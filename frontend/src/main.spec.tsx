@@ -12,6 +12,6 @@ describe("createApp", () => {
 
     expect(app.runtimeConfig.basePath).toBe("/yona");
     expect(app.router.options.basepath).toBe("/yona");
-    expect(app.title).toBe("Yona Rust Frontend");
+    expect(app.title).toBe("Yona");
   });
 });

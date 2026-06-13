@@ -371,8 +371,12 @@ async fn seed_search_rows(
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: "Needle issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "Needle issue title".to_string(),
             },
         })
@@ -419,6 +423,7 @@ async fn seed_search_rows(
         attachment_ids: Vec::new(),
         contents_markdown: "Needle post comment".to_string(),
         owner_name: "owner".to_string(),
+        parent_comment_id: None,
         post_number: post.post_number,
         project_name: "projectYobi".to_string(),
     })
@@ -485,6 +490,7 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
         payload["items"][0]["snippets"][0]["highlights"][0]["start"],
         0
     );
+    assert_eq!(payload["items"][0]["snippets"][0]["truncated"], false);
 }
 
 #[tokio::test]
@@ -597,8 +603,12 @@ async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
             assignee_login_id: None,
             attachment_ids: Vec::new(),
             body_markdown: "Needle appears only in this newer body".to_string(),
+            due_date: None,
+            is_draft: false,
+            is_publish: false,
             label_ids: Vec::new(),
             milestone_id: None,
+            parent_issue_id: None,
             title: "Recent unrelated issue".to_string(),
         },
     })
@@ -658,8 +668,12 @@ async fn issue_search_visibility_matches_legacy_public_and_private_acl() {
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: format!("IssueNeedle body for {project_name}"),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: title.to_string(),
             },
         })
@@ -766,8 +780,12 @@ async fn issue_search_protected_visibility_matches_legacy_org_membership_acl() {
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: format!("IssueProtectedNeedle body for {project_name}"),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: title.to_string(),
             },
         })
@@ -888,8 +906,12 @@ async fn project_issue_search_matches_legacy_project_scope_visibility() {
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: format!("ProjectIssueScopeNeedle body for {project_name}"),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: title.to_string(),
             },
         })
@@ -1536,8 +1558,12 @@ async fn organization_issue_search_matches_legacy_group_scope_and_visibility() {
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: format!("IssueGroupScopeNeedle body for {project_name}"),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: title.to_string(),
             },
         })
@@ -1639,6 +1665,7 @@ async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() 
             attachment_ids: Vec::new(),
             contents_markdown: comment.to_string(),
             owner_name: "owner".to_string(),
+            parent_comment_id: None,
             post_number: post.post_number,
             project_name: project_name.to_string(),
         })
@@ -1761,6 +1788,7 @@ async fn post_comment_search_protected_visibility_matches_legacy_org_membership_
             attachment_ids: Vec::new(),
             contents_markdown: comment.to_string(),
             owner_name: "post-comment-labs".to_string(),
+            parent_comment_id: None,
             post_number: post.post_number,
             project_name: project_name.to_string(),
         })
@@ -1897,6 +1925,7 @@ async fn project_post_comment_search_matches_legacy_project_scope_visibility() {
             attachment_ids: Vec::new(),
             contents_markdown: comment.to_string(),
             owner_name: owner_name.to_string(),
+            parent_comment_id: None,
             post_number: post.post_number,
             project_name: project_name.to_string(),
         })
@@ -2052,6 +2081,7 @@ async fn organization_post_comment_search_matches_legacy_group_scope_and_visibil
             attachment_ids: Vec::new(),
             contents_markdown: comment.to_string(),
             owner_name: owner_name.to_string(),
+            parent_comment_id: None,
             post_number: post.post_number,
             project_name: project_name.to_string(),
         })
@@ -2597,8 +2627,12 @@ async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl()
                     assignee_login_id: None,
                     attachment_ids: Vec::new(),
                     body_markdown: format!("IssueCommentNeedle issue body for {project_name}"),
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
                     label_ids: Vec::new(),
                     milestone_id: None,
+                    parent_issue_id: None,
                     title: format!("IssueCommentNeedle issue {project_name}"),
                 },
             })
@@ -2720,8 +2754,12 @@ async fn issue_comment_search_protected_visibility_matches_legacy_org_membership
                     assignee_login_id: None,
                     attachment_ids: Vec::new(),
                     body_markdown: format!("IssueCommentProtectedNeedle issue {project_name}"),
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
                     label_ids: Vec::new(),
                     milestone_id: None,
+                    parent_issue_id: None,
                     title: format!("IssueCommentProtectedNeedle issue {project_name}"),
                 },
             })
@@ -2857,8 +2895,12 @@ async fn project_issue_comment_search_matches_legacy_project_scope_visibility() 
                     assignee_login_id: None,
                     attachment_ids: Vec::new(),
                     body_markdown: format!("ProjectIssueCommentScopeNeedle issue {project_name}"),
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
                     label_ids: Vec::new(),
                     milestone_id: None,
+                    parent_issue_id: None,
                     title: format!("ProjectIssueCommentScopeNeedle issue {project_name}"),
                 },
             })
@@ -3013,8 +3055,12 @@ async fn organization_issue_comment_search_matches_legacy_group_scope_and_visibi
                     assignee_login_id: None,
                     attachment_ids: Vec::new(),
                     body_markdown: format!("IssueCommentGroupScopeNeedle issue {project_name}"),
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
                     label_ids: Vec::new(),
                     milestone_id: None,
+                    parent_issue_id: None,
                     title: format!("IssueCommentGroupScopeNeedle issue {project_name}"),
                 },
             })

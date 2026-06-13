@@ -31,6 +31,14 @@ function Section({ title, children }: React.PropsWithChildren<{ title: string }>
   );
 }
 
+function UserProjectListEmpty({ active, id }: { active?: boolean; id: string }) {
+  return (
+    <div className={`no-result tab-pane user-ul ${active ? "active" : ""}`.trim()} id={id}>
+      title.no.results
+    </div>
+  );
+}
+
 export function workspaceAvatarDataUrl(label: string): string {
   const initialsParts: string[] = [];
   for (const part of label.split(/\s+/u)) {
@@ -143,6 +151,7 @@ export function PublicUserProfilePage(props: {
   const openIssues = issueItems.filter((item) => item.state === "open");
   const closedIssues = issueItems.filter((item) => item.state !== "open");
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
+  const showUserEmail = props.runtimeConfig.showUserEmail !== false;
 
   return (
     <main className="app-shell user-profile-page">
@@ -162,7 +171,7 @@ export function PublicUserProfilePage(props: {
               <div className="whoami usf-group">
                 <span className="name">{headlineName}</span>
                 <span className="loginid">{profile.loginId ? `@${profile.loginId}` : ""}</span>
-                {profile.primaryEmailAddress ? (
+                {showUserEmail && profile.primaryEmailAddress ? (
                   <span className="email">{profile.primaryEmailAddress}</span>
                 ) : null}
                 {props.viewerCanEditProfile ? (
@@ -190,7 +199,7 @@ export function PublicUserProfilePage(props: {
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>Connected social login</strong>
+                  <strong>Connected Social Login</strong>
                 </div>
                 <div className="auth-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
@@ -285,7 +294,7 @@ export function PublicUserProfilePage(props: {
                           setActiveIssueTab("open");
                         }}
                       >
-                        Open Issues <span className="num-badge">{openIssues.length}</span>
+                        issue.state.open <span className="num-badge">{openIssues.length}</span>
                       </a>
                     </li>
                     <li className={activeIssueTab === "closed" ? "active" : undefined}>
@@ -297,7 +306,7 @@ export function PublicUserProfilePage(props: {
                           setActiveIssueTab("closed");
                         }}
                       >
-                        Closed Issues <span className="num-badge">{closedIssues.length}</span>
+                        issue.state.closed <span className="num-badge">{closedIssues.length}</span>
                       </a>
                     </li>
                     <li className="show-subtasks-li">
@@ -327,7 +336,7 @@ export function PublicUserProfilePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>{`No issues found in the last ${daysAgo} days.`}</p>
+                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
@@ -343,7 +352,7 @@ export function PublicUserProfilePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>{`No issues found in the last ${daysAgo} days.`}</p>
+                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
@@ -362,7 +371,7 @@ export function PublicUserProfilePage(props: {
                 >
                   {pullRequestItems.length === 0 ? (
                     <div className="error-wrap">
-                      <p>{`No pull requests found in the last ${daysAgo} days.`}</p>
+                      <p>userinfo.daysAgo.prefix pullRequest.is.empty</p>
                     </div>
                   ) : (
                     <ul className="post-list-wrap row-fluid">
@@ -420,7 +429,7 @@ export function PublicUserProfilePage(props: {
                 >
                   {memberProjects.length === 0 ? (
                     <div className="error-wrap">
-                      <p>No projects found.</p>
+                      <p>project.is.empty</p>
                     </div>
                   ) : (
                     <ul className="user-streams all-projects">
@@ -494,48 +503,91 @@ function PublicProfileIssueItems(props: {
 }) {
   return (
     <ul className="post-list-wrap my-issues row-fluid">
-      {props.items.map((issue) => (
-        <li
-          className="post-item title"
-          key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-        >
-          <div className="span12 span-hard-wrap">
-            <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-              <span className="infos-item project-name">
-                <a
-                  className="title project"
-                  href={appHref(
-                    props.runtimeConfig,
-                    projectHref(issue.ownerName, issue.projectName),
-                  )}
+      {props.items.map((issue) => {
+        const issueUrl = appHref(
+          props.runtimeConfig,
+          issueHref(issue.ownerName, issue.projectName, issue.issueNumber),
+        );
+        return (
+          <li
+            className="post-item title"
+            data-href={issueUrl}
+            id={`issue-item-${issue.ownerName}-${issue.projectName}-${issue.issueNumber}`}
+            key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+          >
+            <div className="span12 span-hard-wrap">
+              <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
+                <span className="infos-item project-name">
+                  <a
+                    className="title project"
+                    data-placement="bottom"
+                    data-toggle="tooltip"
+                    href={appHref(
+                      props.runtimeConfig,
+                      projectHref(issue.ownerName, issue.projectName),
+                    )}
+                    title="project.name"
+                  >
+                    {issue.projectName}
+                  </a>
+                </span>
+                <span className="infos-item post-id">#{issue.issueNumber}</span>
+              </div>
+              <div className="title-wrap span5">
+                <span className="title-cell">
+                  <a className="title" href={issueUrl}>
+                    {issue.title}
+                  </a>
+                  {issue.commentCount > 0 ? (
+                    <span className="item-count-groups">
+                      <a className="num-comments" href={`${issueUrl}#comments`}>
+                        {issue.commentCount}
+                      </a>
+                    </span>
+                  ) : null}
+                  <span className="for-subtask-progressbar"></span>
+                  <div className="child-issue-list hide"></div>
+                </span>
+              </div>
+              <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
+                <span
+                  className="infos-item infos-link-item author-cell"
+                  data-placement="bottom"
+                  data-toggle="tooltip"
+                  title={issue.authorLabel || "issue.noAuthor"}
                 >
-                  {issue.projectName}
-                </a>
-              </span>
-              <span className="infos-item post-id">#{issue.issueNumber}</span>
-            </div>
-            <div className="title-wrap span5">
-              <span className="title-cell">
-                <a
-                  className="title"
-                  href={appHref(
-                    props.runtimeConfig,
-                    issueHref(issue.ownerName, issue.projectName, issue.issueNumber),
-                  )}
+                  {issue.authorLabel || "issue.noAuthor"}
+                </span>
+              </div>
+              <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
+                <span
+                  className="infos-item infos-link-item author-cell"
+                  data-placement="bottom"
+                  data-toggle="tooltip"
+                  title={issue.assigneeLabel || ""}
                 >
-                  {issue.title}
-                </a>
-              </span>
-              <div className="infos">
-                <span className="infos-item">{issue.authorLabel || "Unknown"}</span>
-                <span className="infos-item">{issue.assigneeLabel || "none"}</span>
-                <span className="infos-item">{issue.updatedLabel}</span>
-                <span className="infos-item">{issue.state}</span>
+                  {issue.assigneeLabel || ""}
+                </span>
+              </div>
+              <div className="infos span3 meta">
+                <span className="meta-cell">
+                  <span className="hide show-in-mobile">
+                    <span className="infos-item">{issue.assigneeLabel || ""}</span>
+                  </span>
+                  <span
+                    className="infos-item"
+                    data-placement="bottom"
+                    data-toggle="tooltip"
+                    title={issue.updatedLabel || ""}
+                  >
+                    {issue.updatedLabel || "unknown"}
+                  </span>
+                </span>
               </div>
             </div>
-          </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -589,11 +641,16 @@ export function WorkspacePage(props: {
   );
   const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
+  const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
+  const showUserEmail = props.runtimeConfig.showUserEmail !== false;
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Workspace</p>
-      <h1>{profile.displayName || session.userLabel || session.loginId}</h1>
+    <main>
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>{profile.displayName || session.userLabel || session.loginId}</h3>
+        </div>
+      </div>
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <section className="user-box">
@@ -606,7 +663,9 @@ export function WorkspacePage(props: {
                 <span className="name">{headlineName}</span>
                 {showDisplayName ? <span className="lede">{profile.displayName}</span> : null}
                 <span className="loginid">{`@${profile.loginId || session.loginId}`}</span>
-                <span className="email">{profile.primaryEmailAddress || session.emailAddress}</span>
+                {showUserEmail && profileEmailAddress ? (
+                  <span className="email">{profileEmailAddress}</span>
+                ) : null}
               </div>
               <div className="edit">
                 <a
@@ -630,19 +689,13 @@ export function WorkspacePage(props: {
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>Connected social login</strong>
+                  <strong>Connected Social Login</strong>
                 </div>
-                {profile.connectedSocialProviders.length === 0 ? (
-                  <p>No connected providers.</p>
-                ) : (
-                  <ul className="auth-provider-logo">
-                    {profile.connectedSocialProviders.map((provider) => (
-                      <li key={provider}>
-                        <WorkspaceProviderBadge provider={provider} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <div className="auth-provider-logo">
+                  {profile.connectedSocialProviders.map((provider) => (
+                    <WorkspaceProviderBadge key={provider} provider={provider} />
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -704,7 +757,7 @@ export function WorkspacePage(props: {
                           setActiveIssueTab("open");
                         }}
                       >
-                        Open Issues <span className="num-badge">{openIssues.length}</span>
+                        issue.state.open <span className="num-badge">{openIssues.length}</span>
                       </a>
                     </li>
                     <li className={activeIssueTab === "closed" ? "active" : undefined}>
@@ -716,8 +769,13 @@ export function WorkspacePage(props: {
                           setActiveIssueTab("closed");
                         }}
                       >
-                        Closed Issues <span className="num-badge">{closedIssues.length}</span>
+                        issue.state.closed <span className="num-badge">{closedIssues.length}</span>
                       </a>
+                    </li>
+                    <li>
+                      <span className="show-subtasks">
+                        <input id="show-subtasks" type="checkbox" />
+                      </span>
                     </li>
                   </ul>
                   <div className="tab-content">
@@ -728,58 +786,10 @@ export function WorkspacePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>{`No issues found in the last ${daysAgo} days.`}</p>
+                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
                         </div>
                       ) : (
-                        <ul className="post-list-wrap my-issues row-fluid">
-                          {openIssues.map((issue) => (
-                            <li
-                              className="post-item title"
-                              key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                            >
-                              <div className="span12 span-hard-wrap">
-                                <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-                                  <span className="infos-item project-name">
-                                    <a
-                                      className="title project"
-                                      href={appHref(
-                                        props.runtimeConfig,
-                                        projectHref(issue.ownerName, issue.projectName),
-                                      )}
-                                    >
-                                      {issue.projectName}
-                                    </a>
-                                  </span>
-                                  <span className="infos-item post-id">#{issue.issueNumber}</span>
-                                </div>
-                                <div className="title-wrap span5">
-                                  <span className="title-cell">
-                                    <a
-                                      className="title"
-                                      href={appHref(
-                                        props.runtimeConfig,
-                                        issueHref(
-                                          issue.ownerName,
-                                          issue.projectName,
-                                          issue.issueNumber,
-                                        ),
-                                      )}
-                                    >
-                                      {issue.title}
-                                    </a>
-                                  </span>
-                                  <div className="infos">
-                                    <span className="infos-item">{`Author: ${issue.authorLabel || "Unknown"}`}</span>
-                                    <span className="infos-item">{`Assignee: ${issue.assigneeLabel || "none"}`}</span>
-                                    <span className="infos-item">{`Comments: ${issue.commentCount}`}</span>
-                                    <span className="infos-item">{`Updated ${issue.updatedLabel || "unknown"}`}</span>
-                                    <span className="infos-item">{`State: ${issue.state}`}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
+                        <PublicProfileIssueItems items={openIssues} runtimeConfig={props.runtimeConfig} />
                       )}
                     </div>
                     <div
@@ -789,58 +799,13 @@ export function WorkspacePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>{`No issues found in the last ${daysAgo} days.`}</p>
+                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
                         </div>
                       ) : (
-                        <ul className="post-list-wrap my-issues row-fluid">
-                          {closedIssues.map((issue) => (
-                            <li
-                              className="post-item title"
-                              key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                            >
-                              <div className="span12 span-hard-wrap">
-                                <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-                                  <span className="infos-item project-name">
-                                    <a
-                                      className="title project"
-                                      href={appHref(
-                                        props.runtimeConfig,
-                                        projectHref(issue.ownerName, issue.projectName),
-                                      )}
-                                    >
-                                      {issue.projectName}
-                                    </a>
-                                  </span>
-                                  <span className="infos-item post-id">#{issue.issueNumber}</span>
-                                </div>
-                                <div className="title-wrap span5">
-                                  <span className="title-cell">
-                                    <a
-                                      className="title"
-                                      href={appHref(
-                                        props.runtimeConfig,
-                                        issueHref(
-                                          issue.ownerName,
-                                          issue.projectName,
-                                          issue.issueNumber,
-                                        ),
-                                      )}
-                                    >
-                                      {issue.title}
-                                    </a>
-                                  </span>
-                                  <div className="infos">
-                                    <span className="infos-item">{`Author: ${issue.authorLabel || "Unknown"}`}</span>
-                                    <span className="infos-item">{`Assignee: ${issue.assigneeLabel || "none"}`}</span>
-                                    <span className="infos-item">{`Comments: ${issue.commentCount}`}</span>
-                                    <span className="infos-item">{`Updated ${issue.updatedLabel || "unknown"}`}</span>
-                                    <span className="infos-item">{`State: ${issue.state}`}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
+                        <PublicProfileIssueItems
+                          items={closedIssues}
+                          runtimeConfig={props.runtimeConfig}
+                        />
                       )}
                     </div>
                   </div>
@@ -853,7 +818,7 @@ export function WorkspacePage(props: {
                 >
                   {pullRequestItems.length === 0 ? (
                     <div className="error-wrap">
-                      <p>{`No pull requests found in the last ${daysAgo} days.`}</p>
+                      <p>userinfo.daysAgo.prefix pullRequest.is.empty</p>
                     </div>
                   ) : (
                     <ul className="post-list-wrap row-fluid">
@@ -909,7 +874,7 @@ export function WorkspacePage(props: {
                 >
                   {memberProjects.length === 0 ? (
                     <div className="error-wrap">
-                      <p>No projects found.</p>
+                      <p>project.is.empty</p>
                     </div>
                   ) : (
                     <ul className="user-streams all-projects">
@@ -990,7 +955,7 @@ export function WorkspacePage(props: {
       </Section>
       <Section title="Favorite projects">
         {favoriteProjects.length === 0 ? (
-          <p>No favorite projects yet.</p>
+          <UserProjectListEmpty id="watching" />
         ) : (
           <ul>
             {favoriteProjects.map((project) => (
@@ -1003,7 +968,7 @@ export function WorkspacePage(props: {
       </Section>
       <Section title="Recent projects">
         {recentProjects.length === 0 ? (
-          <p>No recent projects yet.</p>
+          <UserProjectListEmpty active id="recentlyVisited" />
         ) : (
           <ul>
             {recentProjects.map((project) => (

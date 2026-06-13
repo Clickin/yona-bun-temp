@@ -107,7 +107,7 @@ export async function listWorkspaceFilesRest(
     searchParams.set("filter", filter);
   }
   if (input.page && input.page > 1) {
-    searchParams.set("page", String(input.page));
+    searchParams.set("pageNum", String(input.page));
   }
   const query = searchParams.toString();
   const response = await restFetch<WorkspaceFilesResponse>(
@@ -120,7 +120,7 @@ export async function listWorkspaceFilesRest(
     files: response.files ?? [],
     filter: response.filter ?? filter,
     page: response.page ?? input.page ?? 1,
-    pageSize: response.pageSize ?? 30,
+    pageSize: response.pageSize ?? 50,
     total: response.total ?? 0,
     totalPages: response.totalPages ?? 0,
   };

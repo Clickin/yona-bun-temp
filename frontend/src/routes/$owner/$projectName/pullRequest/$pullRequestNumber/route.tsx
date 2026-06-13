@@ -5,7 +5,6 @@ import {
   acceptPullRequestRest,
   closePullRequestRest,
   closePullRequestThreadRest,
-  createPullRequestCommentRest,
   deletePullRequestCommentRest,
   deletePullRequestSourceBranchRest,
   openPullRequestRest,
@@ -244,30 +243,6 @@ function PullRequestDetailLeafRouteComponent() {
       ]);
     },
   });
-  const commentMutation = useMutation({
-    mutationFn: (input: { attachmentIds?: number[]; contentsMarkdown: string }) =>
-      createPullRequestCommentRest(runtimeConfig, csrfToken, {
-        ...scope,
-        attachmentIds: input.attachmentIds,
-        contentsMarkdown: input.contentsMarkdown,
-      }),
-    onError: mutationError("Create pull request comment failed."),
-    onSuccess: async (updated) => {
-      queryClient.setQueryData(
-        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
-        updated,
-      );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
-        }),
-        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
-      ]);
-    },
-  });
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: number) =>
       deletePullRequestCommentRest(runtimeConfig, csrfToken, {
@@ -387,9 +362,6 @@ function PullRequestDetailLeafRouteComponent() {
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}
       onClose={async () => {
         await closeMutation.mutateAsync();
-      }}
-      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
-        await commentMutation.mutateAsync({ attachmentIds, contentsMarkdown });
       }}
       onCommentDelete={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);

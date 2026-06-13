@@ -365,10 +365,16 @@ async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_
         )
         .await
         .unwrap();
-    assert_eq!(imported.status(), StatusCode::SEE_OTHER);
+    let imported_status = imported.status();
+    let imported_headers = imported.headers().clone();
+    let imported_body = response_json(imported).await;
     assert_eq!(
-        imported
-            .headers()
+        imported_status,
+        StatusCode::SEE_OTHER,
+        "unexpected import response body: {imported_body}"
+    );
+    assert_eq!(
+        imported_headers
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
         Some("/yona/admin/imported")
@@ -443,13 +449,17 @@ async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_
 
 #[tokio::test]
 async fn organization_and_project_settings_contracts_require_expected_authority() {
-    let app = build_app().await;
+    let (app, repository) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark organization create actor as guest");
 
     let create_org = app
         .clone()
@@ -468,6 +478,24 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .await
         .unwrap();
     assert_eq!(create_org.status(), StatusCode::OK);
+
+    let guest_create_org = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/CreateOrganization")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &guest_cookie)
+                .header("x-csrf-token", &guest_csrf)
+                .body(Body::from(
+                    "{\"organizationName\":\"guestlabs\",\"description\":\"guest labs\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_create_org.status(), StatusCode::FORBIDDEN);
 
     let detail = app
         .clone()
@@ -628,9 +656,13 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-
+    let response_status = response.status();
     let json = response_json(response).await;
+    assert_eq!(
+        response_status,
+        StatusCode::OK,
+        "unexpected project container response body: {json}"
+    );
     let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
     assert_eq!(payload["showIssue"], true);
     assert_eq!(payload["showBoard"], true);
@@ -645,6 +677,12 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
     let owner_id = register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+    let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark directory actor as guest");
     create_organization(
         app.clone(),
         &owner_cookie,
@@ -744,7 +782,22 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         format!("/yona/files/{}", project_logo.id)
     );
 
+    let guest_projects = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/projects")
+                .header(http::header::COOKIE, &guest_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_projects.status(), StatusCode::FORBIDDEN);
+
     let organizations = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -761,6 +814,19 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         organizations_json["items"][0]["logoUrl"],
         format!("/yona/files/{}", organization_logo.id)
     );
+
+    let guest_organizations = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/organizations")
+                .header(http::header::COOKIE, &guest_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_organizations.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]
@@ -957,13 +1023,19 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
 
 #[tokio::test]
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
-    let app = build_app().await;
+    let (app, repository) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark project enrollment actor as guest");
+    let (visitor_csrf, visitor_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &visitor_cookie, &visitor_csrf, "visitor").await;
 
     let create_project = app
         .clone()
@@ -988,7 +1060,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
                 .method(Method::POST)
                 .uri("/yona/api/v1/_pilot/ReadProjectDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .header(http::header::COOKIE, &guest_cookie)
+                .header(http::header::COOKIE, &visitor_cookie)
                 .body(Body::from(
                     "{\"ownerName\":\"admin\",\"projectName\":\"projectYobi\"}",
                 ))
@@ -997,6 +1069,24 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .await
         .unwrap();
     assert_eq!(first_detail.status(), StatusCode::OK);
+
+    let non_guest_enroll = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/EnrollProject")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::from(
+                    "{\"ownerName\":\"admin\",\"projectName\":\"projectYobi\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(non_guest_enroll.status(), StatusCode::BAD_REQUEST);
 
     let enroll = app
         .clone()
@@ -1023,8 +1113,8 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
                 .method(Method::POST)
                 .uri("/yona/api/v1/_pilot/ToggleFavoriteProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .header(http::header::COOKIE, &guest_cookie)
-                .header("x-csrf-token", &guest_csrf)
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
                 .body(Body::from(
                     "{\"ownerName\":\"admin\",\"projectName\":\"projectYobi\"}",
                 ))
@@ -1041,7 +1131,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
                 .method(Method::POST)
                 .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .header(http::header::COOKIE, &guest_cookie)
+                .header(http::header::COOKIE, &visitor_cookie)
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -1247,7 +1337,7 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
     seed_bare_repository_readme(
         data_dir.path(),
         project.id,
-        "# Git README\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+        "# Git README\n\n@admin @admin/projectYobi @ghost @admin/missing\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
     );
 
     let response = app
@@ -1276,12 +1366,39 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
         .expect("readme body markdown");
     assert!(body_markdown.contains("# Git README"), "{body_markdown}");
     assert!(
+        body_markdown.contains("@admin @admin/projectYobi @ghost @admin/missing"),
+        "{body_markdown}"
+    );
+    assert!(
         body_markdown.contains(r#"![logo](/yona/admin/projectYobi/files/main/assets/logo.png)"#),
         "{body_markdown}"
     );
     assert!(
         body_markdown.contains(r#"[Guide](/yona/admin/projectYobi/code/main/docs/guide.md)"#),
         "{body_markdown}"
+    );
+    let mention_references = readme["mentionReferences"]
+        .as_array()
+        .expect("readme mention references");
+    assert!(
+        mention_references
+            .iter()
+            .any(|reference| reference["loginId"] == "admin"),
+        "{mention_references:?}"
+    );
+    assert!(
+        mention_references
+            .iter()
+            .any(|reference| reference["ownerName"] == "admin"
+                && reference["projectName"] == "projectYobi"),
+        "{mention_references:?}"
+    );
+    assert!(
+        !mention_references
+            .iter()
+            .any(|reference| reference["loginId"] == "ghost"
+                || reference["projectName"] == "missing"),
+        "{mention_references:?}"
     );
     std::env::remove_var("YONA_DATA");
 }
@@ -1886,6 +2003,12 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark organization enrollment actor as guest");
+    let (visitor_csrf, visitor_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &visitor_cookie, &visitor_csrf, "visitor").await;
 
     create_organization(
         app.clone(),
@@ -1895,6 +2018,22 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
         "web labs",
     )
     .await;
+
+    let non_guest_enroll = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/EnrollOrganization")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::from("{\"organizationName\":\"weblabs\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(non_guest_enroll.status(), StatusCode::BAD_REQUEST);
 
     let organization = repository
         .read_organization_by_name("weblabs")
@@ -2032,13 +2171,17 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
 
 #[tokio::test]
 async fn organization_enrollment_mutations_toggle_guest_request_state() {
-    let app = build_app().await;
+    let (app, repository) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark organization enrollment actor as guest");
 
     create_organization(
         app.clone(),
@@ -2099,6 +2242,10 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     let guest_id = register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark organization enrollment actor as guest");
 
     create_organization(
         app.clone(),
@@ -2108,6 +2255,27 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         "web labs",
     )
     .await;
+
+    let add_guest_directly_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/AddOrganizationMember")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"organizationName\":\"weblabs\",\"loginId\":\"guest\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        add_guest_directly_response.status(),
+        StatusCode::BAD_REQUEST
+    );
 
     let add_member_response = app
         .clone()

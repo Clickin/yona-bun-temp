@@ -287,6 +287,13 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
     assert_eq!(form["canFork"], true);
     assert_eq!(form["ownerOptions"][0]["ownerName"], "guest");
 
+    let guest = repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("toggle guest mode")
+        .expect("guest exists");
+    assert!(guest.is_guest);
+
     let forked = ok_json(
         rest(
             app.clone(),

@@ -838,6 +838,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         attachment_ids: vec![export_post_comment_attachment.id],
         contents_markdown: "legacy data export post comment".to_string(),
         owner_name: "member".to_string(),
+        parent_comment_id: None,
         post_number: 1,
         project_name: "dataproj".to_string(),
     })
@@ -854,8 +855,12 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
             assignee_login_id: None,
             attachment_ids: vec![export_issue_attachment.id],
             body_markdown: "legacy data export issue".to_string(),
+            due_date: None,
+            is_draft: false,
+            is_publish: false,
             label_ids: vec![],
             milestone_id: Some(milestone.id),
+            parent_issue_id: None,
             title: "Data export issue".to_string(),
         },
     })
@@ -1070,6 +1075,27 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
 
     let boundary = "yona-import-boundary";
+    let missing_data_multipart = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"csrfToken\"\r\n\r\n{admin_csrf}\r\n--{boundary}--\r\n",
+    );
+    let missing_data = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        None,
+        &format!("multipart/form-data; boundary={boundary}"),
+        &missing_data_multipart,
+    )
+    .await;
+    assert_eq!(missing_data.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        missing_data
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/sites/data")
+    );
+
     let multipart = format!(
         "--{boundary}\r\nContent-Disposition: form-data; name=\"csrfToken\"\r\n\r\n{admin_csrf}\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"data\"; filename=\"yobi-data.json\"\r\nContent-Type: application/json\r\n\r\n{}\r\n--{boundary}--\r\n",
         payload
@@ -1083,16 +1109,14 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         &multipart,
     )
     .await;
-    let imported = response_json(imported).await;
-    assert_eq!(imported["importedUsers"], 1);
-    assert_eq!(imported["importedProjects"], 1);
-    assert_eq!(imported["importedPosts"], 1);
-    assert_eq!(imported["importedIssues"], 1);
-    assert_eq!(imported["skippedUsers"], 0);
-    assert_eq!(imported["skippedProjects"], 0);
-    assert_eq!(imported["skippedPosts"], 0);
-    assert_eq!(imported["skippedIssues"], 0);
-    assert_eq!(imported["unsupportedSections"].as_array().unwrap().len(), 0);
+    assert_eq!(imported.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        imported
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
 
     let users = response_json(
         rest_get(
@@ -1412,6 +1436,15 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (manager_csrf, manager_cookie, manager_id) =
         register_user(app.clone(), "solemanager").await;
     mark_site_admin(&db, admin_id).await;
+    let member_avatar = insert_attachment(
+        &db,
+        "USER_AVATAR",
+        member_id,
+        "member",
+        "member-avatar.png",
+        "image/png",
+    )
+    .await;
 
     let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/users", None).await;
     assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
@@ -1433,6 +1466,10 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     assert_eq!(login_ids(&active), vec!["member".to_string()]);
     assert_eq!(user(&active, "member")["isSiteAdmin"], false);
     assert_eq!(user(&active, "member")["state"], "ACTIVE");
+    assert_eq!(
+        user(&active, "member")["avatarUrl"],
+        format!("/yona/files/{}", member_avatar.id)
+    );
 
     let forbidden_toggle = rest_post(
         app.clone(),
@@ -1709,6 +1746,15 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
         .await
         .expect("read beta project")
         .expect("beta project");
+    let beta_logo = insert_attachment(
+        &db,
+        "PROJECT",
+        beta_project.id,
+        "member",
+        "beta-logo.png",
+        "image/png",
+    )
+    .await;
     let filtered = response_json(
         rest_get(
             app.clone(),
@@ -1732,6 +1778,10 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
     assert_eq!(
         filtered["projects"][0]["overview"],
         "site admin delete guard"
+    );
+    assert_eq!(
+        filtered["projects"][0]["projectLogoUrl"],
+        format!("/yona/files/{}", beta_logo.id)
     );
 
     let delete_forbidden = rest_delete(
@@ -1798,6 +1848,21 @@ async fn site_admin_post_list_follows_legacy_read_only_surface() {
         "boardproj",
     )
     .await;
+    let project = repo
+        .read_project_authorization("member", "boardproj", None)
+        .await
+        .expect("read board project")
+        .expect("board project exists")
+        .project;
+    let logo = insert_attachment(
+        &db,
+        "PROJECT",
+        project.id,
+        "member",
+        "logo.png",
+        "image/png",
+    )
+    .await;
     let posting = repo
         .create_posting(CreatePostingInput {
             actor_display_name: "Member Name".to_string(),
@@ -1846,6 +1911,14 @@ async fn site_admin_post_list_follows_legacy_read_only_surface() {
     assert_eq!(payload["posts"][0]["title"], "Legacy site post");
     assert_eq!(payload["posts"][0]["authorLoginId"], "member");
     assert_eq!(payload["posts"][0]["authorLabel"], "Member Name");
+    assert_eq!(
+        payload["posts"][0]["projectLogoUrl"],
+        format!("/yona/files/{}", logo.id)
+    );
+    assert!(payload["posts"][0]["authorAvatarUrl"]
+        .as_str()
+        .expect("author avatar url")
+        .starts_with("https://www.gravatar.com/avatar/"));
     assert_eq!(payload["posts"][0]["commentCount"], 0);
 }
 
@@ -1864,6 +1937,21 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
         "issueproj",
     )
     .await;
+    let project = repo
+        .read_project_authorization("member", "issueproj", None)
+        .await
+        .expect("read issue project")
+        .expect("issue project exists")
+        .project;
+    let logo = insert_attachment(
+        &db,
+        "PROJECT",
+        project.id,
+        "member",
+        "issue-logo.png",
+        "image/png",
+    )
+    .await;
     let open_issue = repo
         .create_issue(CreateIssueInput {
             actor_display_name: "Member Name".to_string(),
@@ -1875,8 +1963,12 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
                 assignee_login_id: None,
                 attachment_ids: vec![],
                 body_markdown: "legacy site issue list body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: vec![],
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "Open site issue".to_string(),
             },
         })
@@ -1894,8 +1986,12 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
                 assignee_login_id: None,
                 attachment_ids: vec![],
                 body_markdown: "legacy closed issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: vec![],
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "Closed site issue".to_string(),
             },
         })
@@ -1949,6 +2045,14 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
     assert_eq!(open["issues"][0]["title"], "Open site issue");
     assert_eq!(open["issues"][0]["authorLoginId"], "member");
     assert_eq!(open["issues"][0]["authorLabel"], "Member Name");
+    assert_eq!(
+        open["issues"][0]["projectLogoUrl"],
+        format!("/yona/files/{}", logo.id)
+    );
+    assert!(open["issues"][0]["authorAvatarUrl"]
+        .as_str()
+        .expect("author avatar url")
+        .starts_with("https://www.gravatar.com/avatar/"));
     assert_eq!(open["issues"][0]["state"], "open");
     assert_eq!(open["issues"][0]["commentCount"], 0);
 
@@ -1988,11 +2092,34 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
     .await;
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
 
-    let payload =
-        response_json(rest_get(app, "/yona/api/v1/site/diagnostics", Some(&admin_cookie)).await)
-            .await;
+    let payload = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/diagnostics",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
     assert_eq!(payload["errorCount"], 0);
     assert_eq!(payload["errors"].as_array().expect("errors").len(), 0);
+
+    let direct_unauthenticated = rest_get(app.clone(), "/yona/sites/diagnostic", None).await;
+    assert_eq!(direct_unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let direct_forbidden =
+        rest_get(app.clone(), "/yona/sites/diagnostic", Some(&member_cookie)).await;
+    assert_eq!(direct_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let direct = rest_get(app, "/yona/sites/diagnostic", Some(&admin_cookie)).await;
+    assert_eq!(direct.status(), StatusCode::OK);
+    assert_eq!(
+        direct.headers().get(http::header::CONTENT_TYPE).unwrap(),
+        "text/html; charset=utf-8"
+    );
+    let direct_body = response_text(direct).await;
+    assert!(direct_body.contains("site.sidebar.diagnostics"));
+    assert!(direct_body.contains("site.diagnostic.errorNotFound"));
 }
 
 #[tokio::test]
@@ -2200,14 +2327,10 @@ async fn site_admin_update_download_file_proxies_configured_https_binary() {
         .unwrap_or_else(|error| error.into_inner());
     clear_site_update_env();
     let fake_curl_dir = tempfile::tempdir().expect("fake curl tempdir");
-    let fake_curl = fake_curl_dir.path().join("fake-curl.ps1");
+    let fake_curl = fake_curl_dir.path().join("fake-curl.sh");
     std::fs::write(
         &fake_curl,
-        r#"
-param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Remaining)
-$bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: application/zip`r`n`r`nportable-yona-update")
-[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
-"#,
+        "#!/bin/sh\nprintf 'HTTP/1.1 200 OK\\r\\nContent-Type: application/zip\\r\\n\\r\\nportable-yona-update'\n",
     )
     .expect("write fake curl");
     std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
@@ -2218,10 +2341,7 @@ $bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: appli
     );
     std::env::set_var(
         "YONA_UPDATE_HTTPS_FETCH_COMMAND",
-        format!(
-            "powershell -NoProfile -ExecutionPolicy Bypass -File {}",
-            fake_curl.display()
-        ),
+        format!("sh {}", fake_curl.display()),
     );
 
     let (app, _repo, db) = build_app_with_repository().await;
@@ -2268,9 +2388,15 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     std::env::remove_var("SMTP_ENABLED");
     std::env::remove_var("SMTP_HOST");
     std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASSWORD");
     std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
     std::env::remove_var("YONA_SMTP_HOST");
     std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
     std::env::remove_var("YONA_SMTP_PASSWORD");
     std::env::set_var("SMTP_FROM", "site-admin@yona.local");
     clear_test_outbox();
@@ -2311,7 +2437,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     assert_eq!(options["sent"], false);
     assert_eq!(
         options["notConfiguredItems"],
-        json!(["SMTP_HOST", "SMTP_USER", "SMTP_PASS"])
+        json!(["smtp.host", "smtp.user", "smtp.password"])
     );
 
     let send_forbidden = rest_json(
@@ -2354,6 +2480,32 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     assert_eq!(outbox[0].to, "receiver@example.com");
     assert_eq!(outbox[0].subject, "Test subject");
     assert_eq!(outbox[0].body, "Test body");
+    assert!(!outbox[0].html);
+
+    let direct_sent = rest_raw_post(
+        app.clone(),
+        "/yona/sites/mail",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/x-www-form-urlencoded",
+        "from=site-admin%40yona.local&to=direct%40example.com&subject=Direct+subject&body=Direct+body",
+    )
+    .await;
+    assert_eq!(direct_sent.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_sent
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/sites/mail?sended=true")
+    );
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 2);
+    assert_eq!(outbox[1].from, "site-admin@yona.local");
+    assert_eq!(outbox[1].to, "direct@example.com");
+    assert_eq!(outbox[1].subject, "Direct subject");
+    assert_eq!(outbox[1].body, "Direct body");
+    assert!(!outbox[1].html);
 
     let all_recipients = response_json(
         rest_json(
@@ -2439,9 +2591,16 @@ async fn site_admin_mail_options_accept_legacy_yona_smtp_env_aliases() {
         .unwrap_or_else(|error| error.into_inner());
     std::env::remove_var("SMTP_HOST");
     std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASSWORD");
     std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
     std::env::set_var("YONA_SMTP_HOST", "smtp.example.com");
     std::env::set_var("YONA_SMTP_USER", "smtp-user");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
     std::env::set_var("YONA_SMTP_PASSWORD", "smtp-pass");
 
     let (app, _repo, db) = build_app_with_repository().await;
@@ -2453,7 +2612,147 @@ async fn site_admin_mail_options_accept_legacy_yona_smtp_env_aliases() {
 
     std::env::remove_var("YONA_SMTP_HOST");
     std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
     std::env::remove_var("YONA_SMTP_PASSWORD");
 
+    assert_eq!(options["notConfiguredItems"], json!([]));
+}
+
+#[tokio::test]
+async fn site_admin_mail_options_accept_legacy_style_smtp_password_env_alias() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::set_var("SMTP_HOST", "smtp.example.com");
+    std::env::set_var("SMTP_USER", "smtp-user");
+    std::env::set_var("SMTP_PASSWORD", "smtp-password");
+    std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASSWORD");
+
+    assert_eq!(options["notConfiguredItems"], json!([]));
+}
+
+#[tokio::test]
+async fn site_admin_mail_sender_derives_from_legacy_smtp_user_and_domain() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::set_var("SMTP_HOST", "smtp.example.com");
+    std::env::set_var("SMTP_USER", "smtp-user");
+    std::env::set_var("SMTP_DOMAIN", "example.com");
+    std::env::set_var("SMTP_PASSWORD", "smtp-password");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("SMTP_PASSWORD");
+
+    assert_eq!(options["sender"], "smtp-user@example.com");
+    assert_eq!(options["notConfiguredItems"], json!([]));
+}
+
+#[tokio::test]
+async fn site_admin_mail_sender_uses_application_hostname_when_smtp_domain_is_absent() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::set_var("SMTP_HOST", "smtp.example.com");
+    std::env::set_var("SMTP_USER", "smtp-user");
+    std::env::set_var("SMTP_PASSWORD", "smtp-password");
+    std::env::set_var("YONA_APPLICATION_HOSTNAME", "host.example.com");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASSWORD");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+
+    assert_eq!(options["sender"], "smtp-user@host.example.com");
+    assert_eq!(options["notConfiguredItems"], json!([]));
+}
+
+#[tokio::test]
+async fn site_admin_mail_sender_accepts_yona_smtp_from_override() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::set_var("SMTP_HOST", "smtp.example.com");
+    std::env::set_var("SMTP_USER", "smtp-user");
+    std::env::set_var("SMTP_DOMAIN", "example.com");
+    std::env::set_var("SMTP_PASSWORD", "smtp-password");
+    std::env::set_var("YONA_SMTP_FROM", "override@yona.example");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("SMTP_PASSWORD");
+    std::env::remove_var("YONA_SMTP_FROM");
+
+    assert_eq!(options["sender"], "override@yona.example");
     assert_eq!(options["notConfiguredItems"], json!([]));
 }

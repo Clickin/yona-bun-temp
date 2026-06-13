@@ -152,6 +152,7 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
     viewerHasInheritedShare: response.viewerHasInheritedShare ?? false,
     viewerIsDirectSharer: response.viewerIsDirectSharer ?? false,
     voterCount: response.voterCount ?? 0,
+    issueVoters: (response as unknown as { issueVoters?: unknown[] }).issueVoters ?? [],
     watcherCount: response.watcherCount ?? 0,
     attachments: response.attachments ?? [],
     comments: (response.comments ?? []).map((comment) => ({

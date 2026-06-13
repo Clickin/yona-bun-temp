@@ -22,6 +22,22 @@ export interface AvatarCropSelection {
   y: number;
 }
 
+const WORKSPACE_SETTINGS_TABS: Array<{
+  href: string;
+  label: string;
+  section: WorkspaceSettingsSection;
+}> = [
+  { href: "/user/editform", label: "userinfo.editProfile", section: "profile" },
+  { href: "/user/editform/password", label: "userinfo.changePassword", section: "password" },
+  {
+    href: "/user/editform/notifications",
+    label: "userinfo.changeNotifications",
+    section: "notifications",
+  },
+  { href: "/user/editform/emails", label: "userinfo.changeEmails", section: "emails" },
+  { href: "/user/editform/token", label: "userinfo.token", section: "token" },
+];
+
 function clampAvatarCropSelection(
   crop: AvatarCropSelection,
   imageWidth: number,
@@ -256,33 +272,10 @@ export function WorkspaceSettingsPage(props: {
     case "profile":
       sectionBody = (
         <>
-          <section className="runtime-grid">
-            <div className="avatar-frm">
-              <div className="avatar-wrap xlarge">
-                <img
-                  alt={`${session.loginId} avatar`}
-                  src={currentAvatarUrl}
-                  style={{ width: "128px", maxWidth: "none" }}
-                />
-              </div>
-              <div className="btn-wrap mt10 center-txt">
-                <label className="ybtn ybtn-small btnUploadAvatar">
-                  Change avatar
-                  <input
-                    accept="image/*"
-                    className="file"
-                    hidden
-                    onChange={onAvatarFileChange}
-                    type="file"
-                  />
-                </label>
-              </div>
-              {avatarErrorMessage ? <p className="lede">{avatarErrorMessage}</p> : null}
-            </div>
-          </section>
           <form
             action={appHref(props.runtimeConfig, "/user/edit")}
-            className="runtime-grid"
+            className="pull-left"
+            id="frmBasic"
             method="post"
             onSubmit={(event) => {
               event.preventDefault();
@@ -292,37 +285,101 @@ export function WorkspaceSettingsPage(props: {
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <input name="avatarAttachmentId" type="hidden" value={avatarAttachmentId} />
-            <label>
-              <span>Login ID</span>
-              <input defaultValue={session.loginId} name="loginId" readOnly type="text" />
-            </label>
-            <label>
-              <span>Name</span>
-              <input defaultValue={session.userLabel} name="name" type="text" />
-            </label>
-            <label>
-              <span>Email</span>
-              <input defaultValue={session.emailAddress} name="email" type="email" />
-            </label>
-            <button type="submit">{props.pending ? "Saving…" : "Edit Profile"}</button>
+            <dl>
+              <dt>user.loginId</dt>
+              <dd className="mt10">
+                <input
+                  className="text"
+                  defaultValue={session.loginId}
+                  name="loginId"
+                  readOnly
+                  type="text"
+                />
+              </dd>
+              <dt>user.name</dt>
+              <dd className="mt10">
+                <input className="text" defaultValue={session.userLabel} name="name" type="text" />
+              </dd>
+              <dt>user.email</dt>
+              <dd className="mt10">
+                <input
+                  className="text"
+                  defaultValue={session.emailAddress}
+                  name="email"
+                  type="email"
+                />
+              </dd>
+              <dd>
+                <button className="ybtn ybtn-success" type="submit">
+                  userinfo.editProfile
+                </button>
+              </dd>
+            </dl>
           </form>
-          <section className="modal" hidden={!isCropModalOpen}>
-            <div className="modal-header center-txt">
-              <h2>Crop Avatar</h2>
+          <form
+            action={appHref(props.runtimeConfig, "/user/edit")}
+            className="pull-left"
+            id="frmAvatar"
+            method="post"
+            style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
+          >
+            <input name="name" type="hidden" value={session.userLabel} />
+            <input name="email" type="hidden" value={session.emailAddress} />
+            <div className="avatar-frm">
               <div className="avatar-wrap xlarge">
-                <img alt="Avatar crop preview" src={cropSourceUrl} style={cropPreviewStyle} />
+                <img alt="" src={currentAvatarUrl} style={{ width: "128px", maxWidth: "none" }} />
+              </div>
+              <div className="upload-progress avatar" style={{ display: "none" }}>
+                <div className="bar orange" />
+              </div>
+              <div className="btn-wrap mt10 center-txt">
+                <label className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
+                  userinfo.changeAvatar
+                  <input
+                    accept="image/*"
+                    className="file"
+                    id="avatarFile"
+                    name="filePath"
+                    onChange={onAvatarFileChange}
+                    type="file"
+                  />
+                </label>
+              </div>
+              {avatarErrorMessage ? <p className="lede">{avatarErrorMessage}</p> : null}
+            </div>
+          </form>
+          <div className="reset-user-visited-list">
+            <hr />
+            <form
+              action={appHref(props.runtimeConfig, "/user/resetVisitedList")}
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onResetVisitedProjects?.();
+              }}
+            >
+              <button className="ybtn" type="submit">
+                userinfo.reset.visited.project.list
+              </button>
+            </form>
+          </div>
+          <section
+            className="modal hide"
+            data-backdrop="static"
+            hidden={!isCropModalOpen}
+            id="avatarCropWrap"
+            role="dialog"
+          >
+            <div className="modal-header center-txt">
+              <div className="avatar-wrap xlarge">
+                <img alt="" src={cropSourceUrl} style={cropPreviewStyle} />
               </div>
             </div>
-            <div className="modal-body runtime-grid">
-              <img
-                alt="Avatar crop source"
-                ref={cropImageRef}
-                src={cropSourceUrl}
-                style={{ maxWidth: "500px" }}
-              />
-              <label>
-                <span>Crop X</span>
+            <div className="modal-body">
+              <img alt="" ref={cropImageRef} src={cropSourceUrl} style={{ maxWidth: "500px" }} />
+              <label className="hide">
                 <input
+                  aria-label="crop-x"
                   max={Math.max(0, cropImageSize.width - cropSelection.size)}
                   min={0}
                   onChange={(event) =>
@@ -341,9 +398,9 @@ export function WorkspaceSettingsPage(props: {
                   value={cropSelection.x}
                 />
               </label>
-              <label>
-                <span>Crop Y</span>
+              <label className="hide">
                 <input
+                  aria-label="crop-y"
                   max={Math.max(0, cropImageSize.height - cropSelection.size)}
                   min={0}
                   onChange={(event) =>
@@ -362,9 +419,9 @@ export function WorkspaceSettingsPage(props: {
                   value={cropSelection.y}
                 />
               </label>
-              <label>
-                <span>Crop Size</span>
+              <label className="hide">
                 <input
+                  aria-label="crop-size"
                   max={Math.max(32, Math.min(cropImageSize.width, cropImageSize.height))}
                   min={32}
                   onChange={(event) =>
@@ -386,135 +443,140 @@ export function WorkspaceSettingsPage(props: {
               <canvas height={128} hidden ref={cropCanvasRef} width={128} />
             </div>
             <div className="modal-footer">
-              <button onClick={closeCropModal} type="button">
-                Cancel
+              <button className="ybtn ybtn-default" onClick={closeCropModal} type="button">
+                button.cancel
               </button>
               <button
+                className="ybtn ybtn-success btnSubmitCrop"
                 disabled={uploadingAvatar}
                 onClick={() => void uploadCroppedAvatar()}
                 type="button"
               >
-                {uploadingAvatar ? "Saving…" : "Save"}
+                button.save
               </button>
             </div>
           </section>
-          <form
-            action={appHref(props.runtimeConfig, "/user/resetVisitedList")}
-            method="post"
-            onSubmit={(event) => {
-              event.preventDefault();
-              props.onResetVisitedProjects?.();
-            }}
-          >
-            <button type="submit">Reset visited project list</button>
-          </form>
         </>
       );
       break;
     case "password":
       sectionBody = (
-        <form
-          action={appHref(props.runtimeConfig, "/user/resetPassword")}
-          className="runtime-grid"
-          method="post"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            props.onChangePassword?.({
-              loginId: String(formData.get("loginId") ?? ""),
-              oldPassword: String(formData.get("oldPassword") ?? ""),
-              password: String(formData.get("password") ?? ""),
-              retypedPassword: String(formData.get("retypedPassword") ?? ""),
-            });
-          }}
-        >
-          <input name="loginId" type="hidden" value={session.loginId} />
-          <label>
-            <span>Current Password</span>
-            <input name="oldPassword" type="password" />
-          </label>
-          <label>
-            <span>New Password</span>
-            <input name="password" type="password" />
-          </label>
-          <label>
-            <span>Retype password</span>
-            <input name="retypedPassword" type="password" />
-          </label>
-          <button type="submit">{props.pending ? "Saving…" : "Change Password"}</button>
-          <a href={appHref(props.runtimeConfig, "/lostPassword")}>Reset password by email</a>
-        </form>
+        <>
+          <form
+            action={appHref(props.runtimeConfig, "/user/resetPassword")}
+            id="frmPassword"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              props.onChangePassword?.({
+                loginId: String(formData.get("loginId") ?? ""),
+                oldPassword: String(formData.get("oldPassword") ?? ""),
+                password: String(formData.get("password") ?? ""),
+                retypedPassword: String(formData.get("retypedPassword") ?? ""),
+              });
+            }}
+          >
+            <input name="loginId" type="hidden" value={session.loginId} />
+            <dl>
+              <dt>user.currentPassword</dt>
+              <dd className="mt10">
+                <input autoComplete="off" id="oldPassword" name="oldPassword" type="password" />
+              </dd>
+              <dt>user.newPassword</dt>
+              <dd className="mt10">
+                <input autoComplete="off" id="password" name="password" type="password" />
+              </dd>
+              <dt>validation.retypePassword</dt>
+              <dd className="mt10">
+                <input
+                  autoComplete="off"
+                  id="retypedPassword"
+                  name="retypedPassword"
+                  type="password"
+                />
+              </dd>
+              <dd>
+                <button className="ybtn ybtn-success" type="submit">
+                  userinfo.changePassword
+                </button>
+              </dd>
+            </dl>
+          </form>
+          <hr />
+          <div className="mt10">
+            <dl>
+              <dt>site.resetPasswordEmail.desc</dt>
+              <dd className="mt10">
+                <a className="ybtn ybtn-fail" href={appHref(props.runtimeConfig, "/lostPassword")}>
+                  site.resetPasswordEmail.title
+                </a>
+              </dd>
+            </dl>
+          </div>
+        </>
       );
       break;
     case "notifications":
       sectionBody = (
-        <section className="runtime-grid">
-          <div>
-            <strong>Watched Projects</strong>
-          </div>
-          {watchedProjects.length === 0 ? (
-            <p>No watched projects yet.</p>
-          ) : (
-            <>
-              <ul className="unstyled lst-stacked span3 mr20" id="notification-projects">
-                {watchedProjects.map((project, index) => (
-                  <li className={index === 0 ? "active" : undefined} key={project.projectId}>
-                    <a href={`#${project.projectId}`}>
-                      {`${project.ownerName} / ${project.projectName}`}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <div className="tab-content">
-                {watchedProjects.map((project, index) => (
-                  <div
-                    className={`tab-pane ${index === 0 ? "active" : ""}`}
-                    id={project.projectId}
-                    key={project.projectId}
-                  >
-                    <table className="table table-striped table-bordered">
-                      <tbody>
-                        {project.notifications.map((notification) => (
-                          <tr key={`${project.projectId}-${notification.eventType}`}>
-                            <th>{notification.label}</th>
-                            <td>
-                              <div className="switch" data-off-label="Off" data-on-label="On">
-                                <input
-                                  checked={notification.enabled}
-                                  className="notiUpdate"
-                                  data-href={appHref(
-                                    props.runtimeConfig,
-                                    `/noti/toggle/${project.projectId}/${notification.eventType}`,
-                                  )}
-                                  data-toggle="switch"
-                                  onChange={() =>
-                                    props.onToggleWorkspaceNotification?.(
-                                      project.projectId,
-                                      notification.eventType,
-                                    )
-                                  }
-                                  type="checkbox"
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
+        <div>
+          <ul className="unstyled lst-stacked span3 mr20" id="notification-projects">
+            {watchedProjects.map((project, index) => (
+              <li className={index === 0 ? "active" : undefined} key={project.projectId}>
+                <a data-toggle="tab" href={`#${project.projectId}`}>
+                  {`${project.ownerName} / ${project.projectName}`}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="tab-content">
+            {watchedProjects.map((project, index) => (
+              <div
+                className={`tab-pane ${index === 0 ? "active" : ""}`}
+                id={project.projectId}
+                key={project.projectId}
+              >
+                <table className="table table-striped table-bordered">
+                  <tbody>
+                    {project.notifications.map((notification) => (
+                      <tr key={`${project.projectId}-${notification.eventType}`}>
+                        <th>{notification.label}</th>
+                        <td>
+                          <div className="switch" data-off-label="Off" data-on-label="On">
+                            <input
+                              checked={notification.enabled}
+                              className="notiUpdate"
+                              data-href={appHref(
+                                props.runtimeConfig,
+                                `/noti/toggle/${project.projectId}/${notification.eventType}`,
+                              )}
+                              data-toggle="switch"
+                              onChange={() =>
+                                props.onToggleWorkspaceNotification?.(
+                                  project.projectId,
+                                  notification.eventType,
+                                )
+                              }
+                              type="checkbox"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </>
-          )}
-        </section>
+            ))}
+          </div>
+        </div>
       );
       break;
     case "emails":
       sectionBody = (
-        <section className="runtime-grid">
+        <>
           <form
             action={appHref(props.runtimeConfig, "/user/email")}
-            className="runtime-grid"
+            className="form-inline inner-bubble"
             method="post"
             onSubmit={(event) => {
               event.preventDefault();
@@ -523,118 +585,152 @@ export function WorkspaceSettingsPage(props: {
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
-            <label>
-              <span>Email</span>
-              <input name="email" placeholder="New email" type="email" />
-            </label>
-            <button type="submit">Add</button>
+            <input className="text uname" name="email" placeholder="user.email.new" type="text" />
+            <button className="ybtn ybtn-success" type="submit">
+              button.add
+            </button>
           </form>
+          <hr />
           <p>
-            Main email receives account mail.
+            emails.main.email.descr
             <br />
-            Sub emails can be promoted after validation.
+            emails.sub.email.descr
           </p>
-          {searchParams.get("validation") === "sent" ? (
-            <p className="lede">Validation request was accepted.</p>
-          ) : null}
-          {searchParams.get("validation") === "error" ? (
-            <p className="lede">Validation request failed.</p>
-          ) : null}
-          {searchParams.get("confirmed") === "1" ? (
-            <p className="lede">Email address was confirmed.</p>
-          ) : null}
-          {searchParams.get("confirmed") === "invalid" ? (
-            <p className="lede">Invalid email confirmation link.</p>
-          ) : null}
-          <div>
-            <strong>Main Email</strong>
-            <p>{session.emailAddress}</p>
-          </div>
-          {emails.map((email) => (
-            <div className="runtime-grid" key={email.id}>
-              <strong>{email.emailAddress}</strong>
-              <div>
-                <button
-                  data-request-method="delete"
-                  data-request-uri={appHref(props.runtimeConfig, `/user/email/delete/${email.id}`)}
-                  onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
-                  type="button"
-                >
-                  Delete
-                </button>
-                {email.valid ? (
-                  <button
-                    data-request-method="put"
-                    onClick={() => props.onSetMainWorkspaceEmail?.(email.id)}
-                    type="button"
-                  >
-                    Set as main
-                  </button>
-                ) : (
-                  <div className="runtime-grid">
-                    <span>Validation required</span>
-                    <form
-                      action={appHref(
+          <table className="table mt20">
+            <tbody>
+              <tr>
+                <td>
+                  <img alt="" height={40} src={currentAvatarUrl} width={40} />
+                  <strong className="ml10">{session.emailAddress}</strong>
+                  <span className="label-head vmiddle ml10">emails.main.email</span>
+                </td>
+                <td style={{ textAlign: "right" }} />
+              </tr>
+              {emails.map((email) => (
+                <tr key={email.id}>
+                  <td>
+                    <img
+                      alt=""
+                      height={40}
+                      src={resolveWorkspaceAvatarUrl("", email.emailAddress)}
+                      width={40}
+                    />
+                    <span className="ml10">{email.emailAddress}</span>
+                  </td>
+                  <td style={{ textAlign: "right", verticalAlign: "middle" }}>
+                    <button
+                      className="ybtn ybtn-small ybtn-danger"
+                      data-request-method="delete"
+                      data-request-uri={appHref(
                         props.runtimeConfig,
-                        `/user/email/sendValidationEmail/${email.id}`,
+                        `/user/email/delete/${email.id}`,
                       )}
-                      method="post"
+                      onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
+                      type="button"
                     >
-                      <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
-                      <button type="submit">Send validation mail</button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </section>
+                      button.delete
+                    </button>
+                    {email.valid ? (
+                      <button
+                        className="ybtn ybtn-small"
+                        data-request-method="put"
+                        data-request-uri={appHref(
+                          props.runtimeConfig,
+                          `/user/email/setAsMain/${email.id}`,
+                        )}
+                        onClick={() => props.onSetMainWorkspaceEmail?.(email.id)}
+                        style={{ width: "150px" }}
+                        type="button"
+                      >
+                        emails.set.as.main
+                      </button>
+                    ) : (
+                      <button
+                        className="ybtn ybtn-small"
+                        data-request-method="post"
+                        data-request-uri={appHref(
+                          props.runtimeConfig,
+                          `/user/email/sendValidationEmail/${email.id}`,
+                        )}
+                        onClick={() => undefined}
+                        style={{ width: "150px" }}
+                        type="button"
+                      >
+                        <i
+                          className="yobicon-error2 orange-txt mr5"
+                          style={{ verticalAlign: "bottom" }}
+                        />
+                        emails.send.validatino.mail
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       );
       break;
     case "token":
       sectionBody = (
-        <form
-          action={appHref(props.runtimeConfig, "/user/editform/token_reset")}
-          className="runtime-grid"
-          method="post"
-          onSubmit={(event) => {
-            event.preventDefault();
-            props.onResetApiToken?.();
-          }}
-        >
-          <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
-          <label>
-            <span>Token</span>
-            <input name="name" readOnly type="text" value={apiToken} />
-          </label>
-          <button type="submit">Recreate Token</button>
-        </form>
+        <div className="token-generate">
+          <form
+            action={appHref(props.runtimeConfig, "/user/editform/token_reset")}
+            className="pull-left"
+            id="frmBasic"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onResetApiToken?.();
+            }}
+            style={{ width: "100%" }}
+          >
+            <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
+            <div>userinfo.token</div>
+            <div>
+              <input
+                className="text"
+                name="name"
+                onClick={(event) =>
+                  event.currentTarget.setSelectionRange(0, event.currentTarget.value.length)
+                }
+                readOnly
+                size={45}
+                style={{ width: "90%" }}
+                type="text"
+                value={apiToken}
+              />
+            </div>
+            <div>
+              <button className="ybtn ybtn-success" type="submit">
+                userinfo.recreateToken
+              </button>
+            </div>
+          </form>
+        </div>
       );
       break;
   }
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Workspace</p>
-      <h1>Account Settings</h1>
-      <ul className="nav nav-tabs">
-        <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform")}>Edit Profile</a>
-        </li>
-        <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/password")}>Change Password</a>
-        </li>
-        <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/notifications")}>Notifications</a>
-        </li>
-        <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/emails")}>Emails</a>
-        </li>
-        <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/token")}>Token</a>
-        </li>
-      </ul>
-      {sectionBody}
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>{props.section === "token" ? "userinfo.token" : "userinfo.accountSetting"}</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
+          <ul className="nav nav-tabs mt20">
+            {WORKSPACE_SETTINGS_TABS.map((tab) => (
+              <li className={props.section === tab.section ? "active" : undefined} key={tab.section}>
+                <a href={appHref(props.runtimeConfig, tab.href)}>{tab.label}</a>
+              </li>
+            ))}
+          </ul>
+          {sectionBody}
+        </div>
+      </div>
     </main>
   );
 }

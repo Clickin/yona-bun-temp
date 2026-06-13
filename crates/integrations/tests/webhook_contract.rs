@@ -85,19 +85,19 @@ fn webhook_https_delivery_uses_executable_fetcher_and_preserves_legacy_headers()
             .as_nanos()
     ));
     std::fs::create_dir_all(&fake_curl_dir).expect("fake curl tempdir");
-    let fake_curl = fake_curl_dir.join("fake-curl.ps1");
+    let fake_curl = fake_curl_dir.join("fake-curl.sh");
     let capture_path = fake_curl_dir.join("body.txt");
     std::fs::write(
         &fake_curl,
         format!(
-            r#"
-param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Remaining)
-$body = [Console]::In.ReadToEnd()
-[IO.File]::WriteAllText("{}", $body)
-$argsText = $Remaining -join " "
-if (-not $argsText.Contains("https://127.0.0.1/webhook")) {{ exit 9 }}
-$bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: text/plain`r`n`r`nthread.name")
-[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
+            r#"#!/bin/sh
+body="$(cat)"
+printf "%s" "$body" > "{}"
+case "$*" in
+  *https://127.0.0.1/webhook*) ;;
+  *) exit 9 ;;
+esac
+printf "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nthread.name"
 "#,
             capture_path.display()
         ),
@@ -107,10 +107,7 @@ $bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: text/
     std::env::set_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true");
     std::env::set_var(
         "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
-        format!(
-            "powershell -NoProfile -ExecutionPolicy Bypass -File {}",
-            fake_curl.display()
-        ),
+        format!("sh {}", fake_curl.display()),
     );
 
     let outcome = deliver_webhook(OutboundWebhook {

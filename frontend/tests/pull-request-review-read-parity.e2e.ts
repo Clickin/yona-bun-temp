@@ -9,6 +9,7 @@ const apiV1Route = (path: string) => `**/api/v1${path}`;
 
 function prItem(number: number, title: string, state = "open") {
   return {
+    closedCommentThreadCount: 0,
     commentThreadCount: 1,
     conflict: state === "conflict",
     contributorLabel: "Nori",
@@ -33,6 +34,7 @@ function prItem(number: number, title: string, state = "open") {
 
 const reviewThread = {
   authorId: 1,
+  authorAvatarUrl: "/yona/avatar/nori.png",
   authorLabel: "Nori",
   authorLoginId: "nori",
   comments: [
@@ -53,7 +55,35 @@ const reviewThread = {
   id: 7,
   path: "src/lib.rs",
   prevCommitId: "base",
+  pullRequestNumber: 3,
   startLine: 1,
+  state: "open",
+};
+
+const commitDiscussionThread = {
+  authorId: 2,
+  authorAvatarUrl: "/yona/avatar/reviewer.png",
+  authorLabel: "Reviewer",
+  authorLoginId: "reviewer",
+  comments: [
+    {
+      authorId: 2,
+      authorLabel: "Reviewer",
+      authorLoginId: "reviewer",
+      contentsHtml: "",
+      contentsMarkdown: "Commit discussion body",
+      createdLabel: "2026-05-04",
+      id: 12,
+      threadId: 11,
+    },
+  ],
+  commitId: "fedcba654321",
+  createdLabel: "2026-05-04",
+  endLine: 4,
+  id: 11,
+  path: "src/main.rs",
+  prevCommitId: "",
+  startLine: 4,
   state: "open",
 };
 
@@ -72,6 +102,7 @@ const pullRequestDetail = {
   ],
   conflict: false,
   contributor: {
+    avatarUrl: "/yona/avatar/nori.png",
     loginId: "nori",
     userId: 1,
     userLabel: "Nori",
@@ -79,6 +110,7 @@ const pullRequestDetail = {
   createdLabel: "2026-05-01",
   events: [
     {
+      commits: [],
       createdLabel: "2026-05-01",
       eventType: "NEW_PULL_REQUEST",
       id: 9,
@@ -106,11 +138,19 @@ const pullRequestDetail = {
   projectName: "projectYobi",
   pullRequestNumber: 3,
   receiver: {
+    avatarUrl: "/yona/avatar/reviewer.png",
     loginId: "reviewer",
     userId: 2,
     userLabel: "Reviewer",
   },
-  reviewers: [{ loginId: "reviewer", userId: 2, userLabel: "Reviewer" }],
+  reviewers: [
+    {
+      avatarUrl: "/yona/avatar/reviewer.png",
+      loginId: "reviewer",
+      userId: 2,
+      userLabel: "Reviewer",
+    },
+  ],
   state: "open",
   threads: [reviewThread],
   title: "PR detail title",
@@ -253,11 +293,17 @@ test.beforeEach(async ({ page }) => {
             : prItem(3, "Open read surface", "open");
       await route.fulfill({
         body: JSON.stringify({
+          acceptedCount: 1,
           category,
+          closedCount: 1,
+          contributors: [{ loginId: "nori", userId: 1, userLabel: "Nori" }],
           items: [item],
-          pageNum: 1,
+          openCount: 31,
+          pageNum: Number(url.searchParams.get("pageNum") || "1"),
           pageSize: 15,
-          totalCount: 1,
+          recentlyPushedBranches: [],
+          sentCount: 1,
+          totalCount: category === "open" ? 31 : 1,
         }),
         headers: restJsonHeaders,
         status: 200,
@@ -297,13 +343,16 @@ test.beforeEach(async ({ page }) => {
     async (route) => {
       await route.fulfill({
         body: JSON.stringify({
+          allCount: 2,
+          authorCount: 0,
           closedCount: 0,
-          items: [reviewThread],
-          openCount: 1,
+          items: [reviewThread, commitDiscussionThread],
+          openCount: 2,
           pageNum: 1,
           pageSize: 15,
+          participantCount: 2,
           state: "open",
-          totalCount: 1,
+          totalCount: 2,
         }),
         headers: restJsonHeaders,
         status: 200,
@@ -332,8 +381,17 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   page,
 }) => {
   await page.goto("/yona/admin/projectYobi/pullRequests?pageNum=1");
-  await expect(page.locator(".pullrequeset-tab-menu")).toContainText("Open");
+  await expect(page.locator(".pullrequeset-tab-menu")).toContainText("pullRequest.state.open");
+  await expect(page.locator("#search .search-btn .yobicon-search")).toHaveCount(1);
+  await expect(page.locator("#advanced-search-form #contributors")).toBeVisible();
   await expect(page.locator(".post-list-wrap")).toContainText("Open read surface");
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequests?pageNum=2",
+  );
   await expect(page.locator("main")).not.toContainText("File-based route placeholder");
 
   await page.goto("/yona/admin/projectYobi/closedPullRequests?pageNum=1");
@@ -344,15 +402,35 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3");
   await expect(page.locator(".pullRequest-branchInfo")).toContainText("topic/pr-3");
-  await expect(page.locator(".review-card")).toContainText("Review comment body");
-  await expect(page.locator(".ybtn", { hasText: "Changes" })).toBeVisible();
+  await expect(page.locator("ul#comments")).toContainText("pullRequest.event.message");
+  await expect(page.locator(".review-card")).toHaveCount(0);
+  await expect(
+    page.locator(".pull-request-overview-tabs a", { hasText: "pullRequest.menu.changes" }),
+  ).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3/changes");
-  await expect(page.locator("main")).toContainText("No changed file diff is available.");
+  await expect(page.locator("#commits")).toContainText("pullRequest.changes.all");
+  await expect(page.locator(".diff-body.diffs-wrap-scroll")).toBeVisible();
+  await expect(page.locator(".diff-body .btnPop")).toBeVisible();
+  await expect(page.locator(".review-card")).toContainText("Review **comment** body");
+  await expect(page.locator("main")).not.toContainText("No changed file diff is available.");
 
   await page.goto("/yona/admin/projectYobi/reviews?state=open");
-  await expect(page.getByRole("heading", { name: "Reviews" })).toBeVisible();
-  await expect(page.locator(".review-card")).toContainText("src/lib.rs");
+  await expect(page.locator(".project-page-wrap .issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".review-list-wrap .post-list-wrap")).toContainText(
+    "Review **comment** body",
+  );
+  await expect(page.locator(".review-list-wrap .post-item .title").nth(0)).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7",
+  );
+  await expect(page.locator(".review-list-wrap .post-list-wrap")).toContainText(
+    "Commit discussion body",
+  );
+  await expect(page.locator(".review-list-wrap .post-item .title").nth(1)).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commit/fedcba654321#thread-11",
+  );
 });
 
 test("renders organization PR lists and REST error shells", async ({ page }) => {

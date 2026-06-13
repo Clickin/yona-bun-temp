@@ -167,6 +167,25 @@ test.beforeEach(async ({ page }) => {
           {
             assigneeLabel: "",
             authorLabel: "Nori",
+            childClosedCount: 0,
+            childIssues: [
+              {
+                assigneeLabel: "Door",
+                createdLabel: "2026-04-16",
+                isDraft: false,
+                issueNumber: "2",
+                labels: [
+                  {
+                    color: "#2196f3",
+                    id: "8",
+                    name: "subtask",
+                  },
+                ],
+                state: "open",
+                title: "Child issue row",
+              },
+            ],
+            childOpenCount: 1,
             commentCount: 3,
             issueNumber: "1",
             labels: [],
@@ -702,7 +721,11 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
 }) => {
   await page.goto("/yona/");
   await expect(page).toHaveTitle("Yona");
-  await expect(page.getByRole("heading", { name: "Legacy Route Foundation" })).toBeVisible();
+  await expect(page.locator(".siteintro-bg.row")).toBeVisible();
+  await expect(page.locator(".site-heading")).toHaveText(
+    "21st Century Software Development Platform",
+  );
+  await expect(page.getByText("Just focus on what you have to do")).toBeVisible();
 
   await page.goto("/yona/users/loginform");
   await expect(page).toHaveTitle("Login");
@@ -718,7 +741,8 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
 
   await page.goto("/yona/admin/projectYobi/issues?pageNum=2");
   await expect(page).toHaveTitle("Issues");
-  await expect(page.getByRole("heading", { name: "Issue List" })).toBeVisible();
+  await expect(page.locator(".row-fluid.issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap.row-fluid")).toBeVisible();
 });
 
 test("signup submit refreshes a sparse workspace overview without client map errors", async ({
@@ -786,11 +810,11 @@ test("signup submit refreshes a sparse workspace overview without client map err
   });
 
   await page.goto("/yona/users/signupform");
-  await page.getByLabel("Login ID").fill("door");
-  await page.getByLabel("Name").fill("Door");
-  await page.getByLabel("Email").fill("door@example.com");
-  await page.getByLabel("Password", { exact: true }).fill("doorpass1");
-  await page.getByLabel("Retype password").fill("doorpass1");
+  await page.locator("#loginId").fill("door");
+  await page.locator("#uname").fill("Door");
+  await page.locator("#email").fill("door@example.com");
+  await page.locator("#password").fill("doorpass1");
+  await page.locator("#retypedPassword").fill("doorpass1");
 
   await Promise.all([
     page.waitForURL(/\/yona\/me$/),
@@ -928,12 +952,18 @@ test("organization admin routes render forbidden and not-found shells for authen
   });
 
   await page.goto("/yona/organizations/weblabs/members");
-  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
-  await expect(page.getByText("/organizations/weblabs/members")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText(
+    "/organizations/weblabs/members",
+  );
 
   await page.goto("/yona/organizations/missinglabs/deleteForm");
-  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
-  await expect(page.getByText("/organizations/missinglabs/deleteForm")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText(
+    "/organizations/missinglabs/deleteForm",
+  );
 });
 
 test("project issue routes render data-backed issue list filters and detail screens", async ({
@@ -946,9 +976,33 @@ test("project issue routes render data-backed issue list filters and detail scre
       body: JSON.stringify({
         items: [
           {
+            assigneeAvatarUrl: "/avatars/door.png",
             assigneeLabel: "Door",
             authorLabel: "Nori",
+            authorLoginId: "nori",
+            childClosedCount: 0,
+            childIssues: [
+              {
+                assigneeLabel: "Door",
+                createdLabel: "2026-04-16",
+                isDraft: false,
+                issueNumber: "2",
+                labels: [
+                  {
+                    color: "#2196f3",
+                    id: "8",
+                    name: "subtask",
+                  },
+                ],
+                state: "open",
+                title: "Child issue row",
+              },
+            ],
+            childOpenCount: 1,
             commentCount: 3,
+            dueDateLabel: "2026-05-09",
+            dueDateOverdue: false,
+            id: "101",
             issueNumber: "1",
             labels: [
               {
@@ -965,6 +1019,7 @@ test("project issue routes render data-backed issue list filters and detail scre
             updatedLabel: "2026-04-15",
             voterCount: 0,
             watcherCount: 0,
+            weight: 2,
           },
         ],
         ownerName: "admin",
@@ -983,7 +1038,31 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.getByText("Pilot issue")).toBeVisible();
   await expect(page.getByText("2026-04-15")).toBeVisible();
-  await expect(page.locator('select[name="state"]')).toHaveValue("open");
+  await expect(page.locator("#issue-item-101")).toHaveAttribute(
+    "data-value",
+    "nori 1 Pilot issue",
+  );
+  await expect(page.locator("#issue-101")).toHaveAttribute("data-issue-id", "101");
+  await expect(page.locator('.issue-item-row[data-for="issue-101"]')).toBeAttached();
+  await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "issue.weight 2");
+  await expect(page.locator('.avatar-wrap.assinee img[alt="Door"]')).toHaveAttribute(
+    "src",
+    "/avatars/door.png",
+  );
+  await expect(page.locator(".yobicon-clock2.mr3.vmiddle")).toBeAttached();
+  await expect(page.locator(".span3.hide-in-mobile span.vmiddle")).toHaveText("2026-05-09");
+  await expect(page.locator(".subtask-progress.upload-progress.red-outline .bar.red")).toHaveAttribute(
+    "style",
+    "width: 0%;",
+  );
+  await expect(page.locator(".subtask-progress.completion-ratio")).toHaveText("0/1");
+  await expect(page.locator(".child-issue-list.hide .child-issue")).toContainText(
+    "Child issue row",
+  );
+  await expect(page.locator(".child-issue-list.hide .child-issue .subtask-number")).toHaveText(
+    "#2",
+  );
+  await expect(page.locator('input[name="state"]')).toHaveValue("open");
   await expect(page.locator('input[name="authorLoginId"]')).toHaveValue("nori");
   await expect(page.locator('input[name="assigneeLoginId"]')).toHaveValue("door");
   await expect(page.locator('select[name="milestoneId"]')).toHaveValue("7");
@@ -1009,8 +1088,18 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator(".board-body.row-fluid .span3.right-menu")).toBeVisible();
   await expect(page.locator(".board-actrow.right-txt")).toBeVisible();
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
-  await expect(page.locator("#vote.vote-wrap")).toContainText("Voters: 0");
-  await expect(page.locator(".watcher-list")).toContainText("Watchers: 0");
+  await expect(page.locator("#watch-button")).toContainText("issue.watch");
+  await expect(page.locator("#issue-share-button")).toContainText("button.share.issue");
+  await expect(page.locator(".project-btn-item.show-in-mobile-inline a")).toHaveAttribute(
+    "href",
+    /parentIssueId=/,
+  );
+  await expect(page.locator(".issue-weight #upvote-issue-weight")).toBeVisible();
+  await expect(page.locator(".issue-weight #down-vote-issue-weight")).toBeVisible();
+  await expect(page.locator("#vote.vote-wrap .heart .yobicon-hearts")).toBeVisible();
+  await expect(page.getByText("Voters: 0")).toHaveCount(0);
+  await expect(page.locator(".watcher-list")).toBeVisible();
+  await expect(page.getByText("Watchers: 0")).toHaveCount(0);
   await expect(page.locator("#event-54 .state.closed")).toContainText("issue.state.closed");
   await expect(page.locator('#event-54 .date a[href="#event-54"]')).toContainText("1 minute ago");
   await expect(page.locator("#event-54 .user-link")).toHaveAttribute("href", "/yona/nori");
@@ -1170,7 +1259,7 @@ test("project issue routes render direct issue form from comment for authenticat
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/First issue comment/);
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/Originally posted by @nori/);
   await page.locator('input[name="title"]').fill("Derived issue");
-  await page.getByRole("button", { name: "Create" }).click();
+  await page.locator("#button-save").click();
   await expect.poll(() => directIssueCreateBody?.referCommentId).toBe("55");
   expect(directIssueCreateBody?.title).toBe("Derived issue");
   expect(directIssueCreateBody?.bodyMarkdown).toContain("First issue comment");
@@ -1252,6 +1341,18 @@ test("project issue routes render direct my-issue form for authenticated users",
       status: 200,
     });
   });
+  await page.route(apiV1Route("/owners/nori/projects/inbox/milestones?*"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        milestones: [],
+        ownerName: "nori",
+        projectName: "inbox",
+        state: "all",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
   await page.route(/\/api\/v1\/projects\/nori\/inbox\/issues$/, async (route) => {
     directIssueCreateBody = route.request().postDataJSON() as {
       bodyMarkdown?: string;
@@ -1275,7 +1376,7 @@ test("project issue routes render direct my-issue form for authenticated users",
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("");
   await expect(page.locator('textarea[name="body"]')).toHaveValue("");
   await page.locator('input[name="title"]').fill("My issue");
-  await page.getByRole("button", { name: "Create" }).click();
+  await page.locator("#button-save").click();
   await expect.poll(() => directIssueCreateBody?.referCommentId).toBeUndefined();
   expect(directIssueCreateBody?.title).toBe("My issue");
   expect(directIssueCreateBody?.bodyMarkdown).toBe("");
@@ -1370,7 +1471,7 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
   });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
-  const editor = page.getByPlaceholder("Leave a comment");
+  const editor = page.locator("#editor-contents-comment-body");
 
   await editor.evaluate((element) => {
     const data = new DataTransfer();
@@ -1398,7 +1499,7 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
   });
   await expect(editor).toHaveValue("![paste.png](/yona/files/901) ![drop.png](/yona/files/902) ");
 
-  await page.getByRole("button", { exact: true, name: "Comment" }).click();
+  await page.locator("#comment-form").getByRole("button", { name: "button.comment.new" }).click();
 
   expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
   expect(submittedComment).toEqual({
@@ -1458,7 +1559,7 @@ test("project commit history routes render branch and path-scoped lists", async 
   await expect(page.locator("#history")).toBeVisible();
   await expect(page.locator(".code-table.commits.mt10")).toBeVisible();
   await expect(page.locator(".btn-copy-commitId").first()).toHaveAttribute(
-    "data-commit-id",
+    "data-commitId",
     "abcdef1234567890abcdef1234567890abcdef12",
   );
   await expect(page.getByRole("link", { name: "abcdef1" })).toHaveAttribute(
@@ -1578,9 +1679,16 @@ test("organization issue route renders cross-project issue inbox", async ({ page
         closedIssueCount: 1,
         items: [
           {
-            assigneeLabel: "",
+            assigneeAvatarUrl: "/avatars/door.png",
+            assigneeLabel: "Door",
+            assigneeLoginId: "door",
+            authorAvatarUrl: "/avatars/nori.png",
             authorLabel: "Nori",
+            authorLoginId: "nori",
             commentCount: 2,
+            dueDateLabel: "2026-05-30",
+            dueDateOverdue: true,
+            id: "207",
             issueNumber: "7",
             labels: [],
             milestoneTitle: "",
@@ -1606,14 +1714,36 @@ test("organization issue route renders cross-project issue inbox", async ({ page
   });
 
   await page.goto("/yona/organizations/weblabs/issues?state=open&pageNum=1");
-  await expect(page.getByRole("heading", { name: "Organization Issues" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Open/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Closed/ })).toBeVisible();
-  await expect(page.getByLabel("Projects")).toBeVisible();
-  await expect(page.getByPlaceholder("Search issues")).toBeVisible();
+  await expect(page.locator(".row-fluid.issue-list-wrap")).toBeVisible();
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator("#projects")).toBeVisible();
+  await expect(page.locator('.nav.nav-tabs.nm a[data-state="open"]')).toContainText(
+    "issue.state.open",
+  );
+  await expect(page.locator('.nav.nav-tabs.nm a[data-state="closed"]')).toContainText(
+    "issue.state.closed",
+  );
   await expect(page.getByRole("link", { name: "Organization inbox issue" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "projectAlpha" })).toBeVisible();
-  await expect(page.getByText("#7")).toBeVisible();
+  await expect(page.locator("#issue-item-207")).toBeAttached();
+  await expect(page.locator('.avatar-wrap.mlarge img[alt="Nori"]')).toHaveAttribute(
+    "src",
+    "/avatars/nori.png",
+  );
+  await expect(page.locator(".infos-link-item", { hasText: "Nori" })).toHaveAttribute(
+    "href",
+    "/yona/nori",
+  );
+  await expect(page.locator('.avatar-wrap.assinee img[alt="Door"]')).toHaveAttribute(
+    "src",
+    "/avatars/door.png",
+  );
+  await expect(page.locator(".avatar-wrap.assinee")).toHaveAttribute("href", "/yona/door");
+  await expect(page.locator(".span2.hide-in-mobile .yobicon-clock2")).toBeAttached();
+  await expect(page.locator(".span2.hide-in-mobile .mr20.mt10.pull-right.overdue")).toContainText(
+    "2026-05-30",
+  );
+  await expect(page.locator(".group-project-name")).toHaveText("projectAlpha");
+  await expect(page.locator(".post-id.margin-right-5")).toHaveText("#7");
 });
 
 test("project issue label management route renders the legacy label editor shell", async ({
@@ -1663,19 +1793,26 @@ test("project issue label management route renders the legacy label editor shell
   });
 
   await page.goto("/yona/admin/projectYobi/issue/labelsform");
-  await expect(page.getByRole("heading", { name: "Issue Labels" })).toBeVisible();
+  await expect(page.locator(".project-page-wrap.label-editor-wrap")).toBeVisible();
   await expect(page.locator("#copyLabel")).toBeVisible();
   await expect(page.getByText("label.copy.append")).toBeVisible();
   await expect(page.getByPlaceholder("project.owner")).toBeVisible();
   await expect(page.getByPlaceholder("project.name")).toBeVisible();
-  await expect(page.getByText("Add new label")).toBeVisible();
-  await expect(page.getByPlaceholder("Category", { exact: true })).toBeVisible();
-  await expect(page.getByPlaceholder("Name", { exact: true })).toBeVisible();
-  await expect(page.getByText("No label exists")).toBeVisible();
+  await expect(page.locator("#frmNewLabel")).toBeVisible();
+  await expect(page.getByText("label.new")).toBeVisible();
+  await expect(page.locator("#frmNewLabel").getByPlaceholder("label.category")).toBeVisible();
+  await expect(
+    page.locator("#frmNewLabel").getByPlaceholder("label.name", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
+  await expect(page.locator("#labelsList .error-wrap")).toContainText("label.list.empty");
   await page.locator('#copyLabel input[name="owner"]').fill("owner");
   await page.locator('#copyLabel input[name="projectName"]').fill("sourceLabels");
   await page.locator("#copyLabel").getByRole("button", { name: "label.copy" }).click();
-  await expect(page.getByText("Copied")).toBeVisible();
+  await expect(page.locator("#labelsList .issue-label.active")).toHaveText("Copied");
+  await expect(
+    page.locator('#labelsList .category-wrap[data-category-name="FromSource"]'),
+  ).toBeVisible();
 });
 
 test("project watchers route renders the legacy watcher directory shell", async ({ page }) => {
@@ -1695,23 +1832,51 @@ test("project watchers route renders the legacy watcher directory shell", async 
 
 test("project milestone routes render list detail and form shells", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/milestones?state=open");
-  await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible();
-  await expect(page.getByText("v1.0")).toBeVisible();
-  await expect(page.getByText("Open milestone issue")).toBeVisible();
-  await expect(page.getByText("50%")).toBeVisible();
+  await expect(page.locator(".project-page-wrap .tab-wrap")).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.open" })).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.closed" })).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.all" })).toBeVisible();
+  await expect(page.locator(".milestones .milestone")).toHaveCount(1);
+  await expect(page.locator(".milestone-name")).toHaveText("v1.0");
+  await expect(page.locator(".issue-link", { hasText: "Open milestone issue" })).toBeVisible();
+  await expect(page.locator(".completion-rate")).toContainText("50%");
+  await expect(page.locator(".progress.progress-success .bar")).toHaveAttribute(
+    "style",
+    "width: 50%;",
+  );
 
   await page.goto("/yona/admin/projectYobi/milestone/7?state=all");
-  await expect(page.getByRole("heading", { exact: true, name: "v1.0" })).toBeVisible();
-  await expect(page.getByText("Ship parity")).toBeVisible();
-  await expect(page.getByText("Closed milestone issue")).toBeVisible();
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Ship parity");
+  await expect(page.locator(".badge.badge-issue-open")).toContainText("milestone.state.open");
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.open" })).toBeVisible();
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.closed" })).toBeVisible();
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.all" })).toBeVisible();
+  await expect(page.getByPlaceholder("milestone.searchPlaceholder")).toBeVisible();
+  await expect(page.locator(".issue-link", { hasText: "Closed milestone issue" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "button.list" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "button.edit" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "milestone.close" })).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/newMilestoneForm");
-  await expect(page.getByRole("heading", { name: "New Milestone" })).toBeVisible();
-  await expect(page.getByPlaceholder("yyyy-MM-dd")).toBeVisible();
+  await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
+  await expect(page.locator('#milestone-form input[name="title"]')).toHaveAttribute(
+    "placeholder",
+    "title.text",
+  );
+  await expect(page.locator('#milestone-form textarea[name="contents"]')).toBeVisible();
+  await expect(page.locator("#milestone-open")).toBeChecked();
+  await expect(page.locator('label[for="milestone-open"]')).toHaveText("milestone.state.open");
+  await expect(page.locator('label[for="milestone-close"]')).toHaveText("milestone.state.closed");
+  await expect(page.locator("#dueDate")).toBeVisible();
+  await expect(page.locator("#datepicker.date-picker")).toBeAttached();
+  await expect(page.locator('#milestone-form button[type="submit"]')).toHaveText("button.save");
 
   await page.goto("/yona/admin/projectYobi/milestone/7/editform");
-  await expect(page.getByRole("heading", { name: "Edit Milestone" })).toBeVisible();
+  await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
   await expect(page.locator('input[name="title"]')).toHaveValue("v1.0");
+  await expect(page.locator('textarea[name="contents"]')).toHaveValue("Ship parity");
+  await expect(page.locator("#dueDate")).toHaveValue("2026-05-09");
 });
 
 test("project milestone create editor inserts pasted and dropped image uploads", async ({
@@ -1941,18 +2106,22 @@ test("project issue routes render forbidden and not-found shells when issue read
   });
 
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
-  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
-  await expect(page.getByText("/admin/projectYobi/issues")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issues");
 
   await page.goto("/yona/missing/projectYobi/issues?pageNum=1");
-  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
-  await expect(page.getByText("/missing/projectYobi/issues")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/missing/projectYobi/issues");
 
   await page.goto("/yona/admin/projectYobi/issue/1");
-  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
-  await expect(page.getByText("/admin/projectYobi/issue/1")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issue/1");
 
   await page.goto("/yona/admin/projectYobi/issue/999");
-  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
-  await expect(page.getByText("/admin/projectYobi/issue/999")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issue/999");
 });

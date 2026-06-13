@@ -120,13 +120,33 @@ export interface OrganizationAdminViewModel {
 }
 
 export interface OrganizationIssueListItemViewModel {
+  assigneeAvatarUrl?: string;
   assigneeLabel: string;
+  assigneeLoginId?: string;
+  authorAvatarUrl?: string;
   authorLabel: string;
+  authorLoginId?: string;
+  childClosedCount?: number;
+  childIssues?: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft?: boolean;
+    issueNumber: number;
+    labels: Array<{ color: string; id: number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount?: number;
   commentCount: number;
+  dueDateLabel?: string;
+  dueDateOverdue?: boolean;
+  id?: number;
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
   milestoneTitle: string;
   ownerName: string;
+  parentIssueNumber?: number;
+  parentIssueTitle?: string;
   projectName: string;
   state: string;
   title: string;
@@ -213,6 +233,7 @@ export interface ProjectDetailViewModel {
   readmeFile?: {
     bodyHtml: string;
     bodyMarkdown: string;
+    mentionReferences?: MentionReferenceMetadata[];
     name: string;
   };
   reviewCount?: number;
@@ -226,6 +247,7 @@ export interface ProjectDetailViewModel {
   viewerCanEnroll: boolean;
   viewerCanUpdate: boolean;
   viewerCanWatch?: boolean;
+  vcs?: string;
   watchCount?: number;
 }
 
@@ -238,6 +260,9 @@ export interface CodeBrowserViewModel {
   branches: Array<{ name: string }>;
   breadcrumbs: Array<{ name: string; path: string }>;
   entries: Array<{
+    authorAvatarUrl?: string;
+    authorLabel?: string;
+    authorLoginId?: string;
     commitDate: string;
     commitMessage: string;
     commitShortId: string;
@@ -247,10 +272,19 @@ export interface CodeBrowserViewModel {
     size: number;
   }>;
   file?: {
+    authorAvatarUrl?: string;
+    authorLabel?: string;
+    authorLoginId?: string;
+    commitDate?: string;
+    commitId?: string;
+    commentCount?: number;
+    commitMessage?: string;
+    commitShortId?: string;
     html?: string;
     isBinary: boolean;
     isTooLarge: boolean;
     mimeType: string;
+    mentionReferences?: MentionReferenceMetadata[];
     name: string;
     path: string;
     size: number;
@@ -264,28 +298,57 @@ export interface CodeBrowserViewModel {
 }
 
 export interface ProjectIssueListItemViewModel {
+  assigneeAvatarUrl?: string;
   assigneeLabel: string;
+  assigneeLoginId?: string;
+  authorAvatarUrl?: string;
   authorLabel: string;
+  authorLoginId?: string;
+  childClosedCount?: number;
+  childIssues?: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft?: boolean;
+    issueNumber: number;
+    labels: Array<{ color: string; id: number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount?: number;
   commentCount: number;
+  dueDateLabel?: string;
+  dueDateOverdue?: boolean;
+  id?: number;
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
   milestoneTitle: string;
   ownerName: string;
+  parentIssueNumber?: number;
+  parentIssueTitle?: string;
   projectName: string;
   state: string;
   title: string;
   updatedLabel: string;
   voterCount: number;
   watcherCount: number;
+  weight?: number;
 }
 
 export interface ProjectIssueListViewModel {
+  draftItems: ProjectIssueListItemViewModel[];
   items: ProjectIssueListItemViewModel[];
   ownerName: string;
   pageNum: number;
   pageSize: number;
   projectName: string;
   totalCount: number;
+}
+
+export interface ProjectIssueParentOptionViewModel {
+  id: number;
+  issueNumber: number;
+  selected: boolean;
+  title: string;
 }
 
 export interface UserIssueListViewModel {
@@ -295,8 +358,14 @@ export interface UserIssueListViewModel {
   openIssueCount: number;
   pageNum: number;
   pageSize: number;
+  sideFilterCounts: {
+    favorite: number;
+    mentioned: number;
+    shared: number;
+  };
   state: string;
   totalCount: number;
+  viewerUserId: number;
 }
 
 export interface ProjectIssueDetailViewModel {
@@ -305,11 +374,13 @@ export interface ProjectIssueDetailViewModel {
   assigneeLoginId: string;
   attachments: Array<{ id: number; name: string; url: string }>;
   authorAvatarUrl: string;
+  authorId?: number;
   authorLabel: string;
   authorLoginId: string;
   bodyHtml: string;
   bodyMarkdown: string;
   commentCount: number;
+  dueDateLabel: string;
   comments: Array<{
     authorAvatarUrl: string;
     authorLabel: string;
@@ -320,6 +391,7 @@ export interface ProjectIssueDetailViewModel {
     id: number;
     issueReferences?: IssueReferenceMetadata[];
     mentionReferences?: MentionReferenceMetadata[];
+    parentCommentId?: number;
     viewerCanDelete: boolean;
     viewerCanUpdate: boolean;
     viewerHasVoted: boolean;
@@ -327,17 +399,34 @@ export interface ProjectIssueDetailViewModel {
     viaEmail?: boolean;
     voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
   }>;
+  childClosedCount: number;
+  childIssues: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft: boolean;
+    issueNumber: number;
+    labels: Array<{ color: string; id: number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount: number;
   hasVoted: boolean;
   historyHtml: string;
   historyMarkdown: string;
   issueReferences?: IssueReferenceMetadata[];
   mentionReferences?: MentionReferenceMetadata[];
+  issueId?: number;
   isFavorited: boolean;
+  isDraft: boolean;
   isWatching: boolean;
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
+  milestoneId: number;
   milestoneTitle: string;
   ownerName: string;
+  parentIssueId: number;
+  parentIssueNumber: number;
+  parentIssueTitle: string;
   projectName: string;
   sharers: Array<{ loginId: string; userId: number; userLabel: string }>;
   state: string;
@@ -352,6 +441,7 @@ export interface ProjectIssueDetailViewModel {
       id: number;
       issueReferences?: IssueReferenceMetadata[];
       mentionReferences?: MentionReferenceMetadata[];
+      parentCommentId?: number;
       viewerCanDelete: boolean;
       viewerCanUpdate: boolean;
       viewerHasVoted: boolean;
@@ -375,7 +465,9 @@ export interface ProjectIssueDetailViewModel {
   viewerHasInheritedShare: boolean;
   viewerIsDirectSharer: boolean;
   voterCount: number;
+  issueVoters?: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
   watcherCount: number;
+  weight?: number;
 }
 
 export interface ProjectMilestoneIssueViewModel {

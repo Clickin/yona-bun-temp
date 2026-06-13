@@ -9,9 +9,9 @@ use serde_json::json;
 use serde_json::Value;
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    email, watch, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
-    PostingMutationInput,
+    email, issue, user_project_notification, watch, AppRepository, CreateIssueCommentInput,
+    CreateIssueInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
@@ -141,6 +141,31 @@ async fn rest(
     }
     if let Some(csrf) = csrf {
         builder = builder.header("x-csrf-token", csrf);
+    }
+    if payload.is_some() {
+        builder = builder.header(http::header::CONTENT_TYPE, "application/json");
+    }
+    app.oneshot(
+        builder
+            .body(Body::from(
+                payload.map_or_else(String::new, |value| value.to_string()),
+            ))
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+}
+
+async fn rest_with_headers(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    headers: &[(&str, &str)],
+    payload: Option<Value>,
+) -> axum::response::Response {
+    let mut builder = Request::builder().method(method).uri(uri);
+    for (name, value) in headers {
+        builder = builder.header(*name, *value);
     }
     if payload.is_some() {
         builder = builder.header(http::header::CONTENT_TYPE, "application/json");
@@ -289,6 +314,420 @@ async fn create_issue_comment(
 }
 
 #[tokio::test]
+async fn rest_issue_create_update_persists_legacy_due_date() {
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    let created = ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Due issue",
+                "bodyMarkdown": "Due issue body",
+                "dueDate": "2026-08-01"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["dueDateLabel"], "2026-08-01");
+
+    let updated = ok_json(
+        rpc(
+            app.clone(),
+            "UpdateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "title": "Due issue edited",
+                "bodyMarkdown": "Due issue body edited",
+                "dueDate": "2026-08-02"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["dueDateLabel"], "2026-08-02");
+
+    let cleared = ok_json(
+        rpc(
+            app.clone(),
+            "UpdateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "title": "Due issue cleared",
+                "bodyMarkdown": "Due issue body cleared",
+                "dueDate": ""
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(cleared["dueDateLabel"], "");
+
+    let invalid = rpc(
+        app,
+        "UpdateIssue",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({
+            "ownerName": "owner",
+            "projectName": "projectYobi",
+            "issueNumber": "1",
+            "title": "Invalid due issue",
+            "bodyMarkdown": "Invalid due issue body",
+            "dueDate": "08/01/2026"
+        }),
+    )
+    .await;
+    assert_eq!(invalid.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
+    let (app, _, db) = build_app_with_repository_and_db().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Weighted due issue",
+                "bodyMarkdown": "Weighted due issue body",
+                "assigneeLoginId": "owner",
+                "dueDate": "2026-08-01"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let issue = issue::Entity::find()
+        .filter(issue::Column::Number.eq(Some(1)))
+        .one(&db)
+        .await
+        .expect("read issue")
+        .expect("created issue");
+    let mut active: issue::ActiveModel = issue.into();
+    active.weight = Set(Some(3));
+    active.update(&db).await.expect("update issue weight");
+
+    let parent_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/parent-options",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let parent_issue_id = parent_options["items"][0]["id"].as_i64().unwrap();
+    ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Child row issue",
+                "bodyMarkdown": "Child row issue body",
+                "parentIssueId": parent_issue_id
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let list = ok_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let items = list["items"].as_array().expect("issue list items");
+    let item = items
+        .iter()
+        .find(|item| item["title"] == "Weighted due issue")
+        .expect("parent row");
+    assert!(item["id"].as_i64().unwrap_or_default() > 0);
+    assert_eq!(item["assigneeLabel"], "owner");
+    assert_eq!(item["assigneeLoginId"], "owner");
+    assert_eq!(item["authorLoginId"], "owner");
+    assert!(item["authorAvatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar"));
+    assert!(item["assigneeAvatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar"));
+    assert_eq!(item["dueDateLabel"], "2026-08-01");
+    assert_eq!(item["dueDateOverdue"], false);
+    assert_eq!(item["weight"], 3);
+    assert_eq!(item["childOpenCount"], 1);
+    assert_eq!(item["childClosedCount"], 0);
+    assert_eq!(item["childIssues"][0]["issueNumber"], 2);
+    assert_eq!(item["childIssues"][0]["title"], "Child row issue");
+
+    let child_item = items
+        .iter()
+        .find(|item| item["title"] == "Child row issue")
+        .expect("child row");
+    assert_eq!(child_item["parentIssueNumber"], 1);
+    assert_eq!(child_item["parentIssueTitle"], "Weighted due issue");
+}
+
+#[tokio::test]
+async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    let parent = ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Parent issue",
+                "bodyMarkdown": "Parent issue body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(parent["issueNumber"], "1");
+
+    let parent_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/parent-options",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let parent_issue_id = parent_options["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["issueNumber"] == 1)
+        .unwrap()["id"]
+        .as_i64()
+        .unwrap();
+
+    let child = ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Child issue",
+                "bodyMarkdown": "Child issue body",
+                "parentIssueId": parent_issue_id
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(child["parentIssueId"], parent_issue_id);
+    assert_eq!(child["parentIssueNumber"], 1);
+    assert_eq!(child["parentIssueTitle"], "Parent issue");
+
+    let parent_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(parent_detail["authorId"].as_i64().unwrap_or_default() > 0);
+    assert_eq!(parent_detail["childOpenCount"], 1);
+    assert_eq!(parent_detail["childClosedCount"], 0);
+    assert_eq!(parent_detail["childIssues"][0]["issueNumber"], 2);
+    assert_eq!(parent_detail["childIssues"][0]["title"], "Child issue");
+    assert_eq!(parent_detail["childIssues"][0]["state"], "open");
+
+    let selected_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/parent-options?currentIssueNumber=2",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(selected_options["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["id"] == parent_issue_id && item["selected"] == true));
+
+    let cleared = ok_json(
+        rpc(
+            app.clone(),
+            "UpdateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "2",
+                "title": "Child issue cleared",
+                "bodyMarkdown": "Child issue body cleared",
+                "parentIssueId": ""
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(cleared["parentIssueId"], Value::Null);
+    assert_eq!(cleared["parentIssueNumber"], Value::Null);
+    assert_eq!(cleared["parentIssueTitle"], "");
+}
+
+#[tokio::test]
+async fn rest_issue_draft_save_and_publish_follow_legacy_visibility_and_numbering() {
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (_other_csrf, other_cookie) = register_user(app.clone(), "other").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    let draft = ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Draft issue",
+                "bodyMarkdown": "Draft issue body",
+                "isDraft": true
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(draft["isDraft"], true);
+    assert_eq!(draft["state"], "draft");
+    assert_eq!(draft["issueNumber"], "1");
+
+    let forbidden = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/projects/owner/projectYobi/issues/1",
+        Some(&other_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let list = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(list["items"].as_array().unwrap().len(), 0);
+    assert_eq!(list["draftItems"].as_array().unwrap().len(), 1);
+    assert_eq!(list["draftItems"][0]["state"], "draft");
+    assert_eq!(list["draftItems"][0]["title"], "Draft issue");
+
+    let published = ok_json(
+        rpc(
+            app.clone(),
+            "UpdateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "title": "Published issue",
+                "bodyMarkdown": "Published issue body",
+                "isPublish": true
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(published["isDraft"], false);
+    assert_eq!(published["state"], "open");
+    assert_eq!(published["issueNumber"], "2");
+
+    let published_read = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2",
+            Some(&other_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(published_read["title"], "Published issue");
+}
+
+#[tokio::test]
 async fn rest_session_route_coexists_with_bootstrap_and_rpc() {
     let app = build_router();
 
@@ -397,6 +836,10 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
     let (_member_csrf, _member_cookie) = register_user(app.clone(), "member").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (_outsider_csrf, outsider_cookie) = register_user(app.clone(), "outsider").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark organization enrollment actor as guest");
 
     let created = create_organization_rest(
         app.clone(),
@@ -691,9 +1134,10 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 
 #[tokio::test]
 async fn rest_project_routes_cover_directory_views_and_mutations() {
-    let (app, _) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;
 
     let created = create_project_rest(
         app.clone(),
@@ -706,6 +1150,23 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(created["projectName"], "projectYobi");
+    let project_id = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("created project")
+        .id;
+    let project_id_text = project_id.to_string();
+    let visitor_id = repository
+        .find_user_by_identifier("visitor")
+        .await
+        .unwrap()
+        .expect("visitor user")
+        .id;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark project enrollment actor as guest");
 
     let listed = ok_json(
         rest(
@@ -726,8 +1187,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/api/v1/owners/owner/projects/projectYobi",
-            Some(&guest_cookie),
+            "/yona/api/v1/owners/owner/projects/projectYobi/container",
+            Some(&visitor_cookie),
             None,
             None,
         )
@@ -741,7 +1202,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             app.clone(),
             Method::GET,
             "/yona/api/v1/owners/owner/projects/projectYobi/container",
-            Some(&guest_cookie),
+            Some(&visitor_cookie),
             None,
             None,
         )
@@ -760,6 +1221,28 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(forbidden_settings.status(), StatusCode::FORBIDDEN);
+
+    let guest_watch_forbidden = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/watch",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(guest_watch_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let guest_direct_unwatched = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/unwatch",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(guest_direct_unwatched.status(), StatusCode::FORBIDDEN);
 
     let settings = ok_json(
         rest(
@@ -857,8 +1340,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             app.clone(),
             Method::POST,
             "/yona/api/v1/owners/owner/projects/projectYobi/favorite",
-            Some(&guest_cookie),
-            Some(&guest_csrf),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
             None,
         )
         .await,
@@ -866,13 +1349,295 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(favorited["favorited"], true);
 
+    let legacy_favorites = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/favoriteProjects",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_favorites["projectIds"], json!([project_id]));
+    assert_eq!(legacy_favorites["projects"][0]["projectId"], project_id);
+    assert_eq!(
+        legacy_favorites["projects"][0]["projectName"],
+        "projectYobi"
+    );
+    assert_eq!(legacy_favorites["projects"][0]["owner"], "owner");
+
+    let legacy_unfavorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_unfavorited["projectId"], project_id.to_string());
+    assert_eq!(legacy_unfavorited["favored"], false);
+    let legacy_refavorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_refavorited["projectId"], project_id.to_string());
+    assert_eq!(legacy_refavorited["favored"], true);
+
+    let guest_api_token = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/api-token/reset",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await["apiToken"]
+        .as_str()
+        .expect("guest api token")
+        .to_string();
+    let token_favorites = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/favoriteProjects",
+            &[("Yona-Token", &guest_api_token)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(token_favorites["projectIds"], json!([project_id]));
+    let authorization_header = format!("token {guest_api_token}");
+    let token_unfavorited = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &[("Authorization", &authorization_header)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(token_unfavorited["projectId"], project_id.to_string());
+    assert_eq!(token_unfavorited["favored"], false);
+    let token_refavorited = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &[("Yona-Token", &guest_api_token)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(token_refavorited["projectId"], project_id.to_string());
+    assert_eq!(token_refavorited["favored"], true);
+
+    let issue_created = ok_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Favorite issue",
+                "bodyMarkdown": "Favorite issue body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(issue_created["issueNumber"], "1");
+    let issue_id = issue::Entity::find()
+        .filter(issue::Column::Title.eq(Some("Favorite issue".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("created favorite issue")
+        .id;
+    let legacy_issue_favorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_favorited["issueId"], issue_id.to_string());
+    assert_eq!(legacy_issue_favorited["favored"], true);
+    assert_eq!(legacy_issue_favorited["message"], "issue.favorite.added");
+    let legacy_issues = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/favoriteIssues",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issues["projectIds"], json!([issue_id]));
+    assert_eq!(legacy_issues["projects"][0]["issueId"], issue_id);
+    assert_eq!(legacy_issues["projects"][0]["issueTitle"], "Favorite issue");
+    assert_eq!(legacy_issues["projects"][0]["issueAuthorName"], "owner");
+    let legacy_issue_unfavorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_unfavorited["issueId"], issue_id.to_string());
+    assert_eq!(legacy_issue_unfavorited["favored"], false);
+    assert_eq!(
+        legacy_issue_unfavorited["message"],
+        "issue.favorite.deleted"
+    );
+
+    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
+    std::env::set_var("YONA_TRANSLATION_API", "");
+    let translation_without_config = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/translation",
+        Some(&visitor_cookie),
+        Some(&visitor_csrf),
+        Some(json!({
+            "owner": "owner",
+            "projectName": "projectYobi",
+            "type": "issue",
+            "number": 1
+        })),
+    )
+    .await;
+    assert_eq!(
+        translation_without_config.status(),
+        StatusCode::PRECONDITION_FAILED
+    );
+    assert_eq!(
+        response_text(translation_without_config).await,
+        "Precondition Failed"
+    );
+    if let Some(value) = previous_translation_api {
+        std::env::set_var("YONA_TRANSLATION_API", value);
+    } else {
+        std::env::remove_var("YONA_TRANSLATION_API");
+    }
+
+    let organization = create_organization_rest(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
+    assert_eq!(organization["organizationName"], "weblabs");
+    let organization_id = repository
+        .read_organization_by_name("weblabs")
+        .await
+        .unwrap()
+        .expect("created organization")
+        .id;
+    let legacy_organization_favorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_organization_favorited["organizationId"],
+        organization_id.to_string()
+    );
+    assert_eq!(legacy_organization_favorited["favored"], true);
+    let legacy_organizations = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/favoriteOrganizations",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_organizations["organizationIds"],
+        json!([organization_id])
+    );
+    assert_eq!(
+        legacy_organizations["organizations"][0]["organizationId"],
+        organization_id
+    );
+    assert_eq!(
+        legacy_organizations["organizations"][0]["organizationName"],
+        "weblabs"
+    );
+    let legacy_organization_unfavorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_organization_unfavorited["organizationId"],
+        organization_id.to_string()
+    );
+    assert_eq!(legacy_organization_unfavorited["favored"], false);
+
     let watched = ok_json(
         rest(
             app.clone(),
             Method::POST,
             "/yona/api/v1/owners/owner/projects/projectYobi/watch",
-            Some(&guest_cookie),
-            Some(&guest_csrf),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
             None,
         )
         .await,
@@ -883,11 +1648,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
 
     let unwatched = ok_json(
         rest(
-            app,
+            app.clone(),
             Method::DELETE,
             "/yona/api/v1/owners/owner/projects/projectYobi/watch",
-            Some(&guest_cookie),
-            Some(&guest_csrf),
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
             None,
         )
         .await,
@@ -895,6 +1660,220 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(unwatched["isWatching"].as_bool().unwrap_or(false), false);
     assert_eq!(unwatched["watchCount"].as_u64().unwrap_or_default(), 0);
+
+    let direct_watched = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/watch",
+        Some(&visitor_cookie),
+        Some(&visitor_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_watched.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_watched).await, "");
+    assert!(repository
+        .is_watching_project(visitor_id, project_id)
+        .await
+        .unwrap());
+
+    let direct_watch_notification = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/notifications",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            Some(json!({
+                "projectId": project_id_text,
+                "eventType": "NEW_COMMENT"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let direct_watch_notifications = direct_watch_notification["watchedProjects"][0]
+        ["notifications"]
+        .as_array()
+        .expect("notifications array after direct watch");
+    let direct_watch_new_comment = direct_watch_notifications
+        .iter()
+        .find(|entry| entry["eventType"] == "NEW_COMMENT")
+        .expect("new comment notification after direct watch");
+    assert_eq!(direct_watch_new_comment["enabled"], true);
+    let direct_watch_override = user_project_notification::Entity::find()
+        .filter(user_project_notification::Column::UserId.eq(Some(visitor_id)))
+        .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+        .filter(
+            user_project_notification::Column::NotificationType.eq(Some("NEW_COMMENT".to_string())),
+        )
+        .one(&db)
+        .await
+        .unwrap();
+    assert!(direct_watch_override.is_some());
+
+    let direct_unwatched = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/unwatch",
+        Some(&visitor_cookie),
+        Some(&visitor_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_unwatched.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_unwatched).await, "");
+    assert!(!repository
+        .is_watching_project(visitor_id, project_id)
+        .await
+        .unwrap());
+    let direct_unwatch_override = user_project_notification::Entity::find()
+        .filter(user_project_notification::Column::UserId.eq(Some(visitor_id)))
+        .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+        .filter(
+            user_project_notification::Column::NotificationType.eq(Some("NEW_COMMENT".to_string())),
+        )
+        .one(&db)
+        .await
+        .unwrap();
+    assert!(direct_unwatch_override.is_none());
+}
+
+#[tokio::test]
+async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
+    let (app, repository) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;
+    let (_read_guest_csrf, read_guest_cookie) = register_user(app.clone(), "read-guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let owner_issue = create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Owner public issue",
+    )
+    .await;
+    assert_eq!(owner_issue["issueNumber"], "1");
+
+    let public_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(public_detail["projectName"], "projectYobi");
+
+    let read_guest = repository
+        .toggle_site_user_guest_mode("read-guest")
+        .await
+        .expect("toggle read guest mode")
+        .expect("read guest exists");
+    assert!(read_guest.is_guest);
+
+    let guest_detail = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/owners/owner/projects/projectYobi",
+        Some(&read_guest_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(guest_detail.status(), StatusCode::FORBIDDEN);
+
+    let guest_comment = create_issue_comment(
+        app.clone(),
+        &visitor_cookie,
+        &visitor_csrf,
+        1,
+        "Guest-created public issue comment",
+    )
+    .await;
+    assert_eq!(
+        guest_comment["comments"][0]["contentsMarkdown"],
+        "Guest-created public issue comment"
+    );
+
+    let guest_issue = create_issue(
+        app.clone(),
+        &visitor_cookie,
+        &visitor_csrf,
+        "Guest-created public issue",
+    )
+    .await;
+    assert_eq!(guest_issue["issueNumber"], "2");
+
+    let guest_post = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            Some(json!({
+                "title": "Guest-created public post",
+                "bodyMarkdown": "Legacy public board post create"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_post["postNumber"], "1");
+
+    let guest_post_comment = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1/comments",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            Some(json!({
+                "contentsMarkdown": "Guest-created public board comment"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_post_comment["commentCount"], 1);
+    assert_eq!(
+        guest_post_comment["comments"][0]["contentsMarkdown"],
+        "Guest-created public board comment"
+    );
+
+    let project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    let visitor = repository
+        .find_user_by_login_id("visitor")
+        .await
+        .unwrap()
+        .expect("visitor exists");
+    repository
+        .add_project_membership(project.id, visitor.id, "member")
+        .await
+        .unwrap();
+
+    let member_detail = ok_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(member_detail["projectName"], "projectYobi");
 }
 
 #[tokio::test]
@@ -977,6 +1956,26 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     )
     .await;
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
+    let child_commented = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "one-line child reply",
+                "parentCommentId": comment_id.parse::<i64>().unwrap()
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert!(child_commented["commentParentLinks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|link| link["parentCommentId"] == comment_id.parse::<i64>().unwrap()));
 
     let anonymous_watch = rest(
         app.clone(),
@@ -1019,7 +2018,42 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     )
     .await;
     assert_eq!(voted["hasVoted"], true);
+    assert_eq!(voted["issueId"], 1);
     assert_eq!(voted["voterCount"], 1);
+    assert_eq!(voted["issueVoters"][0]["loginId"], "guest");
+    assert_eq!(voted["issueVoters"][0]["userLabel"], "guest");
+    assert!(voted["issueVoters"][0]["avatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar.com"));
+
+    let weight_upvoted = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/upvoteWeight",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(weight_upvoted["weight"], 1);
+
+    let weight_downvoted = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/downvoteWeight",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(weight_downvoted["weight"], 0);
 
     let favorited = ok_json(
         rest(
@@ -1374,6 +2408,52 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .expect("new comment notification");
     assert_eq!(new_comment["enabled"], true);
 
+    let direct_toggle_notification = rest(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/noti/toggle/{}/NEW_COMMENT", project.id),
+        Some(&cookie_header),
+        Some(&csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_toggle_notification.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_toggle_notification).await, "");
+    let direct_toggle_row = user_project_notification::Entity::find()
+        .filter(user_project_notification::Column::UserId.eq(Some(user.id)))
+        .filter(user_project_notification::Column::ProjectId.eq(Some(project.id)))
+        .filter(
+            user_project_notification::Column::NotificationType.eq(Some("NEW_COMMENT".to_string())),
+        )
+        .one(&db)
+        .await
+        .unwrap();
+    assert!(direct_toggle_row.is_none());
+    let rest_toggle_after_direct = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/notifications",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({
+                "projectId": project.id.to_string(),
+                "eventType": "NEW_COMMENT"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let rest_toggle_after_direct_notifications = rest_toggle_after_direct["watchedProjects"][0]
+        ["notifications"]
+        .as_array()
+        .expect("notifications array after rest toggle");
+    let rest_toggle_after_direct_new_comment = rest_toggle_after_direct_notifications
+        .iter()
+        .find(|entry| entry["eventType"] == "NEW_COMMENT")
+        .expect("new comment notification after rest toggle");
+    assert_eq!(rest_toggle_after_direct_new_comment["enabled"], true);
+
     let reset_token = ok_json(
         rest(
             app.clone(),
@@ -1615,8 +2695,12 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
                 assignee_login_id: None,
                 attachment_ids: Vec::new(),
                 body_markdown: "owner issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "owner issue".to_string(),
             },
         })
@@ -1634,8 +2718,12 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
                 assignee_login_id: Some("owner".to_string()),
                 attachment_ids: Vec::new(),
                 body_markdown: "assigned issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "assigned issue".to_string(),
             },
         })
@@ -1685,6 +2773,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             attachment_ids: Vec::new(),
             contents_markdown: "owner posting comment".to_string(),
             owner_name: "owner".to_string(),
+            parent_comment_id: None,
             post_number: posting.post_number,
             project_name: "statsYobi".to_string(),
         })

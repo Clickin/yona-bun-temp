@@ -31,6 +31,7 @@ export type SearchScope = "global" | "organization" | "project";
 export type SearchSnippet = {
   highlights: Array<{ end: number; start: number }>;
   text: string;
+  truncated?: boolean;
 };
 
 export type SearchItem = {

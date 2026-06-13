@@ -1282,6 +1282,7 @@ export function ProjectDetailPage(props: {
     normalizeProjectHomeTab(detail.defaultTab) ??
     "readme";
   const projectHref = buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName);
+  const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
 
   return (
     <main className="app-shell">
@@ -1309,9 +1310,19 @@ export function ProjectDetailPage(props: {
             <div className="project-overview span9 span-hard-wrap">
               <div className="project-description" data-toggle="project-description-tab">
                 <h3>
-                  <span className="markdown-wrap" id="project-description">
-                    {detail.overview || "project.description.placeholder"}
-                  </span>
+                  {detail.overview ? (
+                    <MarkdownRenderer
+                      className="markdown-wrap"
+                      containerElement="span"
+                      id="project-description"
+                      markdown={detail.overview}
+                      mentionReferences={[]}
+                    />
+                  ) : (
+                    <span className="markdown-wrap" id="project-description">
+                      project.description.placeholder
+                    </span>
+                  )}
                   {detail.overviewEditable || detail.viewerCanUpdate ? (
                     <button
                       aria-label="Edit overview"
@@ -1422,14 +1433,32 @@ export function ProjectDetailPage(props: {
                         </header>
                         <MarkdownRenderer
                           className="readme-body markdown-wrap"
+                          basePath={props.runtimeConfig?.basePath}
                           markdown={detail.readmeFile.bodyMarkdown}
+                          mentionReferences={detail.readmeFile.mentionReferences}
+                          ownerName={detail.ownerName}
+                          projectName={detail.projectName}
                         />
                       </article>
                     ) : (
-                      <>
-                        <h3>README</h3>
-                        <p>No README post yet.</p>
-                      </>
+                      <div className="bubble-wrap gray readme">
+                        <p className="default">
+                          {isGitProject ? (
+                            <>
+                              <span>project.readme</span>
+                              <br />
+                              <br />
+                              {detail.viewerCanUpdate ? (
+                                <a className="ybtn" href={`${projectHref}/postform?readme=true`}>
+                                  project.readme.create
+                                </a>
+                              ) : null}
+                            </>
+                          ) : (
+                            <span>project.svn.readme</span>
+                          )}
+                        </p>
+                      </div>
                     )
                   ) : null}
                   {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
@@ -1578,7 +1607,6 @@ export function ProjectWatchersPage(props: {
                 >
                   {watcher.avatarUrl ? (
                     <img
-                      alt={`${watcher.userLabel || watcher.loginId} avatar`}
                       height={64}
                       src={watcher.avatarUrl}
                       width={64}
@@ -1820,6 +1848,12 @@ export function ProjectWebhooksPage(props: {
     webhookType: "SIMPLE",
   });
   const webhooksPath = `/${detail.ownerName}/${detail.projectName}/webhooks`;
+  const webhookTypeLabels: Record<ProjectWebhookType, string> = {
+    DETAIL_HANGOUT_CHAT: "Google Chat (Thread)",
+    DETAIL_SLACK: "Slack (Meta)",
+    JSON: "Continuous Integration tool (Only push event)",
+    SIMPLE: "Messenger (Only text)",
+  };
 
   const updateWebhookType = (webhookType: ProjectWebhookType) => {
     setFormState((current) => ({
@@ -1856,11 +1890,11 @@ export function ProjectWebhooksPage(props: {
                 });
               }}
             >
-              <fieldset>
-                <legend className="form-legend">project.webhook.add</legend>
-                <div className="form-wrap">
-                  <label htmlFor="payloadUrl">project.webhook.payloadUrl</label>
+              <strong className="form-legend">project.webhook.new</strong>
+              <div className="form-wrap form-actions">
+                <div>
                   <input
+                    autoComplete="off"
                     className="input-webhook-payload"
                     id="payloadUrl"
                     maxLength={2000}
@@ -1871,14 +1905,13 @@ export function ProjectWebhooksPage(props: {
                         payloadUrl: event.target.value,
                       }))
                     }
+                    placeholder="project.webhook.payloadUrl"
                     required
                     type="url"
                     value={formState.payloadUrl}
                   />
-                </div>
-                <div className="form-wrap">
-                  <label htmlFor="secret">project.webhook.secret</label>
                   <input
+                    autoComplete="off"
                     className="input-webhook-secret"
                     id="secret"
                     maxLength={250}
@@ -1889,11 +1922,19 @@ export function ProjectWebhooksPage(props: {
                         secret: event.target.value,
                       }))
                     }
+                    placeholder="project.webhook.secret"
                     type="text"
                     value={formState.secret}
                   />
+                  <button
+                    className="ybtn ybtn-primary btn-submit"
+                    disabled={props.pending}
+                    type="submit"
+                  >
+                    project.webhook.add
+                  </button>
                 </div>
-                <div className="form-wrap">
+                <div>
                   {detail.webhookTypes.map((webhookType) => (
                     <label className="radio inline" key={webhookType}>
                       <input
@@ -1903,12 +1944,12 @@ export function ProjectWebhooksPage(props: {
                         type="radio"
                         value={webhookType}
                       />
-                      {` project.webhook.type.${webhookType}`}
+                      {` ${webhookTypeLabels[webhookType]}`}
                     </label>
                   ))}
-                </div>
-                <div className="form-wrap">
-                  <label className="checkbox" htmlFor="gitPush">
+                  <label className="radio inline"> | </label>
+                  <label className="radio inline"></label>
+                  <label className="checkbox inline" htmlFor="gitPush">
                     <input
                       checked={formState.gitPush}
                       className="form-check-input"
@@ -1923,19 +1964,11 @@ export function ProjectWebhooksPage(props: {
                       }
                       type="checkbox"
                     />
-                    project.webhook.gitPush
+                    {" project.webhook.includeGitPush"}
                   </label>
                 </div>
-                <div className="form-wrap form-actions">
-                  <button
-                    className="ybtn ybtn-primary btn-submit"
-                    disabled={props.pending}
-                    type="submit"
-                  >
-                    button.add
-                  </button>
-                </div>
-              </fieldset>
+              </div>
+              <div>project.webhook.help</div>
             </form>
 
             <div className="webhook-list-wrap" id="webhooksList">
@@ -1947,11 +1980,19 @@ export function ProjectWebhooksPage(props: {
               ) : (
                 <>
                   <div className="row-fluid list-head">
-                    <div className="span5 payload-url">project.webhook.payloadUrl</div>
-                    <div className="span2 secret text-center">project.webhook.secret</div>
-                    <div className="span2 text-center">project.webhook.type</div>
-                    <div className="span1 text-center">project.webhook.gitPush</div>
-                    <div className="span2 text-right">button.delete</div>
+                    <div className="span5 payload-url">
+                      <strong>project.webhook.payloadUrl</strong>
+                    </div>
+                    <div className="span2 secret text-center">
+                      <strong>project.webhook.secret</strong>
+                    </div>
+                    <div className="span2 secret text-center">
+                      <strong>Type of message</strong>
+                    </div>
+                    <div className="span2 secret text-center">
+                      <strong>Include git push events</strong>
+                    </div>
+                    <div className="span1 secret text-center"></div>
                   </div>
                   {detail.webhooks.map((webhook) => (
                     <div
@@ -1959,13 +2000,17 @@ export function ProjectWebhooksPage(props: {
                       data-webhook-id={webhook.id}
                       key={webhook.id}
                     >
-                      <div className="span5 payload-url">{webhook.payloadUrl}</div>
-                      <div className="span2 secret text-center">{webhook.secret || "NONE"}</div>
+                      <div className="span5">
+                        <h6 className="mr20 truncate">{webhook.payloadUrl}</h6>
+                      </div>
+                      <div className="span2 text-center">
+                        <h6>{webhook.secret || "NONE"}</h6>
+                      </div>
                       <div className="span2 text-center">{webhook.webhookType}</div>
-                      <div className="span1 text-center">
+                      <div className="span2 text-center">
                         <input checked={webhook.gitPush} readOnly type="checkbox" />
                       </div>
-                      <div className="span2 text-right">
+                      <div className="span1 text-center">
                         <button
                           className="ybtn ybtn-danger ybtn-small"
                           data-request-method="delete"
@@ -2525,7 +2570,7 @@ export function ProjectStatisticsPage(props: {
   );
 }
 
-function ProjectSettingsSubMenu(props: {
+export function ProjectSettingsSubMenu(props: {
   active: "delete" | "labels" | "members" | "setting" | "transfer" | "vcs" | "webhooks";
   detail: Pick<ProjectDetailViewModel, "ownerName" | "projectName" | "showCode">;
   runtimeConfig: RuntimeConfig;

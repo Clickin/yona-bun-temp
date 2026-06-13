@@ -32,6 +32,7 @@ export type ReviewThreadListQuery = {
 };
 
 export type PullRequestListItem = {
+  closedCommentThreadCount: number;
   commentThreadCount: number;
   conflict: boolean;
   contributorLabel: string;
@@ -54,14 +55,31 @@ export type PullRequestListItem = {
 };
 
 export type PullRequestListResponse = {
+  acceptedCount: number;
   category: string;
+  closedCount: number;
+  contributors: PullRequestUser[];
   items: PullRequestListItem[];
+  openCount: number;
   pageNum: number;
   pageSize: number;
+  recentlyPushedBranches: PullRequestPushedBranch[];
+  sentCount: number;
   totalCount: number;
 };
 
+export type PullRequestPushedBranch = {
+  branchName: string;
+  defaultBranch: string;
+  id: number;
+  ownerName: string;
+  projectName: string;
+  pushedLabel: string;
+  shortName: string;
+};
+
 export type PullRequestUser = {
+  avatarUrl: string;
   loginId: string;
   userId: number;
   userLabel: string;
@@ -79,6 +97,7 @@ export type PullRequestPermissions = {
 };
 
 export type PullRequestEvent = {
+  commits: PullRequestCommit[];
   createdLabel: string;
   eventType: string;
   id: number;
@@ -88,6 +107,7 @@ export type PullRequestEvent = {
 };
 
 export type ReviewComment = {
+  attachments?: ReviewCommentAttachment[];
   authorId: number;
   authorLabel: string;
   authorLoginId: string;
@@ -102,8 +122,17 @@ export type ReviewComment = {
   viaEmail: boolean;
 };
 
+export type ReviewCommentAttachment = {
+  id: number;
+  mimeType: string;
+  name: string;
+  size: number;
+  url: string;
+};
+
 export type ReviewThread = {
   authorId: number;
+  authorAvatarUrl: string;
   authorLabel: string;
   authorLoginId: string;
   comments: ReviewComment[];
@@ -114,6 +143,7 @@ export type ReviewThread = {
   id: number;
   path: string;
   prevCommitId: string;
+  pullRequestNumber?: number;
   startLine?: number;
   startSide?: string;
   state: string;
@@ -169,8 +199,11 @@ export type PullRequestChangedFile = {
 };
 
 export type PullRequestChangesResponse = {
+  cardThreads: ReviewThread[];
   commits: PullRequestCommit[];
   files: PullRequestChangedFile[];
+  inlineThreads: ReviewThread[];
+  nonRangedThreads: ReviewThread[];
   pullRequest: PullRequestDetailResponse;
   threads: ReviewThread[];
 };
@@ -248,11 +281,14 @@ export type PullRequestCommentEditInput = PullRequestScopeInput & {
 };
 
 export type ReviewThreadListResponse = {
+  allCount: number;
+  authorCount: number;
   closedCount: number;
   items: ReviewThread[];
   openCount: number;
   pageNum: number;
   pageSize: number;
+  participantCount: number;
   state: string;
   totalCount: number;
 };
@@ -358,6 +394,7 @@ function pullRequestChangesSearch(input: PullRequestChangesInput): string {
 
 function normalizeUser(user: Partial<PullRequestUser> | undefined): PullRequestUser {
   return {
+    avatarUrl: user?.avatarUrl ?? "",
     loginId: user?.loginId ?? "",
     userId: user?.userId ?? 0,
     userLabel: user?.userLabel ?? "",
@@ -366,6 +403,7 @@ function normalizeUser(user: Partial<PullRequestUser> | undefined): PullRequestU
 
 function normalizeListItem(item: Partial<PullRequestListItem>): PullRequestListItem {
   return {
+    closedCommentThreadCount: item.closedCommentThreadCount ?? 0,
     commentThreadCount: item.commentThreadCount ?? 0,
     conflict: item.conflict ?? false,
     contributorLabel: item.contributorLabel ?? "",
@@ -391,9 +429,17 @@ function normalizeListItem(item: Partial<PullRequestListItem>): PullRequestListI
 function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
   return {
     authorId: thread.authorId ?? 0,
+    authorAvatarUrl: thread.authorAvatarUrl ?? "",
     authorLabel: thread.authorLabel ?? "",
     authorLoginId: thread.authorLoginId ?? "",
     comments: (thread.comments ?? []).map((comment) => ({
+      attachments: (comment.attachments ?? []).map((attachment) => ({
+        id: attachment.id ?? 0,
+        mimeType: attachment.mimeType ?? "",
+        name: attachment.name ?? "",
+        size: attachment.size ?? 0,
+        url: attachment.url ?? "",
+      })),
       authorId: comment.authorId ?? 0,
       authorLabel: comment.authorLabel ?? "",
       authorLoginId: comment.authorLoginId ?? "",
@@ -414,9 +460,33 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
     id: thread.id ?? 0,
     path: thread.path ?? "",
     prevCommitId: thread.prevCommitId ?? "",
+    pullRequestNumber: thread.pullRequestNumber ? Number(thread.pullRequestNumber) : undefined,
     startLine: thread.startLine,
     startSide: thread.startSide,
     state: thread.state ?? "open",
+  };
+}
+
+function normalizeCommit(commit: Partial<PullRequestCommit>): PullRequestCommit {
+  return {
+    authorDateLabel: commit.authorDateLabel ?? "",
+    authorEmail: commit.authorEmail ?? "",
+    commitId: commit.commitId ?? "",
+    commitMessage: commit.commitMessage ?? "",
+    commitShortId: commit.commitShortId ?? "",
+    state: commit.state ?? "CURRENT",
+  };
+}
+
+function normalizeEvent(event: Partial<PullRequestEvent>): PullRequestEvent {
+  return {
+    commits: (event.commits ?? []).map(normalizeCommit),
+    createdLabel: event.createdLabel ?? "",
+    eventType: event.eventType ?? "",
+    id: event.id ?? 0,
+    newValue: event.newValue ?? "",
+    oldValue: event.oldValue ?? "",
+    senderLoginId: event.senderLoginId ?? "",
   };
 }
 
@@ -424,11 +494,11 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
   return {
     bodyHtml: response.bodyHtml ?? "",
     bodyMarkdown: response.bodyMarkdown ?? "",
-    commits: response.commits ?? [],
+    commits: (response.commits ?? []).map(normalizeCommit),
     conflict: response.conflict ?? false,
     contributor: normalizeUser(response.contributor),
     createdLabel: response.createdLabel ?? "",
-    events: response.events ?? [],
+    events: (response.events ?? []).map(normalizeEvent),
     fromBranch: response.fromBranch ?? "",
     fromOwnerName: response.fromOwnerName ?? "",
     fromProjectName: response.fromProjectName ?? "",
@@ -470,11 +540,29 @@ function normalizeListResponse(
   response: Partial<PullRequestListResponse>,
 ): PullRequestListResponse {
   return {
+    acceptedCount: response.acceptedCount ?? 0,
     category: response.category ?? "open",
+    closedCount: response.closedCount ?? 0,
+    contributors: (response.contributors ?? []).map(normalizeUser),
     items: (response.items ?? []).map(normalizeListItem),
+    openCount: response.openCount ?? 0,
     pageNum: response.pageNum ?? 1,
     pageSize: response.pageSize ?? 15,
+    recentlyPushedBranches: (response.recentlyPushedBranches ?? []).map(normalizePushedBranch),
+    sentCount: response.sentCount ?? 0,
     totalCount: response.totalCount ?? 0,
+  };
+}
+
+function normalizePushedBranch(branch: Partial<PullRequestPushedBranch>): PullRequestPushedBranch {
+  return {
+    branchName: branch.branchName ?? "",
+    defaultBranch: branch.defaultBranch ?? "HEAD",
+    id: branch.id ?? 0,
+    ownerName: branch.ownerName ?? "",
+    projectName: branch.projectName ?? "",
+    pushedLabel: branch.pushedLabel ?? "",
+    shortName: branch.shortName ?? branch.branchName ?? "",
   };
 }
 
@@ -482,11 +570,14 @@ function normalizeReviewThreadList(
   response: Partial<ReviewThreadListResponse>,
 ): ReviewThreadListResponse {
   return {
+    allCount: response.allCount ?? 0,
+    authorCount: response.authorCount ?? 0,
     closedCount: response.closedCount ?? 0,
     items: (response.items ?? []).map(normalizeThread),
     openCount: response.openCount ?? 0,
     pageNum: response.pageNum ?? 1,
     pageSize: response.pageSize ?? 15,
+    participantCount: response.participantCount ?? 0,
     state: response.state ?? "open",
     totalCount: response.totalCount ?? 0,
   };
@@ -535,14 +626,7 @@ function normalizeMergeResult(
   response: Partial<PullRequestMergeResultResponse>,
 ): PullRequestMergeResultResponse {
   return {
-    commits: (response.commits ?? []).map((commit) => ({
-      authorDateLabel: commit.authorDateLabel ?? "",
-      authorEmail: commit.authorEmail ?? "",
-      commitId: commit.commitId ?? "",
-      commitMessage: commit.commitMessage ?? "",
-      commitShortId: commit.commitShortId ?? "",
-      state: commit.state ?? "CURRENT",
-    })),
+    commits: (response.commits ?? []).map(normalizeCommit),
     conflict: response.conflict ?? false,
     noHead: response.noHead ?? false,
   };
@@ -681,8 +765,11 @@ export async function readPullRequestChanges(
     { fetchImpl, method: "GET" },
   );
   return {
+    cardThreads: (payload.cardThreads ?? payload.threads ?? []).map(normalizeThread),
     commits: payload.commits ?? [],
     files: payload.files ?? [],
+    inlineThreads: (payload.inlineThreads ?? payload.threads ?? []).map(normalizeThread),
+    nonRangedThreads: (payload.nonRangedThreads ?? []).map(normalizeThread),
     pullRequest: normalizeDetail(payload.pullRequest ?? {}),
     threads: (payload.threads ?? []).map(normalizeThread),
   };

@@ -9,43 +9,45 @@ use crate::repo_types::{
     CreateReviewCommentViaEmailInput, CreateUserInput, CreateWebhookDeliveryInput,
     CreateWebhookThreadInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
     DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
-    IssueAttachmentRecord, IssueCommentOriginRecord, IssueCommentRecord, IssueCommentVoterRecord,
-    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
-    IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxActionExecutionInput,
-    MailboxActionExecutionRecord, MailboxNormalizedMessageInput, MailboxNormalizedMessageResult,
-    MailboxReplyTargetRecord, MailboxResourceActionRecord, MassUpdateIssuesInput,
-    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
-    NotificationItemRecord, NotificationListRecord, NotificationMailDeliveryRecord,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
-    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
-    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
+    IssueAttachmentRecord, IssueChildRecord, IssueCommentOriginRecord, IssueCommentRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
+    LegacyResourceTargetRecord, MailboxActionExecutionInput, MailboxActionExecutionRecord,
+    MailboxNormalizedMessageInput, MailboxNormalizedMessageResult, MailboxReplyTargetRecord,
+    MailboxResourceActionRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
+    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
+    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
+    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
+    PostingCommentOriginRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
     ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
     ProjectEnrollmentRequestRecord, ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
-    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookDeliveryRecord,
-    ProjectWebhookListRecord, ProjectWebhookRecord, PullRequestCommitChangedInput,
-    PullRequestCommitChangedRecord, PullRequestCommitRecord, PullRequestDetailRecord,
-    PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
-    PullRequestListRecord, PullRequestMergeInput, PullRequestReviewInput, PullRequestStateInput,
+    ProjectIssueListRecord, ProjectIssueParentOptionRecord, ProjectIssueReferenceRecord,
+    ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
+    ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord,
+    ProjectPostingListItemRecord, ProjectPostingListRecord, ProjectRecord, ProjectTransferRecord,
+    ProjectTransferRequestInput, ProjectViewerRecord, ProjectWatcherListRecord,
+    ProjectWatcherRecord, ProjectWebhookDeliveryRecord, ProjectWebhookListRecord,
+    ProjectWebhookRecord, PullRequestCommitChangedInput, PullRequestCommitChangedRecord,
+    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord, PullRequestMergeInput,
+    PullRequestPushedBranchRecord, PullRequestReviewInput, PullRequestStateInput,
     PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
-    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    SiteIssueListRecord, SiteNoAvatarUserRecord, SitePostingListRecord,
-    SiteUserAvatarFromAttachmentResult, SiteUserDeleteResult, SiteUserListFilter,
-    SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
-    UpdateCommitDiscussionCommentInput, UpdateIssueCommentInput, UpdateIssueInput,
-    UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput,
-    UpdateProjectInput, UpdateProjectLabelCategoryInput, UpdateProjectLabelInput,
-    UpdatePullRequestCommentInput, UpdatePullRequestInput, UserAttachmentListRecord,
-    UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
-    WatchedProjectNotificationsRecord, WebhookThreadRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, ReviewThreadRouteContext,
+    SearchContextRecord, SearchCountsRecord, SearchItemRecord, SearchRepositoryInput,
+    SearchResultRecord, SearchScope, SiteIssueListRecord, SiteNoAvatarUserRecord,
+    SitePostingListRecord, SiteUserAvatarFromAttachmentResult, SiteUserDeleteResult,
+    SiteUserListFilter, SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateCommitDiscussionCommentInput, UpdateIssueCommentInput,
+    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
+    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, UpdatePullRequestCommentInput, UpdatePullRequestInput,
+    UserAttachmentListRecord, UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter,
+    UserStatisticsRecord, WatchedProjectNotificationsRecord, WebhookThreadRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
     WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
@@ -215,6 +217,29 @@ fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecor
         item_type: "user".to_string(),
         login_id,
         pure_name_only,
+    }
+}
+
+fn issue_assignable_custom_user_record(
+    user: &n4user::Model,
+    display_name: &str,
+) -> IssueAssignableUserRecord {
+    IssueAssignableUserRecord {
+        avatar_url: String::new(),
+        display_name: display_name.to_string(),
+        item_type: "user".to_string(),
+        login_id: user.login_id.clone().unwrap_or_default(),
+        pure_name_only: display_name.to_string(),
+    }
+}
+
+fn issue_assignable_no_assignee_record() -> IssueAssignableUserRecord {
+    IssueAssignableUserRecord {
+        avatar_url: String::new(),
+        display_name: "issue.noAssignee".to_string(),
+        item_type: "user".to_string(),
+        login_id: LEGACY_ANONYMOUS_LOGIN_ID.to_string(),
+        pure_name_only: "issue.noAssignee".to_string(),
     }
 }
 
@@ -440,7 +465,9 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
 
 const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
 const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
+const ISSUE_EVENT_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
 const NOTIFICATION_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
+const PROJECT_PUSHED_BRANCH_DRAFT_TIME_IN_MILLIS: i64 = 60 * 60 * 1000;
 const USER_ATTACHMENT_CONTAINER: &str = "USER";
 const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
 const PROJECT_ATTACHMENT_CONTAINER: &str = "PROJECT";
@@ -454,6 +481,39 @@ const RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "BOARD_POST_COMMENT";
 const MILESTONE_ATTACHMENT_CONTAINER: &str = "MILESTONE";
 const PULL_REQUEST_ATTACHMENT_CONTAINER: &str = "PULL_REQUEST";
 const REVIEW_COMMENT_ATTACHMENT_CONTAINER: &str = "REVIEW_COMMENT";
+
+fn notification_draft_time_in_millis() -> i64 {
+    std::env::var("YONA_NOTIFICATION_DRAFT_TIME")
+        .ok()
+        .and_then(|value| parse_legacy_duration_ms(&value))
+        .unwrap_or(NOTIFICATION_DRAFT_TIME_IN_MILLIS)
+}
+
+fn issue_event_draft_time_in_millis() -> i64 {
+    std::env::var("YONA_ISSUE_EVENT_DRAFT_TIME")
+        .ok()
+        .and_then(|value| parse_legacy_duration_ms(&value))
+        .unwrap_or(ISSUE_EVENT_DRAFT_TIME_IN_MILLIS)
+}
+
+fn parse_legacy_duration_ms(value: &str) -> Option<i64> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let (number, multiplier) = if let Some(number) = trimmed.strip_suffix("ms") {
+        (number.trim(), 1)
+    } else if let Some(number) = trimmed.strip_suffix('s') {
+        (number.trim(), 1_000)
+    } else if let Some(number) = trimmed.strip_suffix('m') {
+        (number.trim(), 60_000)
+    } else if let Some(number) = trimmed.strip_suffix('h') {
+        (number.trim(), 3_600_000)
+    } else {
+        (trimmed, 1)
+    };
+    number.parse::<i64>().ok()?.checked_mul(multiplier)
+}
 
 enum PostingMentionNotificationMode {
     All,
@@ -644,6 +704,10 @@ fn notification_event_uses_draft_merge(event_type: &str) -> bool {
     )
 }
 
+fn issue_event_uses_draft_merge(event_type: &str) -> bool {
+    notification_event_uses_draft_merge(event_type)
+}
+
 fn random_workspace_token() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -706,6 +770,15 @@ fn issue_state_from_raw(value: Option<i32>) -> String {
         "open".to_string()
     } else {
         "closed".to_string()
+    }
+}
+
+fn child_issue_state_order(state: &str) -> u8 {
+    match normalize_identity(state).as_str() {
+        "draft" => 0,
+        "open" => 1,
+        "closed" => 2,
+        _ => 3,
     }
 }
 
@@ -2504,6 +2577,50 @@ impl AppRepository {
         }))
     }
 
+    pub async fn read_posting_comment_origin(
+        &self,
+        comment_id: i64,
+    ) -> Result<Option<PostingCommentOriginRecord>, DbErr> {
+        let Some(comment) = posting_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(posting_id) = comment.posting_id else {
+            return Ok(None);
+        };
+        let Some(posting_model) = posting::Entity::find_by_id(posting_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_id) = posting_model.project_id else {
+            return Ok(None);
+        };
+        let Some(project_model) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_record) = self.project_record_from_model(project_model).await? else {
+            return Ok(None);
+        };
+        let contents_markdown = self
+            .read_text_column("posting_comment", "contents", comment.id)
+            .await?;
+
+        Ok(Some(PostingCommentOriginRecord {
+            comment_id: comment.id,
+            contents_markdown,
+            owner_name: project_record.owner_name,
+            post_number: posting_model.number.unwrap_or_default(),
+            project_name: project_record.project_name,
+        }))
+    }
+
     pub async fn read_issue_share_status(
         &self,
         issue_id: i64,
@@ -2527,6 +2644,7 @@ impl AppRepository {
     async fn list_assignable_users_for_project(
         &self,
         project_record: &ProjectRecord,
+        actor_id: Option<i64>,
         current_assignee_user_id: Option<i64>,
         query: &str,
         search_type: &str,
@@ -2534,9 +2652,38 @@ impl AppRepository {
     ) -> Result<IssueAssignableUserSearchRecord, DbErr> {
         let query = query.trim();
         if query.is_empty() {
+            let mut items = Vec::new();
+            if let Some(actor_id) = actor_id {
+                if let Some(actor) = n4user::Entity::find_by_id(actor_id).one(&self.db).await? {
+                    items.push(issue_assignable_custom_user_record(
+                        &actor,
+                        "issue.assignToMe",
+                    ));
+                }
+            }
+
+            let assignable_user_ids = self.assignable_member_user_ids(project_record).await?;
+            let mut users = n4user::Entity::find()
+                .order_by_asc(n4user::Column::LoginId)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter(|user| assignable_user_ids.contains(&user.id))
+                .filter(n4user_is_active)
+                .map(issue_assignable_user_record)
+                .collect::<Vec<_>>();
+            users.sort_by(|left, right| {
+                normalize_identity(&left.display_name)
+                    .cmp(&normalize_identity(&right.display_name))
+                    .then_with(|| {
+                        normalize_identity(&left.login_id).cmp(&normalize_identity(&right.login_id))
+                    })
+            });
+            items.extend(users);
+            let total = items.len() as u32;
             return Ok(IssueAssignableUserSearchRecord {
-                items: vec![],
-                total: 0,
+                items,
+                total,
                 truncated: false,
             });
         }
@@ -2586,6 +2733,7 @@ impl AppRepository {
         &self,
         owner_name: &str,
         project_name: &str,
+        actor_id: Option<i64>,
         query: &str,
         search_type: &str,
         limit: usize,
@@ -2597,9 +2745,16 @@ impl AppRepository {
             return Ok(None);
         };
 
-        self.list_assignable_users_for_project(&project_record, None, query, search_type, limit)
-            .await
-            .map(Some)
+        self.list_assignable_users_for_project(
+            &project_record,
+            actor_id,
+            None,
+            query,
+            search_type,
+            limit,
+        )
+        .await
+        .map(Some)
     }
 
     pub async fn list_issue_assignable_users(
@@ -2607,6 +2762,7 @@ impl AppRepository {
         owner_name: &str,
         project_name: &str,
         issue_number: i64,
+        actor_id: Option<i64>,
         query: &str,
         search_type: &str,
         limit: usize,
@@ -2626,8 +2782,105 @@ impl AppRepository {
             None => None,
         };
 
+        if query.trim().is_empty() {
+            let actor = match actor_id {
+                Some(actor_id) => n4user::Entity::find_by_id(actor_id).one(&self.db).await?,
+                None => None,
+            };
+            let issue_author = match issue_model.author_id {
+                Some(author_id) => n4user::Entity::find_by_id(author_id).one(&self.db).await?,
+                None => None,
+            };
+            let current_assignee = match current_assignee_user_id {
+                Some(user_id) => n4user::Entity::find_by_id(user_id).one(&self.db).await?,
+                None => None,
+            };
+
+            let mut items = Vec::new();
+            if current_assignee.is_some() {
+                if let (Some(actor), Some(assignee)) = (actor.as_ref(), current_assignee.as_ref()) {
+                    if actor.id != assignee.id {
+                        items.push(issue_assignable_custom_user_record(
+                            actor,
+                            "issue.assignToMe",
+                        ));
+                    }
+                }
+                if let (Some(author), Some(actor), Some(assignee)) = (
+                    issue_author.as_ref(),
+                    actor.as_ref(),
+                    current_assignee.as_ref(),
+                ) {
+                    if author.id != actor.id && author.id != assignee.id {
+                        items.push(issue_assignable_custom_user_record(
+                            author,
+                            "issue.assignToAuthor",
+                        ));
+                    }
+                }
+                items.push(issue_assignable_no_assignee_record());
+                if let Some(assignee) = current_assignee.as_ref() {
+                    items.push(issue_assignable_user_record(assignee.clone()));
+                }
+            } else {
+                if let Some(actor) = actor.as_ref() {
+                    items.push(issue_assignable_custom_user_record(
+                        actor,
+                        "issue.assignToMe",
+                    ));
+                }
+                if let (Some(author), Some(actor)) = (issue_author.as_ref(), actor.as_ref()) {
+                    if author.id != actor.id {
+                        items.push(issue_assignable_custom_user_record(
+                            author,
+                            "issue.assignToAuthor",
+                        ));
+                    }
+                }
+            }
+
+            let assignable_user_ids = self.assignable_member_user_ids(&project_record).await?;
+            let mut users = n4user::Entity::find()
+                .order_by_asc(n4user::Column::LoginId)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter(|user| {
+                    assignable_user_ids.contains(&user.id)
+                        || current_assignee_user_id == Some(user.id)
+                })
+                .filter(|user| current_assignee_user_id == Some(user.id) || n4user_is_active(user))
+                .map(issue_assignable_user_record)
+                .collect::<Vec<_>>();
+            users.sort_by(|left, right| {
+                normalize_identity(&left.display_name)
+                    .cmp(&normalize_identity(&right.display_name))
+                    .then_with(|| {
+                        normalize_identity(&left.login_id).cmp(&normalize_identity(&right.login_id))
+                    })
+            });
+            items.extend(users);
+            let mut seen = HashSet::new();
+            items.retain(|item| {
+                seen.insert((
+                    item.avatar_url.clone(),
+                    item.display_name.clone(),
+                    item.item_type.clone(),
+                    item.login_id.clone(),
+                    item.pure_name_only.clone(),
+                ))
+            });
+            let total = items.len() as u32;
+            return Ok(Some(IssueAssignableUserSearchRecord {
+                items,
+                total,
+                truncated: false,
+            }));
+        }
+
         self.list_assignable_users_for_project(
             &project_record,
+            actor_id,
             current_assignee_user_id,
             query,
             search_type,
@@ -2663,7 +2916,7 @@ impl AppRepository {
             }));
         }
 
-        let mut matches = n4user::Entity::find()
+        let mut user_matches = n4user::Entity::find()
             .order_by_asc(n4user::Column::LoginId)
             .all(&self.db)
             .await?
@@ -2672,22 +2925,27 @@ impl AppRepository {
             .filter(|user| issue_assignable_user_matches(user, query, search_type))
             .map(issue_assignable_user_record)
             .collect::<Vec<_>>();
-        matches.extend(
-            self.list_projects()
-                .await?
-                .into_iter()
-                .filter(|project| normalize_identity(&project.project_scope) == "public")
-                .filter(|project| {
-                    normalize_identity(&project.project_name).contains(&normalize_identity(query))
-                })
-                .map(issue_sharable_project_record),
-        );
-        let total = matches.len() as u32;
-        let truncated = matches.len() > limit;
-        matches.truncate(limit);
+        let mut project_matches = self
+            .list_projects()
+            .await?
+            .into_iter()
+            .filter(|project| normalize_identity(&project.project_scope) == "public")
+            .filter(|project| {
+                normalize_identity(&project.project_name).contains(&normalize_identity(query))
+            })
+            .map(issue_sharable_project_record)
+            .collect::<Vec<_>>();
+        let total = (user_matches.len() + project_matches.len()) as u32;
+        let truncated = user_matches.len() + project_matches.len() > limit;
+        if truncated {
+            let per_type_limit = limit / 2;
+            user_matches.truncate(per_type_limit);
+            project_matches.truncate(per_type_limit);
+        }
+        user_matches.extend(project_matches);
 
         Ok(Some(IssueAssignableUserSearchRecord {
-            items: matches,
+            items: user_matches,
             total,
             truncated,
         }))
@@ -2972,6 +3230,66 @@ impl AppRepository {
         })
     }
 
+    pub async fn read_legacy_favorite_issue_target(
+        &self,
+        issue_id: i64,
+    ) -> Result<Option<(String, String, i64)>, DbErr> {
+        let Some(issue_row) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let Some(project_id) = issue_row.project_id else {
+            return Ok(None);
+        };
+        let Some(issue_number) = issue_row.number else {
+            return Ok(None);
+        };
+        let Some(project_row) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(owner_name) = project_row.owner else {
+            return Ok(None);
+        };
+        let Some(project_name) = project_row.name else {
+            return Ok(None);
+        };
+        Ok(Some((owner_name, project_name, issue_number)))
+    }
+
+    pub async fn list_legacy_favorite_issues_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<(i64, String, String)>, DbErr> {
+        let rows = favorite_issue::Entity::find()
+            .filter(favorite_issue::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(favorite_issue::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut issues = Vec::new();
+        for row in rows {
+            let Some(issue_id) = row.issue_id else {
+                continue;
+            };
+            let Some(issue_row) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+                continue;
+            };
+            let title = issue_row.title.unwrap_or_default();
+            let author_name = if let Some(author_id) = issue_row.author_id {
+                n4user::Entity::find_by_id(author_id)
+                    .one(&self.db)
+                    .await?
+                    .and_then(|user| user.name)
+                    .unwrap_or_else(|| issue_row.author_name.clone().unwrap_or_default())
+            } else {
+                issue_row.author_name.clone().unwrap_or_default()
+            };
+            issues.push((issue_id, title, author_name));
+        }
+        Ok(issues)
+    }
+
     pub async fn list_user_issue_candidates(
         &self,
         user_id: i64,
@@ -3106,6 +3424,7 @@ impl AppRepository {
                     assignee_id: None,
                     assignee_login_id: None,
                     author_login_id: None,
+                    draft_author_login_id: None,
                     label_ids: Vec::new(),
                     milestone_id: None,
                     page_num: 1,
@@ -3142,6 +3461,51 @@ impl AppRepository {
             .await
     }
 
+    pub async fn list_project_issue_parent_options(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        current_issue_number: Option<i64>,
+    ) -> Result<Vec<ProjectIssueParentOptionRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let current_issue = match current_issue_number.filter(|number| *number > 0) {
+            Some(number) => {
+                issue::Entity::find()
+                    .filter(issue::Column::ProjectId.eq(Some(project.id)))
+                    .filter(issue::Column::Number.eq(Some(number)))
+                    .one(&self.db)
+                    .await?
+            }
+            None => None,
+        };
+        let current_issue_id = current_issue.as_ref().map(|model| model.id);
+        let selected_parent_id = current_issue.as_ref().and_then(|model| model.parent_id);
+        let mut models = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .order_by_desc(issue::Column::Number)
+            .all(&self.db)
+            .await?;
+        models.retain(|model| {
+            Some(model.id) != current_issue_id
+                && (model.parent_id.is_none() || Some(model.id) == selected_parent_id)
+        });
+        models.truncate(300);
+        Ok(models
+            .into_iter()
+            .map(|model| ProjectIssueParentOptionRecord {
+                id: model.id,
+                issue_number: model.number.unwrap_or_default(),
+                selected: Some(model.id) == selected_parent_id,
+                title: model.title.unwrap_or_default(),
+            })
+            .collect())
+    }
+
     async fn list_project_issues_filtered_with_page_size(
         &self,
         owner_name: &str,
@@ -3155,6 +3519,7 @@ impl AppRepository {
             .await?
         else {
             return Ok(ProjectIssueListRecord {
+                draft_items: Vec::new(),
                 items: Vec::new(),
                 page_num: filter.page_num.max(1),
                 page_size: page_size.unwrap_or(DEFAULT_PAGE_SIZE),
@@ -3169,8 +3534,53 @@ impl AppRepository {
             .all(&self.db)
             .await?;
 
+        let can_show_drafts = filter.page_num.max(1) == 1
+            && filter
+                .state
+                .as_deref()
+                .map(normalize_identity)
+                .filter(|state| !state.is_empty())
+                .as_deref()
+                != Some("closed")
+            && filter
+                .author_login_id
+                .as_deref()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && filter
+                .assignee_login_id
+                .as_deref()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && filter.assignee_id.is_none()
+            && filter.milestone_id.is_none()
+            && filter.label_ids.is_empty();
+        let draft_author_login_id = filter
+            .draft_author_login_id
+            .as_deref()
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty());
+        let mut draft_items = Vec::new();
         let mut filtered = Vec::new();
         for model in models {
+            if model.is_draft.unwrap_or_default() != 0 {
+                if can_show_drafts
+                    && draft_author_login_id.as_deref()
+                        == model
+                            .author_login_id
+                            .as_deref()
+                            .map(normalize_identity)
+                            .as_deref()
+                {
+                    draft_items.push(
+                        self.project_issue_list_item_from_model(model, &project)
+                            .await?,
+                    );
+                }
+                continue;
+            }
             if filter.state.as_deref().is_some_and(|state| {
                 !state.trim().is_empty()
                     && issue_state_from_raw(model.state) != normalize_identity(state)
@@ -3227,29 +3637,10 @@ impl AppRepository {
                 continue;
             }
 
-            let (assignee_login_id, assignee_label) =
-                self.issue_assignee_summary(model.assignee_id).await?;
-            let (milestone_id, milestone_title) =
-                self.issue_milestone_summary(model.milestone_id).await?;
-            filtered.push(ProjectIssueListItemRecord {
-                assignee_label,
-                author_label: model.author_name.unwrap_or_default(),
-                author_login_id: model.author_login_id.unwrap_or_default(),
-                comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
-                created_label: format_workspace_date_label(model.created_date),
-                issue_number: model.number.unwrap_or_default(),
-                labels,
-                milestone_id,
-                milestone_title,
-                owner_name: project.owner_name.clone(),
-                project_name: project.project_name.clone(),
-                state: issue_state_from_raw(model.state),
-                title: model.title.unwrap_or_default(),
-                updated_label: format_workspace_date_label(model.updated_date),
-                voter_count: self.count_issue_voters(model.id).await?,
-                watcher_count: self.count_issue_watchers(model.id).await?,
-            });
-            drop(assignee_login_id);
+            filtered.push(
+                self.project_issue_list_item_from_model(model, &project)
+                    .await?,
+            );
         }
 
         let page_num = filter.page_num.max(1);
@@ -3267,6 +3658,7 @@ impl AppRepository {
         };
 
         Ok(ProjectIssueListRecord {
+            draft_items,
             items,
             page_num,
             page_size: effective_page_size,
@@ -3336,6 +3728,44 @@ impl AppRepository {
                 .collect::<HashSet<_>>(),
             None => HashSet::new(),
         };
+        let mentioned_issue_ids = if let Some(user_id) = filter.mention_user_id {
+            let mention_rows = mention::Entity::find()
+                .filter(mention::Column::UserId.eq(Some(user_id)))
+                .all(&self.db)
+                .await?;
+            let mut issue_ids = HashSet::new();
+            let mut comment_ids = Vec::new();
+            for row in mention_rows {
+                let Some(resource_id) = row.resource_id.and_then(|value| value.parse::<i64>().ok())
+                else {
+                    continue;
+                };
+                let resource_type = row
+                    .resource_type
+                    .as_deref()
+                    .map(normalize_identity)
+                    .unwrap_or_default();
+                match resource_type.as_str() {
+                    "issue" | "issue_post" => {
+                        issue_ids.insert(resource_id);
+                    }
+                    "issue_comment" => comment_ids.push(resource_id),
+                    _ => {}
+                }
+            }
+            for comment in issue_comment::Entity::find()
+                .filter(issue_comment::Column::Id.is_in(comment_ids))
+                .all(&self.db)
+                .await?
+            {
+                if let Some(issue_id) = comment.issue_id {
+                    issue_ids.insert(issue_id);
+                }
+            }
+            issue_ids
+        } else {
+            HashSet::new()
+        };
 
         let rows = issue::Entity::find()
             .filter(issue::Column::ProjectId.is_in(project_by_id.keys().copied().map(Some)))
@@ -3365,6 +3795,9 @@ impl AppRepository {
                     .assignee_id
                     .is_some_and(|assignee_id| assignee_ids.contains(&assignee_id))
             {
+                continue;
+            }
+            if filter.mention_user_id.is_some() && !mentioned_issue_ids.contains(&row.id) {
                 continue;
             }
             if let Some(text_filter) = filter.filter.as_deref() {
@@ -3519,8 +3952,12 @@ impl AppRepository {
             return Ok(None);
         };
         let issue_number = self.next_issue_number(project_record.id).await?;
+        let is_draft = input.values.is_draft;
         let assignee_id = self
             .resolve_assignee_id(project_record.id, input.values.assignee_login_id.as_deref())
+            .await?;
+        let parent_id = self
+            .resolve_issue_parent_id(project_record.id, input.values.parent_issue_id, None)
             .await?;
         let now = current_datetime();
         let created = issue::ActiveModel {
@@ -3534,29 +3971,41 @@ impl AppRepository {
             project_id: Set(Some(project_record.id)),
             number: Set(Some(issue_number)),
             num_of_comments: Set(Some(0)),
-            state: Set(Some(issue_state_to_raw("open"))),
-            due_date: Set(None),
+            state: Set(Some(issue_state_to_raw(if is_draft {
+                "draft"
+            } else {
+                "open"
+            }))),
+            due_date: Set(input.values.due_date),
             milestone_id: Set(input.values.milestone_id.filter(|value| *value > 0)),
             assignee_id: Set(assignee_id),
-            parent_id: Set(None),
+            parent_id: Set(parent_id),
             weight: Set(None),
             updated_by_author_id: Set(Some(input.actor_id)),
-            is_draft: Set(Some(0)),
+            is_draft: Set(Some(if is_draft { 1 } else { 0 })),
         }
         .insert(&self.db)
         .await?;
         self.write_text_column("issue", "body", created.id, &input.values.body_markdown)
             .await?;
-        self.sync_mentions_and_notify(
-            input.actor_id,
-            "issue_post",
-            created.id,
-            &input.values.body_markdown,
-            "NEW_ISSUE",
-            "",
-            &input.values.body_markdown,
-        )
-        .await?;
+        if is_draft {
+            let mentioned_user_ids = self
+                .mentioned_active_user_ids(&input.values.body_markdown)
+                .await?;
+            self.sync_mentions_for_resource("issue_post", created.id, mentioned_user_ids)
+                .await?;
+        } else {
+            self.sync_mentions_and_notify(
+                input.actor_id,
+                "issue_post",
+                created.id,
+                &input.values.body_markdown,
+                "NEW_ISSUE",
+                "",
+                &input.values.body_markdown,
+            )
+            .await?;
+        }
 
         let mut project_active = project::ActiveModel {
             id: Set(project_record.id),
@@ -3595,8 +4044,12 @@ impl AppRepository {
                     assignee_login_id: None,
                     attachment_ids: Vec::new(),
                     body_markdown: input.body_markdown,
+                    due_date: None,
                     label_ids: Vec::new(),
+                    is_draft: false,
+                    is_publish: false,
                     milestone_id: None,
+                    parent_issue_id: None,
                     title: input.title,
                 },
             })
@@ -3623,7 +4076,15 @@ impl AppRepository {
         let assignee_id = self
             .resolve_assignee_id(project_record.id, input.values.assignee_login_id.as_deref())
             .await?;
+        let parent_id = self
+            .resolve_issue_parent_id(
+                project_record.id,
+                input.values.parent_issue_id,
+                Some(model.id),
+            )
+            .await?;
         let old_state = issue_state_from_raw(model.state);
+        let was_draft = model.is_draft.unwrap_or_default() != 0;
         let old_assignee = model.assignee_id;
         let old_milestone = model.milestone_id;
         let old_body = self.read_text_column("issue", "body", model.id).await?;
@@ -3640,7 +4101,21 @@ impl AppRepository {
         let mut active = issue::ActiveModel::from(model);
         active.title = Set(Some(input.values.title.trim().to_string()));
         active.assignee_id = Set(assignee_id);
+        active.due_date = Set(input.values.due_date);
         active.milestone_id = Set(input.values.milestone_id.filter(|value| *value > 0));
+        active.parent_id = Set(parent_id);
+        if input.values.is_publish {
+            active.created_date = Set(Some(current_datetime()));
+            active.is_draft = Set(Some(0));
+            active.state = Set(Some(issue_state_to_raw("open")));
+            if was_draft {
+                let next_issue_number = self.next_issue_number(project_record.id).await?;
+                active.number = Set(Some(next_issue_number));
+            }
+        } else if input.values.is_draft {
+            active.is_draft = Set(Some(1));
+            active.state = Set(Some(issue_state_to_raw("draft")));
+        }
         active.updated_date = Set(Some(current_datetime()));
         let mut updated = active.update(&self.db).await?;
         self.write_text_column("issue", "body", updated.id, &input.values.body_markdown)
@@ -3653,16 +4128,41 @@ impl AppRepository {
         )
         .await?;
         updated.history = next_history;
-        self.sync_mentions_and_notify(
-            actor_id,
-            "issue_post",
-            updated.id,
-            &input.values.body_markdown,
-            "ISSUE_BODY_CHANGED",
-            &old_body,
-            &input.values.body_markdown,
-        )
-        .await?;
+        if updated.is_draft.unwrap_or_default() != 0 {
+            let mentioned_user_ids = self
+                .mentioned_active_user_ids(&input.values.body_markdown)
+                .await?;
+            self.sync_mentions_for_resource("issue_post", updated.id, mentioned_user_ids)
+                .await?;
+        } else if input.values.is_publish && was_draft {
+            self.sync_mentions_and_notify(
+                actor_id,
+                "issue_post",
+                updated.id,
+                &input.values.body_markdown,
+                "NEW_ISSUE",
+                "",
+                &input.values.body_markdown,
+            )
+            .await?;
+            let mut project_active = project::ActiveModel {
+                id: Set(project_record.id),
+                ..Default::default()
+            };
+            project_active.last_issue_number = Set(updated.number);
+            project_active.update(&self.db).await?;
+        } else {
+            self.sync_mentions_and_notify(
+                actor_id,
+                "issue_post",
+                updated.id,
+                &input.values.body_markdown,
+                "ISSUE_BODY_CHANGED",
+                &old_body,
+                &input.values.body_markdown,
+            )
+            .await?;
+        }
 
         self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
@@ -4482,7 +4982,7 @@ impl AppRepository {
             author_name: Set(Some(input.actor_display_name)),
             posting_id: Set(Some(posting_model.id)),
             project_id: Set(project_record.id),
-            parent_comment_id: Set(None),
+            parent_comment_id: Set(input.parent_comment_id),
             ..Default::default()
         }
         .insert(&self.db)
@@ -4537,6 +5037,7 @@ impl AppRepository {
                 attachment_ids: Vec::new(),
                 contents_markdown: input.contents_markdown.clone(),
                 owner_name: input.owner_name.clone(),
+                parent_comment_id: None,
                 post_number: input.post_number,
                 project_name: input.project_name.clone(),
             })
@@ -5668,6 +6169,78 @@ impl AppRepository {
         Ok(None)
     }
 
+    pub async fn read_organization_by_id(
+        &self,
+        organization_id: i64,
+    ) -> Result<Option<OrganizationRecord>, DbErr> {
+        let Some(row) = organization::Entity::find_by_id(organization_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(self.organization_record_from_model(row))
+    }
+
+    pub async fn toggle_favorite_organization(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+    ) -> Result<Option<bool>, DbErr> {
+        let Some(organization) = self.read_organization_by_id(organization_id).await? else {
+            return Ok(None);
+        };
+
+        if let Some(existing) = favorite_organization::Entity::find()
+            .filter(favorite_organization::Column::UserId.eq(Some(user_id)))
+            .filter(favorite_organization::Column::OrganizationId.eq(Some(organization.id)))
+            .one(&self.db)
+            .await?
+        {
+            favorite_organization::Entity::delete_by_id(existing.id)
+                .exec(&self.db)
+                .await?;
+            return Ok(Some(false));
+        }
+
+        favorite_organization::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user_id)),
+            organization_id: Set(Some(organization.id)),
+            organization_name: Set(Some(organization.organization_name)),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(Some(true))
+    }
+
+    pub async fn list_legacy_favorite_organizations_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<(i64, String)>, DbErr> {
+        let rows = favorite_organization::Entity::find()
+            .filter(favorite_organization::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(favorite_organization::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut organizations = Vec::new();
+        for row in rows {
+            let Some(organization_id) = row.organization_id else {
+                continue;
+            };
+            let organization_row = organization::Entity::find_by_id(organization_id)
+                .one(&self.db)
+                .await?;
+            let organization_name = row
+                .organization_name
+                .or_else(|| organization_row.as_ref().and_then(|item| item.name.clone()));
+            if let Some(organization_name) = organization_name {
+                organizations.push((organization_id, organization_name));
+            }
+        }
+        Ok(organizations)
+    }
+
     pub async fn add_organization_membership(
         &self,
         organization_id: i64,
@@ -6107,6 +6680,7 @@ impl AppRepository {
         };
 
         let mut viewer = OrganizationViewerRecord {
+            is_guest: false,
             is_organization_admin: false,
             is_organization_member: false,
             is_site_admin: false,
@@ -6115,6 +6689,7 @@ impl AppRepository {
 
         if let Some(actor_id) = actor_id {
             if let Some(user) = self.find_user_by_id(actor_id).await? {
+                viewer.is_guest = user.is_guest;
                 viewer.is_site_admin = user.is_site_admin;
             }
 
@@ -6229,6 +6804,7 @@ impl AppRepository {
         };
 
         let mut viewer = ProjectViewerRecord {
+            is_guest: false,
             is_organization_admin: false,
             is_organization_member: false,
             is_project_manager: false,
@@ -6239,8 +6815,9 @@ impl AppRepository {
         let mut is_favorited = false;
 
         if let Some(actor_id) = actor_id {
-            if let Some(user) = self.find_user_by_id(actor_id).await? {
-                viewer.is_site_admin = user.is_site_admin;
+            if let Some(user) = n4user::Entity::find_by_id(actor_id).one(&self.db).await? {
+                viewer.is_guest = user.is_guest.unwrap_or_default() != 0;
+                viewer.is_site_admin = self.user_is_site_admin(user.id).await?;
             }
 
             if let Some(organization_id) = project.organization_id {
@@ -7428,6 +8005,37 @@ impl AppRepository {
         Ok(projects)
     }
 
+    pub async fn list_legacy_favorite_projects_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<(i64, String, String)>, DbErr> {
+        let rows = favorite_project::Entity::find()
+            .filter(favorite_project::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(favorite_project::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut projects = Vec::new();
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+
+            let project_row = project::Entity::find_by_id(project_id)
+                .one(&self.db)
+                .await?;
+            let owner_name = row
+                .owner
+                .or_else(|| project_row.as_ref().and_then(|item| item.owner.clone()));
+            let project_name = row
+                .project_name
+                .or_else(|| project_row.as_ref().and_then(|item| item.name.clone()));
+            if let (Some(owner_name), Some(project_name)) = (owner_name, project_name) {
+                projects.push((project_id, owner_name, project_name));
+            }
+        }
+        Ok(projects)
+    }
+
     pub async fn list_recent_projects_for_user(
         &self,
         user_id: i64,
@@ -7765,6 +8373,7 @@ impl AppRepository {
         &self,
         project: &ProjectRecord,
         filter: PullRequestListFilter,
+        actor_id: Option<i64>,
     ) -> Result<PullRequestListRecord, DbErr> {
         const PAGE_SIZE: u32 = 15;
         let page_num = filter.page_num.max(1);
@@ -7778,6 +8387,44 @@ impl AppRepository {
             .as_deref()
             .map(normalize_identity)
             .filter(|value| !value.is_empty());
+        let open_count = self
+            .count_project_pull_requests_for_category(
+                project,
+                "open",
+                filter.contributor_id,
+                text_filter.as_deref(),
+            )
+            .await?;
+        let closed_count = self
+            .count_project_pull_requests_for_category(
+                project,
+                "closed",
+                filter.contributor_id,
+                text_filter.as_deref(),
+            )
+            .await?;
+        let sent_count = self
+            .count_project_pull_requests_for_category(
+                project,
+                "sent",
+                filter.contributor_id,
+                text_filter.as_deref(),
+            )
+            .await?;
+        let accepted_count = self
+            .count_project_pull_requests_for_category(
+                project,
+                "accepted",
+                filter.contributor_id,
+                text_filter.as_deref(),
+            )
+            .await?;
+        let contributors = self
+            .list_pull_request_contributors_for_project(project.id)
+            .await?;
+        let recently_pushed_branches = self
+            .list_recently_pushed_branches_for_pull_request_list(project, actor_id)
+            .await?;
         let project_column = if category == "sent" {
             pull_request::Column::FromProjectId
         } else {
@@ -7815,10 +8462,16 @@ impl AppRepository {
                 items.push(self.pull_request_list_item_from_model(row, project).await?);
             }
             return Ok(PullRequestListRecord {
+                accepted_count,
                 category,
+                closed_count,
+                contributors,
                 items,
+                open_count,
                 page_num,
                 page_size: PAGE_SIZE,
+                recently_pushed_branches,
+                sent_count,
                 total_count,
             });
         }
@@ -7862,12 +8515,190 @@ impl AppRepository {
             items.push(self.pull_request_list_item_from_model(row, project).await?);
         }
         Ok(PullRequestListRecord {
+            accepted_count,
             category,
+            closed_count,
+            contributors,
             items,
+            open_count,
             page_num,
             page_size: PAGE_SIZE,
+            recently_pushed_branches,
+            sent_count,
             total_count,
         })
+    }
+
+    async fn list_recently_pushed_branches_for_pull_request_list(
+        &self,
+        project: &ProjectRecord,
+        actor_id: Option<i64>,
+    ) -> Result<Vec<PullRequestPushedBranchRecord>, DbErr> {
+        let source_projects = if project.original_project_id.is_some() {
+            vec![project.clone()]
+        } else {
+            let Some(actor_id) = actor_id else {
+                return Ok(Vec::new());
+            };
+            let Some(actor) = n4user::Entity::find_by_id(actor_id).one(&self.db).await? else {
+                return Ok(Vec::new());
+            };
+            let Some(actor_login_id) = actor.login_id.filter(|value| !value.trim().is_empty())
+            else {
+                return Ok(Vec::new());
+            };
+            let rows = project::Entity::find()
+                .filter(project::Column::Owner.eq(actor_login_id))
+                .filter(project::Column::OriginalProjectId.eq(Some(project.id)))
+                .all(&self.db)
+                .await?;
+            let mut projects = Vec::new();
+            for row in rows {
+                if let Some(record) = self.project_record_from_model(row).await? {
+                    projects.push(record);
+                }
+            }
+            projects
+        };
+        if source_projects.is_empty() {
+            return Ok(Vec::new());
+        }
+        let project_by_id = source_projects
+            .into_iter()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+        let cutoff = SystemTime::now()
+            .checked_sub(Duration::from_millis(
+                PROJECT_PUSHED_BRANCH_DRAFT_TIME_IN_MILLIS as u64,
+            ))
+            .unwrap_or(SystemTime::UNIX_EPOCH);
+        let cutoff = DateTimeUtc::from(cutoff).naive_utc();
+        let rows = project_pushed_branch::Entity::find()
+            .filter(
+                project_pushed_branch::Column::ProjectId
+                    .is_in(project_by_id.keys().copied().map(Some)),
+            )
+            .filter(project_pushed_branch::Column::PushedDate.gt(cutoff))
+            .order_by_desc(project_pushed_branch::Column::PushedDate)
+            .order_by_desc(project_pushed_branch::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project) = project_by_id.get(&project_id) else {
+                continue;
+            };
+            let branch_name = row.name.unwrap_or_default();
+            if branch_name.trim().is_empty() {
+                continue;
+            }
+            records.push(PullRequestPushedBranchRecord {
+                branch_name: branch_name.clone(),
+                default_branch_project_id: project.original_project_id.unwrap_or(project.id),
+                id: row.id,
+                owner_name: project.owner_name.clone(),
+                project_name: project.project_name.clone(),
+                pushed_label: format_workspace_date_label(row.pushed_date),
+                short_name: branch_name
+                    .strip_prefix("refs/heads/")
+                    .unwrap_or(&branch_name)
+                    .to_string(),
+            });
+        }
+        Ok(records)
+    }
+
+    async fn list_pull_request_contributors_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<PullRequestUserRecord>, DbErr> {
+        let rows = pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?;
+        let mut contributor_ids = rows
+            .into_iter()
+            .filter_map(|row| row.contributor_id)
+            .collect::<Vec<_>>();
+        contributor_ids.sort_unstable();
+        contributor_ids.dedup();
+        let mut contributors = Vec::new();
+        for contributor_id in contributor_ids {
+            let contributor = self
+                .user_record_for_optional_id(Some(contributor_id))
+                .await?;
+            if contributor.login_id.is_empty() && contributor.user_label.is_empty() {
+                continue;
+            }
+            contributors.push(contributor);
+        }
+        contributors.sort_by(|left, right| {
+            left.user_label
+                .cmp(&right.user_label)
+                .then_with(|| left.login_id.cmp(&right.login_id))
+                .then_with(|| left.user_id.cmp(&right.user_id))
+        });
+        Ok(contributors)
+    }
+
+    async fn count_project_pull_requests_for_category(
+        &self,
+        project: &ProjectRecord,
+        category: &str,
+        contributor_id: Option<i64>,
+        text_filter: Option<&str>,
+    ) -> Result<u32, DbErr> {
+        let project_column = if category == "sent" || category == "accepted" {
+            pull_request::Column::FromProjectId
+        } else {
+            pull_request::Column::ToProjectId
+        };
+        let mut select = pull_request::Entity::find().filter(project_column.eq(Some(project.id)));
+        select = match category {
+            "closed" => select.filter(pull_request_closed_condition()),
+            "accepted" => select.filter(pull_request::Column::State.eq(Some(6))),
+            "sent" => select,
+            _ => select.filter(pull_request_open_condition()),
+        };
+        if let Some(contributor_id) = contributor_id {
+            select = select.filter(pull_request::Column::ContributorId.eq(Some(contributor_id)));
+        }
+        if text_filter.is_none() {
+            return Ok(select.count(&self.db).await? as u32);
+        }
+        let rows = select.all(&self.db).await?;
+        self.count_pull_request_rows_matching_filter(rows, text_filter)
+            .await
+    }
+
+    async fn count_pull_request_rows_matching_filter(
+        &self,
+        rows: Vec<pull_request::Model>,
+        text_filter: Option<&str>,
+    ) -> Result<u32, DbErr> {
+        let Some(text_filter) = text_filter else {
+            return Ok(rows.len() as u32);
+        };
+        let mut count = 0;
+        for row in rows {
+            let title_matches = row
+                .title
+                .as_deref()
+                .is_some_and(|title| normalize_identity(title).contains(text_filter));
+            let body_matches = normalize_identity(
+                &self
+                    .read_text_column("pull_request", "body", row.id)
+                    .await?,
+            )
+            .contains(text_filter);
+            if title_matches || body_matches {
+                count += 1;
+            }
+        }
+        Ok(count)
     }
 
     pub async fn latest_pull_requests_from_branches(
@@ -7939,10 +8770,16 @@ impl AppRepository {
             .collect::<HashMap<_, _>>();
         if project_by_id.is_empty() {
             return Ok(PullRequestListRecord {
+                accepted_count: 0,
                 category,
+                closed_count: 0,
+                contributors: Vec::new(),
                 items: Vec::new(),
+                open_count: 0,
                 page_num,
                 page_size: PAGE_SIZE,
+                recently_pushed_branches: Vec::new(),
+                sent_count: 0,
                 total_count: 0,
             });
         }
@@ -7951,6 +8788,20 @@ impl AppRepository {
             .as_deref()
             .map(normalize_identity)
             .filter(|value| !value.is_empty());
+        let open_count = self
+            .count_organization_pull_requests_for_category(
+                project_by_id.keys().copied().collect::<Vec<_>>(),
+                "open",
+                text_filter.as_deref(),
+            )
+            .await?;
+        let closed_count = self
+            .count_organization_pull_requests_for_category(
+                project_by_id.keys().copied().collect::<Vec<_>>(),
+                "closed",
+                text_filter.as_deref(),
+            )
+            .await?;
         let mut select = pull_request::Entity::find().filter(
             pull_request::Column::ToProjectId.is_in(project_by_id.keys().copied().map(Some)),
         );
@@ -7977,10 +8828,16 @@ impl AppRepository {
                 }
             }
             return Ok(PullRequestListRecord {
+                accepted_count: 0,
                 category,
+                closed_count,
+                contributors: Vec::new(),
                 items,
+                open_count,
                 page_num,
                 page_size: PAGE_SIZE,
+                recently_pushed_branches: Vec::new(),
+                sent_count: 0,
                 total_count,
             });
         }
@@ -8025,12 +8882,42 @@ impl AppRepository {
             );
         }
         Ok(PullRequestListRecord {
+            accepted_count: 0,
             category,
+            closed_count,
+            contributors: Vec::new(),
             items,
+            open_count,
             page_num,
             page_size: PAGE_SIZE,
+            recently_pushed_branches: Vec::new(),
+            sent_count: 0,
             total_count,
         })
+    }
+
+    async fn count_organization_pull_requests_for_category(
+        &self,
+        project_ids: Vec<i64>,
+        category: &str,
+        text_filter: Option<&str>,
+    ) -> Result<u32, DbErr> {
+        if project_ids.is_empty() {
+            return Ok(0);
+        }
+        let mut select = pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.is_in(project_ids.into_iter().map(Some)));
+        select = if category == "closed" {
+            select.filter(pull_request_closed_condition())
+        } else {
+            select.filter(pull_request_open_condition())
+        };
+        if text_filter.is_none() {
+            return Ok(select.count(&self.db).await? as u32);
+        }
+        let rows = select.all(&self.db).await?;
+        self.count_pull_request_rows_matching_filter(rows, text_filter)
+            .await
     }
 
     pub async fn read_pull_request_detail(
@@ -8688,6 +9575,44 @@ impl AppRepository {
         .await?;
         let comments = self.list_review_comments(updated.id).await?;
         self.review_thread_record(updated, comments).await.map(Some)
+    }
+
+    pub async fn read_review_thread_route_context(
+        &self,
+        thread_id: i64,
+    ) -> Result<Option<ReviewThreadRouteContext>, DbErr> {
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let pull_request = if let Some(pull_request_id) = thread.pull_request_id {
+            pull_request::Entity::find_by_id(pull_request_id)
+                .one(&self.db)
+                .await?
+        } else {
+            None
+        };
+        let project_id = thread
+            .project_id
+            .or_else(|| pull_request.as_ref().and_then(|row| row.to_project_id));
+        let Some(project_id) = project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+
+        Ok(Some(ReviewThreadRouteContext {
+            author_id: thread.author_id,
+            commit_id: thread.commit_id.unwrap_or_default(),
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+            pull_request_number: pull_request.and_then(|row| row.number),
+            thread_id: thread.id,
+        }))
     }
 
     pub async fn list_commit_discussion_threads(
@@ -9862,6 +10787,24 @@ impl AppRepository {
             .and_then(|row| row.token))
     }
 
+    pub async fn read_user_id_by_api_token(&self, token: &str) -> Result<Option<i64>, DbErr> {
+        let token = token.trim();
+        if token.is_empty() {
+            return Ok(None);
+        }
+        Ok(n4user::Entity::find()
+            .filter(n4user::Column::Token.eq(Some(token.to_string())))
+            .one(&self.db)
+            .await?
+            .filter(|user| {
+                !matches!(
+                    normalize_optional(user.state.as_deref()).as_deref(),
+                    Some("locked" | "deleted")
+                )
+            })
+            .map(|row| row.id))
+    }
+
     pub async fn reset_api_token_for_user(&self, user_id: i64) -> Result<String, DbErr> {
         let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
             return Err(DbErr::Custom("User not found.".to_string()));
@@ -10596,6 +11539,11 @@ impl AppRepository {
             for row in existing {
                 watch::Entity::delete_by_id(row.id).exec(&self.db).await?;
             }
+            user_project_notification::Entity::delete_many()
+                .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
+                .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+                .exec(&self.db)
+                .await?;
         }
 
         Ok(())
@@ -10818,6 +11766,19 @@ impl AppRepository {
             .exec(&self.db)
             .await?;
         Ok(())
+    }
+
+    pub async fn delete_project_pushed_branch_by_id(
+        &self,
+        project_id: i64,
+        pushed_branch_id: i64,
+    ) -> Result<bool, DbErr> {
+        let result = project_pushed_branch::Entity::delete_many()
+            .filter(project_pushed_branch::Column::ProjectId.eq(Some(project_id)))
+            .filter(project_pushed_branch::Column::Id.eq(pushed_branch_id))
+            .exec(&self.db)
+            .await?;
+        Ok(result.rows_affected > 0)
     }
 
     pub async fn upsert_project_pushed_branch(
@@ -11380,6 +12341,7 @@ impl AppRepository {
             display_name: model.name.unwrap_or_default(),
             email_address: model.email.unwrap_or_default(),
             is_confirmed: normalize_optional(model.state.as_deref()).as_deref() == Some("active"),
+            is_guest: model.is_guest.unwrap_or_default() != 0,
             is_site_admin,
             login_id: model.login_id.unwrap_or_default(),
             password_hash: model.password.unwrap_or_default(),
@@ -11641,6 +12603,21 @@ impl AppRepository {
         let assignee_email_address = self.issue_assignee_email_address(model.assignee_id).await?;
         let (milestone_id, milestone_title) =
             self.issue_milestone_summary(model.milestone_id).await?;
+        let parent_issue_id = model.parent_id;
+        let (parent_issue_number, parent_issue_title) =
+            self.issue_parent_summary(parent_issue_id).await?;
+        let parent_group_issue_id = parent_issue_id.unwrap_or(model.id);
+        let child_issues = self
+            .list_issue_child_records(parent_group_issue_id, &author_login_id)
+            .await?;
+        let child_open_count = child_issues
+            .iter()
+            .filter(|child| child.state == "open")
+            .count() as u32;
+        let child_closed_count = child_issues
+            .iter()
+            .filter(|child| child.state == "closed")
+            .count() as u32;
         let labels = self.list_issue_labels(model.id).await?;
         let sharers = self.list_issue_sharers(model.id).await?;
         let comments = self.list_issue_comments(model.id, viewer_id).await?;
@@ -11648,7 +12625,8 @@ impl AppRepository {
         let attachments = self
             .list_issue_attachments(ISSUE_ATTACHMENT_CONTAINER, model.id)
             .await?;
-        let voter_count = self.count_issue_voters(model.id).await?;
+        let voters = self.list_issue_voters(model.id, viewer_id).await?;
+        let voter_count = voters.len() as u32;
         let watcher_count = self.count_issue_watchers(model.id).await?;
         let has_voted = match viewer_id {
             Some(user_id) => issue_voter::Entity::find_by_id((model.id, user_id))
@@ -11678,25 +12656,117 @@ impl AppRepository {
             body_markdown: self.read_text_column("issue", "body", model.id).await?,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments,
+            due_date_label: format_workspace_date_label(model.due_date),
             has_voted,
             history_markdown: self.read_text_column("issue", "history", model.id).await?,
             id: model.id,
             is_favorited,
             is_watching,
             issue_number: model.number.unwrap_or_default(),
+            is_draft: model.is_draft.unwrap_or_default() != 0,
             labels,
             sharers,
             milestone_id,
             milestone_title,
             owner_name: project.owner_name.clone(),
+            parent_issue_id: model.parent_id,
+            parent_issue_number,
+            parent_issue_title,
+            child_closed_count,
+            child_issues,
+            child_open_count,
             project_name: project.project_name.clone(),
-            state: issue_state_from_raw(model.state),
+            state: if model.is_draft.unwrap_or_default() != 0 {
+                "draft".to_string()
+            } else {
+                issue_state_from_raw(model.state)
+            },
             timeline,
             title: model.title.unwrap_or_default(),
             updated_label: format_workspace_date_label(model.updated_date),
             voter_count,
+            voters,
             watcher_count,
+            weight: model.weight.unwrap_or_default(),
         })
+    }
+
+    pub async fn update_issue_weight(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        delta: i16,
+        viewer_id: Option<i64>,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let next_weight = model.weight.unwrap_or_default().saturating_add(delta);
+        let mut active = issue::ActiveModel::from(model);
+        active.weight = Set(Some(next_weight));
+        active.updated_date = Set(Some(current_datetime()));
+        active.update(&self.db).await?;
+        self.read_issue_detail_for_viewer(
+            &project_record.owner_name,
+            &project_record.project_name,
+            issue_number,
+            viewer_id,
+        )
+        .await
+    }
+
+    async fn list_issue_child_records(
+        &self,
+        parent_issue_id: i64,
+        viewer_login_id: &str,
+    ) -> Result<Vec<IssueChildRecord>, DbErr> {
+        let rows = issue::Entity::find()
+            .filter(issue::Column::ParentId.eq(Some(parent_issue_id)))
+            .order_by_asc(issue::Column::State)
+            .order_by_desc(issue::Column::CreatedDate)
+            .order_by_desc(issue::Column::Number)
+            .all(&self.db)
+            .await?;
+        let viewer_login_id = normalize_identity(viewer_login_id);
+        let mut items = Vec::new();
+        for row in rows {
+            let is_draft = row.is_draft.unwrap_or_default() != 0;
+            if is_draft
+                && row
+                    .author_login_id
+                    .as_deref()
+                    .map(normalize_identity)
+                    .as_deref()
+                    != Some(viewer_login_id.as_str())
+            {
+                continue;
+            }
+            let (_assignee_login_id, assignee_label) =
+                self.issue_assignee_summary(row.assignee_id).await?;
+            items.push(IssueChildRecord {
+                assignee_label,
+                created_label: format_workspace_date_label(row.created_date),
+                is_draft,
+                issue_number: row.number.unwrap_or_default(),
+                labels: self.list_issue_labels(row.id).await?,
+                state: if is_draft {
+                    "draft".to_string()
+                } else {
+                    issue_state_from_raw(row.state)
+                },
+                title: row.title.unwrap_or_default(),
+            });
+        }
+        items.sort_by(|a, b| {
+            child_issue_state_order(&a.state)
+                .cmp(&child_issue_state_order(&b.state))
+                .then_with(|| b.issue_number.cmp(&a.issue_number))
+        });
+        Ok(items)
     }
 
     async fn read_project_pull_request_model(
@@ -11725,6 +12795,7 @@ impl AppRepository {
     ) -> Result<PullRequestUserRecord, DbErr> {
         let Some(user_id) = user_id else {
             return Ok(PullRequestUserRecord {
+                email_address: String::new(),
                 login_id: String::new(),
                 user_id: 0,
                 user_label: String::new(),
@@ -11734,11 +12805,13 @@ impl AppRepository {
             .find_user_by_id(user_id)
             .await?
             .map(|user| PullRequestUserRecord {
+                email_address: user.email_address,
                 login_id: user.login_id,
                 user_id: user.id,
                 user_label: user.display_name,
             })
             .unwrap_or(PullRequestUserRecord {
+                email_address: String::new(),
                 login_id: String::new(),
                 user_id,
                 user_label: String::new(),
@@ -11761,12 +12834,18 @@ impl AppRepository {
             .filter(comment_thread::Column::PullRequestId.eq(Some(row.id)))
             .count(&self.db)
             .await? as u32;
+        let closed_comment_thread_count = comment_thread::Entity::find()
+            .filter(comment_thread::Column::PullRequestId.eq(Some(row.id)))
+            .filter(review_thread_closed_condition())
+            .count(&self.db)
+            .await? as u32;
         let reviewer_count = pull_request_reviewers::Entity::find()
             .filter(pull_request_reviewers::Column::PullRequestId.eq(row.id))
             .count(&self.db)
             .await? as u32;
 
         Ok(PullRequestListItemRecord {
+            closed_comment_thread_count,
             comment_thread_count,
             conflict: row.is_conflict.unwrap_or_default() != 0,
             contributor_label: contributor.user_label,
@@ -11923,6 +13002,9 @@ impl AppRepository {
                 .await?
                 .is_some();
             comments.push(ReviewCommentRecord {
+                attachments: self
+                    .list_issue_attachments(REVIEW_COMMENT_ATTACHMENT_CONTAINER, row.id)
+                    .await?,
                 author_id: row.author_id,
                 author_label: row.author_name.unwrap_or_default(),
                 author_login_id: row.author_login_id.unwrap_or_default(),
@@ -11943,10 +13025,24 @@ impl AppRepository {
         row: comment_thread::Model,
         comments: Vec<ReviewCommentRecord>,
     ) -> Result<ReviewThreadRecord, DbErr> {
+        let author_id = row.author_id;
+        let author_login_id = row.author_login_id.unwrap_or_default();
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
+        let pull_request_number = if let Some(pull_request_id) = row.pull_request_id {
+            pull_request::Entity::find_by_id(pull_request_id)
+                .one(&self.db)
+                .await?
+                .and_then(|pull_request| pull_request.number)
+        } else {
+            None
+        };
         Ok(ReviewThreadRecord {
-            author_id: row.author_id,
+            author_id,
+            author_email_address,
             author_label: row.author_name.unwrap_or_default(),
-            author_login_id: row.author_login_id.unwrap_or_default(),
+            author_login_id,
             comments,
             commit_id: row.commit_id.unwrap_or_default(),
             created_label: format_workspace_date_label(row.created_date),
@@ -11955,6 +13051,7 @@ impl AppRepository {
             id: row.id,
             path: row.path.unwrap_or_default(),
             prev_commit_id: row.prev_commit_id.unwrap_or_default(),
+            pull_request_number,
             start_line: row.start_line,
             start_side: row.start_side,
             state: review_thread_state(row.state.as_deref()),
@@ -11973,16 +13070,52 @@ impl AppRepository {
             .await?;
         let mut commits = Vec::new();
         for row in rows {
-            commits.push(PullRequestCommitRecord {
-                author_date_label: format_workspace_date_label(row.author_date.or(row.created)),
-                author_email: row.author_email.unwrap_or_default(),
-                commit_id: row.commit_id.unwrap_or_default(),
-                commit_message: self
-                    .read_text_column("pull_request_commit", "commit_message", row.id)
-                    .await?,
-                commit_short_id: row.commit_short_id.unwrap_or_default(),
-                state: row.state.unwrap_or_default(),
-            });
+            commits.push(self.pull_request_commit_record_from_model(row).await?);
+        }
+        Ok(commits)
+    }
+
+    async fn pull_request_commit_record_from_model(
+        &self,
+        row: pull_request_commit::Model,
+    ) -> Result<PullRequestCommitRecord, DbErr> {
+        Ok(PullRequestCommitRecord {
+            author_date_label: format_workspace_date_label(row.author_date.or(row.created)),
+            author_email: row.author_email.unwrap_or_default(),
+            commit_id: row.commit_id.unwrap_or_default(),
+            commit_message: self
+                .read_text_column("pull_request_commit", "commit_message", row.id)
+                .await?,
+            commit_short_id: row.commit_short_id.unwrap_or_default(),
+            id: row.id,
+            state: row.state.unwrap_or_default(),
+        })
+    }
+
+    async fn list_pull_request_event_commits(
+        &self,
+        event_type: &str,
+        new_value: &str,
+    ) -> Result<Vec<PullRequestCommitRecord>, DbErr> {
+        if event_type != "PULL_REQUEST_COMMIT_CHANGED" {
+            return Ok(Vec::new());
+        }
+        let commit_row_ids = new_value
+            .split(',')
+            .filter_map(|value| value.trim().parse::<i64>().ok())
+            .collect::<Vec<_>>();
+        if commit_row_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let rows = pull_request_commit::Entity::find()
+            .filter(pull_request_commit::Column::Id.is_in(commit_row_ids))
+            .order_by_desc(pull_request_commit::Column::AuthorDate)
+            .order_by_desc(pull_request_commit::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut commits = Vec::new();
+        for row in rows {
+            commits.push(self.pull_request_commit_record_from_model(row).await?);
         }
         Ok(commits)
     }
@@ -11999,13 +13132,19 @@ impl AppRepository {
             .await?;
         let mut events = Vec::new();
         for row in rows {
+            let event_type = row.event_type.unwrap_or_default();
+            let new_value = self
+                .read_text_column("pull_request_event", "new_value", row.id)
+                .await?;
+            let commits = self
+                .list_pull_request_event_commits(&event_type, &new_value)
+                .await?;
             events.push(PullRequestEventRecord {
+                commits,
                 created_label: format_workspace_date_label(row.created),
-                event_type: row.event_type.unwrap_or_default(),
+                event_type,
                 id: row.id,
-                new_value: self
-                    .read_text_column("pull_request_event", "new_value", row.id)
-                    .await?,
+                new_value,
                 old_value: self
                     .read_text_column("pull_request_event", "old_value", row.id)
                     .await?,
@@ -12020,28 +13159,67 @@ impl AppRepository {
         model: issue::Model,
         project: &ProjectRecord,
     ) -> Result<ProjectIssueListItemRecord, DbErr> {
+        let author_id = model.author_id;
+        let author_login_id = model.author_login_id.unwrap_or_default();
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
         let labels = self.list_issue_labels(model.id).await?;
-        let (_assignee_login_id, assignee_label) =
+        let (assignee_login_id, assignee_label) =
             self.issue_assignee_summary(model.assignee_id).await?;
+        let assignee_email_address = self.issue_assignee_email_address(model.assignee_id).await?;
         let (milestone_id, milestone_title) =
             self.issue_milestone_summary(model.milestone_id).await?;
+        let (parent_issue_number, parent_issue_title) =
+            self.issue_parent_summary(model.parent_id).await?;
+        let due_date = model.due_date;
+        let child_issues = self
+            .list_issue_child_records(model.id, &author_login_id)
+            .await?;
+        let child_open_count = child_issues
+            .iter()
+            .filter(|child| child.state == "open")
+            .count() as u32;
+        let child_closed_count = child_issues
+            .iter()
+            .filter(|child| child.state == "closed")
+            .count() as u32;
         Ok(ProjectIssueListItemRecord {
             assignee_label,
+            assignee_email_address,
+            assignee_login_id,
+            author_email_address,
             author_label: model.author_name.unwrap_or_default(),
-            author_login_id: model.author_login_id.unwrap_or_default(),
+            child_closed_count,
+            child_issues,
+            child_open_count,
+            author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
+            due_date_label: format_workspace_date_label(due_date),
+            due_date_overdue: due_date
+                .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
+            id: model.id,
+            is_draft: model.is_draft.unwrap_or_default() != 0,
             issue_number: model.number.unwrap_or_default(),
             labels,
             milestone_id,
             milestone_title,
             owner_name: project.owner_name.clone(),
+            parent_issue_number,
+            parent_issue_title,
+            project_id: project.id,
             project_name: project.project_name.clone(),
-            state: issue_state_from_raw(model.state),
+            state: if model.is_draft.unwrap_or_default() != 0 {
+                "draft".to_string()
+            } else {
+                issue_state_from_raw(model.state)
+            },
             title: model.title.unwrap_or_default(),
             updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
             voter_count: self.count_issue_voters(model.id).await?,
             watcher_count: self.count_issue_watchers(model.id).await?,
+            weight: model.weight.unwrap_or_default(),
         })
     }
 
@@ -12458,6 +13636,37 @@ impl AppRepository {
         Ok(Some(created.id))
     }
 
+    async fn resolve_issue_parent_id(
+        &self,
+        project_id: i64,
+        parent_issue_id: Option<i64>,
+        current_issue_id: Option<i64>,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(parent_issue_id) = parent_issue_id.filter(|value| *value > 0) else {
+            return Ok(None);
+        };
+        if Some(parent_issue_id) == current_issue_id {
+            return Err(DbErr::Custom("issue cannot be its own parent".to_string()));
+        }
+        let Some(parent) = issue::Entity::find_by_id(parent_issue_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Err(DbErr::Custom("issue parent not found".to_string()));
+        };
+        if parent.project_id != Some(project_id) {
+            return Err(DbErr::Custom(
+                "issue parent must belong to the same project".to_string(),
+            ));
+        }
+        if parent.parent_id.is_some() {
+            return Err(DbErr::Custom(
+                "issue parent cannot be another subtask".to_string(),
+            ));
+        }
+        Ok(Some(parent.id))
+    }
+
     async fn issue_assignee_summary(
         &self,
         assignee_id: Option<i64>,
@@ -12520,6 +13729,22 @@ impl AppRepository {
             return Ok((None, String::new()));
         };
         Ok((Some(row.id), row.title.unwrap_or_default()))
+    }
+
+    async fn issue_parent_summary(
+        &self,
+        parent_issue_id: Option<i64>,
+    ) -> Result<(Option<i64>, String), DbErr> {
+        let Some(parent_issue_id) = parent_issue_id else {
+            return Ok((None, String::new()));
+        };
+        let Some(row) = issue::Entity::find_by_id(parent_issue_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok((None, String::new()));
+        };
+        Ok((row.number, row.title.unwrap_or_default()))
     }
 
     async fn list_issue_labels(&self, issue_id: i64) -> Result<Vec<IssueLabelRecord>, DbErr> {
@@ -12744,15 +13969,22 @@ impl AppRepository {
         model: posting::Model,
         project: &ProjectRecord,
     ) -> Result<ProjectPostingListItemRecord, DbErr> {
+        let author_id = model.author_id;
+        let author_login_id = model.author_login_id.unwrap_or_default();
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
         Ok(ProjectPostingListItemRecord {
+            author_email_address,
             author_label: model.author_name.unwrap_or_default(),
-            author_login_id: model.author_login_id.unwrap_or_default(),
+            author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
             labels: self.list_posting_labels(model.id).await?,
             notice: model.notice.unwrap_or_default() != 0,
             owner_name: project.owner_name.clone(),
             post_number: model.number.unwrap_or_default(),
+            project_id: project.id,
             project_name: project.project_name.clone(),
             readme: model.readme.unwrap_or_default() != 0,
             title: model.title.unwrap_or_default(),
@@ -12869,29 +14101,67 @@ impl AppRepository {
         model: issue::Model,
         project: &ProjectRecord,
     ) -> Result<ProjectIssueListItemRecord, DbErr> {
+        let author_id = model.author_id;
+        let author_login_id = model.author_login_id.unwrap_or_default();
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
         let (assignee_login_id, assignee_label) =
             self.issue_assignee_summary(model.assignee_id).await?;
+        let assignee_email_address = self.issue_assignee_email_address(model.assignee_id).await?;
         let (milestone_id, milestone_title) =
             self.issue_milestone_summary(model.milestone_id).await?;
+        let (parent_issue_number, parent_issue_title) =
+            self.issue_parent_summary(model.parent_id).await?;
+        let due_date = model.due_date;
+        let child_issues = self
+            .list_issue_child_records(model.id, &author_login_id)
+            .await?;
+        let child_open_count = child_issues
+            .iter()
+            .filter(|child| child.state == "open")
+            .count() as u32;
+        let child_closed_count = child_issues
+            .iter()
+            .filter(|child| child.state == "closed")
+            .count() as u32;
         let item = ProjectIssueListItemRecord {
             assignee_label,
+            assignee_email_address,
+            assignee_login_id,
+            author_email_address,
             author_label: model.author_name.unwrap_or_default(),
-            author_login_id: model.author_login_id.unwrap_or_default(),
+            child_closed_count,
+            child_issues,
+            child_open_count,
+            author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
+            due_date_label: format_workspace_date_label(due_date),
+            due_date_overdue: due_date
+                .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
+            id: model.id,
+            is_draft: model.is_draft.unwrap_or_default() != 0,
             issue_number: model.number.unwrap_or_default(),
             labels: self.list_issue_labels(model.id).await?,
             milestone_id,
             milestone_title,
             owner_name: project.owner_name.clone(),
+            parent_issue_number,
+            parent_issue_title,
+            project_id: project.id,
             project_name: project.project_name.clone(),
-            state: issue_state_from_raw(model.state),
+            state: if model.is_draft.unwrap_or_default() != 0 {
+                "draft".to_string()
+            } else {
+                issue_state_from_raw(model.state)
+            },
             title: model.title.unwrap_or_default(),
             updated_label: format_workspace_date_label(model.updated_date),
             voter_count: self.count_issue_voters(model.id).await?,
             watcher_count: self.count_issue_watchers(model.id).await?,
+            weight: model.weight.unwrap_or_default(),
         };
-        drop(assignee_login_id);
         Ok(item)
     }
 
@@ -13123,6 +14393,7 @@ impl AppRepository {
                 .await?,
             created_label: format_workspace_date_label(row.created_date),
             id: row.id,
+            parent_comment_id: row.parent_comment_id,
             via_email,
             viewer_has_voted,
             voter_count: voters.len() as u32,
@@ -13326,6 +14597,41 @@ impl AppRepository {
             .await? as u32)
     }
 
+    async fn list_issue_voters(
+        &self,
+        issue_id: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Vec<IssueVoterRecord>, DbErr> {
+        let rows = issue_voter::Entity::find()
+            .filter(issue_voter::Column::IssueId.eq(issue_id))
+            .all(&self.db)
+            .await?;
+        let mut voters = Vec::new();
+        for row in rows {
+            if let Some(user) = n4user::Entity::find_by_id(row.user_id)
+                .one(&self.db)
+                .await?
+            {
+                voters.push(IssueVoterRecord {
+                    email_address: user.email.unwrap_or_default(),
+                    login_id: user.login_id.unwrap_or_default(),
+                    user_id: user.id,
+                    user_label: user.name.unwrap_or_default(),
+                });
+            }
+        }
+        voters.sort_by(|left, right| {
+            let left_is_viewer = Some(left.user_id) == viewer_id;
+            let right_is_viewer = Some(right.user_id) == viewer_id;
+            right_is_viewer.cmp(&left_is_viewer).then(
+                left.login_id
+                    .cmp(&right.login_id)
+                    .then(left.user_id.cmp(&right.user_id)),
+            )
+        });
+        Ok(voters)
+    }
+
     async fn count_issue_watchers(&self, issue_id: i64) -> Result<u32, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
@@ -13471,6 +14777,206 @@ impl AppRepository {
                 .await?;
         }
         Ok(())
+    }
+
+    pub async fn resolve_legacy_resource_target(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
+        let Some(resource_id) = resource_id.parse::<i64>().ok() else {
+            return Ok(None);
+        };
+        let normalized_type = normalize_identity(resource_type);
+        match normalized_type.as_str() {
+            "project" => self.legacy_project_resource_target(resource_id).await,
+            "issue" | "issue_post" | "issue_comment" => {
+                self.legacy_issue_resource_target(&normalized_type, resource_id)
+                    .await
+            }
+            "posting" | "board_post" | "posting_comment" | "nonissue_comment" => {
+                self.legacy_posting_resource_target(&normalized_type, resource_id)
+                    .await
+            }
+            "pull_request" | "review_comment" => {
+                self.legacy_pull_request_resource_target(&normalized_type, resource_id)
+                    .await
+            }
+            _ => Ok(None),
+        }
+    }
+
+    async fn legacy_project_resource_target(
+        &self,
+        project_id: i64,
+    ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(LegacyResourceTargetRecord {
+            owner_name: project.owner_name.clone(),
+            project_id: project.id,
+            project_name: project.project_name.clone(),
+            target_path: format!("/{}/{}", project.owner_name, project.project_name),
+            target_title: project.project_name,
+        }))
+    }
+
+    async fn legacy_issue_resource_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
+        let issue_model = match resource_type {
+            "issue" | "issue_post" => issue::Entity::find_by_id(resource_id).one(&self.db).await?,
+            "issue_comment" => {
+                let Some(comment) = issue_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                match comment.issue_id {
+                    Some(issue_id) => issue::Entity::find_by_id(issue_id).one(&self.db).await?,
+                    None => None,
+                }
+            }
+            _ => None,
+        };
+        let Some(issue_model) = issue_model else {
+            return Ok(None);
+        };
+        let Some(project_id) = issue_model.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let issue_number = issue_model.number.unwrap_or_default();
+        Ok(Some(LegacyResourceTargetRecord {
+            owner_name: project.owner_name.clone(),
+            project_id: project.id,
+            project_name: project.project_name.clone(),
+            target_path: format!(
+                "/{}/{}/issue/{}",
+                project.owner_name, project.project_name, issue_number
+            ),
+            target_title: issue_model.title.unwrap_or_default(),
+        }))
+    }
+
+    async fn legacy_posting_resource_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
+        let mut comment_anchor = String::new();
+        let posting_model = match resource_type {
+            "posting" | "board_post" => {
+                posting::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+            }
+            "posting_comment" | "nonissue_comment" => {
+                let Some(comment) = posting_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                comment_anchor = format!("#comment-{}", comment.id);
+                match comment.posting_id {
+                    Some(posting_id) => {
+                        posting::Entity::find_by_id(posting_id)
+                            .one(&self.db)
+                            .await?
+                    }
+                    None => None,
+                }
+            }
+            _ => None,
+        };
+        let Some(posting_model) = posting_model else {
+            return Ok(None);
+        };
+        let Some(project_id) = posting_model.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let post_number = posting_model.number.unwrap_or_default();
+        Ok(Some(LegacyResourceTargetRecord {
+            owner_name: project.owner_name.clone(),
+            project_id: project.id,
+            project_name: project.project_name.clone(),
+            target_path: format!(
+                "/{}/{}/post/{}{}",
+                project.owner_name, project.project_name, post_number, comment_anchor
+            ),
+            target_title: posting_model.title.unwrap_or_default(),
+        }))
+    }
+
+    async fn legacy_pull_request_resource_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
+        let mut comment_anchor = String::new();
+        let pull_request_model = match resource_type {
+            "pull_request" => {
+                pull_request::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+            }
+            "review_comment" => {
+                let Some(comment) = review_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                comment_anchor = format!("#comment-{}", comment.id);
+                let Some(thread_id) = comment.thread_id else {
+                    return Ok(None);
+                };
+                let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(pull_request_id) = thread.pull_request_id else {
+                    return Ok(None);
+                };
+                comment_anchor = format!("/changes{comment_anchor}");
+                pull_request::Entity::find_by_id(pull_request_id)
+                    .one(&self.db)
+                    .await?
+            }
+            _ => None,
+        };
+        let Some(pull_request_model) = pull_request_model else {
+            return Ok(None);
+        };
+        let Some(project_id) = pull_request_model.to_project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let pull_request_number = pull_request_model.number.unwrap_or_default();
+        Ok(Some(LegacyResourceTargetRecord {
+            owner_name: project.owner_name.clone(),
+            project_id: project.id,
+            project_name: project.project_name.clone(),
+            target_path: format!(
+                "/{}/{}/pullRequest/{}{}",
+                project.owner_name, project.project_name, pull_request_number, comment_anchor
+            ),
+            target_title: pull_request_model.title.unwrap_or_default(),
+        }))
     }
 
     async fn has_explicit_pull_request_watch(
@@ -13672,6 +15178,24 @@ impl AppRepository {
         old_value: &str,
         new_value: &str,
     ) -> Result<(), DbErr> {
+        let mut old_value_to_write = old_value.to_string();
+        if issue_event_uses_draft_merge(event_type) {
+            if let Some(previous) = self
+                .recent_mergeable_issue_event(issue_id, sender_login_id, event_type)
+                .await?
+            {
+                old_value_to_write = self
+                    .read_text_column("issue_event", "old_value", previous.id)
+                    .await?;
+                issue_event::Entity::delete_by_id(previous.id)
+                    .exec(&self.db)
+                    .await?;
+                if old_value_to_write == new_value {
+                    return Ok(());
+                }
+            }
+        }
+
         let created = issue_event::ActiveModel {
             id: NotSet,
             created: Set(Some(current_datetime())),
@@ -13682,11 +15206,33 @@ impl AppRepository {
         }
         .insert(&self.db)
         .await?;
-        self.write_text_column("issue_event", "old_value", created.id, old_value)
+        self.write_text_column("issue_event", "old_value", created.id, &old_value_to_write)
             .await?;
         self.write_text_column("issue_event", "new_value", created.id, new_value)
             .await?;
         Ok(())
+    }
+
+    async fn recent_mergeable_issue_event(
+        &self,
+        issue_id: i64,
+        sender_login_id: &str,
+        event_type: &str,
+    ) -> Result<Option<issue_event::Model>, DbErr> {
+        let now = current_datetime();
+        let events = issue_event::Entity::find()
+            .filter(issue_event::Column::IssueId.eq(Some(issue_id)))
+            .filter(issue_event::Column::SenderLoginId.eq(Some(sender_login_id.to_string())))
+            .filter(issue_event::Column::EventType.eq(Some(event_type.to_string())))
+            .order_by_desc(issue_event::Column::Id)
+            .all(&self.db)
+            .await?;
+        Ok(events.into_iter().find(|event| {
+            event.created.is_some_and(|created| {
+                now.signed_duration_since(created).num_milliseconds()
+                    < issue_event_draft_time_in_millis()
+            })
+        }))
     }
 
     async fn create_pull_request_event(
@@ -13812,7 +15358,7 @@ impl AppRepository {
         Ok(events.into_iter().find(|event| {
             event.created.is_some_and(|created| {
                 now.signed_duration_since(created).num_milliseconds()
-                    < NOTIFICATION_DRAFT_TIME_IN_MILLIS
+                    < notification_draft_time_in_millis()
             })
         }))
     }
@@ -14534,6 +16080,12 @@ impl AppRepository {
                 event.resource_id.as_deref().unwrap_or_default(),
             )
             .await?;
+        let reply_target = self
+            .notification_reply_target(
+                event.resource_type.as_deref().unwrap_or_default(),
+                event.resource_id.as_deref().unwrap_or_default(),
+            )
+            .await?;
 
         Ok(NotificationItemRecord {
             actor,
@@ -14541,12 +16093,69 @@ impl AppRepository {
             event_type: event_type.clone(),
             id: event.id,
             message: notification_message(&event_type, &old_value, &new_value),
+            reply_resource_id: reply_target
+                .as_ref()
+                .map(|(_, resource_id)| resource_id.to_string())
+                .unwrap_or_default(),
+            reply_resource_type: reply_target
+                .as_ref()
+                .map(|(resource_type, _)| resource_type.clone())
+                .unwrap_or_default(),
             resource_id: event.resource_id.unwrap_or_default(),
             resource_type: event.resource_type.unwrap_or_default(),
             target_path: target.0,
             target_title: target.1,
             type_icon: notification_type_icon(&event_type, &new_value).to_string(),
         })
+    }
+
+    async fn notification_reply_target(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Option<(String, i64)>, DbErr> {
+        let Some(resource_id) = resource_id.parse::<i64>().ok() else {
+            return Ok(None);
+        };
+        let normalized_type = normalize_identity(resource_type);
+        match normalized_type.as_str() {
+            "issue" | "issue_post" => Ok(Some(("issue_post".to_string(), resource_id))),
+            "issue_comment" => {
+                let Some(comment) = issue_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                Ok(comment
+                    .issue_id
+                    .map(|issue_id| ("issue_post".to_string(), issue_id)))
+            }
+            "posting" | "board_post" => Ok(Some(("board_post".to_string(), resource_id))),
+            "posting_comment" | "nonissue_comment" => {
+                let Some(comment) = posting_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                Ok(comment
+                    .posting_id
+                    .map(|posting_id| ("board_post".to_string(), posting_id)))
+            }
+            "review_comment" => {
+                let Some(comment) = review_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                Ok(comment
+                    .thread_id
+                    .map(|thread_id| ("comment_thread".to_string(), thread_id)))
+            }
+            _ => Ok(None),
+        }
     }
 
     async fn notification_target(

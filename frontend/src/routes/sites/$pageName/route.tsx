@@ -54,31 +54,35 @@ export const Route = createFileRoute("/sites/$pageName")({
 });
 
 const SITE_USER_STATES: Array<{ label: string; state: SiteUserState }> = [
-  { label: "Unlocked", state: "ACTIVE" },
-  { label: "Locked", state: "LOCKED" },
-  { label: "Deleted", state: "DELETED" },
-  { label: "Guest", state: "GUEST" },
-  { label: "Site Admin", state: "SITE_ADMIN" },
+  { label: "site.userList.unlocked", state: "ACTIVE" },
+  { label: "site.userList.locked", state: "LOCKED" },
+  { label: "site.userList.deleted", state: "DELETED" },
+  { label: "site.userList.guest", state: "GUEST" },
+  { label: "site.userList.siteAdmin", state: "SITE_ADMIN" },
 ];
 
 const SITE_ISSUE_STATES: Array<{ label: string; state: SiteIssueState }> = [
-  { label: "Open", state: "open" },
-  { label: "Closed", state: "closed" },
+  { label: "issue.state.open", state: "open" },
+  { label: "issue.state.closed", state: "closed" },
 ];
 
 const SITE_ADMIN_NAV = [
-  { href: "/sites/userList", label: "User List", pageName: "userList" },
-  { href: "/sites/postList", label: "Post List", pageName: "postList" },
-  { href: "/sites/issueList", label: "Issue List", pageName: "issueList" },
-  { href: "/sites/projectList", label: "Project List", pageName: "projectList" },
-  { href: "/sites/mail", label: "Mail Send", pageName: "mail" },
-  { href: "/sites/massmail", label: "Mass Mail", pageName: "massmail" },
-  { href: "/sites/update", label: "Update", pageName: "update" },
-  { href: "/sites/diagnostic", label: "Diagnostics", pageName: "diagnostic" },
+  { href: "/sites/userList", label: "site.sidebar.userList", pageName: "userList" },
+  { href: "/sites/postList", label: "site.sidebar.postList", pageName: "postList" },
+  { href: "/sites/issueList", label: "site.sidebar.issueList", pageName: "issueList" },
+  { href: "/sites/projectList", label: "site.sidebar.projectList", pageName: "projectList" },
+  { href: "/sites/mail", label: "site.sidebar.mailSend", pageName: "mail" },
+  { href: "/sites/massmail", label: "site.sidebar.massMail", pageName: "massmail" },
+  { href: "/sites/update", label: "site.sidebar.update", pageName: "update" },
+  { href: "/sites/diagnostic", label: "site.sidebar.diagnostics", pageName: "diagnostic" },
 ];
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
+}
+
+function legacyLabelName(name: string): React.LabelHTMLAttributes<HTMLLabelElement> {
+  return { name } as React.LabelHTMLAttributes<HTMLLabelElement>;
 }
 
 function parsePositiveInt(value: string | null, fallback: number): number {
@@ -175,6 +179,11 @@ function siteIssueListHref(input: SiteIssueListInput, page: number = input.page)
   return `/sites/issueList?${params.toString()}`;
 }
 
+function siteMailSentFromHref(href: string): boolean {
+  const params = new URL(href, "http://yona.local").searchParams;
+  return params.get("sended") === "true";
+}
+
 function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
   return appHref(
     runtimeConfig,
@@ -194,10 +203,6 @@ function apiDeleteSiteProjectUri(runtimeConfig: RuntimeConfig, projectId: number
   return appHref(runtimeConfig, `/api/v1/site/projects/${projectId}`);
 }
 
-function apiSiteMailUri(runtimeConfig: RuntimeConfig): string {
-  return appHref(runtimeConfig, "/api/v1/site/mail/test");
-}
-
 function apiSiteMailListUri(runtimeConfig: RuntimeConfig): string {
   return appHref(runtimeConfig, "/api/v1/site/mail-list");
 }
@@ -211,6 +216,11 @@ function SiteAdminRouteComponent() {
   useDocumentTitle("Site Admin");
 
   const currentIsSiteAdmin = currentSession?.isSiteAdmin ?? false;
+  const updateBadgeQuery = useQuery({
+    ...siteUpdateQueryOptions(runtimeConfig),
+    enabled: !bootstrapping && currentIsSiteAdmin,
+  });
+  const updateAvailable = updateBadgeQuery.data?.versionToUpdate != null;
 
   if (pageName === "userList") {
     return (
@@ -221,6 +231,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -234,6 +245,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -246,6 +258,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -258,6 +271,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -271,6 +285,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -284,6 +299,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -296,6 +312,7 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -307,6 +324,7 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -319,6 +337,7 @@ function SiteAdminRouteComponent() {
         href={href}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
+        updateAvailable={updateAvailable}
       />
     );
   }
@@ -332,12 +351,14 @@ function SiteDataRoute({
   currentIsSiteAdmin,
   href,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
 
@@ -352,7 +373,13 @@ function SiteDataRoute({
     return <ForbiddenPage href="/sites/data" />;
   }
 
-  return <SiteAdminDataPage csrfToken={csrfToken} runtimeConfig={runtimeConfig} />;
+  return (
+    <SiteAdminDataPage
+      csrfToken={csrfToken}
+      runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
+    />
+  );
 }
 
 function SiteUpdateRoute({
@@ -360,11 +387,13 @@ function SiteUpdateRoute({
   currentIsSiteAdmin,
   href,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const query = useQuery({
@@ -388,6 +417,7 @@ function SiteUpdateRoute({
       error={query.error instanceof Error ? query.error.message : null}
       response={query.data}
       runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
     />
   );
 }
@@ -399,6 +429,7 @@ function SiteUserListRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   csrfToken: string;
@@ -406,6 +437,7 @@ function SiteUserListRoute({
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => siteUserListInputFromHref(href), [href]);
@@ -499,6 +531,7 @@ function SiteUserListRoute({
       response={query.data}
       resetPasswords={resetPasswords}
       runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
       onCancelDelete={() => setDeleteTarget(null)}
       onConfirmDelete={(loginId) => deleteMutation.mutate(loginId)}
       onRequestDelete={setDeleteTarget}
@@ -517,6 +550,7 @@ function SiteProjectListRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   csrfToken: string;
@@ -524,6 +558,7 @@ function SiteProjectListRoute({
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => siteProjectListInputFromHref(href), [href]);
@@ -572,6 +607,7 @@ function SiteProjectListRoute({
       pendingDeleteProjectId={deleteMutation.isPending ? deleteMutation.variables : undefined}
       response={query.data}
       runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
       onCancelDelete={() => setDeleteTarget(null)}
       onConfirmDelete={(projectId) => deleteMutation.mutate(projectId)}
       onRequestDelete={setDeleteTarget}
@@ -585,12 +621,14 @@ function SitePostListRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => sitePostListInputFromHref(href), [href]);
@@ -621,7 +659,12 @@ function SitePostListRoute({
   }
 
   return (
-    <SiteAdminPostListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
+    <SiteAdminPostListPage
+      input={input}
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
+    />
   );
 }
 
@@ -631,12 +674,14 @@ function SiteIssueListRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => siteIssueListInputFromHref(href), [href]);
@@ -667,7 +712,12 @@ function SiteIssueListRoute({
   }
 
   return (
-    <SiteAdminIssueListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
+    <SiteAdminIssueListPage
+      input={input}
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
+    />
   );
 }
 
@@ -678,6 +728,7 @@ function SiteMailRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   csrfToken: string;
@@ -685,10 +736,11 @@ function SiteMailRoute({
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const queryClient = useQueryClient();
-  const [sent, setSent] = React.useState(false);
+  const [sent, setSent] = React.useState(() => siteMailSentFromHref(href));
   const query = useQuery({
     ...siteMailOptionsQueryOptions(runtimeConfig),
     enabled: canRender && currentIsSiteAdmin,
@@ -731,6 +783,7 @@ function SiteMailRoute({
       response={query.data}
       runtimeConfig={runtimeConfig}
       sent={sent || sendMutation.data?.sent === true}
+      updateAvailable={updateAvailable}
       onSend={(input) => sendMutation.mutate(input)}
     />
   );
@@ -743,6 +796,7 @@ function SiteMassMailRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   csrfToken: string;
@@ -750,6 +804,7 @@ function SiteMassMailRoute({
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const queryClient = useQueryClient();
@@ -781,6 +836,7 @@ function SiteMassMailRoute({
       mailtoHref={mailtoHref}
       pending={mailListMutation.isPending}
       runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
       onResolveRecipients={(input) => mailListMutation.mutate(input)}
     />
   );
@@ -792,12 +848,14 @@ function SiteDiagnosticRoute({
   href,
   runtimeConfig,
   setErrorMessage,
+  updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
+  updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const query = useQuery({
@@ -828,28 +886,41 @@ function SiteDiagnosticRoute({
     return <NotFoundPage href="/sites/diagnostic" />;
   }
 
-  return <SiteAdminDiagnosticPage response={query.data} runtimeConfig={runtimeConfig} />;
+  return (
+    <SiteAdminDiagnosticPage
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+      updateAvailable={updateAvailable}
+    />
+  );
 }
 
 function SiteAdminSidebar({
   activePageName,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   activePageName: string;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   return (
     <ul className="site-setting-nav">
       {SITE_ADMIN_NAV.map((item) => (
         <li className={item.pageName === activePageName ? "active" : ""} key={item.pageName}>
-          <a href={appHref(runtimeConfig, item.href)}>{item.label}</a>
+          <a href={appHref(runtimeConfig, item.href)}>
+            {item.label}
+            {item.pageName === "update" && updateAvailable ? (
+              <span className="notification-badge">1</span>
+            ) : null}
+          </a>
         </li>
       ))}
     </ul>
   );
 }
 
-function SiteAdminUserListPage({
+export function SiteAdminUserListPage({
   deleteTarget,
   input,
   pendingAccountLockLoginId,
@@ -860,6 +931,7 @@ function SiteAdminUserListPage({
   response,
   resetPasswords,
   runtimeConfig,
+  updateAvailable = false,
   onCancelDelete,
   onConfirmDelete,
   onRequestDelete,
@@ -878,6 +950,7 @@ function SiteAdminUserListPage({
   response: SiteUserListResponse | undefined;
   resetPasswords: Record<string, string>;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
   onCancelDelete: () => void;
   onConfirmDelete: (loginId: string) => void;
   onRequestDelete: (user: SiteUser) => void;
@@ -894,18 +967,22 @@ function SiteAdminUserListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="userList" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="userList"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">User List</h2>
+                <h2 className="pull-left">site.sidebar.userList</h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/userList")}
                   className="form-search pull-right"
@@ -917,11 +994,11 @@ function SiteAdminUserListPage({
                       className="textbox"
                       defaultValue={input.query}
                       name="query"
-                      placeholder="Search users"
+                      placeholder="site.userList.search"
                       type="text"
                     />
                     <button className="search-btn" type="submit">
-                      Search
+                      <i className="yobicon-search" />
                     </button>
                   </div>
                 </form>
@@ -932,31 +1009,27 @@ function SiteAdminUserListPage({
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
               <SiteUserListHeader state={input.state} />
-              {users.length === 0 ? (
-                <div className="warning-none">No users found.</div>
-              ) : (
-                <ul className="user-list-wrap">
-                  {users.map((user) => (
-                    <SiteUserRow
-                      key={user.id}
-                      pendingAccountLock={pendingAccountLockLoginId === user.loginId}
-                      pendingDelete={pendingDeleteLoginId === user.loginId}
-                      pendingGuest={pendingGuestLoginId === user.loginId}
-                      pendingResetPassword={pendingResetPasswordLoginId === user.loginId}
-                      pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
-                      resetPassword={resetPasswords[user.loginId] ?? ""}
-                      runtimeConfig={runtimeConfig}
-                      selectedState={input.state}
-                      user={user}
-                      onRequestDelete={onRequestDelete}
-                      onResetPassword={onResetPassword}
-                      onToggleAccountLock={onToggleAccountLock}
-                      onToggleGuest={onToggleGuest}
-                      onToggleSiteAdmin={onToggleSiteAdmin}
-                    />
-                  ))}
-                </ul>
-              )}
+              <ul className="user-list-wrap">
+                {users.map((user) => (
+                  <SiteUserRow
+                    key={user.id}
+                    pendingAccountLock={pendingAccountLockLoginId === user.loginId}
+                    pendingDelete={pendingDeleteLoginId === user.loginId}
+                    pendingGuest={pendingGuestLoginId === user.loginId}
+                    pendingResetPassword={pendingResetPasswordLoginId === user.loginId}
+                    pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
+                    resetPassword={resetPasswords[user.loginId] ?? ""}
+                    runtimeConfig={runtimeConfig}
+                    selectedState={input.state}
+                    user={user}
+                    onRequestDelete={onRequestDelete}
+                    onResetPassword={onResetPassword}
+                    onToggleAccountLock={onToggleAccountLock}
+                    onToggleGuest={onToggleGuest}
+                    onToggleSiteAdmin={onToggleSiteAdmin}
+                  />
+                ))}
+              </ul>
               <SiteUserPagination
                 input={input}
                 page={page}
@@ -978,12 +1051,13 @@ function SiteAdminUserListPage({
   );
 }
 
-function SiteAdminProjectListPage({
+export function SiteAdminProjectListPage({
   deleteTarget,
   input,
   pendingDeleteProjectId,
   response,
   runtimeConfig,
+  updateAvailable = false,
   onCancelDelete,
   onConfirmDelete,
   onRequestDelete,
@@ -993,6 +1067,7 @@ function SiteAdminProjectListPage({
   pendingDeleteProjectId: number | undefined;
   response: SiteProjectListResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
   onCancelDelete: () => void;
   onConfirmDelete: (projectId: number) => void;
   onRequestDelete: (project: SiteProject) => void;
@@ -1005,18 +1080,22 @@ function SiteAdminProjectListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="projectList" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="projectList"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Project List</h2>
+                <h2 className="pull-left">site.sidebar.projectList</h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/projectList")}
                   className="form-search pull-right"
@@ -1027,31 +1106,27 @@ function SiteAdminProjectListPage({
                       className="textbox"
                       defaultValue={input.filter}
                       name="filter"
-                      placeholder="Search projects"
+                      placeholder="site.project.filter"
                       type="text"
                     />
                     <button className="search-btn" type="submit">
-                      Search
+                      <i className="yobicon-search" />
                     </button>
                   </div>
                 </form>
               </div>
               <SiteProjectListHeader />
-              {projects.length === 0 ? (
-                <div className="warning-none">No projects found.</div>
-              ) : (
-                <ul className="project-list-wrap">
-                  {projects.map((project) => (
-                    <SiteProjectRow
-                      key={project.id}
-                      pendingDelete={pendingDeleteProjectId === project.id}
-                      project={project}
-                      runtimeConfig={runtimeConfig}
-                      onRequestDelete={onRequestDelete}
-                    />
-                  ))}
-                </ul>
-              )}
+              <ul className="project-list-wrap">
+                {projects.map((project) => (
+                  <SiteProjectRow
+                    key={project.id}
+                    pendingDelete={pendingDeleteProjectId === project.id}
+                    project={project}
+                    runtimeConfig={runtimeConfig}
+                    onRequestDelete={onRequestDelete}
+                  />
+                ))}
+              </ul>
               <SiteProjectPagination
                 input={input}
                 page={page}
@@ -1073,14 +1148,16 @@ function SiteAdminProjectListPage({
   );
 }
 
-function SiteAdminPostListPage({
+export function SiteAdminPostListPage({
   input,
   response,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   input: SitePostListInput;
   response: SitePostListResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const posts = response?.posts ?? [];
   const page = response?.page ?? input.page;
@@ -1090,32 +1167,32 @@ function SiteAdminPostListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="postList" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="postList"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Post List</h2>
+                <h2 className="pull-left">site.sidebar.postList</h2>
               </div>
-              {posts.length === 0 ? (
-                <div className="warning-none">No posts found.</div>
-              ) : (
-                <ul className="post-list-wrap">
-                  {posts.map((post) => (
-                    <SitePostRow
-                      key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
-                      post={post}
-                      runtimeConfig={runtimeConfig}
-                    />
-                  ))}
-                </ul>
-              )}
+              <ul className="post-list-wrap">
+                {posts.map((post) => (
+                  <SitePostRow
+                    key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                    post={post}
+                    runtimeConfig={runtimeConfig}
+                  />
+                ))}
+              </ul>
               <SitePostPagination
                 input={input}
                 page={page}
@@ -1130,14 +1207,16 @@ function SiteAdminPostListPage({
   );
 }
 
-function SiteAdminIssueListPage({
+export function SiteAdminIssueListPage({
   input,
   response,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   input: SiteIssueListInput;
   response: SiteIssueListResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const issues = response?.issues ?? [];
   const page = response?.page ?? input.page;
@@ -1147,33 +1226,33 @@ function SiteAdminIssueListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="issueList" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="issueList"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Issue List</h2>
+                <h2 className="pull-left">site.sidebar.issueList</h2>
               </div>
               <SiteIssueTabs input={input} runtimeConfig={runtimeConfig} />
-              {issues.length === 0 ? (
-                <div className="warning-none">No issues found.</div>
-              ) : (
-                <ul className="post-list-wrap">
-                  {issues.map((issue) => (
-                    <SiteIssueRow
-                      issue={issue}
-                      key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                      runtimeConfig={runtimeConfig}
-                    />
-                  ))}
-                </ul>
-              )}
+              <ul className="post-list-wrap">
+                {issues.map((issue) => (
+                  <SiteIssueRow
+                    issue={issue}
+                    key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+                    runtimeConfig={runtimeConfig}
+                  />
+                ))}
+              </ul>
               <SiteIssuePagination
                 input={input}
                 page={page}
@@ -1188,17 +1267,19 @@ function SiteAdminIssueListPage({
   );
 }
 
-function SiteAdminMailPage({
+export function SiteAdminMailPage({
   pending,
   response,
   runtimeConfig,
   sent,
+  updateAvailable = false,
   onSend,
 }: {
   pending: boolean;
   response: SiteMailOptionsResponse | undefined;
   runtimeConfig: RuntimeConfig;
   sent: boolean;
+  updateAvailable?: boolean;
   onSend: (input: SiteMailSendInput) => void;
 }) {
   const notConfiguredItems = response?.notConfiguredItems ?? [];
@@ -1218,22 +1299,26 @@ function SiteAdminMailPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="mail" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="mail"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Send Mail</h2>
+                <h2 className="pull-left">title.sendMail</h2>
               </div>
               {notConfiguredItems.length === 0 ? null : (
                 <div className="alert alert-error">
-                  <p>Mail configuration is incomplete.</p>
+                  <p>site.mail.notConfigured /admin/mailconf</p>
                   <ul>
                     {notConfiguredItems.map((item) => (
                       <li key={item}>{item}</li>
@@ -1241,55 +1326,64 @@ function SiteAdminMailPage({
                   </ul>
                 </div>
               )}
-              {sent ? <div className="alert alert-success">Mail was sent.</div> : null}
+              {sent ? <div className="alert alert-success">site.mail.sended</div> : null}
               <form
-                action={apiSiteMailUri(runtimeConfig)}
+                action={appHref(runtimeConfig, "/sites/mail")}
                 className="form-horizontal"
                 id="mailForm"
                 method="post"
                 onSubmit={handleSubmit}
               >
                 <div className="control-group">
-                  <label className="control-label" htmlFor="mail-from">
-                    From
+                  <label className="control-label span3" htmlFor="mail-from" {...legacyLabelName("from")}>
+                    site.mail.from
                   </label>
                   <div className="controls">
                     <input
-                      className="input-xlarge"
+                      className="span4"
                       defaultValue={sender}
                       id="mail-from"
                       name="from"
+                      placeholder="site.mail.fromPlaceholder"
+                      required
                       type="text"
                     />
                   </div>
                 </div>
                 <div className="control-group">
-                  <label className="control-label" htmlFor="mail-to">
-                    To
+                  <label className="control-label" htmlFor="mail-to" {...legacyLabelName("to")}>
+                    site.mail.to
                   </label>
                   <div className="controls">
-                    <input className="input-xlarge" id="mail-to" name="to" type="email" />
+                    <input
+                      className="span4"
+                      id="mail-to"
+                      name="to"
+                      placeholder="site.mail.toPlaceholder"
+                      required
+                      type="text"
+                    />
                   </div>
                 </div>
-                <div className="control-group">
-                  <label className="control-label" htmlFor="mail-subject">
-                    Subject
+                <div className="control-group mr10">
+                  <label className="control-label" htmlFor="mail-subject" {...legacyLabelName("subject")}>
+                    site.mail.subject
                   </label>
                   <div className="controls">
-                    <input className="input-xlarge" id="mail-subject" name="subject" type="text" />
+                    <input className="span12" id="mail-subject" name="subject" type="text" />
                   </div>
                 </div>
-                <div className="control-group">
-                  <label className="control-label" htmlFor="body">
-                    Body
+                <div className="control-group mr10">
+                  <label className="control-label" htmlFor="body" {...legacyLabelName("body")}>
+                    site.mail.body
                   </label>
                   <div className="controls">
-                    <textarea className="input-xxlarge" id="body" name="body" rows={10} />
+                    <textarea className="span12 input-xlarge textbody" id="body" name="body" rows={16} />
                   </div>
                 </div>
-                <div className="mail-btn-wrap">
+                <div className="span12 mail-btn-wrap">
                   <button className="ybtn ybtn-primary" disabled={pending} type="submit">
-                    {pending ? "Sending..." : "Send"}
+                    <strong>site.mail.send</strong>
                   </button>
                 </div>
               </form>
@@ -1301,15 +1395,17 @@ function SiteAdminMailPage({
   );
 }
 
-function SiteAdminMassMailPage({
+export function SiteAdminMassMailPage({
   mailtoHref,
   pending,
   runtimeConfig,
+  updateAvailable = false,
   onResolveRecipients,
 }: {
   mailtoHref: string;
   pending: boolean;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
   onResolveRecipients: (input: SiteMailListInput) => void;
 }) {
   const [mode, setMode] = React.useState<"all" | "projects">("all");
@@ -1334,55 +1430,70 @@ function SiteAdminMassMailPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="massmail" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="massmail"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Mass Mail</h2>
+                <h2 className="pull-left">title.massMail</h2>
               </div>
               <div className="mess-mail-wrap">
-                <div className="control-group">
-                  <label className="radio" htmlFor="mailtoAll">
+                <label className="radio" htmlFor="mailtoAll">
+                  <input
+                    checked={mode === "all"}
+                    data-action="hide"
+                    data-toggle="mail-type"
+                    id="mailtoAll"
+                    name="mailingType"
+                    type="radio"
+                    value="all"
+                    onChange={() => setMode("all")}
+                  />
+                  site.massMail.toAll
+                </label>
+                <label className="radio" htmlFor="mailtoPrj">
+                  <input
+                    checked={mode === "projects"}
+                    data-action="show"
+                    data-toggle="mail-type"
+                    id="mailtoPrj"
+                    name="mailingType"
+                    type="radio"
+                    value="projects"
+                    onChange={() => setMode("projects")}
+                  />
+                  site.massMail.toProjects
+                </label>
+                <div className={mode === "projects" ? "control-group" : "control-group hide"} id="project-list-wrap">
+                  <div className="controls">
                     <input
-                      checked={mode === "all"}
-                      id="mailtoAll"
-                      name="mailto"
-                      type="radio"
-                      value="all"
-                      onChange={() => setMode("all")}
-                    />
-                    All users
-                  </label>
-                  <label className="radio" htmlFor="mailtoPrj">
-                    <input
-                      checked={mode === "projects"}
-                      id="mailtoPrj"
-                      name="mailto"
-                      type="radio"
-                      value="projects"
-                      onChange={() => setMode("projects")}
-                    />
-                    Project members
-                  </label>
-                </div>
-                <div hidden={mode !== "projects"} id="project-list-wrap">
-                  <div className="project-select-row">
-                    <input
-                      className="textbox"
+                      autoComplete="off"
+                      className="span3"
+                      data-provider="typeahead"
                       id="input-project"
+                      placeholder="project.name"
                       type="text"
                       value={projectInput}
                       onChange={(event) => setProjectInput(event.target.value)}
                     />
-                    <button className="ybtn" id="select-project" type="button" onClick={addProject}>
-                      Select
+                    <button
+                      className="ybtn"
+                      data-loading-text="site.massMail.loading"
+                      id="select-project"
+                      type="submit"
+                      onClick={addProject}
+                    >
+                      <strong>button.add</strong>
                     </button>
                   </div>
                   <div id="selected-projects">
@@ -1400,10 +1511,10 @@ function SiteAdminMassMailPage({
                     data-request-uri={apiSiteMailListUri(runtimeConfig)}
                     disabled={pending}
                     id="write-email"
-                    type="button"
+                    type="submit"
                     onClick={resolveRecipients}
                   >
-                    {pending ? "Resolving..." : "Write email"}
+                    <strong>site.mail.write</strong>
                   </button>
                   {mailtoHref === "" ? null : (
                     <a href={mailtoHref} id="mailto-link">
@@ -1420,25 +1531,31 @@ function SiteAdminMassMailPage({
   );
 }
 
-function SiteAdminDataPage({
+export function SiteAdminDataPage({
   csrfToken,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   csrfToken: string;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="data" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="data"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -1474,7 +1591,7 @@ function SiteAdminDataPage({
                 <input name="csrfToken" readOnly type="hidden" value={csrfToken} />
                 <input name="data" type="file" />
                 <p>
-                  <input readOnly type="submit" value="site.data.import" />
+                  <input type="submit" />
                 </p>
               </form>
             </div>
@@ -1485,48 +1602,57 @@ function SiteAdminDataPage({
   );
 }
 
-function SiteAdminUpdatePage({
+export function SiteAdminUpdatePage({
   error,
   response,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   error: string | null;
   response: SiteUpdateResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const branchError = response?.error ?? error;
   const versionToUpdate = response?.versionToUpdate ?? null;
   const currentVersion = response?.currentVersion ?? "";
+  const showUpdateBadge = updateAvailable || versionToUpdate !== null;
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="update" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="update"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={showUpdateBadge}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Update</h2>
+                <h2 className="pull-left">site.sidebar.update</h2>
               </div>
               {versionToUpdate ? (
                 <p>
                   <strong>{`site.update.isAvailable ${versionToUpdate}`}</strong>{" "}
                   <a
                     className="ybtn ybtn-success"
-                    href={appHref(runtimeConfig, "/sites/update/download-file")}
+                    href={appHref(runtimeConfig, "/sites/update/download")}
                   >
                     site.update.download
                   </a>
                 </p>
               ) : null}
               {currentVersion ? <p>{`site.update.currentVersion ${currentVersion}`}</p> : null}
-              {!versionToUpdate && !branchError ? <p>site.update.isNotNecessary</p> : null}
+              {!versionToUpdate && !branchError ? (
+                <p>{`site.update.isNotNecessary ${currentVersion}`}</p>
+              ) : null}
               {branchError ? (
                 <>
                   <p>site.update.error</p>
@@ -1541,37 +1667,43 @@ function SiteAdminUpdatePage({
   );
 }
 
-function SiteAdminDiagnosticPage({
+export function SiteAdminDiagnosticPage({
   response,
   runtimeConfig,
+  updateAvailable = false,
 }: {
   response: SiteDiagnosticsResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  updateAvailable?: boolean;
 }) {
   const errors = response?.errors ?? [];
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Site Admin</h3>
+          <h3>site.sidebar</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
         <div className="site-setting-wrap">
-          <div className="row-fluid site-setting-layout">
+          <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar activePageName="diagnostic" runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar
+                activePageName="diagnostic"
+                runtimeConfig={runtimeConfig}
+                updateAvailable={updateAvailable}
+              />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">Diagnostics</h2>
+                <h2 className="pull-left">site.sidebar.diagnostics</h2>
               </div>
               {errors.length === 0 ? (
-                <p>No errors were found</p>
+                <p>site.diagnostic.errorNotFound</p>
               ) : (
                 <>
-                  <p>{`${response?.errorCount ?? errors.length} errors were found`}</p>
-                  <ul className="site-diagnostic-errors">
+                  <p>{`site.diagnostic.errorFound ${response?.errorCount ?? errors.length}`}</p>
+                  <ul>
                     {errors.map((error) => (
                       <li key={error}>
                         <pre>{error}</pre>
@@ -1623,7 +1755,11 @@ function SiteIssueRow({
   return (
     <li className="row-fluid listitem">
       <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
-        <span className="avatar-initial">{issue.projectName.slice(0, 1).toUpperCase()}</span>
+        {issue.projectLogoUrl ? (
+          <img alt={issue.projectName} src={issue.projectLogoUrl} />
+        ) : (
+          <span className="avatar-initial">{issue.projectName.slice(0, 1).toUpperCase()}</span>
+        )}
       </a>
       <div className="post-info-wrap">
         <a className="post-project" href={appHref(runtimeConfig, projectPath)}>
@@ -1636,9 +1772,13 @@ function SiteIssueRow({
       </div>
       <div className="post-meta-wrap">
         <a className="avatar-wrap" href={appHref(runtimeConfig, `/${issue.authorLoginId}`)}>
-          <span className="avatar-initial avatar-initial-small">
-            {authorLabel.slice(0, 1).toUpperCase()}
-          </span>
+          {issue.authorAvatarUrl ? (
+            <img alt={authorLabel} height={16} src={issue.authorAvatarUrl} width={16} />
+          ) : (
+            <span className="avatar-initial avatar-initial-small">
+              {authorLabel.slice(0, 1).toUpperCase()}
+            </span>
+          )}
         </a>
         <a className="post-meta-item" href={appHref(runtimeConfig, `/${issue.authorLoginId}`)}>
           {authorLabel}
@@ -1648,7 +1788,7 @@ function SiteIssueRow({
         </span>
         <span className="post-comments post-meta-item">
           <a href={appHref(runtimeConfig, `${issuePath}#comments`)}>
-            <span aria-hidden="true" className="yobicon-comments" />
+            <i className="yobicon-comments" />
             {issue.commentCount}
           </a>
         </span>
@@ -1666,7 +1806,11 @@ function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: R
   return (
     <li className="row-fluid listitem">
       <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
-        <span className="avatar-initial">{post.projectName.slice(0, 1).toUpperCase()}</span>
+        {post.projectLogoUrl ? (
+          <img alt={post.projectName} src={post.projectLogoUrl} />
+        ) : (
+          <span className="avatar-initial">{post.projectName.slice(0, 1).toUpperCase()}</span>
+        )}
       </a>
       <div className="post-info-wrap">
         <a className="post-project" href={appHref(runtimeConfig, projectPath)}>
@@ -1679,9 +1823,13 @@ function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: R
       </div>
       <div className="post-meta-wrap">
         <a className="avatar-wrap" href={appHref(runtimeConfig, `/${post.authorLoginId}`)}>
-          <span className="avatar-initial avatar-initial-small">
-            {authorLabel.slice(0, 1).toUpperCase()}
-          </span>
+          {post.authorAvatarUrl ? (
+            <img alt={authorLabel} height={16} src={post.authorAvatarUrl} width={16} />
+          ) : (
+            <span className="avatar-initial avatar-initial-small">
+              {authorLabel.slice(0, 1).toUpperCase()}
+            </span>
+          )}
         </a>
         <a className="post-meta-item" href={appHref(runtimeConfig, `/${post.authorLoginId}`)}>
           {authorLabel}
@@ -1691,7 +1839,7 @@ function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: R
         </span>
         <span className="post-comments post-meta-item">
           <a href={appHref(runtimeConfig, `${postPath}#comments`)}>
-            <span aria-hidden="true" className="yobicon-comments" />
+            <i className="yobicon-comments" />
             {post.commentCount}
           </a>
         </span>
@@ -1704,13 +1852,13 @@ function SiteProjectListHeader() {
   return (
     <div className="row-fluid listhead">
       <div className="span5 listhead-title">
-        <strong>Project</strong>
+        <strong>project.name</strong>
       </div>
       <div className="span4 listhead-title">
-        <strong>Description</strong>
+        <strong>project.description</strong>
       </div>
       <div className="span2 listhead-title">
-        <strong>Created</strong>
+        <strong>project.created</strong>
       </div>
       <div className="span1 listhead-title">
         <strong>{"\u00a0"}</strong>
@@ -1736,7 +1884,11 @@ function SiteProjectRow({
     <li className="row-fluid listitem">
       <div className="span5 listitem-col">
         <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
-          <span className="avatar-initial">{project.projectName.slice(0, 1).toUpperCase()}</span>
+          {project.projectLogoUrl ? (
+            <img alt={project.projectName} src={project.projectLogoUrl} />
+          ) : (
+            <span className="avatar-initial">{project.projectName.slice(0, 1).toUpperCase()}</span>
+          )}
           {projectLabel}
         </a>
         <a className="project-name" href={appHref(runtimeConfig, projectPath)}>
@@ -1760,7 +1912,7 @@ function SiteProjectRow({
             onRequestDelete(project);
           }}
         >
-          {pendingDelete ? "Deleting..." : "Delete"}
+          button.delete
         </button>
       </div>
     </li>
@@ -1790,16 +1942,22 @@ function SiteDeleteProjectModal({
       role="dialog"
     >
       <div className="modal-header">
-        <button aria-label="Close" className="close" type="button" onClick={onCancel}>
-          x
+        <button
+          aria-label="Close"
+          className="close"
+          data-dismiss="modal"
+          type="button"
+          onClick={onCancel}
+        >
+          ×
         </button>
         <span id="project-name">
           {project === null ? "" : `${project.ownerName}/${project.projectName}`}
         </span>
-        Delete Project
+        site.project.delete
       </div>
       <div className="modal-body">
-        <p>Are you sure?</p>
+        <p>site.project.deleteConfirm</p>
       </div>
       <div className="modal-footer">
         <button
@@ -1818,10 +1976,16 @@ function SiteDeleteProjectModal({
             }
           }}
         >
-          {pending ? "Deleting..." : "Delete Project"}
+          button.yes
         </button>
-        <button className="ybtn" disabled={pending} type="button" onClick={onCancel}>
-          Cancel
+        <button
+          className="ybtn"
+          data-dismiss="modal"
+          disabled={pending}
+          type="button"
+          onClick={onCancel}
+        >
+          button.no
         </button>
       </div>
     </div>
@@ -1862,16 +2026,16 @@ function SiteUserListHeader({ state }: { state: SiteUserState }) {
   return (
     <div className="row-fluid listhead">
       <div className="span3 listhead-title">
-        <strong>User</strong>
+        <strong>user.name</strong>
       </div>
       <div className="span3 listhead-title">
-        <strong>Email</strong>
+        <strong>user.email</strong>
       </div>
       <div className="span2 listhead-title">
-        <strong>Since</strong>
+        <strong>userinfo.since</strong>
       </div>
       <div className="span4 listhead-title">
-        <strong>{state === "DELETED" ? "Leave" : "\u00a0"}</strong>
+        <strong>{state === "DELETED" ? "userinfo.leave" : "\u00a0"}</strong>
       </div>
     </div>
   );
@@ -1912,7 +2076,11 @@ function SiteUserRow({
     <li className="row-fluid listitem">
       <div className="span3 listitem-col">
         <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, `/${user.loginId}`)}>
-          <span className="avatar-initial">{user.displayName.slice(0, 1).toUpperCase()}</span>
+          {user.avatarUrl ? (
+            <img alt={user.displayName} height={32} src={user.avatarUrl} width={32} />
+          ) : (
+            <span className="avatar-initial">{user.displayName.slice(0, 1).toUpperCase()}</span>
+          )}
         </a>
         <a className="user-name" href={appHref(runtimeConfig, `/${user.loginId}`)}>
           {user.displayName}
@@ -1941,7 +2109,7 @@ function SiteUserRow({
               onToggleGuest(user.loginId);
             }}
           >
-            {pendingGuest ? "Saving..." : user.isGuest ? "Normal User" : "Guest User"}
+            {user.isGuest ? "button.user.make.normal.mode" : "button.user.make.guest.mode"}
           </button>
           <button
             className="ybtn ybtn-small"
@@ -1953,7 +2121,7 @@ function SiteUserRow({
               onToggleAccountLock(user.loginId);
             }}
           >
-            {pendingAccountLock ? "Saving..." : user.state === "LOCKED" ? "Unlock" : "Lock"}
+            {`button.user.makeAccountUnlock.${user.state === "LOCKED"}`}
           </button>
           <button
             className="ybtn ybtn-small"
@@ -1968,11 +2136,11 @@ function SiteUserRow({
               onResetPassword(user.loginId);
             }}
           >
-            {pendingResetPassword ? "Sending..." : "Reset Password"}
+            title.resetPassword
           </button>
           {resetPassword === "" ? null : (
             <div className="alert alert-success">
-              <h4>New Password: {resetPassword}</h4>
+              <h4>{`user.newPassword: ${resetPassword}`}</h4>
             </div>
           )}
           <button
@@ -1985,11 +2153,9 @@ function SiteUserRow({
               onToggleSiteAdmin(user.loginId);
             }}
           >
-            {pendingSiteAdmin
-              ? "Saving..."
-              : user.isSiteAdmin
-                ? "Revoke Site Admin"
-                : "Make Site Admin"}
+            {user.isSiteAdmin
+              ? "button.user.revoke.site.admin.role"
+              : "button.user.upgrade.to.site.admin"}
           </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
@@ -2006,7 +2172,7 @@ function SiteUserRow({
               onRequestDelete(user);
             }}
           >
-            {pendingDelete ? "Deleting..." : "Delete"}
+            button.delete
           </button>
         </div>
       )}
@@ -2037,20 +2203,22 @@ function SiteDeleteUserModal({
       role="dialog"
     >
       <div className="modal-header">
-        <button aria-label="Close" className="close" type="button" onClick={onCancel}>
-          x
+        <button
+          aria-label="Close"
+          className="close"
+          data-dismiss="modal"
+          type="button"
+          onClick={onCancel}
+        >
+          ×
         </button>
-        <h3>Delete User</h3>
+        <span id="userInfo">{user === null ? "" : `${user.displayName}(${user.loginId})`}</span>
+        <span>site.user.delete</span>
       </div>
       <div className="modal-body">
-        <p>
-          <span id="userInfo">{user === null ? "" : `${user.displayName}(${user.loginId})`}</span>
-        </p>
+        <p>site.user.deleteConfirm</p>
       </div>
       <div className="modal-footer">
-        <button className="ybtn" disabled={pending} type="button" onClick={onCancel}>
-          Cancel
-        </button>
         <button
           className="ybtn ybtn-danger"
           data-request-method="delete"
@@ -2065,7 +2233,16 @@ function SiteDeleteUserModal({
             }
           }}
         >
-          {pending ? "Deleting..." : "Delete"}
+          button.yes
+        </button>
+        <button
+          className="ybtn"
+          data-dismiss="modal"
+          disabled={pending}
+          type="button"
+          onClick={onCancel}
+        >
+          button.no
         </button>
       </div>
     </div>
@@ -2083,22 +2260,12 @@ function SiteUserPagination({
   runtimeConfig: RuntimeConfig;
   totalPages: number;
 }) {
-  if (totalPages <= 1) {
-    return <div id="pagination" />;
-  }
   return (
-    <div id="pagination">
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-        <a
-          className={pageNumber === page ? "active" : ""}
-          data-page-num={pageNumber}
-          href={appHref(runtimeConfig, siteUserListHref(input, pageNumber))}
-          key={pageNumber}
-        >
-          {pageNumber}
-        </a>
-      ))}
-    </div>
+    <SiteAdminPagination
+      currentPage={page}
+      hrefForPage={(pageNumber) => appHref(runtimeConfig, siteUserListHref(input, pageNumber))}
+      totalPages={totalPages}
+    />
   );
 }
 
@@ -2113,22 +2280,12 @@ function SiteProjectPagination({
   runtimeConfig: RuntimeConfig;
   totalPages: number;
 }) {
-  if (totalPages <= 1) {
-    return <div id="pagination" />;
-  }
   return (
-    <div id="pagination">
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-        <a
-          className={pageNumber === page ? "active" : ""}
-          data-page-num={pageNumber}
-          href={appHref(runtimeConfig, siteProjectListHref(input, pageNumber))}
-          key={pageNumber}
-        >
-          {pageNumber}
-        </a>
-      ))}
-    </div>
+    <SiteAdminPagination
+      currentPage={page}
+      hrefForPage={(pageNumber) => appHref(runtimeConfig, siteProjectListHref(input, pageNumber))}
+      totalPages={totalPages}
+    />
   );
 }
 
@@ -2143,22 +2300,12 @@ function SitePostPagination({
   runtimeConfig: RuntimeConfig;
   totalPages: number;
 }) {
-  if (totalPages <= 1) {
-    return <div id="pagination" />;
-  }
   return (
-    <div id="pagination">
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-        <a
-          className={pageNumber === page ? "active" : ""}
-          data-page-num={pageNumber}
-          href={appHref(runtimeConfig, sitePostListHref(input, pageNumber))}
-          key={pageNumber}
-        >
-          {pageNumber}
-        </a>
-      ))}
-    </div>
+    <SiteAdminPagination
+      currentPage={page}
+      hrefForPage={(pageNumber) => appHref(runtimeConfig, sitePostListHref(input, pageNumber))}
+      totalPages={totalPages}
+    />
   );
 }
 
@@ -2173,21 +2320,73 @@ function SiteIssuePagination({
   runtimeConfig: RuntimeConfig;
   totalPages: number;
 }) {
-  if (totalPages <= 1) {
+  return (
+    <SiteAdminPagination
+      currentPage={page}
+      hrefForPage={(pageNumber) => appHref(runtimeConfig, siteIssueListHref(input, pageNumber))}
+      totalPages={totalPages}
+    />
+  );
+}
+
+function SiteAdminPagination({
+  currentPage,
+  hrefForPage,
+  totalPages,
+}: {
+  currentPage: number;
+  hrefForPage: (page: number) => string;
+  totalPages: number;
+}) {
+  if (totalPages <= 0) {
     return <div id="pagination" />;
   }
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
   return (
-    <div id="pagination">
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-        <a
-          className={pageNumber === page ? "active" : ""}
-          data-page-num={pageNumber}
-          href={appHref(runtimeConfig, siteIssueListHref(input, pageNumber))}
-          key={pageNumber}
-        >
-          {pageNumber}
-        </a>
-      ))}
+    <div className="page-navigation-wrap" id="pagination">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <a href={hrefForPage(currentPage - 1)} pjax-page="">
+              <i className="ico btn-pg-prev"></i>
+              <span>button.prevPage</span>
+            </a>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">button.prevPage</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            readOnly
+            type="number"
+            value={currentPage}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <a href={hrefForPage(currentPage + 1)} pjax-page="">
+              <span>button.nextPage</span>
+              <i className="ico btn-pg-next"></i>
+            </a>
+          ) : (
+            <>
+              <span className="off">button.nextPage</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }

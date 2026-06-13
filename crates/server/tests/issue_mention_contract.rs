@@ -591,6 +591,9 @@ async fn issue_mention_contract_indexes_issue_body_mentions_and_notifies_new_act
     )
     .await;
     assert_eq!(mentioned["items"].as_array().unwrap().len(), 1);
+    assert_eq!(mentioned["sideFilterCounts"]["mentioned"], 1);
+    assert_eq!(mentioned["sideFilterCounts"]["shared"], 0);
+    assert_eq!(mentioned["sideFilterCounts"]["favorite"], 0);
 
     response_json(
         rpc(

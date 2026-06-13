@@ -14,19 +14,40 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
           ...issueDetail,
           bodyMarkdown: "Body **markdown** with `React`",
           hasVoted: true,
+          issueId: 101,
           isWatching: true,
+          parentIssueId: 0,
+          issueVoters: [
+            {
+              avatarUrl: "https://cdn.yona/avatar-door.png",
+              loginId: "door",
+              userId: 2,
+              userLabel: "Door User",
+            },
+            {
+              avatarUrl: "https://cdn.yona/avatar-nori.png",
+              loginId: "nori",
+              userId: 3,
+              userLabel: "Nori User",
+            },
+          ],
           labels: [{ color: "#f44336", id: 5, name: "bug" }],
+          viewerCanUpdate: true,
           voterCount: 2,
           watcherCount: 3,
+          weight: 3,
         }}
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
         onFavoriteToggle={async () => undefined}
+        onIssueWeightChange={async () => undefined}
         onVoteToggle={async () => undefined}
         onWatchToggle={async () => undefined}
       />,
     );
 
     expect(html).toContain('class="app-shell issue-detail-page page-wrap-outer"');
+    expect(html).not.toContain("Yona Rust Project");
+    expect(html).not.toContain("<p>owner/projectYobi</p>");
     expect(html).toContain('class="project-page-wrap board-view"');
     expect(html).toContain('class="board-header issue"');
     expect(html).toContain('class="board-id"');
@@ -38,14 +59,124 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="board-actrow right-txt"');
     expect(html).toContain('id="watch-button"');
     expect(html).toContain('data-watching="true"');
+    expect(html).toContain(">issue.unwatch</button>");
+    expect(html).not.toContain(">Unwatch</button>");
+    expect(html).toContain('id="issue-share-button"');
+    expect(html).toContain("button.share.issue");
+    expect(html).toContain('data-content="issue.sharer.description"');
+    expect(html).toContain('class="project-btn-item hide show-in-mobile-inline ml4"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issueform?parentIssueId=101"');
+    expect(html).toContain("button.newSubtask");
+    expect(html).toContain('class="issue-weight"');
+    expect(html).toContain('id="upvote-issue-weight"');
+    expect(html).toContain('id="down-vote-issue-weight"');
+    expect(html).toContain('class="weight-number"');
+    expect(html).toContain(">3</span>");
+    expect(html).toContain('id="translate"');
+    expect(html).toContain('title="button.translation"');
+    expect(html).toContain('class="yobicon-lang"');
     expect(html).toContain('id="vote"');
     expect(html).toContain('class="vote-wrap voter-exists"');
     expect(html).toContain('data-request-method="post"');
-    expect(html).toContain('class="watcher-list"');
-    expect(html).toContain("Watchers: 3");
-    expect(html).toContain('class="label issue-label list-label active"');
+    expect(html).toContain('class="heart"');
+    expect(html).toContain('class="yobicon-hearts"');
+    expect(html).toContain('class="voter-list-wrap"');
+    expect(html).toContain('class="voter-list"');
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('src="https://cdn.yona/avatar-door.png"');
+    expect(html).toContain('id="voters"');
+    expect(html).toContain('class="modal hide voters-dialog"');
+    expect(html).toContain("issue.voters");
+    expect(html).toContain('class="usf-group"');
+    expect(html).toContain("Door User");
+    expect(html).not.toContain("Voters: 2");
+    expect(html).not.toContain("Unvote");
+    expect(html).toContain('<div class="watcher-list"></div>');
+    expect(html).not.toContain("Watchers: 3");
+    expect(html).toContain("<dt>label</dt>");
+    expect(html).toContain('class="label issue-label active static"');
+    expect(html).toContain('data-label-id="5"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=5"');
+    expect(html).not.toContain('class="label issue-label list-label active"');
     expect(html).toContain("<strong>markdown</strong>");
     expect(html).toContain("<code>React</code>");
+  });
+
+  it("renders legacy issue child comments under their parent with one-line reply form", () => {
+    const parentComment = {
+      authorAvatarUrl: "https://cdn.yona/avatar-parent.png",
+      authorLabel: "Parent User",
+      authorLoginId: "parent",
+      contentsHtml: "",
+      contentsMarkdown: "Parent comment",
+      createdLabel: "1 minute ago",
+      id: 77,
+      viewerCanDelete: false,
+      viewerCanUpdate: false,
+      viewerHasVoted: false,
+      voterCount: 0,
+      voters: [],
+    };
+    const childComment = {
+      ...parentComment,
+      authorLabel: "Child User",
+      authorLoginId: "child",
+      contentsMarkdown: "Child reply",
+      createdLabel: "now",
+      id: 78,
+      parentCommentId: 77,
+      viewerCanDelete: true,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 2,
+          comments: [parentComment, childComment],
+          timeline: [
+            {
+              comment: parentComment,
+              createdLabel: "1 minute ago",
+              eventType: "",
+              id: 77,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+            {
+              comment: childComment,
+              createdLabel: "now",
+              eventType: "",
+              id: 78,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+          viewerCanComment: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onCommentDelete={async () => undefined}
+        onCommentSubmit={async () => undefined}
+      />,
+    );
+
+    expect(html).toContain('id="comment-77"');
+    expect(html).not.toContain('id="comment-78"');
+    expect(html).toContain('class="add-a-comment pull-right"');
+    expect(html).toContain('class="child-comments"');
+    expect(html).toContain('class="one-line-comment"');
+    expect(html).toContain("Child reply");
+    expect(html).toContain('class="subcomment-author hide"');
+    expect(html).toContain('class="parentCommentId"');
+    expect(html).toContain('name="parentCommentId"');
+    expect(html).toContain('value="77"');
+    expect(html).toContain('class="oneline-comment-box"');
+    expect(html).toContain("comment.oneline.comment.placeholder (CTRL + ENTER)");
+    expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/78/delete"');
   });
 
   it("renders the legacy delete confirmation modal shell for deletable issues", () => {
@@ -118,6 +249,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="act-row pull-right"');
     expect(html).toContain('class="new-issue-by"');
     expect(html).toContain('href="/yona/user/issues/new?commentId=55"');
+    expect(html).toContain('class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"');
+    expect(html).toContain('data-comment-id="55"');
+    expect(html).toContain('title="button.translation"');
     expect(html).toContain('data-request-type="comment-vote"');
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/vote"');
     expect(html).toContain('title="common.comment.vote"');
@@ -180,6 +314,68 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('title="common.comment.edit"');
     expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml10"');
     expect(html).toContain('class="yobicon-edit-2"');
+    expect(html).toContain('id="comment-editform-56"');
+    expect(html).toContain('class="comment-update-form"');
+    expect(html).toContain('data-toggle="markdown-editor"');
+    expect(html).toContain('href="#edit-56"');
+    expect(html).toContain('href="#preview-56"');
+    expect(html).toContain('data-editor-mode="update-comment-body"');
+    expect(html).toContain('class="markdown-help"');
+    expect(html).toContain('class="markdown-preview markdown-wrap update-comment-body"');
+    expect(html).toContain('class="upload-drop-here"');
+  });
+
+  it("renders the legacy writable and disabled issue comment form shells", () => {
+    const writableHtml = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          viewerCanComment: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onCommentSubmit={async () => undefined}
+      />,
+    );
+
+    expect(writableHtml).toContain('id="comment-form"');
+    expect(writableHtml).toContain('action="/yona/owner/projectYobi/issue/1/comments"');
+    expect(writableHtml).toContain('encType="multipart/form-data"');
+    expect(writableHtml).toContain('<div class="write-comment-box">');
+    expect(writableHtml).toContain('data-toggle="markdown-editor"');
+    expect(writableHtml).toContain('class="nav nav-tabs nm small"');
+    expect(writableHtml).toContain("common.editor.edit");
+    expect(writableHtml).toContain("common.editor.preview");
+    expect(writableHtml).toContain('class="markdown-help"');
+    expect(writableHtml).toContain('class="markdown-help-nav"');
+    expect(writableHtml).toContain('data-target="markdownShortLinks"');
+    expect(writableHtml).toContain('class="markdown-help-wrap"');
+    expect(writableHtml).toContain('id="editor-contents-comment-body"');
+    expect(writableHtml).toContain('name="contents"');
+    expect(writableHtml).toContain('data-editor-mode="comment-body"');
+    expect(writableHtml).toContain('class="temporaryUploadFiles"');
+    expect(writableHtml).toContain('data-resourcetype="ISSUE_COMMENT"');
+    expect(writableHtml).toContain('id="dynamic-comment-btn"');
+    expect(writableHtml).toContain("button.comment.new");
+    expect(writableHtml).not.toContain("Leave a comment");
+    expect(writableHtml).not.toContain(">Comment</button>");
+
+    const disabledHtml = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          viewerCanComment: false,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(disabledHtml).toContain('class="write-comment-box mt20"');
+    expect(disabledHtml).toContain('title="error.auth.unauthorized.comment"');
+    expect(disabledHtml).toContain('data-login="required"');
+    expect(disabledHtml).toContain('class="comment disabled"');
+    expect(disabledHtml).toContain('class="ybtn ybtn-disabled"');
   });
 
   it("uses metadata-backed mention links in the legacy issue history modal", () => {
@@ -268,6 +464,53 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("issue.event.label.added");
     expect(html).not.toContain('id="event-19"');
   });
+
+  it("renders the legacy issue subtask list shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          childClosedCount: 1,
+          childIssues: [
+            {
+              assigneeLabel: "Door User",
+              createdLabel: "now",
+              isDraft: false,
+              issueNumber: 2,
+              labels: [{ color: "#00aaff", id: 9, name: "subtask" }],
+              state: "open",
+              title: "Child issue",
+            },
+            {
+              assigneeLabel: "",
+              createdLabel: "yesterday",
+              isDraft: false,
+              issueNumber: 3,
+              labels: [],
+              state: "closed",
+              title: "Done child",
+            },
+          ],
+          childOpenCount: 1,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('class="subtasks"');
+    expect(html).toContain('class="child-issues"');
+    expect(html).toContain('class="issue-item parent-issue"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/1"');
+    expect(html).toContain('class="upload-progress red-outline"');
+    expect(html).toContain('style="width:50%"');
+    expect(html).toContain('class="parent-issue-state open"');
+    expect(html).toContain('class="issue-item child-issue"');
+    expect(html).toContain('class="state-label open"');
+    expect(html).toContain('class="subtask-number">#2');
+    expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=9"');
+    expect(html).toContain('class="child-issue-date" title="now"');
+  });
 });
 
 const projectDetail: ProjectDetailViewModel = {
@@ -294,15 +537,24 @@ const issueDetail: ProjectIssueDetailViewModel = {
   bodyMarkdown: "Body",
   commentCount: 0,
   comments: [],
+  childClosedCount: 0,
+  childIssues: [],
+  childOpenCount: 0,
+  dueDateLabel: "",
   hasVoted: false,
   historyHtml: "",
   historyMarkdown: "",
   isFavorited: false,
+  isDraft: false,
   isWatching: false,
   issueNumber: 1,
   labels: [],
+  milestoneId: 0,
   milestoneTitle: "",
   ownerName: "owner",
+  parentIssueId: 0,
+  parentIssueNumber: 0,
+  parentIssueTitle: "",
   projectName: "projectYobi",
   sharers: [],
   state: "open",
@@ -316,4 +568,5 @@ const issueDetail: ProjectIssueDetailViewModel = {
   viewerIsDirectSharer: false,
   voterCount: 0,
   watcherCount: 0,
+  weight: 0,
 };

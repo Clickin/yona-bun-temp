@@ -22,7 +22,7 @@ export const Route = createFileRoute("/$owner/$projectName/reviews")({
 
 function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, currentSession, runtimeConfig, setErrorMessage } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const query: ReviewThreadListQuery = {
     authorId: Number(searchParams.get("authorId") || "0"),
@@ -74,6 +74,7 @@ function ProjectReviewsRouteComponent() {
       query={query}
       reviews={reviewsQuery.data}
       runtimeConfig={runtimeConfig}
+      viewerId={Number(currentSession?.actorId ?? 0)}
     />
   );
 }

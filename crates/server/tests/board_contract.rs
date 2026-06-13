@@ -537,9 +537,13 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
     std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark board watch actor as guest");
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let label_id = create_label(app.clone(), &owner_cookie, &owner_csrf).await;
     let linked_issue = ok_json(
@@ -656,6 +660,10 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(list["totalCount"], 1);
     assert_eq!(list["items"].as_array().unwrap().len(), 1);
     assert_eq!(list["items"][0]["postNumber"], "1");
+    assert!(list["items"][0]["authorAvatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar"));
     assert_eq!(list["items"][0]["labels"][0]["name"], "Guide");
     assert_eq!(list["notices"].as_array().unwrap().len(), 1);
     assert_eq!(list["notices"][0]["postNumber"], "2");
@@ -732,6 +740,43 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .any(|(_, login_id, _, _)| login_id == "nforge"));
 
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
+    let child_commented = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Child board comment",
+                "parentCommentId": comment_id.parse::<i64>().unwrap()
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(child_commented["commentCount"], 2);
+    let child_comment = child_commented["comments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|comment| comment["contentsMarkdown"] == "Child board comment")
+        .expect("child comment");
+    assert_eq!(child_comment["parentCommentId"], comment_id);
+    let child_comment_id = child_comment["id"].as_str().unwrap();
+    let child_deleted = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            &format!("/yona/api/v1/projects/owner/projectYobi/posts/1/comments/{child_comment_id}"),
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(child_deleted["commentCount"], 1);
     original_email::ActiveModel {
         id: NotSet,
         message_id: Set(Some("<board-comment-1@example.com>".to_string())),
@@ -821,6 +866,17 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         direct_edited_detail["comments"][0]["contentsMarkdown"],
         "Legacy board comment edit"
     );
+
+    let guest_watch_forbidden = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/projects/owner/projectYobi/posts/1/watch",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(guest_watch_forbidden.status(), StatusCode::FORBIDDEN);
 
     let unwatched = ok_json(
         rest(

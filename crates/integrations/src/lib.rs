@@ -8,6 +8,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 use base64::{engine::general_purpose, Engine as _};
+use lettre::message::SinglePart;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 
@@ -19,6 +20,8 @@ pub struct MailDeliveryRecord {
     pub bcc: Vec<String>,
     pub body: String,
     pub from: String,
+    pub html: bool,
+    pub reply_to: Option<String>,
     pub subject: String,
     pub to: String,
 }
@@ -28,8 +31,120 @@ pub struct OutboundMail {
     pub bcc: Vec<String>,
     pub body: String,
     pub from: String,
+    pub html: bool,
+    pub reply_to: Option<String>,
     pub subject: String,
     pub to: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailAddress {
+    pub email: String,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailRecipient {
+    pub email: String,
+    pub name: String,
+    pub preferred_language: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailBatch {
+    pub bcc: Vec<NotificationMailAddress>,
+    pub language: String,
+    pub to: Vec<NotificationMailAddress>,
+}
+
+pub fn notification_mail_hide_address_from_env() -> bool {
+    configured_env_value(&["YONA_NOTIFICATION_MAIL_HIDE_ADDRESS"])
+        .map(|value| parse_bool_env_value(&value))
+        .unwrap_or(true)
+}
+
+pub fn notification_mail_recipient_limit_from_env() -> Option<usize> {
+    configured_env_value(&["YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT"])
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|limit| *limit > 0)
+}
+
+pub fn notification_mail_batches(
+    recipients: &[NotificationMailRecipient],
+    default_from_email: &str,
+    site_name: &str,
+    hide_address: bool,
+    recipient_limit: Option<usize>,
+) -> Vec<NotificationMailBatch> {
+    let partial_recipient_size =
+        notification_mail_partial_recipient_size(recipients.len(), hide_address, recipient_limit);
+    if partial_recipient_size == 0 {
+        return Vec::new();
+    }
+
+    let mut language_groups: Vec<(String, Vec<NotificationMailRecipient>)> = Vec::new();
+    for recipient in recipients {
+        let language = recipient.preferred_language.clone();
+        if let Some((_, group)) = language_groups
+            .iter_mut()
+            .find(|(candidate, _)| candidate == &language)
+        {
+            group.push(recipient.clone());
+        } else {
+            language_groups.push((language, vec![recipient.clone()]));
+        }
+    }
+
+    let mut batches = Vec::new();
+    for (language, group) in language_groups {
+        for chunk in group.chunks(partial_recipient_size) {
+            let recipient_addresses = chunk
+                .iter()
+                .map(notification_mail_address_from_recipient)
+                .collect::<Vec<_>>();
+            let (to, bcc) = if hide_address {
+                (
+                    vec![NotificationMailAddress {
+                        email: default_from_email.to_string(),
+                        name: site_name.to_string(),
+                    }],
+                    recipient_addresses,
+                )
+            } else {
+                (recipient_addresses, Vec::new())
+            };
+            batches.push(NotificationMailBatch {
+                bcc,
+                language: language.clone(),
+                to,
+            });
+        }
+    }
+    batches
+}
+
+fn notification_mail_partial_recipient_size(
+    recipient_count: usize,
+    hide_address: bool,
+    recipient_limit: Option<usize>,
+) -> usize {
+    let Some(limit) = recipient_limit else {
+        return recipient_count;
+    };
+    if hide_address {
+        limit.saturating_sub(1)
+    } else {
+        limit
+    }
+}
+
+fn notification_mail_address_from_recipient(
+    recipient: &NotificationMailRecipient,
+) -> NotificationMailAddress {
+    NotificationMailAddress {
+        email: recipient.email.clone(),
+        name: recipient.name.clone(),
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -692,12 +807,39 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
             bcc: mail.bcc,
             body: mail.body,
             from: mail.from,
+            html: mail.html,
+            reply_to: mail.reply_to,
             subject: mail.subject,
             to: mail.to,
         });
         return Ok(());
     }
 
+    let email = build_mail_message(mail)?;
+
+    let host = configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
+        .ok_or_else(|| "SMTP_HOST is required.".to_string())?;
+    let smtp_config = smtp_delivery_config_from_env();
+    let port = configured_env_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(smtp_config.default_port);
+    let mut builder = match smtp_config.ssl_enabled {
+        Some(false) => SmtpTransport::builder_dangerous(&host),
+        Some(true) | None => SmtpTransport::relay(&host)
+            .map_err(|error| format!("smtp relay configuration failed: {error}"))?,
+    }
+    .port(port);
+    if let Some((user, pass)) = smtp_credentials_from_env() {
+        builder = builder.credentials(Credentials::new(user, pass));
+    }
+    builder
+        .build()
+        .send(&email)
+        .map_err(|error| format!("smtp delivery failed: {error}"))?;
+    Ok(())
+}
+
+fn build_mail_message(mail: OutboundMail) -> Result<Message, String> {
     let mut builder = Message::builder()
         .from(
             mail.from
@@ -714,33 +856,29 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
                 .map_err(|error| format!("invalid bcc address: {error}"))?,
         );
     }
-    let email = builder
-        .subject(mail.subject)
-        .body(mail.body)
-        .map_err(|error| format!("invalid mail message: {error}"))?;
+    if let Some(reply_to) = mail.reply_to {
+        builder = builder.reply_to(
+            reply_to
+                .parse()
+                .map_err(|error| format!("invalid reply-to address: {error}"))?,
+        );
+    }
+    let builder = builder.subject(mail.subject);
+    if mail.html {
+        builder
+            .singlepart(SinglePart::html(mail.body))
+            .map_err(|error| format!("invalid mail message: {error}"))
+    } else {
+        builder
+            .body(mail.body)
+            .map_err(|error| format!("invalid mail message: {error}"))
+    }
+}
 
-    let host = configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
-        .ok_or_else(|| "SMTP_HOST is required.".to_string())?;
-    let smtp_config = smtp_delivery_config_from_env();
-    let port = configured_env_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
-        .and_then(|value| value.parse::<u16>().ok())
-        .unwrap_or(smtp_config.default_port);
-    let mut builder = match smtp_config.ssl_enabled {
-        Some(false) => SmtpTransport::builder_dangerous(&host),
-        Some(true) | None => SmtpTransport::relay(&host)
-            .map_err(|error| format!("smtp relay configuration failed: {error}"))?,
-    }
-    .port(port);
-    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"]);
-    let pass = configured_env_value(&["SMTP_PASS", "YONA_SMTP_PASSWORD"]);
-    if let (Some(user), Some(pass)) = (user, pass) {
-        builder = builder.credentials(Credentials::new(user, pass));
-    }
-    builder
-        .build()
-        .send(&email)
-        .map_err(|error| format!("smtp delivery failed: {error}"))?;
-    Ok(())
+fn smtp_credentials_from_env() -> Option<(String, String)> {
+    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
+    let pass = configured_env_value(&["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"])?;
+    Some((user, pass))
 }
 
 pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcome, String> {
@@ -899,12 +1037,8 @@ fn webhook_https_delivery_command(
         "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
         "WEBHOOK_HTTPS_DELIVERY_COMMAND",
     ]) {
-        let mut parts = configured.split_whitespace();
-        let program = parts
-            .next()
-            .ok_or_else(|| "webhook HTTPS delivery command is empty".to_string())?
-            .to_string();
-        let mut args: Vec<String> = parts.map(ToString::to_string).collect();
+        let (program, mut args) =
+            configured_command_parts(&configured, "webhook HTTPS delivery command is empty")?;
         args.push(record.payload_url.clone());
         return Ok((program, args));
     }
@@ -931,6 +1065,64 @@ fn webhook_https_delivery_command(
     }
     args.push(record.payload_url.clone());
     Ok(("curl".to_string(), args))
+}
+
+fn configured_command_parts(
+    command: &str,
+    empty_message: &str,
+) -> Result<(String, Vec<String>), String> {
+    let parts = split_configured_command(command)?;
+    let mut parts = parts.into_iter();
+    let program = parts.next().ok_or_else(|| empty_message.to_string())?;
+    Ok((program, parts.collect()))
+}
+
+fn split_configured_command(command: &str) -> Result<Vec<String>, String> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+
+    for ch in command.chars() {
+        if escaped {
+            current.push(ch);
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if let Some(quote_char) = quote {
+            if ch == quote_char {
+                quote = None;
+            } else {
+                current.push(ch);
+            }
+            continue;
+        }
+        if ch == '\'' || ch == '"' {
+            quote = Some(ch);
+            continue;
+        }
+        if ch.is_whitespace() {
+            if !current.is_empty() {
+                parts.push(std::mem::take(&mut current));
+            }
+            continue;
+        }
+        current.push(ch);
+    }
+    if escaped {
+        current.push('\\');
+    }
+    if quote.is_some() {
+        return Err("configured command has an unterminated quote".to_string());
+    }
+    if !current.is_empty() {
+        parts.push(current);
+    }
+    Ok(parts)
 }
 
 fn webhook_outcome_from_http_response_bytes(
@@ -1093,8 +1285,9 @@ mod tests {
     use std::sync::{Mutex, OnceLock};
 
     use super::{
-        webhook_endpoint_allowed, webhook_headers, webhook_https_delivery_command,
-        webhook_private_network_delivery_allowed, WebhookDeliveryRecord,
+        build_mail_message, smtp_credentials_from_env, webhook_endpoint_allowed, webhook_headers,
+        webhook_https_delivery_command, webhook_private_network_delivery_allowed, OutboundMail,
+        WebhookDeliveryRecord,
     };
 
     fn webhook_env_lock() -> &'static Mutex<()> {
@@ -1107,6 +1300,78 @@ mod tests {
         std::env::remove_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS");
         std::env::remove_var("YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND");
         std::env::remove_var("WEBHOOK_HTTPS_DELIVERY_COMMAND");
+    }
+
+    fn clear_smtp_credential_env() {
+        std::env::remove_var("SMTP_USER");
+        std::env::remove_var("YONA_SMTP_USER");
+        std::env::remove_var("SMTP_PASSWORD");
+        std::env::remove_var("SMTP_PASS");
+        std::env::remove_var("YONA_SMTP_PASSWORD");
+    }
+
+    fn mail_body_for(html: bool) -> String {
+        let message = build_mail_message(OutboundMail {
+            bcc: vec![],
+            body: if html {
+                "<p>Hello</p>".to_string()
+            } else {
+                "Hello".to_string()
+            },
+            from: "Yona <noreply@yona.example>".to_string(),
+            html,
+            reply_to: Some("reply+yona@example.com".to_string()),
+            subject: "Subject".to_string(),
+            to: "receiver@example.com".to_string(),
+        })
+        .expect("mail message");
+        String::from_utf8(message.formatted()).expect("formatted message")
+    }
+
+    #[test]
+    fn notification_mail_message_uses_html_mime_content_when_requested() {
+        let formatted = mail_body_for(true);
+
+        assert!(formatted.contains("Content-Type: text/html"));
+        assert!(formatted.contains("<p>Hello</p>"));
+        assert!(formatted.contains("Reply-To: reply+yona@example.com"));
+    }
+
+    #[test]
+    fn plain_mail_message_does_not_use_html_mime_content() {
+        let formatted = mail_body_for(false);
+
+        assert!(!formatted.contains("Content-Type: text/html"));
+        assert!(formatted.contains("Hello"));
+    }
+
+    #[test]
+    fn smtp_credentials_accept_legacy_password_aliases() {
+        let _guard = webhook_env_lock().lock().unwrap();
+        clear_smtp_credential_env();
+
+        std::env::set_var("SMTP_USER", "mailer");
+        std::env::set_var("SMTP_PASSWORD", "legacy-password");
+        assert_eq!(
+            smtp_credentials_from_env(),
+            Some(("mailer".to_string(), "legacy-password".to_string()))
+        );
+
+        std::env::remove_var("SMTP_PASSWORD");
+        std::env::set_var("SMTP_PASS", "reference-password");
+        assert_eq!(
+            smtp_credentials_from_env(),
+            Some(("mailer".to_string(), "reference-password".to_string()))
+        );
+
+        std::env::remove_var("SMTP_PASS");
+        std::env::set_var("YONA_SMTP_PASSWORD", "yona-password");
+        assert_eq!(
+            smtp_credentials_from_env(),
+            Some(("mailer".to_string(), "yona-password".to_string()))
+        );
+
+        clear_smtp_credential_env();
     }
 
     #[test]
@@ -1189,6 +1454,36 @@ mod tests {
             Some("https://hooks.example/yona")
         );
 
+        clear_webhook_private_network_env();
+    }
+
+    #[test]
+    fn webhook_https_override_command_preserves_quoted_programs_and_arguments() {
+        let _guard = webhook_env_lock().lock().unwrap();
+        clear_webhook_private_network_env();
+        std::env::set_var(
+            "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
+            r#""/opt/Yona Tools/webhook fetch" --header "X-Test: yes""#,
+        );
+        let record = WebhookDeliveryRecord {
+            body: "{}".to_string(),
+            event_type: "NEW_ISSUE".to_string(),
+            headers: webhook_headers(""),
+            payload_url: "https://hooks.example/yona".to_string(),
+            webhook_type: "SIMPLE".to_string(),
+        };
+
+        let (program, args) = webhook_https_delivery_command(&record).expect("override command");
+
+        assert_eq!(program, "/opt/Yona Tools/webhook fetch");
+        assert_eq!(
+            args,
+            vec![
+                "--header".to_string(),
+                "X-Test: yes".to_string(),
+                "https://hooks.example/yona".to_string(),
+            ]
+        );
         clear_webhook_private_network_env();
     }
 }

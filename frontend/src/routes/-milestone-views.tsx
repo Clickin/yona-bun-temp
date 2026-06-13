@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
-import { MarkdownRenderer } from "./-markdown-renderer";
+import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
@@ -25,7 +25,11 @@ function fallbackProjectDetail(ownerName: string, projectName: string): ProjectD
 }
 
 function stateLabel(state: string) {
-  return state === "closed" ? "Closed" : state === "all" ? "All" : "Open";
+  return state === "closed"
+    ? "milestone.state.closed"
+    : state === "all"
+      ? "milestone.state.all"
+      : "milestone.state.open";
 }
 
 function tabHref(
@@ -70,23 +74,62 @@ function MilestoneIssueLink(props: {
         detail.projectName,
         `issue/${issue.issueNumber}`,
       )}
+      target="_blank"
     >
-      <span className={`state-label ${issue.state}`}>{issue.state === "closed" ? "✓" : ""}</span>
-      <span className="item-name">
-        <span className="number">{`#${issue.issueNumber}`}</span>
-        {` ${issue.title}`}
-        {issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}
-        {issue.labels.map((label) => (
-          <span
-            className="label issue-label list-label active"
-            key={label.id}
-            style={{ backgroundColor: label.color }}
-          >
-            {label.name}
-          </span>
-        ))}
-      </span>
+      <div className="issue-item">
+        <span className={`state-label ${issue.state}`}>
+          {issue.state === "closed" ? <i className="yobicon-checkmark" /> : null}
+        </span>
+        <span className="item-name">
+          <span className="number">{`#${issue.issueNumber}`}</span>
+          {` ${issue.title}`}
+          {issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}
+          {issue.labels.map((label) => (
+            <a
+              className="label issue-label list-label active"
+              data-category-id=""
+              data-label-id={label.id}
+              href="#"
+              key={label.id}
+              style={{ backgroundColor: label.color }}
+            >
+              {label.name}
+            </a>
+          ))}
+        </span>
+      </div>
     </a>
+  );
+}
+
+function milestoneActionHref(
+  runtimeConfig: RuntimeConfig,
+  detail: ProjectDetailViewModel,
+  milestoneId: number,
+  action: "close" | "delete" | "open",
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    `milestone/${milestoneId}/${action}`,
+  );
+}
+
+function MilestoneSearchBox(props: { placeholder: string }) {
+  return (
+    <div className="pull-left search search-bar">
+      <input
+        className="textbox"
+        defaultValue=""
+        name="filter"
+        placeholder={props.placeholder}
+        type="text"
+      />
+      <button className="search-btn" type="submit">
+        <i className="yobicon-search" />
+      </button>
+    </div>
   );
 }
 
@@ -107,120 +150,175 @@ export function ProjectMilestoneListPage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Milestones</h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="tab-wrap">
-        {detail.viewerCanUpdate ? (
-          <div className="pull-right btns">
-            <a
-              className="ybtn ybtn-success"
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "newMilestoneForm",
-              )}
-            >
-              New Milestone
-            </a>
-          </div>
-        ) : null}
-        <ul className="nav nav-tabs">
-          {["open", "closed", "all"].map((state) => (
-            <li className={list.state === state ? "active" : ""} key={state}>
-              <a href={tabHref(props.runtimeConfig, detail, "milestones", state)}>
-                {stateLabel(state)}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {list.milestones.length === 0 ? (
-        <div className="error-wrap">
-          <p>No milestone exists</p>
-        </div>
-      ) : (
-        <>
-          {list.milestones.length > 1 ? (
-            <div className="filter-wrap milestone">
-              <div className="filters">
+      <link
+        href={buildProjectHref(
+          props.runtimeConfig,
+          detail.ownerName,
+          detail.projectName,
+          "issue/labels.css",
+        )}
+        rel="stylesheet"
+        type="text/css"
+      />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="tab-wrap">
+            {detail.viewerCanUpdate ? (
+              <div className="pull-right btns">
                 <a
-                  className={list.orderBy === "dueDate" ? "filter active" : "filter"}
-                  href={sortHref(props.runtimeConfig, detail, list, "dueDate")}
+                  className="ybtn ybtn-success"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "newMilestoneForm",
+                  )}
                 >
-                  Due date
-                </a>
-                <a
-                  className={list.orderBy === "completionRate" ? "filter active" : "filter"}
-                  href={sortHref(props.runtimeConfig, detail, list, "completionRate")}
-                >
-                  Completion rate
+                  milestone.menu.new
                 </a>
               </div>
+            ) : null}
+            <ul className="nav nav-tabs">
+              {["open", "closed", "all"].map((state) => (
+                <li className={list.state === state ? "active" : ""} key={state}>
+                  <a href={tabHref(props.runtimeConfig, detail, "milestones", state)}>
+                    {stateLabel(state)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {list.milestones.length === 0 ? (
+            <div className="error-wrap">
+              <i className="ico ico-err1" />
+              <p>milestone.is.empty</p>
             </div>
-          ) : null}
-          <ul className="milestones">
-            {list.milestones.map((milestone) => (
-              <li className="milestone" key={milestone.id}>
-                <div className="infos">
-                  <div className="meta-info">
-                    <a
-                      className="milestone-name"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `milestone/${milestone.id}`,
-                      )}
-                    >
-                      {milestone.title}
-                    </a>
-                    <span className="sp">|</span>
-                    <span className="issue-item">{`${milestone.closedIssueCount} / ${milestone.openIssueCount + milestone.closedIssueCount}`}</span>
-                    {list.state === "all" ? (
-                      <>
-                        <span className="sp">|</span>
-                        <span className={`state nm ${milestone.state}`}>
-                          {stateLabel(milestone.state)}
-                        </span>
-                      </>
-                    ) : null}
-                    {milestone.dueDateLabel ? (
-                      <>
-                        <span className="sp">|</span>
-                        <span className="due-date">
-                          Due date <strong>{milestone.dueDateLabel}</strong>
-                        </span>
-                      </>
-                    ) : null}
-                    <span className="number completion-rate">{`${milestone.completionPercent}%`}</span>
-                  </div>
-                  <MilestoneProgress percent={milestone.completionPercent} />
+          ) : (
+            <>
+              <div className="filter-wrap milestone">
+                {list.milestones.length > 1 ? (
+                  <>
+                    <div className="filters">
+                      <a
+                        className={list.orderBy === "dueDate" ? "filter active" : "filter"}
+                        href={sortHref(props.runtimeConfig, detail, list, "dueDate")}
+                      >
+                        <i
+                          className={`ico btn-gray-arrow${
+                            list.orderBy === "dueDate" && list.orderDir === "desc" ? " down" : ""
+                          }`}
+                        />
+                        common.order.dueDate
+                      </a>
+                      <a
+                        className={
+                          list.orderBy === "completionRate" ? "filter active" : "filter"
+                        }
+                        href={sortHref(props.runtimeConfig, detail, list, "completionRate")}
+                      >
+                        <i
+                          className={`ico btn-gray-arrow${
+                            list.orderBy === "completionRate" && list.orderDir === "desc"
+                              ? " down"
+                              : ""
+                          }`}
+                        />
+                        common.order.completionRate
+                      </a>
+                    </div>
+                    <MilestoneSearchBox placeholder="search.title" />
+                  </>
+                ) : null}
+              </div>
+              <div className="row-fluid">
+                <div>
+                  <ul className="milestones">
+                    {list.milestones.map((milestone) => (
+                      <li className="milestone" key={milestone.id}>
+                        <div className="infos">
+                          <div className="meta-info">
+                            <strong className="version" />
+                            <a
+                              className="milestone-name"
+                              href={buildProjectHref(
+                                props.runtimeConfig,
+                                detail.ownerName,
+                                detail.projectName,
+                                `milestone/${milestone.id}`,
+                              )}
+                            >
+                              {milestone.title}
+                            </a>
+                            <span className="sp">|</span>
+                            <span className="issue-item">{`${milestone.closedIssueCount} / ${
+                              milestone.openIssueCount + milestone.closedIssueCount
+                            }`}</span>
+                            {list.state === "all" ? (
+                              <>
+                                <span className="sp">|</span>
+                                <span className={`state nm ${milestone.state}`}>
+                                  {stateLabel(milestone.state)}
+                                </span>
+                              </>
+                            ) : null}
+                            {milestone.dueDateLabel ? (
+                              <>
+                                <span className="sp">|</span>
+                                <span
+                                  className={`due-date${
+                                    milestone.state === "closed" ? " ml5" : ""
+                                  }`}
+                                >
+                                  label.dueDate <strong>{milestone.dueDateLabel}</strong>
+                                </span>
+                              </>
+                            ) : null}
+                            <div className="pull-right">
+                              <span className="number completion-rate">
+                                {milestone.openIssueCount + milestone.closedIssueCount > 0
+                                  ? `${milestone.completionPercent}%`
+                                  : ""}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="progress-wrap">
+                            <MilestoneProgress percent={milestone.completionPercent} />
+                          </div>
+                        </div>
+                        <div>
+                          <div />
+                          <div>
+                            {milestone.openIssues.map((issue) => (
+                              <MilestoneIssueLink
+                                detail={detail}
+                                issue={issue}
+                                key={`open-${issue.issueNumber}`}
+                                runtimeConfig={props.runtimeConfig}
+                              />
+                            ))}
+                          </div>
+                          <div />
+                          <div>
+                            {milestone.closedIssues.map((issue) => (
+                              <MilestoneIssueLink
+                                detail={detail}
+                                issue={issue}
+                                key={`closed-${issue.issueNumber}`}
+                                runtimeConfig={props.runtimeConfig}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="milestone-issues">
-                  {milestone.openIssues.map((issue) => (
-                    <MilestoneIssueLink
-                      detail={detail}
-                      issue={issue}
-                      key={`open-${issue.issueNumber}`}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  ))}
-                  {milestone.closedIssues.map((issue) => (
-                    <MilestoneIssueLink
-                      detail={detail}
-                      issue={issue}
-                      key={`closed-${issue.issueNumber}`}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
@@ -250,135 +348,214 @@ export function ProjectMilestoneDetailPage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>{milestone?.title ?? "Milestone"}</h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       {milestone ? (
-        <section className="milesion-wrap">
-          <h4>
-            <a
-              className="title"
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                `milestone/${milestone.id}`,
-              )}
-            >
-              {milestone.title}
-            </a>
-            <small className="ml10">
-              {milestone.dueDateLabel ? (
-                <span className="due-date">
-                  Due date <strong>{milestone.dueDateLabel}</strong>
-                </span>
-              ) : null}
-              <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
-                {stateLabel(milestone.state)}
-              </span>
-            </small>
-          </h4>
-          <MilestoneProgress percent={milestone.completionPercent} />
-          {milestone.contentsMarkdown.trim() ? (
-            <div className="milestone-desc">
-              <MarkdownRenderer
-                className="markdown-wrap"
-                basePath={props.runtimeConfig.basePath}
-                issueReferences={milestone.issueReferences}
-                markdown={milestone.contentsMarkdown}
-                mentionReferences={milestone.mentionReferences}
-                ownerName={detail.ownerName}
-                projectName={detail.projectName}
-              />
-              <div className="attachments">
-                {milestone.attachments.map((attachment) => (
-                  <a href={attachment.url} key={attachment.id}>
-                    {attachment.name}
+        <>
+          <div className="page-wrap-outer">
+            <div className="project-page-wrap">
+              <section className="milesion-wrap">
+                <h4>
+                  <a
+                    className="title"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `milestone/${milestone.id}`,
+                    )}
+                  >
+                    {milestone.title}
                   </a>
-                ))}
+                  <small className="ml10">
+                    {milestone.dueDateLabel ? (
+                      <span className="due-date">
+                        label.dueDate <strong>{milestone.dueDateLabel}</strong>
+                      </span>
+                    ) : null}
+                    <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
+                      {stateLabel(milestone.state)}
+                    </span>
+                  </small>
+                </h4>
+                <MilestoneProgress percent={milestone.completionPercent} />
+                {milestone.contentsMarkdown.trim() ? (
+                  <div className="milestone-desc">
+                    <MarkdownRenderer
+                      className="markdown-wrap"
+                      basePath={props.runtimeConfig.basePath}
+                      issueReferences={milestone.issueReferences}
+                      markdown={milestone.contentsMarkdown}
+                      mentionReferences={milestone.mentionReferences}
+                      ownerName={detail.ownerName}
+                      projectName={detail.projectName}
+                    />
+                    <div className="attachments" data-attachments="[]">
+                      {milestone.attachments.map((attachment) => (
+                        <a href={attachment.url} key={attachment.id}>
+                          {attachment.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="content empty-content" />
+                )}
+                <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
+                  <a
+                    className="ybtn pull-left"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "milestones",
+                    )}
+                  >
+                    button.list
+                  </a>
+                  {milestone.viewerCanDelete && props.onDelete ? (
+                    <a className="ybtn ybtn-danger" data-toggle="modal" href="#deleteConfirm">
+                      button.delete
+                    </a>
+                  ) : null}
+                  {milestone.viewerCanUpdate ? (
+                    <>
+                      <a
+                        className="ybtn"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `milestone/${milestone.id}/editform`,
+                        )}
+                      >
+                        button.edit
+                      </a>
+                      {milestone.state === "open" && props.onClose ? (
+                        <button
+                          className="ybtn"
+                          data-request-method="post"
+                          data-request-uri={milestoneActionHref(
+                            props.runtimeConfig,
+                            detail,
+                            milestone.id,
+                            "close",
+                          )}
+                          onClick={() => void props.onClose?.()}
+                          type="button"
+                        >
+                          milestone.close
+                        </button>
+                      ) : null}
+                      {milestone.state === "closed" && props.onOpen ? (
+                        <button
+                          className="ybtn"
+                          data-request-method="post"
+                          data-request-uri={milestoneActionHref(
+                            props.runtimeConfig,
+                            detail,
+                            milestone.id,
+                            "open",
+                          )}
+                          onClick={() => void props.onOpen?.()}
+                          type="button"
+                        >
+                          milestone.open
+                        </button>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+                <div id="issues">
+                  <ul className="nav nav-tabs">
+                    {["open", "closed", "all"].map((state) => (
+                      <li className={issueState === state ? "active" : ""} key={state}>
+                        <a
+                          href={`${tabHref(
+                            props.runtimeConfig,
+                            detail,
+                            `milestone/${milestone.id}`,
+                            state,
+                          )}#issues`}
+                        >
+                          {state === "open"
+                            ? "issue.state.open"
+                            : state === "closed"
+                              ? "issue.state.closed"
+                              : "issue.state.all"}
+                          <span className="num-badge">
+                            {state === "open"
+                              ? milestone.openIssueCount
+                              : state === "closed"
+                                ? milestone.closedIssueCount
+                                : milestone.openIssueCount + milestone.closedIssueCount}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="issues">
+                    <div className="filter-wrap">
+                      <div className="pull-right search search-bar">
+                        <input
+                          className="textbox"
+                          data-items="issue-item"
+                          data-toggle="item-search"
+                          defaultValue=""
+                          name="filter"
+                          placeholder="milestone.searchPlaceholder"
+                          type="text"
+                        />
+                        <button className="search-btn" type="submit">
+                          <i className="yobicon-search" />
+                        </button>
+                      </div>
+                    </div>
+                    {issues.map((issue) => (
+                      <MilestoneIssueLink
+                        detail={detail}
+                        issue={issue}
+                        key={`${issue.state}-${issue.issueNumber}`}
+                        runtimeConfig={props.runtimeConfig}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+          {milestone.viewerCanDelete && props.onDelete ? (
+            <div className="modal hide fade" id="deleteConfirm">
+              <div className="modal-header">
+                <button className="close" data-dismiss="modal" type="button">
+                  x
+                </button>
+                <h3>milestone.delete</h3>
+              </div>
+              <div className="modal-body">
+                <p>post.delete.confirm</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="ybtn ybtn-danger"
+                  data-request-method="delete"
+                  data-request-uri={milestoneActionHref(
+                    props.runtimeConfig,
+                    detail,
+                    milestone.id,
+                    "delete",
+                  )}
+                  onClick={() => void props.onDelete?.()}
+                  type="button"
+                >
+                  button.yes
+                </button>
+                <button className="ybtn" data-dismiss="modal" type="button">
+                  button.no
+                </button>
               </div>
             </div>
-          ) : (
-            <div className="content empty-content" />
-          )}
-          <div className="actrow right-txt row-fluid">
-            <a
-              className="ybtn pull-left"
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "milestones",
-              )}
-            >
-              List
-            </a>
-            {milestone.viewerCanDelete && props.onDelete ? (
-              <button
-                className="ybtn ybtn-danger"
-                onClick={() => void props.onDelete?.()}
-                type="button"
-              >
-                Delete
-              </button>
-            ) : null}
-            {milestone.viewerCanUpdate ? (
-              <>
-                <a
-                  className="ybtn"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    `milestone/${milestone.id}/editform`,
-                  )}
-                >
-                  Edit
-                </a>
-                {milestone.state === "open" && props.onClose ? (
-                  <button className="ybtn" onClick={() => void props.onClose?.()} type="button">
-                    Close
-                  </button>
-                ) : null}
-                {milestone.state === "closed" && props.onOpen ? (
-                  <button className="ybtn" onClick={() => void props.onOpen?.()} type="button">
-                    Open
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-          </div>
-          <div id="issues">
-            <ul className="nav nav-tabs">
-              {["open", "closed", "all"].map((state) => (
-                <li className={issueState === state ? "active" : ""} key={state}>
-                  <a
-                    href={tabHref(props.runtimeConfig, detail, `milestone/${milestone.id}`, state)}
-                  >
-                    {stateLabel(state)}
-                    <span className="num-badge">
-                      {state === "open"
-                        ? milestone.openIssueCount
-                        : state === "closed"
-                          ? milestone.closedIssueCount
-                          : milestone.openIssueCount + milestone.closedIssueCount}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <div className="issues">
-              {issues.map((issue) => (
-                <MilestoneIssueLink
-                  detail={detail}
-                  issue={issue}
-                  key={`${issue.state}-${issue.issueNumber}`}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+          ) : null}
+        </>
       ) : null}
     </main>
   );
@@ -418,103 +595,163 @@ export function ProjectMilestoneFormPage(props: {
   }, [initial]);
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>{props.mode === "create" ? "New Milestone" : "Edit Milestone"}</h1>
+    <main className="app-shell milestone-form-page page-wrap-outer">
+      <h1 className="sr-only">
+        {props.mode === "create" ? "New Milestone" : "Edit Milestone"}
+      </h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <form
-        id="milestone-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setPending(true);
-          void props
-            .onSubmit?.({
-              attachmentIds,
-              contentsMarkdown,
-              dueDate,
-              state,
-              title,
-            })
-            .finally(() => setPending(false));
-        }}
-      >
-        <input
-          className="zen-mode text title"
-          maxLength={250}
-          name="title"
-          onChange={(event) => setTitle(event.currentTarget.value)}
-          placeholder="Title"
-          value={title}
-        />
-        <MarkdownAttachmentTextarea
-          className="content-body"
-          csrfToken={props.csrfToken}
-          name="contents"
-          onAttachmentUpload={(attachment) =>
-            setAttachmentIds((current) => [...current, attachment.id])
-          }
-          onChange={setContentsMarkdown}
-          runtimeConfig={props.runtimeConfig}
-          value={contentsMarkdown}
-        />
-        <dl className="issue-option">
-          <dt>State</dt>
-          <dd>
-            <label htmlFor="milestone-open">
-              <input
-                checked={state === "open"}
-                id="milestone-open"
-                name="state"
-                onChange={() => setState("open")}
-                type="radio"
-                value="open"
-              />
-              Open
-            </label>
-            <label htmlFor="milestone-close">
-              <input
-                checked={state === "closed"}
-                id="milestone-close"
-                name="state"
-                onChange={() => setState("closed")}
-                type="radio"
-                value="closed"
-              />
-              Closed
-            </label>
-          </dd>
-        </dl>
-        <dl className="issue-option">
-          <dt>Due date</dt>
-          <dd>
-            <input
-              autoComplete="off"
-              className="validate due-date"
-              name="dueDate"
-              onChange={(event) => setDueDate(event.currentTarget.value)}
-              placeholder="yyyy-MM-dd"
-              type="text"
-              value={dueDate}
-            />
-          </dd>
-        </dl>
-        <div className="actrow right-txt">
-          <button className="ybtn ybtn-info" disabled={pending} type="submit">
-            Save
-          </button>
-          <a
-            className="ybtn"
-            href={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              "milestones",
-            )}
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap">
+          <form
+            action={
+              props.mode === "edit" && initial?.id
+                ? buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    `milestone/${initial.id}/edit`,
+                  )
+                : buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "milestones",
+                  )
+            }
+            id="milestone-form"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setPending(true);
+              void props
+                .onSubmit?.({
+                  attachmentIds,
+                  contentsMarkdown,
+                  dueDate,
+                  state,
+                  title,
+                })
+                .finally(() => setPending(false));
+            }}
           >
-            Cancel
-          </a>
+            <div className="row-fluid">
+              <div className="span12">
+                <dl>
+                  <dd>
+                    <input
+                      className="zen-mode text title"
+                      id="title"
+                      maxLength={250}
+                      name="title"
+                      onChange={(event) => setTitle(event.currentTarget.value)}
+                      placeholder="title.text"
+                      tabIndex={1}
+                      type="text"
+                      value={title}
+                    />
+                  </dd>
+                </dl>
+              </div>
+              <div className="row-fluid">
+                <div className="span9 span-left-pane">
+                  <dl>
+                    <dd style={{ position: "relative" }}>
+                      <LegacyMarkdownEditorShell
+                        editId="edit-content-body"
+                        editorMode="content-body"
+                        previewId="preview-content-body"
+                      >
+                        <MarkdownAttachmentTextarea
+                          ariaLabel="Contents"
+                          className="editorSeries content comment nm"
+                          csrfToken={props.csrfToken}
+                          editorMode="content-body"
+                          id="editor-contents-content-body"
+                          name="contents"
+                          onAttachmentUpload={(attachment) =>
+                            setAttachmentIds((current) => [...current, attachment.id])
+                          }
+                          onChange={setContentsMarkdown}
+                          runtimeConfig={props.runtimeConfig}
+                          value={contentsMarkdown}
+                        />
+                      </LegacyMarkdownEditorShell>
+                    </dd>
+                  </dl>
+                  <div className="actrow right-txt">
+                    <button className="ybtn ybtn-info" disabled={pending} type="submit">
+                      button.save
+                    </button>
+                    <a
+                      className="ybtn"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "milestones",
+                      )}
+                    >
+                      button.cancel
+                    </a>
+                  </div>
+                </div>
+                <div className="span3 span-hard-wrap">
+                  <dl className="issue-option">
+                    <dt>milestone.form.state</dt>
+                    <dd>
+                      <div>
+                        <input
+                          checked={state === "open"}
+                          className="radio-btn"
+                          id="milestone-open"
+                          name="state"
+                          onChange={() => setState("open")}
+                          type="radio"
+                          value="open"
+                        />
+                        <label className="bold" htmlFor="milestone-open">
+                          milestone.state.open
+                        </label>{" "}
+                        <input
+                          checked={state === "closed"}
+                          className="radio-btn"
+                          id="milestone-close"
+                          name="state"
+                          onChange={() => setState("closed")}
+                          type="radio"
+                          value="closed"
+                        />
+                        <label className="bold" htmlFor="milestone-close">
+                          milestone.state.closed
+                        </label>
+                      </div>
+                    </dd>
+                  </dl>
+                  <dl className="issue-option">
+                    <dt>milestone.form.dueDate</dt>
+                    <dd>
+                      <div>
+                        <label htmlFor="dueDate">
+                          <input
+                            autoComplete="off"
+                            className="validate due-date"
+                            id="dueDate"
+                            name="dueDate"
+                            onChange={(event) => setDueDate(event.currentTarget.value)}
+                            type="text"
+                            value={dueDate}
+                          />
+                        </label>
+                        <div className="date-picker" id="datepicker" />
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </main>
   );
 }

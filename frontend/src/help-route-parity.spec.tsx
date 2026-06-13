@@ -1,0 +1,48 @@
+import fs from "node:fs";
+import path from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { HelpTocPage } from "./routes/-help-views";
+
+describe("legacy help route parity", () => {
+  it("keeps the anonymous legacy /_help route mounted in React", () => {
+    const legacyRoutes = fs.readFileSync(path.resolve(__dirname, "../../yona-original/conf/routes"), {
+      encoding: "utf8",
+    });
+    const legacyController = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/controllers/HelpApp.java"),
+      { encoding: "utf8" },
+    );
+    const routeSource = fs.readFileSync(path.resolve(__dirname, "routes/[_]help/route.tsx"), {
+      encoding: "utf8",
+    });
+
+    expect(legacyRoutes).toContain("GET            /_help");
+    expect(legacyController).toContain("@AnonymousCheck");
+    expect(routeSource).toContain('createFileRoute("/_help")');
+    expect(routeSource).not.toContain("useRequireAuthenticatedRoute");
+  });
+
+  it("renders the legacy help/toc FAQ shell and anchors", () => {
+    const html = renderToStaticMarkup(<HelpTocPage />);
+
+    expect(html).toContain('class="site-breadcrumb-outer"');
+    expect(html).toContain('class="site-breadcrumb-inner"');
+    expect(html).toContain("<h3>title.help</h3>");
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="page-wrap"');
+    expect(html).toContain('class="qas"');
+    expect(html).toContain('class="qa"');
+    expect(html).toContain('class="question-wrap"');
+    expect(html).toContain('class="yobicon-q q"');
+    expect(html).toContain('href="#!/toggle"');
+    expect(html).toContain('class="answer-wrap"');
+    expect(html).toContain('class="yobicon-a a"');
+    expect(html).toContain('style="width:100%"');
+    expect(html).toContain("app.name를 설치하고 싶어요.");
+    expect(html).toContain("프로젝트를 새로 생성하고 싶어요.");
+    expect(html).toContain("게시판에서는 어떠한 것들을 할수 있나요?");
+    expect(html).toContain("https://github.com/doortts/yona#korean");
+    expect(html).toContain("https://github.com/nforge/yobi/issues");
+  });
+});

@@ -22,8 +22,10 @@ interface CodeHistoryResponse {
   branches: Array<{ name: string }>;
   breadcrumbs: Array<{ name: string; path: string }>;
   commits: Array<{
+    authorAvatarUrl?: string;
     authorDate: string;
     authorEmail: string;
+    authorLoginId?: string;
     authorName: string;
     commentCount: number;
     commitId: string;
@@ -74,8 +76,10 @@ function toCodeHistoryView(response: CodeHistoryResponse): CodeHistoryViewModel 
       path: breadcrumb.path,
     })),
     commits: response.commits.map((commit) => ({
+      authorAvatarUrl: commit.authorAvatarUrl ?? "",
       authorDate: commit.authorDate,
       authorEmail: commit.authorEmail,
+      authorLoginId: commit.authorLoginId ?? "",
       authorName: commit.authorName,
       commentCount: commit.commentCount,
       commitId: commit.commitId,

@@ -9,8 +9,9 @@ use serde_json::json;
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    comment_thread, original_email, pull_request, pull_request_commit, pull_request_event,
-    pull_request_reviewers, review_comment, watch, AppRepository,
+    attachment, comment_thread, original_email, project_pushed_branch, pull_request,
+    pull_request_commit, pull_request_event, pull_request_reviewers, review_comment, watch,
+    AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -113,6 +114,25 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
     app.oneshot(builder.body(Body::empty()).unwrap())
         .await
         .unwrap()
+}
+
+async fn direct_delete(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: &str,
+    csrf: &str,
+) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::DELETE)
+            .uri(uri)
+            .header(http::header::COOKIE, cookie_header)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
 }
 
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
@@ -329,6 +349,27 @@ async fn seed_pull_request_detail_rows(
         "Read surface",
     )
     .await;
+    let prior_commit = pull_request_commit::ActiveModel {
+        id: NotSet,
+        pull_request_id: Set(Some(pull_request.id)),
+        commit_id: Set(Some("1234567890ab".to_string())),
+        author_date: Set(Some(days_ago_datetime(0))),
+        created: Set(Some(days_ago_datetime(0))),
+        commit_short_id: Set(Some("1234567".to_string())),
+        author_email: Set(Some("author2@example.com".to_string())),
+        state: Set(Some("PRIOR".to_string())),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    write_text_column(
+        db,
+        "pull_request_commit",
+        "commit_message",
+        prior_commit.id,
+        "Prior surface\nfull details",
+    )
+    .await;
 
     let event = pull_request_event::ActiveModel {
         id: NotSet,
@@ -347,6 +388,32 @@ async fn seed_pull_request_detail_rows(
         "new_value",
         event.id,
         pull_request.title.as_deref().unwrap_or_default(),
+    )
+    .await;
+    let commit_event = pull_request_event::ActiveModel {
+        id: NotSet,
+        sender_login_id: Set(Some("owner".to_string())),
+        pull_request_id: Set(Some(pull_request.id)),
+        event_type: Set(Some("PULL_REQUEST_COMMIT_CHANGED".to_string())),
+        created: Set(Some(days_ago_datetime(0))),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    write_text_column(
+        db,
+        "pull_request_event",
+        "old_value",
+        commit_event.id,
+        "basehash",
+    )
+    .await;
+    write_text_column(
+        db,
+        "pull_request_event",
+        "new_value",
+        commit_event.id,
+        &format!("{},{}", commit.id, prior_commit.id),
     )
     .await;
 
@@ -410,6 +477,106 @@ async fn seed_pull_request_detail_rows(
     .insert(db)
     .await
     .unwrap();
+    attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("review-note.png".to_string())),
+        hash: Set(Some("review-note-hash".to_string())),
+        container_type: Set(Some("REVIEW_COMMENT".to_string())),
+        mime_type: Set(Some("image/png".to_string())),
+        size: Set(Some(512)),
+        container_id: Set(comment.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("reviewer".to_string())),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+
+    let non_ranged_thread = comment_thread::ActiveModel {
+        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(contributor_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(Some(days_ago_datetime(1))),
+        pull_request_id: Set(Some(pull_request.id)),
+        project_id: Set(pull_request.to_project_id),
+        prev_commit_id: Set(Some("base".to_string())),
+        commit_id: Set(Some("abcdef123456".to_string())),
+        path: Set(None),
+        start_side: Set(None),
+        start_line: Set(None),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(None),
+        end_column: Set(None),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    let non_ranged_comment = review_comment::ActiveModel {
+        id: NotSet,
+        created_date: Set(Some(days_ago_datetime(1))),
+        author_id: Set(Some(reviewer_id)),
+        author_login_id: Set(Some("reviewer".to_string())),
+        author_name: Set(Some("reviewer".to_string())),
+        thread_id: Set(Some(non_ranged_thread.id)),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    write_text_column(
+        db,
+        "review_comment",
+        "contents",
+        non_ranged_comment.id,
+        "Non-ranged review body",
+    )
+    .await;
+
+    let commit_only_thread = comment_thread::ActiveModel {
+        dtype: Set("ReviewThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(contributor_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(Some(days_ago_datetime(1))),
+        pull_request_id: Set(Some(pull_request.id)),
+        project_id: Set(pull_request.to_project_id),
+        prev_commit_id: Set(None),
+        commit_id: Set(Some("abcdef123456".to_string())),
+        path: Set(Some("src/commit-only.rs".to_string())),
+        start_side: Set(None),
+        start_line: Set(Some(8)),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(Some(8)),
+        end_column: Set(None),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    let commit_only_comment = review_comment::ActiveModel {
+        id: NotSet,
+        created_date: Set(Some(days_ago_datetime(1))),
+        author_id: Set(Some(reviewer_id)),
+        author_login_id: Set(Some("reviewer".to_string())),
+        author_name: Set(Some("reviewer".to_string())),
+        thread_id: Set(Some(commit_only_thread.id)),
+    }
+    .insert(db)
+    .await
+    .unwrap();
+    write_text_column(
+        db,
+        "review_comment",
+        "contents",
+        commit_only_comment.id,
+        "Specific commit review body",
+    )
+    .await;
 
     watch::ActiveModel {
         id: NotSet,
@@ -426,7 +593,8 @@ async fn seed_pull_request_detail_rows(
 async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_aggregate() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
-    let (_, reviewer_cookie, reviewer_id) = register_user(app.clone(), "reviewer").await;
+    let (reviewer_csrf, reviewer_cookie, reviewer_id) =
+        register_user(app.clone(), "reviewer").await;
     create_project(
         app.clone(),
         &owner_cookie,
@@ -474,6 +642,15 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     .await;
     create_project(
         app.clone(),
+        &reviewer_cookie,
+        &reviewer_csrf,
+        "reviewer",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    create_project(
+        app.clone(),
         &owner_cookie,
         &owner_csrf,
         "acme",
@@ -481,6 +658,33 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "public",
     )
     .await;
+
+    let origin_project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    let reviewer_fork = repo
+        .read_project_by_owner_and_name("reviewer", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    db.execute(Statement::from_sql_and_values(
+        db.get_database_backend(),
+        "UPDATE project SET original_project_id = ? WHERE id = ?",
+        vec![origin_project.id.into(), reviewer_fork.id.into()],
+    ))
+    .await
+    .expect("link reviewer fork origin");
+    let recent_pushed_branch = project_pushed_branch::ActiveModel {
+        id: NotSet,
+        pushed_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        name: Set(Some("refs/heads/topic/recent".to_string())),
+        project_id: Set(Some(reviewer_fork.id)),
+    }
+    .insert(&db)
+    .await
+    .expect("seed recently pushed branch");
 
     let open = seed_pull_request(
         &db,
@@ -593,8 +797,60 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(open_list["category"], "open");
     assert_eq!(open_list["pageSize"], 15);
     assert_eq!(open_list["totalCount"], 2);
+    assert_eq!(open_list["openCount"], 2);
+    assert_eq!(open_list["closedCount"], 2);
+    assert!(open_list["contributors"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["loginId"] == "owner"));
     assert_eq!(open_list["items"][0]["title"], "Open read surface");
     assert_eq!(open_list["items"][0]["pullRequestNumber"], 1);
+    assert_eq!(open_list["items"][0]["closedCommentThreadCount"], 0);
+    assert_eq!(
+        open_list["recentlyPushedBranches"][0]["ownerName"],
+        "reviewer"
+    );
+    assert_eq!(
+        open_list["recentlyPushedBranches"][0]["projectName"],
+        "projectYobi"
+    );
+    assert_eq!(
+        open_list["recentlyPushedBranches"][0]["branchName"],
+        "refs/heads/topic/recent"
+    );
+    assert_eq!(
+        open_list["recentlyPushedBranches"][0]["shortName"],
+        "topic/recent"
+    );
+    assert_eq!(
+        open_list["recentlyPushedBranches"][0]["defaultBranch"],
+        "HEAD"
+    );
+    let delete_response = direct_delete(
+        app.clone(),
+        &format!(
+            "/yona/reviewer/projectYobi/pushedBranch/{}/delete",
+            recent_pushed_branch.id
+        ),
+        &reviewer_cookie,
+        &reviewer_csrf,
+    )
+    .await;
+    assert_eq!(delete_response.status(), StatusCode::OK);
+    let open_list_after_delete = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests?category=open&filter=read&pageNum=1",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(open_list_after_delete["recentlyPushedBranches"]
+        .as_array()
+        .unwrap()
+        .is_empty());
     assert!(open_list["items"]
         .as_array()
         .unwrap()
@@ -633,6 +889,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     .await;
     assert_eq!(sent_list["category"], "sent");
     assert_eq!(sent_list["totalCount"], 4);
+    assert_eq!(sent_list["sentCount"], 4);
     assert!(sent_list["items"]
         .as_array()
         .unwrap()
@@ -693,19 +950,57 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "{mention_targets:?}"
     );
     assert_eq!(detail["contributor"]["loginId"], "owner");
+    assert!(detail["contributor"]["avatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .starts_with("https://www.gravatar.com/avatar/"));
     assert_eq!(detail["receiver"]["loginId"], "reviewer");
     assert_eq!(detail["reviewers"][0]["loginId"], "reviewer");
+    assert!(detail["reviewers"][0]["avatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .starts_with("https://www.gravatar.com/avatar/"));
     assert_eq!(detail["commits"][0]["commitShortId"], "abcdef1");
     assert_eq!(detail["events"][0]["eventType"], "NEW_PULL_REQUEST");
     assert_eq!(
+        detail["events"][1]["eventType"],
+        "PULL_REQUEST_COMMIT_CHANGED"
+    );
+    assert_eq!(detail["events"][1]["oldValue"], "basehash");
+    assert_eq!(
+        detail["events"][1]["commits"][0]["commitShortId"],
+        "1234567"
+    );
+    assert_eq!(detail["events"][1]["commits"][0]["state"], "PRIOR");
+    assert_eq!(
+        detail["events"][1]["commits"][1]["commitShortId"],
+        "abcdef1"
+    );
+    assert_eq!(
         detail["threads"][0]["comments"][0]["contentsMarkdown"],
         "Review comment body @reviewer @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
+    assert!(
+        detail["threads"][0]["authorAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar.com/avatar/"),
+        "{}",
+        detail["threads"][0]["authorAvatarUrl"]
     );
     assert_eq!(
         detail["threads"][0]["comments"][0]["mentionReferences"],
         detail["mentionReferences"]
     );
     assert_eq!(detail["threads"][0]["comments"][0]["viaEmail"], true);
+    assert_eq!(
+        detail["threads"][0]["comments"][0]["attachments"][0]["name"],
+        "review-note.png"
+    );
+    assert_eq!(
+        detail["threads"][0]["comments"][0]["attachments"][0]["url"],
+        "/yona/files/1"
+    );
     assert_eq!(
         detail["threads"][0]["comments"][0]["contentsHtml"]
             .as_str()
@@ -732,7 +1027,71 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(changes["commits"].as_array().unwrap().len(), 0);
     assert_eq!(changes["files"].as_array().unwrap().len(), 0);
     assert_eq!(changes["threads"][0]["path"], "src/lib.rs");
+    assert!(
+        changes["threads"][0]["authorAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar.com/avatar/"),
+        "{}",
+        changes["threads"][0]["authorAvatarUrl"]
+    );
     assert_eq!(changes["threads"][0]["comments"][0]["viaEmail"], true);
+    assert_eq!(
+        changes["threads"][0]["comments"][0]["attachments"][0]["mimeType"],
+        "image/png"
+    );
+    assert_eq!(changes["cardThreads"].as_array().unwrap().len(), 3);
+    assert!(
+        changes["cardThreads"][0]["authorAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar.com/avatar/"),
+        "{}",
+        changes["cardThreads"][0]["authorAvatarUrl"]
+    );
+    assert_eq!(changes["inlineThreads"].as_array().unwrap().len(), 1);
+    assert_eq!(changes["inlineThreads"][0]["path"], "src/lib.rs");
+    assert_eq!(changes["nonRangedThreads"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        changes["nonRangedThreads"][0]["comments"][0]["contentsMarkdown"],
+        "Non-ranged review body"
+    );
+
+    let specific_changes = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/changes?commitId=abcdef123456",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(specific_changes["cardThreads"].as_array().unwrap().len(), 3);
+    assert_eq!(
+        specific_changes["inlineThreads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|thread| thread["path"].as_str().unwrap_or_default() == "src/lib.rs")
+            .count(),
+        1
+    );
+    assert_eq!(
+        specific_changes["inlineThreads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|thread| thread["path"].as_str().unwrap_or_default() == "src/commit-only.rs")
+            .count(),
+        1
+    );
+    assert_eq!(
+        specific_changes["nonRangedThreads"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 
     let older_thread_with_newer_comment = comment_thread::ActiveModel {
         dtype: Set("ReviewThread".to_string()),
@@ -798,14 +1157,28 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     .await;
     assert_eq!(reviews["state"], "open");
     assert_eq!(reviews["pageSize"], 15);
+    assert_eq!(reviews["allCount"], 2);
+    assert_eq!(reviews["participantCount"], 2);
+    assert_eq!(reviews["authorCount"], 0);
     assert_eq!(reviews["openCount"], 2);
     assert_eq!(reviews["closedCount"], 0);
     assert_eq!(reviews["items"][0]["path"], "src/newer-comment.rs");
+    assert_eq!(reviews["items"][0]["pullRequestNumber"], 1);
     assert_eq!(
         reviews["items"][0]["comments"][0]["authorLoginId"],
         "reviewer"
     );
     assert_eq!(reviews["items"][0]["comments"][0]["viaEmail"], true);
+    assert!(
+        reviews["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|item| item["comments"].as_array().unwrap().iter())
+            .any(|comment| comment["attachments"][0]["name"] == "review-note.png"),
+        "{}",
+        reviews["items"]
+    );
 
     comment_thread::ActiveModel {
         dtype: Set("ReviewThread".to_string()),
@@ -840,10 +1213,18 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     )
     .await;
     assert_eq!(closed_reviews["state"], "closed");
-    assert_eq!(closed_reviews["openCount"], 2);
+    assert_eq!(closed_reviews["openCount"], 4);
     assert_eq!(closed_reviews["closedCount"], 1);
     assert_eq!(closed_reviews["totalCount"], 1);
     assert_eq!(closed_reviews["items"][0]["path"], "src/closed-thread.rs");
+    assert!(
+        closed_reviews["items"][0]["authorAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar.com/avatar/"),
+        "{}",
+        closed_reviews["items"][0]["authorAvatarUrl"]
+    );
 
     let org_list = response_json(
         rest_get(

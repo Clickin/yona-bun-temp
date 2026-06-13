@@ -37,6 +37,7 @@ export type BoardPostComment = {
 };
 
 export type BoardPostListItem = {
+  authorAvatarUrl?: string;
   authorLabel: string;
   authorLoginId: string;
   commentCount: number;
@@ -180,6 +181,7 @@ export type BoardCommentInput = {
   attachmentIds?: Array<number | string>;
   contentsMarkdown: string;
   ownerName: string;
+  parentCommentId?: number | string;
   postNumber: number | string;
   projectName: string;
 };
@@ -273,6 +275,7 @@ function normalizeAttachments(
 
 function normalizePostListItem(item: Partial<BoardPostListItem>): BoardPostListItem {
   return {
+    authorAvatarUrl: item.authorAvatarUrl ?? "",
     authorLabel: item.authorLabel ?? "",
     authorLoginId: item.authorLoginId ?? "",
     commentCount: item.commentCount ?? 0,
@@ -466,6 +469,7 @@ function commentMutationBody(input: BoardCommentInput) {
   return {
     attachmentIds: input.attachmentIds ?? [],
     contentsMarkdown: input.contentsMarkdown,
+    parentCommentId: input.parentCommentId,
   };
 }
 

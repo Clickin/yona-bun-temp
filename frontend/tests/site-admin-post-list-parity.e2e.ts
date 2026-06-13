@@ -131,7 +131,7 @@ test("site admin post list preserves legacy read-only post anchors", async ({ pa
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Post List");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("site.sidebar.postList");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
 
@@ -152,7 +152,10 @@ test("site admin post list preserves legacy read-only post anchors", async ({ pa
     "/yona/member/boardproj/post/1#comments",
   );
   await expect(row.locator(".post-comments")).toContainText("3");
-  await expect(page.locator("#pagination a[data-page-num='2']")).toHaveAttribute(
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
     "href",
     "/yona/sites/postList?pageNum=2",
   );

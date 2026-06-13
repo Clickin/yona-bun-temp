@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { setDefaultLandingPathRest } from "../../../api/workspace";
 import { listUserIssues } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toUserIssueListView } from "../../../app-view-models";
@@ -19,7 +20,14 @@ function UserIssuesRouteComponent() {
 }
 
 function UserIssuesLeafRouteComponent() {
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const {
+    bootstrapping,
+    csrfToken,
+    currentSession,
+    runtimeConfig,
+    setErrorMessage,
+    syncWorkspaceFromOverview,
+  } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/issues");
   const [issueList, setIssueList] = React.useState<ReturnType<typeof toUserIssueListView> | null>(
     null,
@@ -75,5 +83,30 @@ function UserIssuesLeafRouteComponent() {
     );
   }
 
-  return <UserIssueListPage issueList={issueList} query={query} runtimeConfig={runtimeConfig} />;
+  const routePath: string = "/user/issues";
+  const normalizedDefaultLandingPath = currentSession?.defaultLandingPath?.startsWith("/")
+    ? currentSession.defaultLandingPath
+    : currentSession?.defaultLandingPath
+      ? `/${currentSession.defaultLandingPath}`
+      : "";
+  const canSetDefaultLoginPage =
+    routePath !== "/" && normalizedDefaultLandingPath !== routePath;
+  const setDefaultLoginPage = async () => {
+    try {
+      const overview = await setDefaultLandingPathRest(runtimeConfig, csrfToken, routePath);
+      await syncWorkspaceFromOverview(overview);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "set Default page failed.");
+    }
+  };
+
+  return (
+    <UserIssueListPage
+      canSetDefaultLoginPage={canSetDefaultLoginPage}
+      issueList={issueList}
+      onSetDefaultLoginPage={setDefaultLoginPage}
+      query={query}
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }

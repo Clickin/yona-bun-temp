@@ -12,13 +12,15 @@ use std::time::SystemTime;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    issue_event, n4user, notification_event, notification_event_n4user, notification_mail, unwatch,
-    AppRepository,
+    comment_thread, issue, issue_comment, issue_event, n4user, notification_event,
+    notification_event_n4user, notification_mail, posting, posting_comment, review_comment,
+    unwatch, AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, deliver_due_notification_mails,
     deliver_notification_mail_scheduler_tick, notification_mail_add_noreferrer_to_external_links,
+    notification_mail_apply_legacy_html_postprocessing,
     notification_mail_scheduler_config_from_env, NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
@@ -36,6 +38,10 @@ fn notification_contract_mail_links_add_noreferrer_like_legacy() {
         "<a href=\"http://y/foo/bar\" rel=\"nofollow\">external link</a>",
         "<a href=\"http://yobi.io/foo/bar\">internal link</a>",
         "<a href=\"/foo/bar\">relative link</a>",
+        "<a href=\"foo/baz\">relative path link</a>",
+        "<a href = \"/space/link\">spaced relative link</a>",
+        "<a href=/unquoted/link>unquoted relative link</a>",
+        "<A HREF=\"http://outside.example/case\">case external link</A>",
         "<a href=\"http://yobi.io/%ag\">malformed link</a>",
     );
 
@@ -44,8 +50,91 @@ fn notification_contract_mail_links_add_noreferrer_like_legacy() {
     assert!(rendered.contains("<a href=\"http://y/foo/bar\" rel=\" noreferrer\">"));
     assert!(rendered.contains("<a href=\"http://y/foo/bar\" rel=\"nofollow noreferrer\">"));
     assert!(rendered.contains("<a href=\"http://yobi.io/foo/bar\">internal link</a>"));
-    assert!(rendered.contains("<a href=\"/foo/bar\">relative link</a>"));
+    assert!(rendered.contains("<a href=\"http://yobi.io/foo/bar\">relative link</a>"));
+    assert!(rendered.contains("<a href=\"http://yobi.io/foo/baz\">relative path link</a>"));
+    assert!(rendered.contains("<a href=\"http://yobi.io/space/link\">spaced relative link</a>"));
+    assert!(
+        rendered.contains("<a href=\"http://yobi.io/unquoted/link\">unquoted relative link</a>")
+    );
+    assert!(
+        rendered.contains("http://outside.example/case")
+            && rendered.contains("case external link")
+            && rendered.contains("rel=\" noreferrer\"")
+    );
     assert!(rendered.contains("<a href=\"http://yobi.io/%ag\" rel=\" noreferrer\">"));
+}
+
+#[test]
+fn notification_contract_mail_links_scan_tags_case_insensitively_like_jsoup() {
+    let html = "<A HREF=\"http://outside.example/case\">case external link</A>";
+
+    let rendered = notification_mail_add_noreferrer_to_external_links(html, "http://yobi.io");
+
+    assert!(rendered.contains("HREF=\"http://outside.example/case\""));
+    assert!(rendered.contains("rel=\" noreferrer\""));
+    assert!(rendered.contains(">case external link</A>"));
+}
+
+#[test]
+fn notification_contract_mail_href_attrs_on_non_anchor_tags_follow_legacy_selector() {
+    let html = concat!(
+        "<link rel=\"stylesheet\" href=/assets/mail.css>",
+        "<area href=\"http://outside.example/map\">"
+    );
+
+    let rendered = notification_mail_add_noreferrer_to_external_links(html, "https://yobi.io");
+
+    assert!(rendered.contains("<link rel=\"stylesheet\" href=\"https://yobi.io/assets/mail.css\">"));
+    assert!(rendered.contains("<area href=\"http://outside.example/map\" rel=\" noreferrer\">"));
+}
+
+#[test]
+fn notification_contract_mail_src_attrs_are_absolutized_like_legacy() {
+    let html = concat!(
+        "<video src=\"/media/demo.mp4\"></video>",
+        "<source SRC=\"assets/demo.webm\">",
+        "<track src = '/captions/demo.vtt'>",
+        "<audio src=/media/unquoted.ogg></audio>",
+        "<img src=\"https://cdn.example/already.png\">"
+    );
+
+    let rendered = notification_mail_add_noreferrer_to_external_links(html, "https://yobi.io");
+
+    assert!(rendered.contains("<video src=\"https://yobi.io/media/demo.mp4\"></video>"));
+    assert!(rendered.contains("<source src=\"https://yobi.io/assets/demo.webm\">"));
+    assert!(rendered.contains("<track src=\"https://yobi.io/captions/demo.vtt\">"));
+    assert!(rendered.contains("<audio src=\"https://yobi.io/media/unquoted.ogg\"></audio>"));
+    assert!(rendered.contains("<img src=\"https://cdn.example/already.png\">"));
+}
+
+#[test]
+fn notification_contract_mail_images_are_wrapped_like_legacy() {
+    let html = concat!(
+        "<p>body</p>",
+        "<img src=\"https://cdn.example/image.png\">",
+        "<img src=\"/files/1\" style=\"border:1px solid red;\">",
+        "<img src = \"/files/space.png\" style = \"border:2px solid blue;\">",
+        "<img src=/files/unquoted.png style=border:3px>",
+        "<IMG SRC=\"relative/image.png\">"
+    );
+
+    let rendered = notification_mail_apply_legacy_html_postprocessing(html, "https://yobi.io");
+
+    assert!(rendered.contains(
+        "<a href=\"https://cdn.example/image.png\" target=\"_blank\" style=\"border:0;outline:0;\"><img src=\"https://cdn.example/image.png\" style=\"max-width:1024px;\"></a>"
+    ));
+    assert!(rendered.contains(
+        "<a href=\"https://yobi.io/files/1\" target=\"_blank\" style=\"border:0;outline:0;\"><img src=\"https://yobi.io/files/1\" style=\"max-width:1024px;border:1px solid red;\"></a>"
+    ));
+    assert!(rendered.contains(
+        "<a href=\"https://yobi.io/files/space.png\" target=\"_blank\" style=\"border:0;outline:0;\"><img src=\"https://yobi.io/files/space.png\" style=\"max-width:1024px;border:2px solid blue;\"></a>"
+    ));
+    assert!(rendered.contains(
+        "<a href=\"https://yobi.io/files/unquoted.png\" target=\"_blank\" style=\"border:0;outline:0;\"><img src=\"https://yobi.io/files/unquoted.png\" style=\"max-width:1024px;border:3px\"></a>"
+    ));
+    assert!(rendered.contains(
+        "<a href=\"https://yobi.io/relative/image.png\" target=\"_blank\" style=\"border:0;outline:0;\"><IMG src=\"https://yobi.io/relative/image.png\" style=\"max-width:1024px;\"></a>"
+    ));
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -134,6 +223,24 @@ async fn rpc(
 
 async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn rest_get_accept(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    accept: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::GET)
+        .uri(uri)
+        .header(http::header::ACCEPT, accept);
     if let Some(cookie_header) = cookie_header {
         builder = builder.header(http::header::COOKIE, cookie_header);
     }
@@ -252,6 +359,33 @@ async fn update_issue_body(
                 "issueNumber": "1",
                 "title": title,
                 "bodyMarkdown": body_markdown
+            }),
+        )
+        .await,
+    )
+    .await;
+}
+
+async fn update_issue_assignee(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    title: &str,
+    assignee_login_id: &str,
+) {
+    response_json(
+        rpc(
+            app,
+            "UpdateIssue",
+            Some(cookie),
+            Some(csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "title": title,
+                "bodyMarkdown": "",
+                "assigneeLoginId": assignee_login_id
             }),
         )
         .await,
@@ -502,6 +636,41 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
 }
 
 #[tokio::test]
+async fn notification_contract_direct_notification_route_returns_legacy_partial_fragment() {
+    let (app, _repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
+    share_issue(app.clone(), &owner_cookie, &owner_csrf, "guest").await;
+
+    let response = rest_get(
+        app,
+        "/yona/notification?from=0&limit=1",
+        Some(&guest_cookie),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let html = response_text(response).await;
+
+    assert!(html.contains(r#"<li class="notification-stream">"#));
+    assert!(html.contains(r#"<div class="stream-type megaphone">"#));
+    assert!(html.contains(r#"data-toggle="learnmore""#));
+    assert!(html.contains(r#"id="message-"#));
+    assert!(html.contains(r#"<div class="message">Issue is shared with guest</div>"#));
+    assert!(html.contains(r#"<a href="/yona/owner/projectYobi/issue/1">Private issue</a>"#));
+    assert!(html.contains(r#"class="avatar-wrap smaller""#));
+    assert!(html.contains(r#"<a href="/yona/owner" class="author">owner</a>@owner"#));
+    assert!(html.contains(r#"class="ago pull-right""#));
+    assert!(html
+        .contains(r#"<a href="javascript:void(0);" id="notification-more" class="ybtn">More</a>"#));
+    assert!(html.contains(r#"/yona/notification?from=1&amp;size=1"#));
+    assert!(html.contains(r#"$('.activity-streams').append(data);"#));
+    assert!(!html.contains("page-wrap-outer"));
+    assert!(!html.contains("common/mySeriesMenuTab"));
+}
+
+#[tokio::test]
 async fn notification_contract_stages_mail_rows_and_drains_due_events() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -659,6 +828,7 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
     std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
@@ -726,12 +896,20 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     let outbox = snapshot_test_outbox();
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].to, "watcher@example.com");
+    assert!(outbox[0].html);
+    assert_eq!(
+        outbox[0].reply_to.as_deref(),
+        Some("noreply+owner/projectYobi/issue_post/1@yona.example")
+    );
     assert_eq!(outbox[0].subject, "Mail fan-out watched issue");
     assert!(outbox[0].body.contains("<div style=\"font-family:"));
     assert!(outbox[0]
         .body
         .contains("<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">"));
     assert!(outbox[0].body.contains("notification.issue.closed"));
+    assert!(outbox[0]
+        .body
+        .contains("Reply to this email directly or <a href=\"https://yona.example/yona/owner/projectYobi/issue/1\" target=\"_blank\">View it on Yona</a>"));
     assert!(outbox[0]
         .body
         .contains("<a href=\"https://yona.example/yona/owner/projectYobi/issue/1\" target=\"_blank\">View it on Yona</a>"));
@@ -757,8 +935,21 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
             .unwrap()
             .to_str()
             .unwrap(),
-        "/yona/notification"
+        "/yona/owner/projectYobi/issue/1"
     );
+    let json_unwatch_response = rest_get_accept(
+        app.clone(),
+        "/yona/unwatch?resource.type=ISSUE_POST&resource.id=1",
+        Some(&watcher_cookie),
+        "application/json",
+    )
+    .await;
+    assert_eq!(json_unwatch_response.status(), StatusCode::OK);
+    assert!(json_unwatch_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    assert!(response_text(json_unwatch_response).await.is_empty());
     let issue_unwatch_count = unwatch::Entity::find()
         .filter(unwatch::Column::UserId.eq(Some(watcher_id)))
         .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
@@ -768,6 +959,329 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         .unwrap();
     assert_eq!(issue_unwatch_count, 1);
     clear_test_outbox();
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+}
+
+#[tokio::test]
+async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_legacy() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, watcher_id) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Comment reply target issue",
+    )
+    .await;
+    let issue_model = issue::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("issue row");
+    let comment = issue_comment::ActiveModel {
+        id: NotSet,
+        issue_id: Set(Some(issue_model.id)),
+        project_id: Set(issue_model.project_id.expect("issue project id")),
+        author_id: Set(issue_model.author_id),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        created_date: Set(issue_model.created_date),
+        ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let event = notification_event::ActiveModel {
+        id: NotSet,
+        title: Set(None),
+        sender_id: Set(issue_model.author_id),
+        created: Set(issue_model.created_date),
+        resource_type: Set(Some("ISSUE_COMMENT".to_string())),
+        resource_id: Set(Some(comment.id.to_string())),
+        event_type: Set(Some("NEW_COMMENT".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_mail::ActiveModel {
+        id: NotSet,
+        notification_event_id: Set(Some(event.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_event_n4user::ActiveModel {
+        notification_event_id: Set(event.id),
+        n4user_id: Set(watcher_id),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 1);
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "watcher@example.com");
+    assert_eq!(
+        outbox[0].reply_to.as_deref(),
+        Some("noreply+owner/projectYobi/issue_post/1@yona.example")
+    );
+    assert!(!outbox[0]
+        .reply_to
+        .as_deref()
+        .unwrap_or_default()
+        .contains("issue_comment"));
+    clear_test_outbox();
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+}
+
+#[tokio::test]
+async fn notification_contract_board_comment_mail_replies_to_parent_post_like_legacy() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, watcher_id) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Project fixture for board reply target",
+    )
+    .await;
+    let issue_model = issue::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("issue row");
+    let project_id = issue_model.project_id.expect("issue project id");
+    let post = posting::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Board reply target post".to_string())),
+        created_date: Set(issue_model.created_date),
+        updated_date: Set(issue_model.created_date),
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        project_id: Set(Some(project_id)),
+        number: Set(Some(1)),
+        num_of_comments: Set(Some(1)),
+        notice: Set(Some(0)),
+        readme: Set(Some(0)),
+        parent_id: Set(None),
+        updated_by_author_id: Set(Some(owner_id)),
+        ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let comment = posting_comment::ActiveModel {
+        id: NotSet,
+        created_date: Set(issue_model.created_date),
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        posting_id: Set(Some(post.id)),
+        project_id: Set(project_id),
+        parent_comment_id: Set(None),
+        ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let event = notification_event::ActiveModel {
+        id: NotSet,
+        title: Set(None),
+        sender_id: Set(Some(owner_id)),
+        created: Set(issue_model.created_date),
+        resource_type: Set(Some("POSTING_COMMENT".to_string())),
+        resource_id: Set(Some(comment.id.to_string())),
+        event_type: Set(Some("NEW_COMMENT".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_mail::ActiveModel {
+        id: NotSet,
+        notification_event_id: Set(Some(event.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_event_n4user::ActiveModel {
+        notification_event_id: Set(event.id),
+        n4user_id: Set(watcher_id),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 1);
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "watcher@example.com");
+    let expected_reply_to = format!(
+        "noreply+owner/projectYobi/board_post/{}@yona.example",
+        post.id
+    );
+    assert_eq!(
+        outbox[0].reply_to.as_deref(),
+        Some(expected_reply_to.as_str())
+    );
+    assert!(!outbox[0]
+        .reply_to
+        .as_deref()
+        .unwrap_or_default()
+        .contains("posting_comment"));
+    clear_test_outbox();
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+}
+
+#[tokio::test]
+async fn notification_contract_review_comment_mail_replies_to_parent_thread_like_legacy() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, watcher_id) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Project fixture for review reply target",
+    )
+    .await;
+    let issue_model = issue::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("issue row");
+    let project_id = issue_model.project_id.expect("issue project id");
+    let thread = comment_thread::ActiveModel {
+        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(issue_model.created_date),
+        pull_request_id: Set(None),
+        project_id: Set(Some(project_id)),
+        prev_commit_id: Set(None),
+        commit_id: Set(Some("123321".to_string())),
+        path: Set(None),
+        start_side: Set(None),
+        start_line: Set(None),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(None),
+        end_column: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let comment = review_comment::ActiveModel {
+        id: NotSet,
+        created_date: Set(issue_model.created_date),
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        thread_id: Set(Some(thread.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let event = notification_event::ActiveModel {
+        id: NotSet,
+        title: Set(None),
+        sender_id: Set(Some(owner_id)),
+        created: Set(issue_model.created_date),
+        resource_type: Set(Some("REVIEW_COMMENT".to_string())),
+        resource_id: Set(Some(comment.id.to_string())),
+        event_type: Set(Some("NEW_REVIEW_COMMENT".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_mail::ActiveModel {
+        id: NotSet,
+        notification_event_id: Set(Some(event.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_event_n4user::ActiveModel {
+        notification_event_id: Set(event.id),
+        n4user_id: Set(watcher_id),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 1);
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "watcher@example.com");
+    let expected_reply_to = format!(
+        "noreply+owner/projectYobi/comment_thread/{}@yona.example",
+        thread.id
+    );
+    assert_eq!(
+        outbox[0].reply_to.as_deref(),
+        Some(expected_reply_to.as_str())
+    );
+    assert!(!outbox[0]
+        .reply_to
+        .as_deref()
+        .unwrap_or_default()
+        .contains("review_comment"));
+    clear_test_outbox();
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
     std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
@@ -1292,4 +1806,138 @@ async fn notification_contract_merges_same_sender_resource_events_within_draft_t
         other_notifications["items"][0]["message"],
         "Issue body changed"
     );
+}
+
+#[tokio::test]
+async fn notification_contract_honors_configured_issue_event_draft_time_override() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ISSUE_EVENT_DRAFT_TIME", "0");
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
+    let (_, _other_cookie, _) = register_user(app.clone(), "other").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft override issue",
+    )
+    .await;
+
+    update_issue_assignee(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft override issue",
+        "guest",
+    )
+    .await;
+    update_issue_assignee(
+        app,
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft override issue",
+        "other",
+    )
+    .await;
+
+    assert_eq!(
+        issue_event::Entity::find()
+            .filter(issue_event::Column::EventType.eq(Some("ISSUE_ASSIGNEE_CHANGED".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        2
+    );
+    std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");
+}
+
+#[tokio::test]
+async fn notification_contract_merges_issue_events_within_issue_event_draft_time() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
+    let (_, _other_cookie, _) = register_user(app.clone(), "other").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft merge issue",
+    )
+    .await;
+
+    update_issue_assignee(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft merge issue",
+        "guest",
+    )
+    .await;
+    update_issue_assignee(
+        app,
+        &owner_cookie,
+        &owner_csrf,
+        "Issue event draft merge issue",
+        "other",
+    )
+    .await;
+
+    assert_eq!(
+        issue_event::Entity::find()
+            .filter(issue_event::Column::EventType.eq(Some("ISSUE_ASSIGNEE_CHANGED".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn notification_contract_honors_configured_draft_time_override() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::set_var("YONA_NOTIFICATION_DRAFT_TIME", "0");
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
+    let (_, _other_cookie, _) = register_user(app.clone(), "other").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Draft override issue",
+    )
+    .await;
+
+    update_issue_body(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Draft override issue",
+        "first edit @guest",
+    )
+    .await;
+    update_issue_body(
+        app,
+        &owner_cookie,
+        &owner_csrf,
+        "Draft override issue",
+        "second edit @other",
+    )
+    .await;
+
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(
+                notification_event::Column::EventType.eq(Some("ISSUE_BODY_CHANGED".to_string()))
+            )
+            .count(&db)
+            .await
+            .unwrap(),
+        2
+    );
+    std::env::remove_var("YONA_NOTIFICATION_DRAFT_TIME");
 }

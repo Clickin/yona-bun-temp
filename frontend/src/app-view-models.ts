@@ -316,7 +316,12 @@ export function toProjectContainerView(
     defaultReviewerCount?: number;
     isUsingReviewerCount?: boolean;
     maxReviewerCount?: number;
-    readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
+    readmeFile?: {
+      bodyHtml?: string;
+      bodyMarkdown?: string;
+      mentionReferences?: Partial<MentionReferenceMetadata>[];
+      name?: string;
+    } | null;
   };
   return {
     backgroundUrl: detail.backgroundUrl,
@@ -393,6 +398,7 @@ export function toProjectContainerView(
       ? {
           bodyHtml: detailWithReadme.readmeFile.bodyHtml ?? "",
           bodyMarkdown: detailWithReadme.readmeFile.bodyMarkdown ?? "",
+          mentionReferences: normalizeMentionReferences(detailWithReadme.readmeFile.mentionReferences),
           name: detailWithReadme.readmeFile.name ?? "README.md",
         }
       : undefined,
@@ -431,7 +437,18 @@ export function toCodeBrowserView(
   response: Awaited<ReturnType<typeof readCodeBrowser>>,
 ): CodeBrowserViewModel {
   const responseFile = response.file as
-    | (NonNullable<typeof response.file> & { html?: string })
+    | (NonNullable<typeof response.file> & {
+        authorAvatarUrl?: string;
+        authorLabel?: string;
+        authorLoginId?: string;
+        commitDate?: string;
+        commitId?: string;
+        commentCount?: number;
+        commitMessage?: string;
+        commitShortId?: string;
+        html?: string;
+        mentionReferences?: Parameters<typeof normalizeMentionReferences>[0];
+      })
     | undefined;
   return {
     branches: response.branches.map((branch) => ({ name: branch.name })),
@@ -439,21 +456,40 @@ export function toCodeBrowserView(
       name: breadcrumb.name,
       path: breadcrumb.path,
     })),
-    entries: response.entries.map((entry) => ({
-      commitDate: entry.commitDate,
-      commitMessage: entry.commitMessage,
-      commitShortId: entry.commitShortId,
-      kind: entry.kind,
-      name: entry.name,
-      path: entry.path,
-      size: Number(entry.size),
-    })),
+    entries: response.entries.map((entry) => {
+      const responseEntry = entry as typeof entry & {
+        authorAvatarUrl?: string;
+        authorLabel?: string;
+        authorLoginId?: string;
+      };
+      return {
+        authorAvatarUrl: responseEntry.authorAvatarUrl ?? "",
+        authorLabel: responseEntry.authorLabel ?? "",
+        authorLoginId: responseEntry.authorLoginId ?? "",
+        commitDate: entry.commitDate,
+        commitMessage: entry.commitMessage,
+        commitShortId: entry.commitShortId,
+        kind: entry.kind,
+        name: entry.name,
+        path: entry.path,
+        size: Number(entry.size),
+      };
+    }),
     file: responseFile
       ? {
+          authorAvatarUrl: responseFile.authorAvatarUrl ?? "",
+          authorLabel: responseFile.authorLabel ?? "",
+          authorLoginId: responseFile.authorLoginId ?? "",
+          commitDate: responseFile.commitDate ?? "",
+          commitId: responseFile.commitId ?? "",
+          commentCount: Number(responseFile.commentCount ?? 0),
+          commitMessage: responseFile.commitMessage ?? "",
+          commitShortId: responseFile.commitShortId ?? "",
           html: responseFile.html ?? "",
           isBinary: responseFile.isBinary,
           isTooLarge: responseFile.isTooLarge,
           mimeType: responseFile.mimeType,
+          mentionReferences: normalizeMentionReferences(responseFile.mentionReferences),
           name: responseFile.name,
           path: responseFile.path,
           size: Number(responseFile.size),
@@ -471,26 +507,53 @@ export function toCodeBrowserView(
 export function toProjectIssueListView(
   response: Awaited<ReturnType<typeof listProjectIssues>>,
 ): ProjectIssueListViewModel {
-  return {
-    items: response.items.map((item) => ({
-      assigneeLabel: item.assigneeLabel,
-      authorLabel: item.authorLabel,
-      commentCount: Number(item.commentCount),
-      issueNumber: Number(item.issueNumber),
-      labels: item.labels.map((label) => ({
+  const toIssueListItem = (item: (typeof response.items)[number]) => ({
+    assigneeAvatarUrl: item.assigneeAvatarUrl ?? "",
+    assigneeLabel: item.assigneeLabel,
+    assigneeLoginId: item.assigneeLoginId ?? "",
+    authorAvatarUrl: item.authorAvatarUrl ?? "",
+    authorLabel: item.authorLabel,
+    authorLoginId: item.authorLoginId ?? "",
+    childClosedCount: item.childClosedCount ?? 0,
+    childIssues: (item.childIssues ?? []).map((child) => ({
+      assigneeLabel: child.assigneeLabel,
+      createdLabel: child.createdLabel,
+      isDraft: child.isDraft ?? false,
+      issueNumber: Number(child.issueNumber),
+      labels: child.labels.map((label) => ({
         color: label.color,
         id: Number(label.id),
         name: label.name,
       })),
-      milestoneTitle: item.milestoneTitle,
-      ownerName: item.ownerName,
-      projectName: item.projectName,
-      state: item.state,
-      title: item.title,
-      updatedLabel: item.updatedLabel,
-      voterCount: item.voterCount,
-      watcherCount: item.watcherCount,
+      state: child.state,
+      title: child.title,
     })),
+    childOpenCount: item.childOpenCount ?? 0,
+    commentCount: Number(item.commentCount),
+    dueDateLabel: item.dueDateLabel ?? "",
+    dueDateOverdue: item.dueDateOverdue ?? false,
+    id: item.id ? Number(item.id) : undefined,
+    issueNumber: Number(item.issueNumber),
+    labels: item.labels.map((label) => ({
+      color: label.color,
+      id: Number(label.id),
+      name: label.name,
+    })),
+    milestoneTitle: item.milestoneTitle,
+    ownerName: item.ownerName,
+    parentIssueNumber: item.parentIssueNumber ? Number(item.parentIssueNumber) : 0,
+    parentIssueTitle: item.parentIssueTitle ?? "",
+    projectName: item.projectName,
+    state: item.state,
+    title: item.title,
+    updatedLabel: item.updatedLabel,
+    voterCount: item.voterCount,
+    watcherCount: item.watcherCount,
+    weight: item.weight ?? 0,
+  });
+  return {
+    draftItems: (response.draftItems ?? []).map(toIssueListItem),
+    items: response.items.map(toIssueListItem),
     ownerName: response.ownerName,
     pageNum: response.pageNum,
     pageSize: response.pageSize,
@@ -506,9 +569,31 @@ export function toUserIssueListView(
     closedIssueCount: response.closedIssueCount,
     filter: response.filter,
     items: response.items.map((item) => ({
+      assigneeAvatarUrl: item.assigneeAvatarUrl ?? "",
       assigneeLabel: item.assigneeLabel,
+      assigneeLoginId: item.assigneeLoginId ?? "",
+      authorAvatarUrl: item.authorAvatarUrl ?? "",
       authorLabel: item.authorLabel,
+      authorLoginId: item.authorLoginId ?? "",
+      childClosedCount: item.childClosedCount ?? 0,
+      childIssues: (item.childIssues ?? []).map((child) => ({
+        assigneeLabel: child.assigneeLabel,
+        createdLabel: child.createdLabel,
+        isDraft: child.isDraft ?? false,
+        issueNumber: Number(child.issueNumber),
+        labels: child.labels.map((label) => ({
+          color: label.color,
+          id: Number(label.id),
+          name: label.name,
+        })),
+        state: child.state,
+        title: child.title,
+      })),
+      childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
+      dueDateLabel: item.dueDateLabel ?? "",
+      dueDateOverdue: item.dueDateOverdue ?? false,
+      id: item.id ? Number(item.id) : undefined,
       issueNumber: Number(item.issueNumber),
       labels: item.labels.map((label) => ({
         color: label.color,
@@ -517,18 +602,27 @@ export function toUserIssueListView(
       })),
       milestoneTitle: item.milestoneTitle,
       ownerName: item.ownerName,
+      parentIssueNumber: item.parentIssueNumber ? Number(item.parentIssueNumber) : 0,
+      parentIssueTitle: item.parentIssueTitle ?? "",
       projectName: item.projectName,
       state: item.state,
       title: item.title,
       updatedLabel: item.updatedLabel,
       voterCount: item.voterCount,
       watcherCount: item.watcherCount,
+      weight: item.weight ?? 0,
     })),
     openIssueCount: response.openIssueCount,
     pageNum: response.pageNum,
     pageSize: response.pageSize,
+    sideFilterCounts: {
+      favorite: response.sideFilterCounts?.favorite ?? 0,
+      mentioned: response.sideFilterCounts?.mentioned ?? 0,
+      shared: response.sideFilterCounts?.shared ?? 0,
+    },
     state: response.state,
     totalCount: response.totalCount,
+    viewerUserId: Number(response.viewerUserId ?? 0),
   };
 }
 
@@ -538,9 +632,31 @@ export function toOrganizationIssueListView(
   return {
     closedIssueCount: response.closedIssueCount,
     items: response.items.map((item) => ({
+      assigneeAvatarUrl: item.assigneeAvatarUrl ?? "",
       assigneeLabel: item.assigneeLabel,
+      assigneeLoginId: item.assigneeLoginId ?? "",
+      authorAvatarUrl: item.authorAvatarUrl ?? "",
       authorLabel: item.authorLabel,
+      authorLoginId: item.authorLoginId ?? "",
+      childClosedCount: item.childClosedCount ?? 0,
+      childIssues: (item.childIssues ?? []).map((child) => ({
+        assigneeLabel: child.assigneeLabel,
+        createdLabel: child.createdLabel,
+        isDraft: child.isDraft ?? false,
+        issueNumber: Number(child.issueNumber),
+        labels: child.labels.map((label) => ({
+          color: label.color,
+          id: Number(label.id),
+          name: label.name,
+        })),
+        state: child.state,
+        title: child.title,
+      })),
+      childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
+      dueDateLabel: item.dueDateLabel ?? "",
+      dueDateOverdue: item.dueDateOverdue ?? false,
+      id: item.id ? Number(item.id) : undefined,
       issueNumber: Number(item.issueNumber),
       labels: item.labels.map((label) => ({
         color: label.color,
@@ -549,12 +665,15 @@ export function toOrganizationIssueListView(
       })),
       milestoneTitle: item.milestoneTitle,
       ownerName: item.ownerName,
+      parentIssueNumber: item.parentIssueNumber ? Number(item.parentIssueNumber) : 0,
+      parentIssueTitle: item.parentIssueTitle ?? "",
       projectName: item.projectName,
       state: item.state,
       title: item.title,
       updatedLabel: item.updatedLabel,
       voterCount: item.voterCount,
       watcherCount: item.watcherCount,
+      weight: item.weight ?? 0,
     })),
     openIssueCount: response.openIssueCount,
     organizationName: response.organizationName,
@@ -569,13 +688,47 @@ export function toOrganizationIssueListView(
 }
 
 type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>> & {
+  childClosedCount?: number;
+  childIssues?: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft?: boolean;
+    issueNumber: bigint | number;
+    labels: Array<{ color: string; id: bigint | number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount?: number;
+  commentParentLinks?: Array<{
+    id: bigint | number;
+    parentCommentId?: bigint | number | null;
+  }>;
+  dueDateLabel?: string;
   historyHtml?: string;
   historyMarkdown?: string;
+  issueId?: bigint | number;
+  issueVoters?: Array<{
+    avatarUrl: string;
+    loginId: string;
+    userId: bigint | number;
+    userLabel: string;
+  }>;
+  weight?: number;
 };
 
 export function toProjectIssueDetailView(
   response: IssueDetailResponseWithHistory,
 ): ProjectIssueDetailViewModel {
+  const commentParentIdById = new Map(
+    (response.commentParentLinks ?? []).map((link) => [
+      Number(link.id),
+      Number(link.parentCommentId ?? 0),
+    ]),
+  );
+  const commentParentId = (commentId: bigint | number) => {
+    const parentCommentId = commentParentIdById.get(Number(commentId)) ?? 0;
+    return parentCommentId > 0 ? parentCommentId : undefined;
+  };
   return {
     assigneeAvatarUrl: response.assigneeAvatarUrl,
     assigneeLabel: response.assigneeLabel,
@@ -586,11 +739,13 @@ export function toProjectIssueDetailView(
       url: attachment.url,
     })),
     authorAvatarUrl: response.authorAvatarUrl,
+    authorId: Number(response.authorId ?? 0),
     authorLabel: response.authorLabel,
     authorLoginId: response.authorLoginId,
     bodyHtml: response.bodyHtml,
     bodyMarkdown: response.bodyMarkdown,
     commentCount: response.commentCount,
+    dueDateLabel: response.dueDateLabel ?? "",
     comments: response.comments.map((comment) => ({
       authorAvatarUrl: comment.authorAvatarUrl,
       authorLabel: comment.authorLabel,
@@ -601,6 +756,7 @@ export function toProjectIssueDetailView(
       id: Number(comment.id),
       issueReferences: issueReferencesFrom(comment),
       mentionReferences: mentionReferencesFrom(comment),
+      parentCommentId: commentParentId(comment.id),
       viewerCanDelete: comment.viewerCanDelete,
       viewerCanUpdate: comment.viewerCanUpdate,
       viewerHasVoted: comment.viewerHasVoted,
@@ -613,21 +769,48 @@ export function toProjectIssueDetailView(
         userLabel: voter.userLabel,
       })),
     })),
+    childClosedCount: response.childClosedCount ?? 0,
+    childIssues: (response.childIssues ?? []).map((child) => ({
+      assigneeLabel: child.assigneeLabel,
+      createdLabel: child.createdLabel,
+      isDraft: child.isDraft ?? false,
+      issueNumber: Number(child.issueNumber),
+      labels: child.labels.map((label) => ({
+        color: label.color,
+        id: Number(label.id),
+        name: label.name,
+      })),
+      state: child.state,
+      title: child.title,
+    })),
+    childOpenCount: response.childOpenCount ?? 0,
     hasVoted: response.hasVoted,
     historyHtml: response.historyHtml ?? "",
     historyMarkdown: response.historyMarkdown ?? "",
     issueReferences: issueReferencesFrom(response),
     mentionReferences: mentionReferencesFrom(response),
     isFavorited: response.isFavorited,
+    isDraft: response.isDraft ?? false,
     isWatching: response.isWatching,
+    issueId: Number(response.issueId ?? 0),
+    issueVoters: (response.issueVoters ?? []).map((voter) => ({
+      avatarUrl: voter.avatarUrl,
+      loginId: voter.loginId,
+      userId: Number(voter.userId),
+      userLabel: voter.userLabel,
+    })),
     issueNumber: Number(response.issueNumber),
     labels: response.labels.map((label) => ({
       color: label.color,
       id: Number(label.id),
       name: label.name,
     })),
+    milestoneId: Number(response.milestoneId),
     milestoneTitle: response.milestoneTitle,
     ownerName: response.ownerName,
+    parentIssueId: Number(response.parentIssueId ?? 0),
+    parentIssueNumber: Number(response.parentIssueNumber ?? 0),
+    parentIssueTitle: response.parentIssueTitle ?? "",
     projectName: response.projectName,
     sharers: response.sharers.map((sharer) => ({
       loginId: sharer.loginId,
@@ -647,6 +830,7 @@ export function toProjectIssueDetailView(
             id: Number(item.comment.id),
             issueReferences: issueReferencesFrom(item.comment),
             mentionReferences: mentionReferencesFrom(item.comment),
+            parentCommentId: commentParentId(item.comment.id),
             viewerCanDelete: item.comment.viewerCanDelete,
             viewerCanUpdate: item.comment.viewerCanUpdate,
             viewerHasVoted: item.comment.viewerHasVoted,
@@ -677,6 +861,7 @@ export function toProjectIssueDetailView(
     viewerIsDirectSharer: response.viewerIsDirectSharer,
     voterCount: response.voterCount,
     watcherCount: response.watcherCount,
+    weight: response.weight ?? 0,
   };
 }
 

@@ -3,8 +3,8 @@ use std::process::Command;
 use tempfile::tempdir;
 use yona_rust_vcs::{
     create_svn_repository, delete_repository, ensure_svnadmin_available, repository_path,
-    repository_path_for_vcs, svn_executable, svn_repository_path, svn_repository_uuid,
-    svn_youngest_revision, VcsError,
+    repository_path_for_vcs, svn_executable, svn_path_last_changed_revision, svn_repository_path,
+    svn_repository_uuid, svn_youngest_revision, VcsError,
 };
 
 fn svnadmin_available() -> bool {
@@ -19,6 +19,17 @@ fn svnlook_available() -> bool {
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
+}
+
+fn svn_client_available() -> bool {
+    Command::new(svn_executable("svn"))
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+fn file_url(path: &std::path::Path) -> String {
+    format!("file:///{}", path.display().to_string().replace('\\', "/"))
 }
 
 #[test]
@@ -108,4 +119,77 @@ fn svn_repository_uuid_uses_svnlook_when_available() {
     let uuid = svn_repository_uuid(&repo_path).expect("read repository uuid");
     assert_eq!(uuid.len(), 36);
     assert!(uuid.chars().all(|ch| ch.is_ascii_hexdigit() || ch == '-'));
+}
+
+#[test]
+fn svn_path_last_changed_revision_preserves_path_specific_metadata() {
+    if !svnadmin_available() || !svnlook_available() || !svn_client_available() {
+        return;
+    }
+
+    let data_root = tempdir().expect("tempdir");
+    let repo_path = svn_repository_path(data_root.path(), 14);
+    create_svn_repository(&repo_path).expect("create svn repository");
+
+    let import_dir = tempdir().expect("svn import tempdir");
+    let trunk_dir = import_dir.path().join("trunk");
+    std::fs::create_dir_all(&trunk_dir).expect("create svn trunk");
+    std::fs::write(trunk_dir.join("README.md"), "readme one\n").expect("write readme");
+    std::fs::write(trunk_dir.join("notes.txt"), "notes one\n").expect("write notes");
+    let output = Command::new(svn_executable("svn"))
+        .args(["import", "-m", "seed svn files"])
+        .arg(import_dir.path())
+        .arg(file_url(&repo_path))
+        .output()
+        .expect("run svn import");
+    assert!(
+        output.status.success(),
+        "svn import should seed executable-backed repository: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let readme_revision = svn_youngest_revision(&repo_path).expect("read readme revision");
+
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    let output = Command::new(svn_executable("svn"))
+        .arg("checkout")
+        .arg(file_url(&repo_path))
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn checkout");
+    assert!(
+        output.status.success(),
+        "svn checkout should prepare metadata fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    std::fs::write(
+        checkout_dir.path().join("trunk").join("notes.txt"),
+        "notes two\n",
+    )
+    .expect("update notes");
+    let output = Command::new(svn_executable("svn"))
+        .args(["commit", "-m", "update unrelated notes"])
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn commit");
+    assert!(
+        output.status.success(),
+        "svn commit should persist unrelated metadata fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let youngest_revision = svn_youngest_revision(&repo_path).expect("read youngest revision");
+    assert!(
+        youngest_revision > readme_revision,
+        "fixture should create a newer repository revision than README.md"
+    );
+
+    assert_eq!(
+        svn_path_last_changed_revision(&repo_path, Some(youngest_revision), "trunk/README.md")
+            .expect("read README.md path revision"),
+        readme_revision
+    );
+    assert_eq!(
+        svn_path_last_changed_revision(&repo_path, Some(youngest_revision), "trunk/notes.txt")
+            .expect("read notes.txt path revision"),
+        youngest_revision
+    );
 }

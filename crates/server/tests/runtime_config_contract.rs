@@ -1,11 +1,17 @@
 use std::collections::BTreeMap;
 use std::fs;
+use std::sync::{Mutex, OnceLock};
 
 use tempfile::tempdir;
 use yona_rust_pilot_migration::RuntimeSchemaPolicy;
 use yona_rust_pilot_server::runtime_config::{
-    join_base_path, load_startup_config, normalize_base_path,
+    apply_startup_runtime_env, join_base_path, load_startup_config, normalize_base_path,
 };
+
+fn runtime_config_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 #[test]
 fn normalizes_base_paths_like_the_go_pilot() {
@@ -37,6 +43,7 @@ public_origin = "https://example.com"
 database_url = "mysql://db"
 schema_policy = "adopt"
 seed_pilot = true
+show_user_email = false
 use_embedded_assets = true
 asset_root = "C:/assets"
 "#,
@@ -57,9 +64,189 @@ asset_root = "C:/assets"
     assert_eq!(config.database_url, "mysql://db");
     assert_eq!(config.schema_policy, RuntimeSchemaPolicy::Adopt);
     assert_eq!(config.seed_pilot, true);
+    assert_eq!(config.show_user_email, Some(false));
     assert_eq!(config.use_embedded_assets, true);
     assert_eq!(config.asset_root.as_deref(), Some("C:/assets"));
     assert_eq!(config.bind_addr, "127.0.0.1:8089");
+}
+
+#[test]
+fn loads_sectioned_legacy_migration_toml_keys() {
+    let dir = tempdir().expect("tempdir");
+    let config_path = dir.path().join("yona.toml");
+    fs::write(
+        &config_path,
+        r#"
+[site]
+name = "Legacy Yona"
+hostname = "yona.example.com"
+base_path = "/sectioned"
+allow_anonymous_access = false
+allowed_sending_mail_domains = ["allowed.example.com", "other.example.com"]
+guest_login_prefix = "guest-"
+show_user_email = false
+langs = ["ko-KR", "en-US"]
+
+[auth]
+email_verification = true
+login_id_placeholder = "Employee ID"
+password_placeholder = "Employee password"
+signup_require_confirm = true
+social_login_only = true
+
+[session]
+max_age = 1800
+
+[database]
+url = "postgres://db"
+
+[issue]
+event_draft_time = "1s"
+
+[mailbox]
+fetch_command = "fetch-mailbox --unseen"
+imap_address = "noreply@yona.example"
+polling_enabled = true
+polling_initial_delay = "2s"
+polling_interval = "750ms"
+
+[project]
+default_scope = "private"
+default_menus = ["issue", "board"]
+max_file_size = 12345
+
+[smtp]
+host = "smtp.example.com"
+port = 465
+ssl = true
+user = "smtp-user"
+password = "smtp-pass"
+domain = "smtp-domain.example.com"
+from = "override@example.com"
+
+[webhook]
+delivery_retries = 2
+allow_private_networks = true
+
+[update]
+current_version = "1.0.0"
+latest_version = "1.1.0"
+version = "1.1.0-alt"
+release_url = "https://downloads.example/yona-1.1.0.zip"
+metadata_url = "https://downloads.example/latest.json"
+metadata_file = "/opt/yona/latest.json"
+https_fetch_command = "curl --fail"
+
+[notification]
+mail_enabled = false
+mail_initial_delay = "2s"
+mail_interval = "750ms"
+mail_delay = "0"
+recipient_limit = 50
+hide_address = false
+draft_time = "1s"
+"#,
+    )
+    .expect("write config");
+
+    let config = load_startup_config(
+        BTreeMap::from([(
+            "YONA_CONFIG_TOML".to_string(),
+            config_path.to_string_lossy().into_owned(),
+        )]),
+        dir.path(),
+    )
+    .expect("load startup config");
+
+    assert_eq!(config.runtime.base_path, "/sectioned");
+    assert_eq!(config.database_url, "postgres://db");
+    assert_eq!(config.site_name.as_deref(), Some("Legacy Yona"));
+    assert_eq!(config.site_hostname.as_deref(), Some("yona.example.com"));
+    assert_eq!(config.site_allow_anonymous_access, Some(false));
+    assert_eq!(
+        config.allowed_sending_mail_domains,
+        Some(vec![
+            "allowed.example.com".to_string(),
+            "other.example.com".to_string()
+        ])
+    );
+    assert_eq!(config.guest_login_prefix.as_deref(), Some("guest-"));
+    assert_eq!(config.show_user_email, Some(false));
+    assert_eq!(
+        config.supported_languages,
+        Some(vec!["ko-KR".to_string(), "en-US".to_string()])
+    );
+    assert_eq!(config.auth_email_verification_enabled, Some(true));
+    assert_eq!(
+        config.auth_login_id_placeholder.as_deref(),
+        Some("Employee ID")
+    );
+    assert_eq!(
+        config.auth_password_placeholder.as_deref(),
+        Some("Employee password")
+    );
+    assert_eq!(config.auth_signup_require_confirm, Some(true));
+    assert_eq!(config.auth_social_login_only, Some(true));
+    assert_eq!(config.session_timeout_seconds, Some(1800));
+    assert_eq!(config.issue_event_draft_time.as_deref(), Some("1s"));
+    assert_eq!(
+        config.mailbox_fetch_command.as_deref(),
+        Some("fetch-mailbox --unseen")
+    );
+    assert_eq!(
+        config.mailbox_imap_address.as_deref(),
+        Some("noreply@yona.example")
+    );
+    assert_eq!(config.mailbox_polling_enabled, Some(true));
+    assert_eq!(config.mailbox_polling_initial_delay.as_deref(), Some("2s"));
+    assert_eq!(config.mailbox_polling_interval.as_deref(), Some("750ms"));
+    assert_eq!(config.project_default_scope.as_deref(), Some("private"));
+    assert_eq!(
+        config.project_default_menus,
+        Some(vec!["issue".to_string(), "board".to_string()])
+    );
+    assert_eq!(config.max_file_size, Some(12345));
+    assert_eq!(config.smtp_host.as_deref(), Some("smtp.example.com"));
+    assert_eq!(config.smtp_port, Some(465));
+    assert_eq!(config.smtp_ssl, Some(true));
+    assert_eq!(config.smtp_user.as_deref(), Some("smtp-user"));
+    assert_eq!(config.smtp_password.as_deref(), Some("smtp-pass"));
+    assert_eq!(
+        config.smtp_domain.as_deref(),
+        Some("smtp-domain.example.com")
+    );
+    assert_eq!(config.smtp_from.as_deref(), Some("override@example.com"));
+    assert_eq!(config.update_current_version.as_deref(), Some("1.0.0"));
+    assert_eq!(config.update_latest_version.as_deref(), Some("1.1.0"));
+    assert_eq!(config.update_version.as_deref(), Some("1.1.0-alt"));
+    assert_eq!(
+        config.update_release_url.as_deref(),
+        Some("https://downloads.example/yona-1.1.0.zip")
+    );
+    assert_eq!(
+        config.update_metadata_url.as_deref(),
+        Some("https://downloads.example/latest.json")
+    );
+    assert_eq!(
+        config.update_metadata_file.as_deref(),
+        Some("/opt/yona/latest.json")
+    );
+    assert_eq!(
+        config.update_https_fetch_command.as_deref(),
+        Some("curl --fail")
+    );
+    assert_eq!(config.webhook_delivery_retries, Some(2));
+    assert_eq!(config.webhook_allow_private_networks, Some(true));
+    assert_eq!(config.notification_mail_enabled, Some(false));
+    assert_eq!(
+        config.notification_mail_initial_delay.as_deref(),
+        Some("2s")
+    );
+    assert_eq!(config.notification_mail_interval.as_deref(), Some("750ms"));
+    assert_eq!(config.notification_mail_delay.as_deref(), Some("0"));
+    assert_eq!(config.notification_mail_recipient_limit, Some(50));
+    assert_eq!(config.notification_mail_hide_address, Some(false));
+    assert_eq!(config.notification_draft_time.as_deref(), Some("1s"));
 }
 
 #[test]
@@ -74,7 +261,65 @@ public_origin = "https://example.com"
 database_url = "mysql://db"
 schema_policy = "adopt"
 seed_pilot = false
+show_user_email = false
 bind_addr = "127.0.0.1:19089"
+
+[site]
+name = "Toml Yona"
+hostname = "toml.example.com"
+allow_anonymous_access = false
+allowed_sending_mail_domains = ["toml.example.com"]
+langs = ["ko-KR"]
+
+[auth]
+login_id_placeholder = "Toml Login"
+password_placeholder = "Toml Password"
+
+[session]
+max_age = 3600
+
+[mailbox]
+fetch_command = "toml-fetch-mailbox"
+imap_address = "toml-noreply@yona.example"
+polling_enabled = false
+polling_initial_delay = "5s"
+polling_interval = "60s"
+
+[project]
+default_scope = "private"
+default_menus = ["issue"]
+max_file_size = 12345
+
+[smtp]
+host = "smtp.toml.example.com"
+port = 465
+ssl = true
+user = "toml-user"
+password = "toml-pass"
+domain = "toml-domain.example.com"
+from = "toml-from@example.com"
+
+[webhook]
+delivery_retries = 1
+allow_private_networks = false
+
+[update]
+current_version = "toml-current"
+latest_version = "toml-latest"
+version = "toml-version"
+release_url = "https://toml.example/release"
+metadata_url = "https://toml.example/latest.json"
+metadata_file = "/toml/latest.json"
+https_fetch_command = "toml-fetch"
+
+[notification]
+mail_enabled = true
+mail_initial_delay = "5s"
+mail_interval = "60s"
+mail_delay = "180s"
+recipient_limit = 100
+hide_address = true
+draft_time = "30s"
 "#,
     )
     .expect("write config");
@@ -99,6 +344,134 @@ bind_addr = "127.0.0.1:19089"
                 "validate_only".to_string(),
             ),
             ("YONA_SEED_PILOT".to_string(), "1".to_string()),
+            ("YONA_SHOW_USER_EMAIL".to_string(), "yes".to_string()),
+            ("YONA_SITE_NAME".to_string(), "Env Yona".to_string()),
+            (
+                "YONA_APPLICATION_HOSTNAME".to_string(),
+                "env.example.com".to_string(),
+            ),
+            (
+                "YONA_ALLOWED_MAIL_DOMAINS".to_string(),
+                "allowed.example.com,other.example.com".to_string(),
+            ),
+            (
+                "YONA_ALLOW_ANONYMOUS_ACCESS".to_string(),
+                "true".to_string(),
+            ),
+            (
+                "YONA_AUTH_LOGIN_ID_PLACEHOLDER".to_string(),
+                "Env Login".to_string(),
+            ),
+            (
+                "YONA_AUTH_PASSWORD_PLACEHOLDER".to_string(),
+                "Env Password".to_string(),
+            ),
+            (
+                "YONA_SESSION_TIMEOUT_SECONDS".to_string(),
+                "7200".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_FETCH_COMMAND".to_string(),
+                "env-fetch-mailbox".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_IMAP_ADDRESS".to_string(),
+                "env-noreply@yona.example".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_POLLING_ENABLED".to_string(),
+                "true".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_POLLING_INITIAL_DELAY".to_string(),
+                "1s".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_POLLING_INTERVAL".to_string(),
+                "2s".to_string(),
+            ),
+            ("YONA_LANGS".to_string(), "ja-JP,en-US".to_string()),
+            (
+                "YONA_PROJECT_DEFAULT_SCOPE".to_string(),
+                "public".to_string(),
+            ),
+            (
+                "YONA_PROJECT_DEFAULT_MENUS".to_string(),
+                "code,review".to_string(),
+            ),
+            ("YONA_MAX_FILE_SIZE".to_string(), "67890".to_string()),
+            (
+                "YONA_SMTP_HOST".to_string(),
+                "smtp.env.example.com".to_string(),
+            ),
+            ("YONA_SMTP_PORT".to_string(), "2525".to_string()),
+            ("YONA_SMTP_SSL".to_string(), "false".to_string()),
+            ("YONA_SMTP_USER".to_string(), "env-user".to_string()),
+            ("YONA_SMTP_PASSWORD".to_string(), "env-pass".to_string()),
+            (
+                "YONA_SMTP_DOMAIN".to_string(),
+                "smtp-env.example.com".to_string(),
+            ),
+            (
+                "YONA_SMTP_FROM".to_string(),
+                "env-from@example.com".to_string(),
+            ),
+            ("YONA_WEBHOOK_DELIVERY_RETRIES".to_string(), "4".to_string()),
+            (
+                "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS".to_string(),
+                "true".to_string(),
+            ),
+            (
+                "YONA_CURRENT_VERSION".to_string(),
+                "env-current".to_string(),
+            ),
+            (
+                "YONA_UPDATE_LATEST_VERSION".to_string(),
+                "env-latest".to_string(),
+            ),
+            ("YONA_UPDATE_VERSION".to_string(), "env-version".to_string()),
+            (
+                "YONA_UPDATE_RELEASE_URL".to_string(),
+                "https://env.example/release".to_string(),
+            ),
+            (
+                "YONA_UPDATE_METADATA_URL".to_string(),
+                "https://env.example/latest.json".to_string(),
+            ),
+            (
+                "YONA_UPDATE_METADATA_FILE".to_string(),
+                "/env/latest.json".to_string(),
+            ),
+            (
+                "YONA_UPDATE_HTTPS_FETCH_COMMAND".to_string(),
+                "env-fetch".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_ENABLED".to_string(),
+                "false".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INITIAL_DELAY".to_string(),
+                "1s".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INTERVAL".to_string(),
+                "2s".to_string(),
+            ),
+            ("YONA_NOTIFICATION_MAIL_DELAY".to_string(), "3s".to_string()),
+            (
+                "YONA_NOTIFICATION_MAIL_HIDE_ADDRESS".to_string(),
+                "false".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT".to_string(),
+                "7".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_DRAFT_TIME".to_string(),
+                "1ms".to_string(),
+            ),
+            ("YONA_ISSUE_EVENT_DRAFT_TIME".to_string(), "2ms".to_string()),
             ("YONA_BIND_ADDR".to_string(), "127.0.0.1:29089".to_string()),
         ]),
         dir.path(),
@@ -110,7 +483,440 @@ bind_addr = "127.0.0.1:19089"
     assert_eq!(config.database_url, "sqlite::memory:");
     assert_eq!(config.schema_policy, RuntimeSchemaPolicy::ValidateOnly);
     assert_eq!(config.seed_pilot, true);
+    assert_eq!(config.show_user_email, Some(true));
+    assert_eq!(config.site_name.as_deref(), Some("Env Yona"));
+    assert_eq!(config.site_hostname.as_deref(), Some("env.example.com"));
+    assert_eq!(
+        config.allowed_sending_mail_domains,
+        Some(vec![
+            "allowed.example.com".to_string(),
+            "other.example.com".to_string()
+        ])
+    );
+    assert_eq!(config.site_allow_anonymous_access, Some(true));
+    assert_eq!(
+        config.auth_login_id_placeholder.as_deref(),
+        Some("Env Login")
+    );
+    assert_eq!(
+        config.auth_password_placeholder.as_deref(),
+        Some("Env Password")
+    );
+    assert_eq!(config.session_timeout_seconds, Some(7200));
+    assert_eq!(
+        config.mailbox_fetch_command.as_deref(),
+        Some("env-fetch-mailbox")
+    );
+    assert_eq!(
+        config.mailbox_imap_address.as_deref(),
+        Some("env-noreply@yona.example")
+    );
+    assert_eq!(config.mailbox_polling_enabled, Some(true));
+    assert_eq!(config.mailbox_polling_initial_delay.as_deref(), Some("1s"));
+    assert_eq!(config.mailbox_polling_interval.as_deref(), Some("2s"));
+    assert_eq!(
+        config.supported_languages,
+        Some(vec!["ja-JP".to_string(), "en-US".to_string()])
+    );
+    assert_eq!(config.project_default_scope.as_deref(), Some("public"));
+    assert_eq!(
+        config.project_default_menus,
+        Some(vec!["code".to_string(), "review".to_string()])
+    );
+    assert_eq!(config.max_file_size, Some(67890));
+    assert_eq!(config.smtp_host.as_deref(), Some("smtp.env.example.com"));
+    assert_eq!(config.smtp_port, Some(2525));
+    assert_eq!(config.smtp_ssl, Some(false));
+    assert_eq!(config.smtp_user.as_deref(), Some("env-user"));
+    assert_eq!(config.smtp_password.as_deref(), Some("env-pass"));
+    assert_eq!(config.smtp_domain.as_deref(), Some("smtp-env.example.com"));
+    assert_eq!(config.smtp_from.as_deref(), Some("env-from@example.com"));
+    assert_eq!(
+        config.update_current_version.as_deref(),
+        Some("env-current")
+    );
+    assert_eq!(config.update_latest_version.as_deref(), Some("env-latest"));
+    assert_eq!(config.update_version.as_deref(), Some("env-version"));
+    assert_eq!(
+        config.update_release_url.as_deref(),
+        Some("https://env.example/release")
+    );
+    assert_eq!(
+        config.update_metadata_url.as_deref(),
+        Some("https://env.example/latest.json")
+    );
+    assert_eq!(
+        config.update_metadata_file.as_deref(),
+        Some("/env/latest.json")
+    );
+    assert_eq!(
+        config.update_https_fetch_command.as_deref(),
+        Some("env-fetch")
+    );
+    assert_eq!(config.webhook_delivery_retries, Some(4));
+    assert_eq!(config.webhook_allow_private_networks, Some(true));
+    assert_eq!(config.notification_mail_enabled, Some(false));
+    assert_eq!(
+        config.notification_mail_initial_delay.as_deref(),
+        Some("1s")
+    );
+    assert_eq!(config.notification_mail_interval.as_deref(), Some("2s"));
+    assert_eq!(config.notification_mail_delay.as_deref(), Some("3s"));
+    assert_eq!(config.notification_mail_hide_address, Some(false));
+    assert_eq!(config.notification_mail_recipient_limit, Some(7));
+    assert_eq!(config.notification_draft_time.as_deref(), Some("1ms"));
+    assert_eq!(config.issue_event_draft_time.as_deref(), Some("2ms"));
     assert_eq!(config.bind_addr, "127.0.0.1:29089");
+}
+
+#[test]
+fn applies_startup_runtime_env_for_browser_runtime_flags() {
+    let _guard = runtime_config_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_SITE_NAME");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+    std::env::remove_var("YONA_GUEST_LOGIN_PREFIX");
+    std::env::remove_var("YONA_LANGS");
+    std::env::remove_var("YONA_SHOW_USER_EMAIL");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
+    std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
+    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
+    std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");
+    std::env::remove_var("YONA_MAILBOX_FETCH_COMMAND");
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_MAILBOX_POLLING_ENABLED");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INITIAL_DELAY");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INTERVAL");
+    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    std::env::remove_var("YONA_PROJECT_DEFAULT_MENUS");
+    std::env::remove_var("YONA_MAX_FILE_SIZE");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_PORT");
+    std::env::remove_var("YONA_SMTP_SSL");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_CURRENT_VERSION");
+    std::env::remove_var("YONA_UPDATE_ERROR");
+    std::env::remove_var("YONA_UPDATE_LATEST_VERSION");
+    std::env::remove_var("YONA_UPDATE_VERSION");
+    std::env::remove_var("YONA_UPDATE_RELEASE_URL");
+    std::env::remove_var("YONA_UPDATE_METADATA_URL");
+    std::env::remove_var("YONA_UPDATE_METADATA_FILE");
+    std::env::remove_var("YONA_UPDATE_HTTPS_FETCH_COMMAND");
+    std::env::remove_var("YONA_WEBHOOK_DELIVERY_RETRIES");
+    std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
+    std::env::remove_var("YONA_NOTIFICATION_DRAFT_TIME");
+    let dir = tempdir().expect("tempdir");
+    let config_path = dir.path().join("yona.toml");
+    fs::write(
+        &config_path,
+        r#"
+[site]
+name = "Legacy Yona"
+hostname = "yona.example.com"
+allowed_sending_mail_domains = ["allowed.example.com", "other.example.com"]
+allow_anonymous_access = false
+guest_login_prefix = "guest-"
+show_user_email = false
+langs = ["ko-KR", "en-US"]
+
+[auth]
+email_verification = true
+login_id_placeholder = "Employee ID"
+password_placeholder = "Employee password"
+signup_require_confirm = true
+social_login_only = true
+
+[session]
+max_age = 1800
+
+[issue]
+event_draft_time = "1s"
+
+[mailbox]
+fetch_command = "fetch-mailbox --unseen"
+imap_address = "noreply@yona.example"
+polling_enabled = true
+polling_initial_delay = "2s"
+polling_interval = "750ms"
+
+[project]
+default_scope = "private"
+default_menus = ["issue", "board"]
+max_file_size = 12345
+
+[smtp]
+host = "smtp.example.com"
+port = 465
+ssl = true
+user = "smtp-user"
+password = "smtp-pass"
+domain = "smtp-domain.example.com"
+from = "override@example.com"
+
+[webhook]
+delivery_retries = 2
+allow_private_networks = true
+
+[update]
+current_version = "1.0.0"
+error = "configured warning"
+latest_version = "1.1.0"
+version = "1.1.0-alt"
+release_url = "https://downloads.example/yona-1.1.0.zip"
+metadata_url = "https://downloads.example/latest.json"
+metadata_file = "/opt/yona/latest.json"
+https_fetch_command = "curl --fail"
+
+[notification]
+mail_enabled = false
+mail_initial_delay = "2s"
+mail_interval = "750ms"
+mail_delay = "0"
+recipient_limit = 50
+hide_address = false
+draft_time = "1s"
+"#,
+    )
+    .expect("write config");
+
+    let config = load_startup_config(
+        BTreeMap::from([(
+            "YONA_CONFIG_TOML".to_string(),
+            config_path.to_string_lossy().into_owned(),
+        )]),
+        dir.path(),
+    )
+    .expect("load startup config");
+    apply_startup_runtime_env(&config);
+
+    assert_eq!(
+        std::env::var("YONA_SITE_NAME").as_deref(),
+        Ok("Legacy Yona")
+    );
+    assert_eq!(
+        std::env::var("YONA_APPLICATION_HOSTNAME").as_deref(),
+        Ok("yona.example.com")
+    );
+    assert_eq!(
+        std::env::var("YONA_ALLOWED_MAIL_DOMAINS").as_deref(),
+        Ok("allowed.example.com,other.example.com")
+    );
+    assert_eq!(
+        std::env::var("YONA_ALLOW_ANONYMOUS_ACCESS").as_deref(),
+        Ok("false")
+    );
+    assert_eq!(
+        std::env::var("YONA_GUEST_LOGIN_PREFIX").as_deref(),
+        Ok("guest-")
+    );
+    assert_eq!(std::env::var("YONA_LANGS").as_deref(), Ok("ko-KR,en-US"));
+    assert_eq!(
+        std::env::var("YONA_SHOW_USER_EMAIL").as_deref(),
+        Ok("false")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").as_deref(),
+        Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER").as_deref(),
+        Ok("Employee ID")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER").as_deref(),
+        Ok("Employee password")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").as_deref(),
+        Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").as_deref(),
+        Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_SESSION_TIMEOUT_SECONDS").as_deref(),
+        Ok("1800")
+    );
+    assert_eq!(
+        std::env::var("YONA_ISSUE_EVENT_DRAFT_TIME").as_deref(),
+        Ok("1s")
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_FETCH_COMMAND").as_deref(),
+        Ok("fetch-mailbox --unseen")
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_IMAP_ADDRESS").as_deref(),
+        Ok("noreply@yona.example")
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_POLLING_ENABLED").as_deref(),
+        Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_POLLING_INITIAL_DELAY").as_deref(),
+        Ok("2s")
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_POLLING_INTERVAL").as_deref(),
+        Ok("750ms")
+    );
+    assert_eq!(
+        std::env::var("YONA_PROJECT_DEFAULT_SCOPE").as_deref(),
+        Ok("private")
+    );
+    assert_eq!(
+        std::env::var("YONA_PROJECT_DEFAULT_MENUS").as_deref(),
+        Ok("issue,board")
+    );
+    assert_eq!(std::env::var("YONA_MAX_FILE_SIZE").as_deref(), Ok("12345"));
+    assert_eq!(
+        std::env::var("YONA_SMTP_HOST").as_deref(),
+        Ok("smtp.example.com")
+    );
+    assert_eq!(std::env::var("YONA_SMTP_PORT").as_deref(), Ok("465"));
+    assert_eq!(std::env::var("YONA_SMTP_SSL").as_deref(), Ok("true"));
+    assert_eq!(std::env::var("YONA_SMTP_USER").as_deref(), Ok("smtp-user"));
+    assert_eq!(
+        std::env::var("YONA_SMTP_PASSWORD").as_deref(),
+        Ok("smtp-pass")
+    );
+    assert_eq!(
+        std::env::var("YONA_SMTP_DOMAIN").as_deref(),
+        Ok("smtp-domain.example.com")
+    );
+    assert_eq!(
+        std::env::var("YONA_SMTP_FROM").as_deref(),
+        Ok("override@example.com")
+    );
+    assert_eq!(
+        std::env::var("YONA_CURRENT_VERSION").as_deref(),
+        Ok("1.0.0")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_ERROR").as_deref(),
+        Ok("configured warning")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_LATEST_VERSION").as_deref(),
+        Ok("1.1.0")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_VERSION").as_deref(),
+        Ok("1.1.0-alt")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_RELEASE_URL").as_deref(),
+        Ok("https://downloads.example/yona-1.1.0.zip")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_METADATA_URL").as_deref(),
+        Ok("https://downloads.example/latest.json")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_METADATA_FILE").as_deref(),
+        Ok("/opt/yona/latest.json")
+    );
+    assert_eq!(
+        std::env::var("YONA_UPDATE_HTTPS_FETCH_COMMAND").as_deref(),
+        Ok("curl --fail")
+    );
+    assert_eq!(
+        std::env::var("YONA_WEBHOOK_DELIVERY_RETRIES").as_deref(),
+        Ok("2")
+    );
+    assert_eq!(
+        std::env::var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS").as_deref(),
+        Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_ENABLED").as_deref(),
+        Ok("false")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY").as_deref(),
+        Ok("2s")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_INTERVAL").as_deref(),
+        Ok("750ms")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_DELAY").as_deref(),
+        Ok("0")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS").as_deref(),
+        Ok("false")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT").as_deref(),
+        Ok("50")
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_DRAFT_TIME").as_deref(),
+        Ok("1s")
+    );
+    std::env::remove_var("YONA_SITE_NAME");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+    std::env::remove_var("YONA_GUEST_LOGIN_PREFIX");
+    std::env::remove_var("YONA_LANGS");
+    std::env::remove_var("YONA_SHOW_USER_EMAIL");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
+    std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
+    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
+    std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");
+    std::env::remove_var("YONA_MAILBOX_FETCH_COMMAND");
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_MAILBOX_POLLING_ENABLED");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INITIAL_DELAY");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INTERVAL");
+    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    std::env::remove_var("YONA_PROJECT_DEFAULT_MENUS");
+    std::env::remove_var("YONA_MAX_FILE_SIZE");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_PORT");
+    std::env::remove_var("YONA_SMTP_SSL");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_CURRENT_VERSION");
+    std::env::remove_var("YONA_UPDATE_ERROR");
+    std::env::remove_var("YONA_UPDATE_LATEST_VERSION");
+    std::env::remove_var("YONA_UPDATE_VERSION");
+    std::env::remove_var("YONA_UPDATE_RELEASE_URL");
+    std::env::remove_var("YONA_UPDATE_METADATA_URL");
+    std::env::remove_var("YONA_UPDATE_METADATA_FILE");
+    std::env::remove_var("YONA_UPDATE_HTTPS_FETCH_COMMAND");
+    std::env::remove_var("YONA_WEBHOOK_DELIVERY_RETRIES");
+    std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
+    std::env::remove_var("YONA_NOTIFICATION_DRAFT_TIME");
 }
 
 #[test]

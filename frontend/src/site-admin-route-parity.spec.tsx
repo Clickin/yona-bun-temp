@@ -1,6 +1,22 @@
 import fs from "node:fs";
 import path from "node:path";
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import {
+  SiteAdminDataPage,
+  SiteAdminDiagnosticPage,
+  SiteAdminIssueListPage,
+  SiteAdminMailPage,
+  SiteAdminMassMailPage,
+  SiteAdminPostListPage,
+  SiteAdminProjectListPage,
+  SiteAdminUpdatePage,
+  SiteAdminUserListPage,
+} from "./routes/sites/$pageName/route";
+
+const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+const noop = () => {};
 
 describe("site-admin route parity harness", () => {
   it("closes the legacy site-admin wildcard route without porting placeholders", () => {
@@ -14,5 +30,517 @@ describe("site-admin route parity harness", () => {
     expect(routeSource).not.toContain("PlaceholderPage");
     expect(routeSource).toContain("NotFoundPage");
     expect(routeSource).toContain("return <NotFoundPage href={`/sites/${pageName}`} />;");
+  });
+
+  it("renders legacy user and project search forms without temporary English placeholders", () => {
+    const userHtml = renderToStaticMarkup(
+      <SiteAdminUserListPage
+        deleteTarget={null}
+        input={{ page: 1, query: "", state: "ACTIVE" }}
+        pendingAccountLockLoginId={undefined}
+        pendingDeleteLoginId={undefined}
+        pendingGuestLoginId={undefined}
+        pendingResetPasswordLoginId={undefined}
+        pendingSiteAdminLoginId={undefined}
+        response={{
+          page: 1,
+          pageSize: 30,
+          query: "",
+          siteAdminCount: 0,
+          state: "ACTIVE",
+          total: 0,
+          totalPages: 0,
+          users: [],
+        }}
+        resetPasswords={{}}
+        runtimeConfig={runtimeConfig}
+        updateAvailable={true}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+        onResetPassword={noop}
+        onToggleAccountLock={noop}
+        onToggleGuest={noop}
+        onToggleSiteAdmin={noop}
+      />,
+    );
+
+    expect(userHtml).toContain(">site.sidebar.userList<");
+    expect(userHtml).toContain('<div class="row-fluid"><div class="span2">');
+    expect(userHtml).not.toContain("site-setting-layout");
+    expect(userHtml).toContain(
+      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
+    );
+    expect(userHtml).toContain('placeholder="site.userList.search"');
+    expect(userHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(userHtml).toContain('<ul class="user-list-wrap"></ul>');
+    expect(userHtml).not.toContain("Search users");
+    expect(userHtml).not.toContain(">Search</button>");
+    expect(userHtml).not.toContain("No users found.");
+
+    const projectHtml = renderToStaticMarkup(
+      <SiteAdminProjectListPage
+        deleteTarget={null}
+        input={{ filter: "", page: 1 }}
+        pendingDeleteProjectId={undefined}
+        response={{
+          filter: "",
+          page: 1,
+          pageSize: 30,
+          projects: [],
+          total: 0,
+          totalPages: 0,
+        }}
+        runtimeConfig={runtimeConfig}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+      />,
+    );
+
+    expect(projectHtml).toContain(">site.sidebar.projectList<");
+    expect(projectHtml).toContain('placeholder="site.project.filter"');
+    expect(projectHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(projectHtml).toContain('<ul class="project-list-wrap"></ul>');
+    expect(projectHtml).not.toContain("Search projects");
+    expect(projectHtml).not.toContain(">Search</button>");
+    expect(projectHtml).not.toContain("No projects found.");
+  });
+
+  it("renders legacy user and project list action labels", () => {
+    const userHtml = renderToStaticMarkup(
+      <SiteAdminUserListPage
+        deleteTarget={{
+          avatarUrl: "/yona/files/202",
+          createdAt: "2026-01-01",
+          displayName: "Door User",
+          emailAddress: "door@yona.test",
+          id: 7,
+          isGuest: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          state: "ACTIVE",
+        }}
+        input={{ page: 1, query: "", state: "ACTIVE" }}
+        pendingAccountLockLoginId={undefined}
+        pendingDeleteLoginId={undefined}
+        pendingGuestLoginId={undefined}
+        pendingResetPasswordLoginId={undefined}
+        pendingSiteAdminLoginId={undefined}
+        response={{
+          page: 1,
+          pageSize: 30,
+          query: "",
+          siteAdminCount: 0,
+          state: "ACTIVE",
+          total: 1,
+          totalPages: 1,
+          users: [
+            {
+              avatarUrl: "/yona/files/202",
+              createdAt: "2026-01-01",
+              displayName: "Door User",
+              emailAddress: "door@yona.test",
+              id: 7,
+              isGuest: false,
+              isSiteAdmin: false,
+              loginId: "door",
+              state: "ACTIVE",
+            },
+          ],
+        }}
+        resetPasswords={{ door: "new-secret" }}
+        runtimeConfig={runtimeConfig}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+        onResetPassword={noop}
+        onToggleAccountLock={noop}
+        onToggleGuest={noop}
+        onToggleSiteAdmin={noop}
+      />,
+    );
+
+    expect(userHtml).toContain(">user.name<");
+    expect(userHtml).toContain(">user.email<");
+    expect(userHtml).toContain(">userinfo.since<");
+    expect(userHtml).toContain(">site.userList.unlocked<");
+    expect(userHtml).toContain(
+      '<img alt="Door User" height="32" src="/yona/files/202" width="32"/>',
+    );
+    expect(userHtml).toContain(">button.user.make.guest.mode<");
+    expect(userHtml).toContain(">button.user.makeAccountUnlock.false<");
+    expect(userHtml).toContain(">title.resetPassword<");
+    expect(userHtml).toContain("user.newPassword: new-secret");
+    expect(userHtml).toContain(">button.user.upgrade.to.site.admin<");
+    expect(userHtml).toContain(">button.delete<");
+    expect(userHtml).toContain(">site.user.delete<");
+    expect(userHtml).toContain(">site.user.deleteConfirm<");
+    expect(userHtml).toContain(
+      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
+    );
+    expect(userHtml).toContain(">button.yes<");
+    expect(userHtml).toContain(
+      '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
+    );
+    expect(userHtml).not.toContain(">User<");
+    expect(userHtml).not.toContain(">Email<");
+    expect(userHtml).not.toContain(">Reset Password<");
+    expect(userHtml).not.toContain(">Delete User<");
+
+    const projectHtml = renderToStaticMarkup(
+      <SiteAdminProjectListPage
+        deleteTarget={{
+          createdAt: "2026-01-01",
+          id: 11,
+          overview: "A project",
+          ownerName: "yona",
+          projectLogoUrl: "/yona/files/101",
+          projectName: "alpha",
+        }}
+        input={{ filter: "", page: 1 }}
+        pendingDeleteProjectId={undefined}
+        response={{
+          filter: "",
+          page: 1,
+          pageSize: 30,
+          projects: [
+            {
+              createdAt: "2026-01-01",
+              id: 11,
+              overview: "A project",
+              ownerName: "yona",
+              projectLogoUrl: "/yona/files/101",
+              projectName: "alpha",
+            },
+          ],
+          total: 1,
+          totalPages: 1,
+        }}
+        runtimeConfig={runtimeConfig}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+      />,
+    );
+
+    expect(projectHtml).toContain(">project.name<");
+    expect(projectHtml).toContain(">project.description<");
+    expect(projectHtml).toContain(">project.created<");
+    expect(projectHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
+    expect(projectHtml).toContain(">yona/alpha<");
+    expect(projectHtml).toContain(">button.delete<");
+    expect(projectHtml).toContain(">site.project.delete<");
+    expect(projectHtml).toContain(">site.project.deleteConfirm<");
+    expect(projectHtml).toContain(
+      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
+    );
+    expect(projectHtml).toContain(">button.yes<");
+    expect(projectHtml).toContain(
+      '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
+    );
+    expect(projectHtml).not.toContain(">Project<");
+    expect(projectHtml).not.toContain(">Delete Project<");
+    expect(projectHtml).not.toContain(">Are you sure?<");
+  });
+
+  it("renders legacy post and issue empty list wrappers without ad-hoc empty messages", () => {
+    const postHtml = renderToStaticMarkup(
+      <SiteAdminPostListPage
+        input={{ page: 1 }}
+        response={{ page: 1, pageSize: 30, posts: [], total: 0, totalPages: 0 }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(postHtml).toContain(">site.sidebar.postList<");
+    expect(postHtml).toContain('<ul class="post-list-wrap"></ul>');
+    expect(postHtml).not.toContain("No posts found.");
+
+    const issueHtml = renderToStaticMarkup(
+      <SiteAdminIssueListPage
+        input={{ page: 1, state: "open" }}
+        response={{
+          issues: [],
+          page: 1,
+          pageSize: 30,
+          state: "open",
+          total: 0,
+          totalPages: 0,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(issueHtml).toContain(">site.sidebar.issueList<");
+    expect(issueHtml).toContain('<ul class="post-list-wrap"></ul>');
+    expect(issueHtml).not.toContain("No issues found.");
+  });
+
+  it("renders legacy post and issue row anchors and comment icons", () => {
+    const postHtml = renderToStaticMarkup(
+      <SiteAdminPostListPage
+        input={{ page: 1 }}
+        response={{
+          page: 1,
+          pageSize: 30,
+          posts: [
+            {
+              authorAvatarUrl: "/yona/avatar/door.png",
+              authorLabel: "Door User",
+              authorLoginId: "door",
+              commentCount: 3,
+              createdLabel: "2026-01-01",
+              labels: [],
+              notice: false,
+              ownerName: "yona",
+              postNumber: "15",
+              projectLogoUrl: "/yona/files/101",
+              projectName: "alpha",
+              readme: false,
+              title: "Board post",
+              updatedLabel: "2026-01-02",
+            },
+          ],
+          total: 1,
+          totalPages: 2,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(postHtml).toContain('class="row-fluid listitem"');
+    expect(postHtml).toContain('class="avatar-wrap list-avatar"');
+    expect(postHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
+    expect(postHtml).toContain('href="/yona/yona/alpha"');
+    expect(postHtml).toContain('class="post-project"');
+    expect(postHtml).toContain(">yona/alpha<");
+    expect(postHtml).toContain('class="post-info-separator"');
+    expect(postHtml).toContain('class="post-title"');
+    expect(postHtml).toContain('href="/yona/yona/alpha/post/15"');
+    expect(postHtml).toContain(">Board post<");
+    expect(postHtml).toContain('href="/yona/door"');
+    expect(postHtml).toContain(
+      '<img alt="Door User" height="16" src="/yona/avatar/door.png" width="16"/>',
+    );
+    expect(postHtml).toContain(">Door User<");
+    expect(postHtml).toContain('title="2026-01-01"');
+    expect(postHtml).toContain('href="/yona/yona/alpha/post/15#comments"');
+    expect(postHtml).toContain('<i class="yobicon-comments"></i>3');
+    expect(postHtml).toContain('class="page-navigation-wrap" id="pagination"');
+    expect(postHtml).toContain('<ul class="page-nums">');
+    expect(postHtml).toContain('name="pageNum"');
+    expect(postHtml).toContain('value="1"');
+    expect(postHtml).toContain('href="/yona/sites/postList?pageNum=2"');
+    expect(postHtml).toContain("button.prevPage");
+    expect(postHtml).toContain("button.nextPage");
+    expect(postHtml).not.toContain("data-page-num");
+
+    const issueHtml = renderToStaticMarkup(
+      <SiteAdminIssueListPage
+        input={{ page: 1, state: "open" }}
+        response={{
+          issues: [
+            {
+              assigneeLabel: "",
+              authorAvatarUrl: "/yona/avatar/door.png",
+              authorLabel: "Door User",
+              authorLoginId: "door",
+              commentCount: 4,
+              createdLabel: "2026-01-03",
+              issueNumber: "21",
+              labels: [],
+              milestoneTitle: "",
+              ownerName: "yona",
+              projectLogoUrl: "/yona/files/101",
+              projectName: "alpha",
+              state: "open",
+              title: "Open issue",
+              updatedLabel: "2026-01-04",
+              voterCount: 0,
+              watcherCount: 0,
+            },
+          ],
+          page: 1,
+          pageSize: 30,
+          state: "open",
+          total: 1,
+          totalPages: 2,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(issueHtml).toContain(">issue.state.open<");
+    expect(issueHtml).toContain(">issue.state.closed<");
+    expect(issueHtml).not.toContain(">Open<");
+    expect(issueHtml).not.toContain(">Closed<");
+    expect(issueHtml).toContain('class="row-fluid listitem"');
+    expect(issueHtml).toContain('href="/yona/yona/alpha"');
+    expect(issueHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
+    expect(issueHtml).toContain('class="post-project"');
+    expect(issueHtml).toContain(">yona/alpha<");
+    expect(issueHtml).toContain('class="post-title"');
+    expect(issueHtml).toContain('href="/yona/yona/alpha/issue/21"');
+    expect(issueHtml).toContain(">Open issue<");
+    expect(issueHtml).toContain('href="/yona/door"');
+    expect(issueHtml).toContain(
+      '<img alt="Door User" height="16" src="/yona/avatar/door.png" width="16"/>',
+    );
+    expect(issueHtml).toContain(">Door User<");
+    expect(issueHtml).toContain('title="2026-01-03"');
+    expect(issueHtml).toContain('href="/yona/yona/alpha/issue/21#comments"');
+    expect(issueHtml).toContain('<i class="yobicon-comments"></i>4');
+    expect(issueHtml).toContain('class="page-navigation-wrap" id="pagination"');
+    expect(issueHtml).toContain('<ul class="page-nums">');
+    expect(issueHtml).toContain('name="pageNum"');
+    expect(issueHtml).toContain('value="1"');
+    expect(issueHtml).toContain('href="/yona/sites/issueList?state=open&amp;pageNum=2"');
+    expect(issueHtml).toContain("button.prevPage");
+    expect(issueHtml).toContain("button.nextPage");
+    expect(issueHtml).not.toContain("data-page-num");
+  });
+
+  it("renders legacy diagnostics title and status messages", () => {
+    const okHtml = renderToStaticMarkup(
+      <SiteAdminDiagnosticPage
+        response={{ errorCount: 0, errors: [] }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(okHtml).toContain(">site.sidebar<");
+    expect(okHtml).toContain(">site.sidebar.diagnostics<");
+    expect(okHtml).toContain('href="/yona/sites/diagnostic"');
+    expect(okHtml).toContain(">site.diagnostic.errorNotFound<");
+    expect(okHtml).not.toContain(">Site Admin<");
+    expect(okHtml).not.toContain(">Diagnostics<");
+    expect(okHtml).not.toContain("No errors were found");
+
+    const errorHtml = renderToStaticMarkup(
+      <SiteAdminDiagnosticPage
+        response={{ errorCount: 2, errors: ["storage missing", "smtp missing"] }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(errorHtml).toContain(">site.diagnostic.errorFound 2<");
+    expect(errorHtml).toContain("<ul><li><pre>storage missing</pre></li>");
+    expect(errorHtml).toContain("<pre>storage missing</pre>");
+    expect(errorHtml).toContain("<pre>smtp missing</pre>");
+    expect(errorHtml).not.toContain("site-diagnostic-errors");
+    expect(errorHtml).not.toContain("2 errors were found");
+  });
+
+  it("renders legacy mail and mass-mail message-key form shells", () => {
+    const mailHtml = renderToStaticMarkup(
+      <SiteAdminMailPage
+        pending={false}
+        response={{ notConfiguredItems: ["smtp.host"], sender: "admin@yona.test", sent: true }}
+        runtimeConfig={runtimeConfig}
+        sent={true}
+        onSend={noop}
+      />,
+    );
+
+    expect(mailHtml).toContain(">title.sendMail<");
+    expect(mailHtml).toContain(">site.mail.notConfigured /admin/mailconf<");
+    expect(mailHtml).not.toContain(">site.mail.notConfigured<");
+    expect(mailHtml).toContain("smtp.host");
+    expect(mailHtml).toContain(">site.mail.sended<");
+    expect(mailHtml).toContain(">site.mail.from<");
+    expect(mailHtml).toContain('action="/yona/sites/mail"');
+    expect(mailHtml).toContain('placeholder="site.mail.fromPlaceholder"');
+    expect(mailHtml).toContain(">site.mail.to<");
+    expect(mailHtml).toContain('placeholder="site.mail.toPlaceholder"');
+    expect(mailHtml).toContain(">site.mail.subject<");
+    expect(mailHtml).toContain(">site.mail.body<");
+    expect(mailHtml).toContain("<strong>site.mail.send</strong>");
+    expect(mailHtml).not.toContain("Mail configuration is incomplete.");
+    expect(mailHtml).not.toContain("Mail was sent.");
+
+    const massMailHtml = renderToStaticMarkup(
+      <SiteAdminMassMailPage
+        mailtoHref=""
+        pending={false}
+        runtimeConfig={runtimeConfig}
+        onResolveRecipients={noop}
+      />,
+    );
+
+    expect(massMailHtml).toContain(">title.massMail<");
+    expect(massMailHtml).toContain(">site.massMail.toAll<");
+    expect(massMailHtml).toContain(">site.massMail.toProjects<");
+    expect(massMailHtml).toContain('data-toggle="mail-type"');
+    expect(massMailHtml).toContain('placeholder="project.name"');
+    expect(massMailHtml).toContain('data-loading-text="site.massMail.loading"');
+    expect(massMailHtml).toContain('id="select-project" type="submit"');
+    expect(massMailHtml).toContain('id="write-email" type="submit"');
+    expect(massMailHtml).toContain("<strong>button.add</strong>");
+    expect(massMailHtml).toContain("<strong>site.mail.write</strong>");
+    expect(massMailHtml).not.toContain(">Mass Mail<");
+    expect(massMailHtml).not.toContain("All users");
+    expect(massMailHtml).not.toContain("Project members");
+    expect(massMailHtml).not.toContain("Write email");
+  });
+
+  it("renders legacy data and update site-admin shells", () => {
+    const dataHtml = renderToStaticMarkup(
+      <SiteAdminDataPage csrfToken="csrf-token" runtimeConfig={runtimeConfig} />,
+    );
+
+    expect(dataHtml).toContain(">site.sidebar.data<");
+    expect(dataHtml).toContain("<strong>site.data.warning1</strong>");
+    expect(dataHtml).toContain("<strong>site.data.warning2</strong>");
+    expect(dataHtml).toContain("<strong>site.data.warning3</strong>");
+    expect(dataHtml).toContain(">site.data.export<");
+    expect(dataHtml).toContain('href="/yona/sites/export"');
+    expect(dataHtml).toContain(">site.data.import<");
+    expect(dataHtml).toContain('action="/yona/sites/import"');
+    expect(dataHtml).toContain('name="data"');
+    expect(dataHtml).toContain('<input type="submit"/>');
+    expect(dataHtml).not.toContain('value="site.data.import"');
+
+    const updateHtml = renderToStaticMarkup(
+      <SiteAdminUpdatePage
+        error={null}
+        response={{
+          currentVersion: "1.0.0",
+          error: null,
+          message: "",
+          releaseUrl: "/release",
+          versionToUpdate: "1.1.0",
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(updateHtml).toContain(">site.sidebar.update<");
+    expect(updateHtml).toContain("site.update.isAvailable 1.1.0");
+    expect(updateHtml).toContain(
+      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
+    );
+    expect(updateHtml).toContain('href="/yona/sites/update/download"');
+    expect(updateHtml).toContain(">site.update.download<");
+    expect(updateHtml).toContain("site.update.currentVersion 1.0.0");
+    expect(updateHtml).not.toContain(">Update<");
+
+    const noUpdateHtml = renderToStaticMarkup(
+      <SiteAdminUpdatePage
+        error={null}
+        response={{
+          currentVersion: "1.0.0",
+          error: null,
+          message: "",
+          releaseUrl: null,
+          versionToUpdate: null,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(noUpdateHtml).toContain("site.update.isNotNecessary 1.0.0");
+    expect(noUpdateHtml).not.toContain('class="notification-badge"');
+    expect(noUpdateHtml).not.toContain(">site.update.isNotNecessary<");
   });
 });

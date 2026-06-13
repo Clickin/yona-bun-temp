@@ -8,6 +8,7 @@ pub struct AppUserRecord {
     pub display_name: String,
     pub email_address: String,
     pub is_confirmed: bool,
+    pub is_guest: bool,
     pub is_site_admin: bool,
     pub login_id: String,
     pub password_hash: String,
@@ -77,8 +78,10 @@ pub struct IssueRecord {
     pub author_login_id: String,
     pub body_markdown: String,
     pub comment_count: u32,
+    pub due_date_label: String,
     pub id: i64,
     pub issue_number: i64,
+    pub is_draft: bool,
     pub milestone_id: Option<i64>,
     pub milestone_title: String,
     pub owner_name: String,
@@ -87,16 +90,35 @@ pub struct IssueRecord {
     pub title: String,
     pub updated_label: String,
     pub voter_count: u32,
+    pub voters: Vec<IssueVoterRecord>,
     pub watcher_count: u32,
+    pub weight: i16,
     pub is_favorited: bool,
     pub is_watching: bool,
     pub has_voted: bool,
     pub labels: Vec<IssueLabelRecord>,
+    pub parent_issue_id: Option<i64>,
+    pub parent_issue_number: Option<i64>,
+    pub parent_issue_title: String,
+    pub child_issues: Vec<IssueChildRecord>,
+    pub child_open_count: u32,
+    pub child_closed_count: u32,
     pub sharers: Vec<IssueSharerRecord>,
     pub comments: Vec<IssueCommentRecord>,
     pub history_markdown: String,
     pub timeline: Vec<IssueTimelineItemRecord>,
     pub attachments: Vec<IssueAttachmentRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueChildRecord {
+    pub assignee_label: String,
+    pub created_label: String,
+    pub is_draft: bool,
+    pub issue_number: i64,
+    pub labels: Vec<IssueLabelRecord>,
+    pub state: String,
+    pub title: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -203,6 +225,8 @@ pub struct NotificationItemRecord {
     pub event_type: String,
     pub id: i64,
     pub message: String,
+    pub reply_resource_id: String,
+    pub reply_resource_type: String,
     pub resource_id: String,
     pub resource_type: String,
     pub target_path: String,
@@ -239,26 +263,41 @@ pub struct IssueShareStatus {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectIssueListItemRecord {
+    pub author_email_address: String,
     pub author_label: String,
     pub author_login_id: String,
+    pub assignee_login_id: String,
     pub comment_count: u32,
     pub created_label: String,
+    pub child_closed_count: u32,
+    pub child_issues: Vec<IssueChildRecord>,
+    pub child_open_count: u32,
+    pub id: i64,
+    pub is_draft: bool,
     pub issue_number: i64,
     pub owner_name: String,
+    pub parent_issue_number: Option<i64>,
+    pub parent_issue_title: String,
+    pub project_id: i64,
     pub project_name: String,
     pub state: String,
     pub title: String,
     pub updated_label: String,
     pub assignee_label: String,
+    pub assignee_email_address: String,
     pub milestone_id: Option<i64>,
     pub milestone_title: String,
+    pub due_date_label: String,
+    pub due_date_overdue: bool,
     pub voter_count: u32,
     pub watcher_count: u32,
+    pub weight: i16,
     pub labels: Vec<IssueLabelRecord>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectIssueListRecord {
+    pub draft_items: Vec<ProjectIssueListItemRecord>,
     pub items: Vec<ProjectIssueListItemRecord>,
     pub page_num: u32,
     pub page_size: u32,
@@ -266,7 +305,16 @@ pub struct ProjectIssueListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueParentOptionRecord {
+    pub id: i64,
+    pub issue_number: i64,
+    pub selected: bool,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectPostingListItemRecord {
+    pub author_email_address: String,
     pub author_label: String,
     pub author_login_id: String,
     pub comment_count: u32,
@@ -275,6 +323,7 @@ pub struct ProjectPostingListItemRecord {
     pub notice: bool,
     pub owner_name: String,
     pub post_number: i64,
+    pub project_id: i64,
     pub project_name: String,
     pub readme: bool,
     pub title: String,
@@ -350,6 +399,7 @@ pub struct IssueListFilter {
     pub assignee_id: Option<i64>,
     pub assignee_login_id: Option<String>,
     pub author_login_id: Option<String>,
+    pub draft_author_login_id: Option<String>,
     pub label_ids: Vec<i64>,
     pub milestone_id: Option<i64>,
     pub page_num: u32,
@@ -362,6 +412,7 @@ pub struct OrganizationIssueListFilter {
     pub author_id: Option<i64>,
     pub filter: Option<String>,
     pub items_per_page: u32,
+    pub mention_user_id: Option<i64>,
     pub order_by: String,
     pub order_dir: String,
     pub page_num: u32,
@@ -569,6 +620,7 @@ pub struct IssueCommentRecord {
     pub contents_markdown: String,
     pub created_label: String,
     pub id: i64,
+    pub parent_comment_id: Option<i64>,
     pub via_email: bool,
     pub viewer_has_voted: bool,
     pub voter_count: u32,
@@ -586,7 +638,24 @@ pub struct IssueCommentOriginRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PostingCommentOriginRecord {
+    pub comment_id: i64,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueCommentVoterRecord {
+    pub email_address: String,
+    pub login_id: String,
+    pub user_id: i64,
+    pub user_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueVoterRecord {
     pub email_address: String,
     pub login_id: String,
     pub user_id: i64,
@@ -611,8 +680,12 @@ pub struct IssueMutationInput {
     pub assignee_login_id: Option<String>,
     pub attachment_ids: Vec<i64>,
     pub body_markdown: String,
+    pub due_date: Option<DateTime>,
+    pub is_draft: bool,
+    pub is_publish: bool,
     pub label_ids: Vec<i64>,
     pub milestone_id: Option<i64>,
+    pub parent_issue_id: Option<i64>,
     pub title: String,
 }
 
@@ -773,6 +846,7 @@ pub struct CreatePostingCommentInput {
     pub attachment_ids: Vec<i64>,
     pub contents_markdown: String,
     pub owner_name: String,
+    pub parent_comment_id: Option<i64>,
     pub post_number: i64,
     pub project_name: String,
 }
@@ -875,6 +949,7 @@ pub struct OrganizationRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrganizationViewerRecord {
+    pub is_guest: bool,
     pub is_organization_admin: bool,
     pub is_organization_member: bool,
     pub is_site_admin: bool,
@@ -931,7 +1006,17 @@ pub struct ProjectRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyResourceTargetRecord {
+    pub owner_name: String,
+    pub project_id: i64,
+    pub project_name: String,
+    pub target_path: String,
+    pub target_title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectViewerRecord {
+    pub is_guest: bool,
     pub is_organization_admin: bool,
     pub is_organization_member: bool,
     pub is_project_manager: bool,
@@ -1289,6 +1374,7 @@ pub struct PullRequestListFilter {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestListItemRecord {
+    pub closed_comment_thread_count: u32,
     pub comment_thread_count: u32,
     pub conflict: bool,
     pub contributor_label: String,
@@ -1320,11 +1406,28 @@ pub struct BranchPullRequestRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestListRecord {
+    pub accepted_count: u32,
     pub category: String,
+    pub closed_count: u32,
+    pub contributors: Vec<PullRequestUserRecord>,
     pub items: Vec<PullRequestListItemRecord>,
+    pub open_count: u32,
     pub page_num: u32,
     pub page_size: u32,
+    pub recently_pushed_branches: Vec<PullRequestPushedBranchRecord>,
+    pub sent_count: u32,
     pub total_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestPushedBranchRecord {
+    pub branch_name: String,
+    pub default_branch_project_id: i64,
+    pub id: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pushed_label: String,
+    pub short_name: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1531,6 +1634,7 @@ pub struct DeleteCommitDiscussionCommentInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestUserRecord {
+    pub email_address: String,
     pub login_id: String,
     pub user_id: i64,
     pub user_label: String,
@@ -1538,6 +1642,7 @@ pub struct PullRequestUserRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestEventRecord {
+    pub commits: Vec<PullRequestCommitRecord>,
     pub created_label: String,
     pub event_type: String,
     pub id: i64,
@@ -1548,6 +1653,7 @@ pub struct PullRequestEventRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReviewCommentRecord {
+    pub attachments: Vec<IssueAttachmentRecord>,
     pub author_id: Option<i64>,
     pub author_label: String,
     pub author_login_id: String,
@@ -1561,6 +1667,7 @@ pub struct ReviewCommentRecord {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReviewThreadRecord {
     pub author_id: Option<i64>,
+    pub author_email_address: String,
     pub author_label: String,
     pub author_login_id: String,
     pub comments: Vec<ReviewCommentRecord>,
@@ -1571,9 +1678,20 @@ pub struct ReviewThreadRecord {
     pub id: i64,
     pub path: String,
     pub prev_commit_id: String,
+    pub pull_request_number: Option<i64>,
     pub start_line: Option<i32>,
     pub start_side: Option<String>,
     pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewThreadRouteContext {
+    pub author_id: Option<i64>,
+    pub commit_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: Option<i64>,
+    pub thread_id: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1583,6 +1701,7 @@ pub struct PullRequestCommitRecord {
     pub commit_id: String,
     pub commit_message: String,
     pub commit_short_id: String,
+    pub id: i64,
     pub state: String,
 }
 

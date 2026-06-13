@@ -235,6 +235,149 @@ fn login_ids(payload: &Value) -> Vec<String> {
         .collect()
 }
 
+fn display_names(payload: &Value) -> Vec<String> {
+    payload["items"]
+        .as_array()
+        .expect("items")
+        .iter()
+        .map(|item| item["displayName"].as_str().unwrap().to_string())
+        .collect()
+}
+
+#[tokio::test]
+async fn project_assignable_users_blank_query_preserves_legacy_default_rows() {
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_member_csrf, _member_cookie, member_id) = register_user(app.clone(), "member").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+
+    let blank = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/assignable-users",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let login_ids = login_ids(&blank);
+    let display_names = display_names(&blank);
+    assert_eq!(login_ids.first().map(String::as_str), Some("owner"));
+    assert_eq!(
+        display_names.first().map(String::as_str),
+        Some("issue.assignToMe")
+    );
+    assert!(login_ids.contains(&"member".to_string()));
+}
+
+#[tokio::test]
+async fn issue_assignable_users_blank_query_preserves_legacy_pseudo_rows() {
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "Assignable issue",
+    )
+    .await;
+
+    let unassigned = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignable-users",
+            Some(&member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        &login_ids(&unassigned)[0..2],
+        &["member".to_string(), "owner".to_string()]
+    );
+    assert_eq!(
+        &display_names(&unassigned)[0..2],
+        &[
+            "issue.assignToMe".to_string(),
+            "issue.assignToAuthor".to_string()
+        ]
+    );
+
+    assign_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "member",
+    )
+    .await;
+    let assigned = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignable-users",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        &login_ids(&assigned)[0..3],
+        &[
+            "owner".to_string(),
+            "anonymous".to_string(),
+            "member".to_string()
+        ]
+    );
+    assert_eq!(
+        &display_names(&assigned)[0..3],
+        &[
+            "issue.assignToMe".to_string(),
+            "issue.noAssignee".to_string(),
+            "member".to_string()
+        ]
+    );
+}
+
 #[tokio::test]
 async fn project_assignable_users_searches_active_public_users() {
     let (app, _repo, db) = build_app_with_repository().await;

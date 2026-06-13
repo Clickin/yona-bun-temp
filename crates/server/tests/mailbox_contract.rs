@@ -752,19 +752,29 @@ async fn mailbox_polling_tick_fetches_raw_messages_and_threads_replies() {
             .as_nanos()
     ));
     std::fs::create_dir_all(&fake_fetch_dir).expect("fake fetch tempdir");
-    let fake_fetch = fake_fetch_dir.join("fake-mailbox-fetch.ps1");
+    let fake_fetch = fake_fetch_dir.join("fake-mailbox-fetch.sh");
     let args_path = fake_fetch_dir.join("args.txt");
     std::fs::write(
         &fake_fetch,
         format!(
-            r#"
-param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Remaining)
-[IO.File]::WriteAllText("{}", $Remaining -join " ")
-$first = "Message-ID: <poll-root@domain>`r`nSubject: Polled issue`r`nFrom: Mailbox Member <member@example.com>`r`nTo: noreply+mailbox/projectYobi@yona.local`r`nContent-Type: text/plain; charset=UTF-8`r`n`r`npolled issue body"
-$second = "Message-ID: <poll-reply@domain>`r`nSubject: Re: Polled issue`r`nFrom: Mailbox Member <member@example.com>`r`nTo: noreply+mailbox/projectYobi@yona.local`r`nIn-Reply-To: <poll-root@domain>`r`nContent-Type: text/plain; charset=UTF-8`r`n`r`npolled reply body"
-$payload = $first + [char]0 + $second
-$bytes = [Text.Encoding]::UTF8.GetBytes($payload)
-[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
+            r#"#!/bin/sh
+printf '%s' "$*" > "{}"
+first='Message-ID: <poll-root@domain>
+Subject: Polled issue
+From: Mailbox Member <member@example.com>
+To: noreply+mailbox/projectYobi@yona.local
+Content-Type: text/plain; charset=UTF-8
+
+polled issue body'
+second='Message-ID: <poll-reply@domain>
+Subject: Re: Polled issue
+From: Mailbox Member <member@example.com>
+To: noreply+mailbox/projectYobi@yona.local
+In-Reply-To: <poll-root@domain>
+Content-Type: text/plain; charset=UTF-8
+
+polled reply body'
+printf '%s\0%s' "$first" "$second"
 "#,
             args_path.display()
         ),
@@ -773,10 +783,7 @@ $bytes = [Text.Encoding]::UTF8.GetBytes($payload)
 
     let config = MailboxPollingConfig {
         enabled: true,
-        fetch_command: format!(
-            "powershell -NoProfile -ExecutionPolicy Bypass -File {}",
-            fake_fetch.display()
-        ),
+        fetch_command: format!("sh {}", fake_fetch.display()),
         imap_address: "noreply@yona.local".to_string(),
         initial_delay_ms: 0,
         interval_ms: 1,

@@ -13,7 +13,7 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
-import { buildProjectHref, ProjectMenu } from "../../../../-project-views";
+import { buildProjectHref, ProjectMenu, ProjectSettingsSubMenu } from "../../../../-project-views";
 import type { ProjectDetailViewModel } from "../../../../-view-models";
 import {
   classifyConnectFailure,
@@ -41,6 +41,41 @@ type CategoryView = {
   isExclusive: boolean;
   name: string;
 };
+
+const NEW_LABEL_PRESET_COLORS = [
+  "#f44336",
+  "#e91e63",
+  "#9c27b0",
+  "#3f51b5",
+  "#2196f3",
+  "#03a9f4",
+  "#00bcd4",
+  "#009688",
+  "#4caf50",
+  "#8bc34a",
+  "#cddc39",
+  "#ffeb3b",
+  "#ffc107",
+  "#ff9800",
+  "#ff5722",
+  "#795548",
+  "#9e9e9e",
+];
+
+const EDIT_LABEL_PRESET_COLORS = [
+  "#FF7770",
+  "#F18CA7",
+  "#FFB399",
+  "#F1D55C",
+  "#A5D870",
+  "#32CDA1",
+  "#9985D8",
+  "#40A0EB",
+  "#6BC4E9",
+  "#DCBD98",
+  "#8C8C9C",
+  "#7A9CB4",
+];
 
 function IssueLabelsFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
@@ -163,78 +198,127 @@ function IssueLabelsFormPage(props: {
   };
   const grouped = groupLabels(props.labels);
   return (
-    <main className="app-shell label-editor-wrap">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Issue Labels</h1>
+    <main className="app-shell">
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <section className="new-label-wrap">
-        <IssueLabelCopyForm {...props} />
-      </section>
-      <section className="new-label-wrap">
-        <strong className="form-legend">Add new label</strong>
-        <IssueLabelCreateForm {...props} />
-      </section>
-      <section id="labelsList" className="issue-label-list-wrap">
-        {props.labels.length === 0 ? (
-          <div className="error-wrap">
-            <p>No label exists</p>
-          </div>
-        ) : (
-          <>
-            <div className="row-fluid list-head">
-              <strong>Category</strong>
-              <strong>Name</strong>
-            </div>
-            {grouped.map((group) => (
-              <div
-                className="row-fluid list-item category-wrap"
-                data-category={group.categoryId}
-                key={group.categoryId}
-              >
-                <h5>
-                  <span className="category-name">{group.categoryName}</span>
-                  <span>
-                    {group.categoryIsExclusive ? "only a single label" : "multiple labels"}
-                  </span>
-                  <IssueCategoryEditForm category={group} {...props} />
-                </h5>
-                <table className="table nm">
-                  <tbody>
-                    {group.labels.map((label) => (
-                      <tr data-label-id={label.id} key={label.id}>
-                        <td>
-                          <span
-                            className="issue-label active"
-                            style={{ backgroundColor: label.color }}
-                          >
-                            {label.name}
-                          </span>
-                        </td>
-                        <td className="actions">
-                          <IssueLabelEditForm label={label} {...props} />
-                          <button
-                            className="ybtn ybtn-danger ybtn-small"
-                            onClick={() =>
-                              void deleteProjectLabel(props.runtimeConfig, props.csrfToken, {
-                                labelId: BigInt(label.id),
-                                ownerName: props.owner,
-                                projectName: props.projectName,
-                              }).then(props.onChanged)
-                            }
-                            type="button"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap label-editor-wrap">
+          <ProjectSettingsSubMenu
+            active="labels"
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <IssueLabelCopyForm {...props} />
+          <IssueLabelCreateForm {...props} />
+
+          <div id="labelsList" className="issue-label-list-wrap">
+            {props.labels.length === 0 ? (
+              <div className="error-wrap">
+                <i className="ico ico-err1" />
+                <p>label.list.empty</p>
               </div>
-            ))}
-          </>
-        )}
-      </section>
+            ) : (
+              <>
+                <div className="row-fluid list-head">
+                  <div className="span3 category">
+                    <strong>label.category</strong>
+                  </div>
+                  <div className="span9 name">
+                    <strong>label.name</strong>
+                  </div>
+                </div>
+                {grouped.map((group) => (
+                  <div
+                    className="row-fluid list-item category-wrap"
+                    data-category={group.categoryId}
+                    data-category-name={group.categoryName}
+                    key={group.categoryId}
+                  >
+                    <div className="span3">
+                      <h5 className="right-txt mr20">
+                        <span className="category-name">{group.categoryName}</span>
+                        <p className="mt5">
+                          <i
+                            className={`category-exclusive ${
+                              group.categoryIsExclusive
+                                ? "yobicon-tag single"
+                                : "yobicon-tags multiple"
+                            }`}
+                            data-html="true"
+                            data-toggle="tooltip"
+                            title={`label.category.option<br>${
+                              group.categoryIsExclusive
+                                ? "label.category.option.single"
+                                : "label.category.option.multiple"
+                            }`}
+                          />
+                          <IssueCategoryEditForm category={group} {...props} />
+                        </p>
+                      </h5>
+                    </div>
+                    <div className="span9">
+                      <table className="table nm">
+                        <tbody>
+                          {group.labels.map((label) => (
+                            <tr data-label-id={label.id} key={label.id}>
+                              <td>
+                                <span
+                                  className="issue-label active"
+                                  data-label-id={label.id}
+                                  data-label-name={label.name}
+                                  style={{ backgroundColor: label.color }}
+                                >
+                                  {label.name}
+                                </span>
+                              </td>
+                              <td className="actions">
+                                <button
+                                  className="ybtn ybtn-danger ybtn-small"
+                                  data-category-name={group.categoryName}
+                                  data-delete-uri={buildProjectHref(
+                                    props.runtimeConfig,
+                                    props.owner,
+                                    props.projectName,
+                                    `issue/labels/${label.id}`,
+                                  )}
+                                  data-label-id={label.id}
+                                  onClick={() =>
+                                    void deleteProjectLabel(props.runtimeConfig, props.csrfToken, {
+                                      labelId: BigInt(label.id),
+                                      ownerName: props.owner,
+                                      projectName: props.projectName,
+                                    }).then(props.onChanged)
+                                  }
+                                  type="button"
+                                >
+                                  button.delete
+                                </button>
+                                <IssueLabelEditForm label={label} {...props} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+                <link
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    props.owner,
+                    props.projectName,
+                    "issue/labels.css",
+                  )}
+                  rel="stylesheet"
+                  type="text/css"
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <IssueLabelEditModal categories={props.categories} />
+      <IssueCategoryEditModal />
     </main>
   );
 }
@@ -304,7 +388,10 @@ function IssueLabelCreateForm(props: {
   const [labelColor, setLabelColor] = React.useState("#f44336");
   return (
     <form
+      action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "issue/labels")}
+      className="new-label-wrap"
       id="frmNewLabel"
+      method="post"
       onSubmit={(event) => {
         event.preventDefault();
         void createProjectLabel(props.runtimeConfig, props.csrfToken, {
@@ -316,28 +403,53 @@ function IssueLabelCreateForm(props: {
         }).then(props.onChanged);
       }}
     >
-      <input
-        maxLength={250}
-        name="category"
-        onChange={(event) => setCategoryName(event.currentTarget.value)}
-        placeholder="Category"
-        value={categoryName}
-      />
-      <input
-        maxLength={250}
-        name="name"
-        onChange={(event) => setLabelName(event.currentTarget.value)}
-        placeholder="Name"
-        value={labelName}
-      />
-      <input
-        name="color"
-        onChange={(event) => setLabelColor(event.currentTarget.value)}
-        placeholder="Label Color"
-        value={labelColor}
-      />
+      <strong className="form-legend">label.new</strong>
+      <div className="form-wrap">
+        <div>
+          <input
+            autoComplete="off"
+            className="input-label mr5"
+            data-provider="typeahead"
+            maxLength={250}
+            name="category"
+            onChange={(event) => setCategoryName(event.currentTarget.value)}
+            placeholder="label.category"
+            type="text"
+            value={categoryName}
+          />
+          <input
+            autoComplete="off"
+            className="input-label"
+            maxLength={250}
+            name="name"
+            onChange={(event) => setLabelName(event.currentTarget.value)}
+            placeholder="label.name"
+            type="text"
+            value={labelName}
+          />
+        </div>
+        <div className="label-preset-colors">
+          {NEW_LABEL_PRESET_COLORS.map((color) => (
+            <button
+              className="issue-label btn-preset-color"
+              key={color}
+              onClick={() => setLabelColor(color)}
+              style={{ backgroundColor: color }}
+              type="button"
+            />
+          ))}
+          <input
+            className="input-small input-label-color"
+            name="color"
+            onChange={(event) => setLabelColor(event.currentTarget.value)}
+            placeholder="label.customColor"
+            type="text"
+            value={labelColor}
+          />
+        </div>
+      </div>
       <button className="ybtn ybtn-primary btn-submit" type="submit">
-        Add label
+        label.add
       </button>
     </form>
   );
@@ -358,13 +470,27 @@ function IssueLabelEditForm(props: {
   const [labelColor, setLabelColor] = React.useState(props.label.color);
   if (!editing) {
     return (
-      <button className="ybtn ybtn-small" onClick={() => setEditing(true)} type="button">
-        Edit
+      <button
+        className="ybtn ybtn-small"
+        data-category-id={props.label.categoryId}
+        data-label-color={props.label.color}
+        data-label-name={props.label.name}
+        data-update-uri={buildProjectHref(
+          props.runtimeConfig,
+          props.owner,
+          props.projectName,
+          `issue/labels/${props.label.id}`,
+        )}
+        onClick={() => setEditing(true)}
+        type="button"
+      >
+        button.edit
       </button>
     );
   }
   return (
     <form
+      className="inline-label-edit-form"
       onSubmit={(event) => {
         event.preventDefault();
         void updateProjectLabel(props.runtimeConfig, props.csrfToken, {
@@ -381,6 +507,8 @@ function IssueLabelEditForm(props: {
       }}
     >
       <select
+        data-toggle="select2"
+        name="category.id"
         onChange={(event) => setCategoryId(Number(event.currentTarget.value))}
         value={categoryId}
       >
@@ -391,14 +519,27 @@ function IssueLabelEditForm(props: {
         ))}
       </select>
       <input
+        className="text input-label-name"
         maxLength={250}
+        name="name"
         onChange={(event) => setLabelName(event.currentTarget.value)}
+        placeholder="label.name"
+        type="text"
         value={labelName}
       />
-      <input onChange={(event) => setLabelColor(event.currentTarget.value)} value={labelColor} />
-      <button type="submit">Save</button>
-      <button onClick={() => setEditing(false)} type="button">
-        Cancel
+      <input
+        className="input-small input-label-color"
+        name="color"
+        onChange={(event) => setLabelColor(event.currentTarget.value)}
+        placeholder="label.customColor"
+        type="text"
+        value={labelColor}
+      />
+      <button className="ybtn ybtn-info btnSubmit" type="submit">
+        button.save
+      </button>
+      <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
+        button.cancel
       </button>
     </form>
   );
@@ -417,13 +558,27 @@ function IssueCategoryEditForm(props: {
   const [isExclusive, setIsExclusive] = React.useState(props.category.categoryIsExclusive);
   if (!editing) {
     return (
-      <button className="ybtn ybtn-mini" onClick={() => setEditing(true)} type="button">
-        Edit category
+      <button
+        className="ybtn ybtn-mini"
+        data-category-id={props.category.categoryId}
+        data-category-is-exclusive={props.category.categoryIsExclusive}
+        data-category-name={props.category.categoryName}
+        data-category-update-uri={buildProjectHref(
+          props.runtimeConfig,
+          props.owner,
+          props.projectName,
+          `issue/labelCategories/${props.category.categoryId}`,
+        )}
+        onClick={() => setEditing(true)}
+        type="button"
+      >
+        label.category.edit
       </button>
     );
   }
   return (
     <form
+      className="inline-category-edit-form"
       onSubmit={(event) => {
         event.preventDefault();
         void updateProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
@@ -439,21 +594,31 @@ function IssueCategoryEditForm(props: {
       }}
     >
       <input
+        className="text category-name"
+        name="name"
         onChange={(event) => setCategoryName(event.currentTarget.value)}
+        placeholder="label.category"
+        type="text"
         value={categoryName}
       />
       <select
+        data-dropdown-css-class="select2-without-searchbox"
+        data-toggle="select2"
+        name="isExclusive"
         onChange={(event) => setIsExclusive(event.currentTarget.value === "true")}
         value={String(isExclusive)}
       >
-        <option value="false">multiple labels</option>
-        <option value="true">only a single label</option>
+        <option value="false">label.category.option.multiple</option>
+        <option value="true">label.category.option.single</option>
       </select>
-      <button type="submit">Save</button>
-      <button onClick={() => setEditing(false)} type="button">
-        Cancel
+      <button className="ybtn ybtn-info btnSubmit" type="submit">
+        button.save
+      </button>
+      <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
+        button.cancel
       </button>
       <button
+        className="ybtn ybtn-danger"
         onClick={() =>
           void deleteProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
             categoryId: BigInt(props.category.categoryId),
@@ -463,9 +628,118 @@ function IssueCategoryEditForm(props: {
         }
         type="button"
       >
-        Delete
+        button.delete
       </button>
     </form>
+  );
+}
+
+function IssueLabelEditModal(props: { categories: CategoryView[] }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="modal hide yobiDialog"
+      id="editLabel"
+      role="dialog"
+      tabIndex={-1}
+    >
+      <div className="btn-dismiss">
+        <button className="btn-transparent" data-dismiss="modal" type="button">
+          &times;
+        </button>
+      </div>
+      <div className="message edit-label-form">
+        <div className="center-txt">
+          <select data-toggle="select2" name="category.id">
+            {props.categories
+              .filter((category) => category.name.length > 0)
+              .map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+          </select>
+          <input
+            className="text input-label-name"
+            maxLength={250}
+            name="name"
+            placeholder="label.name"
+            type="text"
+          />
+          <div className="label-preset-colors edit">
+            {EDIT_LABEL_PRESET_COLORS.map((color) => (
+              <button
+                className="issue-label btn-preset-color"
+                key={color}
+                style={{ backgroundColor: color }}
+                type="button"
+              />
+            ))}
+            <input
+              className="input-small input-label-color"
+              name="color"
+              placeholder="label.customColor"
+              type="text"
+            />
+          </div>
+        </div>
+        <div className="center-txt buttons mt20 mb20">
+          <button className="ybtn ybtn-info btnSubmit" type="button">
+            button.save
+          </button>
+          <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
+            button.cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueCategoryEditModal() {
+  return (
+    <div
+      aria-hidden="true"
+      className="modal hide yobiDialog"
+      id="editCategory"
+      role="dialog"
+      tabIndex={-1}
+    >
+      <div className="btn-dismiss">
+        <button className="btn-transparent" data-dismiss="modal" type="button">
+          &times;
+        </button>
+      </div>
+      <div className="message edit-label-category-form">
+        <div className="center-txt">
+          <input
+            className="text category-name"
+            name="name"
+            placeholder="label.category"
+            type="text"
+          />
+          <div className="desc">
+            label.category.option
+            <select
+              data-dropdown-css-class="select2-without-searchbox"
+              data-toggle="select2"
+              name="isExclusive"
+            >
+              <option value="false">label.category.option.multiple</option>
+              <option value="true">label.category.option.single</option>
+            </select>
+          </div>
+        </div>
+        <div className="center-txt buttons mt20 mb20">
+          <button className="ybtn ybtn-info btnSubmit" type="button">
+            button.save
+          </button>
+          <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
+            button.cancel
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

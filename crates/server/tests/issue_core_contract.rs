@@ -640,7 +640,15 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
+    let (guest_outsider_csrf, guest_outsider_cookie, _) =
+        register_user(app.clone(), "guest-outsider").await;
     let (outsider_csrf, outsider_cookie, _) = register_user(app.clone(), "outsider").await;
+    repo.toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark public issue actor as guest");
+    repo.toggle_site_user_guest_mode("guest-outsider")
+        .await
+        .expect("mark public issue outsider as guest");
 
     response_json(
         rpc(
@@ -690,15 +698,6 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     .await;
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
 
-    let project = repo
-        .read_project_by_owner_and_name("owner", "projectYobi")
-        .await
-        .unwrap()
-        .unwrap();
-    repo.add_project_membership(project.id, guest_id, "member")
-        .await
-        .unwrap();
-
     let updated = response_json(
         rest(
             app.clone(),
@@ -707,16 +706,89 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
             Some(&guest_cookie),
             Some(&guest_csrf),
             Some(json!({
-                "title": "edited by member",
+                "title": "edited by guest author",
                 "bodyMarkdown": "updated"
             })),
         )
         .await,
     )
     .await;
-    assert_eq!(updated["title"], "edited by member");
+    assert_eq!(updated["title"], "edited by guest author");
     assert_eq!(updated["historyMarkdown"], "body");
     assert_eq!(updated["historyHtml"].as_str().unwrap_or(""), "");
+
+    let state_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(state_updated["state"], "closed");
+
+    let watched_by_author = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(watched_by_author["isWatching"], true);
+
+    let voted_by_author = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/vote",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(voted_by_author["hasVoted"], true);
+
+    let watch_forbidden = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+        Some(&guest_outsider_cookie),
+        Some(&guest_outsider_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(watch_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let vote_forbidden = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/vote",
+        Some(&guest_outsider_cookie),
+        Some(&guest_outsider_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(vote_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_project_membership(project.id, guest_id, "member")
+        .await
+        .unwrap();
 
     let mass_updated = response_json(
         rest(

@@ -28,15 +28,19 @@ describe("project review list export", () => {
           state: "closed",
         }}
         reviews={{
+          allCount: 3,
+          authorCount: 1,
           closedCount: 1,
           items: [],
           openCount: 2,
           pageNum: 3,
           pageSize: 15,
+          participantCount: 2,
           state: "closed",
           totalCount: 1,
         }}
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        viewerId={7}
       />,
     );
 

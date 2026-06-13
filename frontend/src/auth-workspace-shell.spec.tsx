@@ -7,13 +7,19 @@ import {
   drawAvatarCropToCanvas,
   getAvatarCropPreviewStyle,
 } from "./routes/-workspace-settings-view";
-import { resolveAuthRedirectPath, resolvePostAuthHref } from "./routes/-auth-views";
+import {
+  LegacyLoginDialog,
+  resolveAuthRedirectPath,
+  resolvePostAuthHref,
+} from "./routes/-auth-views";
 import {
   renderHome,
   renderLogin,
   renderLostPassword,
+  renderOrganizationDelete,
   renderOrganizationDetail,
   renderOrganizationDirectory,
+  renderOrganizationMembersAdmin,
   renderProjectDetail,
   renderProjectDirectory,
   renderRegister,
@@ -26,6 +32,8 @@ import {
   ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
   ISSUE_MENTION_SEARCH_DEBOUNCE_MS,
   IssueAssignableUserSuggestions,
+  IssueMentionUserSuggestions,
+  IssueReferenceSuggestions,
   ProjectIssueFormPage,
   ProjectIssueDetailPage,
   buildProjectIssueFormSubmitInput,
@@ -48,17 +56,73 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?redirectUrl=/admin/projectYobi/issue/1",
     });
 
-    expect(html).toContain("Login for Yona");
+    expect(html).toContain("title.loginFor");
+    expect(html).not.toContain("Login for Yona");
+    expect(html).toContain('class="page full"');
+    expect(html).toContain('class="center-wrap tag-line-wrap login"');
+    expect(html).toContain('class="login-form-wrap frm-wrap"');
     expect(html).toContain('name="loginIdOrEmail"');
-    expect(html).toContain('placeholder="Login ID or email"');
+    expect(html).toContain('id="loginIdOrEmailD"');
+    expect(html).toContain('class="text email"');
+    expect(html).toContain('placeholder="user.login.key"');
     expect(html).toContain('name="password"');
+    expect(html).toContain('id="password"');
+    expect(html).toContain('class="text password"');
+    expect(html).toContain('placeholder="user.password"');
     expect(html).toContain('name="rememberMe"');
+    expect(html).toContain('id="remember-me"');
+    expect(html).toContain('class="remember-me-wrap pull-left"');
+    expect(html).toContain('class="links-wrap pull-right"');
     expect(html).toContain('method="post"');
     expect(html).toContain('action="/yona/users/login"');
     expect(html).toContain('name="redirectUrl"');
     expect(html).toContain('value="/admin/projectYobi/issue/1"');
-    expect(html).toContain(">Login<");
+    expect(html).toContain(">button.login<");
+    expect(html).toContain(">title.forgotpassword<");
+    expect(html).not.toContain(">Login<");
+    expect(html).not.toContain(">Forgot password<");
+    expect(html).not.toContain('placeholder="Login ID or email"');
+    expect(html).not.toContain('placeholder="Password"');
+    expect(html).not.toContain(">title.resetPassword<");
     expect(html).toContain('href="/yona/lostPassword"');
+  });
+
+  it("renders the common legacy login dialog shell", () => {
+    const html = renderToStaticMarkup(
+      <LegacyLoginDialog
+        authUiCapabilities={{
+          emailVerificationEnabled: false,
+          loginIdPlaceholder: "",
+          passwordPlaceholder: "",
+          signupRequireConfirm: false,
+          socialLoginOnly: false,
+        }}
+        csrfToken="csrf-1"
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('id="loginDialog"');
+    expect(html).toContain('class="modal hide loginDialog"');
+    expect(html).toContain('class="frm-wrap login-form-wrap"');
+    expect(html).toContain('action="/yona/users/login"');
+    expect(html).toContain('name="csrfToken"');
+    expect(html).toContain('value="csrf-1"');
+    expect(html).toContain('id="loginIdOrEmailD"');
+    expect(html).toContain('name="loginIdOrEmail"');
+    expect(html).toContain('placeholder="user.login.key"');
+    expect(html).toContain('id="passwordD"');
+    expect(html).toContain('placeholder="user.password"');
+    expect(html).toContain('class="yobicon-error"');
+    expect(html).toContain('class="error-message"');
+    expect(html).toContain(">button.login<");
+    expect(html).toContain('id="remember-meD"');
+    expect(html).toContain(">title.rememberMe<");
+    expect(html).toContain('href="/yona/lostPassword"');
+    expect(html).toContain(">title.resetPassword<");
+    expect(html).toContain('href="/yona/users/signupform"');
+    expect(html).toContain(">title.signup<");
+    expect(html).not.toContain(">title.forgotpassword<");
   });
 
   it("uses configured legacy login placeholders from auth capabilities", () => {
@@ -224,37 +288,71 @@ describe("auth and workspace views", () => {
       },
     });
 
-    expect(html).toContain("Sign Up for Yona");
-    expect(html).toContain(">Login ID<");
+    expect(html).toContain("title.signupFor");
+    expect(html).not.toContain("Sign Up for Yona");
+    expect(html).toContain('class="page full"');
+    expect(html).toContain('class="center-wrap tag-line-wrap signup"');
+    expect(html).toContain('class="signup-form-wrap frm-wrap"');
+    expect(html).toContain('name="signup"');
+    expect(html).toContain(">user.signupId<");
+    expect(html).toContain('id="loginId"');
     expect(html).toContain('name="loginId"');
-    expect(html).toContain(">Name<");
+    expect(html).toContain(">user.name<");
+    expect(html).toContain('id="uname"');
     expect(html).toContain('name="name"');
-    expect(html).toContain(">Email<");
-    expect(html).toContain('name="emailAddress"');
-    expect(html).toContain(">Password<");
+    expect(html).toContain(">user.email<");
+    expect(html).toContain('id="email"');
+    expect(html).toContain('name="email"');
+    expect(html).toContain(">user.password<");
     expect(html).toContain('name="password"');
-    expect(html).toContain(">Retype password<");
+    expect(html).toContain(">validation.retypePassword<");
     expect(html).toContain('name="retypedPassword"');
+    expect(html).toContain('class="text password"');
     expect(html).toContain('method="post"');
     expect(html).toContain('action="/yona/users/signup"');
-    expect(html).toContain(">Sign up<");
+    expect(html).toContain(">user.signupBtn<");
+    expect(html).not.toContain(">Sign up<");
+    expect(html).toContain("user.isAlreadySignupUser");
     expect(html).toContain('href="/yona/users/loginform"');
+    expect(html).toContain(">title.login<");
   });
 
   it("renders lost-password and reset-password shells with legacy field layout", () => {
     const lostPasswordHtml = renderLostPassword("/lostPassword");
-    expect(lostPasswordHtml).toContain("Reset Password for Yona");
+    expect(lostPasswordHtml).toContain("title.resetPasswordFor");
+    expect(lostPasswordHtml).not.toContain("Reset Password for Yona");
+    expect(lostPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
+    expect(lostPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
+    expect(lostPasswordHtml).toContain('id="loginId"');
     expect(lostPasswordHtml).toContain('name="loginId"');
+    expect(lostPasswordHtml).toContain('placeholder="user.loginId"');
+    expect(lostPasswordHtml).toContain('id="emailAddress"');
     expect(lostPasswordHtml).toContain('name="emailAddress"');
-    expect(lostPasswordHtml).toContain(">Confirm<");
+    expect(lostPasswordHtml).toContain('placeholder="user.email"');
+    expect(lostPasswordHtml).toContain('class="ybtn ybtn-primary ybtn-large ybtn-fullsize"');
+    expect(lostPasswordHtml).toContain(">button.confirm<");
+    expect(lostPasswordHtml).not.toContain(">Confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
-    expect(resetPasswordHtml).toContain("Reset Password for Yona");
+    expect(resetPasswordHtml).toContain("title.resetPasswordFor");
+    expect(resetPasswordHtml).not.toContain("Reset Password for Yona");
+    expect(resetPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
+    expect(resetPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
+    expect(resetPasswordHtml).toContain('name="passwordReset"');
     expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
+    expect(resetPasswordHtml).toContain('name="hashString"');
+    expect(resetPasswordHtml).toContain('id="password"');
     expect(resetPasswordHtml).toContain('name="password"');
+    expect(resetPasswordHtml).toContain('placeholder="user.password"');
+    expect(resetPasswordHtml).toContain('id="retypedPassword"');
     expect(resetPasswordHtml).toContain('name="retypedPassword"');
-    expect(resetPasswordHtml).toContain(">Confirm<");
+    expect(resetPasswordHtml).toContain('placeholder="validation.retypePassword"');
+    expect(resetPasswordHtml).toContain('class="ybtn ybtn-primary ybtn-fullsize"');
+    expect(resetPasswordHtml).toContain(">button.confirm<");
+    expect(resetPasswordHtml).not.toContain(">Confirm<");
+    expect(resetPasswordHtml).not.toContain('placeholder="Password"');
+    expect(resetPasswordHtml).not.toContain('placeholder="Retype password"');
   });
 
   it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
@@ -266,7 +364,8 @@ describe("auth and workspace views", () => {
       },
       routeHref: "/users/loginform",
     });
-    expect(loginHtml).toContain("Email verification is required");
+    expect(loginHtml).toContain("notification.confirm.mail.will.be.sent");
+    expect(loginHtml).toContain('class="email-verification-help"');
 
     const registerHtml = renderRegister({
       authUiCapabilities: {
@@ -275,15 +374,19 @@ describe("auth and workspace views", () => {
         socialLoginOnly: false,
       },
     });
-    expect(registerHtml).toContain("Sign up requires confirmation");
+    expect(registerHtml).toContain('class="center-txt"');
+    expect(registerHtml).toContain("title.signupConfirmDesc");
+    expect(registerHtml).toContain("title.signupConfirmDesc2");
   });
 
   it("renders login-side post-submit messages from auth query parameters", () => {
     const verifyHtml = renderLogin({ routeHref: "/users/loginform?verify=sent" });
-    expect(verifyHtml).toContain("Confirmation request was accepted.");
+    expect(verifyHtml).toContain("user.verification.mail.sent");
+    expect(verifyHtml).not.toContain("Confirmation request was accepted.");
 
     const requestedHtml = renderLogin({ routeHref: "/users/loginform?signup=requested" });
-    expect(requestedHtml).toContain("Sign up requires confirmation.");
+    expect(requestedHtml).toContain("user.signup.requested");
+    expect(requestedHtml).not.toContain("Sign up requires confirmation.");
   });
 
   it("renders unsupported social-login provider state from auth query parameters", () => {
@@ -291,21 +394,37 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?error=unsupported&provider=github",
     });
 
-    expect(html).toContain("Social login provider is not configured.");
+    expect(html).toContain("auth.socialLogin.unsupportedProvider");
     expect(html).toContain("github");
+    expect(html).not.toContain("Social login provider is not configured.");
+  });
+
+  it("renders OAuth denied provider state from auth query parameters", () => {
+    const html = renderLogin({
+      routeHref: "/users/loginform?error=oauthDenied&provider=github",
+    });
+
+    expect(html).toContain("auth.socialLogin.denied");
+    expect(html).toContain("github");
+    expect(html).not.toContain("auth.socialLogin.unsupportedProvider");
   });
 
   it("renders verify-user success and invalid surfaces", () => {
     const successHtml = renderVerifyUser({ loginId: "door" });
-    expect(successHtml).toContain("Verified User");
+    expect(successHtml).toContain('class="app-shell page full"');
+    expect(successHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
+    expect(successHtml).toContain('class="title">user.verified</h1>');
     expect(successHtml).toContain("door");
-    expect(successHtml).toContain("User is verified. Try logging in.");
-    expect(successHtml).toContain('href="/yona/users/loginform"');
+    expect(successHtml).toContain("<hr/>");
+    expect(successHtml).toContain('class="tag-line">user.verified.detail</p>');
+    expect(successHtml).not.toContain("Yona Rust Auth");
+    expect(successHtml).not.toContain('href="/yona/users/loginform"');
 
     const invalidHtml = renderVerifyUser({ invalid: true, loginId: "door" });
+    expect(invalidHtml).toContain('class="error-wrap"');
     expect(invalidHtml).toContain("Invalid verification");
-    expect(invalidHtml).toContain("door");
-    expect(invalidHtml).toContain('href="/yona/users/loginform"');
+    expect(invalidHtml).not.toContain("door");
+    expect(invalidHtml).not.toContain("Yona Rust Auth");
   });
 
   it("hides local auth forms when social-login-only mode is enabled", () => {
@@ -317,7 +436,8 @@ describe("auth and workspace views", () => {
       },
       routeHref: "/users/loginform",
     });
-    expect(loginHtml).toContain("Social login only");
+    expect(loginHtml).toContain("app.warn.support.social.login.only");
+    expect(loginHtml).toContain('class="btns-row nm"');
     expect(loginHtml).not.toContain('name="loginIdOrEmail"');
     expect(loginHtml).not.toContain('name="password"');
 
@@ -328,9 +448,10 @@ describe("auth and workspace views", () => {
         socialLoginOnly: true,
       },
     });
-    expect(registerHtml).toContain("Social login only");
+    expect(registerHtml).toContain("app.warn.support.social.login.only");
+    expect(registerHtml).toContain('class="btns-row nm"');
     expect(registerHtml).not.toContain('name="loginId"');
-    expect(registerHtml).not.toContain('name="emailAddress"');
+    expect(registerHtml).not.toContain('name="email"');
     expect(registerHtml).not.toContain('name="password"');
   });
 
@@ -367,11 +488,17 @@ describe("auth and workspace views", () => {
 
   it("renders the public landing and directory views", () => {
     const homeHtml = renderHome();
-    expect(homeHtml).toContain("Yona Rust Frontend");
-    expect(homeHtml).toContain('href="/yona/users/loginform"');
+    expect(homeHtml).toContain('class="siteintro-bg row"');
+    expect(homeHtml).toContain('class="site-heading"');
+    expect(homeHtml).toContain("21st Century Software Development Platform");
+    expect(homeHtml).toContain("Just focus on what you have to do");
     expect(homeHtml).toContain('href="/yona/users/signupform"');
-    expect(homeHtml).toContain('href="/yona/projects"');
-    expect(homeHtml).toContain('href="/yona/orgs"');
+    expect(homeHtml).toContain("button.signup");
+    expect(homeHtml).toContain("title.features");
+    expect(homeHtml).toContain("title.unlimitedProjects");
+    expect(homeHtml).toContain("site.features.codeReview");
+    expect(homeHtml).not.toContain("Yona Rust Frontend");
+    expect(homeHtml).not.toContain("Legacy Route Foundation");
 
     const projectsHtml = renderProjectDirectory(
       {
@@ -388,7 +515,8 @@ describe("auth and workspace views", () => {
       "/projects?filter=yobi&pageNum=1",
     );
 
-    expect(projectsHtml).toContain("Project List");
+    expect(projectsHtml).toContain("project.public title.projectList");
+    expect(projectsHtml).toContain("title.organization.list");
     expect(projectsHtml).toContain('action="/yona/projects"');
     expect(projectsHtml).toContain('src="/yona/files/1"');
     expect(projectsHtml).toContain("projectYobi");
@@ -407,7 +535,8 @@ describe("auth and workspace views", () => {
       "/orgs?filter=lab&pageNum=1",
     );
 
-    expect(organizationsHtml).toContain("Organization List");
+    expect(organizationsHtml).toContain("project.public title.projectList");
+    expect(organizationsHtml).toContain("title.organization.list");
     expect(organizationsHtml).toContain('action="/yona/orgs"');
     expect(organizationsHtml).toContain('src="/yona/files/2"');
     expect(organizationsHtml).toContain("weblabs");
@@ -439,6 +568,91 @@ describe("auth and workspace views", () => {
     expect(projectHtml).toContain("Favorite project");
   });
 
+  it("renders the legacy organization members management shell", () => {
+    const html = renderOrganizationMembersAdmin({
+      deleteAllowed: true,
+      enrollmentRequests: [
+        {
+          avatarUrl: "https://cdn.yona/avatar-candidate.png",
+          loginId: "candidate",
+          userId: "8",
+          userLabel: "Candidate User",
+        },
+      ],
+      members: [
+        {
+          avatarUrl: "https://cdn.yona/avatar-admin.png",
+          loginId: "admin",
+          role: "org_admin",
+          userId: "7",
+          userLabel: "Admin User",
+        },
+      ],
+      organizationName: "weblabs",
+      roleOptions: [
+        { label: "org_admin", role: "org_admin" },
+        { label: "org_member", role: "org_member" },
+      ],
+      viewerCanUpdate: true,
+    });
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="addNewMember"');
+    expect(html).toContain('action="/yona/organizations/weblabs/members"');
+    expect(html).toContain('class="text uname"');
+    expect(html).toContain('data-provider="typeahead"');
+    expect(html).toContain('placeholder="project.members.addMember"');
+    expect(html).toContain('class="members project row-fluid"');
+    expect(html).toContain('class="member span6 span-hard-wrap"');
+    expect(html).toContain('class="avatar-wrap mlarge pull-left mr10"');
+    expect(html).toContain('class="member-name"');
+    expect(html).toContain('class="member-id"');
+    expect(html).toContain('data-name="roleof-admin"');
+    expect(html).toContain('class="dropdown-menu"');
+    expect(html).toContain('data-action="apply"');
+    expect(html).toContain('data-href="/yona/organizations/weblabs/member/7/edit"');
+    expect(html).toContain('data-action="delete"');
+    expect(html).toContain('data-href="/yona/organizations/weblabs/member/7/delete"');
+    expect(html).toContain('id="alertDeletion"');
+    expect(html).toContain("organization.member.deleteConfirm");
+    expect(html).toContain('id="deleteBtn"');
+    expect(html).toContain("project.member.enrollment.request (1)");
+    expect(html).toContain('class="img-circle"');
+    expect(html).toContain('class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"');
+    expect(html).toContain('data-loginid="candidate"');
+  });
+
+  it("renders the legacy organization delete confirmation shell", () => {
+    const html = renderOrganizationDelete({
+      deleteAllowed: true,
+      enrollmentRequests: [],
+      members: [],
+      organizationName: "weblabs",
+      roleOptions: [],
+      viewerCanUpdate: true,
+    });
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="nav nav-tabs"');
+    expect(html).toContain('href="/yona/organizations/weblabs/settingform"');
+    expect(html).toContain('href="/yona/organizations/weblabs/members"');
+    expect(html).toContain('href="/yona/organizations/weblabs/deleteForm"');
+    expect(html).toContain('class="active"');
+    expect(html).toContain('class="box-wrap bottom"');
+    expect(html).toContain('id="btnDelete"');
+    expect(html).toContain('data-toggle="modal"');
+    expect(html).toContain("organization.delete.this");
+    expect(html).toContain('id="alertDeletion"');
+    expect(html).toContain('class="modal hide"');
+    expect(html).toContain("organization.delete.requestion");
+    expect(html).toContain("organization.delete.reaccept");
+    expect(html).toContain('id="btnDeleteExec"');
+    expect(html).toContain("button.yes");
+    expect(html).toContain("button.no");
+  });
+
   it("renders workspace settings tabs with canonical legacy user-editform paths", () => {
     const html = renderWorkspaceSettings("password", "/user/editform/password", {
       defaultLandingPath: "/me",
@@ -461,10 +675,18 @@ describe("auth and workspace views", () => {
     expect(html).toContain('href="/yona/user/editform/emails"');
     expect(html).toContain('href="/yona/user/editform/token"');
     expect(html).toContain('action="/yona/user/resetPassword"');
+    expect(html).toContain('id="frmPassword"');
     expect(html).toContain('name="oldPassword"');
     expect(html).toContain('name="loginId"');
     expect(html).toContain('href="/yona/lostPassword"');
-    expect(html).toContain("Change Password");
+    expect(html).toContain("user.currentPassword");
+    expect(html).toContain("user.newPassword");
+    expect(html).toContain("validation.retypePassword");
+    expect(html).toContain("userinfo.changePassword");
+    expect(html).toContain("site.resetPasswordEmail.desc");
+    expect(html).toContain("site.resetPasswordEmail.title");
+    expect(html).not.toContain("Change Password");
+    expect(html).not.toContain("Reset password by email");
   });
 
   it("prefers profile.avatarUrl on /me and profile settings before placeholder fallback", () => {
@@ -589,11 +811,13 @@ describe("auth and workspace views", () => {
       },
     });
 
-    expect(html).toContain("Change avatar");
+    expect(html).toContain("userinfo.changeAvatar");
     expect(html).toContain('name="avatarAttachmentId"');
-    expect(html).toContain("Crop Avatar");
-    expect(html).toContain("Cancel");
-    expect(html).toContain("Save");
+    expect(html).toContain('id="avatarCropWrap"');
+    expect(html).toContain("button.cancel");
+    expect(html).toContain("button.save");
+    expect(html).not.toContain("Change avatar");
+    expect(html).not.toContain("Crop Avatar");
   });
 
   it("renders issue sharer list and manager controls in the issue sidebar", () => {
@@ -611,12 +835,23 @@ describe("auth and workspace views", () => {
       },
     );
 
-    expect(html).toContain("Issue Sharer");
+    expect(html).toContain('class="sharer-list"');
+    expect(html).toContain('class="issue-share-title mb10"');
+    expect(html).toContain("issue.sharer");
     expect(html).toContain("Guest User");
+    expect(html).toContain('href="/yona/guest"');
+    expect(html).toContain('class="usf-group"');
+    expect(html).toContain('class="text-ellipsis sharer-item"');
+    expect(html).toContain('id="issueSharer"');
+    expect(html).toContain('class="bigdrop width100p"');
     expect(html).toContain('name="issueSharer"');
-    expect(html).toContain('placeholder="Issue sharer login ID"');
-    expect(html).toContain(">Share<");
-    expect(html).toContain(">Remove sharer<");
+    expect(html).toContain('placeholder="issue.sharer.select"');
+    expect(html).toContain(">button.share.issue<");
+    expect(html).toContain("issue.event.sharer.deleted.title");
+    expect(html).not.toContain("Issue Sharer");
+    expect(html).not.toContain('placeholder="Issue sharer login ID"');
+    expect(html).not.toContain(">Share<");
+    expect(html).not.toContain(">Remove sharer<");
     expect(html).not.toContain("Searching…");
   });
 
@@ -637,7 +872,8 @@ describe("auth and workspace views", () => {
         state={{ items: [], status: "loaded", truncated: false }}
       />,
     );
-    expect(emptyHtml).toContain("No matching users");
+    expect(emptyHtml).toContain("No matches found");
+    expect(emptyHtml).not.toContain("No matching users");
 
     const errorHtml = renderToStaticMarkup(
       <IssueAssignableUserSuggestions
@@ -645,7 +881,8 @@ describe("auth and workspace views", () => {
         state={{ items: [], status: "error", truncated: false }}
       />,
     );
-    expect(errorHtml).toContain("Assignable user search failed.");
+    expect(errorHtml).toBe("");
+    expect(errorHtml).not.toContain("Assignable user search failed.");
 
     const suggestionHtml = renderToStaticMarkup(
       <IssueAssignableUserSuggestions
@@ -668,6 +905,63 @@ describe("auth and workspace views", () => {
     expect(suggestionHtml).toContain("Door User");
     expect(suggestionHtml).toContain("@door");
     expect(suggestionHtml).toContain("More matches available");
+  });
+
+  it("renders issue mention and reference autocomplete like legacy At.js", () => {
+    const emptyMentionHtml = renderToStaticMarkup(
+      <IssueMentionUserSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "loaded", truncated: false }}
+      />,
+    );
+    expect(emptyMentionHtml).toBe("");
+    expect(emptyMentionHtml).not.toContain("No matching mentions");
+
+    const errorReferenceHtml = renderToStaticMarkup(
+      <IssueReferenceSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "error", truncated: false }}
+      />,
+    );
+    expect(errorReferenceHtml).toBe("");
+    expect(errorReferenceHtml).not.toContain("Issue reference search failed.");
+
+    const mentionHtml = renderToStaticMarkup(
+      <IssueMentionUserSuggestions
+        onSelect={() => undefined}
+        state={{
+          items: [
+            {
+              avatarUrl: "/avatars/door.png",
+              displayName: "Door User",
+              loginId: "door",
+              searchText: "Door User door",
+              type: "user",
+            },
+          ],
+          status: "loaded",
+          truncated: true,
+        }}
+      />,
+    );
+    expect(mentionHtml).toContain("Door User");
+    expect(mentionHtml).toContain("@door");
+    expect(mentionHtml).not.toContain("More matches available");
+
+    const referenceHtml = renderToStaticMarkup(
+      <IssueReferenceSuggestions
+        onSelect={() => undefined}
+        state={{
+          items: [{ issueNumber: 17, state: "open", title: "Reference issue" }],
+          status: "loaded",
+          truncated: true,
+        }}
+      />,
+    );
+    expect(referenceHtml).toContain("#17");
+    expect(referenceHtml).toContain("Reference issue");
+    expect(referenceHtml).not.toContain("No matching issues");
+    expect(referenceHtml).not.toContain("More matches available");
   });
 
   it("keeps assignee suggestion selection, manual assign, and blank unassign on the existing submit flow", async () => {
@@ -755,9 +1049,11 @@ describe("auth and workspace views", () => {
         }}
         getIssueReferencesQueryOptions={getIssueReferencesQueryOptions}
         initialBodyMarkdown="Source comment body"
+        initialParentIssueId={31}
         mode="create"
         onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
         onSubmit={async () => undefined}
+        parentIssueOptions={[{ id: 31, issueNumber: 12, selected: true, title: "Parent issue" }]}
         referCommentId="55"
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
       />,
@@ -765,9 +1061,11 @@ describe("auth and workspace views", () => {
     expect(createHtml).toContain('name="assigneeLoginId"');
     expect(createHtml).toContain('name="body"');
     expect(createHtml).toContain('name="referCommentId"');
+    expect(createHtml).toContain('name="parentIssueId"');
+    expect(createHtml).toContain('<option value="31" selected="">#12. Parent issue</option>');
     expect(createHtml).toContain('value="55"');
     expect(createHtml).toContain("Source comment body");
-    expect(createHtml).toContain('placeholder="Assignee"');
+    expect(createHtml).toContain('placeholder="issue.noAssignee"');
     expect(createHtml).not.toContain("Searching…");
 
     const editHtml = renderToStaticMarkup(
@@ -796,12 +1094,23 @@ describe("auth and workspace views", () => {
         assigneeLoginId: "guest",
         attachmentIds: [5],
         bodyMarkdown: "Body",
+        dueDate: "2026-08-01",
+        isDraft: true,
+        labelIds: [7],
+        milestoneId: 9,
+        parentIssueId: 31,
         title: "  New issue  ",
       }),
     ).toEqual({
       assigneeLoginId: "guest",
       attachmentIds: [5],
       bodyMarkdown: "Body",
+      dueDate: "2026-08-01",
+      isDraft: true,
+      isPublish: false,
+      labelIds: [7],
+      milestoneId: 9,
+      parentIssueId: 31,
       title: "New issue",
     });
 
@@ -815,6 +1124,12 @@ describe("auth and workspace views", () => {
       assigneeLoginId: "member",
       attachmentIds: [],
       bodyMarkdown: "Updated",
+      dueDate: "",
+      isDraft: false,
+      isPublish: false,
+      labelIds: [],
+      milestoneId: 0,
+      parentIssueId: 0,
       title: "Edit issue",
     });
 
@@ -828,7 +1143,33 @@ describe("auth and workspace views", () => {
       assigneeLoginId: "",
       attachmentIds: [],
       bodyMarkdown: "Updated",
+      dueDate: "",
+      isDraft: false,
+      isPublish: false,
+      labelIds: [],
+      milestoneId: 0,
+      parentIssueId: 0,
       title: "Edit issue",
+    });
+
+    expect(
+      buildProjectIssueFormSubmitInput({
+        assigneeLoginId: "guest",
+        bodyMarkdown: "Body",
+        isPublish: true,
+        title: "Publish draft",
+      }),
+    ).toEqual({
+      assigneeLoginId: "guest",
+      attachmentIds: [],
+      bodyMarkdown: "Body",
+      dueDate: "",
+      isDraft: false,
+      isPublish: true,
+      labelIds: [],
+      milestoneId: 0,
+      parentIssueId: 0,
+      title: "Publish draft",
     });
 
     expect(
@@ -853,9 +1194,17 @@ describe("auth and workspace views", () => {
       },
     );
 
-    expect(html).toContain("Issue Sharer");
+    expect(html).toContain("issue.sharer");
+    expect(html).toContain('id="sharer-list"');
+    expect(html).toContain('class="text-ellipsis sharer-item"');
+    expect(html).toContain('href="/yona/guest"');
     expect(html).toContain("Guest User");
-    expect(html).toContain('placeholder="Leave a comment"');
+    expect(html).not.toContain("Issue Sharer");
+    expect(html).toContain('id="comment-form"');
+    expect(html).toContain('action="/yona/owner/projectYobi/issue/1/comments"');
+    expect(html).toContain('id="dynamic-comment-btn"');
+    expect(html).toContain("button.comment.new");
+    expect(html).not.toContain("Leave a comment");
     expect(html).not.toContain(">Edit<");
     expect(html).not.toContain(">Close<");
     expect(html).not.toContain(">Assign<");
@@ -910,6 +1259,26 @@ describe("auth and workspace views", () => {
 
     expect(html).toContain('class="assignee-info"');
     expect(html).toContain("issue.noAssignee");
+  });
+
+  it("renders updateable issue assignee control with legacy select2 anchors", () => {
+    const html = renderIssueDetailPage(
+      {
+        assigneeLoginId: "",
+        viewerCanUpdate: true,
+      },
+      {
+        onAssign: async () => undefined,
+      },
+    );
+
+    expect(html).toContain('id="assignee"');
+    expect(html).toContain('class="bigdrop"');
+    expect(html).toContain('name="assigneeLoginId"');
+    expect(html).toContain('placeholder="issue.noAssignee"');
+    expect(html).toContain('style="width:100%"');
+    expect(html).not.toContain('placeholder="Assignee"');
+    expect(html).not.toContain(">Assign<");
   });
 
   it("renders issue comment agreement count, voters, and agree action", () => {

@@ -72,6 +72,16 @@ async fn response_json(response: Response<Body>) -> serde_json::Value {
     serde_json::from_str(&text).expect("json response")
 }
 
+async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
+    let mut request = Request::builder().method(Method::GET).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        request = request.header(http::header::COOKIE, cookie_header);
+    }
+    app.oneshot(request.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn rpc(
     app: axum::Router,
     method_name: &str,
@@ -153,12 +163,13 @@ async fn create_project(
     .await;
 }
 
-async fn create_issue(
+async fn create_issue_with_body(
     app: axum::Router,
     cookie: &str,
     csrf: &str,
     project_name: &str,
     title: &str,
+    body_markdown: &str,
 ) -> serde_json::Value {
     response_json(
         rpc(
@@ -170,10 +181,28 @@ async fn create_issue(
                 "ownerName": "weblabs",
                 "projectName": project_name,
                 "title": title,
-                "bodyMarkdown": format!("body for {title}")
+                "bodyMarkdown": body_markdown
             }),
         )
         .await,
+    )
+    .await
+}
+
+async fn create_issue(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    project_name: &str,
+    title: &str,
+) -> serde_json::Value {
+    create_issue_with_body(
+        app,
+        cookie,
+        csrf,
+        project_name,
+        title,
+        &format!("body for {title}"),
     )
     .await
 }
@@ -350,12 +379,13 @@ async fn organization_issue_list_contract_filters_sorts_and_pages_visible_issues
         "Alpha query match",
     )
     .await;
-    create_issue(
+    create_issue_with_body(
         app.clone(),
         &admin_cookie,
         &admin_csrf,
         "beta",
         "Beta query match",
+        "Beta body mentions @member",
     )
     .await;
     create_issue(
@@ -403,6 +433,21 @@ async fn organization_issue_list_contract_filters_sorts_and_pages_visible_issues
     assert_eq!(filtered["pageSize"], 1);
     assert_eq!(filtered["totalCount"], 1);
     assert_eq!(filtered["openIssueCount"], 1);
+
+    let mentioned = response_json(
+        rest_get(
+            app.clone(),
+            &format!(
+                "/yona/api/v1/organizations/weblabs/issues?state=open&mentionId={member_id}&pageNum=1"
+            ),
+            Some(&member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(mentioned["items"].as_array().unwrap().len(), 1);
+    assert_eq!(mentioned["items"][0]["title"], "Beta query match");
+    assert_eq!(mentioned["openIssueCount"], 1);
 
     let authored_by_me = response_json(
         rpc(

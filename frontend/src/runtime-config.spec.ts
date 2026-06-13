@@ -19,6 +19,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/",
       projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
       projectDefaultScope: "public",
+      showUserEmail: true,
       supportedLanguages: ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"],
     });
   });
@@ -33,6 +34,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/yona/",
       projectDefaultMenus: ["issue", "pull-request", "unknown"],
       projectDefaultScope: "private",
+      showUserEmail: false,
       supportedLanguages: ["ko-KR", "", "en-US"],
     };
 
@@ -41,6 +43,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/yona",
       projectDefaultMenus: ["issue", "pullRequest"],
       projectDefaultScope: "private",
+      showUserEmail: false,
       supportedLanguages: ["ko-KR", "en-US"],
     });
   });
@@ -50,11 +53,13 @@ describe("readRuntimeConfig", () => {
     process.env.VITE_YONA_BASE_PATH = "/yona";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
     process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
+    process.env.VITE_YONA_SHOW_USER_EMAIL = "false";
     (import.meta as { env?: Record<string, string> }).env = {
       ...originalImportMetaEnv,
       VITE_YONA_BASE_PATH: "/yona",
       VITE_YONA_LANGS: "ja-JP, en-US",
       VITE_YONA_PROJECT_DEFAULT_MENUS: "issue,board",
+      VITE_YONA_SHOW_USER_EMAIL: "false",
     };
 
     expect(readRuntimeConfig()).toEqual({
@@ -62,6 +67,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/yona",
       projectDefaultMenus: ["issue", "board"],
       projectDefaultScope: "public",
+      showUserEmail: false,
       supportedLanguages: ["ja-JP", "en-US"],
     });
   });

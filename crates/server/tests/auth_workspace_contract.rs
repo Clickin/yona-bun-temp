@@ -7,7 +7,7 @@ use sea_orm::{
     Set,
 };
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
@@ -16,7 +16,10 @@ use yona_rust_persistence::{
     AppRepository, CreateOrganizationInput, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, create_router_with_repository_and_filesystem_assets,
+    RuntimeConfig,
+};
 
 fn auth_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -118,7 +121,7 @@ fn days_ago_datetime(days: u64) -> DateTime {
 async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
-    let (app, repository, _) = build_auth_router().await;
+    let (_, repository, _) = build_auth_router().await;
 
     repository
         .create_project(CreateProjectInput {
@@ -130,6 +133,28 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
         })
         .await
         .unwrap();
+
+    let asset_root = std::env::temp_dir().join(format!(
+        "yona-auth-assets-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&asset_root).expect("asset root");
+    std::fs::write(
+        asset_root.join("index.html"),
+        "<html><head></head><body>legacy auth shell</body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets(
+        RuntimeConfig {
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository.clone(),
+        asset_root,
+    );
 
     let session = app
         .clone()
@@ -156,6 +181,30 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
         .await
         .unwrap();
     assert_eq!(capabilities.status(), StatusCode::OK);
+
+    for path in [
+        "/yona/users/loginform",
+        "/yona/users/signupform",
+        "/yona/lostPassword",
+        "/yona/resetPassword",
+    ] {
+        let public_auth_page = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            public_auth_page.status(),
+            StatusCode::OK,
+            "{path} should remain reachable when anonymous access is disabled"
+        );
+    }
 
     let page = app
         .clone()
@@ -333,6 +382,34 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
 }
 
 #[tokio::test]
+async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let (app, _, _) = build_auth_router().await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github/denied")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?error=oauthDenied&provider=github")
+    );
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+}
+
+#[tokio::test]
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
@@ -463,7 +540,8 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
 }
 
 #[tokio::test]
-async fn direct_legacy_login_and_signup_form_routes_accept_form_csrf_redirect_and_authenticate() {
+async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate(
+) {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
@@ -483,7 +561,7 @@ async fn direct_legacy_login_and_signup_form_routes_accept_form_csrf_redirect_an
                 )
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::from(format!(
-                    "csrfToken={csrf}&loginId=door&name=Door&emailAddress=door%40example.com&password=doorpass1&retypedPassword=doorpass1"
+                    "csrfToken={csrf}&loginId=door&name=Door&email=door%40example.com&password=doorpass1&retypedPassword=doorpass1"
                 )))
                 .unwrap(),
         )
@@ -2196,6 +2274,110 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
         .await
         .unwrap();
     assert_eq!(anonymous_fragment.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "door".to_string(),
+            overview: Some("Yona project".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    repository
+        .record_recent_project_visit(user.id, "door", "projectYobi")
+        .await
+        .unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/sidebar?path=%2Fdoor%2FprojectYobi%2Fissue%2F1&hash=comment-7")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/html; charset=utf-8")
+    );
+    let html = response_text(response).await;
+    assert!(html.contains(r#"<body class="framed-body" id="html-body">"#));
+    assert!(html.contains(r#"<div id="sidebar" class="sidebar hide-in-mobile">"#));
+    assert!(html.contains(r#"<div class="row-fluid user-menu-wrap">"#));
+    assert!(html.contains(r#"<a href="/yona/door" target="mainFrame">"#));
+    assert!(html.contains(r#"<span class="caret-text hide-in-mobile">Door</span>"#));
+    assert!(html.contains(
+        r#"<a href="/yona/user/editform" target="mainFrame">userinfo.accountSetting</a>"#
+    ));
+    assert!(html.contains(r#"<div class="pin-in-sidebar" data-toggle="tooltip" data-placement="bottom" title="Sidebar">"#));
+    assert!(html.contains(r##"<a href="#myOrganizationList" data-toggle="tab">"##));
+    assert!(html.contains("title.favorite"));
+    assert!(html.contains("title.project"));
+    assert!(html.contains("title.recently.visited.issue"));
+    assert!(html.contains(r#"<div id="usermenu-tab-content-list" class="tab-content">"#));
+    assert!(html.contains(r#"class="search-input org-search""#));
+    assert!(html.contains(r#"href="/yona/door/projectYobi""#));
+    assert!(html.contains(r#"<div id="mainFrame" class="show-in-mobile-100vh">"#));
+    assert!(html.contains(r#"iframe name="mainFrame" id="mainFrameId""#));
+    assert!(html.contains(r#"src="/yona/door/projectYobi/issue/1#comment-7""#));
+    assert!(html.contains(r#"var UsermenuUrl = "/yona/user/usermenuTabContentList";"#));
+    assert!(html.contains(r#"/assets/javascripts/common/yona.Usermenu.js"#));
+
+    let anonymous_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/sidebar")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(anonymous_response.status(), StatusCode::OK);
+    let anonymous_html = response_text(anonymous_response).await;
+    assert!(anonymous_html.contains(r#"<div id="sidebar" class="sidebar hide-in-mobile">"#));
+    assert!(!anonymous_html.contains(r#"<div class="row-fluid user-menu-wrap">"#));
+    assert!(anonymous_html.contains(r#"src="/yona/notifications""#));
 }
 
 #[tokio::test]

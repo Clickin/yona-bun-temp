@@ -12,6 +12,7 @@ function siteUsersPayload(input: {
   query?: string;
   siteAdminCount?: number;
   state?: string;
+  totalPages?: number;
   users: Array<{
     emailAddress?: string;
     id: number;
@@ -29,7 +30,7 @@ function siteUsersPayload(input: {
     siteAdminCount: input.siteAdminCount ?? 1,
     state: input.state ?? "ACTIVE",
     total: input.users.length,
-    totalPages: input.users.length === 0 ? 0 : 1,
+    totalPages: input.totalPages ?? (input.users.length === 0 ? 0 : 1),
     users: input.users.map((user) => ({
       createdAt: "2026-05-17 10:00:00",
       displayName: user.name ?? user.loginId,
@@ -240,6 +241,7 @@ test("site admin user list preserves legacy shell and toggles user state", async
           query,
           siteAdminCount: promoted ? 2 : 1,
           state,
+          totalPages: state === "ACTIVE" && query === "mem" ? 2 : undefined,
           users,
         }),
       ),
@@ -253,13 +255,20 @@ test("site admin user list preserves legacy shell and toggles user state", async
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("User List");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("Unlocked");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("site.sidebar.userList");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.unlocked");
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
   await expect(page.locator("input[name='state']")).toHaveValue("ACTIVE");
   await expect(page.locator("input[name='query']")).toHaveValue("mem");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    "/yona/sites/userList?state=ACTIVE&query=mem&pageNum=2",
+  );
 
   await page.locator("[data-request-uri$='/site-admin/toggle']").click();
   await expect
@@ -279,7 +288,7 @@ test("site admin user list preserves legacy shell and toggles user state", async
     .poll(() => requests.some((request) => request.includes("password/reset")))
     .toBe(true);
   await expect(page.locator(".user-list-wrap .alert-success")).toContainText(
-    `New Password: ${resetPassword}`,
+    `user.newPassword: ${resetPassword}`,
   );
 
   await page.goto("/yona/sites/userList?state=ACTIVE&query=del");
@@ -294,22 +303,25 @@ test("site admin user list preserves legacy shell and toggles user state", async
   await expect
     .poll(() => requests.some((request) => request === "DELETE /yona/api/v1/site/users/deletee"))
     .toBe(true);
-  await expect(page.locator(".warning-none")).toHaveText("No users found.");
+  await expect(page.locator(".user-list-wrap")).toHaveCount(1);
+  await expect(page.locator(".warning-none")).toHaveCount(0);
 
   await page.goto("/yona/sites/userList?state=DELETED&query=del");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("Deleted");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.deleted");
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@deletee");
   await expect(page.locator(".user-list-wrap .email")).toHaveText(
     "deleted-deletee@noreply.yona.io",
   );
 
   await page.goto("/yona/sites/userList?state=GUEST");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("Guest");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.guest");
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
-  await expect(page.locator("[data-request-uri$='/guest/toggle']")).toContainText("Normal User");
+  await expect(page.locator("[data-request-uri$='/guest/toggle']")).toContainText(
+    "button.user.make.normal.mode",
+  );
 
   await page.goto("/yona/sites/userList?state=SITE_ADMIN");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("Site Admin");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.siteAdmin");
   await expect(page.locator(".nav-tabs li.active .num-badge")).toHaveText("2");
   await expect(page.locator(".user-list-wrap .user-id")).toContainText(["@siteboss", "@member"]);
 });

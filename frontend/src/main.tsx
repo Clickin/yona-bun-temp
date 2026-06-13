@@ -15,7 +15,7 @@ export function createApp(options: CreateAppOptions = {}) {
   return {
     router,
     runtimeConfig,
-    title: "Yona Rust Frontend",
+    title: "Yona",
   };
 }
 

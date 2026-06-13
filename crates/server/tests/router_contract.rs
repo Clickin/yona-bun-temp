@@ -1,8 +1,92 @@
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
+use sea_orm::{Database, DatabaseConnection};
+use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
-use yona_rust_pilot_server::{create_router, RuntimeConfig};
+use yona_rust_persistence::AppRepository;
+use yona_rust_pilot_migration::Migrator;
+use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
+
+fn router_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_app_repository(
+        RuntimeConfig {
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+    );
+
+    (app, app_repo, db)
+}
+
+async fn bootstrap(app: axum::Router) -> (String, String) {
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/auth/session")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let csrf = response
+        .headers()
+        .get("x-csrf-token")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let cookies: Vec<String> = response
+        .headers()
+        .get_all(http::header::SET_COOKIE)
+        .iter()
+        .map(|value| {
+            value
+                .to_str()
+                .unwrap()
+                .split(';')
+                .next()
+                .unwrap()
+                .to_string()
+        })
+        .collect();
+
+    (csrf, cookies.join("; "))
+}
+
+async fn register_user(app: axum::Router, login_id: &str) -> String {
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from(format!(
+                    "{{\"loginId\":\"{login_id}\",\"name\":\"{login_id}\",\"emailAddress\":\"{login_id}@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    cookie_header
+}
 
 #[tokio::test]
 async fn mounts_session_bootstrap_under_base_path() {
@@ -271,4 +355,110 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
     let body = success.into_body().collect().await.unwrap().to_bytes();
     let json = String::from_utf8(body.to_vec()).unwrap();
     assert!(json.contains("\"state\":\"closed\""));
+}
+
+#[tokio::test]
+async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
+    let (app, _, _) = build_app_with_repository().await;
+    let cookie_header = register_user(app.clone(), "migrator").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration")
+                .header(http::header::COOKIE, cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    let content_type = response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(content_type.contains("text/html"));
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("yobi-migration"));
+    assert!(html.contains("Yona to Github"));
+    assert!(html.contains("Source 프로젝트를 선택해 주세요"));
+    assert!(html.contains("Destination 프로젝트를 선택해 주세요"));
+    assert!(html.contains("Migration 대상"));
+    assert!(html.contains("마일스톤 옮기기"));
+    assert!(html.contains("이슈 옮기기"));
+    assert!(html.contains("게시글 옮기기"));
+    assert!(html.contains("error.forbidden.or.not.allowed"));
+    assert!(!html.contains("window.__YONA_RUNTIME_CONFIG__"));
+}
+
+#[tokio::test]
+async fn legacy_migration_requires_login_when_anonymous_access_is_disabled() {
+    let _guard = router_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let app = create_router(RuntimeConfig {
+        base_path: "/yona".to_string(),
+        public_origin: String::new(),
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get(http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    assert_eq!(location, "/yona/users/loginform?redirectUrl=%2Fmigration");
+}
+
+#[tokio::test]
+async fn legacy_migration_export_paths_stay_disabled_json_surface() {
+    let (app, _, _) = build_app_with_repository().await;
+    let cookie_header = register_user(app.clone(), "migration-exporter").await;
+
+    for path in [
+        "/yona/migration/projects",
+        "/yona/migration/owner/projects/project",
+        "/yona/migration/owner/projects/project/labels",
+        "/yona/migration/owner/projects/project/issuelabel",
+        "/yona/migration/owner/projects/project/milestones",
+        "/yona/migration/owner/projects/project/issues",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .header(http::header::COOKIE, &cookie_header)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{path}");
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(payload["error"]["code"], "forbidden", "{path}");
+        assert_eq!(
+            payload["error"]["message"], "error.forbidden.or.not.allowed",
+            "{path}"
+        );
+    }
 }

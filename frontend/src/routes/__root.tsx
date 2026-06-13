@@ -3,6 +3,7 @@ import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
 import type { RuntimeConfig } from "../runtime-config";
+import { LegacyLoginDialog } from "./-auth-views";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -20,8 +21,21 @@ function RootRouteComponent() {
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
         <Outlet />
+        <RootLoginDialog />
       </AppRuntimeProvider>
     </YonaQueryProvider>
+  );
+}
+
+function RootLoginDialog() {
+  const { authUiCapabilities, csrfToken, runtimeConfig } = useAppRuntime();
+
+  return (
+    <LegacyLoginDialog
+      authUiCapabilities={authUiCapabilities}
+      csrfToken={csrfToken}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 

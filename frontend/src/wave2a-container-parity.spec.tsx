@@ -50,14 +50,14 @@ describe("wave 2A container parity", () => {
 
     expect(html).toContain("Web labs");
     expect(html).toContain('id="mylist-filter"');
-    expect(html).toContain(">Create project<");
+    expect(html).toContain(">button.newProject<");
     expect(html).toContain("projectYobi");
     expect(html).toContain("Wave 2A parity home");
-    expect(html).toContain("Members: 4");
-    expect(html).toContain("Watchers: 3");
-    expect(html).toContain("Original: naver / legacyYobi");
-    expect(html).toContain("Group Manager");
-    expect(html).toContain("Group Member");
+    expect(html).toContain("project.onmember 4");
+    expect(html).toContain("project.onwatching 3");
+    expect(html).toContain("naver<!-- --> / <!-- -->legacyYobi");
+    expect(html).toContain("user.role.org_admin");
+    expect(html).toContain("user.role.org_member");
     expect(html).toContain('href="/yona/organizations/weblabs/settingform"');
   });
 
@@ -72,9 +72,9 @@ describe("wave 2A container parity", () => {
       visibleProjects: [],
     } as never);
 
-    expect(html).not.toContain(">Create project<");
-    expect(html).not.toContain("Group Manager");
-    expect(html).not.toContain("Group Member");
+    expect(html).not.toContain(">button.newProject<");
+    expect(html).not.toContain("user.role.org_admin");
+    expect(html).not.toContain("user.role.org_member");
     expect(html).not.toContain("/settingform");
   });
 

@@ -1,4 +1,4 @@
-use yona_rust_search::make_snippets;
+use yona_rust_search::{make_snippets, SearchHighlight};
 
 #[test]
 fn snippets_follow_legacy_korean_window_boundaries() {
@@ -10,6 +10,10 @@ fn snippets_follow_legacy_korean_window_boundaries() {
 
     assert_eq!(snippets.len(), 1);
     assert_eq!(snippets[0].text, "링크처럼 보여주기 이슈 본문이나 댓글 등");
+    assert_eq!(
+        snippets[0].highlights,
+        vec![SearchHighlight { start: 10, end: 12 }]
+    );
 }
 
 #[test]

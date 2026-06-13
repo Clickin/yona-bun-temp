@@ -99,12 +99,13 @@ function BoardDetailRouteComponent() {
           reportMutationError(error, "Delete board comment failed.");
         }
       }}
-      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
+      onCommentSubmit={async (contentsMarkdown, attachmentIds, parentCommentId) => {
         try {
           const nextPost = await createPostCommentRest(runtimeConfig, csrfToken, {
             attachmentIds,
             contentsMarkdown,
             ownerName: owner,
+            parentCommentId,
             postNumber,
             projectName,
           });

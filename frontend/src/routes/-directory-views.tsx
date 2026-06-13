@@ -14,42 +14,6 @@ function parsePositiveInt(value: string | null, fallback: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function buildProjectsHref(filter: string, pageNum: number): string {
-  const params = new URLSearchParams();
-  if (filter.trim() !== "") {
-    params.set("filter", filter.trim());
-  }
-  params.set("pageNum", String(pageNum));
-  const query = params.toString();
-  return query ? `/projects?${query}` : "/projects";
-}
-
-function buildOrganizationsHref(filter: string, pageNum: number): string {
-  const params = new URLSearchParams();
-  if (filter.trim() !== "") {
-    params.set("filter", filter.trim());
-  }
-  params.set("pageNum", String(pageNum));
-  return `/orgs?${params.toString()}`;
-}
-
-function getPaginationWindow(currentPageNum: number, totalPageCount: number) {
-  const paginationWindow = 5;
-  if (totalPageCount <= paginationWindow) {
-    return Array.from({ length: totalPageCount }, (_, index) => index + 1);
-  }
-
-  let start = Math.max(1, currentPageNum - Math.floor(paginationWindow / 2));
-  let end = start + paginationWindow - 1;
-
-  if (end > totalPageCount) {
-    end = totalPageCount;
-    start = end - paginationWindow + 1;
-  }
-
-  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-}
-
 export function ProjectDirectoryPage({
   directory,
   href,
@@ -79,7 +43,6 @@ export function ProjectDirectoryPage({
     (currentPageNum - 1) * pageSize,
     (currentPageNum - 1) * pageSize + pageSize,
   );
-  const pageNumbers = getPaginationWindow(currentPageNum, totalPageCount);
 
   return (
     <>
@@ -88,10 +51,10 @@ export function ProjectDirectoryPage({
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li className="active">
-                <a href={appHref(runtimeConfig, "/projects")}>Project List</a>
+                <a href={appHref(runtimeConfig, "/projects")}>project.public title.projectList</a>
               </li>
               <li>
-                <a href={appHref(runtimeConfig, "/orgs")}>Organization List</a>
+                <a href={appHref(runtimeConfig, "/orgs")}>title.organization.list</a>
               </li>
             </ul>
           </div>
@@ -107,10 +70,11 @@ export function ProjectDirectoryPage({
                     className="textbox"
                     defaultValue={params.get("filter") ?? ""}
                     name="filter"
-                    type="search"
+                    placeholder="site.project.filter"
+                    type="text"
                   />
                   <button className="search-btn" type="submit">
-                    Search
+                    <i className="yobicon-search" />
                   </button>
                 </div>
               </form>
@@ -118,7 +82,8 @@ export function ProjectDirectoryPage({
           </div>
           {visibleProjects.length === 0 ? (
             <div className="error-wrap">
-              <p>No public projects found.</p>
+              <i className="ico ico-err1"></i>
+              <p>project.is.empty</p>
             </div>
           ) : (
             <>
@@ -143,52 +108,14 @@ export function ProjectDirectoryPage({
                             {project.projectName}
                           </a>
                         </div>
-                        <div className="desc">{project.overview || "No overview yet."}</div>
+                        <div className="desc">{project.overview}</div>
                         <p className="name-tag">by {project.ownerName}</p>
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
-              {totalPageCount > 1 ? (
-                <nav className="directory-pagination legacy-directory-pagination" id="pagination">
-                  {currentPageNum > 1 ? (
-                    <a
-                      className="nav-pill"
-                      href={buildProjectsHref(params.get("filter") ?? "", currentPageNum - 1)}
-                    >
-                      Prev
-                    </a>
-                  ) : (
-                    <span className="nav-pill is-disabled">Prev</span>
-                  )}
-                  {pageNumbers.map((nextPageNum) =>
-                    nextPageNum === currentPageNum ? (
-                      <span className="nav-pill active" key={nextPageNum}>
-                        {nextPageNum}
-                      </span>
-                    ) : (
-                      <a
-                        className="nav-pill"
-                        href={buildProjectsHref(params.get("filter") ?? "", nextPageNum)}
-                        key={nextPageNum}
-                      >
-                        {nextPageNum}
-                      </a>
-                    ),
-                  )}
-                  {currentPageNum < totalPageCount ? (
-                    <a
-                      className="nav-pill"
-                      href={buildProjectsHref(params.get("filter") ?? "", currentPageNum + 1)}
-                    >
-                      Next
-                    </a>
-                  ) : (
-                    <span className="nav-pill is-disabled">Next</span>
-                  )}
-                </nav>
-              ) : null}
+              <div id="pagination"></div>
             </>
           )}
         </div>
@@ -226,7 +153,6 @@ export function OrganizationDirectoryPage({
     (currentPageNum - 1) * pageSize,
     (currentPageNum - 1) * pageSize + pageSize,
   );
-  const pageNumbers = getPaginationWindow(currentPageNum, totalPageCount);
 
   return (
     <>
@@ -235,10 +161,10 @@ export function OrganizationDirectoryPage({
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li>
-                <a href={appHref(runtimeConfig, "/projects")}>Project List</a>
+                <a href={appHref(runtimeConfig, "/projects")}>project.public title.projectList</a>
               </li>
               <li className="active">
-                <a href={appHref(runtimeConfig, "/orgs")}>Organization List</a>
+                <a href={appHref(runtimeConfig, "/orgs")}>title.organization.list</a>
               </li>
             </ul>
           </div>
@@ -254,10 +180,11 @@ export function OrganizationDirectoryPage({
                     className="textbox"
                     defaultValue={params.get("filter") ?? ""}
                     name="filter"
-                    type="search"
+                    placeholder="site.organization.filter"
+                    type="text"
                   />
                   <button className="search-btn" type="submit">
-                    Search
+                    <i className="yobicon-search" />
                   </button>
                 </div>
               </form>
@@ -265,7 +192,8 @@ export function OrganizationDirectoryPage({
           </div>
           {visibleOrganizations.length === 0 ? (
             <div className="error-wrap">
-              <p>No organizations found.</p>
+              <i className="ico ico-err1"></i>
+              <p>organization.is.empty</p>
             </div>
           ) : (
             <>
@@ -290,53 +218,13 @@ export function OrganizationDirectoryPage({
                             {organization.organizationName}
                           </a>
                         </div>
-                        <div className="desc">
-                          {organization.description || "No description yet."}
-                        </div>
+                        <div className="desc">{organization.description}</div>
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
-              {totalPageCount > 1 ? (
-                <nav className="directory-pagination legacy-directory-pagination" id="pagination">
-                  {currentPageNum > 1 ? (
-                    <a
-                      className="nav-pill"
-                      href={buildOrganizationsHref(params.get("filter") ?? "", currentPageNum - 1)}
-                    >
-                      Prev
-                    </a>
-                  ) : (
-                    <span className="nav-pill is-disabled">Prev</span>
-                  )}
-                  {pageNumbers.map((nextPageNum) =>
-                    nextPageNum === currentPageNum ? (
-                      <span className="nav-pill active" key={nextPageNum}>
-                        {nextPageNum}
-                      </span>
-                    ) : (
-                      <a
-                        className="nav-pill"
-                        href={buildOrganizationsHref(params.get("filter") ?? "", nextPageNum)}
-                        key={nextPageNum}
-                      >
-                        {nextPageNum}
-                      </a>
-                    ),
-                  )}
-                  {currentPageNum < totalPageCount ? (
-                    <a
-                      className="nav-pill"
-                      href={buildOrganizationsHref(params.get("filter") ?? "", currentPageNum + 1)}
-                    >
-                      Next
-                    </a>
-                  ) : (
-                    <span className="nav-pill is-disabled">Next</span>
-                  )}
-                </nav>
-              ) : null}
+              <div id="pagination"></div>
             </>
           )}
         </div>

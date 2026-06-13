@@ -84,10 +84,16 @@ function RouteStatusPage({ href, lede, title }: { href: string; lede: string; ti
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Route</p>
-      <h1>{title}</h1>
-      <p>{href}</p>
-      <p className="lede">{lede}</p>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico ico-err2"></i>
+            <p>{title}</p>
+            <p className="hide">{href}</p>
+            <p className="lede">{lede}</p>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
@@ -96,9 +102,29 @@ export function PlaceholderPage({ href, title }: { href: string; title: string }
   return (
     <RouteStatusPage
       href={href}
-      lede="File-based route placeholder while the full screen body is being ported."
+      lede="error.notfound"
       title={title}
     />
+  );
+}
+
+export function BadRequestPage({ href = "/" }: { href?: string }) {
+  useDocumentTitle("The request cannot be fulfilled due to bad syntax");
+
+  return (
+    <main className="app-shell">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico-404"></i>
+            <p>The request cannot be fulfilled due to bad syntax</p>
+            <a className="ybtn ybtn-info" href={href}>
+              Home
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -107,14 +133,18 @@ export function ForbiddenPage({ href }: { href: string }) {
     <RouteStatusPage
       href={href}
       lede="You do not have permission to view this page."
-      title="Forbidden"
+      title="error.forbidden"
     />
   );
 }
 
 export function NotFoundPage({ href }: { href: string }) {
   return (
-    <RouteStatusPage href={href} lede="The requested page could not be found." title="Not found" />
+    <RouteStatusPage
+      href={href}
+      lede="The requested page could not be found."
+      title="error.notfound"
+    />
   );
 }
 

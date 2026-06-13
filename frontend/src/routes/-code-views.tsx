@@ -2,9 +2,9 @@ import * as React from "react";
 
 import { highlightCodeLine } from "./-syntax-highlighting";
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/issue-meta";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
-import { MarkdownRenderer } from "./-markdown-renderer";
+import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
 
@@ -14,8 +14,10 @@ export interface CodeHistoryViewModel {
   branches: Array<{ name: string }>;
   breadcrumbs: Array<{ name: string; path: string }>;
   commits: Array<{
+    authorAvatarUrl?: string;
     authorDate: string;
     authorEmail: string;
+    authorLoginId?: string;
     authorName: string;
     commentCount: number;
     commitId: string;
@@ -141,6 +143,78 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
   };
 }
 
+function codeCloneUrl(detail: ProjectDetailViewModel) {
+  return detail.cloneUrl || `${detail.ownerName}/${detail.projectName}`;
+}
+
+function isSvnProject(detail: ProjectDetailViewModel) {
+  return detail.vcs?.toLowerCase().includes("svn") || detail.vcs?.toLowerCase().includes("subversion");
+}
+
+function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel }) {
+  const detail = props.detail;
+  const projectName = detail.projectName || "project";
+  const cloneUrl = codeCloneUrl(detail);
+  const isSvn = isSvnProject(detail);
+
+  return (
+    <div className="row-fluid code-nohead-wrap">
+      <div className="span12">
+        <div className="alert alert-block">
+          <h4>code.nohead</h4>
+        </div>
+        {detail.viewerCanUpdate ? (
+          isSvn ? (
+            <>
+              <h5>code.nohead.svn.clone</h5>
+              <pre>
+                <code>{`svn co ${cloneUrl}
+cd ${projectName}/
+echo "# ${projectName}" > README.md
+svn add README.md
+svn commit -m "first commit"`}</code>
+              </pre>
+            </>
+          ) : (
+            <>
+              <h5>code.nohead.clone</h5>
+              <pre>
+                <code>{`git clone ${cloneUrl} ${projectName}
+cd ${projectName}/
+echo "# ${projectName}" > README.md
+git add README.md
+git commit -m "Hello Yona"
+git push origin master`}</code>
+              </pre>
+              <h5>code.nohead.init</h5>
+              <pre>
+                <code>{`mkdir ${projectName}
+cd ${projectName}/
+echo "# ${projectName}" > README.md
+git init
+git add README.md
+git commit -m "Hello Yona"
+git remote add origin ${cloneUrl}
+git push origin master`}</code>
+              </pre>
+              <h5>code.nohead.remote</h5>
+              <pre>
+                <code>{`git remote add origin ${cloneUrl}
+git push origin master`}</code>
+              </pre>
+              <h5>code.nohead.pull.push</h5>
+              <pre>
+                <code>{`git pull origin master
+git push origin master`}</code>
+              </pre>
+            </>
+          )
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function codeHref(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -192,6 +266,45 @@ function codeArchiveHref(
     projectName,
     `code/${encodeURIComponent(branch)}/download`,
   );
+}
+
+function codeNewFileHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+  path: string,
+  isFile: boolean,
+) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("path", codeNewFileDirectory(path, isFile));
+  searchParams.set("branch", branch);
+  return `${buildProjectHref(runtimeConfig, ownerName, projectName, "postform")}?${searchParams.toString()}`;
+}
+
+function codeEditFileHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+  path: string,
+) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("path", path);
+  searchParams.set("branch", branch);
+  searchParams.set("edit", "true");
+  return `${buildProjectHref(runtimeConfig, ownerName, projectName, "postform")}?${searchParams.toString()}`;
+}
+
+function codeNewFileDirectory(path: string, isFile: boolean) {
+  if (!path) {
+    return "";
+  }
+  if (!isFile) {
+    return path.endsWith("/") ? path : `${path}/`;
+  }
+  const lastSlash = path.lastIndexOf("/");
+  return lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
 }
 
 function codeFileIsMarkdown(file: NonNullable<CodeBrowserViewModel["file"]>) {
@@ -492,79 +605,94 @@ export function CodeBrowserPage(props: {
   const detail = props.detail ?? fallbackProjectDetail();
   const code = props.code;
   const selectedBranch = code?.selectedBranch ?? "";
+  const isFileView = Boolean(code?.file);
+  const selectedBranchHref = selectedBranch
+    ? codeHref(
+        props.runtimeConfig,
+        detail.ownerName,
+        detail.projectName,
+        selectedBranch,
+        code?.path ?? "",
+      )
+    : "";
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Code</h1>
+      <h1>menu.code</h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section className="code-browse-wrap">
-        <nav aria-label="Code tabs">
-          <a
-            aria-current="page"
-            href={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              "code",
-            )}
-          >
-            Files
-          </a>
-          <a
-            href={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              "commits",
-            )}
-          >
-            Commit
-          </a>
-          <a
-            href={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              "branches",
-            )}
-          >
-            Branches
-          </a>
-        </nav>
+        {!isFileView ? (
+          <nav aria-label="Code tabs">
+            <a
+              aria-current="page"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "code",
+              )}
+            >
+              code.files
+            </a>
+            <a
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "commits",
+              )}
+            >
+              code.commits
+            </a>
+            <a
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "branches",
+              )}
+            >
+              title.branches
+            </a>
+          </nav>
+        ) : null}
         {code?.noHead ? (
-          <div className="alert alert-block">
-            <h2>The repository is empty!</h2>
-            <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
-          </div>
+          <CodeNoHeadBlock detail={detail} />
         ) : (
           <>
             <div className="code-browse-header">
-              <label htmlFor="branches">Branch</label>
               <select
+                className={code?.file ? "pull-left mb10" : "pull-left"}
+                data-dropdown-css-class="branches"
+                data-format="branch"
+                data-toggle="select2"
                 id="branches"
                 onChange={(event) => {
-                  const nextBranch = event.currentTarget.value;
-                  window.location.assign(
-                    codeHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      nextBranch,
-                      code?.path ?? "",
-                    ),
-                  );
+                  window.location.assign(event.currentTarget.value);
                 }}
-                value={selectedBranch}
+                value={selectedBranchHref}
               >
-                {(code?.branches ?? []).map((branch) => (
-                  <option key={branch.name} value={branch.name}>
-                    {branch.name}
-                  </option>
-                ))}
+                {(code?.branches ?? []).map((branch) => {
+                  const branchHref = codeHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    branch.name,
+                    code?.path ?? "",
+                  );
+                  return (
+                    <option key={branch.name} value={branchHref}>
+                      {branch.name}
+                    </option>
+                  );
+                })}
               </select>
-              <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
+              <div
+                aria-label="Breadcrumbs"
+                className="code-breadcrumb-wrap ml10 pull-left"
+                id="breadcrumbs"
+              >
                 <a
                   href={
                     selectedBranch
@@ -580,53 +708,76 @@ export function CodeBrowserPage(props: {
                   {detail.projectName}
                 </a>
                 {(code?.breadcrumbs ?? []).map((breadcrumb) => (
-                  <React.Fragment key={breadcrumb.path}>
-                    <span>/</span>
-                    <a
-                      href={codeHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        selectedBranch,
-                        breadcrumb.path,
-                      )}
-                    >
-                      {breadcrumb.name}
-                    </a>
-                  </React.Fragment>
+                  <a
+                    href={codeHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      breadcrumb.path,
+                    )}
+                    key={breadcrumb.path}
+                  >
+                    {breadcrumb.name}
+                  </a>
                 ))}
-              </nav>
+              </div>
               {selectedBranch ? (
-                <a
-                  className="ybtn"
-                  href={codeArchiveHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    selectedBranch,
-                  )}
-                >
-                  Download
-                </a>
+                <div className="pull-right">
+                  <a
+                    className="ybtn"
+                    href={codeArchiveHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    code.download
+                  </a>
+                </div>
+              ) : null}
+              {selectedBranch && detail.viewerCanUpdate ? (
+                <div className="pull-right">
+                  <a
+                    className="ybtn"
+                    href={codeNewFileHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      code?.path ?? "",
+                      Boolean(code?.file),
+                    )}
+                    id="new-file-link"
+                  >
+                    code.new.file
+                  </a>
+                </div>
               ) : null}
             </div>
-            {code?.file ? (
-              <CodeFileView
-                file={code.file}
-                ownerName={detail.ownerName}
-                projectName={detail.projectName}
-                runtimeConfig={props.runtimeConfig}
-                selectedBranch={selectedBranch}
-              />
-            ) : (
-              <CodeFolderView
-                entries={code?.entries ?? []}
-                ownerName={detail.ownerName}
-                projectName={detail.projectName}
-                runtimeConfig={props.runtimeConfig}
-                selectedBranch={selectedBranch}
-              />
-            )}
+            <div className="code-viewer-wrap">
+              <div id="spin" style={{ left: "50%", position: "fixed", top: "50%" }}></div>
+              {code?.file ? (
+                <CodeFileView
+                  file={code.file}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedBranch={selectedBranch}
+                  viewerCanUpdate={detail.viewerCanUpdate}
+                />
+              ) : (
+                <CodeFolderView
+                  entries={code?.entries ?? []}
+                  listPath={code?.path ?? ""}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedBranch={selectedBranch}
+                />
+              )}
+            </div>
           </>
         )}
       </section>
@@ -664,8 +815,7 @@ export function CodeCommitDetailPage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>{commit?.shortMessage ?? "Commit"}</h1>
+      <h1>{commit?.shortMessage ?? "code.commits"}</h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
@@ -680,7 +830,7 @@ export function CodeCommitDetailPage(props: {
                   selectedBranch,
                 )}
               >
-                Files
+                code.files
               </a>
               <a
                 aria-current="page"
@@ -691,7 +841,7 @@ export function CodeCommitDetailPage(props: {
                   selectedBranch,
                 )}
               >
-                Commits
+                code.commits
               </a>
               <a
                 href={buildProjectHref(
@@ -701,14 +851,11 @@ export function CodeCommitDetailPage(props: {
                   "branches",
                 )}
               >
-                Branches
+                title.branches
               </a>
             </nav>
             {commitDetail?.noHead ? (
-              <div className="alert alert-block">
-                <h2>The repository is empty!</h2>
-                <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
-              </div>
+              <CodeNoHeadBlock detail={detail} />
             ) : (
               <CodeCommitDiffView
                 commitDetail={commitDetail}
@@ -723,10 +870,10 @@ export function CodeCommitDetailPage(props: {
             )}
           </div>
           <button className="pull-left ybtn" id="watch-button" type="button">
-            Watch
+            notification.watch
           </button>
           <a className="ybtn pull-right" href={listHref}>
-            List
+            button.list
           </a>
         </div>
       </div>
@@ -747,24 +894,20 @@ export function CodeComparePage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Compare</h1>
+      <h1>{revA && revB ? `${revA}..${revB}` : "code.fullDiff"}</h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="project-page-wrap">
         <div className="code-browse-wrap">
           {compare?.noHead ? (
-            <div className="alert alert-block">
-              <h2>The repository is empty!</h2>
-              <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
-            </div>
+            <CodeNoHeadBlock detail={detail} />
           ) : (
             <>
               <p className="commitInfo">
                 <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
               </p>
               {files.length === 0 ? (
-                <div className="alert">No changes</div>
+                <div className="alert">code.noChanges</div>
               ) : (
                 <div className="diff-body discommentable">
                   {files.map((file) => (
@@ -799,8 +942,7 @@ export function CodeBranchListPage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Branches</h1>
+      <h1>title.branches</h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
@@ -817,7 +959,7 @@ export function CodeBranchListPage(props: {
                       defaultBranch,
                     )}
                   >
-                    Files
+                    code.files
                   </a>
                 </li>
                 <li>
@@ -829,7 +971,7 @@ export function CodeBranchListPage(props: {
                       defaultBranch,
                     )}
                   >
-                    Commits
+                    code.commits
                   </a>
                 </li>
                 <li className="active">
@@ -842,15 +984,12 @@ export function CodeBranchListPage(props: {
                       "branches",
                     )}
                   >
-                    Branches
+                    title.branches
                   </a>
                 </li>
               </ul>
               {branchList?.noHead ? (
-                <div className="alert alert-block">
-                  <h2>The repository is empty!</h2>
-                  <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
-                </div>
+                <CodeNoHeadBlock detail={detail} />
               ) : (
                 <CodeBranchTable
                   branchList={branchList}
@@ -885,35 +1024,27 @@ function CodeBranchTable(props: {
     <table className="table branch-list-wrap">
       <thead className="thead">
         <tr>
-          <th>Branches</th>
-          <th>Commit</th>
-          <th>Pull Request</th>
+          <th>title.branches</th>
+          <th>code.branches.commit</th>
+          <th>code.branches.pullRequest</th>
           {showActions ? <th></th> : null}
         </tr>
       </thead>
       <tbody>
-        {branches.length === 0 ? (
-          <tr>
-            <td className="warning-none" colSpan={showActions ? 4 : 3}>
-              No branches
-            </td>
-          </tr>
-        ) : (
-          branches.map((branch) => (
-            <CodeBranchRow
-              branch={branch}
-              canDelete={branchList?.permissions.canDelete === true}
-              canUpdate={branchList?.permissions.canUpdate === true}
-              detail={props.detail}
-              key={branch.name}
-              onDeleteBranch={props.onDeleteBranch}
-              onSetDefaultBranch={props.onSetDefaultBranch}
-              pending={props.pendingBranchName === branch.name}
-              runtimeConfig={props.runtimeConfig}
-              showActions={showActions}
-            />
-          ))
-        )}
+        {branches.map((branch) => (
+          <CodeBranchRow
+            branch={branch}
+            canDelete={branchList?.permissions.canDelete === true}
+            canUpdate={branchList?.permissions.canUpdate === true}
+            detail={props.detail}
+            key={branch.name}
+            onDeleteBranch={props.onDeleteBranch}
+            onSetDefaultBranch={props.onSetDefaultBranch}
+            pending={props.pendingBranchName === branch.name}
+            runtimeConfig={props.runtimeConfig}
+            showActions={showActions}
+          />
+        ))}
       </tbody>
     </table>
   );
@@ -944,7 +1075,9 @@ function CodeBranchRow(props: {
         >
           {branch.shortName || branch.name}
         </a>
-        {branch.isDefault ? <span className="headBranch ml10">Default branch</span> : null}
+        {branch.isDefault ? (
+          <span className="headBranch ml10">code.branches.defaultBranch</span>
+        ) : null}
       </td>
       <td className="commit">
         <a
@@ -981,7 +1114,7 @@ function CodeBranchRow(props: {
             {`pullRequest-${branch.pullRequest.pullRequestNumber}`}
           </a>
         ) : (
-          <span className="disabled">No pull request</span>
+          <span className="disabled">code.branches.noPullRequest</span>
         )}
       </td>
       {props.showActions ? (
@@ -1002,7 +1135,7 @@ function CodeBranchRow(props: {
               }}
               type="button"
             >
-              Set as default
+              code.branches.setAsDefault
             </button>
           ) : null}
           {props.canDelete && !branch.isDefault ? (
@@ -1020,7 +1153,7 @@ function CodeBranchRow(props: {
                 void props.onDeleteBranch(branch.name);
               }}
             >
-              Delete
+              button.delete
             </a>
           ) : null}
         </td>
@@ -1115,12 +1248,12 @@ function CodeCommitDiffView(props: {
   return (
     <div className="codediff-wrap">
       <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
-        Review cards
+        <i className="yobicon-restore"></i>
       </button>
       <div className="diffs-wrap">
         <div className="commitInfo">
           <div className="commitAuthor">
-            <strong>{commit?.authorName || "Anonymous"}</strong>
+            <strong>{commit?.authorName || "User.anonymous.name"}</strong>
             {commit?.authorEmail ? <span>{` <${commit.authorEmail}>`}</span> : null}
             {commit?.authorDate ? (
               <span className="ago" title={commit.authorDate}>
@@ -1145,110 +1278,115 @@ function CodeCommitDiffView(props: {
         </div>
 
         <div className="diff-body">
-          {files.length === 0 ? (
-            <div className="warning-none">No changed file diff is available.</div>
-          ) : (
-            files.map((file) => {
-              const diffLines = parseUnifiedDiffLines(file.patch);
-              const stats = diffFileStats(diffLines);
-              return (
-                <article
-                  className="diff-file diff-container"
-                  data-file-path={file.path}
-                  id={diffAnchorId(file.path)}
-                  key={file.path}
+          {files.map((file) => {
+            const diffLines = parseUnifiedDiffLines(file.patch);
+            const stats = diffFileStats(diffLines);
+            return (
+              <article
+                className="diff-file diff-container"
+                data-file-path={file.path}
+                id={diffAnchorId(file.path)}
+                key={file.path}
+              >
+                <h2>
+                  <span className="filename">{file.path}</span>
+                  <span aria-label="Changed lines" className="diff-stats">
+                    <span className="num-added">{`+${stats.added}`}</span>
+                    <span className="num-deleted">{`-${stats.deleted}`}</span>
+                  </span>
+                </h2>
+                <table
+                  className="diff-code diff-table"
+                  onMouseUp={(event) =>
+                    showInlineCommentFromSelection(file.path, event.currentTarget)
+                  }
                 >
-                  <h2>
-                    <span className="filename">{file.path}</span>
-                    <span aria-label="Changed lines" className="diff-stats">
-                      <span className="num-added">{`+${stats.added}`}</span>
-                      <span className="num-deleted">{`-${stats.deleted}`}</span>
-                    </span>
-                  </h2>
-                  <table
-                    className="diff-code diff-table"
-                    onMouseUp={(event) =>
-                      showInlineCommentFromSelection(file.path, event.currentTarget)
-                    }
-                  >
-                    <tbody>
-                      {diffLines.map((line) => {
-                        const lineThreads =
-                          line.commentLine === undefined
-                            ? []
-                            : rangedThreadsForLine(file.path, line.commentLine);
-                        const isInlineFormOpen =
-                          inlineComment?.path === file.path &&
-                          inlineComment.endLine === line.commentLine;
-                        return (
-                          <React.Fragment key={line.key}>
+                  <tbody>
+                    {diffLines.map((line) => {
+                      const lineThreads =
+                        line.commentLine === undefined
+                          ? []
+                          : rangedThreadsForLine(file.path, line.commentLine);
+                      const isInlineFormOpen =
+                        inlineComment?.path === file.path &&
+                        inlineComment.endLine === line.commentLine;
+                      return (
+                        <React.Fragment key={line.key}>
+                          <tr
+                            className={diffLineClass(line.kind)}
+                            data-line={line.commentLine}
+                            data-side={line.kind === "remove" ? "A" : "B"}
+                            data-type={diffLineClass(line.kind)}
+                          >
+                            <td className="linenum">
+                              {line.commentLine !== undefined && canComment ? (
+                                <button
+                                  aria-label={`Comment on ${file.path}:${line.commentLine}`}
+                                  className="btn-transparent line-comment-trigger"
+                                  onClick={() =>
+                                    showInlineComment(file.path, line.commentLine ?? 0)
+                                  }
+                                  type="button"
+                                >
+                                  <i className="yobicon-post2"></i>
+                                </button>
+                              ) : null}
+                              <div className="line-number" data-line-num={line.oldLine ?? ""}>
+                                {line.oldLine ?? ""}
+                              </div>
+                            </td>
+                            <td className="linenum">
+                              <div className="line-number" data-line-num={line.newLine ?? ""}>
+                                {line.newLine ?? ""}
+                              </div>
+                            </td>
+                            <td className={line.kind === "hunk" ? "hunk" : "code"}>
+                              <pre className="diff-partial-codeline">{line.text}</pre>
+                            </td>
+                          </tr>
+                          {isInlineFormOpen && commitDetail && inlineComment ? (
                             <tr
-                              className={diffLineClass(line.kind)}
-                              data-line={line.commentLine}
-                              data-side={line.kind === "remove" ? "A" : "B"}
-                              data-type={diffLineClass(line.kind)}
+                              className="comments board-comment-wrap inline-comment-form-row"
+                              data-range-endline={inlineComment.endLine}
+                              data-range-path={inlineComment.path}
+                              data-range-startline={inlineComment.startLine}
                             >
-                              <td className="linenum">
-                                {line.commentLine !== undefined && canComment ? (
-                                  <button
-                                    aria-label={`Comment on ${file.path}:${line.commentLine}`}
-                                    className="btn-transparent line-comment-trigger"
-                                    onClick={() =>
-                                      showInlineComment(file.path, line.commentLine ?? 0)
-                                    }
-                                    type="button"
+                              <td colSpan={3}>
+                                <form
+                                  action={commitDiscussionApiHref(
+                                    props.runtimeConfig,
+                                    commitDetail,
+                                    "/comments",
+                                  )}
+                                  className="review-form code-review-form"
+                                  method="post"
+                                  onSubmit={(event) => {
+                                    void submitInlineComment(event);
+                                  }}
+                                >
+                                  <input name="path" type="hidden" value={file.path} />
+                                  <input
+                                    name="startLine"
+                                    type="hidden"
+                                    value={inlineComment.startLine}
+                                  />
+                                  <input
+                                    name="endLine"
+                                    type="hidden"
+                                    value={inlineComment.endLine}
+                                  />
+                                  <LegacyMarkdownEditorShell
+                                    editId={`edit-code-review-${line.key}`}
+                                    editorMode="code-review-body"
+                                    previewId={`preview-code-review-${line.key}`}
                                   >
-                                    Comment
-                                  </button>
-                                ) : null}
-                                <div className="line-number" data-line-num={line.oldLine ?? ""}>
-                                  {line.oldLine ?? ""}
-                                </div>
-                              </td>
-                              <td className="linenum">
-                                <div className="line-number" data-line-num={line.newLine ?? ""}>
-                                  {line.newLine ?? ""}
-                                </div>
-                              </td>
-                              <td className={line.kind === "hunk" ? "hunk" : "code"}>
-                                <pre className="diff-partial-codeline">{line.text}</pre>
-                              </td>
-                            </tr>
-                            {isInlineFormOpen && commitDetail && inlineComment ? (
-                              <tr
-                                className="comments board-comment-wrap inline-comment-form-row"
-                                data-range-endline={inlineComment.endLine}
-                                data-range-path={inlineComment.path}
-                                data-range-startline={inlineComment.startLine}
-                              >
-                                <td colSpan={3}>
-                                  <form
-                                    action={commitDiscussionApiHref(
-                                      props.runtimeConfig,
-                                      commitDetail,
-                                      "/comments",
-                                    )}
-                                    className="review-form code-review-form"
-                                    method="post"
-                                    onSubmit={(event) => {
-                                      void submitInlineComment(event);
-                                    }}
-                                  >
-                                    <input name="path" type="hidden" value={file.path} />
-                                    <input
-                                      name="startLine"
-                                      type="hidden"
-                                      value={inlineComment.startLine}
-                                    />
-                                    <input
-                                      name="endLine"
-                                      type="hidden"
-                                      value={inlineComment.endLine}
-                                    />
                                     <MarkdownAttachmentTextarea
                                       ariaLabel={`Code review comment on ${file.path}:${inlineComment.startLine}-${inlineComment.endLine}`}
+                                      className="editorSeries content comment nm"
                                       csrfToken={props.csrfToken}
                                       disabled={!canComment}
+                                      editorMode="code-review-body"
+                                      id="editor-contents"
                                       name="contentsMarkdown"
                                       onAttachmentUpload={(attachment) =>
                                         setInlineAttachmentIds((current) => [
@@ -1260,54 +1398,54 @@ function CodeCommitDiffView(props: {
                                       runtimeConfig={props.runtimeConfig}
                                       value={inlineCommentText}
                                     />
-                                    <button
-                                      className="ybtn ybtn-success ybtn-small"
-                                      disabled={!canComment}
-                                      type="submit"
-                                    >
-                                      Comment
-                                    </button>
-                                  </form>
-                                </td>
-                              </tr>
-                            ) : null}
-                            {commitDetail && lineThreads.length > 0 ? (
-                              <tr
-                                className="comments board-comment-wrap"
-                                data-commit-id={commitDetail.commit?.commitId ?? ""}
-                              >
-                                <td colSpan={3}>
-                                  {lineThreads.map((thread) => (
-                                    <CommitDiscussionThread
-                                      commitDetail={commitDetail}
-                                      csrfToken={props.csrfToken}
-                                      key={thread.id}
-                                      runtimeConfig={props.runtimeConfig}
-                                      thread={thread}
-                                      onCloseThread={props.onCloseThread}
-                                      onCreateComment={props.onCreateComment}
-                                      onDeleteComment={props.onDeleteComment}
-                                      onOpenThread={props.onOpenThread}
-                                      onUpdateComment={props.onUpdateComment}
-                                    />
-                                  ))}
-                                </td>
-                              </tr>
-                            ) : null}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </article>
-              );
-            })
-          )}
-          <div className="btnPop">
-            <button className="ybtn ybtn-info ybtn-small" type="button">
-              Comment
-            </button>
-          </div>
+                                  </LegacyMarkdownEditorShell>
+                                  <button
+                                    className="ybtn ybtn-success ybtn-small"
+                                    disabled={!canComment}
+                                    type="submit"
+                                  >
+                                    button.comment.new
+                                  </button>
+                                </form>
+                              </td>
+                            </tr>
+                          ) : null}
+                          {commitDetail && lineThreads.length > 0 ? (
+                            <tr
+                              className="comments board-comment-wrap"
+                              data-commit-id={commitDetail.commit?.commitId ?? ""}
+                            >
+                              <td colSpan={3}>
+                                {lineThreads.map((thread) => (
+                                  <CommitDiscussionThread
+                                    commitDetail={commitDetail}
+                                    csrfToken={props.csrfToken}
+                                    key={thread.id}
+                                    runtimeConfig={props.runtimeConfig}
+                                    thread={thread}
+                                    onCloseThread={props.onCloseThread}
+                                    onCreateComment={props.onCreateComment}
+                                    onDeleteComment={props.onDeleteComment}
+                                    onOpenThread={props.onOpenThread}
+                                    onUpdateComment={props.onUpdateComment}
+                                  />
+                                ))}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </article>
+            );
+          })}
+            <div className="btnPop">
+              <button className="ybtn ybtn-info ybtn-small" type="button">
+                <i className="yobicon-post2"></i>
+              </button>
+            </div>
         </div>
 
         <div className="board-comment-wrap">
@@ -1341,21 +1479,36 @@ function CodeCommitDiffView(props: {
               void submitComment(event);
             }}
           >
-            <MarkdownAttachmentTextarea
-              ariaLabel="Commit comment"
-              csrfToken={props.csrfToken}
-              disabled={!canComment}
-              name="contentsMarkdown"
-              onAttachmentUpload={(attachment) =>
-                setCommentAttachmentIds((current) => [...current, attachment.id])
-              }
-              onChange={setCommentText}
-              runtimeConfig={props.runtimeConfig}
-              value={commentText}
-            />
-            <button className="ybtn" disabled={!canComment} type="submit">
-              Comment
-            </button>
+            <div className="write-comment-box">
+              <LegacyMarkdownEditorShell
+                editId="edit-commit-comment"
+                editorMode="comment-body"
+                previewId="preview-commit-comment"
+              >
+                <MarkdownAttachmentTextarea
+                  ariaLabel="Commit comment"
+                  className="editorSeries content comment nm"
+                  csrfToken={props.csrfToken}
+                  disabled={!canComment}
+                  editorMode="comment-body"
+                  id="editor-contents"
+                  name="contentsMarkdown"
+                  onAttachmentUpload={(attachment) =>
+                    setCommentAttachmentIds((current) => [...current, attachment.id])
+                  }
+                  onChange={setCommentText}
+                  runtimeConfig={props.runtimeConfig}
+                  value={commentText}
+                />
+              </LegacyMarkdownEditorShell>
+              <div className="write-comment-wrap">
+                <div className="right-txt">
+                  <button className="ybtn ybtn-success" disabled={!canComment} type="submit">
+                    button.comment.new
+                  </button>
+                </div>
+              </div>
+            </div>
           </form>
         </div>
       </div>
@@ -1363,20 +1516,24 @@ function CodeCommitDiffView(props: {
       <div className="review-wrap span-hard-wrap">
         <div className="review-container">
           <button className="ybtn ybtn-default btn-hide-reviewcards" type="button">
-            Hide review cards
+            <i className="yobicon-restore"></i>
           </button>
           <ul className="nav nav-tabs">
             <li className="active">
-              <a href="#reviewcards-open">{`Open ${openThreads.length}`}</a>
+              <a data-toggle="tab" href="#reviewcards-open">
+                {`issue.state.open ${openThreads.length}`}
+              </a>
             </li>
             <li>
-              <a href="#reviewcards-closed">{`Closed ${closedThreads.length}`}</a>
+              <a data-toggle="tab" href="#reviewcards-closed">
+                {`issue.state.closed ${closedThreads.length}`}
+              </a>
             </li>
           </ul>
           <div className="tab-content review-list">
             <div className="tab-pane active" id="reviewcards-open">
               {openThreads.length === 0 ? (
-                <span>Open 0</span>
+                <span>issue.state.open 0</span>
               ) : (
                 openThreads.map((thread) => (
                   <CommitDiscussionReviewCard key={thread.id} thread={thread} />
@@ -1385,7 +1542,7 @@ function CodeCommitDiffView(props: {
             </div>
             <div className="tab-pane" id="reviewcards-closed">
               {closedThreads.length === 0 ? (
-                <span>Closed 0</span>
+                <span>issue.state.closed 0</span>
               ) : (
                 closedThreads.map((thread) => (
                   <CommitDiscussionReviewCard key={thread.id} thread={thread} />
@@ -1486,7 +1643,7 @@ function CommitDiscussionThread(props: {
     >
       <div className="btn-thread-here btn-thread-minimize">
         <button className="ybtn ybtn-default ybtn-small" type="button">
-          Comments
+          <i className="yobicon-post2"></i>
         </button>
       </div>
       <ul className="comments">
@@ -1519,7 +1676,7 @@ function CommitDiscussionThread(props: {
                         onClick={() => beginEdit(comment)}
                         type="button"
                       >
-                        Edit
+                        button.edit
                       </button>
                     ) : null}
                     <button
@@ -1533,9 +1690,10 @@ function CommitDiscussionThread(props: {
                       onClick={() => {
                         void props.onDeleteComment?.(comment.id);
                       }}
+                      title="common.comment.delete"
                       type="button"
                     >
-                      Delete
+                      <i className="yobicon-trash"></i>
                     </button>
                   </span>
                 ) : null}
@@ -1555,26 +1713,40 @@ function CommitDiscussionThread(props: {
                   }}
                 >
                   <input name="_method" type="hidden" value="patch" />
-                  <MarkdownAttachmentTextarea
-                    ariaLabel="Edit commit comment"
-                    csrfToken={props.csrfToken}
-                    name="contentsMarkdown"
-                    onAttachmentUpload={(attachment) =>
-                      setEditAttachmentIds((current) => [...current, attachment.id])
-                    }
-                    onChange={setEditText}
-                    runtimeConfig={props.runtimeConfig}
-                    value={editText}
-                  />
+                  <LegacyMarkdownEditorShell
+                    editId={`edit-${comment.id}`}
+                    editorMode="update-comment-body"
+                    previewId={`preview-${comment.id}`}
+                  >
+                    <MarkdownAttachmentTextarea
+                      ariaLabel="Edit commit comment"
+                      className="editorSeries content comment nm"
+                      csrfToken={props.csrfToken}
+                      editorMode="update-comment-body"
+                      id={`editor-contents-${comment.id}`}
+                      name="contentsMarkdown"
+                      onAttachmentUpload={(attachment) =>
+                        setEditAttachmentIds((current) => [...current, attachment.id])
+                      }
+                      onChange={setEditText}
+                      runtimeConfig={props.runtimeConfig}
+                      value={editText}
+                    />
+                  </LegacyMarkdownEditorShell>
+                  <div className="upload-drop-here">
+                    <div className="msg-wrap">
+                      <div className="msg">common.attach.dropFilesHere</div>
+                    </div>
+                  </div>
                   <button className="ybtn ybtn-success ybtn-small" type="submit">
-                    Save
+                    button.save
                   </button>
                   <button
                     className="ybtn ybtn-small"
                     onClick={() => setEditingCommentId(null)}
                     type="button"
                   >
-                    Cancel
+                    button.cancel
                   </button>
                 </form>
               ) : (
@@ -1608,7 +1780,7 @@ function CommitDiscussionThread(props: {
           }}
           type="button"
         >
-          {state === "closed" ? "Open" : "Close"}
+          {state === "closed" ? "commentThread.open" : "commentThread.close"}
         </button>
       </div>
       <form
@@ -1620,20 +1792,29 @@ function CommitDiscussionThread(props: {
         }}
       >
         <input name="threadId" type="hidden" value={props.thread.id} />
-        <MarkdownAttachmentTextarea
-          ariaLabel="Reply to commit comment"
-          csrfToken={props.csrfToken}
-          disabled={!canComment}
-          name="contentsMarkdown"
-          onAttachmentUpload={(attachment) =>
-            setReplyAttachmentIds((current) => [...current, attachment.id])
-          }
-          onChange={setReplyText}
-          runtimeConfig={props.runtimeConfig}
-          value={replyText}
-        />
+        <LegacyMarkdownEditorShell
+          editId={`edit-thread-comment-${props.thread.id}`}
+          editorMode="code-review-body"
+          previewId={`preview-thread-comment-${props.thread.id}`}
+        >
+          <MarkdownAttachmentTextarea
+            ariaLabel="Reply to commit comment"
+            className="editorSeries content comment nm"
+            csrfToken={props.csrfToken}
+            disabled={!canComment}
+            editorMode="code-review-body"
+            id="editor-contents"
+            name="contentsMarkdown"
+            onAttachmentUpload={(attachment) =>
+              setReplyAttachmentIds((current) => [...current, attachment.id])
+            }
+            onChange={setReplyText}
+            runtimeConfig={props.runtimeConfig}
+            value={replyText}
+          />
+        </LegacyMarkdownEditorShell>
         <button className="ybtn" disabled={!canComment} type="submit">
-          Comment
+          button.comment.new
         </button>
       </form>
     </div>
@@ -1649,19 +1830,23 @@ export function CodeHistoryPage(props: {
   const history = props.history;
   const selectedBranch = history?.selectedBranch ?? "";
   const selectedPath = history?.path ?? "";
+  const selectedHistoryBranchHref = selectedBranch
+    ? codeHistoryHref(
+        props.runtimeConfig,
+        detail.ownerName,
+        detail.projectName,
+        selectedBranch,
+      )
+    : "";
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Commit History</h1>
+      <h1>code.commits</h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section className="code-browse-wrap">
         {history?.noHead ? (
-          <div className="alert alert-block">
-            <h2>The repository is empty!</h2>
-            <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
-          </div>
+          <CodeNoHeadBlock detail={detail} />
         ) : (
           <>
             {selectedPath ? (
@@ -1677,44 +1862,46 @@ export function CodeHistoryPage(props: {
                   {detail.projectName}
                 </a>
                 {(history?.breadcrumbs ?? []).map((breadcrumb) => (
-                  <React.Fragment key={breadcrumb.path}>
-                    <span>/</span>
-                    <a
-                      href={codeHistoryHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        selectedBranch,
-                        breadcrumb.path,
-                      )}
-                    >
-                      {breadcrumb.name}
-                    </a>
-                  </React.Fragment>
+                  <a
+                    href={codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      breadcrumb.path,
+                    )}
+                    key={breadcrumb.path}
+                  >
+                    {breadcrumb.name}
+                  </a>
                 ))}
               </nav>
             ) : (
               <div className="code-browse-header">
-                <label htmlFor="branches">Branch</label>
                 <select
+                  className="pull-right"
+                  data-dropdown-css-class="branches"
+                  data-format="branch"
+                  data-toggle="select2"
                   id="branches"
                   onChange={(event) => {
-                    window.location.assign(
-                      codeHistoryHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        event.currentTarget.value,
-                      ),
-                    );
+                    window.location.assign(event.currentTarget.value);
                   }}
-                  value={selectedBranch}
+                  value={selectedHistoryBranchHref}
                 >
-                  {(history?.branches ?? []).map((branch) => (
-                    <option key={branch.name} value={branch.name}>
-                      {branch.name}
-                    </option>
-                  ))}
+                  {(history?.branches ?? []).map((branch) => {
+                    const branchHref = codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      branch.name,
+                    );
+                    return (
+                      <option key={branch.name} value={branchHref}>
+                        {branch.name}
+                      </option>
+                    );
+                  })}
                 </select>
                 <nav aria-label="Code tabs">
                   <a
@@ -1725,7 +1912,7 @@ export function CodeHistoryPage(props: {
                       selectedBranch,
                     )}
                   >
-                    Files
+                    code.files
                   </a>
                   <a
                     aria-current="page"
@@ -1736,7 +1923,7 @@ export function CodeHistoryPage(props: {
                       selectedBranch,
                     )}
                   >
-                    Commits
+                    code.commits
                   </a>
                   <a
                     href={buildProjectHref(
@@ -1746,7 +1933,7 @@ export function CodeHistoryPage(props: {
                       "branches",
                     )}
                   >
-                    Branches
+                    title.branches
                   </a>
                 </nav>
               </div>
@@ -1775,6 +1962,53 @@ function CodeHistoryTable(props: {
   const history = props.history;
   const commits = history?.commits ?? [];
   const path = history?.path ?? "";
+  const newerHref =
+    history && history.hasNewer
+      ? codeHistoryHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.selectedBranch,
+          path,
+          history.page - 1,
+        )
+      : "";
+  const olderHref =
+    history && history.hasOlder
+      ? codeHistoryHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.selectedBranch,
+          path,
+          history.page + 1,
+        )
+      : "";
+  React.useEffect(() => {
+    if (!newerHref && !olderHref) {
+      return;
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === "a" && newerHref) {
+        window.location.assign(newerHref);
+      }
+      if (key === "s" && olderHref) {
+        window.location.assign(olderHref);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [newerHref, olderHref]);
   return (
     <>
       <div id="history" className="commit-wrap">
@@ -1785,14 +2019,14 @@ function CodeHistoryTable(props: {
                 <strong>@</strong>
               </td>
               <td className="messages">
-                <strong>Commit message</strong>
+                <strong>code.commitMsg</strong>
               </td>
               {path ? <td className="browse"></td> : null}
               <td className="date">
-                <strong>Author date</strong>
+                <strong>code.authorDate</strong>
               </td>
               <td className="author">
-                <strong>Author</strong>
+                <strong>code.author</strong>
               </td>
             </tr>
           </thead>
@@ -1800,7 +2034,7 @@ function CodeHistoryTable(props: {
             {commits.length === 0 ? (
               <tr>
                 <td className="warning-none" colSpan={path ? 5 : 4}>
-                  No commits
+                  code.nocommits
                 </td>
               </tr>
             ) : (
@@ -1818,26 +2052,25 @@ function CodeHistoryTable(props: {
                     <td className="commit-id">
                       <button
                         className="ybtn ybtn-mini btn-copy-commitId"
-                        data-commit-id={commit.commitId}
-                        title="Copy commit id"
+                        title="code.copyCommitId"
                         type="button"
+                        {...({
+                          "data-commitId": commit.commitId,
+                        } as unknown as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                       >
-                        Copy
+                        <i className="yobicon-copy"></i>
                       </button>
-                      <a href={showCommitHref} title="Show commit">
+                      <a href={showCommitHref} title="code.showCommit">
                         {commit.commitShortId}
                       </a>
                     </td>
                     <td className="messages">
                       {commit.commentCount > 0 ? (
                         <span className="number-of-comments">
-                          {`Comments ${commit.commentCount}`}
+                          <i className="yobicon-comments"></i> {commit.commentCount}
                         </span>
                       ) : null}
-                      <a href={showCommitHref}>{commit.shortMessage}</a>
-                      {commit.message !== commit.shortMessage ? (
-                        <pre className="commitMsg desc hidden">{commit.message}</pre>
-                      ) : null}
+                      <CodeCommitMessage commit={commit} href={showCommitHref} />
                     </td>
                     {path ? (
                       <td className="browse">
@@ -1850,15 +2083,15 @@ function CodeHistoryTable(props: {
                             commit.commitShortId,
                             path,
                           )}
-                          title="Show code at this commit"
+                          title="code.showCodeAtThisCommit"
                         >
-                          Show code
+                          code.showCode
                         </a>
                       </td>
                     ) : null}
                     <td className="date">{commit.authorDate}</td>
                     <td className="author">
-                      <span title={commit.authorEmail}>{commit.authorName || "Anonymous"}</span>
+                      <CodeHistoryAuthorCell commit={commit} runtimeConfig={props.runtimeConfig} />
                     </td>
                   </tr>
                 );
@@ -1869,33 +2102,13 @@ function CodeHistoryTable(props: {
       </div>
       <div className="actrow margin-top-20">
         {history && history.hasNewer ? (
-          <a
-            className="ybtn pull-left"
-            href={codeHistoryHref(
-              props.runtimeConfig,
-              props.ownerName,
-              props.projectName,
-              props.selectedBranch,
-              path,
-              history.page - 1,
-            )}
-          >
-            Newer
+          <a className="ybtn pull-left" href={newerHref}>
+            code.newer
           </a>
         ) : null}
         {history && history.hasOlder ? (
-          <a
-            className="ybtn pull-left"
-            href={codeHistoryHref(
-              props.runtimeConfig,
-              props.ownerName,
-              props.projectName,
-              props.selectedBranch,
-              path,
-              history.page + 1,
-            )}
-          >
-            Older
+          <a className="ybtn pull-left" href={olderHref}>
+            code.older
           </a>
         ) : null}
       </div>
@@ -1905,39 +2118,84 @@ function CodeHistoryTable(props: {
 
 function CodeFolderView(props: {
   entries: CodeBrowserViewModel["entries"];
+  listPath: string;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
   selectedBranch: string;
 }) {
   if (props.entries.length === 0) {
-    return <div className="alert alert-warning">No file exists</div>;
+    return (
+      <div className="alert alert-warning nm" style={{ borderTop: 0, paddingLeft: 23 }}>
+        code.nofiles
+      </div>
+    );
   }
   return (
-    <div className="list-wrap" data-type="folder">
+    <div
+      className="list-wrap"
+      data-listPath={props.listPath ? props.listPath : undefined}
+      data-type="folder"
+    >
       <div className="row-fluid listhead">
-        <strong>File name</strong>
-        <strong>Commit message</strong>
-        <strong>Commit date</strong>
-      </div>
-      {props.entries.map((entry) => (
-        <div className="row-fluid listitem" data-path={entry.path} key={entry.path}>
-          <a
-            href={codeHref(
-              props.runtimeConfig,
-              props.ownerName,
-              props.projectName,
-              props.selectedBranch,
-              entry.path,
-            )}
-          >
-            {entry.kind === "folder" ? "Folder: " : "File: "}
-            {entry.name}
-          </a>
-          <span>{entry.commitMessage || "No commit message"}</span>
-          <span>{entry.commitDate}</span>
+        <div className="span6 filename">
+          <strong>code.filename</strong>
         </div>
-      ))}
+        <div className="span4 commitMsg">
+          <strong>code.commitMsg</strong>
+        </div>
+        <div className="span2 commitDate">
+          <strong>code.commitDate</strong>
+        </div>
+      </div>
+      {props.entries.map((entry) => {
+        const rowId = `cb-${entry.path}`;
+        const entryHref = codeHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.selectedBranch,
+          entry.path,
+        );
+        const commitHref = commitDetailHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          entry.commitShortId,
+          props.selectedBranch,
+          entry.path,
+        );
+        return (
+          <div className="row-fluid listitem" data-path={entry.path} id={rowId} key={entry.path}>
+            <div className="span6 filename">
+              <a
+                className={entry.kind === "folder" ? "folder" : "file"}
+                data-targetPath={entry.path}
+                data-type={entry.kind === "folder" ? "folder" : undefined}
+                href={entry.kind === "folder" ? `${entryHref}#${rowId}` : entryHref}
+                title={entry.name}
+              >
+                <span className="dynatree-icon vmiddle"></span>
+                {entry.name}
+              </a>
+            </div>
+            <div className="span5 commitMsg">
+              {entry.authorAvatarUrl ? (
+                <a
+                  className="avatar-wrap smaller"
+                  href={codeAuthorHref(props.runtimeConfig, entry.authorLoginId)}
+                >
+                  <img src={entry.authorAvatarUrl} />
+                </a>
+              ) : null}
+              <span className="ml5">
+                <a href={commitHref}>{entry.commitMessage || "code.commitMsg.empty"}</a>
+              </span>
+            </div>
+            <div className="span1 commitDate">{entry.commitDate}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1948,13 +2206,15 @@ function CodeFileView(props: {
   projectName: string;
   runtimeConfig: RuntimeConfig;
   selectedBranch: string;
+  viewerCanUpdate: boolean;
 }) {
+  const rawRevision = props.file.commitId || props.selectedBranch;
   const rawHref = codeFileAssetHref(
     props.runtimeConfig,
     props.ownerName,
     props.projectName,
     "rawcode",
-    props.selectedBranch,
+    rawRevision,
     props.file.path,
   );
   const openHref = codeFileAssetHref(
@@ -1965,31 +2225,33 @@ function CodeFileView(props: {
     props.selectedBranch,
     props.file.path,
   );
-  const imageHref = codeFileAssetHref(
-    props.runtimeConfig,
-    props.ownerName,
-    props.projectName,
-    "image",
-    props.selectedBranch,
-    props.file.path,
-  );
+  const headerProps = {
+    file: props.file,
+    openHref,
+    ownerName: props.ownerName,
+    projectName: props.projectName,
+    rawHref,
+    runtimeConfig: props.runtimeConfig,
+    selectedBranch: props.selectedBranch,
+    viewerCanUpdate: props.viewerCanUpdate,
+  };
   if (props.file.isBinary) {
     return (
       <div className="file-wrap" data-type="file">
-        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={false} />
+        <CodeFileHeader {...headerProps} showRaw={false} />
         {props.file.mimeType.startsWith("image/") ? (
           <div className="image-wrap" id="showImage">
-            <img alt={props.file.name} src={imageHref} />
+            <img alt={props.file.name} src={rawHref} />
           </div>
         ) : (
           <div className="file-wrap" id="showFile">
             <p>
               <strong className="filename">{props.file.name}</strong>
               <br />
-              <span>{`${props.file.size} bytes`}</span>
+              <span className="filesize">{`${props.file.size} bytes`}</span>
               <br />
-              <a className="filehref ybtn" href={openHref} target="_blank">
-                Download
+              <a className="filehref ybtn" href={rawHref} target="_blank">
+                <i className="yobicon-download-alt yobicon-white vmiddle"></i> button.download
               </a>
             </p>
           </div>
@@ -2000,12 +2262,12 @@ function CodeFileView(props: {
   if (props.file.isTooLarge) {
     return (
       <div className="file-wrap" data-type="file">
-        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={false} />
+        <CodeFileHeader {...headerProps} showRaw={false} />
         <p>
-          {`Sorry, we cannot show a file larger than ${props.file.size} bytes here.`}
+          code.tooBigFileForCodeBrowser
           <br />
           <a className="filehref ybtn" href={rawHref} target="_blank">
-            View Raw
+            code.viewRaw
           </a>
         </p>
       </div>
@@ -2014,18 +2276,25 @@ function CodeFileView(props: {
   if (codeFileIsMarkdown(props.file)) {
     return (
       <div className="file-wrap" data-type="file">
-        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
+        <CodeFileHeader {...headerProps} showRaw={true} />
         <MarkdownRenderer
+          basePath={props.runtimeConfig.basePath}
           className="markdown-wrap codebrowser-markdown"
           id="codeVal"
           markdown={props.file.text}
+          mentionReferences={props.file.mentionReferences}
+          ownerName={props.ownerName}
+          projectName={props.projectName}
         />
       </div>
     );
   }
   return (
     <div className="file-wrap" data-type="file">
-      <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
+      <CodeFileHeader {...headerProps} showRaw={true} />
+      <div className="hidden" id="codeVal">
+        {props.file.text}
+      </div>
       <CodeTextView file={props.file} />
     </div>
   );
@@ -2038,6 +2307,7 @@ function CodeTextView(props: { file: NonNullable<CodeBrowserViewModel["file"]> }
     <pre
       className="code-wrap code-syntax-wrap"
       data-language={language}
+      data-mimeType={props.file.mimeType}
       data-mime-type={props.file.mimeType}
       id="showCode"
     >
@@ -2097,35 +2367,193 @@ function codeLanguageFromFile(path: string, mimeType: string) {
   return "plain";
 }
 
+function codeLineEndingType(file: NonNullable<CodeBrowserViewModel["file"]>) {
+  if (file.isBinary) {
+    return "";
+  }
+  if (!file.text) {
+    return "UNDEFINED";
+  }
+  return file.text.includes("\r\n") ? "DOS" : "UNIX";
+}
+
 function CodeFileHeader(props: {
   file: NonNullable<CodeBrowserViewModel["file"]>;
   openHref: string;
+  ownerName?: string;
+  projectName?: string;
   rawHref: string;
+  runtimeConfig?: RuntimeConfig;
+  selectedBranch?: string;
   showRaw: boolean;
+  viewerCanUpdate?: boolean;
 }) {
+  const historyHref =
+    props.runtimeConfig && props.ownerName && props.projectName && props.selectedBranch
+      ? codeHistoryHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.selectedBranch,
+          props.file.path,
+        )
+      : "";
+  const revisionHref =
+    props.runtimeConfig && props.ownerName && props.projectName && props.selectedBranch && props.file.commitId
+      ? commitDetailHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.file.commitId,
+          props.selectedBranch,
+          props.file.path,
+        )
+      : "";
+  const editHref =
+    props.runtimeConfig &&
+    props.ownerName &&
+    props.projectName &&
+    props.selectedBranch &&
+    props.viewerCanUpdate
+      ? codeEditFileHref(
+          props.runtimeConfig,
+          props.ownerName,
+          props.projectName,
+          props.selectedBranch,
+          props.file.path,
+        )
+      : "";
   return (
-    <div className="file-header">
+    <div className="file-header nm">
       <div id="fileInfo" className="file-info">
-        <strong>{props.file.name}</strong>
-        <span>{props.file.mimeType}</span>
-        <span>{`${props.file.size} bytes`}</span>
+        <span id="commiter" className="commiter">
+          {props.file.authorAvatarUrl ? (
+            <a
+              className="avatar-wrap smaller"
+              href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}
+            >
+              <img src={props.file.authorAvatarUrl} />
+            </a>
+          ) : null}
+          <a className="ml5" href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}>
+            {props.file.authorLabel || "User.anonymous.name"}
+          </a>
+        </span>
+        <span id="commitDate" className="commitDate">
+          {props.file.commitDate}
+        </span>
+        <span id="revisionNo" className="revision">
+          {revisionHref ? (
+            <a href={revisionHref}>
+              {props.file.commitShortId || props.file.commitId}
+              {(props.file.commentCount ?? 0) > 0 ? (
+                <span className="number-of-comments ml5">
+                  <i className="yobicon-comments"></i> {props.file.commentCount}
+                </span>
+              ) : null}
+            </a>
+          ) : (
+            props.file.commitShortId || props.file.commitId
+          )}
+        </span>
+        <span id="commitMessage" className="commitMsg">
+          {props.file.commitMessage || "code.commitMsg.empty"}
+        </span>
+        {!props.file.isBinary ? <span>{codeLineEndingType(props.file)}</span> : null}
       </div>
       <div className="pull-right">
         {props.showRaw ? (
           <a className="ybtn" href={props.rawHref} target="_blank">
-            Raw
+            <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
+          </a>
+        ) : null}
+        {props.showRaw && editHref ? (
+          <a className="ybtn" href={editHref}>
+            Edit
           </a>
         ) : null}
         <a
           className="ybtn"
-          data-content="Open file in browser"
+          data-content="code.open.desc"
           href={props.openHref}
           id="open-in-browser"
           target="_blank"
         >
-          Open
+          <i className="yobicon-download-alt yobicon-white vmiddle"></i> code.open
         </a>
+        {historyHref ? (
+          <a className="ybtn" href={historyHref}>
+            code.history
+          </a>
+        ) : null}
       </div>
     </div>
   );
+}
+
+function CodeCommitMessage(props: {
+  commit: CodeHistoryViewModel["commits"][number];
+  href: string;
+}) {
+  const shortMessage = props.commit.shortMessage || "code.commitMsg.empty";
+  const messageLines = props.commit.message.split("\n");
+  const hasDescription = messageLines.length > 1;
+  const description = messageLines.slice(1).join("\n");
+  return (
+    <>
+      <a className="commitMsg short" href={props.href}>
+        {shortMessage}
+      </a>
+      {hasDescription ? (
+        <>
+          <button className="commitMsg moreBtn" type="button">
+            <span>{"\u2026"}</span>
+          </button>
+          <pre className="commitMsg desc hidden">{description}</pre>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function CodeHistoryAuthorCell(props: {
+  commit: CodeHistoryViewModel["commits"][number];
+  runtimeConfig: RuntimeConfig;
+}) {
+  const commit = props.commit;
+  if (commit.authorLoginId && commit.authorAvatarUrl) {
+    return (
+      <a
+        className="avatar-wrap"
+        data-placement="top"
+        data-toggle="tooltip"
+        href={codeAuthorHref(props.runtimeConfig, commit.authorLoginId)}
+        title={commit.authorLoginId}
+      >
+        <img alt={commit.authorName} height={32} src={commit.authorAvatarUrl} width={32} />
+      </a>
+    );
+  }
+  if (commit.authorEmail) {
+    return (
+      <span
+        className="avatar-wrap"
+        data-placement="top"
+        data-toggle="tooltip"
+        title={commit.authorEmail}
+      >
+        <img src={commit.authorAvatarUrl} />
+      </span>
+    );
+  }
+  if (commit.authorName) {
+    return <span>{commit.authorName}</span>;
+  }
+  return <span>User.anonymous.name</span>;
+}
+
+function codeAuthorHref(runtimeConfig: RuntimeConfig | undefined, loginId: string | undefined) {
+  return loginId && runtimeConfig
+    ? prefixBasePath(runtimeConfig.basePath, `/${encodeURIComponent(loginId)}`)
+    : "javascript:void(); return false;";
 }

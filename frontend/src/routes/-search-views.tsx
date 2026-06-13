@@ -17,7 +17,13 @@ import {
 import { apiQueryKeys } from "../api/query-keys";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage, useDocumentTitle } from "./-shared";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useDocumentTitle,
+} from "./-shared";
 
 type SearchRouteScope =
   | { type: "global" }
@@ -240,6 +246,7 @@ function SearchResultItem(props: {
         {item.snippets.map((snippet) => (
           <p className="search-content-body" key={snippetKey(snippet)}>
             <HighlightedSnippet snippet={snippet} />
+            {snippet.truncated ? " ....." : null}
           </p>
         ))}
       </div>
@@ -288,7 +295,7 @@ function SearchResults(props: {
   );
 }
 
-function SearchPagination(props: {
+export function SearchPagination(props: {
   input: SearchInput;
   response: SearchResponse;
   runtimeConfig: RuntimeConfig;
@@ -300,41 +307,70 @@ function SearchPagination(props: {
   if (pageCount <= 1) {
     return <div id="pagination"></div>;
   }
+  const prevHref = searchHref(props.runtimeConfig, props.scope, props.input, {
+    pageNum: pageNum - 1,
+    searchType: props.response.searchType,
+  });
+  const nextHref = searchHref(props.runtimeConfig, props.scope, props.input, {
+    pageNum: pageNum + 1,
+    searchType: props.response.searchType,
+  });
   return (
-    <div id="pagination">
-      {pageNum > 1 ? (
-        <a
-          className="ybtn"
-          href={searchHref(props.runtimeConfig, props.scope, props.input, {
-            pageNum: pageNum - 1,
-            searchType: props.response.searchType,
-          })}
-        >
-          Previous
-        </a>
-      ) : null}
-      <span className="page-count">
-        Page {pageNum} of {pageCount}
-      </span>
-      {pageNum < pageCount ? (
-        <a
-          className="ybtn"
-          href={searchHref(props.runtimeConfig, props.scope, props.input, {
-            pageNum: pageNum + 1,
-            searchType: props.response.searchType,
-          })}
-        >
-          Next
-        </a>
-      ) : null}
+    <div className="page-navigation-wrap" id="pagination">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {pageNum > 1 ? (
+            <a href={prevHref} pjax-page="">
+              <i className="ico btn-pg-prev"></i>
+              <span>button.prevPage</span>
+            </a>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">button.prevPage</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={pageNum}
+            max={pageCount}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{pageCount}</li>
+        <li className="page-num ikon">
+          {pageNum < pageCount ? (
+            <a href={nextHref} pjax-page="">
+              <i className="ico btn-pg-next"></i>
+              <span>button.nextPage</span>
+            </a>
+          ) : (
+            <>
+              <i className="ico btn-pg-next off"></i>
+              <span className="off">button.nextPage</span>
+            </>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }
 
 export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const routeQuery = readSearchRouteQuery();
+  const routeInvalid =
+    routeQuery.invalid ||
+    (scope.type === "project" && routeQuery.input?.searchType === "project");
   const input = routeQuery.input;
   const keyInput = {
     keyword: input?.keyword ?? "",
@@ -348,7 +384,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
         ? apiQueryKeys.search.organization(scope.organizationName, keyInput)
         : apiQueryKeys.search.global(keyInput);
   const searchQuery = useQuery<SearchResponse>({
-    enabled: !bootstrapping && input !== null && !routeQuery.invalid,
+    enabled: !bootstrapping && input !== null && !routeInvalid,
     queryFn: () => {
       if (input === null) {
         throw new Error("missing search input");
@@ -388,10 +424,8 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      searchQuery.error instanceof Error ? searchQuery.error.message : "Search failed.",
-    );
-  }, [searchQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [searchQuery.error]);
 
   if (bootstrapping) {
     return (
@@ -405,6 +439,12 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={basePathForScope(scope)} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={prefixBasePath(runtimeConfig.basePath, "/")} />;
+  }
+  if (routeInvalid) {
+    return <BadRequestPage href={prefixBasePath(runtimeConfig.basePath, "/")} />;
   }
 
   return (
@@ -446,11 +486,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
                     Search
                   </button>
                 </form>
-                {routeQuery.invalid ? (
-                  <div className="empty-result invalid-query">Invalid search query.</div>
-                ) : (
-                  <SearchResultTitle activeType={activeType} count={activeCount} />
-                )}
+                <SearchResultTitle activeType={activeType} count={activeCount} />
               </div>
               <div className="search-result-wrap">
                 <SearchResults

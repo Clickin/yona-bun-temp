@@ -96,6 +96,46 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="bubble-wrap gray project-home"');
   });
 
+  it("renders project overview through Markdown like legacy project home", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      overview: "Project **home** ~~parity~~",
+    });
+
+    expect(html).toContain('<span class="markdown-wrap" id="project-description">');
+    expect(html).toContain("<strong>home</strong>");
+    expect(html).toContain("<del>parity</del>");
+    expect(html).not.toContain("Project **home** ~~parity~~");
+  });
+
+  it("keeps project overview mentions plain like legacy Markdown.render(String)", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      overview: "Project **home** @admin @yona/projectYobi",
+    });
+
+    const overviewHtml = html.match(
+      /<span class="markdown-wrap" id="project-description">[\s\S]*?<\/span>/,
+    )?.[0];
+
+    expect(overviewHtml).toBeDefined();
+    expect(html).toContain("<strong>home</strong>");
+    expect(overviewHtml).toContain("@admin");
+    expect(overviewHtml).toContain("@yona/projectYobi");
+    expect(overviewHtml).not.toContain('href="/yona/admin"');
+    expect(overviewHtml).not.toContain('href="/yona/yona/projectYobi"');
+    expect(overviewHtml).not.toContain("user-link");
+    expect(overviewHtml).not.toContain("project-link");
+  });
+
+  it("keeps the legacy project overview placeholder plain when empty", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      overview: "",
+    });
+
+    expect(html).toContain(
+      '<span class="markdown-wrap" id="project-description">project.description.placeholder</span>',
+    );
+  });
+
   it("uses tabId=history to render the legacy history stream shell", () => {
     const html = renderProjectHome("/yona/yona/projectYobi?tabId=history", {
       history: {
@@ -130,6 +170,35 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="date"');
     expect(html).toContain("2026-05-20");
     expect(html).not.toContain("Legacy placeholder panel");
+    expect(html).not.toContain("No README post yet.");
+  });
+
+  it("renders the legacy empty README fallback and create action for updateable Git projects", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      readmeFile: undefined,
+      vcs: "GIT",
+      viewerCanUpdate: true,
+    });
+
+    expect(html).toContain('class="bubble-wrap gray readme"');
+    expect(html).toContain('class="default"');
+    expect(html).toContain("project.readme");
+    expect(html).toContain('href="/yona/yona/projectYobi/postform?readme=true"');
+    expect(html).toContain("project.readme.create");
+    expect(html).not.toContain("project.svn.readme");
+    expect(html).not.toContain("No README post yet.");
+  });
+
+  it("renders the legacy SVN empty README copy without a create action", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      readmeFile: undefined,
+      vcs: "Subversion",
+      viewerCanUpdate: true,
+    });
+
+    expect(html).toContain('class="bubble-wrap gray readme"');
+    expect(html).toContain("project.svn.readme");
+    expect(html).not.toContain("project.readme.create");
     expect(html).not.toContain("No README post yet.");
   });
 
@@ -196,6 +265,40 @@ describe("project home tab parity", () => {
     );
 
     expect(html).toContain('class="board-view project-readme-post"');
+    expect(html).toContain('href="/yona/owner"');
+    expect(html).toContain('href="/yona/yona/projectYobi"');
+    expect(html).toContain("@ghost");
+    expect(html).toContain("@yona/missing");
+    expect(html).not.toContain('href="/yona/ghost"');
+    expect(html).not.toContain('href="/yona/yona/missing"');
+  });
+
+  it("uses metadata-backed mention links for Git README fallback files", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      readmeFile: {
+        bodyHtml: "",
+        bodyMarkdown: "README @owner @yona/projectYobi @ghost @yona/missing",
+        mentionReferences: [
+          {
+            kind: "user",
+            label: "owner",
+            loginId: "owner",
+            ownerName: "",
+            projectName: "",
+          },
+          {
+            kind: "project",
+            label: "yona/projectYobi",
+            loginId: "",
+            ownerName: "yona",
+            projectName: "projectYobi",
+          },
+        ],
+        name: "README.md",
+      },
+    });
+
+    expect(html).toContain('class="readme-wrap project-git-readme"');
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('href="/yona/yona/projectYobi"');
     expect(html).toContain("@ghost");

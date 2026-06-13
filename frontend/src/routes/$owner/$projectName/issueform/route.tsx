@@ -2,13 +2,16 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   createIssue,
+  listIssueParentOptions,
+  listProjectMilestones,
   readProjectContainer,
   searchProjectAssignableUsers,
 } from "../../../../auth-workspace-client";
 import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
-import { toProjectContainerView } from "../../../../app-view-models";
+import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../-issue-views";
+import type { ProjectIssueParentOptionViewModel, ProjectMilestoneViewModel } from "../../../-view-models";
 import {
   classifyConnectFailure,
   ForbiddenPage,
@@ -27,6 +30,10 @@ function IssueCreateRouteComponent() {
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
+  const [milestones, setMilestones] = React.useState<ProjectMilestoneViewModel[]>([]);
+  const [parentIssueOptions, setParentIssueOptions] = React.useState<
+    ProjectIssueParentOptionViewModel[]
+  >([]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle("New Issue");
@@ -36,9 +43,26 @@ function IssueCreateRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const nextDetail = await readProjectContainer(runtimeConfig, owner, projectName);
+        const searchParams = new URLSearchParams(window.location.search);
+        const initialParentIssueId = Number(searchParams.get("parentIssueId") ?? 0);
+        const [nextDetail, nextMilestones, nextParentOptions] = await Promise.all([
+          readProjectContainer(runtimeConfig, owner, projectName),
+          listProjectMilestones(runtimeConfig, owner, projectName, { state: "all" }),
+          listIssueParentOptions(runtimeConfig, owner, projectName),
+        ]);
         if (!cancelled) {
           setDetail(toProjectContainerView(nextDetail));
+          setMilestones(
+            toProjectMilestoneListView(nextMilestones, "all", "dueDate", "asc").milestones,
+          );
+          setParentIssueOptions(
+            nextParentOptions.items.map((option) => ({
+              id: Number(option.id),
+              issueNumber: Number(option.issueNumber),
+              selected: Number(option.id) === initialParentIssueId || option.selected,
+              title: option.title,
+            })),
+          );
         }
       } catch (error) {
         if (cancelled) {
@@ -82,6 +106,7 @@ function IssueCreateRouteComponent() {
           query,
         })
       }
+      milestoneOptions={milestones}
       mode="create"
       onSearchAssignableUsers={(query) =>
         searchProjectAssignableUsers(runtimeConfig, {
@@ -90,17 +115,36 @@ function IssueCreateRouteComponent() {
           query,
         })
       }
-      onSubmit={async ({ assigneeLoginId, attachmentIds, bodyMarkdown, title }) => {
+      onSubmit={async ({
+        assigneeLoginId,
+        attachmentIds,
+        bodyMarkdown,
+        dueDate,
+        isDraft,
+        isPublish,
+        labelIds,
+        milestoneId,
+        parentIssueId,
+        title,
+      }) => {
         const issue = await createIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
           attachmentIds: attachmentIds.map(BigInt),
           bodyMarkdown,
+          dueDate,
+          isDraft,
+          isPublish,
+          labelIds: labelIds.map(BigInt),
+          milestoneId: BigInt(milestoneId),
           ownerName: owner,
+          parentIssueId: parentIssueId ? BigInt(parentIssueId) : undefined,
           projectName,
           title,
         });
         window.location.assign(`/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`);
       }}
+      initialParentIssueId={Number(new URLSearchParams(window.location.search).get("parentIssueId") ?? 0)}
+      parentIssueOptions={parentIssueOptions}
       runtimeConfig={runtimeConfig}
     />
   );

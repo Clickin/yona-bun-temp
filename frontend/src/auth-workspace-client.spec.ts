@@ -1469,6 +1469,7 @@ describe("issue REST clients", () => {
         authorId: 7,
         filter: "all",
         itemsPerPage: 20,
+        mentionId: 5,
         orderBy: "updatedDate",
         orderDir: "desc",
         pageNum: 3,
@@ -1506,7 +1507,7 @@ describe("issue REST clients", () => {
       "/yona/api/v1/projects/owner%20space/project%2Fname/issues?assigneeLoginId=guest&authorLoginId=owner&labelIds=1&labelIds=2&milestoneId=3&pageNum=2&state=open",
     );
     expect(readCalls[1]![0]).toBe(
-      "/yona/api/v1/organizations/web%20labs/issues?assigneeId=9&authorId=7&filter=all&itemsPerPage=20&orderBy=updatedDate&orderDir=desc&pageNum=3&projectNames=alpha&projectNames=beta&state=closed",
+      "/yona/api/v1/organizations/web%20labs/issues?assigneeId=9&authorId=7&filter=all&itemsPerPage=20&mentionId=5&orderBy=updatedDate&orderDir=desc&pageNum=3&projectNames=alpha&projectNames=beta&state=closed",
     );
     expect(readCalls[2]![0]).toBe(
       "/yona/api/v1/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=4&pageSize=15&query=pilot&state=open",
@@ -1669,6 +1670,9 @@ describe("issue REST clients", () => {
       assigneeLoginId: "guest",
       attachmentIds: ["5"],
       bodyMarkdown: "body",
+      dueDate: "",
+      isDraft: false,
+      isPublish: false,
       labelIds: ["7"],
       milestoneId: "3",
       referCommentId: "55",

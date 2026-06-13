@@ -94,6 +94,19 @@ async fn rpc(
     rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
+async fn rest_get(app: axum::Router, path: &str, cookie_header: &str) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::GET)
+            .uri(path)
+            .header(http::header::COOKIE, cookie_header)
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -249,7 +262,7 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
 async fn user_issue_list_defaults_to_assigned_and_filters_comment_shared_and_favorite() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    let (guest_csrf, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
     create_issue(
         app.clone(),
@@ -382,8 +395,25 @@ async fn user_issue_list_defaults_to_assigned_and_filters_comment_shared_and_fav
     )
     .await;
     assert_eq!(shared["openIssueCount"], 1);
+    assert_eq!(shared["sideFilterCounts"]["shared"], 1);
+    assert_eq!(shared["sideFilterCounts"]["favorite"], 1);
+    assert_eq!(shared["sideFilterCounts"]["mentioned"], 0);
     assert_eq!(shared["items"].as_array().unwrap().len(), 1);
     assert_eq!(shared["items"][0]["title"], "Commented shared issue");
+
+    let shared_rest = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/user/issues?filter=shared",
+            &guest_cookie,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(shared_rest["filter"], "shared");
+    assert_eq!(shared_rest["viewerUserId"], guest_id);
+    assert_eq!(shared_rest["sideFilterCounts"]["shared"], 1);
+    assert_eq!(shared_rest["items"].as_array().unwrap().len(), 1);
 
     let favorite = response_json(
         rpc(
@@ -399,6 +429,9 @@ async fn user_issue_list_defaults_to_assigned_and_filters_comment_shared_and_fav
     )
     .await;
     assert_eq!(favorite["openIssueCount"], 1);
+    assert_eq!(favorite["sideFilterCounts"]["shared"], 1);
+    assert_eq!(favorite["sideFilterCounts"]["favorite"], 1);
+    assert_eq!(favorite["sideFilterCounts"]["mentioned"], 0);
     assert_eq!(favorite["items"].as_array().unwrap().len(), 1);
     assert_eq!(favorite["items"][0]["title"], "Commented shared issue");
 }

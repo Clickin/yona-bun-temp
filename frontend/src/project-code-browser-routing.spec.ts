@@ -171,7 +171,7 @@ describe("project code browser routing", () => {
     );
 
     expect(html).toContain('id="branches"');
-    expect(html).toContain('<option value="v1.0.0" selected="">v1.0.0</option>');
+    expect(html).toContain('<option value="/yona/owner/projectYobi/code/v1.0.0" selected="">v1.0.0</option>');
     expect(html).toContain('href="/yona/owner/projectYobi/code/v1.0.0"');
     expect(html).toContain('href="/yona/owner/projectYobi/branches"');
     expect(html).not.toContain('data-request-uri="/yona/owner/projectYobi/code/v1.0.0/');
@@ -179,6 +179,7 @@ describe("project code browser routing", () => {
 
   it("renders legacy raw/open/image file action anchors", () => {
     const textHtml = renderCodeFile({
+      commitId: "abcdef1234567890abcdef1234567890abcdef12",
       isBinary: false,
       isTooLarge: false,
       mimeType: "text/x-rust",
@@ -188,18 +189,20 @@ describe("project code browser routing", () => {
       text: "fn main() {}\n",
     });
 
-    expect(textHtml).toContain('href="/yona/owner/projectYobi/rawcode/main/src/main.rs"');
+    expect(textHtml).toContain('href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/src/main.rs"');
     expect(textHtml).toContain('href="/yona/owner/projectYobi/code/main/download"');
     expect(textHtml).toContain('id="open-in-browser"');
     expect(textHtml).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
-    expect(textHtml).toContain(">Raw</a>");
-    expect(textHtml).toContain(">Open</a>");
+    expect(textHtml).toContain("</i> Raw</a>");
+    expect(textHtml).toContain("</i> code.open</a>");
     expect(textHtml).toContain('data-language="rust"');
+    expect(textHtml).toContain('data-mimeType="text/x-rust"');
     expect(textHtml).toContain('data-line-number="1"');
     expect(textHtml).toContain('class="syntax-token syntax-keyword">fn</span>');
     expect(textHtml).toContain('class="line-number">1</span>');
 
     const imageHtml = renderCodeFile({
+      commitId: "abcdef1234567890abcdef1234567890abcdef12",
       isBinary: true,
       isTooLarge: false,
       mimeType: "image/png",
@@ -210,10 +213,11 @@ describe("project code browser routing", () => {
     });
 
     expect(imageHtml).toContain('id="showImage"');
-    expect(imageHtml).toContain('src="/yona/owner/projectYobi/image/main/assets/logo.png"');
+    expect(imageHtml).toContain('src="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/assets/logo.png"');
     expect(imageHtml).toContain('href="/yona/owner/projectYobi/files/main/assets/logo.png"');
 
     const binaryHtml = renderCodeFile({
+      commitId: "abcdef1234567890abcdef1234567890abcdef12",
       isBinary: true,
       isTooLarge: false,
       mimeType: "application/octet-stream",
@@ -224,8 +228,9 @@ describe("project code browser routing", () => {
     });
 
     expect(binaryHtml).toContain('id="showFile"');
-    expect(binaryHtml).toContain('href="/yona/owner/projectYobi/files/main/bin/archive.bin"');
-    expect(binaryHtml).toContain(">Download</a>");
+    expect(binaryHtml).toContain('<span class="filesize">7 bytes</span>');
+    expect(binaryHtml).toContain('class="filehref ybtn" href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/bin/archive.bin"');
+    expect(binaryHtml).toContain("</i> button.download</a>");
   });
 
   it("renders markdown files with the legacy codebrowser markdown wrapper", () => {
@@ -237,7 +242,23 @@ describe("project code browser routing", () => {
       name: "README.md",
       path: "README.md",
       size: 67,
-      text: "# Hello Yona\n\n![logo](/yona/owner/projectYobi/files/main/assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+      text: "# Hello Yona\n\n@owner @owner/projectYobi @ghost @owner/missing\n\n![logo](/yona/owner/projectYobi/files/main/assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+      mentionReferences: [
+        {
+          kind: "user",
+          label: "Owner",
+          loginId: "owner",
+          ownerName: "",
+          projectName: "",
+        },
+        {
+          kind: "project",
+          label: "owner/projectYobi",
+          loginId: "",
+          ownerName: "owner",
+          projectName: "projectYobi",
+        },
+      ],
     } as NonNullable<CodeBrowserViewModel["file"]>);
 
     expect(markdownHtml).toContain('id="codeVal"');
@@ -247,10 +268,21 @@ describe("project code browser routing", () => {
     );
     expect(markdownHtml).toContain('src="/yona/owner/projectYobi/files/main/assets/logo.png"');
     expect(markdownHtml).toContain('href="./docs/guide.md"');
+    expect(markdownHtml).toContain('href="/yona/owner"');
+    expect(markdownHtml).toContain('href="/yona/owner/projectYobi"');
+    expect(markdownHtml).toContain("@ghost");
+    expect(markdownHtml).toContain("@owner/missing");
+    expect(markdownHtml).not.toContain('href="/yona/ghost"');
+    expect(markdownHtml).not.toContain('href="/yona/owner/missing"');
     expect(markdownHtml).not.toContain('id="showCode"');
   });
 
   it("renders legacy commit history table, branch tabs, and path-scoped actions", () => {
+    const codeViewsSource = fs.readFileSync(path.resolve(__dirname, "routes/-code-views.tsx"), "utf8");
+    expect(codeViewsSource).toContain('document.addEventListener("keydown", onKeyDown)');
+    expect(codeViewsSource).toContain('key === "a" && newerHref');
+    expect(codeViewsSource).toContain('key === "s" && olderHref');
+
     const rootHtml = renderCodeHistory({
       branches: [{ name: "main" }, { name: "topic" }],
       breadcrumbs: [],
@@ -277,6 +309,7 @@ describe("project code browser routing", () => {
       ],
       commits: [
         {
+          authorAvatarUrl: "https://www.gravatar.com/avatar/second",
           authorEmail: "second@example.com",
           authorName: "Second Author",
           authorDate: "2026-04-21",
@@ -299,15 +332,45 @@ describe("project code browser routing", () => {
 
     expect(pathHtml).toContain('id="history"');
     expect(pathHtml).toContain('class="code-table commits mt10"');
-    expect(pathHtml).toContain('data-commit-id="abcdef1234567890abcdef1234567890abcdef12"');
+    expect(pathHtml).toContain('data-commitId="abcdef1234567890abcdef1234567890abcdef12"');
+    expect(pathHtml).not.toContain('data-commit-id="abcdef1234567890abcdef1234567890abcdef12"');
     expect(pathHtml).toContain(
       'href="/yona/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&amp;path=src%2Fmain.rs#src-main-rs"',
     );
     expect(pathHtml).toContain('href="/yona/owner/projectYobi/code/abcdef1/src/main.rs"');
-    expect(pathHtml).toContain(">Show code</a>");
-    expect(pathHtml).toContain(">Older</a>");
-    expect(pathHtml).toContain("Second Author");
+    expect(pathHtml).toContain(">code.showCode</a>");
+    expect(pathHtml).toContain(">code.older</a>");
+    expect(pathHtml).toContain('class="commitMsg short"');
+    expect(pathHtml).toContain(
+      '<span class="avatar-wrap" data-placement="top" data-toggle="tooltip" title="second@example.com"><img src="https://www.gravatar.com/avatar/second"/></span>',
+    );
     expect(pathHtml).toContain("Update main function");
+
+    const emptyMessageHtml = renderCodeHistory({
+      branches: [{ name: "main" }],
+      breadcrumbs: [],
+      commits: [
+        {
+          authorEmail: "",
+          authorName: "",
+          authorDate: "2026-04-21",
+          commentCount: 0,
+          commitId: "0000000000000000000000000000000000000000",
+          commitShortId: "0000000",
+          message: "",
+          shortMessage: "",
+        },
+      ],
+      hasNewer: false,
+      hasOlder: false,
+      noHead: false,
+      ownerName: "owner",
+      page: 0,
+      path: "",
+      projectName: "projectYobi",
+      selectedBranch: "main",
+    });
+    expect(emptyMessageHtml).toContain(">code.commitMsg.empty</a>");
   });
 
   it("renders legacy commit detail diff anchors and review placeholders", () => {
@@ -439,9 +502,9 @@ describe("project code browser routing", () => {
     expect(detailHtml).not.toContain('aria-label="Commit comment" disabled=""');
     expect(detailHtml).toContain('class="review-wrap span-hard-wrap"');
     expect(detailHtml).toContain('id="reviewcards-open"');
-    expect(detailHtml).toContain("Open 1");
+    expect(detailHtml).toContain("issue.state.open 1");
     expect(detailHtml).toContain('id="reviewcards-closed"');
-    expect(detailHtml).toContain("Closed 1");
+    expect(detailHtml).toContain("issue.state.closed 1");
     expect(detailHtml).toContain('href="#thread-7"');
     expect(detailHtml).toContain(
       'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/threads/7/close"',
@@ -513,7 +576,7 @@ describe("project code browser routing", () => {
       revB: "abcdef1",
     });
     expect(emptyCompareHtml).toContain('class="alert"');
-    expect(emptyCompareHtml).toContain("No changes");
+    expect(emptyCompareHtml).toContain("code.noChanges");
   });
 
   it("renders legacy branch list table and mutation anchors", () => {

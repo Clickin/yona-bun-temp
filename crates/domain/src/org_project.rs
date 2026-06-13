@@ -36,6 +36,7 @@ pub enum ProjectOperation {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProjectAccessReason {
+    GuestPublicReadDenied,
     OrganizationAdminRead,
     OrganizationAdminUpdate,
     OrganizationMemberRead,
@@ -58,6 +59,7 @@ pub struct ProjectAccessDecision {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ProjectAccessFacts {
     pub is_anonymous: bool,
+    pub is_guest: bool,
     pub is_organization_admin: bool,
     pub is_organization_member: bool,
     pub is_project_manager: bool,
@@ -175,10 +177,17 @@ pub fn authorize_project_access(
         };
     }
 
-    if facts.project_scope == ProjectScope::Public {
+    if facts.project_scope == ProjectScope::Public && !facts.is_guest {
         return ProjectAccessDecision {
             allowed: true,
             reason: ProjectAccessReason::PublicRead,
+        };
+    }
+
+    if facts.project_scope == ProjectScope::Public {
+        return ProjectAccessDecision {
+            allowed: false,
+            reason: ProjectAccessReason::GuestPublicReadDenied,
         };
     }
 
@@ -197,6 +206,7 @@ pub fn authorize_project_access(
 
 pub fn can_request_project_enrollment(
     is_authenticated: bool,
+    is_guest: bool,
     is_organization_admin: bool,
     is_organization_member: bool,
     is_project_manager: bool,
@@ -204,6 +214,7 @@ pub fn can_request_project_enrollment(
     is_site_admin: bool,
 ) -> bool {
     is_authenticated
+        && is_guest
         && !is_organization_admin
         && !is_organization_member
         && !is_project_manager
@@ -218,6 +229,7 @@ mod tests {
     fn facts(project_scope: ProjectScope) -> ProjectAccessFacts {
         ProjectAccessFacts {
             is_anonymous: false,
+            is_guest: false,
             is_organization_admin: false,
             is_organization_member: false,
             is_project_manager: false,

@@ -65,7 +65,7 @@ function UserFilesRouteComponent() {
   return <UserFilesPage basePath={runtimeConfig.basePath} files={files} query={query} />;
 }
 
-function UserFilesPage(props: {
+export function UserFilesPage(props: {
   basePath: string;
   files: WorkspaceFilesResponse | null;
   query: { filter: string; page: number };
@@ -104,12 +104,12 @@ function UserFilesPage(props: {
             {files.map((file) => (
               <div className="attachment-file-detail row" key={file.id}>
                 <div className="file-preview span1">
-                  <a href={file.url} target="_blank" rel="noreferrer">
+                  <a href={file.url} target="_blank">
                     {file.previewUrl ? <img alt="" src={file.previewUrl} /> : null}
                   </a>
                 </div>
                 <div className="span5 file-name">
-                  <a href={file.url} target="_blank" rel="noreferrer">
+                  <a href={file.url} target="_blank">
                     <i className="icon text-icon" />
                     {file.name}
                   </a>
@@ -125,7 +125,7 @@ function UserFilesPage(props: {
                 <div className="span2 file-date">{file.createdLabel}</div>
                 <div className="span4 file-location">
                   {file.locationHref ? (
-                    <a href={file.locationHref} target="_blank" rel="noreferrer">
+                    <a href={file.locationHref} target="_blank">
                       {file.locationLabel || file.locationHref}
                     </a>
                   ) : (
@@ -144,7 +144,7 @@ function UserFilesPage(props: {
               searchParams.set("filter", props.query.filter.trim());
             }
             if (page > 1) {
-              searchParams.set("page", String(page));
+              searchParams.set("pageNum", String(page));
             }
             const query = searchParams.toString();
             return (
@@ -167,7 +167,7 @@ function MySeriesMenuTabs({ basePath }: { basePath: string }) {
   return (
     <ul className="nav nav-tabs">
       <li>
-        <a href={appHref(basePath, "/notification")}>notification</a>
+        <a href={appHref(basePath, "/notifications")}>notification</a>
       </li>
       <li>
         <a href={appHref(basePath, "/user/issues")}>issue.myIssue</a>

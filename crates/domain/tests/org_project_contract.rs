@@ -41,6 +41,7 @@ fn project_access_preserves_public_protected_private_rules() {
         authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: true,
+                is_guest: false,
                 is_organization_admin: false,
                 is_organization_member: false,
                 is_project_manager: false,
@@ -57,6 +58,7 @@ fn project_access_preserves_public_protected_private_rules() {
         authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: false,
                 is_organization_admin: false,
                 is_organization_member: true,
                 is_project_manager: false,
@@ -73,6 +75,7 @@ fn project_access_preserves_public_protected_private_rules() {
         authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: false,
                 is_organization_admin: false,
                 is_organization_member: true,
                 is_project_manager: false,
@@ -89,6 +92,7 @@ fn project_access_preserves_public_protected_private_rules() {
         authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: false,
                 is_organization_admin: false,
                 is_organization_member: false,
                 is_project_manager: true,
@@ -100,6 +104,43 @@ fn project_access_preserves_public_protected_private_rules() {
         )
         .allowed,
         true,
+    );
+}
+
+#[test]
+fn project_access_denies_nonmember_guest_public_read() {
+    assert!(
+        !authorize_project_access(
+            &ProjectAccessFacts {
+                is_anonymous: false,
+                is_guest: true,
+                is_organization_admin: false,
+                is_organization_member: false,
+                is_project_manager: false,
+                is_project_member: false,
+                is_site_admin: false,
+                project_scope: ProjectScope::Public,
+            },
+            ProjectOperation::Read,
+        )
+        .allowed
+    );
+
+    assert!(
+        authorize_project_access(
+            &ProjectAccessFacts {
+                is_anonymous: false,
+                is_guest: true,
+                is_organization_admin: false,
+                is_organization_member: false,
+                is_project_manager: false,
+                is_project_member: true,
+                is_site_admin: false,
+                project_scope: ProjectScope::Public,
+            },
+            ProjectOperation::Read,
+        )
+        .allowed
     );
 }
 
@@ -116,24 +157,27 @@ fn project_creation_rules_distinguish_self_owner_and_org_admin_paths() {
 #[test]
 fn project_enrollment_is_guest_only() {
     assert!(can_request_project_enrollment(
-        true, false, false, false, false, false
+        true, true, false, false, false, false, false
     ));
     assert!(!can_request_project_enrollment(
-        false, false, false, false, false, false
+        false, true, false, false, false, false, false
     ));
     assert!(!can_request_project_enrollment(
-        true, true, false, false, false, false
+        true, false, false, false, false, false, false
     ));
     assert!(!can_request_project_enrollment(
-        true, false, true, false, false, false
+        true, true, true, false, false, false, false
     ));
     assert!(!can_request_project_enrollment(
-        true, false, false, true, false, false
+        true, true, false, true, false, false, false
     ));
     assert!(!can_request_project_enrollment(
-        true, false, false, false, true, false
+        true, true, false, false, true, false, false
     ));
     assert!(!can_request_project_enrollment(
-        true, false, false, false, false, true
+        true, true, false, false, false, true, false
+    ));
+    assert!(!can_request_project_enrollment(
+        true, true, false, false, false, false, true
     ));
 }

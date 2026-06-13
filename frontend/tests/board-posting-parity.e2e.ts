@@ -18,6 +18,7 @@ const boardLabel = {
 
 function boardListItem(overrides: Record<string, unknown> = {}) {
   return {
+    authorAvatarUrl: "/avatars/nori.png",
     authorLabel: "Nori",
     authorLoginId: "nori",
     commentCount: 1,
@@ -413,37 +414,59 @@ test("project board list honors filter label sort notice and route parity", asyn
     "/yona/admin/projectYobi/posts?filter=guide&labelIds[]=5&orderBy=createdDate&orderDir=asc&pageNum=1",
   );
 
-  await expect(page.locator(".post-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap").last()).toBeVisible();
   await expect(page.locator(".notice-wrap")).toContainText("Pinned maintenance note");
   await expect(page.getByRole("link", { name: "Board parity announcement" })).toBeVisible();
+  await expect(page.locator('.post-list-wrap .avatar-wrap.mlarge img[alt="Nori"]').first()).toHaveAttribute(
+    "src",
+    "/avatars/nori.png",
+  );
+  await expect(page.locator(".post-list-wrap .avatar-wrap.mlarge").first()).toHaveAttribute(
+    "href",
+    "/yona/nori",
+  );
   await expect(
     page.locator(".post-list-wrap .board-label", { hasText: "guide" }).first(),
   ).toBeVisible();
-  await expect(page.getByPlaceholder("Search posts")).toHaveValue("guide");
+  await expect(page.getByPlaceholder("project.searchPlaceholder")).toHaveValue("guide");
   await expect(page.getByLabel("Labels")).toHaveValues(["5"]);
-  await expect(page.getByRole("link", { exact: true, name: "Date" })).toBeVisible();
-  await expect(page.getByRole("link", { exact: true, name: "Comments" })).toBeVisible();
-  await expect(page.locator(".board-badge.readme", { hasText: "README" })).toBeVisible();
-  await expect(page.getByText("Page 1 of 3")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Next" })).toHaveAttribute("href", /pageNum=2/);
+  await expect(page.getByRole("link", { exact: true, name: "common.order.date" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { exact: true, name: "common.order.comments" }),
+  ).toBeVisible();
+  await expect(page.locator(".label.label-important", { hasText: "README" })).toBeVisible();
+  await expect(page.locator(".board-badge.readme")).toHaveCount(0);
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    /pageNum=2/,
+  );
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 
-  const sortHref = await page.getByRole("link", { exact: true, name: "Date" }).getAttribute("href");
+  const sortHref = await page
+    .getByRole("link", { exact: true, name: "common.order.date" })
+    .getAttribute("href");
   expect(sortHref).toContain("labelIds%5B%5D=5");
   expect(sortHref).toContain("orderBy=createdDate");
   expect(sortHref).toContain("orderDir=desc");
 
   await page.setViewportSize({ height: 844, width: 390 });
-  await expect(page.locator(".post-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap").last()).toBeVisible();
 });
 
 test("project board detail supports watch and comment create update delete", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/post/1");
   await expect(page.locator(".board-view")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Board parity announcement" })).toBeVisible();
+  await expect(page.locator(".board-header .title")).toContainText("Board parity announcement");
   await expect(page.getByText("#1")).toBeVisible();
-  await expect(page.getByText("Board body from markdown")).toBeVisible();
-  await expect(page.locator(".board-view .board-label", { hasText: "guide" })).toBeVisible();
+  await expect(page.locator("#post-body-1")).toContainText("Board body from markdown");
+  await expect(
+    page.locator(".issue-info.board-labels .label.issue-label.active.static", {
+      hasText: "guide",
+    }),
+  ).toBeVisible();
   await expect(page.locator(".posting-history a")).toHaveAttribute(
     "href",
     "#-yona-posting-history",
@@ -457,10 +480,11 @@ test("project board detail supports watch and comment create update delete", asy
   const watchRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/watch") && request.method() === "POST",
   );
-  await page.getByRole("button", { name: "Watch" }).click();
+  await page.locator("#watch-button").click();
   expect((await watchRequest).headers()["x-csrf-token"]).toBe("csrf-123");
-  await expect(page.getByRole("button", { name: "Unwatch" })).toBeVisible();
-  await expect(page.getByText("Watchers 3")).toBeVisible();
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "true");
+  await expect(page.locator("#watch-button")).toContainText("post.unwatch");
+  await expect(page.getByText("Watchers 3")).toHaveCount(0);
 
   const updateCommentRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/comments/77") && request.method() === "PATCH",
@@ -470,27 +494,24 @@ test("project board detail supports watch and comment create update delete", asy
     .getByRole("button", { name: "Edit" })
     .click();
   await page.getByLabel("Edit comment").fill("Edited board comment");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "button.save" }).click();
   expect((await updateCommentRequest).headers()["x-csrf-token"]).toBe("csrf-123");
-  await expect(page.getByText("Edited board comment")).toBeVisible();
+  await expect(page.locator("#comment-body-77")).toContainText("Edited board comment");
 
   const commentRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/comments") && request.method() === "POST",
   );
-  await page.getByPlaceholder("Leave a comment").fill("Fresh comment");
-  await page.getByRole("button", { name: "Comment" }).click();
+  await page.locator("#editor-contents-comment-body").fill("Fresh comment");
+  await page.locator("#comment-form").getByRole("button", { name: "button.comment.new" }).click();
   expect((await commentRequest).headers()["x-csrf-token"]).toBe("csrf-123");
   await expect(page.locator("#comment-88")).toContainText("Fresh comment");
 
   const deleteCommentRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/comments/77") && request.method() === "DELETE",
   );
-  await page
-    .locator(".board-comment", { hasText: "Edited board comment" })
-    .getByRole("button", { name: "Delete" })
-    .click();
+  await page.locator("#comment-77").getByRole("button", { name: "Delete" }).click();
   expect((await deleteCommentRequest).headers()["x-csrf-token"]).toBe("csrf-123");
-  await expect(page.getByText("No comments yet.")).toBeVisible();
+  await expect(page.locator("#comment-77")).toHaveCount(0);
 });
 
 test("project board post editor inserts pasted and dropped image uploads", async ({ page }) => {
@@ -515,7 +536,7 @@ test("project board post editor inserts pasted and dropped image uploads", async
   });
 
   await page.goto("/yona/admin/projectYobi/postform");
-  const bodyEditor = page.getByLabel("Body");
+  const bodyEditor = page.locator("#editor-body-content-body");
 
   await bodyEditor.evaluate((element) => {
     const data = new DataTransfer();
@@ -548,8 +569,8 @@ test("project board post editor inserts pasted and dropped image uploads", async
   const createRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts") && request.method() === "POST",
   );
-  await page.getByLabel("Title").fill("Created upload post");
-  await page.getByRole("button", { name: "Create" }).click();
+  await page.locator("#title").fill("Created upload post");
+  await page.locator(".board-actions").getByRole("button", { name: "button.save" }).click();
   const submittedPost = (await createRequest).postDataJSON() as {
     attachmentIds?: number[];
     bodyMarkdown?: string;
@@ -578,7 +599,7 @@ test("project board comment editor inserts pasted image uploads", async ({ page 
   });
 
   await page.goto("/yona/admin/projectYobi/post/1");
-  const commentEditor = page.getByPlaceholder("Leave a comment");
+  const commentEditor = page.locator("#editor-contents-comment-body");
 
   await commentEditor.evaluate((element) => {
     const data = new DataTransfer();
@@ -596,7 +617,7 @@ test("project board comment editor inserts pasted image uploads", async ({ page 
   const commentRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/comments") && request.method() === "POST",
   );
-  await page.getByRole("button", { name: "Comment" }).click();
+  await page.locator("#comment-form").getByRole("button", { name: "button.comment.new" }).click();
   const submittedComment = (await commentRequest).postDataJSON() as {
     attachmentIds?: number[];
     contentsMarkdown?: string;
@@ -611,34 +632,34 @@ test("project board comment editor inserts pasted image uploads", async ({ page 
 test("project board create edit and delete flows send CSRF REST mutations", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/postform");
   await expect(page.getByRole("heading", { name: "New post" })).toBeVisible();
-  await page.getByLabel("Title").fill("Created Playwright post");
-  await page.getByLabel("Body").fill("Created body");
-  await page.getByLabel("Notice").check();
-  await page.getByLabel("README").check();
+  await page.locator("#title").fill("Created Playwright post");
+  await page.locator("#editor-body-content-body").fill("Created body");
+  await page.locator("#notice").check();
+  await page.locator("#readme").check();
   await page.getByLabel("guide").check();
 
   const createRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts") && request.method() === "POST",
   );
-  await page.getByRole("button", { name: "Create" }).click();
+  await page.locator(".board-actions").getByRole("button", { name: "button.save" }).click();
   const createHeaders = (await createRequest).headers();
   expect(createHeaders["x-csrf-token"]).toBe("csrf-123");
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/post\/3$/);
 
   await page.goto("/yona/admin/projectYobi/post/1/editform");
   await expect(page.getByRole("heading", { name: "Edit post" })).toBeVisible();
-  await expect(page.getByLabel("Title")).toHaveValue("Board parity announcement");
-  await page.getByLabel("Title").fill("Updated board post");
-  await page.getByLabel("Body").fill("Updated body");
-  await page.getByLabel("README").check();
+  await expect(page.locator("#title")).toHaveValue("Board parity announcement");
+  await page.locator("#title").fill("Updated board post");
+  await page.locator("#editor-body-content-body").fill("Updated body");
+  await page.locator("#readme").check();
 
   const updateRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1") && request.method() === "PATCH",
   );
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.locator(".board-actions").getByRole("button", { name: "button.save" }).click();
   expect((await updateRequest).headers()["x-csrf-token"]).toBe("csrf-123");
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/post\/1$/);
-  await expect(page.getByRole("heading", { name: "Updated board post" })).toBeVisible();
+  await expect(page.locator(".board-header .title")).toContainText("Updated board post");
 
   const deletePostRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1") && request.method() === "DELETE",
@@ -655,19 +676,30 @@ test("organization board route renders cross-project posts and project filters",
     "/yona/organizations/weblabs/boards?filter=post&projectNames[]=projectAlpha&orderBy=numOfComments&orderDir=desc",
   );
 
-  await expect(page.getByRole("heading", { name: "Boards" })).toBeVisible();
-  await expect(page.getByPlaceholder("Search posts")).toHaveValue("post");
+  await expect(page.getByRole("heading", { name: "Boards" })).toHaveCount(0);
+  await expect(page.getByPlaceholder("title.searchByKeyword")).toHaveValue("post");
   await expect(page.getByLabel("Projects")).toHaveValues(["projectAlpha"]);
   await expect(page.getByRole("link", { name: "Organization board update" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "weblabs/projectAlpha" })).toBeVisible();
-  await expect(page.getByRole("link", { exact: true, name: "Comments" })).toBeVisible();
+  await expect(page.locator('.post-list-wrap .avatar-wrap.mlarge img[alt="Nori"]')).toHaveAttribute(
+    "src",
+    "/avatars/nori.png",
+  );
+  await expect(page.locator(".group-project-name")).toHaveText("projectAlpha");
+  await expect(
+    page.getByRole("link", { exact: true, name: "common.order.comments" }),
+  ).toBeVisible();
   const commentsSortHref = await page
-    .getByRole("link", { exact: true, name: "Comments" })
+    .getByRole("link", { exact: true, name: "common.order.comments" })
     .getAttribute("href");
   expect(commentsSortHref).toContain("orderBy=numOfComments");
   expect(commentsSortHref).toContain("orderDir=asc");
-  await expect(page.getByText("Page 1 of 2")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Next" })).toHaveAttribute("href", /pageNum=2/);
-  await expect(page.getByText("#9")).toBeVisible();
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    /pageNum=2/,
+  );
+  await expect(page.locator(".post-row-meta .post-id")).toHaveText("#9");
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });

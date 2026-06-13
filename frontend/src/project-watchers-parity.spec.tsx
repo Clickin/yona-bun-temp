@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
+import fs from "node:fs";
+import path from "node:path";
 import { ProjectWatchersPage } from "./routes/-project-views";
 import type { RuntimeConfig } from "./runtime-config";
 
@@ -41,6 +43,21 @@ describe("project watchers parity", () => {
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
     expect(html).toContain('href="/yona/admin"');
+    expect(html).toContain('<img height="64" src="/avatars/admin.png" width="64"/>');
     expect(html).toContain("@member");
+    expect(html).not.toContain("avatar&quot;");
+    expect(html).not.toContain('alt="');
+  });
+
+  it("classifies legacy project watcher READ authorization failures", () => {
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/watchers/route.tsx"),
+      "utf8",
+    );
+
+    expect(routeSource).toContain("classifyConnectFailure");
+    expect(routeSource).toContain("ForbiddenPage");
+    expect(routeSource).toContain("NotFoundPage");
+    expect(routeSource).toContain("Read project watchers failed.");
   });
 });

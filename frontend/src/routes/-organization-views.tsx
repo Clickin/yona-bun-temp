@@ -45,6 +45,9 @@ function buildOrganizationIssueHref(
   if (nextQuery.assigneeId) {
     search.set("assigneeId", String(nextQuery.assigneeId));
   }
+  if (nextQuery.mentionId) {
+    search.set("mentionId", String(nextQuery.mentionId));
+  }
   for (const projectName of nextQuery.projectNames) {
     search.append("projectNames", projectName);
   }
@@ -53,10 +56,15 @@ function buildOrganizationIssueHref(
   return buildOrganizationHref(runtimeConfig, organizationName, suffix);
 }
 
+function userInfoHref(runtimeConfig: RuntimeConfig, loginId: string) {
+  return prefixBasePath(runtimeConfig.basePath, `/${loginId}`);
+}
+
 export interface OrganizationIssueListQuery {
   assigneeId: number;
   authorId: number;
   filter: string;
+  mentionId: number;
   orderBy: string;
   orderDir: string;
   pageNum: number;
@@ -110,39 +118,79 @@ export function OrganizationMenu(props: {
 }
 
 function OrganizationSettingsSubMenu(props: {
+  active?: "settings" | "members" | "delete";
   organizationName: string;
   runtimeConfig: RuntimeConfig;
 }) {
   return (
-    <nav aria-label="Organization settings menu">
-      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "settingform")}>
-        Setting
-      </a>
-      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "members")}>
-        Members
-      </a>
-      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "deleteForm")}>
-        Group Delete
-      </a>
-    </nav>
+    <ul className="nav nav-tabs">
+      <li className={props.active === "settings" ? "active" : undefined}>
+        <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "settingform")}>
+          organization.settingFrom
+        </a>
+      </li>
+      <li className={props.active === "members" ? "active" : undefined}>
+        <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "members")}>
+          organization.member
+        </a>
+      </li>
+      <li className={props.active === "delete" ? "active" : undefined}>
+        <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "deleteForm")}>
+          organization.delete
+        </a>
+      </li>
+    </ul>
   );
 }
 
 function OrganizationMemberBubble(props: {
   members: NonNullable<OrganizationDetailViewModel["adminMembers"]>;
+  runtimeConfig: RuntimeConfig;
   title: string;
 }) {
   return (
-    <section className="organization-member-wrap">
-      <h2>{props.title}</h2>
-      <ul className="member-list unstyled">
-        {props.members.map((member) => (
-          <li className="member-item" key={`${props.title}-${member.loginId}`}>
-            {member.userLabel} @{member.loginId}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="bubble-wrap gray project-home organization-home">
+      <div className="bubble-wrap gray organization-home">
+        <div className="inner member-info">
+          <header>
+            <h3>{props.title}</h3>
+          </header>
+          <div className="organization-member-wrap">
+            <div className="member-wrap">
+              <ul className="project-members unstyled">
+                {props.members.map((member) => {
+                  const userHref = prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${member.loginId}`,
+                  );
+                  return (
+                    <li className="member" key={`${props.title}-${member.loginId}`}>
+                      <a
+                        className="avatar-wrap"
+                        data-placement="top"
+                        data-toggle="tooltip"
+                        href={userHref}
+                        title={member.loginId}
+                      >
+                        <img alt={member.loginId} height={45} src={member.avatarUrl} width={45} />
+                      </a>
+                      <a
+                        data-placement="top"
+                        data-toggle="tooltip"
+                        href={userHref}
+                        title={member.loginId}
+                      >
+                        {member.userLabel}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -300,88 +348,175 @@ export function OrganizationDetailPage(props: {
     visibleProjects: [],
   };
 
-  const organizationHref = buildOrganizationHref(props.runtimeConfig, detail.organizationName);
-
   return (
     <main className="app-shell organization-page page-wrap-outer">
       <div className="project-page-wrap organization-home-wrap">
-        <p className="eyebrow">Yona Rust Organization</p>
-        <h1>{detail.organizationName || "Organization"}</h1>
         <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
         <div className="project-home-header row-fluid">
           <div className="project-overview span9 span-hard-wrap">
-            <div className="project-description">
-              <h3>
-                <span className="markdown-wrap">{detail.description || "No description yet."}</span>
-              </h3>
-            </div>
+            <h3 className="markdown-wrap">
+              <span className="project-description" id="project-description">
+                {detail.description}
+              </span>
+            </h3>
           </div>
         </div>
-        <section className="organization-project-filter">
-          <form action={organizationHref} method="get">
-            <label htmlFor="mylist-filter">Project filter</label>
-            <input id="mylist-filter" name="filter" placeholder="Type project name" type="text" />
-            <button type="submit">Search</button>
-          </form>
-          {detail.viewerCanCreateProject ? (
-            <a
-              className="ybtn ybtn-success"
-              href={prefixBasePath(
-                props.runtimeConfig.basePath,
-                `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
-              )}
-            >
-              Create project
-            </a>
-          ) : null}
-        </section>
         <div className="row-fluid organization-home-body">
           <div className="span9 span-left-pane">
-            <section>
-              <h2>Projects</h2>
-              <ul className="project-list-wrap organization-project-list">
-                {(detail.visibleProjects ?? []).map((project) => (
-                  <li
-                    className="listitem organization-project-card"
-                    key={`${project.ownerName}/${project.projectName}`}
+            <div className="project-search-wrap row-fluid mt10">
+              <div className="span7">
+                <div className="search-bar">
+                  <input
+                    className="textbox full"
+                    data-items="project-item"
+                    data-toggle="item-search"
+                    id="mylist-filter"
+                    name="mylist-filter"
+                    placeholder="title.type.name"
+                    type="text"
+                    defaultValue=""
+                  />
+                  <button className="search-btn" type="button">
+                    <i className="yobicon-search" />
+                  </button>
+                </div>
+              </div>
+              {detail.viewerCanCreateProject ? (
+                <div className="pull-right">
+                  <a
+                    className="ybtn ybtn-primary"
+                    href={prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
+                    )}
                   >
-                    <a
-                      href={prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        `/${project.ownerName}/${project.projectName}`,
-                      )}
-                    >
-                      {project.projectName}
-                    </a>
-                    <p>{project.overview}</p>
-                    <p>State: {project.projectScope}</p>
-                    <p>{`Members: ${project.memberCount}`}</p>
-                    <p>{`Watchers: ${project.watchCount}`}</p>
-                    <p>{`Created ${project.createdLabel}`}</p>
-                    <p>{`Last pushed ${project.lastPushedLabel}`}</p>
-                    {project.originOwnerName && project.originProjectName ? (
-                      <p>{`Original: ${project.originOwnerName} / ${project.originProjectName}`}</p>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-          <aside className="span3 span-right-pane">
-            <div className="bubble-wrap gray organization-home">
-              <OrganizationMembershipActions
-                detail={detail}
-                onCancelEnrollOrganization={props.onCancelEnrollOrganization}
-                onEnrollOrganization={props.onEnrollOrganization}
-                onLeaveOrganization={props.onLeaveOrganization}
-              />
-              {detail.adminMembers?.length ? (
-                <OrganizationMemberBubble members={detail.adminMembers} title="Group Manager" />
-              ) : null}
-              {detail.memberMembers?.length ? (
-                <OrganizationMemberBubble members={detail.memberMembers} title="Group Member" />
+                    button.newProject
+                  </a>
+                </div>
               ) : null}
             </div>
+            <div className="project-list-wrap organization-project-list">
+              <ul className="all-projects organization-project-list">
+                {(detail.visibleProjects ?? []).map((project) => {
+                  const projectHref = prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${project.ownerName}/${project.projectName}`,
+                  );
+                  const ownerHref = prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${project.ownerName}`,
+                  );
+                  const originHref =
+                    project.originOwnerName && project.originProjectName
+                      ? prefixBasePath(
+                          props.runtimeConfig.basePath,
+                          `/${project.originOwnerName}/${project.originProjectName}`,
+                        )
+                      : "";
+                  return (
+                    <li
+                      className="project"
+                      data-item="project-item"
+                      data-value={`${project.projectName} ${project.overview}`}
+                      key={`${project.ownerName}/${project.projectName}`}
+                    >
+                      <div className="listitem organization-project-card">
+                        <div className="info-wrap">
+                          <div className="owner-avatar-wrap hide-in-mobile">
+                            <a href={projectHref}>
+                              {project.logoUrl ? (
+                                <img alt={`${project.projectName}.name`} src={project.logoUrl} />
+                              ) : null}
+                            </a>
+                          </div>
+                          <div className="organization-project-info">
+                            <div className="header">
+                              <a className="black" href={projectHref}>
+                                {project.projectName}
+                              </a>
+                              {originHref ? (
+                                <span className="small-font blue-txt">
+                                  <a className="origin-title" href={originHref}>
+                                    <i className="yobicon-split" />
+                                    {project.originOwnerName} / {project.originProjectName}
+                                  </a>
+                                </span>
+                              ) : null}
+                              {project.projectScope === "private" ? (
+                                <i className="yobicon-lock yobicon-small" />
+                              ) : null}
+                              {project.projectScope === "protected" ? (
+                                <span className="project-protected" title="Group Project">
+                                  G
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="desc">{project.overview}</div>
+                            <p className="name-tag">
+                              by{" "}
+                              <a className="owner-name-small" href={ownerHref}>
+                                {project.ownerName}
+                              </a>{" "}
+                              at <strong>{project.createdLabel}</strong>
+                              {project.lastPushedLabel ? (
+                                <span className="small-font">
+                                  , project.codeUpdate <strong>{project.lastPushedLabel}</strong>
+                                </span>
+                              ) : null}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="stats-wrap pull-right">
+                          <div className="members">
+                            <ul className="unstyled" />
+                            <p>
+                              <span>{`project.onmember ${project.memberCount}`}</span>{" "}
+                              <i className="yobicon-eye" />{" "}
+                              <span>{`project.onwatching ${project.watchCount}`}</span>{" "}
+                              {project.isWatching ? (
+                                <i
+                                  className="yobicon-lightbulb ramp-on"
+                                  data-toggle="tooltip"
+                                  title="project.default.group.watching"
+                                />
+                              ) : (
+                                <i
+                                  className="yobicon-lightbulb ramp-off"
+                                  data-toggle="tooltip"
+                                  title="project.you.are.not.watching"
+                                />
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+          <aside className="span3 span-right-pane">
+            <OrganizationMembershipActions
+              detail={detail}
+              onCancelEnrollOrganization={props.onCancelEnrollOrganization}
+              onEnrollOrganization={props.onEnrollOrganization}
+              onLeaveOrganization={props.onLeaveOrganization}
+            />
+            {detail.adminMembers?.length ? (
+              <OrganizationMemberBubble
+                members={detail.adminMembers}
+                runtimeConfig={props.runtimeConfig}
+                title="user.role.org_admin"
+              />
+            ) : null}
+            {detail.memberMembers?.length ? (
+              <OrganizationMemberBubble
+                members={detail.memberMembers}
+                runtimeConfig={props.runtimeConfig}
+                title="user.role.org_member"
+              />
+            ) : null}
           </aside>
         </div>
       </div>
@@ -415,145 +550,396 @@ export function OrganizationIssueListPage(props: {
   const authoredHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
     assigneeId: 0,
     authorId: props.currentUserId,
+    mentionId: 0,
     pageNum: 1,
   });
   const assignedHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
     assigneeId: props.currentUserId,
     authorId: 0,
+    mentionId: 0,
+    pageNum: 1,
+  });
+  const mentionedHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    assigneeId: 0,
+    authorId: 0,
+    mentionId: props.currentUserId,
     pageNum: 1,
   });
   const allHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
     assigneeId: 0,
     authorId: 0,
+    mentionId: 0,
     pageNum: 1,
   });
+  const issueItems = issueList?.items ?? [];
+  const state = query.state || "open";
+  const totalPageCount = Math.ceil((issueList?.totalCount ?? 0) / (issueList?.pageSize || 1));
+  const orderDirFor = (orderBy: string) =>
+    query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc";
+  const orderHref = (orderBy: string) =>
+    buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+      orderBy,
+      orderDir: orderDirFor(orderBy),
+      pageNum: 1,
+    });
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Organization Issues</h1>
-      <p>{organizationName}</p>
+    <main>
       <OrganizationMenu active="issues" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <section className="issue-list-wrap">
-        <aside className="left-menu">
-          <nav aria-label="Issue quick filters">
-            <a href={allHref}>All</a>
-            {props.currentUserId > 0 ? (
-              <>
-                <a href={assignedHref}>Assigned to me</a>
-                <a href={authoredHref}>Authored by me</a>
-              </>
-            ) : null}
-          </nav>
-          <form
-            action={buildOrganizationHref(props.runtimeConfig, organizationName, "issues")}
-            method="get"
-          >
-            <input name="state" type="hidden" value={query.state || "open"} />
-            <input name="orderBy" type="hidden" value={query.orderBy} />
-            <input name="orderDir" type="hidden" value={query.orderDir} />
-            <input name="authorId" type="hidden" value={query.authorId || ""} />
-            <input name="assigneeId" type="hidden" value={query.assigneeId || ""} />
-            <label htmlFor="organization-issue-projects">Projects</label>
-            <select
-              id="organization-issue-projects"
-              multiple
-              name="projectNames"
-              defaultValue={query.projectNames}
-            >
-              {(issueList?.visibleProjects ?? []).map((project) => (
-                <option key={project.projectName} value={project.projectName}>
-                  {project.projectName}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="organization-issue-filter">Search</label>
-            <input
-              id="organization-issue-filter"
-              name="filter"
-              placeholder="Search issues"
-              type="text"
-              defaultValue={query.filter}
-            />
-            <button type="submit">Search</button>
-          </form>
-        </aside>
-        <section>
-          <nav aria-label="Issue state tabs">
-            <a className={(query.state || "open") === "open" ? "active" : ""} href={openHref}>
-              Open <span>{issueList?.openIssueCount ?? 0}</span>
-            </a>
-            <a className={query.state === "closed" ? "active" : ""} href={closedHref}>
-              Closed <span>{issueList?.closedIssueCount ?? 0}</span>
-            </a>
-          </nav>
-          <div className="filter-wrap">
-            {["dueDate", "updatedDate", "createdDate", "numOfComments"].map((orderBy) => (
-              <a
-                href={buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
-                  orderBy,
-                  orderDir: query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc",
-                  pageNum: 1,
-                })}
-                key={orderBy}
-              >
-                {orderBy}
-              </a>
-            ))}
-          </div>
-          {(issueList?.items ?? []).length > 0 ? (
-            <ul className="post-list-wrap">
-              {issueList?.items.map((issue) => (
-                <li
-                  className="post-item title"
-                  key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                >
-                  <a
-                    className="title"
-                    href={prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
-                    )}
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
+          <div className="row-fluid issue-list-wrap" data-pjax-container="">
+            <aside className="left-menu span2 span-hard-wrap">
+              <div className="inner advanced">
+                <ul className="lst-stacked unstyled">
+                  <li
+                    className={
+                      !query.assigneeId && !query.authorId && !query.mentionId
+                        ? "active"
+                        : undefined
+                    }
                   >
-                    {issue.title}
-                  </a>
-                  <div className="infos">
-                    <span>{issue.authorLabel || "No author"}</span>
-                    <span>{issue.updatedLabel}</span>
-                    <span>{`Comments: ${issue.commentCount}`}</span>
-                    <span>{`Votes: ${issue.voterCount}`}</span>
-                    <span>{`Watchers: ${issue.watcherCount}`}</span>
-                    <span>{`Assignee: ${issue.assigneeLabel || "none"}`}</span>
                     <a
-                      className="group-project-name"
-                      href={prefixBasePath(
+                      data-assignee-id=""
+                      data-author-id=""
+                      data-mention-id=""
+                      data-milestone-id=""
+                      data-pjax-filter=""
+                      data-project-names={query.projectNames.join(",")}
+                      href={allHref}
+                    >
+                      issue.list.all
+                    </a>
+                  </li>
+                  {props.currentUserId > 0 ? (
+                    <>
+                      <li className={query.assigneeId === props.currentUserId ? "active" : undefined}>
+                        <a
+                          data-assignee-id={props.currentUserId}
+                          data-author-id=""
+                          data-mention-id=""
+                          data-milestone-id=""
+                          data-pjax-filter=""
+                          data-project-names={query.projectNames.join(",")}
+                          href={assignedHref}
+                        >
+                          issue.list.assignedToMe
+                        </a>
+                      </li>
+                      <li className={query.authorId === props.currentUserId ? "active" : undefined}>
+                        <a
+                          data-assignee-id=""
+                          data-author-id={props.currentUserId}
+                          data-mention-id=""
+                          data-milestone-id=""
+                          data-pjax-filter=""
+                          data-project-names={query.projectNames.join(",")}
+                          href={authoredHref}
+                        >
+                          issue.list.authoredByMe
+                        </a>
+                      </li>
+                      <li className={query.mentionId === props.currentUserId ? "active" : undefined}>
+                        <a
+                          data-assignee-id=""
+                          data-author-id=""
+                          data-mention-id={props.currentUserId}
+                          data-milestone-id=""
+                          data-pjax-filter=""
+                          data-project-names={query.projectNames.join(",")}
+                          href={mentionedHref}
+                        >
+                          issue.list.mentionedOfMe
+                        </a>
+                      </li>
+                    </>
+                  ) : null}
+                </ul>
+                <form
+                  action={buildOrganizationHref(props.runtimeConfig, organizationName, "issues")}
+                  id="search"
+                  method="get"
+                  name="search"
+                >
+                  <select
+                    data-container-css-class="fullsize"
+                    data-placeholder="organization.choose.projects"
+                    data-toggle="select2"
+                    defaultValue={query.projectNames}
+                    id="projects"
+                    multiple
+                    name="projectNames[]"
+                  >
+                    {(issueList?.visibleProjects ?? []).map((project) => (
+                      <option
+                        data-avatar-url=""
+                        key={project.projectName}
+                        value={project.projectName}
+                      >
+                        {project.projectName}
+                      </option>
+                    ))}
+                  </select>
+                  <hr />
+                  <input name="orderBy" type="hidden" value={query.orderBy} />
+                  <input name="orderDir" type="hidden" value={query.orderDir} />
+                  <input name="state" type="hidden" value={state} />
+                  <input
+                    data-search="authorId"
+                    name="authorId"
+                    type="hidden"
+                    value={query.authorId || ""}
+                  />
+                  <input
+                    data-search="assigneeId"
+                    name="assigneeId"
+                    type="hidden"
+                    value={query.assigneeId || ""}
+                  />
+                  <input
+                    data-search="mentionId"
+                    name="mentionId"
+                    type="hidden"
+                    value={query.mentionId || ""}
+                  />
+                  <div className="search">
+                    <div className="search-bar">
+                      <input
+                        className="textbox full"
+                        defaultValue={query.filter}
+                        name="filter"
+                        type="text"
+                      />
+                      <button className="search-btn" type="submit">
+                        <i className="yobicon-search" />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </aside>
+            <section className="span10 span-hard-wrap" id="span10">
+              <ul className="nav nav-tabs nm">
+                <li className={state === "open" ? "active" : undefined}>
+                  <a data-state="open" href={openHref}>
+                    issue.state.open{" "}
+                    <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
+                  </a>
+                </li>
+                <li className={state === "closed" ? "active" : undefined}>
+                  <a data-state="closed" href={closedHref}>
+                    issue.state.closed{" "}
+                    <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
+                  </a>
+                </li>
+                <li>
+                  <span className="two-column-mode">
+                    <input id="two-column-mode" type="checkbox" />
+                  </span>
+                </li>
+              </ul>
+              {issueItems.length > 0 ? (
+                <>
+                  <div className="filter-wrap small-heights">
+                    {issueItems.length > 1 ? (
+                      <div className="filters pull-right">
+                        {[
+                          ["dueDate", "common.order.dueDate"],
+                          ["updatedDate", "common.order.updatedDate"],
+                          ["createdDate", "common.order.date"],
+                          ["numOfComments", "common.order.comments"],
+                        ].map(([orderBy, label]) => (
+                          <a
+                            className={query.orderBy === orderBy ? "filter active" : "filter"}
+                            data-order-by={orderBy}
+                            data-order-dir={orderDirFor(orderBy)}
+                            href={orderHref(orderBy)}
+                            key={orderBy}
+                          >
+                            <i
+                              className={`ico btn-gray-arrow ${
+                                query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
+                              }`}
+                            />
+                            {label}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <ul className="post-list-wrap">
+                    {issueItems.map((issue) => {
+                      const issueHref = prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
+                      );
+                      const legacyIssueId = issue.id && issue.id > 0 ? issue.id : issue.issueNumber;
+                      const projectHref = prefixBasePath(
                         props.runtimeConfig.basePath,
                         `/${issue.ownerName}/${issue.projectName}`,
-                      )}
+                      );
+                      const labelHrefBase = buildOrganizationIssueHref(
+                        props.runtimeConfig,
+                        organizationName,
+                        query,
+                        { pageNum: 1 },
+                      );
+                      const authorHref = issue.authorLoginId
+                        ? userInfoHref(props.runtimeConfig, issue.authorLoginId)
+                        : "#";
+                      const assigneeHref = issue.assigneeLoginId
+                        ? userInfoHref(props.runtimeConfig, issue.assigneeLoginId)
+                        : "#";
+                      return (
+                        <li
+                          className="post-item title"
+                          data-href={issueHref}
+                          id={`issue-item-${legacyIssueId}`}
+                          key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+                        >
+                          <div className="span10 span-hard-wrap">
+                            <a
+                              className={`avatar-wrap mlarge hide-in-mobile${
+                                issue.authorAvatarUrl ? "" : " empty-avatar-wrap"
+                              }`}
+                              data-placement="top"
+                              data-toggle="tooltip"
+                              href={authorHref}
+                              title={issue.authorLoginId || issue.authorLabel || "issue.noAuthor"}
+                            >
+                              {issue.authorAvatarUrl ? (
+                                <img
+                                  alt={issue.authorLabel}
+                                  height={32}
+                                  src={issue.authorAvatarUrl}
+                                  width={32}
+                                />
+                              ) : (
+                                "\u00a0"
+                              )}
+                            </a>
+                            <div className="title-wrap">
+                              <a className="title" href={issueHref}>
+                                {issue.title}
+                              </a>
+                            </div>
+                            <div className="infos">
+                              {issue.authorLoginId && issue.authorLabel ? (
+                                <a
+                                  className="infos-item infos-link-item"
+                                  data-placement="top"
+                                  data-toggle="tooltip"
+                                  href={authorHref}
+                                  title={issue.authorLoginId}
+                                >
+                                  {issue.authorLabel}
+                                </a>
+                              ) : (
+                                <span className="infos-item">issue.noAuthor</span>
+                              )}
+                              <span className="infos-item">{issue.updatedLabel}</span>
+                              {issue.milestoneTitle ? (
+                                <span className="infos-item mileston-tag">
+                                  {issue.milestoneTitle}
+                                </span>
+                              ) : null}
+                              {issue.commentCount > 0 || issue.voterCount > 0 ? (
+                                <span className="infos-item item-count-groups">
+                                  {issue.commentCount > 0 ? (
+                                    <a className="num-comments" href={`${issueHref}#comments`}>
+                                      {issue.commentCount}
+                                    </a>
+                                  ) : null}
+                                  {issue.voterCount > 0 ? (
+                                    <a className="num-hearts strong" href={`${issueHref}#vote`}>
+                                      {issue.voterCount}
+                                    </a>
+                                  ) : null}
+                                </span>
+                              ) : null}
+                              <a className="infos-link-item group-project-name" href={projectHref}>
+                                {issue.projectName}
+                              </a>
+                              <span className="post-id margin-right-5">#{issue.issueNumber}</span>
+                              {issue.labels.map((label) => (
+                                <a
+                                  className="label issue-label list-label"
+                                  data-label-id={label.id}
+                                  href={`${labelHrefBase}&labelIds=${label.id}`}
+                                  key={label.id}
+                                  style={{ background: label.color || "#ddd" }}
+                                >
+                                  {label.name}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="span2 hide-in-mobile">
+                            <div className="mt5 pull-right">
+                              {issue.assigneeLabel ? (
+                                <a
+                                  className={`avatar-wrap assinee${
+                                    issue.assigneeAvatarUrl ? "" : " empty-avatar-wrap"
+                                  }`}
+                                  data-placement="top"
+                                  data-toggle="tooltip"
+                                  href={assigneeHref}
+                                  title={`issue.assignee: ${issue.assigneeLabel}`}
+                                >
+                                  {issue.assigneeAvatarUrl ? (
+                                    <img
+                                      alt={issue.assigneeLabel}
+                                      height={32}
+                                      src={issue.assigneeAvatarUrl}
+                                      width={32}
+                                    />
+                                  ) : (
+                                    "\u00a0"
+                                  )}
+                                </a>
+                              ) : (
+                                <div className="empty-avatar-wrap">&nbsp;</div>
+                              )}
+                            </div>
+                            {issue.dueDateLabel ? (
+                              <div
+                                className={`mr20 mt10 pull-right${
+                                  issue.dueDateOverdue ? " overdue" : ""
+                                }`}
+                                data-placement="top"
+                                data-toggle="tooltip"
+                                title={issue.dueDateLabel}
+                              >
+                                <i className="yobicon-clock2" />
+                                {issue.dueDateLabel}
+                              </div>
+                            ) : null}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div id="pagination" data-total={totalPageCount}>
+                    <a
+                      className="pageNum active"
+                      href={buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+                        pageNum: issueList?.pageNum ?? 1,
+                      })}
                     >
-                      {issue.projectName}
+                      {issueList?.pageNum ?? 1}
                     </a>
-                    <span>{`#${issue.issueNumber}`}</span>
-                    {issue.labels.map((label) => (
-                      <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>
-                        {label.name}
-                      </span>
-                    ))}
                   </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="error-wrap">
-              <p>Issue is empty.</p>
-            </div>
-          )}
-          <nav aria-label="Issue pagination" id="pagination">
-            <span>{`Page ${issueList?.pageNum ?? 1}`}</span>
-            <span>{`Total ${issueList?.totalCount ?? 0}`}</span>
-          </nav>
-        </section>
-      </section>
+                </>
+              ) : (
+                <div className="error-wrap">
+                  <i className="ico ico-err1" />
+                  <p>issue.is.empty</p>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
@@ -599,6 +985,7 @@ export function OrganizationSettingsPage(props: {
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
+            active="settings"
             organizationName={detail.organizationName}
             runtimeConfig={props.runtimeConfig}
           />
@@ -738,88 +1125,207 @@ export function OrganizationMembersPage(props: {
     viewerCanUpdate: false,
   };
   const [loginId, setLoginId] = React.useState("");
+  const [deleteTarget, setDeleteTarget] = React.useState<null | string>(null);
+  const memberPath = buildOrganizationHref(props.runtimeConfig, detail.organizationName, "members");
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Members</h1>
-      <OrganizationSettingsSubMenu
-        organizationName={detail.organizationName}
-        runtimeConfig={props.runtimeConfig}
-      />
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onAddMember?.(detail.organizationName, loginId);
-        }}
-      >
-        <label>
-          <span>Add member</span>
-          <input
-            name="loginId"
-            placeholder="Add a new member..."
-            type="text"
-            value={loginId}
-            onChange={(event) => setLoginId(event.target.value)}
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <OrganizationSettingsSubMenu
+            active="members"
+            organizationName={detail.organizationName}
+            runtimeConfig={props.runtimeConfig}
           />
-        </label>
-        <button type="submit">{props.pending ? "Adding…" : "Add"}</button>
-      </form>
-      <ul>
-        {detail.members.map((member) => (
-          <li key={member.userId}>
-            <strong>{member.userLabel}</strong> @{member.loginId}
-            <div>
-              {detail.roleOptions.map((roleOption) => (
-                <button
-                  key={`${member.userId}-${roleOption.role}`}
-                  type="button"
-                  onClick={() =>
-                    props.onUpdateMemberRole?.(
-                      detail.organizationName,
-                      member.userId,
-                      roleOption.role,
-                    )
-                  }
-                >
-                  {roleOption.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => props.onDeleteMember?.(detail.organizationName, member.userId)}
-              >
-                Delete
+
+          <div className="inner-bubble">
+            <form
+              action={memberPath}
+              className="nm"
+              id="addNewMember"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onAddMember?.(detail.organizationName, loginId);
+              }}
+            >
+              <input
+                autoComplete="off"
+                className="text uname"
+                data-provider="typeahead"
+                id="loginId"
+                name="loginId"
+                onChange={(event) => setLoginId(event.target.value)}
+                pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+                placeholder="project.members.addMember"
+                required
+                title="user.wrongloginId.alert"
+                type="text"
+                value={loginId}
+              />
+              <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
+                <i className="yobicon-addfriend" /> button.add
               </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <section>
-        <h2>Delete a group member</h2>
-        <p>Are you sure this user should leave this group?</p>
-      </section>
-      {detail.enrollmentRequests.length > 0 ? (
-        <section>
-          <h2>Enrollment requests</h2>
-          <ul>
-            {detail.enrollmentRequests.map((request) => (
-              <li key={request.userId}>
-                <strong>{request.userLabel}</strong> @{request.loginId}
-                <button
-                  type="button"
-                  onClick={() =>
-                    props.onAcceptEnrollment?.(detail.organizationName, request.userId)
-                  }
+            </form>
+          </div>
+
+          <ul className="members project row-fluid">
+            {detail.members.map((member) => (
+              <li className="member span6 span-hard-wrap" key={member.userId}>
+                <a
+                  className="avatar-wrap mlarge pull-left mr10"
+                  href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
                 >
-                  Add
-                </button>
+                  {member.avatarUrl ? (
+                    <img
+                      alt={`${member.userLabel || member.loginId} avatar`}
+                      height={64}
+                      src={member.avatarUrl}
+                      width={64}
+                    />
+                  ) : null}
+                </a>
+                <div className="member-name">{member.userLabel || member.loginId}</div>
+                <div className="member-id">{`@${member.loginId}`}</div>
+                <div className="member-setting">
+                  <div className="btn-group" data-name={`roleof-${member.loginId}`}>
+                    <button className="btn dropdown-toggle large" data-toggle="dropdown" type="button">
+                      <span className="d-label">{`user.role.${member.role}`}</span>
+                      <span className="d-caret">
+                        <span className="caret" />
+                      </span>
+                    </button>
+                    <ul className="dropdown-menu">
+                      {detail.roleOptions.map((roleOption) => (
+                        <li
+                          className={roleOption.role === member.role ? "active" : undefined}
+                          data-selected={roleOption.role === member.role ? "true" : undefined}
+                          data-value={roleOption.role}
+                          key={`${member.userId}-${roleOption.role}`}
+                        >
+                          <a
+                            data-action="apply"
+                            data-href={buildOrganizationHref(
+                              props.runtimeConfig,
+                              detail.organizationName,
+                              `member/${member.userId}/edit`,
+                            )}
+                            href="javascript:void(0)"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              props.onUpdateMemberRole?.(
+                                detail.organizationName,
+                                member.userId,
+                                roleOption.role,
+                              );
+                            }}
+                            data-loginid={member.loginId}
+                          >
+                            {`user.role.${roleOption.label}`}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <a
+                    className="ybtn ybtn-danger ybtn-small"
+                    data-action="delete"
+                    data-href={buildOrganizationHref(
+                      props.runtimeConfig,
+                      detail.organizationName,
+                      `member/${member.userId}/delete`,
+                    )}
+                    href="javascript:void(0)"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setDeleteTarget(member.userId);
+                    }}
+                  >
+                    button.delete
+                  </a>
+                </div>
               </li>
             ))}
           </ul>
-        </section>
-      ) : null}
+
+          <div className={`modal hide${deleteTarget ? " in" : ""}`} id="alertDeletion">
+            <div className="modal-header">
+              <button className="close" data-dismiss="modal" type="button">
+                x
+              </button>
+              <h3>organization.member.delete</h3>
+            </div>
+            <div className="modal-body">
+              <p>organization.member.deleteConfirm</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-info ybtn-mini"
+                id="deleteBtn"
+                onClick={() => {
+                  if (deleteTarget) {
+                    props.onDeleteMember?.(detail.organizationName, deleteTarget);
+                  }
+                  setDeleteTarget(null);
+                }}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button className="ybtn ybtn-mini" data-dismiss="modal" type="button">
+                button.no
+              </button>
+            </div>
+          </div>
+
+          {detail.enrollmentRequests.length > 0 ? (
+            <>
+              <legend>
+                <h3>{`project.member.enrollment.request (${detail.enrollmentRequests.length})`}</h3>
+              </legend>
+              <div className="row-fluid">
+                {detail.enrollmentRequests.map((request) => (
+                  <div className="span2" key={request.userId}>
+                    <div className="pull-left mr10">
+                      <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                        {request.avatarUrl ? (
+                          <img
+                            alt={`${request.userLabel || request.loginId} avatar`}
+                            className="img-circle"
+                            height={65}
+                            src={request.avatarUrl}
+                            width={65}
+                          />
+                        ) : null}
+                      </a>
+                    </div>
+                    <div className="pull-left organization-member-enrollment-info">
+                      <span>
+                        <a
+                          href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}
+                        >
+                          <strong>{request.userLabel || request.loginId}</strong>
+                        </a>
+                      </span>
+                      <span>{`(${request.loginId})`}</span>
+                      <button
+                        className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
+                        onClick={() =>
+                          props.onAcceptEnrollment?.(detail.organizationName, request.userId)
+                        }
+                        type="button"
+                        data-loginid={request.loginId}
+                      >
+                        <i className="yobicon-addfriend" /> button.add
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
     </main>
   );
 }
@@ -830,6 +1336,7 @@ export function OrganizationDeletePage(props: {
   runtimeConfig: RuntimeConfig;
   onDeleteOrganization?: (organizationName: string) => void;
 }) {
+  const [modalOpen, setModalOpen] = React.useState(false);
   const detail = props.detail ?? {
     deleteAllowed: false,
     enrollmentRequests: [],
@@ -841,23 +1348,63 @@ export function OrganizationDeletePage(props: {
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Group Delete</h1>
-      <OrganizationSettingsSubMenu
-        organizationName={detail.organizationName}
-        runtimeConfig={props.runtimeConfig}
-      />
-      <section>
-        <button
-          type="button"
-          disabled={!detail.deleteAllowed || props.pending}
-          onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
-        >
-          {props.pending ? "Deleting…" : "Delete This Group"}
-        </button>
-        <p>Do you want to delete this group?</p>
-        <p>Are you sure you want to delete this group?</p>
-      </section>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <OrganizationSettingsSubMenu
+            active="delete"
+            organizationName={detail.organizationName}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="box-wrap bottom">
+            <button
+              className="ybtn ybtn-danger"
+              data-toggle="modal"
+              disabled={!detail.deleteAllowed || props.pending}
+              id="btnDelete"
+              onClick={() => setModalOpen(true)}
+              type="button"
+            >
+              organization.delete.this
+            </button>
+          </div>
+
+          <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
+            <div className="modal-header">
+              <button
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                x
+              </button>
+              <h3>organization.delete.requestion</h3>
+            </div>
+            <div className="modal-body">
+              <p> organization.delete.reaccept </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                disabled={!detail.deleteAllowed || props.pending}
+                id="btnDeleteExec"
+                onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                button.no
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

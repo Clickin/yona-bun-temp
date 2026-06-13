@@ -37,9 +37,7 @@ import {
   UpdateProjectLabelRequestSchema,
   VerifyUserRequestSchema,
   type ListProjectLabelCategoriesResponse,
-  type ListOrganizationIssuesResponse,
   type ListProjectIssuesResponse,
-  type ListUserIssuesResponse,
   type ListProjectLabelsResponse,
   type ListProjectMilestonesResponse,
   type MassUpdateIssuesResponse,
@@ -211,6 +209,7 @@ export interface OrganizationIssueListOptions {
   authorId?: bigint | number;
   filter?: string;
   itemsPerPage?: number;
+  mentionId?: bigint | number;
   orderBy?: string;
   orderDir?: string;
   pageNum?: number;
@@ -239,6 +238,109 @@ export type DirectIssueFormOptionsResponse = {
     ownerName: string;
     projectName: string;
   };
+};
+
+export type IssueParentOption = {
+  id: bigint | number;
+  issueNumber: bigint | number;
+  selected: boolean;
+  title: string;
+};
+
+export type IssueParentOptionsResponse = {
+  items: IssueParentOption[];
+};
+
+export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
+  assigneeAvatarUrl?: string;
+  assigneeLoginId?: string;
+  authorAvatarUrl?: string;
+  authorLoginId?: string;
+  childClosedCount?: number;
+  childIssues?: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft?: boolean;
+    issueNumber: bigint | number;
+    labels: Array<{ color: string; id: bigint | number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount?: number;
+  commentParentLinks?: Array<{
+    id: bigint | number;
+    parentCommentId?: bigint | number | null;
+  }>;
+  dueDateLabel?: string;
+  dueDateOverdue?: boolean;
+  id?: bigint | number;
+  parentIssueNumber?: bigint | number | null;
+  parentIssueTitle?: string;
+  weight?: number;
+};
+
+export type ProjectIssueListRestResponse = Omit<ListProjectIssuesResponse, "items"> & {
+  items: RestIssueListItem[];
+  draftItems?: RestIssueListItem[];
+};
+
+export type OrganizationIssueListRestResponse = Omit<ListProjectIssuesResponse, "items"> & {
+  closedIssueCount: number;
+  items: RestIssueListItem[];
+  openIssueCount: number;
+  organizationName: string;
+  visibleProjects: Array<{ ownerName: string; projectName: string }>;
+};
+
+export type UserIssueListRestResponse = Omit<
+  ListProjectIssuesResponse,
+  "items" | "ownerName" | "projectName"
+> & {
+  closedIssueCount: number;
+  filter: string;
+  items: RestIssueListItem[];
+  openIssueCount: number;
+  sideFilterCounts?: {
+    favorite?: number;
+    mentioned?: number;
+    shared?: number;
+  };
+  state: string;
+  viewerUserId?: bigint | number;
+};
+
+export type RestIssueDetailResponse = ReadIssueDetailResponse & {
+  authorId?: bigint | number | null;
+  childClosedCount?: number;
+  childIssues?: Array<{
+    assigneeLabel: string;
+    createdLabel: string;
+    isDraft?: boolean;
+    issueNumber: bigint | number;
+    labels: Array<{ color: string; id: bigint | number; name: string }>;
+    state: string;
+    title: string;
+  }>;
+  childOpenCount?: number;
+  dueDateLabel?: string;
+  historyHtml?: string;
+  historyMarkdown?: string;
+  issueId?: bigint | number;
+  issueVoters?: Array<{
+    avatarUrl: string;
+    loginId: string;
+    userId: bigint | number;
+    userLabel: string;
+  }>;
+  isDraft?: boolean;
+  parentIssueId?: bigint | number | null;
+  parentIssueNumber?: bigint | number | null;
+  parentIssueTitle?: string;
+  weight?: number;
+};
+
+export type IssueWeightResponse = {
+  weight: number;
 };
 
 export interface CodeBrowserOptions {
@@ -465,6 +567,10 @@ type IssueMutationRestInput = (
   | MessageInitShape<typeof CreateIssueRequestSchema>
   | MessageInitShape<typeof UpdateIssueRequestSchema>
 ) & {
+  dueDate?: string;
+  isDraft?: boolean;
+  isPublish?: boolean;
+  parentIssueId?: bigint | number | string | null;
   referCommentId?: bigint | number | string | null;
 };
 
@@ -474,8 +580,12 @@ function issueMutationRestBody(input: IssueMutationRestInput) {
     assigneeLoginId: input.assigneeLoginId ?? "",
     attachmentIds: input.attachmentIds ?? [],
     bodyMarkdown: input.bodyMarkdown ?? "",
+    dueDate: input.dueDate ?? "",
+    isDraft: input.isDraft ?? false,
+    isPublish: input.isPublish ?? false,
     labelIds: input.labelIds ?? [],
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
+    parentIssueId: input.parentIssueId ? input.parentIssueId : undefined,
     referCommentId,
     title: input.title ?? "",
   };
@@ -483,12 +593,15 @@ function issueMutationRestBody(input: IssueMutationRestInput) {
 
 function issueCommentRestBody(
   input:
-    | MessageInitShape<typeof CreateIssueCommentRequestSchema>
+    | (MessageInitShape<typeof CreateIssueCommentRequestSchema> & {
+        parentCommentId?: bigint | number | string | null;
+      })
     | MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
 ) {
   return {
     attachmentIds: input.attachmentIds ?? [],
     contentsMarkdown: input.contentsMarkdown ?? "",
+    parentCommentId: "parentCommentId" in input ? input.parentCommentId : undefined,
   };
 }
 
@@ -510,14 +623,15 @@ export async function listOrganizationIssues(
   organizationName: string,
   input: OrganizationIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
-): Promise<ListOrganizationIssuesResponse> {
-  return restFetch<ListOrganizationIssuesResponse>(
+): Promise<OrganizationIssueListRestResponse> {
+  return restFetch<OrganizationIssueListRestResponse>(
     runtimeConfig,
     `/organizations/${encodeIssuePathSegment(organizationName)}/issues${issueQueryString({
       assigneeId: input.assigneeId,
       authorId: input.authorId,
       filter: input.filter,
       itemsPerPage: input.itemsPerPage,
+      mentionId: input.mentionId,
       orderBy: input.orderBy,
       orderDir: input.orderDir,
       pageNum: input.pageNum ?? 1,
@@ -534,8 +648,8 @@ export async function listProjectIssues(
   projectName: string,
   input: ProjectIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
-): Promise<ListProjectIssuesResponse> {
-  return restFetch<ListProjectIssuesResponse>(
+): Promise<ProjectIssueListRestResponse> {
+  return restFetch<ProjectIssueListRestResponse>(
     runtimeConfig,
     `${projectIssuesRestPath(ownerName, projectName)}${issueQueryString({
       assigneeId: input.assigneeId,
@@ -554,8 +668,8 @@ export async function listUserIssues(
   runtimeConfig: RuntimeConfig,
   input: UserIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
-): Promise<ListUserIssuesResponse> {
-  return restFetch<ListUserIssuesResponse>(
+): Promise<UserIssueListRestResponse> {
+  return restFetch<UserIssueListRestResponse>(
     runtimeConfig,
     `/user/issues${issueQueryString({
       filter: input.filter,
@@ -576,8 +690,8 @@ export async function readIssueDetail(
   projectName: string,
   issueNumber: bigint | number,
   fetchImpl: typeof fetch = fetch,
-): Promise<ReadIssueDetailResponse> {
-  return restFetch<ReadIssueDetailResponse>(
+): Promise<RestIssueDetailResponse> {
+  return restFetch<RestIssueDetailResponse>(
     runtimeConfig,
     projectIssueDetailRestPath(ownerName, projectName, issueNumber),
     { fetchImpl },
@@ -607,6 +721,22 @@ export async function readDirectIssueFormOptions(
   };
 }
 
+export async function listIssueParentOptions(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  input: { currentIssueNumber?: bigint | number | string | null } = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueParentOptionsResponse> {
+  return restFetch<IssueParentOptionsResponse>(
+    runtimeConfig,
+    `${projectIssuesRestPath(ownerName, projectName)}/parent-options${issueQueryString({
+      currentIssueNumber: input.currentIssueNumber,
+    })}`,
+    { fetchImpl },
+  );
+}
+
 export async function updateIssueState(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
@@ -625,15 +755,41 @@ export async function updateIssueState(
   );
 }
 
+export async function updateIssueWeight(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateIssueRequestSchema>,
+  delta: 1 | -1,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueWeightResponse> {
+  return restFetch<IssueWeightResponse>(
+    runtimeConfig,
+    `${projectIssueDetailRestPath(
+      input.ownerName ?? "",
+      input.projectName ?? "",
+      input.issueNumber ?? 0n,
+    )}/${delta > 0 ? "upvoteWeight" : "downvoteWeight"}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
 export async function createIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
   input: MessageInitShape<typeof CreateIssueRequestSchema> & {
+    dueDate?: string;
+    isDraft?: boolean;
+    isPublish?: boolean;
+    parentIssueId?: bigint | number | string | null;
     referCommentId?: bigint | number | string | null;
   },
   fetchImpl: typeof fetch = fetch,
-): Promise<ReadIssueDetailResponse> {
-  return restFetch<ReadIssueDetailResponse>(
+): Promise<RestIssueDetailResponse> {
+  return restFetch<RestIssueDetailResponse>(
     runtimeConfig,
     projectIssuesRestPath(input.ownerName ?? "", input.projectName ?? ""),
     {
@@ -648,10 +804,15 @@ export async function createIssue(
 export async function updateIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateIssueRequestSchema>,
+  input: MessageInitShape<typeof UpdateIssueRequestSchema> & {
+    dueDate?: string;
+    isDraft?: boolean;
+    isPublish?: boolean;
+    parentIssueId?: bigint | number | string | null;
+  },
   fetchImpl: typeof fetch = fetch,
-): Promise<ReadIssueDetailResponse> {
-  return restFetch<ReadIssueDetailResponse>(
+): Promise<RestIssueDetailResponse> {
+  return restFetch<RestIssueDetailResponse>(
     runtimeConfig,
     projectIssueDetailRestPath(
       input.ownerName ?? "",
@@ -691,7 +852,9 @@ export async function deleteIssue(
 export async function createIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateIssueCommentRequestSchema>,
+  input: MessageInitShape<typeof CreateIssueCommentRequestSchema> & {
+    parentCommentId?: bigint | number | string | null;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(

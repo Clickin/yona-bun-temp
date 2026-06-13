@@ -77,6 +77,8 @@ pub struct CodeBreadcrumbRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeEntryRecord {
+    pub author_email: String,
+    pub author_label: String,
     pub commit_date: String,
     pub commit_message: String,
     pub commit_short_id: String,
@@ -88,6 +90,12 @@ pub struct CodeEntryRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeFileRecord {
+    pub author_email: String,
+    pub author_label: String,
+    pub commit_date: String,
+    pub commit_id: String,
+    pub commit_message: String,
+    pub commit_short_id: String,
     pub is_binary: bool,
     pub is_too_large: bool,
     pub mime_type: String,
@@ -691,6 +699,48 @@ pub fn svn_changed_paths(repo_path: &Path, revision: i64) -> Result<Vec<SvnChang
     parse_svnlook_changed(&String::from_utf8_lossy(&output.stdout))
 }
 
+pub fn svn_path_last_changed_revision(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if revision.is_some_and(|revision| revision < 0) {
+        return Err(VcsError::InvalidPath);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return revision.map_or_else(|| svn_youngest_revision(repo_path), Ok);
+    }
+
+    let mut command = svn_command("svnlook");
+    command.arg("history");
+    if let Some(revision) = revision {
+        command.args(["-r", &revision.to_string()]);
+    }
+    let output = command
+        .arg(repo_path)
+        .arg(&clean_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let lower = stderr.to_ascii_lowercase();
+        if lower.contains("path not found")
+            || lower.contains("no such revision")
+            || lower.contains("does not exist")
+            || lower.contains("not found")
+        {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::SvnLookFailed(stderr));
+    }
+
+    parse_svnlook_history_latest_revision(&String::from_utf8_lossy(&output.stdout))
+}
+
 pub fn svn_revision_at_or_before(repo_path: &Path, date: &str) -> Result<Option<i64>, VcsError> {
     if !repo_path.exists() || !repo_path.is_dir() {
         return Err(VcsError::NotFound);
@@ -1145,6 +1195,45 @@ pub fn svn_copy_path(
     svn_youngest_revision(repo_path)
 }
 
+pub fn svn_move_path(
+    repo_path: &Path,
+    source_path: &str,
+    destination_path: &str,
+    message: &str,
+) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_source = normalize_repo_path(source_path)?;
+    let clean_destination = normalize_repo_path(destination_path)?;
+    if clean_source.is_empty() || clean_destination.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let work_dir = svn_temp_work_dir("move")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        svn_command("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let source = work_dir.join(&clean_source);
+    let target = work_dir.join(&clean_destination);
+    run_svn_command(svn_command("svn").arg("move").arg(&source).arg(&target))?;
+    run_svn_command(
+        svn_command("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&work_dir),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_patch_properties(
     repo_path: &Path,
     path: &str,
@@ -1342,6 +1431,28 @@ fn parse_svnlook_changed(output: &str) -> Result<Vec<SvnChangedPath>, VcsError> 
         });
     }
     Ok(paths)
+}
+
+fn parse_svnlook_history_latest_revision(output: &str) -> Result<i64, VcsError> {
+    for line in output.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty()
+            || trimmed.starts_with('-')
+            || trimmed
+                .chars()
+                .next()
+                .is_some_and(|character| !character.is_ascii_digit())
+        {
+            continue;
+        }
+        let Some(revision) = trimmed.split_whitespace().next() else {
+            continue;
+        };
+        return revision
+            .parse::<i64>()
+            .map_err(|_| VcsError::SvnLookFailed(format!("invalid history revision: {line}")));
+    }
+    Err(VcsError::NotFound)
 }
 
 fn parse_svnlook_copy_info(line: &str) -> Result<Option<(String, i64)>, VcsError> {
@@ -2733,9 +2844,11 @@ fn list_tree_entries(
         };
         let size = fields[3].parse::<i64>().unwrap_or_default();
         let entry_path = join_repo_path(path, name);
-        let (commit_short_id, commit_message, commit_date) =
+        let (commit_short_id, commit_message, commit_date, author_label, author_email) =
             latest_commit_for_path(repo_path, branch, &entry_path);
         entries.push(CodeEntryRecord {
+            author_email,
+            author_label,
             commit_date,
             commit_message,
             commit_short_id,
@@ -2753,15 +2866,70 @@ fn list_tree_entries(
     Ok(entries)
 }
 
-fn latest_commit_for_path(repo_path: &Path, branch: &str, path: &str) -> (String, String, String) {
+fn latest_commit_for_path(
+    repo_path: &Path,
+    branch: &str,
+    path: &str,
+) -> (String, String, String, String, String) {
     let Ok(output) = git_output(
         repo_path,
-        &["log", "-1", "--format=%h%x1f%s%x1f%cs", branch, "--", path],
+        &[
+            "log",
+            "-1",
+            "--format=%h%x1f%s%x1f%cs%x1f%an%x1f%ae",
+            branch,
+            "--",
+            path,
+        ],
     ) else {
-        return (String::new(), String::new(), String::new());
+        return (
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
     };
     let mut parts = output.trim().split('\x1f');
     (
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+    )
+}
+
+fn latest_file_commit_for_path(
+    repo_path: &Path,
+    branch: &str,
+    path: &str,
+) -> (String, String, String, String, String, String) {
+    let Ok(output) = git_output(
+        repo_path,
+        &[
+            "log",
+            "-1",
+            "--format=%H%x1f%h%x1f%s%x1f%cs%x1f%an%x1f%ae",
+            branch,
+            "--",
+            path,
+        ],
+    ) else {
+        return (
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+    };
+    let mut parts = output.trim().split('\x1f');
+    (
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
         parts.next().unwrap_or_default().to_string(),
         parts.next().unwrap_or_default().to_string(),
         parts.next().unwrap_or_default().to_string(),
@@ -3030,7 +3198,15 @@ fn read_file(repo_path: &Path, branch: &str, path: &str) -> Result<CodeFileRecor
     } else {
         String::from_utf8_lossy(&bytes).to_string()
     };
+    let (commit_id, commit_short_id, commit_message, commit_date, author_label, author_email) =
+        latest_file_commit_for_path(repo_path, branch, path);
     Ok(CodeFileRecord {
+        author_email,
+        author_label,
+        commit_date,
+        commit_id,
+        commit_message,
+        commit_short_id,
         is_binary,
         is_too_large,
         mime_type: mime_guess::from_path(path)
@@ -3367,5 +3543,23 @@ mod tests {
                 copy_from_revision: Some(1),
             }]
         );
+    }
+
+    #[test]
+    fn parse_svnlook_history_reads_latest_path_revision() {
+        let revision = parse_svnlook_history_latest_revision(
+            "REVISION   PATH\n--------   ----\n2          /trunk/README.md\n1          /trunk/README.md\n",
+        )
+        .expect("parse history output");
+
+        assert_eq!(revision, 2);
+    }
+
+    #[test]
+    fn parse_svnlook_history_returns_not_found_for_empty_history() {
+        assert!(matches!(
+            parse_svnlook_history_latest_revision("REVISION   PATH\n--------   ----\n"),
+            Err(VcsError::NotFound)
+        ));
     }
 }

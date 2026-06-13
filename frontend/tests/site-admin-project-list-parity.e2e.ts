@@ -120,7 +120,13 @@ test("site admin project list preserves legacy shell and delete modal", async ({
         : [];
 
     await route.fulfill({
-      body: JSON.stringify(siteProjectsPayload({ filter, projects })),
+      body: JSON.stringify(
+        siteProjectsPayload({
+          filter,
+          projects,
+          totalPages: filter === "alpha" ? 2 : undefined,
+        }),
+      ),
       headers: restJsonHeaders,
       status: 200,
     });
@@ -131,7 +137,9 @@ test("site admin project list preserves legacy shell and delete modal", async ({
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Project List");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText(
+    "site.sidebar.projectList",
+  );
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect(page.locator("input[name='filter']")).toHaveValue("alpha");
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
@@ -140,6 +148,13 @@ test("site admin project list preserves legacy shell and delete modal", async ({
   );
   await expect(page.locator(".project-list-wrap .project-overview")).toHaveText(
     "Legacy project list row",
+  );
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    "/yona/sites/projectList?filter=alpha&pageNum=2",
   );
 
   const deleteButton = page.locator("[data-toggle='delete-project']");
@@ -154,5 +169,6 @@ test("site admin project list preserves legacy shell and delete modal", async ({
   await expect
     .poll(() => requests.some((request) => request === "DELETE /yona/api/v1/site/projects/7"))
     .toBe(true);
-  await expect(page.locator(".warning-none")).toHaveText("No projects found.");
+  await expect(page.locator(".project-list-wrap")).toHaveCount(1);
+  await expect(page.locator(".warning-none")).toHaveCount(0);
 });

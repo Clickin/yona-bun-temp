@@ -1,6 +1,8 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  listProjectMilestones,
+  listIssueParentOptions,
   readIssueDetail,
   readProjectContainer,
   searchIssueMentionUsers,
@@ -12,8 +14,13 @@ import { useAppRuntime } from "../../../../../../app-runtime-context";
 import {
   toProjectContainerView,
   toProjectIssueDetailView,
+  toProjectMilestoneListView,
 } from "../../../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../../../-issue-views";
+import type {
+  ProjectIssueParentOptionViewModel,
+  ProjectMilestoneViewModel,
+} from "../../../../../-view-models";
 import {
   classifyConnectFailure,
   ForbiddenPage,
@@ -35,6 +42,10 @@ function IssueEditRouteComponent() {
   const [issue, setIssue] = React.useState<ReturnType<typeof toProjectIssueDetailView> | null>(
     null,
   );
+  const [milestones, setMilestones] = React.useState<ProjectMilestoneViewModel[]>([]);
+  const [parentIssueOptions, setParentIssueOptions] = React.useState<
+    ProjectIssueParentOptionViewModel[]
+  >([]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle(issue?.title ? `Edit ${issue.title}` : "Edit Issue");
@@ -44,13 +55,28 @@ function IssueEditRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const [nextDetail, nextIssue] = await Promise.all([
+        const [nextDetail, nextIssue, nextMilestones, nextParentOptions] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
           readIssueDetail(runtimeConfig, owner, projectName, Number(issueNumber)),
+          listProjectMilestones(runtimeConfig, owner, projectName, { state: "all" }),
+          listIssueParentOptions(runtimeConfig, owner, projectName, {
+            currentIssueNumber: issueNumber,
+          }),
         ]);
         if (!cancelled) {
           setDetail(toProjectContainerView(nextDetail));
           setIssue(toProjectIssueDetailView(nextIssue));
+          setMilestones(
+            toProjectMilestoneListView(nextMilestones, "all", "dueDate", "asc").milestones,
+          );
+          setParentIssueOptions(
+            nextParentOptions.items.map((option) => ({
+              id: Number(option.id),
+              issueNumber: Number(option.issueNumber),
+              selected: option.selected,
+              title: option.title,
+            })),
+          );
         }
       } catch (error) {
         if (cancelled) {
@@ -95,6 +121,7 @@ function IssueEditRouteComponent() {
         })
       }
       initialIssue={issue}
+      milestoneOptions={milestones}
       mode="edit"
       onSearchAssignableUsers={(query) =>
         searchProjectAssignableUsers(runtimeConfig, {
@@ -112,18 +139,36 @@ function IssueEditRouteComponent() {
           query,
         })
       }
-      onSubmit={async ({ assigneeLoginId, attachmentIds, bodyMarkdown, title }) => {
+      onSubmit={async ({
+        assigneeLoginId,
+        attachmentIds,
+        bodyMarkdown,
+        dueDate,
+        isDraft,
+        isPublish,
+        labelIds,
+        milestoneId,
+        parentIssueId,
+        title,
+      }) => {
         const updated = await updateIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
           attachmentIds: attachmentIds.map(BigInt),
           bodyMarkdown,
+          dueDate,
+          isDraft,
+          isPublish,
           issueNumber: BigInt(Number(issueNumber)),
+          labelIds: labelIds.map(BigInt),
+          milestoneId: BigInt(milestoneId),
           ownerName: owner,
+          parentIssueId: parentIssueId ? BigInt(parentIssueId) : undefined,
           projectName,
           title,
         });
         window.location.assign(`/${owner}/${projectName}/issue/${Number(updated.issueNumber)}`);
       }}
+      parentIssueOptions={parentIssueOptions}
       runtimeConfig={runtimeConfig}
     />
   );

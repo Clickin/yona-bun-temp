@@ -1,7 +1,9 @@
 use tracing_subscriber::EnvFilter;
 use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
 use yona_rust_pilot_server::persistence::PilotRepository;
-use yona_rust_pilot_server::runtime_config::load_startup_config_from_env;
+use yona_rust_pilot_server::runtime_config::{
+    apply_startup_runtime_env, load_startup_config_from_env,
+};
 use yona_rust_pilot_server::{
     create_router_with_repository, create_router_with_repository_and_embedded_assets,
     create_router_with_repository_and_filesystem_assets, mailbox_polling_config_from_env,
@@ -16,6 +18,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let startup = load_startup_config_from_env()?;
+    apply_startup_runtime_env(&startup);
     let config: RuntimeConfig = startup.runtime.clone();
     let db = sea_orm::Database::connect(&startup.database_url).await?;
     Migrator::ensure_runtime_schema_with_policy(&db, startup.schema_policy).await?;

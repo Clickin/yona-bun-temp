@@ -1,5 +1,7 @@
 //! Canonical search ownership placeholder for search query and snippet slices.
 
+use std::cmp::Ordering;
+
 use serde::Serialize;
 
 /// Returns the crate ownership label used by foundation tests and future packet wiring.
@@ -105,8 +107,9 @@ pub fn keyword_matches(value: &str, keyword: &str) -> bool {
 
 pub fn relevance_score(title: &str, body: &str, keyword: &str) -> u32 {
     const TITLE_MATCH_WEIGHT: u32 = 100;
-    count_keyword_matches(title, keyword) * TITLE_MATCH_WEIGHT
-        + count_keyword_matches(body, keyword)
+    count_keyword_matches(title, keyword)
+        .saturating_mul(TITLE_MATCH_WEIGHT)
+        .saturating_add(count_keyword_matches(body, keyword))
 }
 
 fn count_keyword_matches(value: &str, keyword: &str) -> u32 {
@@ -122,6 +125,19 @@ fn count_keyword_matches(value: &str, keyword: &str) -> u32 {
         .unwrap_or(u32::MAX)
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SearchRank {
+    pub relevance: u32,
+    pub legacy_order: usize,
+}
+
+pub fn compare_search_rank(left: SearchRank, right: SearchRank) -> Ordering {
+    right
+        .relevance
+        .cmp(&left.relevance)
+        .then_with(|| left.legacy_order.cmp(&right.legacy_order))
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchHighlight {
@@ -134,6 +150,7 @@ pub struct SearchHighlight {
 pub struct SearchSnippet {
     pub text: String,
     pub highlights: Vec<SearchHighlight>,
+    pub truncated: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -195,7 +212,11 @@ pub fn make_snippets(contents: &str, keyword: &str, threshold: usize) -> Vec<Sea
                     end: matched.end - window.begin,
                 })
                 .collect();
-            SearchSnippet { text, highlights }
+            SearchSnippet {
+                text,
+                highlights,
+                truncated: window.begin > 0 || window.end < chars.len(),
+            }
         })
         .collect()
 }
@@ -251,6 +272,14 @@ mod tests {
                 SearchHighlight { start: 19, end: 26 },
             ]
         );
+        assert!(!snippets[0].truncated);
+    }
+
+    #[test]
+    fn snippets_mark_legacy_view_ellipsis_when_window_is_shorter_than_contents() {
+        let snippets = make_snippets("prefix alpha keyword beta suffix", "keyword", 3);
+        assert_eq!(snippets[0].text, "ha keyword be");
+        assert!(snippets[0].truncated);
     }
 
     #[test]
@@ -268,6 +297,40 @@ mod tests {
         assert!(
             relevance_score("", "Needle Needle", "needle")
                 > relevance_score("", "Needle", "needle")
+        );
+    }
+
+    #[test]
+    fn search_rank_prioritizes_relevance_then_preserves_legacy_order() {
+        let mut ranked = [
+            (
+                SearchRank {
+                    relevance: relevance_score("", "needle", "needle"),
+                    legacy_order: 0,
+                },
+                "newer body hit",
+            ),
+            (
+                SearchRank {
+                    relevance: relevance_score("needle", "", "needle"),
+                    legacy_order: 1,
+                },
+                "older title hit",
+            ),
+            (
+                SearchRank {
+                    relevance: relevance_score("", "needle", "needle"),
+                    legacy_order: 2,
+                },
+                "older body hit",
+            ),
+        ];
+
+        ranked.sort_by(|left, right| compare_search_rank(left.0, right.0));
+
+        assert_eq!(
+            ranked.map(|(_, label)| label),
+            ["older title hit", "newer body hit", "older body hit"]
         );
     }
 }

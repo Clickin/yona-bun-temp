@@ -4,7 +4,14 @@ import { listProjects } from "../../auth-workspace-client";
 import { useAppRuntime } from "../../app-runtime-context";
 import { toProjectDirectoryView } from "../../app-view-models";
 import { ProjectDirectoryPage } from "../-directory-views";
-import { useCurrentHref, useDocumentTitle } from "../-shared";
+import {
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useCurrentHref,
+  useDocumentTitle,
+  type RouteFailureKind,
+} from "../-shared";
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRouteComponent,
@@ -15,19 +22,35 @@ function ProjectsRouteComponent() {
   const currentHref = useCurrentHref();
   useDocumentTitle("Project List");
   const [projectDirectory, setProjectDirectory] = React.useState<ReturnType<typeof toProjectDirectoryView> | null>(null);
+  const [failureKind, setFailureKind] = React.useState<null | RouteFailureKind>(null);
 
   React.useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const projects = await listProjects(runtimeConfig);
-      if (!cancelled) {
-        setProjectDirectory(toProjectDirectoryView(projects));
+      try {
+        const projects = await listProjects(runtimeConfig);
+        if (!cancelled) {
+          setFailureKind(null);
+          setProjectDirectory(toProjectDirectoryView(projects));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFailureKind(classifyConnectFailure(error));
+          setProjectDirectory(null);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [runtimeConfig]);
+
+  if (failureKind === "forbidden") {
+    return <ForbiddenPage href={currentHref} />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href={currentHref} />;
+  }
 
   return (
     <ProjectDirectoryPage

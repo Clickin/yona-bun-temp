@@ -160,7 +160,7 @@ test("renders global results, category counts, highlight snippets, and type swit
               requestedSearchType: "user",
               searchType: "user",
             })
-          : searchResponse(),
+          : searchResponse({ totalCount: 41 }),
       ),
       headers: restJsonHeaders,
       status: 200,
@@ -176,6 +176,15 @@ test("renders global results, category counts, highlight snippets, and type swit
     "href",
     "/yona/owner/projectYobi/issue/1",
   );
+  await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
+    "href",
+    "/yona/search?keyword=Needle&searchType=issue&pageNum=2",
+  );
+  await expect(page.locator("#pagination")).not.toContainText("Page 1 of");
+  await expect(page.locator("#pagination")).not.toContainText("Next");
 
   await page.locator('.search-category-wrap a[data-type="user"]').click();
   await expect(page).toHaveURL(/searchType=user/);
@@ -257,7 +266,7 @@ test("renders project and organization scoped search parity", async ({ page }) =
 
 test("shows an invalid query shell without sending a REST search request", async ({ page }) => {
   let searchApiCalls = 0;
-  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+  await page.route(/\/api\/v1\/(?:projects\/[^/]+\/[^/]+\/)?search(?:\?.*)?$/, async (route) => {
     searchApiCalls += 1;
     await route.fulfill({
       body: JSON.stringify(searchResponse()),
@@ -268,7 +277,41 @@ test("shows an invalid query shell without sending a REST search request", async
 
   await page.goto("/yona/search?keyword=Needle&searchType=unknown&pageNum=1");
 
-  await expect(page.locator(".invalid-query")).toContainText("Invalid search query.");
-  await expect(page.locator("#searchInnerForm")).toBeVisible();
+  await expect(page.locator(".error-wrap")).toContainText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toContainText("Home");
+  await expect(page.locator(".invalid-query")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApiCalls).toBe(0);
+
+  await page.goto("/yona/owner/projectYobi/search?keyword=Needle&searchType=project&pageNum=1");
+
+  await expect(page.locator(".error-wrap")).toContainText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".invalid-query")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  expect(searchApiCalls).toBe(0);
+});
+
+test("keeps failed REST search on the legacy bad-request shell", async ({ page }) => {
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ error: "search backend unavailable" }),
+      headers: restJsonHeaders,
+      status: 500,
+    });
+  });
+
+  await page.goto("/yona/search?keyword=Needle&searchType=issue&pageNum=1");
+
+  await expect(page.locator(".error-wrap")).toContainText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Search failed.");
 });

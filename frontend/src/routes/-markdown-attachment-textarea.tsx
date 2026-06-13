@@ -39,6 +39,7 @@ export function MarkdownAttachmentTextarea(props: {
   ariaLabel?: string;
   className?: string;
   csrfToken?: string;
+  editorMode?: string;
   disabled?: boolean;
   id?: string;
   name?: string;
@@ -82,6 +83,7 @@ export function MarkdownAttachmentTextarea(props: {
     <textarea
       aria-label={props.ariaLabel}
       className={props.className}
+      data-editor-mode={props.editorMode}
       disabled={props.disabled}
       id={props.id}
       name={props.name}

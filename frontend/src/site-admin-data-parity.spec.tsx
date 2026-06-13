@@ -24,7 +24,8 @@ describe("site-admin data management parity", () => {
     expect(routeSource).toContain('encType="multipart/form-data"');
     expect(routeSource).toContain('name="csrfToken"');
     expect(routeSource).toContain('name="data"');
-    expect(routeSource).toContain('type="submit" value="site.data.import"');
+    expect(routeSource).toContain('type="submit"');
+    expect(routeSource).toContain("site.data.import");
     expect(routeSource).toContain("site.data.warning1");
     expect(routeSource).toContain("site.data.warning2");
     expect(routeSource).toContain("site.data.warning3");

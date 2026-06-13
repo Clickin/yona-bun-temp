@@ -18,6 +18,7 @@ import {
   unshareIssue,
   updateIssueState,
   updateIssueComment,
+  updateIssueWeight,
   voteIssue,
   voteIssueComment,
   watchIssue,
@@ -152,12 +153,13 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
-      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
+      onCommentSubmit={async (contentsMarkdown, attachmentIds, parentCommentId) => {
         const nextIssue = await createIssueComment(runtimeConfig, csrfToken, {
           attachmentIds: attachmentIds?.map(BigInt),
           contentsMarkdown,
           issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,
+          parentCommentId,
           projectName,
         });
         setIssue(toProjectIssueDetailView(nextIssue));
@@ -198,6 +200,26 @@ function IssueDetailRouteComponent() {
           projectName,
         });
         setIssue(toProjectIssueDetailView(nextIssue));
+      }}
+      onIssueWeightChange={async (delta) => {
+        const nextWeight = await updateIssueWeight(
+          runtimeConfig,
+          csrfToken,
+          {
+            issueNumber: BigInt(Number(issueNumber)),
+            ownerName: owner,
+            projectName,
+          },
+          delta,
+        );
+        setIssue((current) =>
+          current
+            ? {
+                ...current,
+                weight: nextWeight.weight,
+              }
+            : current,
+        );
       }}
       onStateChange={async (state) => {
         const nextIssue = await updateIssueState(runtimeConfig, csrfToken, {

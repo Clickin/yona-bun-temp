@@ -3,14 +3,16 @@ export interface RuntimeConfig {
   basePath: string;
   projectDefaultMenus?: string[];
   projectDefaultScope?: string;
+  showUserEmail?: boolean;
   supportedLanguages?: string[];
 }
 
 type RuntimeConfigInput = Omit<
   Partial<RuntimeConfig>,
-  "projectDefaultMenus" | "supportedLanguages"
+  "projectDefaultMenus" | "showUserEmail" | "supportedLanguages"
 > & {
   projectDefaultMenus?: string[] | string | null;
+  showUserEmail?: boolean | string | null;
   supportedLanguages?: string[] | string | null;
 };
 
@@ -21,6 +23,7 @@ declare global {
     readonly VITE_YONA_LANGS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_MENUS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_SCOPE?: string;
+    readonly VITE_YONA_SHOW_USER_EMAIL?: string;
   }
 
   interface ImportMeta {
@@ -47,6 +50,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
     basePath,
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
     projectDefaultScope: normalizeProjectDefaultScope(input.projectDefaultScope),
+    showUserEmail: normalizeShowUserEmail(input.showUserEmail),
     supportedLanguages: normalizeSupportedLanguages(input.supportedLanguages),
   };
 }
@@ -58,6 +62,7 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
     projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
     supportedLanguages: import.meta.env.VITE_YONA_LANGS,
     projectDefaultScope: import.meta.env.VITE_YONA_PROJECT_DEFAULT_SCOPE,
+    showUserEmail: import.meta.env.VITE_YONA_SHOW_USER_EMAIL,
   };
 }
 
@@ -136,4 +141,25 @@ export function normalizeSupportedLanguages(input: string[] | string | null | un
   const values = Array.isArray(input) ? input : (input ?? "").split(",");
   const normalized = values.map((value) => value.trim()).filter(Boolean);
   return normalized.length > 0 ? normalized : ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"];
+}
+
+export function normalizeShowUserEmail(input: boolean | string | null | undefined): boolean {
+  if (typeof input === "boolean") {
+    return input;
+  }
+
+  switch ((input ?? "").trim().toLowerCase()) {
+    case "0":
+    case "false":
+    case "no":
+    case "off":
+      return false;
+    case "1":
+    case "true":
+    case "yes":
+    case "on":
+      return true;
+    default:
+      return true;
+  }
 }

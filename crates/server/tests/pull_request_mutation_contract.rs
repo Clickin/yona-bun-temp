@@ -560,6 +560,154 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
 }
 
 #[tokio::test]
+async fn pull_request_review_comment_allows_legacy_guest_nonmember_on_public_project() {
+    let _yona_data_guard = lock_yona_data_tests().await;
+    let data_root = temp_path("data");
+    fs::create_dir_all(&data_root).unwrap();
+    std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
+
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _owner_id) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    seed_bare_repo_with_branches(&data_root, project.id);
+    let created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/pr",
+                "toBranch": "main",
+                "title": "Guest review comment target",
+                "bodyMarkdown": "PR body",
+                "attachmentIds": []
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["pullRequestNumber"], 1);
+    let guest = repo
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("toggle guest mode")
+        .expect("guest exists");
+    assert!(guest.is_guest);
+
+    let commented = response_json(
+        rest_json(
+            app,
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            json!({
+                "contentsMarkdown": "Guest public PR review note"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(commented["threads"][0]["authorLoginId"], "guest");
+    assert_eq!(
+        commented["threads"][0]["comments"][0]["contentsMarkdown"],
+        "Guest public PR review note"
+    );
+    assert_eq!(
+        commented["events"].as_array().unwrap().last().unwrap()["eventType"],
+        "NEW_REVIEW_COMMENT"
+    );
+
+    fs::remove_dir_all(data_root).unwrap();
+}
+
+#[tokio::test]
+async fn pull_request_create_rejects_legacy_project_guest_nonmember() {
+    let _yona_data_guard = lock_yona_data_tests().await;
+    let data_root = temp_path("guest-pr-create-data");
+    fs::create_dir_all(&data_root).unwrap();
+    std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
+
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _owner_id) = register_user(app.clone(), "owner").await;
+    let (outsider_csrf, outsider_cookie, _outsider_id) =
+        register_user(app.clone(), "outsider").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    seed_bare_repo_with_branches(&data_root, project.id);
+
+    let form_options_forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/form-options?fromBranch=topic/pr&toBranch=main",
+        Some(&outsider_cookie),
+    )
+    .await;
+    assert_eq!(form_options_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let merge_result_forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/merge-result?fromBranch=topic/pr&toBranch=main",
+        Some(&outsider_cookie),
+    )
+    .await;
+    assert_eq!(merge_result_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let forbidden = rest_json(
+        app,
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests",
+        Some(&outsider_cookie),
+        Some(&outsider_csrf),
+        json!({
+            "fromProjectId": project.id,
+            "toProjectId": project.id,
+            "fromBranch": "topic/pr",
+            "toBranch": "main",
+            "title": "Guest PR create",
+            "bodyMarkdown": "PR body",
+            "attachmentIds": []
+        }),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    fs::remove_dir_all(data_root).unwrap();
+}
+
+#[tokio::test]
 async fn pull_request_state_notifications_include_legacy_review_comment_watchers() {
     let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("notification-watchers-data");
@@ -1244,6 +1392,56 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(commented_text.contains("/yona/owner/projectYobi/pullRequest/1#comment-"));
     assert!(commented_text.contains("|#1: Updated interaction parity"));
 
+    let direct_close = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/threads/{thread_id}/close"))
+                .header(http::header::COOKIE, reviewer_cookie.as_str())
+                .header("x-csrf-token", reviewer_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_close.status(), StatusCode::OK);
+    let directly_closed = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(directly_closed["threads"][0]["state"], "closed");
+
+    let direct_open = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/threads/{thread_id}/open"))
+                .header(http::header::COOKIE, reviewer_cookie.as_str())
+                .header("x-csrf-token", reviewer_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_open.status(), StatusCode::OK);
+    let directly_opened = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(directly_opened["threads"][0]["state"], "open");
+
     let review_export = rest_get(
         app.clone(),
         "/yona/owner/projectYobi/reviews?state=open&filter=Review+comment&format=xls",
@@ -1496,7 +1694,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     );
     assert_eq!(
         count_rows(&db, "pull_request_event", "REVIEW_THREAD_STATE_CHANGED").await,
-        2
+        4
     );
     assert_eq!(snapshot_test_webhook_outbox().len(), 5);
 

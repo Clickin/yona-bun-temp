@@ -2,14 +2,16 @@ import * as React from "react";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   createIssue,
+  listProjectMilestones,
   readDirectIssueFormOptions,
   readProjectContainer,
   searchProjectAssignableUsers,
 } from "../../../../auth-workspace-client";
 import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
-import { toProjectContainerView } from "../../../../app-view-models";
+import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../-issue-views";
+import type { ProjectMilestoneViewModel } from "../../../-view-models";
 import {
   classifyConnectFailure,
   ForbiddenPage,
@@ -40,6 +42,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
+  const [milestones, setMilestones] = React.useState<ProjectMilestoneViewModel[]>([]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle("New Issue");
@@ -63,13 +66,24 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
           return;
         }
         setOptions(nextOptions);
-        const nextDetail = await readProjectContainer(
-          runtimeConfig,
-          nextOptions.selectedProject.ownerName,
-          nextOptions.selectedProject.projectName,
-        );
+        const [nextDetail, nextMilestones] = await Promise.all([
+          readProjectContainer(
+            runtimeConfig,
+            nextOptions.selectedProject.ownerName,
+            nextOptions.selectedProject.projectName,
+          ),
+          listProjectMilestones(
+            runtimeConfig,
+            nextOptions.selectedProject.ownerName,
+            nextOptions.selectedProject.projectName,
+            { state: "all" },
+          ),
+        ]);
         if (!cancelled) {
           setDetail(toProjectContainerView(nextDetail));
+          setMilestones(
+            toProjectMilestoneListView(nextMilestones, "all", "dueDate", "asc").milestones,
+          );
         }
       } catch (error) {
         if (cancelled) {
@@ -123,6 +137,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
         })
       }
       initialBodyMarkdown={options.bodyMarkdown}
+      milestoneOptions={milestones}
       mode="create"
       onSearchAssignableUsers={(query) =>
         searchProjectAssignableUsers(runtimeConfig, {
@@ -131,11 +146,26 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
           query,
         })
       }
-      onSubmit={async ({ assigneeLoginId, attachmentIds, bodyMarkdown, title }) => {
+      onSubmit={async ({
+        assigneeLoginId,
+        attachmentIds,
+        bodyMarkdown,
+        dueDate,
+        isDraft,
+        isPublish,
+        labelIds,
+        milestoneId,
+        title,
+      }) => {
         const issue = await createIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
           attachmentIds: attachmentIds.map(BigInt),
           bodyMarkdown,
+          dueDate,
+          isDraft,
+          isPublish,
+          labelIds: labelIds.map(BigInt),
+          milestoneId: BigInt(milestoneId),
           ownerName,
           projectName,
           referCommentId: options.referCommentId,

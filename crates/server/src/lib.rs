@@ -6,7 +6,7 @@ use axum::body::Bytes;
 use axum::extract::{Form, Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
@@ -42,7 +42,9 @@ use yona_rust_domain::{
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 use yona_rust_integrations::{
-    deliver, deliver_webhook, OutboundMail, OutboundWebhook, WebhookDeliveryOutcome,
+    deliver, deliver_webhook, notification_mail_batches, notification_mail_hide_address_from_env,
+    notification_mail_recipient_limit_from_env, NotificationMailRecipient, OutboundMail,
+    OutboundWebhook, WebhookDeliveryOutcome,
 };
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
@@ -195,13 +197,10 @@ pub fn spawn_mailbox_polling_scheduler(
 }
 
 fn fetch_mailbox_raw_messages(config: &MailboxPollingConfig) -> Result<Vec<String>, String> {
-    let mut parts = config.fetch_command.split_whitespace();
-    let program = parts
-        .next()
-        .ok_or_else(|| "mailbox fetch command is empty".to_string())?;
-    let mut args: Vec<String> = parts.map(ToString::to_string).collect();
+    let (program, mut args) =
+        configured_command_parts(&config.fetch_command, "mailbox fetch command is empty")?;
     args.push(config.imap_address.clone());
-    let output = Command::new(program)
+    let output = Command::new(&program)
         .args(args)
         .output()
         .map_err(|error| format!("mailbox fetch command failed: {error}"))?;
@@ -393,6 +392,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
+    let legacy_init_backend = route_backend.clone();
+    let legacy_init_base_path = base_path.clone();
     let direct_logout_session_manager = session_manager.clone();
     let direct_logout_base_path = base_path.clone();
     let direct_user_logout_session_manager = session_manager.clone();
@@ -413,9 +414,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let lost_password_public_origin = public_origin.clone();
     let reset_password_backend = route_backend.clone();
     let reset_password_base_path = base_path.clone();
+    let legacy_login_page_assets = assets.clone();
+    let legacy_login_page_browser_runtime = browser_runtime.clone();
+    let legacy_signup_page_assets = assets.clone();
+    let legacy_signup_page_browser_runtime = browser_runtime.clone();
+    let legacy_lost_password_page_assets = assets.clone();
+    let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
+    let legacy_reset_password_page_assets = assets.clone();
+    let legacy_reset_password_page_browser_runtime = browser_runtime.clone();
     let reset_visited_session_manager = session_manager.clone();
     let reset_visited_backend = route_backend.clone();
     let reset_visited_base_path = base_path.clone();
+    let user_sidebar_session_manager = session_manager.clone();
+    let user_sidebar_backend = route_backend.clone();
+    let user_sidebar_base_path = base_path.clone();
     let usermenu_tab_session_manager = session_manager.clone();
     let usermenu_tab_backend = route_backend.clone();
     let usermenu_tab_base_path = base_path.clone();
@@ -526,6 +538,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let board_comment_delete_backend = route_backend.clone();
     let board_comment_delete_session_manager = session_manager.clone();
     let board_comment_delete_base_path = base_path.clone();
+    let thread_open_backend = route_backend.clone();
+    let thread_open_session_manager = session_manager.clone();
+    let thread_close_backend = route_backend.clone();
+    let thread_close_session_manager = session_manager.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let raw_code_backend = route_backend.clone();
@@ -539,6 +555,24 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let image_code_base_path = base_path.clone();
     let archive_code_backend = route_backend.clone();
     let archive_code_session_manager = session_manager.clone();
+    let code_ajax_backend = route_backend.clone();
+    let code_ajax_session_manager = session_manager.clone();
+    let code_ajax_base_path = base_path.clone();
+    let code_ajax_root_backend = route_backend.clone();
+    let code_ajax_root_session_manager = session_manager.clone();
+    let code_ajax_root_base_path = base_path.clone();
+    let code_ajax_root_slash_backend = route_backend.clone();
+    let code_ajax_root_slash_session_manager = session_manager.clone();
+    let code_ajax_root_slash_base_path = base_path.clone();
+    let code_ajax_branch_backend = route_backend.clone();
+    let code_ajax_branch_session_manager = session_manager.clone();
+    let code_ajax_branch_base_path = base_path.clone();
+    let code_ajax_branch_root_backend = route_backend.clone();
+    let code_ajax_branch_root_session_manager = session_manager.clone();
+    let code_ajax_branch_root_base_path = base_path.clone();
+    let code_ajax_branch_root_slash_backend = route_backend.clone();
+    let code_ajax_branch_root_slash_session_manager = session_manager.clone();
+    let code_ajax_branch_root_slash_base_path = base_path.clone();
     let smart_http_backend = route_backend.clone();
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
@@ -553,6 +587,26 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let pull_request_restore_source_branch_backend = route_backend.clone();
     let pull_request_restore_source_branch_session_manager = session_manager.clone();
     let pull_request_restore_source_branch_base_path = base_path.clone();
+    let pushed_branch_delete_backend = route_backend.clone();
+    let pushed_branch_delete_session_manager = session_manager.clone();
+    let direct_project_watch_backend = route_backend.clone();
+    let direct_project_watch_session_manager = session_manager.clone();
+    let direct_project_unwatch_backend = route_backend.clone();
+    let direct_project_unwatch_session_manager = session_manager.clone();
+    let legacy_favorite_projects_list_backend = route_backend.clone();
+    let legacy_favorite_projects_list_session_manager = session_manager.clone();
+    let legacy_favorite_project_toggle_backend = route_backend.clone();
+    let legacy_favorite_project_toggle_session_manager = session_manager.clone();
+    let legacy_favorite_issues_list_backend = route_backend.clone();
+    let legacy_favorite_issues_list_session_manager = session_manager.clone();
+    let legacy_favorite_issue_toggle_backend = route_backend.clone();
+    let legacy_favorite_issue_toggle_session_manager = session_manager.clone();
+    let legacy_favorite_organizations_list_backend = route_backend.clone();
+    let legacy_favorite_organizations_list_session_manager = session_manager.clone();
+    let legacy_favorite_organization_toggle_backend = route_backend.clone();
+    let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
+    let legacy_translation_backend = route_backend.clone();
+    let legacy_translation_session_manager = session_manager.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -565,12 +619,23 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_export_session_manager = session_manager.clone();
     let site_import_backend = route_backend.clone();
     let site_import_session_manager = session_manager.clone();
+    let site_import_base_path = base_path.clone();
+    let site_diagnostic_shell_backend = route_backend.clone();
+    let site_diagnostic_shell_session_manager = session_manager.clone();
     let site_no_avatar_backend = route_backend.clone();
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
     let site_set_avatar_session_manager = session_manager.clone();
+    let site_mail_send_backend = route_backend.clone();
+    let site_mail_send_session_manager = session_manager.clone();
+    let site_mail_send_base_path = base_path.clone();
     let site_mail_list_backend = route_backend.clone();
     let site_mail_list_session_manager = session_manager.clone();
+    let direct_notification_backend = route_backend.clone();
+    let direct_notification_session_manager = session_manager.clone();
+    let direct_notification_base_path = base_path.clone();
+    let direct_notification_toggle_backend = route_backend.clone();
+    let direct_notification_toggle_session_manager = session_manager.clone();
     let direct_unwatch_backend = route_backend.clone();
     let direct_unwatch_session_manager = session_manager.clone();
     let direct_unwatch_base_path = base_path.clone();
@@ -600,7 +665,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
+    let legacy_migration_session_manager = session_manager.clone();
+    let legacy_migration_base_path = base_path.clone();
+    let legacy_migration_json_session_manager = session_manager.clone();
+    let legacy_migration_json_base_path = base_path.clone();
     let authenticate_base_path = base_path.clone();
+    let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -615,8 +685,200 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         .nest("/api/v1", rest_router)
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
         .route(
+            "/-_-api/v1/favoriteProjects",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_projects(
+                        headers,
+                        legacy_favorite_projects_list_session_manager.clone(),
+                        legacy_favorite_projects_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteProjects/{project_id}",
+            post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                async move {
+                    legacy_external_toggle_favorite_project(
+                        headers,
+                        project_id,
+                        legacy_favorite_project_toggle_session_manager.clone(),
+                        legacy_favorite_project_toggle_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteIssues",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_issues(
+                        headers,
+                        legacy_favorite_issues_list_session_manager.clone(),
+                        legacy_favorite_issues_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteIssues/{issue_id}",
+            post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
+                async move {
+                    legacy_external_toggle_favorite_issue(
+                        headers,
+                        issue_id,
+                        legacy_favorite_issue_toggle_session_manager.clone(),
+                        legacy_favorite_issue_toggle_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteOrganizations",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_organizations(
+                        headers,
+                        legacy_favorite_organizations_list_session_manager.clone(),
+                        legacy_favorite_organizations_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteOrganizations/{organization_id}",
+            post(
+                move |headers: HeaderMap, Path(organization_id): Path<i64>| {
+                    async move {
+                        legacy_external_toggle_favorite_organization(
+                            headers,
+                            organization_id,
+                            legacy_favorite_organization_toggle_session_manager.clone(),
+                            legacy_favorite_organization_toggle_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/translation",
+            post(
+                move |headers: HeaderMap, Json(body): Json<DirectTranslationRequest>| {
+                    async move {
+                        legacy_external_translation(
+                            headers,
+                            body,
+                            legacy_translation_session_manager.clone(),
+                            legacy_translation_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route("/messages.js", get(legacy_js_messages))
+        .route(
+            "/_init",
+            get(move || {
+                let backend = legacy_init_backend.clone();
+                let base_path = legacy_init_base_path.clone();
+                async move { direct_legacy_init(backend, base_path).await }
+            }),
+        )
+        .route(
+            "/notification",
+            get(
+                move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
+                    async move {
+                        direct_notification_partial(
+                            headers,
+                            query,
+                            direct_notification_session_manager.clone(),
+                            direct_notification_backend.clone(),
+                            direct_notification_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/noti/toggle/{project_id}/{noti_type}",
+            post(
+                move |headers: HeaderMap, Path((project_id, noti_type)): Path<(i64, String)>| {
+                    async move {
+                        direct_toggle_workspace_notification(
+                            headers,
+                            project_id,
+                            noti_type,
+                            direct_notification_toggle_session_manager.clone(),
+                            direct_notification_toggle_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/watch",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_toggle_project_watch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            true,
+                            direct_project_watch_session_manager.clone(),
+                            direct_project_watch_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/unwatch",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_toggle_project_watch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            false,
+                            direct_project_unwatch_session_manager.clone(),
+                            direct_project_unwatch_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
+        )
+        .route(
+            "/authenticate/{provider}/denied",
+            get(move |Path(provider): Path<String>| {
+                async move {
+                    direct_authenticate_provider_denied(
+                        provider,
+                        authenticate_denied_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
         )
         .route(
             "/authenticate/{provider}",
@@ -654,6 +916,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     )
                     .await
                 }
+            }),
+        )
+        .route(
+            "/users/loginform",
+            get(move || {
+                let assets = legacy_login_page_assets.clone();
+                let browser_runtime = legacy_login_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            }),
+        )
+        .route(
+            "/users/signupform",
+            get(move || {
+                let assets = legacy_signup_page_assets.clone();
+                let browser_runtime = legacy_signup_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
             }),
         )
         .route(
@@ -725,8 +1003,31 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             }),
         )
         .route(
+            "/migration",
+            get(move |headers: HeaderMap| {
+                let session_manager = legacy_migration_session_manager.clone();
+                let base_path = legacy_migration_base_path.clone();
+                async move { direct_legacy_migration_disabled(headers, session_manager, base_path).await }
+            }),
+        )
+        .route(
+            "/migration/{*legacy_path}",
+            get(move |headers: HeaderMap| {
+                let session_manager = legacy_migration_json_session_manager.clone();
+                let base_path = legacy_migration_json_base_path.clone();
+                async move {
+                    direct_legacy_migration_json_disabled(headers, session_manager, base_path).await
+                }
+            }),
+        )
+        .route(
             "/lostPassword",
-            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+            get(move || {
+                let assets = legacy_lost_password_page_assets.clone();
+                let browser_runtime = legacy_lost_password_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            })
+            .post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
                 async move {
                     direct_request_reset_password_email(
                         headers,
@@ -742,7 +1043,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .route(
             "/resetPassword",
-            post(move |Form(form): Form<HashMap<String, String>>| {
+            get(move || {
+                let assets = legacy_reset_password_page_assets.clone();
+                let browser_runtime = legacy_reset_password_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            })
+            .post(move |Form(form): Form<HashMap<String, String>>| {
                 async move {
                     direct_reset_password(
                         form,
@@ -752,6 +1058,23 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/user/sidebar",
+            get(
+                move |headers: HeaderMap, Query(query): Query<DirectUserSidebarQuery>| {
+                    async move {
+                        direct_user_sidebar(
+                            headers,
+                            query,
+                            user_sidebar_session_manager.clone(),
+                            user_sidebar_backend.clone(),
+                            user_sidebar_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/user/resetVisitedList",
@@ -1032,6 +1355,36 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             }),
         )
         .route(
+            "/threads/{thread_id}/open",
+            post(move |headers: HeaderMap, Path(thread_id): Path<i64>| {
+                async move {
+                    direct_update_review_thread_state(
+                        headers,
+                        thread_id,
+                        "open",
+                        thread_open_session_manager.clone(),
+                        thread_open_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/threads/{thread_id}/close",
+            post(move |headers: HeaderMap, Path(thread_id): Path<i64>| {
+                async move {
+                    direct_update_review_thread_state(
+                        headers,
+                        thread_id,
+                        "closed",
+                        thread_close_session_manager.clone(),
+                        thread_close_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
             "/sites/export",
             get(move |headers: HeaderMap| {
                 async move {
@@ -1053,6 +1406,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_import_session_manager.clone(),
                         site_import_backend.clone(),
+                        site_import_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/diagnostic",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_read_site_diagnostic_shell(
+                        headers,
+                        site_diagnostic_shell_session_manager.clone(),
+                        site_diagnostic_shell_backend.clone(),
                     )
                     .await
                 }
@@ -1080,6 +1447,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_set_avatar_session_manager.clone(),
                         site_set_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/mail",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_send_site_mail(
+                        headers,
+                        body,
+                        site_mail_send_session_manager.clone(),
+                        site_mail_send_backend.clone(),
+                        site_mail_send_base_path.clone(),
                     )
                     .await
                 }
@@ -1365,6 +1747,135 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             ),
         )
         .route(
+            "/{owner}/{project}/code/!/{*path}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, path)): Path<(String, String, String)>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            None,
+                            path,
+                            code_ajax_session_manager.clone(),
+                            code_ajax_backend.clone(),
+                            code_ajax_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/!",
+            get(
+                move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            None,
+                            String::new(),
+                            code_ajax_root_session_manager.clone(),
+                            code_ajax_root_backend.clone(),
+                            code_ajax_root_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/!/",
+            get(
+                move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            None,
+                            String::new(),
+                            code_ajax_root_slash_session_manager.clone(),
+                            code_ajax_root_slash_backend.clone(),
+                            code_ajax_root_slash_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/{branch}/!/{*path}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, branch, path)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            Some(branch),
+                            path,
+                            code_ajax_branch_session_manager.clone(),
+                            code_ajax_branch_backend.clone(),
+                            code_ajax_branch_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/{branch}/!",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, branch)): Path<(String, String, String)>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            Some(branch),
+                            String::new(),
+                            code_ajax_branch_root_session_manager.clone(),
+                            code_ajax_branch_root_backend.clone(),
+                            code_ajax_branch_root_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/{branch}/!/",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, branch)): Path<(String, String, String)>| {
+                    async move {
+                        direct_code_ajax_compat(
+                            headers,
+                            owner,
+                            project,
+                            Some(branch),
+                            String::new(),
+                            code_ajax_branch_root_slash_session_manager.clone(),
+                            code_ajax_branch_root_slash_backend.clone(),
+                            code_ajax_branch_root_slash_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
             "/{owner}/{project}/pullRequest/{pull_request_number}/accept",
             post(
                 move |headers: HeaderMap,
@@ -1433,6 +1944,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             pull_request_restore_source_branch_session_manager.clone(),
                             pull_request_restore_source_branch_backend.clone(),
                             pull_request_restore_source_branch_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pushedBranch/{pushed_branch_id}/delete",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner, project, pushed_branch_id)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_delete_project_pushed_branch(
+                            headers,
+                            owner,
+                            project,
+                            pushed_branch_id,
+                            pushed_branch_delete_session_manager.clone(),
+                            pushed_branch_delete_backend.clone(),
                         )
                         .await
                     }
@@ -2092,11 +2622,132 @@ async fn session_bootstrap(
     response
 }
 
+async fn legacy_js_messages() -> impl IntoResponse {
+    let message_keys = [
+        "app.name",
+        "button.cancel",
+        "button.confirm",
+        "button.delete",
+        "button.login",
+        "button.save",
+        "common.comment.delete",
+        "error.forbidden",
+        "error.notfound",
+        "issue.menu.new",
+        "menu.home",
+        "project.is.empty",
+        "site.mail.sended",
+        "site.resetPasswordEmail.invalidRequest",
+        "title.help",
+        "title.login",
+        "title.logout",
+        "title.no.results",
+        "title.resetPassword",
+        "title.signup",
+        "user.login.invalid",
+        "user.login.required",
+        "user.password",
+    ];
+    let mut entries = String::new();
+    for key in message_keys {
+        entries.push_str("    ");
+        entries.push_str(&js_string_literal(key));
+        entries.push_str(": ");
+        entries.push_str(&js_string_literal(key));
+        entries.push_str(",\n");
+    }
+    let body = format!(
+        r#"(function(global) {{
+  var _messages = {{
+{entries}  }};
+  function format(message, args) {{
+    return String(message).replace(/\{{(\d+)\}}/g, function(match, index) {{
+      return Object.prototype.hasOwnProperty.call(args, index) ? args[index] : match;
+    }});
+  }}
+  function Messages(key) {{
+    var value = Object.prototype.hasOwnProperty.call(_messages, key) ? _messages[key] : key;
+    return arguments.length > 1 ? format(value, Array.prototype.slice.call(arguments, 1)) : value;
+  }}
+  Messages._messages = _messages;
+  global.Messages = Messages;
+}})(this);
+"#
+    );
+    (
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "application/javascript; charset=utf-8",
+        )],
+        body,
+    )
+        .into_response()
+}
+
+fn js_string_literal(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len() + 2);
+    escaped.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => escaped.push_str("\\\\"),
+            '"' => escaped.push_str("\\\""),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            '\u{08}' => escaped.push_str("\\b"),
+            '\u{0c}' => escaped.push_str("\\f"),
+            c if c.is_control() => {
+                escaped.push_str(&format!("\\u{:04x}", c as u32));
+            }
+            c => escaped.push(c),
+        }
+    }
+    escaped.push('"');
+    escaped
+}
+
 fn base_path_href(base_path: &str, path: &str) -> String {
     if base_path == "/" {
         path.to_string()
     } else {
         format!("{base_path}{path}")
+    }
+}
+
+async fn direct_legacy_init(backend: PilotBackend, base_path: String) -> Response {
+    if let PilotBackend::Repository(repository) = backend {
+        make_legacy_test_repositories(&repository).await;
+    }
+
+    Redirect::to(&base_path_href(&base_path, "/")).into_response()
+}
+
+async fn make_legacy_test_repositories(repository: &PilotRepository) {
+    let projects = match repository.list_projects().await {
+        Ok(projects) => projects,
+        Err(error) => {
+            tracing::warn!(%error, "legacy /_init could not list projects");
+            return;
+        }
+    };
+    for project in projects {
+        let repo_path =
+            yona_rust_vcs::repository_path_for_vcs(&yona_data_root(), project.id, &project.vcs);
+        let result = if project.vcs.eq_ignore_ascii_case("Subversion") {
+            yona_rust_vcs::create_svn_repository(&repo_path)
+        } else {
+            yona_rust_vcs::create_bare_repository(&repo_path)
+        };
+        if let Err(error) = result {
+            tracing::warn!(
+                %error,
+                project_id = project.id,
+                owner = %project.owner_name,
+                project = %project.project_name,
+                vcs = %project.vcs,
+                "legacy /_init repository provisioning failed"
+            );
+        }
     }
 }
 
@@ -2157,8 +2808,12 @@ fn anonymous_access_path_is_public(path: &str) -> bool {
         || path.starts_with("/api/v1/auth/")
         || path.starts_with("/assets/")
         || path == "/favicon.ico"
+        || path == "/messages.js"
+        || path == "/_init"
+        || path == "/_UIKit"
         || path == "/login"
         || path.starts_with("/authenticate/")
+        || path == "/user/sidebar"
         || path == "/users/loginform"
         || path == "/users/signupform"
         || path == "/forgot-password"
@@ -2445,6 +3100,20 @@ async fn smart_http_or_not_found(
     StatusCode::NOT_FOUND.into_response()
 }
 
+async fn serve_frontend_page(
+    assets: AssetMode,
+    method: Method,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Response {
+    match assets {
+        AssetMode::Filesystem(asset_root) => {
+            serve_filesystem_fallback(asset_root, method, browser_runtime).await
+        }
+        AssetMode::Embedded => serve_embedded_fallback(method, browser_runtime).await,
+        AssetMode::None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
 struct DirectIssueExcelRoute {
     owner_name: String,
     project_name: String,
@@ -2715,6 +3384,9 @@ async fn direct_svn_protocol_request(
     if method == "COPY" {
         return svn_protocol_copy_response(&repo_path, &route, principal.as_ref(), &parts.headers);
     }
+    if method == "MOVE" {
+        return svn_protocol_move_response(&repo_path, &route, principal.as_ref(), &parts.headers);
+    }
     if method == "DELETE" {
         if svn_protocol_activity_id(&route.svn_path).is_some() {
             return svn_protocol_status_response(StatusCode::NO_CONTENT);
@@ -2793,7 +3465,7 @@ fn svn_protocol_options_response(
     response.headers_mut().insert(
         http::header::ALLOW,
         HeaderValue::from_static(
-            "OPTIONS, GET, HEAD, POST, PUT, COPY, DELETE, MKCOL, MKACTIVITY, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
+            "OPTIONS, GET, HEAD, POST, PUT, COPY, MOVE, DELETE, MKCOL, MKACTIVITY, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
         ),
     );
     response.headers_mut().insert(
@@ -3175,13 +3847,13 @@ fn svn_protocol_baseline_propfind_response(
     match yona_rust_vcs::svn_youngest_revision(repo_path) {
         Ok(youngest) if revision <= youngest => {}
         Ok(_) | Err(VcsError::NotFound) => {
-            return svn_protocol_status_response(StatusCode::NOT_FOUND)
+            return svn_protocol_status_response(StatusCode::NOT_FOUND);
         }
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "PROPFIND")
+            return svn_protocol_not_implemented_response(route, "PROPFIND");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     }
     let href = format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route));
@@ -3197,10 +3869,10 @@ fn svn_protocol_baseline_propfind_response(
             Ok(uuid) => Some(uuid),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "PROPFIND")
+                return svn_protocol_not_implemented_response(route, "PROPFIND");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -3211,13 +3883,13 @@ fn svn_protocol_baseline_propfind_response(
             Ok(mut entries) => entries.pop(),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "PROPFIND")
+                return svn_protocol_not_implemented_response(route, "PROPFIND");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -3345,10 +4017,10 @@ fn svn_protocol_file_response(
             return svn_protocol_not_implemented_response(
                 route,
                 if head_only { "HEAD" } else { "GET" },
-            )
+            );
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let body = if head_only {
@@ -3383,10 +4055,10 @@ fn svn_protocol_file_propfind_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "PROPFIND")
+            return svn_protocol_not_implemented_response(route, "PROPFIND");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let href = format!(
@@ -3401,7 +4073,7 @@ fn svn_protocol_file_propfind_response(
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => None,
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -3418,10 +4090,10 @@ fn svn_protocol_file_propfind_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "PROPFIND")
+            return svn_protocol_not_implemented_response(route, "PROPFIND");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let lock = if revision.is_none() {
@@ -3429,13 +4101,13 @@ fn svn_protocol_file_propfind_response(
             Ok(lock) => lock,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "PROPFIND")
+                return svn_protocol_not_implemented_response(route, "PROPFIND");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -3478,13 +4150,13 @@ fn svn_protocol_tree_propfind_response(
         Ok(tree) => tree,
         Err(VcsError::NotFound) => return None,
         Err(VcsError::InvalidPath) => {
-            return Some(svn_protocol_status_response(StatusCode::BAD_REQUEST))
+            return Some(svn_protocol_status_response(StatusCode::BAD_REQUEST));
         }
         Err(VcsError::SvnLookUnavailable) => {
-            return Some(svn_protocol_not_implemented_response(route, "PROPFIND"))
+            return Some(svn_protocol_not_implemented_response(route, "PROPFIND"));
         }
         Err(error) => {
-            return Some(RestRouteError::from_connect_error(internal_error(error)).into_response())
+            return Some(RestRouteError::from_connect_error(internal_error(error)).into_response());
         }
     };
     let version_revision = match revision {
@@ -3492,13 +4164,13 @@ fn svn_protocol_tree_propfind_response(
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => Some(revision),
             Err(VcsError::NotFound) => {
-                return Some(svn_protocol_status_response(StatusCode::NOT_FOUND))
+                return Some(svn_protocol_status_response(StatusCode::NOT_FOUND));
             }
             Err(VcsError::SvnLookUnavailable) => None,
             Err(error) => {
                 return Some(
                     RestRouteError::from_connect_error(internal_error(error)).into_response(),
-                )
+                );
             }
         },
     };
@@ -3769,9 +4441,9 @@ fn svn_protocol_propfind_collection_item(
         "version-controlled-configuration",
     ) {
         format!(
-                "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
-                xml_escape(&vcc_href)
-            )
+            "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
+            xml_escape(&vcc_href)
+        )
     } else {
         String::new()
     };
@@ -3992,9 +4664,9 @@ fn svn_protocol_propfind_file_item(
         .unwrap_or_default();
     let version_controlled_configuration = if wants_vcc {
         format!(
-                "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
-                xml_escape(&vcc_href)
-            )
+            "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
+            xml_escape(&vcc_href)
+        )
     } else {
         String::new()
     };
@@ -4350,10 +5022,10 @@ fn svn_protocol_log_report_response(
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let start_revision =
@@ -4367,13 +5039,13 @@ fn svn_protocol_log_report_response(
             Ok(entries) => entries,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let include_changed_paths = request.contains("discover-changed-paths");
@@ -4429,14 +5101,14 @@ fn svn_protocol_dated_rev_report_response(
     let revision = match yona_rust_vcs::svn_revision_at_or_before(repo_path, &creation_date) {
         Ok(Some(revision)) => revision,
         Ok(None) | Err(VcsError::NotFound) => {
-            return svn_protocol_status_response(StatusCode::NOT_FOUND)
+            return svn_protocol_status_response(StatusCode::NOT_FOUND);
         }
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let body = format!(
@@ -4467,10 +5139,10 @@ fn svn_protocol_update_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -4501,10 +5173,10 @@ fn svn_protocol_update_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let base_entries = if !start_empty && base_revision != target_revision {
@@ -4517,13 +5189,13 @@ fn svn_protocol_update_report_response(
             Ok(tree) => tree.entries,
             Err(VcsError::NotFound) => Vec::new(),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -4539,13 +5211,13 @@ fn svn_protocol_update_report_response(
             }),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let entries = if recursive {
@@ -4637,17 +5309,17 @@ fn svn_protocol_update_report_response(
                     ) {
                         Ok(contents) => Some(contents),
                         Err(VcsError::NotFound) => {
-                            return svn_protocol_status_response(StatusCode::NOT_FOUND)
+                            return svn_protocol_status_response(StatusCode::NOT_FOUND);
                         }
                         Err(VcsError::InvalidPath) => {
-                            return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                            return svn_protocol_status_response(StatusCode::BAD_REQUEST);
                         }
                         Err(VcsError::SvnLookUnavailable) => {
-                            return svn_protocol_not_implemented_response(route, "REPORT")
+                            return svn_protocol_not_implemented_response(route, "REPORT");
                         }
                         Err(error) => {
                             return RestRouteError::from_connect_error(internal_error(error))
-                                .into_response()
+                                .into_response();
                         }
                     }
                 } else {
@@ -4707,10 +5379,10 @@ fn svn_protocol_file_revs_report_response(
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let start_revision = svn_protocol_xml_i64(request, "start-revision").unwrap_or(0);
@@ -4728,10 +5400,10 @@ fn svn_protocol_file_revs_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let mut file_revs = String::new();
@@ -4742,13 +5414,13 @@ fn svn_protocol_file_revs_report_response(
             }
             Err(VcsError::NotFound) => {}
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     }
@@ -4779,10 +5451,10 @@ fn svn_protocol_replay_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -4799,10 +5471,10 @@ fn svn_protocol_replay_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let operations = changed_paths
@@ -4838,10 +5510,10 @@ fn svn_protocol_mergeinfo_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -4864,14 +5536,14 @@ fn svn_protocol_mergeinfo_report_response(
                 Ok(None) => continue,
                 Err(VcsError::NotFound) => continue,
                 Err(VcsError::InvalidPath) => {
-                    return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                    return svn_protocol_status_response(StatusCode::BAD_REQUEST);
                 }
                 Err(VcsError::SvnLookUnavailable) => {
-                    return svn_protocol_not_implemented_response(route, "REPORT")
+                    return svn_protocol_not_implemented_response(route, "REPORT");
                 }
                 Err(error) => {
                     return RestRouteError::from_connect_error(internal_error(error))
-                        .into_response()
+                        .into_response();
                 }
             };
         let response_path = if base_path.is_empty() {
@@ -4913,10 +5585,10 @@ fn svn_protocol_get_deleted_rev_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -4929,13 +5601,13 @@ fn svn_protocol_get_deleted_rev_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let version_name = deleted_revision
@@ -4966,10 +5638,10 @@ fn svn_protocol_list_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -4983,10 +5655,10 @@ fn svn_protocol_list_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let log_entry = match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
@@ -4994,10 +5666,10 @@ fn svn_protocol_list_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let author = log_entry
@@ -5040,10 +5712,10 @@ fn svn_protocol_get_locks_report_response(
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let lock_item = lock
@@ -5075,10 +5747,10 @@ fn svn_protocol_inherited_props_report_response(
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         },
     };
@@ -5092,10 +5764,10 @@ fn svn_protocol_inherited_props_report_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "REPORT")
+            return svn_protocol_not_implemented_response(route, "REPORT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let items = inherited
@@ -5172,10 +5844,10 @@ fn svn_protocol_merge_response(
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "MERGE")
+            return svn_protocol_not_implemented_response(route, "MERGE");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let merge_path = svn_protocol_file_lookup_for_route(route)
@@ -5186,10 +5858,10 @@ fn svn_protocol_merge_response(
         Err(VcsError::NotFound) => Vec::new(),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "MERGE")
+            return svn_protocol_not_implemented_response(route, "MERGE");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let mut updated_responses = String::new();
@@ -5297,10 +5969,10 @@ fn svn_protocol_put_response(
         Ok(exists) => exists,
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "PUT")
+            return svn_protocol_not_implemented_response(route, "PUT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let contents = match svn_protocol_put_contents(repo_path, &path, body) {
@@ -5308,10 +5980,10 @@ fn svn_protocol_put_response(
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "PUT")
+            return svn_protocol_not_implemented_response(route, "PUT");
         }
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let message = format!("Update {path} through WebDAV by {}", actor.login_id);
@@ -5388,6 +6060,55 @@ fn svn_protocol_copy_response(
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
             svn_protocol_not_implemented_response(route, "COPY")
+        }
+        Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
+fn svn_protocol_move_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    headers: &HeaderMap,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((source_revision, source_path)) = svn_protocol_file_lookup_for_route(route) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if source_revision.is_some() || source_path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let Some(destination) = headers
+        .get("destination")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| svn_protocol_destination_file_lookup(route, value))
+    else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let (destination_revision, destination_path) = destination;
+    if destination_revision.is_some() || destination_path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let message = format!(
+        "Move {source_path} to {destination_path} through WebDAV by {}",
+        actor.login_id
+    );
+    match yona_rust_vcs::svn_move_path(repo_path, &source_path, &destination_path, &message) {
+        Ok(revision) => {
+            let mut response = StatusCode::CREATED.into_response();
+            add_svn_dav_headers(&mut response);
+            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+                response.headers_mut().insert("svn-revision", value);
+            }
+            response
+        }
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
+            svn_protocol_not_implemented_response(route, "MOVE")
         }
         Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
         Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
@@ -5657,18 +6378,18 @@ fn svn_protocol_lock_response(
             Ok(lock) => lock,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnAdminUnavailable) | Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "LOCK")
+                return svn_protocol_not_implemented_response(route, "LOCK");
             }
             Err(VcsError::SvnAdminFailed(_)) => {
                 return svn_protocol_status_response(
                     StatusCode::from_u16(423).expect("valid WebDAV Locked status"),
-                )
+                );
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let body = svn_protocol_lock_discovery_body(route, &lock);
@@ -5728,14 +6449,14 @@ fn svn_protocol_get_locations_report_response(
         match yona_rust_vcs::svn_path_exists(repo_path, Some(location_revision), &location_path) {
             Ok(exists) => exists,
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let location = if exists {
@@ -5779,14 +6500,14 @@ fn svn_protocol_get_location_segments_report_response(
         match yona_rust_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
             Ok(exists) => exists,
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
     let segment = if exists {
@@ -5810,13 +6531,13 @@ fn svn_protocol_get_location_segments_report_response(
                 .collect::<String>(),
             Err(VcsError::NotFound) => String::new(),
             Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             }
             Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT")
+                return svn_protocol_not_implemented_response(route, "REPORT");
             }
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -7023,7 +7744,7 @@ async fn direct_smart_http_request(
         Ok(Some(authorization)) => authorization,
         Ok(None) => return (StatusCode::NOT_FOUND, "Repository not found").into_response(),
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
@@ -7075,7 +7796,7 @@ async fn direct_smart_http_request(
         match yona_rust_vcs::read_head_refs(&repo_path) {
             Ok(refs) => refs,
             Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         }
     } else {
@@ -7719,10 +8440,24 @@ fn absolute_app_url(public_origin: &str, base_path: &str, path: &str) -> String 
 }
 
 fn default_smtp_from() -> String {
-    std::env::var("SMTP_FROM")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
+    configured_env_value(&["SMTP_FROM", "YONA_SMTP_FROM"])
+        .or_else(smtp_sender_from_user_and_domain)
         .unwrap_or_else(|| "noreply@yona.local".to_string())
+}
+
+fn smtp_sender_from_user_and_domain() -> Option<String> {
+    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
+    if user.contains('@') {
+        return Some(user);
+    }
+    let domain = configured_env_value(&["SMTP_DOMAIN", "YONA_SMTP_DOMAIN"])
+        .or_else(application_hostname_from_env)
+        .unwrap_or_else(|| "localhost".to_string());
+    Some(format!("{user}@{domain}"))
+}
+
+fn application_hostname_from_env() -> Option<String> {
+    configured_env_value(&["YONA_APPLICATION_HOSTNAME", "APPLICATION_HOSTNAME"])
 }
 
 fn notification_mail_recipient_allowed(email: &str) -> bool {
@@ -7741,20 +8476,6 @@ fn notification_mail_recipient_allowed(email: &str) -> bool {
         .split(',')
         .map(|allowed| allowed.trim().to_ascii_lowercase())
         .any(|allowed| allowed == domain)
-}
-
-fn notification_mail_hide_addresses() -> bool {
-    std::env::var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS")
-        .ok()
-        .and_then(|value| {
-            let normalized = value.trim().to_ascii_lowercase();
-            match normalized.as_str() {
-                "false" | "0" | "no" | "off" => Some(false),
-                "true" | "1" | "yes" | "on" => Some(true),
-                _ => None,
-            }
-        })
-        .unwrap_or(true)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -7839,24 +8560,6 @@ fn parse_legacy_duration_ms(value: &str) -> Option<u64> {
         .and_then(|amount| amount.checked_mul(multiplier))
 }
 
-fn notification_mail_recipient_limit() -> Option<usize> {
-    std::env::var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT")
-        .ok()
-        .and_then(|value| value.trim().parse::<usize>().ok())
-        .filter(|limit| *limit > 0)
-}
-
-fn notification_mail_partial_recipient_size(hide_addresses: bool, recipient_count: usize) -> usize {
-    let Some(limit) = notification_mail_recipient_limit() else {
-        return recipient_count;
-    };
-    if hide_addresses {
-        limit.saturating_sub(1)
-    } else {
-        limit
-    }
-}
-
 fn notification_mail_content(
     item: &persistence::NotificationItemRecord,
     target_url: &str,
@@ -7868,7 +8571,7 @@ fn notification_mail_content(
     } else {
         item.target_title.clone()
     };
-    let body = notification_mail_add_noreferrer_to_external_links(
+    let body = notification_mail_apply_legacy_html_postprocessing(
         &notification_mail_legacy_body(item, target_url, public_origin, base_path),
         public_origin,
     );
@@ -7889,8 +8592,14 @@ fn notification_mail_legacy_body(
     let target_link = if target_url.is_empty() {
         String::new()
     } else {
+        let prefix = if notification_mail_reply_to(item).is_some() {
+            "Reply to this email directly or "
+        } else {
+            ""
+        };
         format!(
-            "\n\n<a href=\"{}\" target=\"_blank\">View it on {}</a>\n",
+            "\n\n{}<a href=\"{}\" target=\"_blank\">View it on {}</a>\n",
+            prefix,
             escape_html_attr(target_url),
             escape_html_text(&configured_site_name())
         )
@@ -7900,6 +8609,55 @@ fn notification_mail_legacy_body(
         "<div style=\"font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">\n  {}\n</div>\n\n<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">\n{}\n<div style=\"max-width:410px;margin-top:20px;color:#989898;text-align:justify;word-break:break-all;font-size:11px;font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">You can {} or<br>change settings at {} if you want to mute this.</div>\n",
         item.message, target_link, unwatch_link, settings_link
     )
+}
+
+fn notification_mail_reply_to(item: &persistence::NotificationItemRecord) -> Option<String> {
+    let imap_address = configured_env_value(&["YONA_MAILBOX_IMAP_ADDRESS"])?;
+    let (local_part, domain) = imap_address.split_once('@')?;
+    if local_part.is_empty() || domain.is_empty() {
+        return None;
+    }
+    let detail = notification_mail_reply_detail(item)?;
+    let encoded_detail = detail
+        .split('/')
+        .map(percent_encode_uri_component)
+        .collect::<Vec<_>>()
+        .join("/");
+    Some(format!("{local_part}+{encoded_detail}@{domain}"))
+}
+
+fn notification_mail_reply_detail(item: &persistence::NotificationItemRecord) -> Option<String> {
+    let resource_type = notification_mail_reply_resource_type(item)?;
+    let resource_id = item.reply_resource_id.trim();
+    if resource_id.is_empty() {
+        return None;
+    }
+    let (owner_name, project_name) = notification_mail_target_owner_project(&item.target_path)?;
+    Some(format!(
+        "{}/{}/{}/{}",
+        owner_name, project_name, resource_type, resource_id
+    ))
+}
+
+fn notification_mail_target_owner_project(target_path: &str) -> Option<(String, String)> {
+    let mut segments = target_path.trim_start_matches('/').split('/');
+    let owner_name = segments.next()?.trim();
+    let project_name = segments.next()?.trim();
+    if owner_name.is_empty() || project_name.is_empty() {
+        return None;
+    }
+    Some((owner_name.to_string(), project_name.to_string()))
+}
+
+fn notification_mail_reply_resource_type(
+    item: &persistence::NotificationItemRecord,
+) -> Option<&'static str> {
+    match normalize_identifier(&item.reply_resource_type).as_str() {
+        "issue" | "issue_post" | "issue_comment" => Some("issue_post"),
+        "posting" | "board_post" | "posting_comment" | "nonissue_comment" => Some("board_post"),
+        "comment_thread" | "review_comment" => Some("comment_thread"),
+        _ => None,
+    }
 }
 
 fn notification_mail_unwatch_url(
@@ -7950,11 +8708,11 @@ pub fn notification_mail_add_noreferrer_to_external_links(
     html: &str,
     public_origin: &str,
 ) -> String {
+    let html = notification_mail_absolutize_src_attrs(html, public_origin);
     let public_host = host_from_absolute_url(public_origin);
     let mut rendered = String::with_capacity(html.len());
     let mut cursor = 0;
-    while let Some(relative_start) = html[cursor..].find("<a") {
-        let tag_start = cursor + relative_start;
+    while let Some(tag_start) = find_html_tag_with_attr_start(&html, cursor, "href") {
         rendered.push_str(&html[cursor..tag_start]);
         let Some(relative_end) = html[tag_start..].find('>') else {
             rendered.push_str(&html[tag_start..]);
@@ -7962,8 +8720,9 @@ pub fn notification_mail_add_noreferrer_to_external_links(
         };
         let tag_end = tag_start + relative_end + 1;
         let tag = &html[tag_start..tag_end];
-        rendered.push_str(&notification_mail_link_tag_with_noreferrer(
+        rendered.push_str(&notification_mail_href_tag_with_legacy_attrs(
             tag,
+            public_origin,
             public_host.as_deref(),
         ));
         cursor = tag_end;
@@ -7972,14 +8731,141 @@ pub fn notification_mail_add_noreferrer_to_external_links(
     rendered
 }
 
-fn notification_mail_link_tag_with_noreferrer(tag: &str, public_host: Option<&str>) -> String {
-    let Some(href) = html_attr_value(tag, "href") else {
+pub fn notification_mail_apply_legacy_html_postprocessing(
+    html: &str,
+    public_origin: &str,
+) -> String {
+    let linked = notification_mail_add_noreferrer_to_external_links(html, public_origin);
+    notification_mail_wrap_images_like_legacy(&linked, public_origin)
+}
+
+fn notification_mail_wrap_images_like_legacy(html: &str, public_origin: &str) -> String {
+    let mut rendered = String::with_capacity(html.len());
+    let mut cursor = 0;
+    while let Some(tag_start) = find_html_tag_start(html, cursor, "img") {
+        rendered.push_str(&html[cursor..tag_start]);
+        let Some(relative_end) = html[tag_start..].find('>') else {
+            rendered.push_str(&html[tag_start..]);
+            return rendered;
+        };
+        let tag_end = tag_start + relative_end + 1;
+        let tag = &html[tag_start..tag_end];
+        rendered.push_str(&notification_mail_wrapped_image_tag(tag, public_origin));
+        cursor = tag_end;
+    }
+    rendered.push_str(&html[cursor..]);
+    rendered
+}
+
+fn notification_mail_absolutize_src_attrs(html: &str, public_origin: &str) -> String {
+    let mut rendered = String::with_capacity(html.len());
+    let mut cursor = 0;
+    while let Some(tag_start) = find_html_tag_with_attr_start(html, cursor, "src") {
+        rendered.push_str(&html[cursor..tag_start]);
+        let Some(relative_end) = html[tag_start..].find('>') else {
+            rendered.push_str(&html[tag_start..]);
+            return rendered;
+        };
+        let tag_end = tag_start + relative_end + 1;
+        let tag = &html[tag_start..tag_end];
+        rendered.push_str(&notification_mail_tag_with_absolute_attr(
+            tag,
+            "src",
+            public_origin,
+        ));
+        cursor = tag_end;
+    }
+    rendered.push_str(&html[cursor..]);
+    rendered
+}
+
+fn find_html_tag_with_attr_start(html: &str, cursor: usize, attr_name: &str) -> Option<usize> {
+    let lower_html = html[cursor..].to_ascii_lowercase();
+    let mut search_from = 0;
+    while let Some(relative_start) = lower_html[search_from..].find('<') {
+        let local_start = search_from + relative_start;
+        let Some(relative_end) = lower_html[local_start..].find('>') else {
+            return None;
+        };
+        let local_end = local_start + relative_end + 1;
+        let tag = &html[cursor + local_start..cursor + local_end];
+        if html_attr_span(tag, attr_name).is_some() {
+            return Some(cursor + local_start);
+        }
+        search_from = local_end;
+    }
+    None
+}
+
+fn find_html_tag_start(html: &str, cursor: usize, name: &str) -> Option<usize> {
+    let lower_html = html[cursor..].to_ascii_lowercase();
+    let needle = format!("<{}", name.to_ascii_lowercase());
+    let mut search_from = 0;
+    while let Some(relative_start) = lower_html[search_from..].find(&needle) {
+        let local_start = search_from + relative_start;
+        let after_name = local_start + needle.len();
+        let is_tag = lower_html
+            .as_bytes()
+            .get(after_name)
+            .map(|byte| {
+                byte.is_ascii_whitespace()
+                    || *byte == b'>'
+                    || *byte == b'/'
+                    || *byte == b'\t'
+                    || *byte == b'\n'
+                    || *byte == b'\r'
+            })
+            .unwrap_or(false);
+        if is_tag {
+            return Some(cursor + local_start);
+        }
+        search_from = after_name;
+    }
+    None
+}
+
+fn notification_mail_wrapped_image_tag(tag: &str, public_origin: &str) -> String {
+    let tag = notification_mail_tag_with_absolute_attr(tag, "src", public_origin);
+    let Some(src) = html_attr_value(&tag, "src") else {
+        return tag.to_string();
+    };
+    let image = notification_mail_image_tag_with_max_width(&tag);
+    format!(
+        "<a href=\"{}\" target=\"_blank\" style=\"border:0;outline:0;\">{}</a>",
+        escape_html_attr(&src),
+        image
+    )
+}
+
+fn notification_mail_image_tag_with_max_width(tag: &str) -> String {
+    if let Some((style_start, style_end, style_value)) = html_attr_span(tag, "style") {
+        let mut updated = String::with_capacity(tag.len() + "max-width:1024px;".len());
+        updated.push_str(&tag[..style_start]);
+        updated.push_str(&format!("style=\"max-width:1024px;{}\"", style_value));
+        updated.push_str(&tag[style_end..]);
+        return updated;
+    }
+    let insert_at = tag.rfind('>').unwrap_or(tag.len());
+    let mut updated = String::with_capacity(tag.len() + " style=\"max-width:1024px;\"".len());
+    updated.push_str(&tag[..insert_at]);
+    updated.push_str(" style=\"max-width:1024px;\"");
+    updated.push_str(&tag[insert_at..]);
+    updated
+}
+
+fn notification_mail_href_tag_with_legacy_attrs(
+    tag: &str,
+    public_origin: &str,
+    public_host: Option<&str>,
+) -> String {
+    let tag = notification_mail_tag_with_absolute_attr(tag, "href", public_origin);
+    let Some(href) = html_attr_value(&tag, "href") else {
         return tag.to_string();
     };
     if !notification_mail_link_is_external(&href, public_host) {
         return tag.to_string();
     }
-    if let Some((rel_start, rel_end, rel_value)) = html_attr_span(tag, "rel") {
+    if let Some((rel_start, rel_end, rel_value)) = html_attr_span(&tag, "rel") {
         if rel_value
             .split_whitespace()
             .any(|value| value.eq_ignore_ascii_case("noreferrer"))
@@ -7998,6 +8884,46 @@ fn notification_mail_link_tag_with_noreferrer(tag: &str, public_host: Option<&st
     updated.push_str(" rel=\" noreferrer\"");
     updated.push_str(&tag[insert_at..]);
     updated
+}
+
+fn notification_mail_tag_with_absolute_attr(tag: &str, name: &str, public_origin: &str) -> String {
+    let Some((attr_start, attr_end, value)) = html_attr_span(tag, name) else {
+        return tag.to_string();
+    };
+    let Some(absolute_value) = notification_mail_absolute_url(&value, public_origin) else {
+        return tag.to_string();
+    };
+    let mut updated = String::with_capacity(tag.len() + absolute_value.len());
+    updated.push_str(&tag[..attr_start]);
+    updated.push_str(&format!(
+        "{}=\"{}\"",
+        name,
+        escape_html_attr(&absolute_value)
+    ));
+    updated.push_str(&tag[attr_end..]);
+    updated
+}
+
+fn notification_mail_absolute_url(value: &str, public_origin: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty()
+        || trimmed.starts_with('#')
+        || uri_looks_absolute(trimmed)
+        || public_origin.trim().is_empty()
+    {
+        return None;
+    }
+    let origin = public_origin.trim_end_matches('/');
+    if trimmed.starts_with('/') {
+        Some(format!("{origin}{trimmed}"))
+    } else {
+        Some(format!("{origin}/{trimmed}"))
+    }
+}
+
+fn uri_looks_absolute(value: &str) -> bool {
+    let first_delimiter = value.find([':', '/', '?', '#']).unwrap_or(value.len());
+    value.as_bytes().get(first_delimiter) == Some(&b':')
 }
 
 fn notification_mail_link_is_external(href: &str, public_host: Option<&str>) -> bool {
@@ -8061,21 +8987,69 @@ fn html_attr_value(tag: &str, name: &str) -> Option<String> {
 
 fn html_attr_span(tag: &str, name: &str) -> Option<(usize, usize, String)> {
     let lower = tag.to_ascii_lowercase();
-    let needle = format!("{}=", name.to_ascii_lowercase());
-    let attr_start = lower.find(&needle)?;
-    let value_start = attr_start + needle.len();
-    let quote = tag.as_bytes().get(value_start).copied()?;
-    if quote != b'"' && quote != b'\'' {
-        return None;
+    let name = name.to_ascii_lowercase();
+    let bytes = lower.as_bytes();
+    let name_bytes = name.as_bytes();
+    let mut index = 0;
+    while index + name_bytes.len() <= bytes.len() {
+        let Some(relative_start) = lower[index..].find(&name) else {
+            return None;
+        };
+        let attr_start = index + relative_start;
+        let before = attr_start
+            .checked_sub(1)
+            .and_then(|position| bytes.get(position).copied());
+        let has_name_boundary = before
+            .map(|byte| byte.is_ascii_whitespace() || byte == b'<' || byte == b'/')
+            .unwrap_or(true);
+        let mut after_name = attr_start + name_bytes.len();
+        if !has_name_boundary {
+            index = after_name;
+            continue;
+        }
+        while bytes
+            .get(after_name)
+            .copied()
+            .is_some_and(|byte| byte.is_ascii_whitespace())
+        {
+            after_name += 1;
+        }
+        if bytes.get(after_name).copied() != Some(b'=') {
+            index = after_name;
+            continue;
+        }
+        let mut value_start = after_name + 1;
+        while bytes
+            .get(value_start)
+            .copied()
+            .is_some_and(|byte| byte.is_ascii_whitespace())
+        {
+            value_start += 1;
+        }
+        let quote = tag.as_bytes().get(value_start).copied()?;
+        let (value_body_start, value_body_end, attr_end) = if quote == b'"' || quote == b'\'' {
+            let value_body_start = value_start + 1;
+            let value_body_end = tag[value_body_start..].find(quote as char)? + value_body_start;
+            (value_body_start, value_body_end, value_body_end + 1)
+        } else {
+            let value_body_start = value_start;
+            let value_body_end = tag[value_body_start..]
+                .find(|ch: char| ch.is_whitespace() || ch == '>')
+                .map(|offset| value_body_start + offset)
+                .unwrap_or(tag.len());
+            if value_body_end == value_body_start {
+                index = value_start + 1;
+                continue;
+            }
+            (value_body_start, value_body_end, value_body_end)
+        };
+        return Some((
+            attr_start,
+            attr_end,
+            tag[value_body_start..value_body_end].to_string(),
+        ));
     }
-    let value_body_start = value_start + 1;
-    let value_body_end = tag[value_body_start..].find(quote as char)? + value_body_start;
-    let attr_end = value_body_end + 1;
-    Some((
-        attr_start,
-        attr_end,
-        tag[value_body_start..value_body_end].to_string(),
-    ))
+    None
 }
 
 pub async fn deliver_due_notification_mails(
@@ -8094,71 +9068,66 @@ pub async fn deliver_due_notification_mails(
         .into_iter()
         .filter(|delivery| notification_mail_recipient_allowed(&delivery.recipient_email))
         .collect();
-    let mut delivered = 0;
-    if notification_mail_hide_addresses() {
-        let mut grouped: Vec<(persistence::NotificationItemRecord, String, Vec<String>)> =
-            Vec::new();
-        for delivery in deliveries {
-            if let Some((_, _, recipients)) = grouped.iter_mut().find(|(item, language, _)| {
-                item.id == delivery.item.id && *language == delivery.recipient_language
-            }) {
-                recipients.push(delivery.recipient_email);
-            } else {
-                grouped.push((
-                    delivery.item,
-                    delivery.recipient_language,
-                    vec![delivery.recipient_email],
-                ));
-            }
+    let mut grouped: Vec<(
+        persistence::NotificationItemRecord,
+        Vec<NotificationMailRecipient>,
+    )> = Vec::new();
+    for delivery in deliveries {
+        let recipient = NotificationMailRecipient {
+            email: delivery.recipient_email,
+            name: delivery.recipient_login_id,
+            preferred_language: delivery.recipient_language,
+        };
+        if let Some((_, recipients)) = grouped
+            .iter_mut()
+            .find(|(item, _)| item.id == delivery.item.id)
+        {
+            recipients.push(recipient);
+        } else {
+            grouped.push((delivery.item, vec![recipient]));
         }
-        for (item, _, mut bcc) in grouped {
-            bcc.sort();
-            bcc.dedup();
-            if bcc.is_empty() {
-                continue;
-            }
-            let partial_recipient_size = notification_mail_partial_recipient_size(true, bcc.len());
-            if partial_recipient_size == 0 {
-                continue;
-            }
-            let target_url = if item.target_path.is_empty() {
-                String::new()
-            } else {
-                absolute_app_url(&public_origin, base_path, &item.target_path)
-            };
-            let (subject, body) =
-                notification_mail_content(&item, &target_url, &public_origin, base_path);
-            for recipient_chunk in bcc.chunks(partial_recipient_size) {
+    }
+
+    let mut delivered = 0;
+    let hide_address = notification_mail_hide_address_from_env();
+    let recipient_limit = notification_mail_recipient_limit_from_env();
+    let default_from = default_smtp_from();
+    let site_name = configured_site_name();
+    for (item, recipients) in grouped {
+        let target_url = if item.target_path.is_empty() {
+            String::new()
+        } else {
+            absolute_app_url(&public_origin, base_path, &item.target_path)
+        };
+        let (subject, body) =
+            notification_mail_content(&item, &target_url, &public_origin, base_path);
+        for batch in notification_mail_batches(
+            &recipients,
+            &default_from,
+            &site_name,
+            hide_address,
+            recipient_limit,
+        ) {
+            let bcc = batch
+                .bcc
+                .into_iter()
+                .map(|recipient| recipient.email)
+                .collect::<Vec<_>>();
+            let reply_to = notification_mail_reply_to(&item);
+            for recipient in batch.to {
                 deliver(OutboundMail {
-                    bcc: recipient_chunk.to_vec(),
+                    bcc: bcc.clone(),
                     body: body.clone(),
-                    from: default_smtp_from(),
+                    from: default_from.clone(),
+                    html: true,
+                    reply_to: reply_to.clone(),
                     subject: subject.clone(),
-                    to: default_smtp_from(),
+                    to: recipient.email,
                 })
                 .map_err(|error| error.to_string())?;
                 delivered += 1;
             }
         }
-        return Ok(delivered);
-    }
-    for delivery in deliveries {
-        let target_url = if delivery.item.target_path.is_empty() {
-            String::new()
-        } else {
-            absolute_app_url(&public_origin, base_path, &delivery.item.target_path)
-        };
-        let (subject, body) =
-            notification_mail_content(&delivery.item, &target_url, &public_origin, base_path);
-        deliver(OutboundMail {
-            bcc: Vec::new(),
-            body,
-            from: default_smtp_from(),
-            subject,
-            to: delivery.recipient_email,
-        })
-        .map_err(|error| error.to_string())?;
-        delivered += 1;
     }
     Ok(delivered)
 }
@@ -8298,6 +9267,21 @@ fn configured_supported_languages() -> Vec<String> {
     } else {
         languages
     }
+}
+
+fn configured_bool_env(names: &[&str], default: bool) -> bool {
+    names
+        .iter()
+        .find_map(|name| {
+            std::env::var(name).ok().and_then(|value| {
+                match value.trim().to_ascii_lowercase().as_str() {
+                    "1" | "true" | "yes" | "on" => Some(true),
+                    "0" | "false" | "no" | "off" => Some(false),
+                    _ => None,
+                }
+            })
+        })
+        .unwrap_or(default)
 }
 
 fn gravatar_url(email_address: &str) -> String {
@@ -8469,6 +9453,8 @@ fn send_signup_verification_mail(
         bcc: Vec::new(),
         body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
         from: default_smtp_from(),
+        html: false,
+        reply_to: None,
         subject: "New Sign-up Confirm".to_string(),
         to: to.to_string(),
     })
@@ -8490,6 +9476,8 @@ fn send_password_reset_mail(
         bcc: Vec::new(),
         body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
         from: default_smtp_from(),
+        html: false,
+        reply_to: None,
         subject: format!("[{}] Password reset request", configured_site_name()),
         to: to.to_string(),
     })
@@ -8512,6 +9500,8 @@ fn send_workspace_email_validation_mail(
         bcc: Vec::new(),
         body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
         from: default_smtp_from(),
+        html: false,
+        reply_to: None,
         subject: "Validation email".to_string(),
         to: to.to_string(),
     })
@@ -8574,6 +9564,8 @@ async fn send_project_transfer_request_mail(
             bcc: Vec::new(),
             body: body.clone(),
             from: default_smtp_from(),
+            html: false,
+            reply_to: None,
             subject: subject.clone(),
             to,
         });
@@ -8690,6 +9682,12 @@ struct DirectDefaultLoginPageQuery {
     path: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct DirectUserSidebarQuery {
+    hash: Option<String>,
+    path: Option<String>,
+}
+
 #[derive(Serialize)]
 struct DirectDefaultLoginPageResponse {
     #[serde(rename = "defaultLoginPage")]
@@ -8726,6 +9724,39 @@ async fn direct_reset_user_visited_list(
     }
 }
 
+async fn direct_user_sidebar(
+    headers: HeaderMap,
+    query: DirectUserSidebarQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let session_user_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let iframe_path = legacy_sidebar_iframe_path(&base_path, query);
+    let authenticated_sidebar = match (backend, session_user_id) {
+        (PilotBackend::Repository(repository), Some(user_id)) => {
+            match render_legacy_authenticated_sidebar(&repository, user_id, &base_path).await {
+                Ok(sidebar) => Some(sidebar),
+                Err(error) => return error.into_response(),
+            }
+        }
+        (PilotBackend::Repository(_), None) => None,
+        (PilotBackend::Static, Some(_)) => {
+            return RestRouteError::not_implemented("sidebar requires repository backend")
+                .into_response();
+        }
+        (PilotBackend::Static, None) => None,
+    };
+
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+        render_legacy_user_sidebar_page(&base_path, &iframe_path, authenticated_sidebar.as_deref()),
+    )
+        .into_response()
+}
+
 async fn direct_user_menu_tab_content_list(
     headers: HeaderMap,
     session_manager: SessionManager,
@@ -8749,40 +9780,261 @@ async fn direct_user_menu_tab_content_list(
         Ok(actor) => actor,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
     };
-    let recent_projects = match repository.list_recent_projects_for_user(actor.id).await {
-        Ok(projects) => projects,
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let member_projects = match repository.list_member_projects_for_user(actor.id).await {
-        Ok(projects) => projects,
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let recent_issue_records = match repository
-        .list_recent_workspace_issues_for_user(actor.id, u64::from(WORKSPACE_DAYS_AGO))
-        .await
-    {
-        Ok(issues) => issues,
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let recent_issues =
-        match filter_workspace_issue_items_by_read_acl(&repository, actor.id, recent_issue_records)
-            .await
-        {
-            Ok(issues) => issues,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    let menu =
+        match render_legacy_usermenu_tab_content_for_actor(&repository, &actor, &base_path).await {
+            Ok(menu) => menu,
+            Err(error) => {
+                return error.into_response();
+            }
         };
 
     (
         [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        render_legacy_usermenu_tab_content_list(
-            &base_path,
-            &actor.login_id,
-            &recent_projects,
-            &member_projects,
-            &recent_issues,
-        ),
+        menu,
     )
         .into_response()
+}
+
+async fn render_legacy_authenticated_sidebar(
+    repository: &PilotRepository,
+    user_id: i64,
+    base_path: &str,
+) -> Result<String, RestRouteError> {
+    let actor = require_authenticated_user(repository, Some(user_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let menu = render_legacy_usermenu_tab_content_for_actor(repository, &actor, base_path).await?;
+    Ok(render_legacy_sidebar_inner(base_path, &actor, &menu))
+}
+
+async fn render_legacy_usermenu_tab_content_for_actor(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    base_path: &str,
+) -> Result<String, RestRouteError> {
+    let recent_projects = repository
+        .list_recent_projects_for_user(actor.id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let member_projects = repository
+        .list_member_projects_for_user(actor.id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let recent_issue_records = repository
+        .list_recent_workspace_issues_for_user(actor.id, u64::from(WORKSPACE_DAYS_AGO))
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let recent_issues =
+        filter_workspace_issue_items_by_read_acl(repository, actor.id, recent_issue_records)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(render_legacy_usermenu_tab_content_list(
+        base_path,
+        &actor.login_id,
+        &recent_projects,
+        &member_projects,
+        &recent_issues,
+    ))
+}
+
+fn legacy_sidebar_iframe_path(base_path: &str, query: DirectUserSidebarQuery) -> String {
+    let path = query
+        .path
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("/notifications");
+    let mut iframe_path = if path.starts_with('/') {
+        base_path_href(base_path, path)
+    } else {
+        base_path_href(base_path, &format!("/{path}"))
+    };
+    if let Some(hash) = query
+        .hash
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        iframe_path.push('#');
+        iframe_path.push_str(hash.trim_start_matches('#'));
+    }
+    iframe_path
+}
+
+fn render_legacy_user_sidebar_page(
+    base_path: &str,
+    iframe_path: &str,
+    authenticated_sidebar: Option<&str>,
+) -> String {
+    format!(
+        r#"<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<title>app.name</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="shortcut icon" type="image/x-icon" href="{favicon}">
+<link rel="stylesheet" type="text/css" media="all" href="{bootstrap}">
+<link rel="stylesheet" type="text/css" media="all" href="{yobicon}">
+<link rel="stylesheet" type="text/css" media="all" href="{usermenu_css}">
+<link rel="stylesheet" type="text/css" media="all" href="{yobi_css}">
+</head>
+<body class="framed-body" id="html-body">
+    <div id="sidebar" class="sidebar hide-in-mobile">
+        {sidebar}
+    <div id="sidebar-bottom" class="sidebar-bottom" style="
+        position: absolute;
+        bottom: 8px;
+        right: 15px;
+        color: gray;
+    ">Yona, made by <i class="yobicon-hearts" style="
+        color: red;
+        vertical-align: middle;
+    "></i></div>
+    </div>
+    <div id="mainFrame" class="show-in-mobile-100vh">
+        <iframe name="mainFrame" id="mainFrameId" frameborder="0" class="mainFrame" height="100%" width="100%" src="{iframe_path}" ></iframe>
+    </div>
+    <script type="text/javascript">
+        var UsermenuToggleFavoriteProjectUrl = "{favorite_project_url}";
+        var UsermenuToggleFoveriteOrganizationUrl = "{favorite_organization_url}";
+        var UsermenuGetFoveriteProjectsUrl = "{favorite_projects_url}";
+        var UsermenuToggleFavoriteIssueUrl = "{favorite_issue_url}";
+        var UsermenuGetFoveriteIssuesUrl = "{favorite_issues_url}";
+        var UsermenuUrl = "{usermenu_url}";
+    </script>
+    <script type="text/javascript" src="{usermenu_js}"></script>
+</body>
+</html>
+"#,
+        favicon = escape_html_attr(&base_path_href(base_path, "/assets/images/favicon.ico")),
+        bootstrap = escape_html_attr(&base_path_href(
+            base_path,
+            "/assets/bootstrap/css/bootstrap.css"
+        )),
+        yobicon = escape_html_attr(&base_path_href(
+            base_path,
+            "/assets/stylesheets/yobicon/style.css"
+        )),
+        usermenu_css = escape_html_attr(&base_path_href(
+            base_path,
+            "/assets/stylesheets/usermenu.css"
+        )),
+        yobi_css = escape_html_attr(&base_path_href(base_path, "/assets/stylesheets/yobi.css")),
+        sidebar = authenticated_sidebar.unwrap_or_default(),
+        iframe_path = escape_html_attr(iframe_path),
+        favorite_project_url =
+            escape_html_attr(&base_path_href(base_path, "/-_-api/v1/favoriteProjects/")),
+        favorite_organization_url = escape_html_attr(&base_path_href(
+            base_path,
+            "/-_-api/v1/favoriteOrganizations/"
+        )),
+        favorite_projects_url =
+            escape_html_attr(&base_path_href(base_path, "/-_-api/v1/favoriteProjects")),
+        favorite_issue_url =
+            escape_html_attr(&base_path_href(base_path, "/-_-api/v1/favoriteIssues/")),
+        favorite_issues_url =
+            escape_html_attr(&base_path_href(base_path, "/-_-api/v1/favoriteIssues")),
+        usermenu_url = escape_html_attr(&base_path_href(base_path, "/user/usermenuTabContentList")),
+        usermenu_js = escape_html_attr(&base_path_href(
+            base_path,
+            "/assets/javascripts/common/yona.Usermenu.js"
+        )),
+    )
+}
+
+fn render_legacy_sidebar_inner(
+    base_path: &str,
+    actor: &persistence::AppUserRecord,
+    menu_content: &str,
+) -> String {
+    format!(
+        r##"<div class="row-fluid user-menu-wrap">
+    <span class="user-menu"><a href="{profile_href}" target="mainFrame">
+        <span class="avatar-wrap smaller">
+            <img src="{avatar_url}" />
+        </span>
+        <span class="caret-text hide-in-mobile">{display_name}</span>
+    </a></span>
+    <span class="user-menu"><a href="{settings_href}" target="mainFrame">userinfo.accountSetting</a></span>
+    <a href="{logout_href}"><span class="user-menu logout label">title.logout</span></a>
+    <div class="pin-in-sidebar" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i></div>
+</div>
+<ul class="nav nav-tabs nm">
+    <li class="myOrganizationList">
+        <a href="#myOrganizationList" data-toggle="tab">
+        title.favorite
+        </a>
+    </li>
+    <li class="myProjectList">
+        <a href="#myProjectList" data-toggle="tab">
+        title.project
+        </a>
+    </li>
+    <li class="myRecentIssueList">
+        <a href="#myRecentIssueList" data-toggle="tab">
+            title.recently.visited.issue
+        </a>
+    </li>
+    <li>
+        <div class=""><i class="yobicon-refresh refresh-button"></i></div>
+    </li>
+</ul>
+<div class="tab-content tab-box">
+    <div id="usermenu-tab-content-list" class="tab-content">
+        {menu_content}
+    </div>
+</div>
+    <script>
+         $(function(){{
+             var activeMenu = localStorage.getItem('sidebarActiveMenu')
+             if (activeMenu == null) {{
+                $('.myOrganizationList').addClass('active');
+                 $('#myOrganizationList').addClass('active');
+             }} else {{
+                 $('.'+activeMenu).addClass('active');
+                 $('#'+activeMenu).addClass('active');
+             }}
+
+             $('.refresh-button').on('click', function(){{
+                 window.location.reload();
+             }});
+
+             $('.myOrganizationList').on('click', function(){{
+                 localStorage.setItem('sidebarActiveMenu', 'myOrganizationList');
+                 $(".sidebar-bottom").hide();
+             }})
+             $('.myProjectList').on('click', function(){{
+                 localStorage.setItem('sidebarActiveMenu', 'myProjectList');
+                 $(".sidebar-bottom").hide();
+             }})
+             $('.myRecentIssueList').on('click', function(){{
+                 localStorage.setItem('sidebarActiveMenu', 'myRecentIssueList');
+                 $(".sidebar-bottom").show();
+             }})
+
+             $(".pin-in-sidebar").on("click", function () {{
+                 localStorage.setItem('shallWeOpenLeftNavigation', "false");
+                 window.location = window.location.href;
+             }});
+
+         }})
+    </script>
+"##,
+        profile_href =
+            escape_html_attr(&base_path_href(base_path, &format!("/{}", actor.login_id))),
+        avatar_url = escape_html_attr(&base_path_href(
+            base_path,
+            "/assets/images/default-avatar-32.png"
+        )),
+        display_name = escape_html_text(&actor.display_name),
+        settings_href = escape_html_attr(&base_path_href(base_path, "/user/editform")),
+        logout_href = escape_html_attr(&base_path_href(base_path, "/users/logout")),
+        menu_content = menu_content,
+    )
 }
 
 fn render_legacy_usermenu_tab_content_list(
@@ -9266,7 +10518,11 @@ async fn direct_legacy_signup(
     public_origin: String,
 ) -> Response {
     let request = RegisterWithPasswordRequest {
-        email_address: form.get("emailAddress").cloned().unwrap_or_default(),
+        email_address: form
+            .get("email")
+            .or_else(|| form.get("emailAddress"))
+            .cloned()
+            .unwrap_or_default(),
         login_id: form.get("loginId").cloned().unwrap_or_default(),
         name: form.get("name").cloned().unwrap_or_default(),
         password: form.get("password").cloned().unwrap_or_default(),
@@ -9625,8 +10881,12 @@ async fn direct_import_site_data(
     body: Bytes,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Response {
-    let (form, payload) = direct_site_import_payload(&headers, &body);
+    let (form, payload, is_multipart, has_data_file) = direct_site_import_payload(&headers, &body);
+    if is_multipart && !has_data_file {
+        return Redirect::to(&base_path_href(&base_path, "/sites/data")).into_response();
+    }
     let headers = headers_with_form_csrf(headers, &form);
     let service = PilotServiceImpl {
         base_path: String::new(),
@@ -9635,7 +10895,30 @@ async fn direct_import_site_data(
         backend,
     };
     match rest_import_site_data(headers, &payload, service).await {
-        Ok(Json(payload)) => Json(payload).into_response(),
+        Ok(Json(payload)) => {
+            if is_multipart {
+                Redirect::to(&base_path_href(&base_path, "/")).into_response()
+            } else {
+                Json(payload).into_response()
+            }
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_read_site_diagnostic_shell(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_read_site_diagnostics(headers, service).await {
+        Ok(Json(payload)) => Html(render_legacy_site_diagnostic_shell(&payload)).into_response(),
         Err(error) => error.into_response(),
     }
 }
@@ -9684,6 +10967,35 @@ async fn direct_read_site_mail_list(
     }
 }
 
+async fn direct_send_site_mail(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let form = direct_site_mail_form(&body);
+    let headers = headers_with_form_csrf(headers, &form);
+    let body = RestSiteMailSendBody {
+        from: form.get("from").cloned().unwrap_or_default(),
+        to: form.get("to").cloned().unwrap_or_default(),
+        subject: form.get("subject").cloned().unwrap_or_default(),
+        body: form.get("body").cloned().unwrap_or_default(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_send_site_test_mail(headers, body, service).await {
+        Ok(_) => {
+            Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
 #[derive(Deserialize)]
 struct LegacyResourceQuery {
     #[serde(rename = "resource.id")]
@@ -9699,6 +11011,12 @@ async fn direct_legacy_unwatch(
     backend: PilotBackend,
     base_path: String,
 ) -> Response {
+    let resource_type = query.resource_type.unwrap_or_default();
+    let resource_id = query.resource_id.unwrap_or_default();
+    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
+        return RestRouteError::bad_request("resource.type and resource.id are required")
+            .into_response();
+    }
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&base_path_href(
             &base_path,
@@ -9720,19 +11038,271 @@ async fn direct_legacy_unwatch(
                 .into_response();
         }
     };
-    let resource_type = query.resource_type.unwrap_or_default();
-    let resource_id = query.resource_id.unwrap_or_default();
-    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
-        return RestRouteError::bad_request("resource.type and resource.id are required")
-            .into_response();
+    let target = match repository
+        .resolve_legacy_resource_target(&resource_type, &resource_id)
+        .await
+    {
+        Ok(Some(target)) => target,
+        Ok(None) => return RestRouteError::not_found("resource not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if let Err(error) = require_project_read(
+        &repository,
+        &target.owner_name,
+        &target.project_name,
+        Some(user_id),
+    )
+    .await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
     }
     match repository
         .unwatch_notification_resource(user_id, &resource_type, &resource_id)
         .await
     {
-        Ok(()) => redirect_to(&base_path, "/notification"),
+        Ok(()) if legacy_prefers_json(&headers) => StatusCode::OK.into_response(),
+        Ok(()) => redirect_to(&base_path, &target.target_path),
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
+}
+
+async fn direct_notification_partial(
+    headers: HeaderMap,
+    query: DirectNotificationPartialQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let from = query.from.unwrap_or(0);
+    let size = query
+        .size
+        .or(query.limit)
+        .filter(|size| *size > 0)
+        .unwrap_or(20);
+    let Some(user_id) = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id)
+    else {
+        return Html(render_legacy_notification_partial(
+            &[],
+            from,
+            size,
+            &base_path,
+        ))
+        .into_response();
+    };
+    let PilotBackend::Repository(repository) = backend else {
+        return RestRouteError::not_implemented("notifications require repository backend")
+            .into_response();
+    };
+    match repository
+        .list_notifications_for_user(user_id, from, size)
+        .await
+    {
+        Ok(record) => Html(render_legacy_notification_partial(
+            &record.items,
+            from,
+            size,
+            &base_path,
+        ))
+        .into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_toggle_workspace_notification(
+    headers: HeaderMap,
+    project_id: i64,
+    event_type: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    let body = RestWorkspaceNotificationBody {
+        event_type,
+        project_id: project_id.to_string(),
+    };
+    match rest_toggle_workspace_notification(headers, body, service).await {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_toggle_project_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    watching: bool,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+fn render_legacy_notification_partial(
+    items: &[persistence::NotificationItemRecord],
+    from: u32,
+    size: u32,
+    base_path: &str,
+) -> String {
+    if items.is_empty() {
+        return r#"<div class="warning-none">
+        <i class="yobicon-danger"></i> notification.none
+    </div>"#
+            .to_string();
+    }
+
+    let mut html = String::new();
+    for item in items {
+        html.push_str(&render_legacy_notification_item(item, base_path));
+    }
+    let next_from = from.saturating_add(size);
+    html.push_str(&format!(
+        r##"<li><a href="javascript:void(0);" id="notification-more" class="ybtn">More</a></li>
+<script type="text/javascript">
+    $(document).ready(function(){{
+        $("#notification-more").click(function() {{
+            $("#notification-more").remove();
+            $.get("{}", function(data) {{
+                $('.activity-streams').append(data);
+            }});
+        }});
+    }});
+</script>"##,
+        escape_html_attr(&base_path_href(
+            base_path,
+            &format!("/notification?from={next_from}&size={size}")
+        ))
+    ));
+    html
+}
+
+fn render_legacy_notification_item(
+    item: &persistence::NotificationItemRecord,
+    base_path: &str,
+) -> String {
+    let message_id = format!("message-{}", item.id);
+    let stream_type =
+        if item.event_type == "ISSUE_BODY_CHANGED" || item.event_type == "COMMENT_UPDATED" {
+            "updated".to_string()
+        } else {
+            item.type_icon.clone()
+        };
+    let stream_type_body = if stream_type == "updated" {
+        "Edit".to_string()
+    } else {
+        format!(
+            r#"<i class="yobicon-{}"></i>"#,
+            escape_html_attr(&item.type_icon)
+        )
+    };
+    let title = if item.target_path.is_empty() {
+        escape_html_text(&item.target_title)
+    } else {
+        format!(
+            r#"<a href="{}">{}</a>"#,
+            escape_html_attr(&base_path_href(base_path, &item.target_path)),
+            escape_html_text(&item.target_title)
+        )
+    };
+    let actor_avatar = if item.actor.login_id.is_empty() {
+        format!(
+            r#"<div class="smaller">
+                            <img src="{}" width="42" height="42">
+                        </div>"#,
+            escape_html_attr(&base_path_href(
+                base_path,
+                "/assets/images/default-avatar-64.png"
+            ))
+        )
+    } else {
+        format!(
+            r#"<a class="avatar-wrap smaller" href="{}">
+                            <img src="{}" >
+                        </a>"#,
+            escape_html_attr(&base_path_href(
+                base_path,
+                &format!("/{}", item.actor.login_id)
+            )),
+            escape_html_attr(&item.actor.avatar_url)
+        )
+    };
+    let actor_label = if item.actor.login_id.is_empty() {
+        String::new()
+    } else {
+        format!(
+            r#"<a href="{}" class="author">{}</a>@{}"#,
+            escape_html_attr(&base_path_href(
+                base_path,
+                &format!("/{}", item.actor.login_id)
+            )),
+            escape_html_text(&item.actor.display_name),
+            escape_html_text(&item.actor.login_id)
+        )
+    };
+    let created_at = item
+        .created
+        .map(|created| created.format("%Y-%m-%d %H:%M:%S").to_string())
+        .unwrap_or_default();
+    format!(
+        r#"<li class="notification-stream">
+        <div class="stream-type {stream_type}">
+                {stream_type_body}
+        </div>
+        <div class="stream-desc" data-target="{message_id}" data-toggle="learnmore">
+            <div class="stream-info">
+                <div class="title">
+                    {title}
+                </div>
+                <div class="message-wrap nowrap" id="{message_id}">
+                    <div class="message">{message}</div>
+                </div>
+                <div class="meta">
+                    {actor_avatar}
+                    {actor_label}
+                    <span class="ago pull-right" title="{created_at}">
+                        {created_label}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </li>"#,
+        stream_type = escape_html_attr(&stream_type),
+        stream_type_body = stream_type_body,
+        message_id = escape_html_attr(&message_id),
+        title = title,
+        message = render_legacy_notification_message(&item.message),
+        actor_avatar = actor_avatar,
+        actor_label = actor_label,
+        created_at = escape_html_attr(&created_at),
+        created_label = escape_html_text(&format_project_date_label(item.created)),
+    )
+}
+
+fn render_legacy_notification_message(message: &str) -> String {
+    escape_html_text(message).replace('\n', "<br/>\n")
+}
+
+fn legacy_prefers_json(headers: &HeaderMap) -> bool {
+    headers
+        .get(http::header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.to_ascii_lowercase().contains("application/json"))
+        .unwrap_or(false)
 }
 
 async fn direct_unwatch_site_update(
@@ -9795,6 +11365,62 @@ async fn direct_download_site_update_file(
     }
 }
 
+fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) -> String {
+    let body = if payload.errors.is_empty() {
+        "<p>site.diagnostic.errorNotFound</p>".to_string()
+    } else {
+        let mut items = String::new();
+        for error in &payload.errors {
+            items.push_str(&format!("<li><pre>{}</pre></li>", escape_html_text(error)));
+        }
+        format!(
+            "<p>site.diagnostic.errorFound {}</p><ul>{items}</ul>",
+            payload.error_count
+        )
+    };
+    format!(
+        r#"<!doctype html>
+<html>
+<head><title>title.siteSetting</title></head>
+<body>
+<div class="site-breadcrumb-outer"><h3>site.sidebar</h3></div>
+<div class="site-setting-wrap">
+<ul class="site-setting-nav">
+<li><a href="/sites/userList">site.sidebar.userList</a></li>
+<li><a href="/sites/postList">site.sidebar.postList</a></li>
+<li><a href="/sites/issueList">site.sidebar.issueList</a></li>
+<li><a href="/sites/projectList">site.sidebar.projectList</a></li>
+<li><a href="/sites/mail">site.sidebar.mailSend</a></li>
+<li><a href="/sites/massmail">site.sidebar.massMail</a></li>
+<li><a href="/sites/update">site.sidebar.update</a></li>
+<li class="active"><a href="/sites/diagnostic">site.sidebar.diagnostics</a></li>
+</ul>
+<div class="title_area"><h2 class="pull-left">site.sidebar.diagnostics</h2></div>
+{body}
+</div>
+</body>
+</html>"#
+    )
+}
+
+fn direct_site_mail_form(body: &[u8]) -> HashMap<String, String> {
+    if let Ok(body) = serde_json::from_slice::<RestSiteMailSendBody>(body) {
+        return HashMap::from([
+            ("from".to_string(), body.from),
+            ("to".to_string(), body.to),
+            ("subject".to_string(), body.subject),
+            ("body".to_string(), body.body),
+        ]);
+    }
+    let raw = std::str::from_utf8(body).unwrap_or_default();
+    let mut parsed = HashMap::new();
+    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        parsed.insert(decode_query_component(key), decode_query_component(value));
+    }
+    parsed
+}
+
 fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
     if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
         return body;
@@ -9841,7 +11467,7 @@ fn direct_site_export_response(payload: &RestSiteExportResponse) -> Response {
 fn direct_site_import_payload(
     headers: &HeaderMap,
     body: &[u8],
-) -> (HashMap<String, String>, String) {
+) -> (HashMap<String, String>, String, bool, bool) {
     let content_type = headers
         .get(http::header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
@@ -9850,7 +11476,12 @@ fn direct_site_import_payload(
         .to_ascii_lowercase()
         .starts_with("multipart/form-data")
     {
-        return (HashMap::new(), String::from_utf8_lossy(body).to_string());
+        return (
+            HashMap::new(),
+            String::from_utf8_lossy(body).to_string(),
+            false,
+            true,
+        );
     }
     let Some(boundary) = content_type
         .split(';')
@@ -9858,10 +11489,11 @@ fn direct_site_import_payload(
         .find_map(|part| part.strip_prefix("boundary="))
         .map(|part| part.trim_matches('"').to_string())
     else {
-        return (HashMap::new(), String::new());
+        return (HashMap::new(), String::new(), true, false);
     };
     let mut form = HashMap::new();
     let mut data = String::new();
+    let mut has_data_file = false;
     let text = String::from_utf8_lossy(body);
     for part in text.split(&format!("--{boundary}")) {
         let Some((headers, value)) = part.split_once("\r\n\r\n") else {
@@ -9880,12 +11512,13 @@ fn direct_site_import_payload(
             .trim_end_matches("--")
             .to_string();
         if name == "data" {
+            has_data_file = headers.contains("filename=");
             data = value;
         } else {
             form.insert(name.to_string(), value);
         }
     }
-    (form, data)
+    (form, data, true, has_data_file)
 }
 
 fn site_export_filename_stamp() -> String {
@@ -9930,6 +11563,116 @@ async fn direct_unsupported_authenticate_provider(provider: String, base_path: S
         )
     };
     Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+async fn direct_authenticate_provider_denied(provider: String, base_path: String) -> Response {
+    let provider = provider.trim();
+    let redirect_path = if provider.is_empty() {
+        "/users/loginform?error=oauthDenied".to_string()
+    } else {
+        format!(
+            "/users/loginform?error=oauthDenied&provider={}",
+            percent_encode_uri_component(provider)
+        )
+    };
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+async fn direct_legacy_migration_disabled(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    base_path: String,
+) -> Response {
+    if session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id)
+        .is_none()
+    {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fmigration",
+        ))
+        .into_response();
+    }
+
+    let guide_href = base_path_href(&base_path, "/sites/data");
+    let body = format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Migration</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div class="yobi-migration">
+<div class="header-pannel">
+<div class="comeback-text pull-right">Yona to Github<span class="midium-font"></span></div>
+<div class="row title-text-bg">
+<div id="system-msg" class="well board">
+<div class="messages">error.forbidden.or.not.allowed</div>
+</div>
+</div>
+<div class="status">
+<div class="row">
+<div class="head-title row-fluid">
+<div class="source-title span5"><div class="project-name warn">Source 프로젝트를 선택해 주세요</div></div>
+<div class="arrow span1"><i class="yobicon-arrow-right-alt"></i></div>
+<div class="destination-title span6"><div class="project-name warn">Destination 프로젝트를 선택해 주세요</div></div>
+</div>
+</div>
+</div>
+<div class="row source-destination">
+<div class="source-project span4"><div class="header">Source 0 개</div><div class="search left-border"><input tabindex="1" type="text" class="search-query" name="target-filter" placeholder="Search.." autofocus disabled></div><div class="left-project-list"></div></div>
+<div class="destination-project span4"><div class="header">Destination 0 개</div><div class="search"><input type="text" tabindex="2" class="search-query" name="target-filter" placeholder="Search.." disabled></div><div class="destination-project-list"></div></div>
+<div class="span6 status">
+<div class="progress row"><div class="bar span10 bar-danger" style="width: 0%">0/0</div></div>
+<table class="table">
+<thead><tr><th colspan="2">Migration 대상</th><th></th></tr></thead>
+<tbody>
+<tr><td class="left-title">마일스톤</td><td class="left-title">0</td><td><div class="btn-group"><button class="btn btn-danger" disabled>마일스톤 옮기기</button></div></td></tr>
+<tr><td class="left-title">이슈</td><td class="left-title"><span>0</span></td><td><div class="btn-group"><button class="btn btn-danger" disabled>이슈 옮기기</button></div></td></tr>
+<tr><td class="left-title">게시글</td><td class="left-title"><span>0</span></td><td><div class="btn-group"><button class="btn btn-danger" disabled>게시글 옮기기</button></div></td></tr>
+<tr><td class="td-title left-title">주의 사항!!</td><td colspan="2" class="text-align-left"><div class="caution">작업 시작전에 Yona to Githbub 마이그레이션 가이드를 꼭 읽어주세요.</div></td></tr>
+</tbody>
+</table>
+<div class="left-title">기존 이슈 담당자</div>
+<div class="caution">Migration 기능은 현재 사용할 수 없습니다.</div>
+<div class="caution"><a href="{guide_href}">/sites/data</a></div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>"#
+    );
+    (StatusCode::FORBIDDEN, Html(body)).into_response()
+}
+
+async fn direct_legacy_migration_json_disabled(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    base_path: String,
+) -> Response {
+    if session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id)
+        .is_none()
+    {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fmigration",
+        ))
+        .into_response();
+    }
+
+    RestRouteError {
+        code: Some("forbidden"),
+        message: "error.forbidden.or.not.allowed".to_string(),
+        status: StatusCode::FORBIDDEN,
+    }
+    .into_response()
 }
 
 const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
@@ -10148,9 +11891,12 @@ async fn direct_import_project(
             Ok(guard) => guard,
             Err(_) => {
                 return RestRouteError::internal("repository provisioning lock poisoned")
-                    .into_response()
+                    .into_response();
             }
         };
+        if repo_path.exists() {
+            let _ = yona_rust_vcs::delete_repository(&repo_path);
+        }
         yona_rust_vcs::clone_bare_repository_from_source(&source_url, &repo_path)
     };
     if let Err(error) = clone_result {
@@ -10447,6 +12193,46 @@ async fn direct_update_pull_request_source_branch(
     match result {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_project_pushed_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pushed_branch_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner_name,
+        &project_name,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let project = match repository
+        .read_project_by_owner_and_name(&owner_name, &project_name)
+        .await
+    {
+        Ok(Some(project)) => project,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    match repository
+        .delete_project_pushed_branch_by_id(project.id, pushed_branch_id)
+        .await
+    {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
 }
 
@@ -11110,6 +12896,72 @@ enum DirectCodeFileMode {
     Raw,
 }
 
+async fn direct_code_ajax_compat(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    branch: Option<String>,
+    path: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let authorization = match repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let read_allowed = match project_read_allowed(&authorization, actor_id.is_none()) {
+        Ok(allowed) => allowed,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    if !read_allowed || !project_code_menu_visible(&authorization, true) {
+        return if actor_id.is_none() {
+            StatusCode::UNAUTHORIZED.into_response()
+        } else {
+            StatusCode::FORBIDDEN.into_response()
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = match yona_rust_vcs::read_code_browser(
+        &repo_path,
+        branch.as_deref().filter(|value| !value.trim().is_empty()),
+        &path,
+    ) {
+        Ok(snapshot) if snapshot.no_head => return StatusCode::NOT_FOUND.into_response(),
+        Ok(snapshot) => snapshot,
+        Err(error) => return direct_code_file_error(error),
+    };
+    let mut response = code_browser_rest_response_from_snapshot(
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+        snapshot,
+        &base_path,
+    );
+    if let Err(error) = enrich_code_browser_author_metadata(
+        repository,
+        authorization.project.id,
+        &mut response,
+        &base_path,
+    )
+    .await
+    {
+        return error.into_response();
+    }
+
+    Json(legacy_code_ajax_json_from_rest(&base_path, response)).into_response()
+}
+
 async fn direct_code_file(
     headers: HeaderMap,
     owner_name: String,
@@ -11161,6 +13013,123 @@ async fn direct_code_file(
         }
         Err(error) => direct_code_file_error(error),
     }
+}
+
+fn legacy_code_ajax_json_from_rest(
+    base_path: &str,
+    response: RestCodeBrowserResponse,
+) -> serde_json::Value {
+    if let Some(file) = response.file {
+        return legacy_code_ajax_file_json(file);
+    }
+
+    let mut data = serde_json::Map::new();
+    let owner_name = response.owner_name.clone();
+    let project_name = response.project_name.clone();
+    for entry in response.entries {
+        data.insert(
+            entry.name.clone(),
+            legacy_code_ajax_entry_json(base_path, &owner_name, &project_name, entry),
+        );
+    }
+    serde_json::json!({
+        "type": "folder",
+        "path": response.path,
+        "data": data,
+    })
+}
+
+fn legacy_code_ajax_entry_json(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    entry: RestCodeEntry,
+) -> serde_json::Value {
+    let mut value = serde_json::Map::new();
+    value.insert(
+        "type".to_string(),
+        serde_json::Value::String(entry.kind.clone()),
+    );
+    value.insert(
+        "msg".to_string(),
+        serde_json::Value::String(entry.commit_message.clone()),
+    );
+    value.insert(
+        "author".to_string(),
+        serde_json::Value::String(entry.author_label.clone()),
+    );
+    value.insert(
+        "createdDate".to_string(),
+        serde_json::Value::String(entry.commit_date.clone()),
+    );
+    value.insert(
+        "commitId".to_string(),
+        serde_json::Value::String(entry.commit_short_id.clone()),
+    );
+    value.insert("size".to_string(), serde_json::json!(entry.size));
+    value.insert(
+        "commitUrl".to_string(),
+        serde_json::Value::String(base_path_href(
+            base_path,
+            &format!(
+                "/{}/{}/commit/{}",
+                owner_name, project_name, entry.commit_short_id
+            ),
+        )),
+    );
+    if !entry.author_login_id.trim().is_empty() {
+        value.insert(
+            "userLoginId".to_string(),
+            serde_json::Value::String(entry.author_login_id),
+        );
+    }
+    if !entry.author_avatar_url.trim().is_empty() {
+        value.insert(
+            "avatar".to_string(),
+            serde_json::Value::String(entry.author_avatar_url),
+        );
+    }
+    serde_json::Value::Object(value)
+}
+
+fn legacy_code_ajax_file_json(file: RestCodeFile) -> serde_json::Value {
+    let mut value = serde_json::Map::new();
+    value.insert("type".to_string(), serde_json::json!("file"));
+    value.insert("msg".to_string(), serde_json::json!(file.commit_message));
+    value.insert("author".to_string(), serde_json::json!(file.author_label));
+    value.insert(
+        "createdDate".to_string(),
+        serde_json::json!(file.commit_date),
+    );
+    value.insert(
+        "commitMessage".to_string(),
+        serde_json::json!(file.commit_message),
+    );
+    value.insert("commiter".to_string(), serde_json::json!(file.author_label));
+    value.insert(
+        "commitDate".to_string(),
+        serde_json::json!(file.commit_date),
+    );
+    value.insert("commitId".to_string(), serde_json::json!(file.commit_id));
+    value.insert("size".to_string(), serde_json::json!(file.size));
+    value.insert("isBinary".to_string(), serde_json::json!(file.is_binary));
+    value.insert("mimeType".to_string(), serde_json::json!(file.mime_type));
+    if !file.author_login_id.trim().is_empty() {
+        value.insert(
+            "userLoginId".to_string(),
+            serde_json::json!(file.author_login_id),
+        );
+    }
+    if !file.author_avatar_url.trim().is_empty() {
+        value.insert(
+            "avatar".to_string(),
+            serde_json::json!(file.author_avatar_url),
+        );
+    }
+    if !file.is_binary && !file.is_too_large {
+        value.insert("data".to_string(), serde_json::json!(file.text));
+    }
+    serde_json::Value::Object(value)
 }
 
 async fn direct_code_archive(
@@ -11543,6 +13512,7 @@ struct RestSiteDirectUserMutationQuery {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteUserItem {
+    avatar_url: String,
     created_at: String,
     display_name: String,
     email_address: String,
@@ -11624,6 +13594,7 @@ struct RestSiteProjectItem {
     id: i64,
     owner_name: String,
     overview: String,
+    project_logo_url: String,
     project_name: String,
 }
 
@@ -11650,9 +13621,28 @@ struct RestSitePostsQuery {
 struct RestSitePostListResponse {
     page: u32,
     page_size: u32,
-    posts: Vec<RestPostListItem>,
+    posts: Vec<RestSitePostItem>,
     total: u32,
     total_pages: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostItem {
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    created_label: String,
+    labels: Vec<RestBoardLabel>,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_logo_url: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+    updated_label: String,
 }
 
 #[derive(Default, Deserialize)]
@@ -11667,6 +13657,7 @@ struct RestSiteIssuesQuery {
 #[serde(rename_all = "camelCase")]
 struct RestSiteIssueItem {
     assignee_label: String,
+    author_avatar_url: String,
     author_label: String,
     author_login_id: String,
     comment_count: u32,
@@ -11675,6 +13666,7 @@ struct RestSiteIssueItem {
     labels: Vec<RestBoardLabel>,
     milestone_title: String,
     owner_name: String,
+    project_logo_url: String,
     project_name: String,
     state: String,
     title: String,
@@ -11863,6 +13855,14 @@ struct RestSiteImportResponse {
 struct RestNotificationsQuery {
     from: u32,
     size: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(default)]
+struct DirectNotificationPartialQuery {
+    from: Option<u32>,
+    size: Option<u32>,
+    limit: Option<u32>,
 }
 
 #[derive(Serialize)]
@@ -12087,6 +14087,7 @@ struct RestPostComment {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPostListItem {
+    author_avatar_url: String,
     author_label: String,
     author_login_id: String,
     comment_count: u32,
@@ -12601,6 +14602,7 @@ struct RestProjectHistoryItem {
 struct RestProjectReadmeFile {
     body_html: String,
     body_markdown: String,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     name: String,
 }
 
@@ -12609,8 +14611,126 @@ struct RestProjectReadmeFile {
 struct RestIssueDetailResponse {
     #[serde(flatten)]
     detail: ReadIssueDetailResponse,
+    author_id: Option<i64>,
+    child_closed_count: u32,
+    child_issues: Vec<RestIssueChildIssue>,
+    child_open_count: u32,
+    due_date_label: String,
     history_html: String,
     history_markdown: String,
+    comment_parent_links: Vec<RestIssueCommentParentLink>,
+    issue_id: i64,
+    issue_voters: Vec<IssueCommentVoter>,
+    is_draft: bool,
+    parent_issue_id: Option<i64>,
+    parent_issue_number: Option<i64>,
+    parent_issue_title: String,
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueCommentParentLink {
+    id: i64,
+    parent_comment_id: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueWeightResponse {
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueChildIssue {
+    assignee_label: String,
+    created_label: String,
+    is_draft: bool,
+    issue_number: i64,
+    labels: Vec<IssueLabel>,
+    state: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueListItem {
+    assignee_avatar_url: String,
+    assignee_label: String,
+    assignee_login_id: String,
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    child_closed_count: u32,
+    child_issues: Vec<RestIssueChildIssue>,
+    child_open_count: u32,
+    comment_count: u32,
+    due_date_label: String,
+    due_date_overdue: bool,
+    id: i64,
+    issue_number: i64,
+    labels: Vec<IssueLabel>,
+    milestone_id: i64,
+    milestone_title: String,
+    owner_name: String,
+    parent_issue_number: Option<i64>,
+    parent_issue_title: String,
+    project_name: String,
+    state: String,
+    title: String,
+    updated_label: String,
+    voter_count: u32,
+    watcher_count: u32,
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueListResponse {
+    draft_items: Vec<RestIssueListItem>,
+    items: Vec<RestIssueListItem>,
+    owner_name: String,
+    page_num: u32,
+    page_size: u32,
+    project_name: String,
+    total_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationIssueListResponse {
+    closed_issue_count: u32,
+    items: Vec<RestIssueListItem>,
+    open_issue_count: u32,
+    organization_name: String,
+    page_num: u32,
+    page_size: u32,
+    total_count: u32,
+    visible_projects: Vec<OrganizationIssueProjectOption>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestUserIssueListResponse {
+    closed_issue_count: u32,
+    filter: String,
+    items: Vec<RestIssueListItem>,
+    open_issue_count: u32,
+    page_num: u32,
+    page_size: u32,
+    side_filter_counts: RestUserIssueSideFilterCounts,
+    state: String,
+    total_count: u32,
+    viewer_user_id: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestUserIssueSideFilterCounts {
+    favorite: u32,
+    mentioned: u32,
+    shared: u32,
 }
 
 #[derive(Deserialize)]
@@ -12910,7 +15030,7 @@ struct RestCodeHistoryResponse {
 struct RestCodeBrowserResponse {
     branches: Vec<RestCodeBranch>,
     breadcrumbs: Vec<RestCodeBreadcrumb>,
-    entries: Vec<CodeEntry>,
+    entries: Vec<RestCodeEntry>,
     file: Option<RestCodeFile>,
     no_head: bool,
     owner_name: String,
@@ -12921,11 +15041,39 @@ struct RestCodeBrowserResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestCodeEntry {
+    author_avatar_url: String,
+    #[serde(skip_serializing)]
+    author_email: String,
+    author_label: String,
+    author_login_id: String,
+    commit_date: String,
+    commit_message: String,
+    commit_short_id: String,
+    kind: String,
+    name: String,
+    path: String,
+    size: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestCodeFile {
+    author_avatar_url: String,
+    #[serde(skip_serializing)]
+    author_email: String,
+    author_label: String,
+    author_login_id: String,
+    commit_date: String,
+    commit_id: String,
+    comment_count: u32,
+    commit_message: String,
+    commit_short_id: String,
     html: String,
     is_binary: bool,
     is_too_large: bool,
     mime_type: String,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     name: String,
     path: String,
     size: i64,
@@ -13046,8 +15194,10 @@ struct RestCodeBreadcrumb {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestCodeCommit {
+    author_avatar_url: String,
     author_date: String,
     author_email: String,
+    author_login_id: String,
     author_name: String,
     comment_count: u32,
     commit_id: String,
@@ -13126,7 +15276,7 @@ struct RestOrganizationPullRequestListQuery {
     page_num: u32,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestReviewThreadListQuery {
     author_id: i64,
@@ -13170,6 +15320,7 @@ impl RestReviewThreadListQuery {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestUser {
+    avatar_url: String,
     login_id: String,
     user_id: i64,
     user_label: String,
@@ -13178,6 +15329,7 @@ struct RestPullRequestUser {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestReviewComment {
+    attachments: Vec<IssueAttachment>,
     author_id: i64,
     author_label: String,
     author_login_id: String,
@@ -13196,6 +15348,7 @@ struct RestReviewComment {
 #[serde(rename_all = "camelCase")]
 struct RestReviewThread {
     author_id: i64,
+    author_avatar_url: String,
     author_label: String,
     author_login_id: String,
     comments: Vec<RestReviewComment>,
@@ -13206,6 +15359,7 @@ struct RestReviewThread {
     id: i64,
     path: String,
     prev_commit_id: String,
+    pull_request_number: Option<i64>,
     start_line: Option<i32>,
     start_side: Option<String>,
     state: String,
@@ -13225,6 +15379,7 @@ struct RestPullRequestCommit {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestEvent {
+    commits: Vec<RestPullRequestCommit>,
     created_label: String,
     event_type: String,
     id: i64,
@@ -13236,6 +15391,7 @@ struct RestPullRequestEvent {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestListItem {
+    closed_comment_thread_count: u32,
     comment_thread_count: u32,
     conflict: bool,
     contributor_label: String,
@@ -13260,11 +15416,29 @@ struct RestPullRequestListItem {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestListResponse {
+    accepted_count: u32,
     category: String,
+    closed_count: u32,
+    contributors: Vec<RestPullRequestUser>,
     items: Vec<RestPullRequestListItem>,
+    open_count: u32,
     page_num: u32,
     page_size: u32,
+    recently_pushed_branches: Vec<RestPullRequestPushedBranch>,
+    sent_count: u32,
     total_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestPushedBranch {
+    branch_name: String,
+    default_branch: String,
+    id: i64,
+    owner_name: String,
+    project_name: String,
+    pushed_label: String,
+    short_name: String,
 }
 
 #[derive(Serialize)]
@@ -13365,8 +15539,11 @@ struct RestPullRequestDetailResponse {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestChangesResponse {
+    card_threads: Vec<RestReviewThread>,
     commits: Vec<RestPullRequestCommit>,
     files: Vec<RestPullRequestChangedFile>,
+    inline_threads: Vec<RestReviewThread>,
+    non_ranged_threads: Vec<RestReviewThread>,
     pull_request: RestPullRequestDetailResponse,
     threads: Vec<RestReviewThread>,
 }
@@ -13389,11 +15566,14 @@ struct RestPullRequestChangedFile {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestReviewThreadListResponse {
+    all_count: u32,
+    author_count: u32,
     closed_count: u32,
     items: Vec<RestReviewThread>,
     open_count: u32,
     page_num: u32,
     page_size: u32,
+    participant_count: u32,
     state: String,
     total_count: u32,
 }
@@ -13982,6 +16162,30 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/projects/{owner_name}/{project_name}/issues/parent-options",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestIssueParentOptionsQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_list_issue_parent_options(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}",
             get({
                 let session_manager = session_manager.clone();
@@ -14074,6 +16278,54 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}/upvoteWeight",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_update_issue_weight(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            1,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}/downvoteWeight",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_update_issue_weight(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            -1,
+                            session_manager,
+                            backend,
                         )
                         .await
                     }
@@ -14586,11 +16838,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeHistoryQuery>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_read_code_history(
                             headers,
@@ -14599,6 +16853,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             query,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -16936,7 +19191,7 @@ async fn rest_list_workspace_files(
     query: RestWorkspaceFilesQuery,
     service: PilotServiceImpl,
 ) -> Result<Json<RestWorkspaceFilesResponse>, RestRouteError> {
-    const WORKSPACE_FILES_PAGE_SIZE: u32 = 30;
+    const WORKSPACE_FILES_PAGE_SIZE: u32 = 50;
 
     let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
@@ -17136,7 +19391,11 @@ async fn rest_read_site_users(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
 
-    Ok(Json(rest_site_user_list_from_record(record)))
+    Ok(Json(
+        rest_site_user_list_from_record(&repository, &service.base_path, record)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_read_site_no_avatar_users(
@@ -17201,7 +19460,9 @@ async fn rest_toggle_site_user_admin(
         .ok_or_else(|| RestRouteError::not_found("user not found"))?;
 
     Ok(Json(RestSiteUserMutationResponse {
-        user: rest_site_user_from_record(user),
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
     }))
 }
 
@@ -17218,7 +19479,9 @@ async fn rest_toggle_site_user_account_lock(
         .ok_or_else(|| RestRouteError::not_found("user not found"))?;
 
     Ok(Json(RestSiteUserMutationResponse {
-        user: rest_site_user_from_record(user),
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
     }))
 }
 
@@ -17235,7 +19498,9 @@ async fn rest_toggle_site_user_guest(
         .ok_or_else(|| RestRouteError::not_found("user not found"))?;
 
     Ok(Json(RestSiteUserMutationResponse {
-        user: rest_site_user_from_record(user),
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
     }))
 }
 
@@ -17262,7 +19527,9 @@ async fn rest_delete_site_user(
     };
 
     Ok(Json(RestSiteUserMutationResponse {
-        user: rest_site_user_from_record(user),
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
     }))
 }
 
@@ -17325,12 +19592,18 @@ async fn rest_read_site_projects(
 
     let total = projects.len();
     let offset = ((page - 1) as usize).saturating_mul(SITE_PROJECT_PAGE_SIZE);
-    let projects = projects
+    let mut page_projects = Vec::new();
+    for project in projects
         .into_iter()
         .skip(offset)
         .take(SITE_PROJECT_PAGE_SIZE)
-        .map(rest_site_project_from_record)
-        .collect();
+    {
+        page_projects.push(
+            rest_site_project_from_record(&repository, &service.base_path, project)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
     let total_pages = if total == 0 {
         0
     } else {
@@ -17341,7 +19614,7 @@ async fn rest_read_site_projects(
         filter,
         page,
         page_size: SITE_PROJECT_PAGE_SIZE as u32,
-        projects,
+        projects: page_projects,
         total: total as u32,
         total_pages: total_pages as u32,
     }))
@@ -17358,14 +19631,19 @@ async fn rest_read_site_posts(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
 
+    let mut posts = Vec::new();
+    for post in &record.posts {
+        posts.push(
+            rest_site_post_from_record(&repository, &service.base_path, post)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+
     Ok(Json(RestSitePostListResponse {
         page: record.page,
         page_size: record.page_size,
-        posts: record
-            .posts
-            .iter()
-            .map(rest_post_list_item_from_record)
-            .collect(),
+        posts,
         total: record.total,
         total_pages: record.total_pages,
     }))
@@ -17383,12 +19661,17 @@ async fn rest_read_site_issues(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
 
+    let mut issues = Vec::new();
+    for issue in &record.issues {
+        issues.push(
+            rest_site_issue_from_record(&repository, &service.base_path, issue)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+
     Ok(Json(RestSiteIssueListResponse {
-        issues: record
-            .issues
-            .iter()
-            .map(rest_site_issue_from_record)
-            .collect(),
+        issues,
         page: record.page,
         page_size: record.page_size,
         state: record.state,
@@ -17442,14 +19725,19 @@ async fn rest_export_site_data(
     service: PilotServiceImpl,
 ) -> Result<RestSiteExportResponse, RestRouteError> {
     let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
-    let users = rest_export_site_users(repository).await?;
-    let projects = repository
+    let users = rest_export_site_users(repository, &service.base_path).await?;
+    let project_records = repository
         .list_projects()
         .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-        .into_iter()
-        .map(rest_site_project_from_record)
-        .collect();
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let mut projects = Vec::new();
+    for project in project_records {
+        projects.push(
+            rest_site_project_from_record(repository, &service.base_path, project)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
     let posts = rest_export_site_posts(repository).await?;
     let issues = rest_export_site_issues(repository).await?;
 
@@ -17672,8 +19960,12 @@ async fn rest_import_site_data(
                     )
                     .await?,
                     body_markdown: issue.body_markdown,
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
                     label_ids,
                     milestone_id,
+                    parent_issue_id: None,
                     title: issue.title,
                 },
             })
@@ -17758,6 +20050,7 @@ async fn rest_site_import_post_comments(
                 attachment_ids,
                 contents_markdown: contents_markdown.to_string(),
                 owner_name: owner_name.trim().to_string(),
+                parent_comment_id: None,
                 post_number,
                 project_name: project_name.trim().to_string(),
             })
@@ -17989,6 +20282,7 @@ async fn rest_site_import_actor(
 
 async fn rest_export_site_users(
     repository: &PilotRepository,
+    base_path: &str,
 ) -> Result<Vec<RestSiteUserItem>, RestRouteError> {
     let mut users_by_id = HashMap::new();
     for state in ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"] {
@@ -18003,9 +20297,12 @@ async fn rest_export_site_users(
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
             for user in record.users {
-                users_by_id
-                    .entry(user.id)
-                    .or_insert_with(|| rest_site_user_from_record(user));
+                if !users_by_id.contains_key(&user.id) {
+                    let rest_user = rest_site_user_from_record(repository, base_path, user)
+                        .await
+                        .map_err(RestRouteError::from_connect_error)?;
+                    users_by_id.insert(rest_user.id, rest_user);
+                }
             }
             if record.total_pages == 0 || page >= record.total_pages {
                 break;
@@ -18100,6 +20397,8 @@ async fn rest_send_site_test_mail(
         bcc: Vec::new(),
         body,
         from,
+        html: false,
+        reply_to: None,
         subject,
         to,
     })
@@ -18469,12 +20768,8 @@ fn site_update_https_fetch_command(url: &str) -> Result<(String, Vec<String>), S
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty());
     if let Some(configured) = configured {
-        let mut parts = configured.split_whitespace();
-        let program = parts
-            .next()
-            .ok_or_else(|| "site.update.download.httpsFetchCommandEmpty".to_string())?
-            .to_string();
-        let mut args: Vec<String> = parts.map(ToString::to_string).collect();
+        let (program, mut args) =
+            configured_command_parts(&configured, "site.update.download.httpsFetchCommandEmpty")?;
         args.push(url.to_string());
         return Ok((program, args));
     }
@@ -18497,6 +20792,64 @@ fn site_update_https_fetch_command(url: &str) -> Result<(String, Vec<String>), S
         .map(ToString::to_string)
         .collect(),
     ))
+}
+
+fn configured_command_parts(
+    command: &str,
+    empty_message: &str,
+) -> Result<(String, Vec<String>), String> {
+    let parts = split_configured_command(command)?;
+    let mut parts = parts.into_iter();
+    let program = parts.next().ok_or_else(|| empty_message.to_string())?;
+    Ok((program, parts.collect()))
+}
+
+fn split_configured_command(command: &str) -> Result<Vec<String>, String> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+
+    for ch in command.chars() {
+        if escaped {
+            current.push(ch);
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if let Some(quote_char) = quote {
+            if ch == quote_char {
+                quote = None;
+            } else {
+                current.push(ch);
+            }
+            continue;
+        }
+        if ch == '\'' || ch == '"' {
+            quote = Some(ch);
+            continue;
+        }
+        if ch.is_whitespace() {
+            if !current.is_empty() {
+                parts.push(std::mem::take(&mut current));
+            }
+            continue;
+        }
+        current.push(ch);
+    }
+    if escaped {
+        current.push('\\');
+    }
+    if quote.is_some() {
+        return Err("configured command has an unterminated quote".to_string());
+    }
+    if !current.is_empty() {
+        parts.push(current);
+    }
+    Ok(parts)
 }
 
 fn site_update_payload_from_http_response_bytes(
@@ -18578,9 +20931,12 @@ fn site_update_parse_plain_http_url(url: &str) -> Result<SiteUpdatePlainHttpUrl,
 
 fn site_mail_not_configured_items() -> Vec<String> {
     [
-        ("SMTP_HOST", &["SMTP_HOST", "YONA_SMTP_HOST"][..]),
-        ("SMTP_USER", &["SMTP_USER", "YONA_SMTP_USER"][..]),
-        ("SMTP_PASS", &["SMTP_PASS", "YONA_SMTP_PASSWORD"][..]),
+        ("smtp.host", &["SMTP_HOST", "YONA_SMTP_HOST"][..]),
+        ("smtp.user", &["SMTP_USER", "YONA_SMTP_USER"][..]),
+        (
+            "smtp.password",
+            &["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"][..],
+        ),
     ]
     .into_iter()
     .filter(|(_, names)| configured_env_value(names).is_none())
@@ -18926,10 +21282,41 @@ async fn rest_record_recent_project_visit(
     Ok(rest_json_response(payload, ctx))
 }
 
+async fn rest_reject_legacy_guest_prohibited_user(
+    headers: &HeaderMap,
+    service: &PilotServiceImpl,
+) -> Result<(), RestRouteError> {
+    let Some(user_id) = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id)
+    else {
+        return Ok(());
+    };
+    let repository = rest_repository(service)?;
+    let user = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ))
+        })?;
+    if user.is_guest {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("guest users cannot access this route"),
+        ));
+    }
+    Ok(())
+}
+
 async fn rest_list_projects(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
+    rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
     let request = ListProjectsRequest::default();
     let request = rest_owned_view::<ListProjectsRequestView<'static>>(&request)?;
     let (payload, ctx) = service
@@ -18943,6 +21330,7 @@ async fn rest_list_organizations(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
+    rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
     let request = ListOrganizationsRequest::default();
     let request = rest_owned_view::<ListOrganizationsRequestView<'static>>(&request)?;
     let (payload, ctx) = service
@@ -19663,12 +22051,21 @@ async fn rest_project_readme_file(
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-    project_readme_file_from_git(
+    let mut readme = project_readme_file_from_git(
         &repo_path,
         &service.base_path,
         &authorization.project.owner_name,
         &authorization.project.project_name,
-    )
+    )?;
+    if let Some(readme) = readme.as_mut() {
+        readme.mention_references =
+            markdown_mention_references(repository, &[readme.body_markdown.as_str()])
+                .await?
+                .iter()
+                .map(rest_mention_reference_metadata_from_resolved)
+                .collect();
+    }
+    Ok(readme)
 }
 
 async fn rest_read_project_settings(
@@ -21055,10 +23452,15 @@ async fn rest_fork_project(
     let actor = require_authenticated_user(repository, Some(actor_id))
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let authorization =
-        require_project_read(repository, &owner_name, &project_name, Some(actor_id))
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        Some(actor_id),
+        ProjectCreatableResource::Fork,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Err(RestRouteError::bad_request("project.fork.gitOnly"));
     }
@@ -21877,9 +24279,22 @@ async fn rest_refreshed_issue_detail(
         .and_then(|session| session.user_id);
     let PilotBackend::Repository(repository) = &service.backend else {
         return Ok(RestIssueDetailResponse {
+            author_id: None,
+            child_closed_count: 0,
+            child_issues: Vec::new(),
+            child_open_count: 0,
+            due_date_label: String::new(),
             detail: fallback,
             history_html: String::new(),
             history_markdown: String::new(),
+            comment_parent_links: Vec::new(),
+            issue_id: 0,
+            issue_voters: Vec::new(),
+            is_draft: false,
+            parent_issue_id: None,
+            parent_issue_number: None,
+            parent_issue_title: String::new(),
+            weight: 0,
         });
     };
     let access = read_issue_access(repository, owner_name, project_name, issue_number, actor_id)
@@ -22311,6 +24726,538 @@ async fn legacy_external_api_hello() -> Json<serde_json::Value> {
     }))
 }
 
+fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String> {
+    if let Some(value) = headers
+        .get("Yona-Token")
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return Some(value.to_string());
+    }
+
+    let authorization = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())?;
+    let token = authorization
+        .strip_prefix("token ")
+        .or_else(|| authorization.strip_prefix("token"))?
+        .trim();
+    if token.is_empty() {
+        None
+    } else {
+        Some(token.to_string())
+    }
+}
+
+async fn legacy_external_authenticated_user_id(
+    headers: &HeaderMap,
+    session_manager: &SessionManager,
+    repository: &PilotRepository,
+    require_csrf_for_session: bool,
+) -> Result<i64, ConnectError> {
+    let session = session_manager.read_session_from_headers(headers);
+    if let Some(session) = session.as_ref() {
+        if let Some(user_id) = session.user_id {
+            if !require_csrf_for_session
+                || require_valid_csrf(session_manager, headers, session).is_ok()
+            {
+                return Ok(user_id);
+            }
+        }
+    }
+
+    if let Some(token) = legacy_external_api_token_from_headers(headers) {
+        match repository.read_user_id_by_api_token(&token).await {
+            Ok(Some(user_id)) => return Ok(user_id),
+            Ok(None) => {}
+            Err(error) => {
+                return Err(ConnectError::new(
+                    ErrorCode::Internal,
+                    format!("failed to read api token: {error}"),
+                ));
+            }
+        }
+    }
+
+    if let Some(session) = session.as_ref() {
+        if session.user_id.is_some() && require_csrf_for_session {
+            require_valid_csrf(session_manager, headers, session)?;
+        }
+    }
+
+    Err(ConnectError::unauthenticated(
+        "missing authenticated session",
+    ))
+}
+
+async fn legacy_external_favorite_projects(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("favorite projects require repository backend")
+            .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    let favorite_projects = match repository
+        .list_legacy_favorite_projects_for_user(user_id)
+        .await
+    {
+        Ok(projects) => projects,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let project_ids: Vec<i64> = favorite_projects
+        .iter()
+        .map(|(project_id, _, _)| *project_id)
+        .collect();
+    let projects: Vec<_> = favorite_projects
+        .into_iter()
+        .map(|(project_id, owner_name, project_name)| {
+            serde_json::json!({
+                "projectId": project_id,
+                "projectName": project_name,
+                "owner": owner_name,
+            })
+        })
+        .collect();
+
+    Json(serde_json::json!({
+        "projectIds": project_ids,
+        "projects": projects,
+    }))
+    .into_response()
+}
+
+async fn legacy_external_toggle_favorite_project(
+    headers: HeaderMap,
+    project_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("favorite project requires repository backend")
+            .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let project = match repository.read_project_by_id(project_id).await {
+        Ok(Some(project)) => project,
+        Ok(None) => return RestRouteError::not_found("project not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let authorization = match repository
+        .read_project_authorization(&project.owner_name, &project.project_name, Some(user_id))
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return RestRouteError::not_found("project not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let project_scope = match map_project_scope(&authorization.project.project_scope) {
+        Ok(project_scope) => project_scope,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let can_read = authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope,
+        },
+        ProjectOperation::Read,
+    )
+    .allowed;
+    if !can_read {
+        return RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "project read is not allowed",
+        ))
+        .into_response();
+    }
+
+    let result = match repository
+        .toggle_favorite_project(user_id, &project.owner_name, &project.project_name)
+        .await
+    {
+        Ok(result) => result,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "projectId": project_id.to_string(),
+        "favored": result.favorited,
+    }))
+    .into_response()
+}
+
+async fn legacy_external_favorite_issues(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("favorite issues require repository backend")
+            .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    let favorite_issues = match repository
+        .list_legacy_favorite_issues_for_user(user_id)
+        .await
+    {
+        Ok(issues) => issues,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let issue_ids: Vec<i64> = favorite_issues
+        .iter()
+        .map(|(issue_id, _, _)| *issue_id)
+        .collect();
+    let issues: Vec<_> = favorite_issues
+        .into_iter()
+        .map(|(issue_id, title, author_name)| {
+            serde_json::json!({
+                "issueId": issue_id,
+                "issueTitle": title,
+                "issueAuthorName": author_name,
+            })
+        })
+        .collect();
+
+    Json(serde_json::json!({
+        "projectIds": issue_ids,
+        "projects": issues,
+    }))
+    .into_response()
+}
+
+async fn legacy_external_toggle_favorite_issue(
+    headers: HeaderMap,
+    issue_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("favorite issue requires repository backend")
+            .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let Some((owner_name, project_name, issue_number)) =
+        (match repository.read_legacy_favorite_issue_target(issue_id).await {
+            Ok(target) => target,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        })
+    else {
+        return RestRouteError::not_found("issue not found").into_response();
+    };
+    if let Err(error) = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        Some(user_id),
+    )
+    .await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+
+    let result = match repository.toggle_favorite_issue(issue_id, user_id).await {
+        Ok(result) => result,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "issueId": issue_id.to_string(),
+        "favored": result.favorited,
+        "message": if result.favorited {
+            "issue.favorite.added"
+        } else {
+            "issue.favorite.deleted"
+        },
+    }))
+    .into_response()
+}
+
+async fn legacy_external_favorite_organizations(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "favorite organizations require repository backend",
+        )
+        .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    let favorite_organizations = match repository
+        .list_legacy_favorite_organizations_for_user(user_id)
+        .await
+    {
+        Ok(organizations) => organizations,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let organization_ids: Vec<i64> = favorite_organizations
+        .iter()
+        .map(|(organization_id, _)| *organization_id)
+        .collect();
+    let organizations: Vec<_> = favorite_organizations
+        .into_iter()
+        .map(|(organization_id, organization_name)| {
+            serde_json::json!({
+                "organizationId": organization_id,
+                "organizationName": organization_name,
+            })
+        })
+        .collect();
+
+    Json(serde_json::json!({
+        "organizationIds": organization_ids,
+        "organizations": organizations,
+    }))
+    .into_response()
+}
+
+async fn legacy_external_toggle_favorite_organization(
+    headers: HeaderMap,
+    organization_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "favorite organization requires repository backend",
+        )
+        .into_response();
+    };
+    let user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let favored = match repository
+        .toggle_favorite_organization(user_id, organization_id)
+        .await
+    {
+        Ok(Some(favored)) => favored,
+        Ok(None) => return RestRouteError::not_found("organization not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "organizationId": organization_id.to_string(),
+        "favored": favored,
+    }))
+    .into_response()
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct DirectTranslationRequest {
+    owner: String,
+    #[serde(rename = "projectName")]
+    project_name: String,
+    #[serde(rename = "type")]
+    resource_type: String,
+    number: i64,
+}
+
+async fn legacy_external_translation(
+    headers: HeaderMap,
+    body: DirectTranslationRequest,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let api_url = std::env::var("YONA_TRANSLATION_API")
+        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_API"))
+        .unwrap_or_default();
+    if api_url.trim().is_empty() {
+        return direct_plain_response(StatusCode::PRECONDITION_FAILED, "Precondition Failed");
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("translation requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    let text = match legacy_translation_source(repository, &body, actor_id).await {
+        Ok(text) => text,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let translated = match legacy_translate_text(&api_url, &text) {
+        Ok(translated) => translated,
+        Err(error) => return RestRouteError::bad_request(error).into_response(),
+    };
+
+    Json(serde_json::json!({
+        "translated": translated,
+        "translatedMarkdown": translated,
+    }))
+    .into_response()
+}
+
+async fn legacy_translation_source(
+    repository: &PilotRepository,
+    body: &DirectTranslationRequest,
+    actor_id: i64,
+) -> Result<String, ConnectError> {
+    match body.resource_type.as_str() {
+        "issue" => {
+            let access = read_issue_access(
+                repository,
+                &body.owner,
+                &body.project_name,
+                body.number,
+                Some(actor_id),
+            )
+            .await?;
+            Ok(format!(
+                "Title: {}\n\n{}",
+                access.issue.title, access.issue.body_markdown
+            ))
+        }
+        "posting" => {
+            let access = read_posting_access(
+                repository,
+                &body.owner,
+                &body.project_name,
+                body.number,
+                Some(actor_id),
+            )
+            .await?;
+            Ok(format!(
+                "Title: {}\n\n{}",
+                access.posting.title, access.posting.body_markdown
+            ))
+        }
+        "issue-comment" => {
+            let origin = repository
+                .read_issue_comment_origin(body.number)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("issue comment not found"))?;
+            read_issue_access(
+                repository,
+                &origin.owner_name,
+                &origin.project_name,
+                origin.issue_number,
+                Some(actor_id),
+            )
+            .await?;
+            Ok(origin.contents_markdown)
+        }
+        "post-comment" => {
+            let origin = repository
+                .read_posting_comment_origin(body.number)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("posting comment not found"))?;
+            read_posting_access(
+                repository,
+                &origin.owner_name,
+                &origin.project_name,
+                origin.post_number,
+                Some(actor_id),
+            )
+            .await?;
+            Ok(origin.contents_markdown)
+        }
+        _ => Err(ConnectError::invalid_argument(
+            "translation resource type is invalid",
+        )),
+    }
+}
+
+fn legacy_translate_text(api_url: &str, text: &str) -> Result<String, String> {
+    if text.trim().is_empty() {
+        return Ok(String::new());
+    }
+    let header_key = std::env::var("YONA_TRANSLATION_HEADER_KEY")
+        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY"))
+        .unwrap_or_default();
+    let header_value = std::env::var("YONA_TRANSLATION_HEADER_VALUE")
+        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE"))
+        .unwrap_or_default();
+    let mut command = Command::new("curl");
+    command
+        .arg("-sS")
+        .arg("-X")
+        .arg("POST")
+        .arg("-H")
+        .arg("Accept: application/json,application/x-www-form-urlencoded,text/html,*/*")
+        .arg("-H")
+        .arg("Content-Type: application/x-www-form-urlencoded; charset=UTF-8");
+    if !header_key.trim().is_empty() {
+        command
+            .arg("-H")
+            .arg(format!("{}: {}", header_key.trim(), header_value));
+    }
+    let output = command
+        .arg("--data-urlencode")
+        .arg("source=ko")
+        .arg("--data-urlencode")
+        .arg("target=en")
+        .arg("--data-urlencode")
+        .arg(format!("text={text}"))
+        .arg(api_url.trim())
+        .output()
+        .map_err(|error| format!("translation.fetch.failed: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "translation.fetch.failed: exit status {}",
+            output.status
+        ));
+    }
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| format!("translation.response.invalid: {error}"))?;
+    payload
+        .pointer("/result/translatedText")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| "translation.response.missingTranslatedText".to_string())
+}
+
 async fn rest_read_code_browser(
     headers: HeaderMap,
     owner_name: String,
@@ -22360,12 +25307,140 @@ async fn rest_read_code_browser(
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
 
-    Ok(Json(code_browser_rest_response_from_snapshot(
+    let mut response = code_browser_rest_response_from_snapshot(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
         &base_path,
-    )))
+    );
+    for entry in &mut response.entries {
+        if entry.author_email.trim().is_empty() {
+            continue;
+        }
+        let Some(author) = repository
+            .find_user_by_identifier(&entry.author_email)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        entry.author_login_id = author.login_id.clone();
+        entry.author_avatar_url =
+            workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
+    }
+    if let Some(file) = response.file.as_mut() {
+        if !file.author_email.trim().is_empty() {
+            if let Some(author) = repository
+                .find_user_by_identifier(&file.author_email)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+            {
+                file.author_login_id = author.login_id.clone();
+                file.author_avatar_url =
+                    workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
+                        .await
+                        .map_err(RestRouteError::from_connect_error)?;
+            }
+        }
+        if !file.commit_id.trim().is_empty() {
+            let comment_counts = repository
+                .count_commit_discussion_threads_by_commit(
+                    authorization.project.id,
+                    &[file.commit_id.clone()],
+                    Some(&file.path),
+                )
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?;
+            file.comment_count = *comment_counts.get(&file.commit_id).unwrap_or(&0);
+        }
+        if !file.is_binary
+            && !file.is_too_large
+            && (code_path_is_markdown(&file.path) || code_path_is_markdown(&file.name))
+        {
+            let markdown = file.text.clone();
+            file.mention_references = markdown_mention_references(repository, &[markdown.as_str()])
+                .await
+                .map_err(RestRouteError::from_connect_error)?
+                .iter()
+                .map(rest_mention_reference_metadata_from_resolved)
+                .collect();
+        }
+    }
+
+    Ok(Json(response))
+}
+
+async fn enrich_code_browser_author_metadata(
+    repository: &PilotRepository,
+    project_id: i64,
+    response: &mut RestCodeBrowserResponse,
+    base_path: &str,
+) -> Result<(), RestRouteError> {
+    for entry in &mut response.entries {
+        if entry.author_email.trim().is_empty() {
+            continue;
+        }
+        let Some(author) = repository
+            .find_user_by_identifier(&entry.author_email)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        entry.author_login_id = author.login_id.clone();
+        entry.author_avatar_url =
+            workspace_avatar_url(repository, author.id, &author.email_address, base_path)
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
+    }
+    if let Some(file) = response.file.as_mut() {
+        if !file.author_email.trim().is_empty() {
+            if let Some(author) = repository
+                .find_user_by_identifier(&file.author_email)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+            {
+                file.author_login_id = author.login_id.clone();
+                file.author_avatar_url =
+                    workspace_avatar_url(repository, author.id, &author.email_address, base_path)
+                        .await
+                        .map_err(RestRouteError::from_connect_error)?;
+            }
+        }
+        if !file.commit_id.trim().is_empty() {
+            let comment_counts = repository
+                .count_commit_discussion_threads_by_commit(
+                    project_id,
+                    &[file.commit_id.clone()],
+                    Some(&file.path),
+                )
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?;
+            file.comment_count = *comment_counts.get(&file.commit_id).unwrap_or(&0);
+        }
+        if !file.is_binary
+            && !file.is_too_large
+            && (code_path_is_markdown(&file.path) || code_path_is_markdown(&file.name))
+        {
+            let markdown = file.text.clone();
+            file.mention_references = markdown_mention_references(repository, &[markdown.as_str()])
+                .await
+                .map_err(RestRouteError::from_connect_error)?
+                .iter()
+                .map(rest_mention_reference_metadata_from_resolved)
+                .collect();
+        }
+    }
+
+    Ok(())
 }
 
 async fn rest_read_code_history(
@@ -22375,6 +25450,7 @@ async fn rest_read_code_history(
     query: RestCodeHistoryQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestCodeHistoryResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -22433,12 +25509,31 @@ async fn rest_read_code_history(
     for commit in &mut snapshot.commits {
         commit.comment_count = *comment_counts.get(&commit.commit_id).unwrap_or(&0);
     }
-
-    Ok(Json(code_history_response_from_snapshot(
+    let mut response = code_history_response_from_snapshot(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
-    )))
+    );
+    for commit in &mut response.commits {
+        if commit.author_email.trim().is_empty() {
+            continue;
+        }
+        let Some(author) = repository
+            .find_user_by_identifier(&commit.author_email)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        commit.author_login_id = author.login_id.clone();
+        commit.author_avatar_url =
+            workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    Ok(Json(response))
 }
 
 async fn rest_read_code_commit_detail(
@@ -22567,9 +25662,15 @@ async fn rest_create_commit_discussion_comment(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let authorization =
-        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
-            .await?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        Some(actor.id),
+        ProjectCreatableResource::CommitComment,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     let query = RestCodeCommitDetailQuery::default();
     let current = rest_code_commit_detail_response(
         repository,
@@ -22682,6 +25783,7 @@ async fn rest_update_commit_discussion_thread_state(
         record,
         Some(actor.id),
         can_moderate,
+        &service.base_path,
         &[],
         &[],
     )))
@@ -23063,8 +26165,15 @@ fn rest_site_issue_state(state: Option<String>) -> Result<String, RestRouteError
     }
 }
 
-fn rest_site_user_from_record(record: persistence::SiteUserRecord) -> RestSiteUserItem {
-    RestSiteUserItem {
+async fn rest_site_user_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: persistence::SiteUserRecord,
+) -> Result<RestSiteUserItem, ConnectError> {
+    let avatar_url =
+        workspace_avatar_url(repository, record.id, &record.email_address, base_path).await?;
+    Ok(RestSiteUserItem {
+        avatar_url,
         created_at: record
             .created_at
             .map(|value| value.to_string())
@@ -23076,13 +26185,20 @@ fn rest_site_user_from_record(record: persistence::SiteUserRecord) -> RestSiteUs
         is_site_admin: record.is_site_admin,
         login_id: record.login_id,
         state: record.state,
-    }
+    })
 }
 
-fn rest_site_user_list_from_record(
+async fn rest_site_user_list_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
     record: persistence::SiteUserListRecord,
-) -> RestSiteUserListResponse {
-    RestSiteUserListResponse {
+) -> Result<RestSiteUserListResponse, ConnectError> {
+    let mut users = Vec::new();
+    for user in record.users {
+        users.push(rest_site_user_from_record(repository, base_path, user).await?);
+    }
+
+    Ok(RestSiteUserListResponse {
         page: record.page,
         page_size: record.page_size,
         query: record.query,
@@ -23090,12 +26206,8 @@ fn rest_site_user_list_from_record(
         state: record.state,
         total: record.total,
         total_pages: record.total_pages,
-        users: record
-            .users
-            .into_iter()
-            .map(rest_site_user_from_record)
-            .collect(),
-    }
+        users,
+    })
 }
 
 fn rest_site_no_avatar_user_from_record(
@@ -23124,8 +26236,13 @@ fn empty_string_as_none(value: &str) -> Option<String> {
     }
 }
 
-fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSiteProjectItem {
-    RestSiteProjectItem {
+async fn rest_site_project_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: persistence::ProjectRecord,
+) -> Result<RestSiteProjectItem, ConnectError> {
+    let project_logo_url = project_logo_url(repository, base_path, record.id).await?;
+    Ok(RestSiteProjectItem {
         created_at: record
             .created_date
             .map(|value| value.to_string())
@@ -23133,8 +26250,9 @@ fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSite
         id: record.id,
         owner_name: record.owner_name,
         overview: record.overview.unwrap_or_default(),
+        project_logo_url,
         project_name: record.project_name,
-    }
+    })
 }
 
 fn rest_site_export_post_from_record(
@@ -23263,11 +26381,41 @@ fn rest_site_export_label_from_record(
     }
 }
 
-fn rest_site_issue_from_record(
+async fn rest_site_post_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: &persistence::ProjectPostingListItemRecord,
+) -> Result<RestSitePostItem, ConnectError> {
+    Ok(RestSitePostItem {
+        author_avatar_url: gravatar_url(&record.author_email_address),
+        author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
+        comment_count: record.comment_count,
+        created_label: record.created_label.clone(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        notice: record.notice,
+        owner_name: record.owner_name.clone(),
+        post_number: record.post_number.to_string(),
+        project_logo_url: project_logo_url(repository, base_path, record.project_id).await?,
+        project_name: record.project_name.clone(),
+        readme: record.readme,
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+    })
+}
+
+async fn rest_site_issue_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
     record: &persistence::ProjectIssueListItemRecord,
-) -> RestSiteIssueItem {
-    RestSiteIssueItem {
+) -> Result<RestSiteIssueItem, ConnectError> {
+    Ok(RestSiteIssueItem {
         assignee_label: record.assignee_label.clone(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_label: record.author_label.clone(),
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
@@ -23280,13 +26428,14 @@ fn rest_site_issue_from_record(
             .collect(),
         milestone_title: record.milestone_title.clone(),
         owner_name: record.owner_name.clone(),
+        project_logo_url: project_logo_url(repository, base_path, record.project_id).await?,
         project_name: record.project_name.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
         updated_label: record.updated_label.clone(),
         voter_count: record.voter_count,
         watcher_count: record.watcher_count,
-    }
+    })
 }
 
 fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> Option<i64> {
@@ -23488,6 +26637,17 @@ fn rest_pull_request_mutation_input(
     })
 }
 
+fn require_pull_request_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> Result<(), RestRouteError> {
+    if authorization.viewer.is_site_admin || authorization.viewer.is_project_member {
+        return Ok(());
+    }
+    Err(RestRouteError::from_connect_error(
+        ConnectError::permission_denied("Guest is not allowed this request"),
+    ))
+}
+
 async fn rest_pull_request_detail_response(
     repository: &PilotRepository,
     owner_name: &str,
@@ -23531,6 +26691,7 @@ async fn rest_read_pull_request_create_form_options(
     let target_authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
             .await?;
+    require_pull_request_create_allowed(&target_authorization)?;
     let from_project_id = if query.from_project_id > 0 {
         query.from_project_id
     } else {
@@ -23679,6 +26840,7 @@ async fn rest_read_pull_request_merge_result(
     let route_authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
             .await?;
+    require_pull_request_create_allowed(&route_authorization)?;
     let from_project_id = if query.from_project_id > 0 {
         query.from_project_id
     } else {
@@ -23763,6 +26925,7 @@ async fn rest_create_pull_request(
             "pull request target project does not match route",
         ));
     }
+    require_pull_request_create_allowed(&route_authorization)?;
     let from_authorization =
         rest_require_pull_request_option_project(repository, body.from_project_id, Some(actor.id))
             .await?;
@@ -24386,24 +27549,16 @@ async fn rest_create_pull_request_comment(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let current = rest_pull_request_detail_response(
+    let authorization = require_project_resource_create(
         repository,
         &owner_name,
         &project_name,
-        pull_request_number,
         Some(actor.id),
-        &service.base_path,
+        ProjectCreatableResource::ReviewComment,
     )
-    .await?;
-    if !current.permissions.can_comment {
-        return Err(RestRouteError::from_connect_error(
-            ConnectError::permission_denied("pull request comment is not allowed"),
-        ));
-    }
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     let comment_markdown = body.contents_markdown.clone();
-    let authorization =
-        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
-            .await?;
     let record = repository
         .create_pull_request_comment(persistence::CreatePullRequestCommentInput {
             actor_display_name: actor.display_name.clone(),
@@ -24655,7 +27810,10 @@ async fn rest_update_pull_request_thread_state(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
-    Ok(Json(rest_review_thread_from_record(record)))
+    Ok(Json(rest_review_thread_from_record(
+        record,
+        &service.base_path,
+    )))
 }
 
 async fn rest_list_project_pull_requests(
@@ -24673,11 +27831,12 @@ async fn rest_list_project_pull_requests(
         .list_project_pull_requests(
             &authorization.project,
             rest_pull_request_filter(query, actor_id),
+            actor_id,
         )
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(rest_pull_request_list_from_record(record)))
+    Ok(Json(rest_project_pull_request_list_from_record(record)))
 }
 
 async fn rest_read_pull_request_detail(
@@ -24708,6 +27867,44 @@ async fn rest_read_pull_request_detail(
         .await
         .map_err(RestRouteError::from_connect_error)?,
     ))
+}
+
+fn rest_review_thread_is_outdated(
+    thread: &RestReviewThread,
+    pull_request: &RestPullRequestDetailResponse,
+) -> bool {
+    !thread.path.trim().is_empty()
+        && !thread.prev_commit_id.trim().is_empty()
+        && !thread.commit_id.trim().is_empty()
+        && !pull_request.merged_commit_id_to.trim().is_empty()
+        && thread.commit_id != pull_request.merged_commit_id_to
+}
+
+fn rest_review_thread_is_inline_for_changes(
+    thread: &RestReviewThread,
+    pull_request: &RestPullRequestDetailResponse,
+    selected_commit_id: &str,
+) -> bool {
+    if thread.path.trim().is_empty() {
+        return false;
+    }
+    let selected_commit_id = selected_commit_id.trim();
+    if !selected_commit_id.is_empty() {
+        return thread.commit_id.trim() == selected_commit_id;
+    }
+    !thread.prev_commit_id.trim().is_empty()
+        && !rest_review_thread_is_outdated(thread, pull_request)
+}
+
+fn rest_review_thread_is_non_ranged_for_changes(
+    thread: &RestReviewThread,
+    selected_commit_id: &str,
+) -> bool {
+    if !thread.path.trim().is_empty() {
+        return false;
+    }
+    let selected_commit_id = selected_commit_id.trim();
+    selected_commit_id.is_empty() || thread.commit_id.trim() == selected_commit_id
 }
 
 async fn rest_read_pull_request_changes(
@@ -24799,9 +27996,26 @@ async fn rest_read_pull_request_changes(
         };
         (commits, files)
     };
+    let inline_threads = detail
+        .threads
+        .iter()
+        .filter(|thread| {
+            rest_review_thread_is_inline_for_changes(thread, &detail, selected_commit_id)
+        })
+        .cloned()
+        .collect();
+    let non_ranged_threads = detail
+        .threads
+        .iter()
+        .filter(|thread| rest_review_thread_is_non_ranged_for_changes(thread, selected_commit_id))
+        .cloned()
+        .collect();
     Ok(Json(RestPullRequestChangesResponse {
+        card_threads: detail.threads.clone(),
         commits,
         files,
+        inline_threads,
+        non_ranged_threads,
         threads: detail.threads.clone(),
         pull_request: detail,
     }))
@@ -24818,24 +28032,77 @@ async fn rest_list_project_reviews(
     let actor_id = rest_actor_id(&service, &headers);
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let side_filter_counts = rest_project_review_side_filter_counts(
+        repository,
+        &authorization.project,
+        &query,
+        actor_id,
+    )
+    .await?;
     let record = repository
         .list_project_review_threads(&authorization.project, rest_review_thread_filter(query))
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(RestReviewThreadListResponse {
+        all_count: side_filter_counts.0,
+        author_count: side_filter_counts.2,
         closed_count: record.closed_count,
         items: record
             .items
             .into_iter()
-            .map(rest_review_thread_from_record)
+            .map(|thread| rest_review_thread_from_record(thread, &service.base_path))
             .collect(),
         open_count: record.open_count,
         page_num: record.page_num,
         page_size: record.page_size,
+        participant_count: side_filter_counts.1,
         state: record.state,
         total_count: record.total_count,
     }))
+}
+
+async fn rest_project_review_side_filter_counts(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    query: &RestReviewThreadListQuery,
+    actor_id: Option<i64>,
+) -> Result<(u32, u32, u32), RestRouteError> {
+    let mut all_query = query.clone();
+    all_query.author_id = 0;
+    all_query.participant_id = 0;
+    let all_count = repository
+        .list_project_review_threads(project, rest_review_thread_filter(all_query))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .total_count;
+
+    let Some(actor_id) = actor_id else {
+        return Ok((all_count, 0, 0));
+    };
+
+    let mut participant_query = query.clone();
+    participant_query.author_id = 0;
+    participant_query.participant_id = actor_id;
+    let participant_count = repository
+        .list_project_review_threads(project, rest_review_thread_filter(participant_query))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .total_count;
+
+    let mut author_query = query.clone();
+    author_query.author_id = actor_id;
+    author_query.participant_id = 0;
+    let author_count = repository
+        .list_project_review_threads(project, rest_review_thread_filter(author_query))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .total_count;
+
+    Ok((all_count, participant_count, author_count))
 }
 
 async fn rest_list_organization_pull_requests(
@@ -24895,10 +28162,13 @@ where
     D: Deserializer<'de>,
 {
     let value = Option::<RestStringOrNumber>::deserialize(deserializer)?;
-    value
-        .map(parse_rest_i64)
-        .transpose()
-        .map_err(serde::de::Error::custom)
+    match value {
+        Some(RestStringOrNumber::String(value)) if value.trim().is_empty() => Ok(None),
+        Some(value) => parse_rest_i64(value)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+        None => Ok(None),
+    }
 }
 
 fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
@@ -24926,6 +28196,12 @@ struct RestProjectIssuesQuery {
     milestone_id: Option<i64>,
     page_num: u32,
     state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueParentOptionsQuery {
+    current_issue_number: Option<i64>,
 }
 
 impl RestProjectIssuesQuery {
@@ -24971,6 +28247,7 @@ struct RestOrganizationIssuesQuery {
     author_id: i64,
     filter: String,
     items_per_page: u32,
+    mention_id: i64,
     order_by: String,
     order_dir: String,
     page_num: u32,
@@ -24994,6 +28271,7 @@ impl RestOrganizationIssuesQuery {
                 "authorId" => query.author_id = parse_rest_query_i64(&value)?,
                 "filter" => query.filter = value,
                 "itemsPerPage" => query.items_per_page = parse_rest_query_u32(&value)?,
+                "mentionId" => query.mention_id = parse_rest_query_i64(&value)?,
                 "orderBy" => query.order_by = value,
                 "orderDir" => query.order_dir = value,
                 "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
@@ -25098,6 +28376,21 @@ struct RestDirectIssueFormOptionsResponse {
     selected_project: RestDirectIssueFormProject,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueParentOption {
+    id: i64,
+    issue_number: i64,
+    selected: bool,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueParentOptionsResponse {
+    items: Vec<RestIssueParentOption>,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueMutationBody {
@@ -25108,6 +28401,9 @@ struct RestIssueMutationBody {
     )]
     attachment_ids: Vec<i64>,
     body_markdown: String,
+    due_date: String,
+    is_draft: bool,
+    is_publish: bool,
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
@@ -25118,6 +28414,11 @@ struct RestIssueMutationBody {
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
     )]
     milestone_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    parent_issue_id: Option<i64>,
     #[serde(
         default,
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
@@ -25141,6 +28442,7 @@ struct RestIssueCommentBody {
     )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    parent_comment_id: Option<i64>,
 }
 
 #[derive(Default, Deserialize)]
@@ -25177,6 +28479,7 @@ struct RestPostCommentBody {
     )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    parent_comment_id: Option<i64>,
 }
 
 #[derive(Default, Deserialize)]
@@ -25210,16 +28513,20 @@ struct RestMassUpdateIssuesBody {
 
 fn rest_issue_mutation_input_from_body(
     body: RestIssueMutationBody,
-) -> persistence::IssueMutationInput {
-    persistence::IssueMutationInput {
+) -> Result<persistence::IssueMutationInput, ConnectError> {
+    Ok(persistence::IssueMutationInput {
         assignee_login_id: (!body.assignee_login_id.trim().is_empty())
             .then(|| body.assignee_login_id.trim().to_string()),
         attachment_ids: body.attachment_ids,
         body_markdown: body.body_markdown,
+        due_date: parse_milestone_due_date(&body.due_date)?,
+        is_draft: body.is_draft,
+        is_publish: body.is_publish,
         label_ids: body.label_ids,
         milestone_id: body.milestone_id.filter(|value| *value > 0),
+        parent_issue_id: body.parent_issue_id.filter(|value| *value > 0),
         title: body.title.trim().to_string(),
-    }
+    })
 }
 
 fn rest_project_issue_filter_from_query(
@@ -25231,6 +28538,7 @@ fn rest_project_issue_filter_from_query(
             .then(|| query.assignee_login_id.trim().to_string()),
         author_login_id: (!query.author_login_id.trim().is_empty())
             .then(|| query.author_login_id.trim().to_string()),
+        draft_author_login_id: None,
         label_ids: query.label_ids,
         milestone_id: query.milestone_id.filter(|value| *value > 0),
         page_num: query.page_num.max(1),
@@ -25268,7 +28576,7 @@ async fn direct_issue_excel_export(
     {
         Ok(record) => record,
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     direct_issue_excel_export_response(&authorization.project.project_name, record.items.as_slice())
@@ -25386,7 +28694,7 @@ async fn direct_review_excel_export(
     {
         Ok(record) => record,
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     direct_review_excel_export_response(
@@ -25677,7 +28985,7 @@ async fn rest_list_project_issues(
     query: RestProjectIssuesQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
-) -> Result<Json<ListProjectIssuesResponse>, RestRouteError> {
+) -> Result<Json<RestProjectIssueListResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid pilot project issue list request",
@@ -25695,28 +29003,79 @@ async fn rest_list_project_issues(
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let mut filter = rest_project_issue_filter_from_query(query);
+    if let Some(actor_id) = actor_id {
+        filter.draft_author_login_id = repository
+            .find_user_by_id(actor_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .map(|user| user.login_id);
+    }
     let record = repository
-        .list_project_issues_filtered(
-            &owner_name,
-            &project_name,
-            rest_project_issue_filter_from_query(query),
-        )
+        .list_project_issues_filtered(&owner_name, &project_name, filter)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
 
-    Ok(Json(ListProjectIssuesResponse {
+    Ok(Json(RestProjectIssueListResponse {
+        draft_items: record
+            .draft_items
+            .into_iter()
+            .map(rest_issue_list_item_from_record)
+            .collect(),
         items: record
             .items
             .into_iter()
-            .map(project_issue_list_item_to_proto)
+            .map(rest_issue_list_item_from_record)
             .collect(),
         owner_name: authorization.project.owner_name,
         page_num: record.page_num,
         page_size: record.page_size,
         project_name: authorization.project.project_name,
         total_count: record.total_count,
-        ..Default::default()
+    }))
+}
+
+async fn rest_list_issue_parent_options(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestIssueParentOptionsQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestIssueParentOptionsResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid issue parent options request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue parent options require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let options = repository
+        .list_project_issue_parent_options(&owner_name, &project_name, query.current_issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(RestIssueParentOptionsResponse {
+        items: options
+            .into_iter()
+            .map(|option| RestIssueParentOption {
+                id: option.id,
+                issue_number: option.issue_number,
+                selected: option.selected,
+                title: option.title,
+            })
+            .collect(),
     }))
 }
 
@@ -25726,7 +29085,7 @@ async fn rest_list_organization_issues(
     query: RestOrganizationIssuesQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
-) -> Result<Json<ListOrganizationIssuesResponse>, RestRouteError> {
+) -> Result<Json<RestOrganizationIssueListResponse>, RestRouteError> {
     if organization_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid organization issue list request",
@@ -25777,6 +29136,7 @@ async fn rest_list_organization_issues(
                 author_id: current_user_filter(query.author_id),
                 filter: Some(query.filter).filter(|value| !value.trim().is_empty()),
                 items_per_page: query.items_per_page,
+                mention_user_id: current_user_filter(query.mention_id),
                 order_by: query.order_by,
                 order_dir: query.order_dir,
                 page_num: query.page_num,
@@ -25788,12 +29148,12 @@ async fn rest_list_organization_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
 
-    Ok(Json(ListOrganizationIssuesResponse {
+    Ok(Json(RestOrganizationIssueListResponse {
         closed_issue_count: record.closed_issue_count,
         items: record
             .items
             .into_iter()
-            .map(organization_issue_list_item_to_proto)
+            .map(rest_issue_list_item_from_record)
             .collect(),
         open_issue_count: record.open_issue_count,
         organization_name: record.organization_name,
@@ -25809,7 +29169,6 @@ async fn rest_list_organization_issues(
                 ..Default::default()
             })
             .collect(),
-        ..Default::default()
     }))
 }
 
@@ -26092,10 +29451,15 @@ async fn rest_create_posting(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let authorization =
-        require_project_read(repository, &owner_name, &project_name, session.user_id)
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        session.user_id,
+        ProjectCreatableResource::BoardPost,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     if !posting_can_create(&authorization) {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("posting create is not allowed"),
@@ -26142,8 +29506,9 @@ async fn rest_create_posting(
         )?;
     }
     Ok(Json(RestPostMutationResponse::Detail(
-        rest_post_detail_response_from_record_with_repository_issue_references(
+        rest_post_detail_response_from_record_with_access_issue_references(
             repository,
+            &authorization,
             &posting,
             session.user_id,
             &base_path,
@@ -26329,20 +29694,15 @@ async fn rest_create_posting_comment(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let access = read_posting_access(
+    let access = read_posting_comment_create_access(
         repository,
         &owner_name,
         &project_name,
         post_number,
-        session.user_id,
+        &actor,
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    if !access.viewer_can_comment() {
-        return Err(RestRouteError::from_connect_error(
-            ConnectError::permission_denied("posting comment create is not allowed"),
-        ));
-    }
     let posting = repository
         .create_posting_comment(persistence::CreatePostingCommentInput {
             actor_display_name: actor.display_name.clone(),
@@ -26351,6 +29711,7 @@ async fn rest_create_posting_comment(
             attachment_ids: body.attachment_ids,
             contents_markdown: body.contents_markdown,
             owner_name,
+            parent_comment_id: body.parent_comment_id,
             post_number,
             project_name,
         })
@@ -26359,8 +29720,9 @@ async fn rest_create_posting_comment(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
     Ok(Json(
-        rest_post_detail_response_from_record_with_repository_issue_references(
+        rest_post_detail_response_from_record_with_access_issue_references(
             repository,
+            &access.authorization,
             &posting,
             session.user_id,
             &base_path,
@@ -26611,7 +29973,7 @@ async fn rest_list_user_issues(
     query: RestUserIssuesQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
-) -> Result<Json<ListUserIssuesResponse>, RestRouteError> {
+) -> Result<Json<RestUserIssueListResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     let PilotBackend::Repository(repository) = &backend else {
@@ -26664,6 +30026,35 @@ async fn rest_list_user_issues(
         .await
         .map_err(RestRouteError::from_connect_error)?
         .len() as u32;
+    let side_filter_counts = {
+        let build_side_filter = |filter: &str| persistence::UserIssueListFilter {
+            filter: filter.to_string(),
+            order_by: "updatedDate".to_string(),
+            order_dir: "desc".to_string(),
+            page_num: 1,
+            page_size: MAX_PAGE_SIZE,
+            query: None,
+            state: "open".to_string(),
+        };
+        RestUserIssueSideFilterCounts {
+            favorite: visible_user_issue_items(repository, actor.id, build_side_filter("favorite"))
+                .await
+                .map_err(RestRouteError::from_connect_error)?
+                .len() as u32,
+            mentioned: visible_user_issue_items(
+                repository,
+                actor.id,
+                build_side_filter("mentioned"),
+            )
+            .await
+            .map_err(RestRouteError::from_connect_error)?
+            .len() as u32,
+            shared: visible_user_issue_items(repository, actor.id, build_side_filter("shared"))
+                .await
+                .map_err(RestRouteError::from_connect_error)?
+                .len() as u32,
+        }
+    };
     let page_num = selected_filter.page_num.max(1);
     let page_size = selected_filter.page_size.max(1);
     let total_count = selected_items.len() as u32;
@@ -26672,19 +30063,20 @@ async fn rest_list_user_issues(
         .drain(..)
         .skip(offset)
         .take(page_size as usize)
-        .map(project_issue_list_item_to_proto)
+        .map(rest_issue_list_item_from_record)
         .collect();
 
-    Ok(Json(ListUserIssuesResponse {
+    Ok(Json(RestUserIssueListResponse {
         closed_issue_count,
         filter: filter_name,
         items,
         open_issue_count,
         page_num,
         page_size,
+        side_filter_counts,
         state,
         total_count,
-        ..Default::default()
+        viewer_user_id: actor.id,
     }))
 }
 
@@ -26891,6 +30283,7 @@ async fn rest_list_project_assignable_users(
         .list_project_assignable_users(
             &owner_name,
             &project_name,
+            actor_id,
             &query.query,
             &query.search_type,
             10,
@@ -26940,6 +30333,7 @@ async fn rest_list_issue_assignable_users(
             &owner_name,
             &project_name,
             issue_number,
+            actor_id,
             &query.query,
             &query.search_type,
             10,
@@ -27203,7 +30597,7 @@ async fn rest_update_issue_state(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let authorization =
-        require_project_read(repository, &owner_name, &project_name, session.user_id)
+        require_project_authorization(repository, &owner_name, &project_name, session.user_id)
             .await
             .map_err(RestRouteError::from_connect_error)?;
     let existing = repository
@@ -27231,9 +30625,10 @@ async fn rest_update_issue_state(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_authorization_issue_references(
             repository,
             &issue,
+            &authorization,
             true,
             true,
             session.user_id,
@@ -27269,9 +30664,15 @@ async fn rest_create_issue(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    require_project_read(repository, &owner_name, &project_name, session.user_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        session.user_id,
+        ProjectCreatableResource::IssuePost,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     let refer_comment_id = body.refer_comment_id.filter(|comment_id| *comment_id > 0);
     let refer_comment_origin = match refer_comment_id {
         Some(comment_id) => {
@@ -27300,49 +30701,53 @@ async fn rest_create_issue(
             actor_login_id: actor.login_id.clone(),
             owner_name,
             project_name,
-            values: rest_issue_mutation_input_from_body(body),
+            values: rest_issue_mutation_input_from_body(body)
+                .map_err(RestRouteError::from_connect_error)?,
         })
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    if let (Some(origin), Some(parent_comment_id)) = (refer_comment_origin, refer_comment_id) {
-        repository
-            .create_issue_comment(persistence::CreateIssueCommentInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_ids: Vec::new(),
-                contents_markdown: derived_issue_comment_markdown(
-                    &issue,
-                    &public_origin,
-                    &base_path,
-                ),
-                issue_number: origin.issue_number,
-                owner_name: origin.owner_name,
-                parent_comment_id: Some(parent_comment_id),
-                project_name: origin.project_name,
-            })
-            .await
-            .map_err(internal_error)
-            .map_err(RestRouteError::from_connect_error)?
-            .ok_or_else(|| RestRouteError::not_found("source issue not found"))?;
-    }
-    dispatch_issue_webhooks(
-        repository,
-        &issue,
-        &actor,
-        "NEW_ISSUE",
-        &issue.body_markdown,
-        None,
-        &public_origin,
-        &base_path,
-    )
-    .await;
-    Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_issue_references(
+    if !issue.is_draft {
+        if let (Some(origin), Some(parent_comment_id)) = (refer_comment_origin, refer_comment_id) {
+            repository
+                .create_issue_comment(persistence::CreateIssueCommentInput {
+                    actor_display_name: actor.display_name.clone(),
+                    actor_id: actor.id,
+                    actor_login_id: actor.login_id.clone(),
+                    attachment_ids: Vec::new(),
+                    contents_markdown: derived_issue_comment_markdown(
+                        &issue,
+                        &public_origin,
+                        &base_path,
+                    ),
+                    issue_number: origin.issue_number,
+                    owner_name: origin.owner_name,
+                    parent_comment_id: Some(parent_comment_id),
+                    project_name: origin.project_name,
+                })
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .ok_or_else(|| RestRouteError::not_found("source issue not found"))?;
+        }
+        dispatch_issue_webhooks(
             repository,
             &issue,
+            &actor,
+            "NEW_ISSUE",
+            &issue.body_markdown,
+            None,
+            &public_origin,
+            &base_path,
+        )
+        .await;
+    }
+    Ok(Json(
+        rest_issue_detail_response_from_record_with_authorization_issue_references(
+            repository,
+            &issue,
+            &authorization,
             true,
             true,
             session.user_id,
@@ -27379,7 +30784,7 @@ async fn rest_update_issue(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let authorization =
-        require_project_read(repository, &owner_name, &project_name, session.user_id)
+        require_project_authorization(repository, &owner_name, &project_name, session.user_id)
             .await
             .map_err(RestRouteError::from_connect_error)?;
     let existing = repository
@@ -27399,16 +30804,18 @@ async fn rest_update_issue(
             issue_number,
             owner_name,
             project_name,
-            values: rest_issue_mutation_input_from_body(body),
+            values: rest_issue_mutation_input_from_body(body)
+                .map_err(RestRouteError::from_connect_error)?,
         })
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_authorization_issue_references(
             repository,
             &issue,
+            &authorization,
             true,
             true,
             session.user_id,
@@ -27503,13 +30910,24 @@ async fn rest_create_issue_comment(
         issue_number,
         Some(actor.id),
     )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
-    if !access.viewer_can_comment() {
-        return Err(RestRouteError::from_connect_error(
-            ConnectError::permission_denied("issue comment create is not allowed"),
-        ));
-    }
+    .await;
+    let authorization = match &access {
+        Ok(access) if access.viewer_can_comment() => access.authorization.clone(),
+        Ok(_) => {
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("issue comment create is not allowed"),
+            ));
+        }
+        Err(_) => require_project_resource_create(
+            repository,
+            &owner_name,
+            &project_name,
+            session.user_id,
+            ProjectCreatableResource::IssueComment,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    };
     let issue = repository
         .create_issue_comment(persistence::CreateIssueCommentInput {
             actor_display_name: actor.display_name.clone(),
@@ -27519,7 +30937,7 @@ async fn rest_create_issue_comment(
             contents_markdown: body.contents_markdown.clone(),
             issue_number,
             owner_name,
-            parent_comment_id: None,
+            parent_comment_id: body.parent_comment_id,
             project_name,
         })
         .await
@@ -27545,10 +30963,12 @@ async fn rest_create_issue_comment(
     )
     .await;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_access_issue_references(
+        rest_issue_detail_response_from_record_with_authorization_issue_references(
             repository,
             &issue,
-            &access,
+            &authorization,
+            issue_can_mutate(&authorization, &issue, &actor),
+            true,
             session.user_id,
             &base_path,
         )
@@ -27691,6 +31111,61 @@ async fn rest_delete_issue_comment(
     ))
 }
 
+async fn rest_update_issue_weight(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    delta: i16,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestIssueWeightResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if issue_number <= 0 {
+        return Err(RestRouteError::bad_request("invalid issue weight request"));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    if !issue_can_mutate(&access.authorization, &access.issue, &actor) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue weight update is not allowed"),
+        ));
+    }
+    let issue = repository
+        .update_issue_weight(
+            &owner_name,
+            &project_name,
+            issue_number,
+            delta,
+            session.user_id,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(RestIssueWeightResponse {
+        weight: issue.weight,
+    }))
+}
+
 async fn rest_mass_update_issues(
     headers: HeaderMap,
     owner_name: String,
@@ -27797,6 +31272,9 @@ fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueComment
     RestIssueCommentBody {
         attachment_ids: direct_comment_attachment_ids(form),
         contents_markdown: direct_comment_contents(form),
+        parent_comment_id: form
+            .get("parentCommentId")
+            .and_then(|value| value.parse::<i64>().ok()),
     }
 }
 
@@ -27804,6 +31282,68 @@ fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBo
     RestPostCommentBody {
         attachment_ids: direct_comment_attachment_ids(form),
         contents_markdown: direct_comment_contents(form),
+        parent_comment_id: form
+            .get("parentCommentId")
+            .and_then(|value| value.parse::<i64>().ok()),
+    }
+}
+
+async fn direct_update_review_thread_state(
+    headers: HeaderMap,
+    thread_id: i64,
+    next_state: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let repository = match &backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("review thread requires repository backend")
+                .into_response();
+        }
+    };
+    let context = match repository.read_review_thread_route_context(thread_id).await {
+        Ok(Some(context)) => context,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    let result = if let Some(pull_request_number) = context.pull_request_number {
+        rest_update_pull_request_thread_state(
+            headers,
+            context.owner_name,
+            context.project_name,
+            pull_request_number,
+            context.thread_id,
+            next_state.to_string(),
+            service,
+        )
+        .await
+        .map(|_| ())
+    } else if !context.commit_id.trim().is_empty() {
+        rest_update_commit_discussion_thread_state(
+            headers,
+            context.owner_name,
+            context.project_name,
+            context.commit_id,
+            context.thread_id,
+            next_state.to_string(),
+            service,
+        )
+        .await
+        .map(|_| ())
+    } else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+
+    match result {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
     }
 }
 
@@ -28398,45 +31938,36 @@ impl PilotServiceImpl {
                 "issue requires repository backend",
             ));
         };
-        let _actor = require_authenticated_user(repository, session.user_id).await?;
-        require_project_read(
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let access = read_issue_access(
             repository,
             request.owner_name,
             request.project_name,
-            session.user_id,
+            request.issue_number,
+            Some(actor.id),
         )
         .await?;
-        let issue = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        let user_id = session.user_id.expect("authenticated user id");
         match action {
             "watch" => repository
-                .watch_issue(issue.id, user_id)
+                .watch_issue(access.issue.id, actor.id)
                 .await
                 .map_err(internal_error)?,
             "unwatch" => repository
-                .unwatch_issue(issue.id, user_id)
+                .unwatch_issue(access.issue.id, actor.id)
                 .await
                 .map_err(internal_error)?,
             "vote" => repository
-                .vote_issue(issue.id, user_id)
+                .vote_issue(access.issue.id, actor.id)
                 .await
                 .map_err(internal_error)?,
             "unvote" => repository
-                .unvote_issue(issue.id, user_id)
+                .unvote_issue(access.issue.id, actor.id)
                 .await
                 .map_err(internal_error)?,
             _ => {
                 return Err(ConnectError::invalid_argument(
                     "invalid issue participation action",
-                ))
+                ));
             }
         }
         let updated = repository
@@ -28518,7 +32049,7 @@ impl PilotServiceImpl {
             _ => {
                 return Err(ConnectError::invalid_argument(
                     "invalid issue comment participation action",
-                ))
+                ));
             }
         }
 
@@ -28613,7 +32144,7 @@ impl PilotServiceImpl {
                 _ => {
                     return Err(ConnectError::invalid_argument(
                         "invalid issue sharer action",
-                    ))
+                    ));
                 }
             };
             if changed {
@@ -28686,6 +32217,8 @@ struct BrowserRuntimeConfig {
     project_default_scope: String,
     #[serde(rename = "supportedLanguages")]
     supported_languages: Vec<String>,
+    #[serde(rename = "showUserEmail")]
+    show_user_email: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -28731,6 +32264,10 @@ impl BrowserRuntimeConfig {
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             supported_languages: configured_supported_languages(),
+            show_user_email: configured_bool_env(
+                &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],
+                true,
+            ),
         }
     }
 }
@@ -29705,6 +33242,7 @@ async fn workspace_project_read_allowed_for_viewer(
     Ok(authorize_project_access(
         &ProjectAccessFacts {
             is_anonymous: viewer_id.is_none(),
+            is_guest: authorization.viewer.is_guest,
             is_organization_admin: authorization.viewer.is_organization_admin,
             is_organization_member: authorization.viewer.is_organization_member,
             is_project_manager: authorization.viewer.is_project_manager,
@@ -29857,6 +33395,7 @@ fn project_read_allowed(
     Ok(authorize_project_access(
         &ProjectAccessFacts {
             is_anonymous,
+            is_guest: authorization.viewer.is_guest,
             is_organization_admin: authorization.viewer.is_organization_admin,
             is_organization_member: authorization.viewer.is_organization_member,
             is_project_manager: authorization.viewer.is_project_manager,
@@ -29875,6 +33414,7 @@ fn project_update_allowed(
     Ok(authorize_project_access(
         &ProjectAccessFacts {
             is_anonymous: false,
+            is_guest: authorization.viewer.is_guest,
             is_organization_admin: authorization.viewer.is_organization_admin,
             is_organization_member: authorization.viewer.is_organization_member,
             is_project_manager: authorization.viewer.is_project_manager,
@@ -29885,6 +33425,85 @@ fn project_update_allowed(
         ProjectOperation::Update,
     )
     .allowed)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProjectCreatableResource {
+    BoardPost,
+    CommitComment,
+    Fork,
+    IssueComment,
+    IssuePost,
+    NonIssueComment,
+    ReviewComment,
+}
+
+fn project_group_member_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> bool {
+    authorization.project.organization_id.is_some()
+        && authorization.viewer.is_organization_member
+        && matches!(
+            normalize_identifier(&authorization.project.project_scope).as_str(),
+            "public" | "protected"
+        )
+}
+
+fn project_member_or_admin_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> bool {
+    authorization.viewer.is_site_admin
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_project_manager
+        || authorization.viewer.is_project_member
+}
+
+fn project_resource_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    resource_type: ProjectCreatableResource,
+) -> bool {
+    if project_member_or_admin_create_allowed(authorization)
+        || project_group_member_create_allowed(authorization)
+    {
+        return true;
+    }
+    normalize_identifier(&authorization.project.project_scope) == "public"
+        && matches!(
+            resource_type,
+            ProjectCreatableResource::BoardPost
+                | ProjectCreatableResource::CommitComment
+                | ProjectCreatableResource::Fork
+                | ProjectCreatableResource::IssueComment
+                | ProjectCreatableResource::IssuePost
+                | ProjectCreatableResource::NonIssueComment
+                | ProjectCreatableResource::ReviewComment
+        )
+}
+
+async fn require_project_resource_create(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+    resource_type: ProjectCreatableResource,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let Some(actor_id) = actor_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    if project_resource_create_allowed(&authorization, resource_type) {
+        Ok(authorization)
+    } else {
+        Err(ConnectError::permission_denied(
+            "project resource create is not allowed",
+        ))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30429,6 +34048,16 @@ fn issue_comment_voter_from_record(
     }
 }
 
+fn issue_voter_from_record(record: &persistence::IssueVoterRecord) -> IssueCommentVoter {
+    IssueCommentVoter {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
 fn issue_timeline_item_from_record(
     record: &persistence::IssueTimelineItemRecord,
     viewer_can_manage: bool,
@@ -30540,34 +34169,6 @@ async fn issue_milestone_from_record_with_issue_references(
     Ok(milestone)
 }
 
-fn issue_mutation_input_from_create(
-    request: &CreateIssueRequestView<'_>,
-) -> persistence::IssueMutationInput {
-    persistence::IssueMutationInput {
-        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
-            .then(|| request.assignee_login_id.trim().to_string()),
-        attachment_ids: request.attachment_ids.to_vec(),
-        body_markdown: request.body_markdown.to_string(),
-        label_ids: request.label_ids.to_vec(),
-        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
-        title: request.title.trim().to_string(),
-    }
-}
-
-fn issue_mutation_input_from_update(
-    request: &UpdateIssueRequestView<'_>,
-) -> persistence::IssueMutationInput {
-    persistence::IssueMutationInput {
-        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
-            .then(|| request.assignee_login_id.trim().to_string()),
-        attachment_ids: request.attachment_ids.to_vec(),
-        body_markdown: request.body_markdown.to_string(),
-        label_ids: request.label_ids.to_vec(),
-        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
-        title: request.title.trim().to_string(),
-    }
-}
-
 fn issue_list_filter_from_request(
     request: &ListProjectIssuesRequestView<'_>,
 ) -> persistence::IssueListFilter {
@@ -30577,6 +34178,7 @@ fn issue_list_filter_from_request(
             .then(|| request.assignee_login_id.trim().to_string()),
         author_login_id: (!request.author_login_id.trim().is_empty())
             .then(|| request.author_login_id.trim().to_string()),
+        draft_author_login_id: None,
         label_ids: request.label_ids.to_vec(),
         milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
         page_num: request.page_num.max(1),
@@ -30610,36 +34212,6 @@ fn user_issue_state(value: &str) -> Result<String, ConnectError> {
     }
 }
 
-fn user_issue_list_filter_from_request(
-    request: &ListUserIssuesRequestView<'_>,
-    state: &str,
-    filter: &str,
-) -> persistence::UserIssueListFilter {
-    const DEFAULT_PAGE_SIZE: u32 = 15;
-    const MAX_PAGE_SIZE: u32 = 45;
-    persistence::UserIssueListFilter {
-        filter: filter.to_string(),
-        order_by: if request.order_by.trim().is_empty() {
-            "updatedDate".to_string()
-        } else {
-            request.order_by.trim().to_string()
-        },
-        order_dir: if request.order_dir.trim().is_empty() {
-            "desc".to_string()
-        } else {
-            request.order_dir.trim().to_string()
-        },
-        page_num: request.page_num.max(1),
-        page_size: if request.page_size == 0 {
-            DEFAULT_PAGE_SIZE
-        } else {
-            request.page_size.min(MAX_PAGE_SIZE)
-        },
-        query: (!request.query.trim().is_empty()).then(|| request.query.trim().to_string()),
-        state: state.to_string(),
-    }
-}
-
 async fn visible_user_issue_items(
     repository: &PilotRepository,
     user_id: i64,
@@ -30665,50 +34237,6 @@ async fn visible_user_issue_items(
         }
     }
     Ok(visible)
-}
-
-async fn build_user_issues_response(
-    repository: &PilotRepository,
-    user_id: i64,
-    request: &ListUserIssuesRequestView<'_>,
-) -> Result<ListUserIssuesResponse, ConnectError> {
-    let filter_name = user_issue_filter_name(request.filter)?;
-    let state = user_issue_state(request.state)?;
-    let selected_filter = user_issue_list_filter_from_request(request, &state, &filter_name);
-    let open_filter = user_issue_list_filter_from_request(request, "open", &filter_name);
-    let closed_filter = user_issue_list_filter_from_request(request, "closed", &filter_name);
-
-    let mut selected_items =
-        visible_user_issue_items(repository, user_id, selected_filter.clone()).await?;
-    let open_issue_count = visible_user_issue_items(repository, user_id, open_filter)
-        .await?
-        .len() as u32;
-    let closed_issue_count = visible_user_issue_items(repository, user_id, closed_filter)
-        .await?
-        .len() as u32;
-
-    let page_num = selected_filter.page_num.max(1);
-    let page_size = selected_filter.page_size.max(1);
-    let total_count = selected_items.len() as u32;
-    let offset = ((page_num - 1) * page_size) as usize;
-    let items = selected_items
-        .drain(..)
-        .skip(offset)
-        .take(page_size as usize)
-        .map(project_issue_list_item_to_proto)
-        .collect();
-
-    Ok(ListUserIssuesResponse {
-        closed_issue_count,
-        filter: filter_name,
-        items,
-        open_issue_count,
-        page_num,
-        page_size,
-        state,
-        total_count,
-        ..Default::default()
-    })
 }
 
 fn milestone_list_filter_from_request(
@@ -30767,6 +34295,7 @@ fn project_facts(
 ) -> Result<ProjectAccessFacts, ConnectError> {
     Ok(ProjectAccessFacts {
         is_anonymous,
+        is_guest: authorization.viewer.is_guest,
         is_organization_admin: authorization.viewer.is_organization_admin,
         is_organization_member: authorization.viewer.is_organization_member,
         is_project_manager: authorization.viewer.is_project_manager,
@@ -30844,6 +34373,15 @@ async fn read_issue_access(
             .map_err(internal_error)?,
         None => persistence::IssueShareStatus::default(),
     };
+    if issue.is_draft
+        && !actor
+            .as_ref()
+            .is_some_and(|actor| issue.author_id == Some(actor.id))
+    {
+        return Err(ConnectError::permission_denied(
+            "draft issue read is not allowed",
+        ));
+    }
     let issue_specific_can_read = actor
         .as_ref()
         .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
@@ -30870,11 +34408,8 @@ async fn require_project_read(
     project_name: &str,
     actor_id: Option<i64>,
 ) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
-    let authorization = repository
-        .read_project_authorization(owner_name, project_name, actor_id)
-        .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let authorization =
+        require_project_authorization(repository, owner_name, project_name, actor_id).await?;
     let allowed = authorize_project_access(
         &project_facts(&authorization, actor_id.is_none())?,
         ProjectOperation::Read,
@@ -30887,6 +34422,20 @@ async fn require_project_read(
             "project read is not allowed",
         ))
     }
+}
+
+async fn require_project_authorization(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    Ok(authorization)
 }
 
 async fn require_authenticated_user(
@@ -31197,6 +34746,37 @@ async fn read_posting_access(
     })
 }
 
+async fn read_posting_comment_create_access(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    post_number: i64,
+    actor: &persistence::AppUserRecord,
+) -> Result<PostingAccessContext, ConnectError> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor.id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let posting = repository
+        .read_posting_detail_for_viewer(owner_name, project_name, post_number, Some(actor.id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot posting not found"))?;
+    if !project_resource_create_allowed(&authorization, ProjectCreatableResource::NonIssueComment)
+        && posting.author_id != Some(actor.id)
+    {
+        return Err(ConnectError::permission_denied(
+            "posting comment create is not allowed",
+        ));
+    }
+    Ok(PostingAccessContext {
+        authorization,
+        posting,
+        actor: Some(actor.clone()),
+    })
+}
+
 fn optional_i64_string(value: Option<i64>) -> String {
     value.map(|value| value.to_string()).unwrap_or_default()
 }
@@ -31261,6 +34841,7 @@ fn rest_post_list_item_from_record(
     item: &persistence::ProjectPostingListItemRecord,
 ) -> RestPostListItem {
     RestPostListItem {
+        author_avatar_url: gravatar_url(&item.author_email_address),
         author_label: item.author_label.clone(),
         author_login_id: item.author_login_id.clone(),
         comment_count: item.comment_count,
@@ -31299,6 +34880,35 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
         actor_id,
     )
     .await?;
+    rest_post_detail_response_from_record_with_access_issue_references(
+        repository,
+        &authorization,
+        posting,
+        actor_id,
+        base_path,
+        viewer_can_create,
+        viewer_can_update,
+        viewer_can_delete,
+        viewer_can_comment,
+        viewer_can_set_notice,
+        viewer_can_watch,
+    )
+    .await
+}
+
+async fn rest_post_detail_response_from_record_with_access_issue_references(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    posting: &persistence::PostingRecord,
+    actor_id: Option<i64>,
+    base_path: &str,
+    viewer_can_create: bool,
+    viewer_can_update: bool,
+    viewer_can_delete: bool,
+    viewer_can_comment: bool,
+    viewer_can_set_notice: bool,
+    viewer_can_watch: bool,
+) -> Result<RestPostDetailResponse, ConnectError> {
     let mut markdowns = vec![
         posting.body_markdown.as_str(),
         posting.history_markdown.as_str(),
@@ -31465,27 +35075,6 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
     )
 }
 
-async fn rest_issue_detail_response_from_record_with_repository_issue_references(
-    repository: &PilotRepository,
-    issue: &persistence::IssueRecord,
-    viewer_can_manage: bool,
-    viewer_can_comment: bool,
-    viewer_id: Option<i64>,
-    base_path: &str,
-) -> Result<RestIssueDetailResponse, ConnectError> {
-    rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
-        repository,
-        issue,
-        viewer_can_manage,
-        viewer_can_comment,
-        false,
-        false,
-        viewer_id,
-        base_path,
-    )
-    .await
-}
-
 async fn rest_issue_detail_response_from_record_with_access_issue_references(
     repository: &PilotRepository,
     issue: &persistence::IssueRecord,
@@ -31526,23 +35115,15 @@ async fn rest_issue_detail_response_from_record_with_access_issue_references(
     )
 }
 
-async fn rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+async fn rest_issue_detail_response_from_record_with_authorization_issue_references(
     repository: &PilotRepository,
     issue: &persistence::IssueRecord,
+    authorization: &persistence::ProjectAuthorizationRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
-    viewer_is_direct_sharer: bool,
-    viewer_has_inherited_share: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
-    let authorization = require_project_read(
-        repository,
-        &issue.owner_name,
-        &issue.project_name,
-        viewer_id,
-    )
-    .await?;
     let mut markdowns = vec![
         issue.body_markdown.as_str(),
         issue.history_markdown.as_str(),
@@ -31554,7 +35135,7 @@ async fn rest_issue_detail_response_from_record_with_repository_references_and_s
             .map(|comment| comment.contents_markdown.as_str()),
     );
     let issue_references =
-        markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
+        markdown_issue_references_for_project(repository, authorization, viewer_id, &markdowns)
             .await?;
     let mention_references = markdown_mention_references(repository, &markdowns).await?;
     Ok(
@@ -31562,8 +35143,8 @@ async fn rest_issue_detail_response_from_record_with_repository_references_and_s
             issue,
             viewer_can_manage,
             viewer_can_comment,
-            viewer_is_direct_sharer,
-            viewer_has_inherited_share,
+            false,
+            false,
             viewer_id,
             base_path,
             &issue_references,
@@ -31680,9 +35261,47 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
         mention_references,
     );
     RestIssueDetailResponse {
+        author_id: issue.author_id,
+        child_closed_count: issue.child_closed_count,
+        child_issues: issue
+            .child_issues
+            .iter()
+            .map(rest_issue_child_issue_from_record)
+            .collect(),
+        child_open_count: issue.child_open_count,
+        due_date_label: issue.due_date_label.clone(),
         detail,
         history_html: String::new(),
         history_markdown: issue.history_markdown.clone(),
+        comment_parent_links: issue
+            .comments
+            .iter()
+            .map(|comment| RestIssueCommentParentLink {
+                id: comment.id,
+                parent_comment_id: comment.parent_comment_id,
+            })
+            .collect(),
+        issue_id: issue.id,
+        issue_voters: issue.voters.iter().map(issue_voter_from_record).collect(),
+        is_draft: issue.is_draft,
+        parent_issue_id: issue.parent_issue_id,
+        parent_issue_number: issue.parent_issue_number,
+        parent_issue_title: issue.parent_issue_title.clone(),
+        weight: issue.weight,
+    }
+}
+
+fn rest_issue_child_issue_from_record(
+    record: &persistence::IssueChildRecord,
+) -> RestIssueChildIssue {
+    RestIssueChildIssue {
+        assignee_label: record.assignee_label.clone(),
+        created_label: record.created_label.clone(),
+        is_draft: record.is_draft,
+        issue_number: record.issue_number,
+        labels: record.labels.iter().map(issue_label_from_record).collect(),
+        state: record.state.clone(),
+        title: record.title.clone(),
     }
 }
 
@@ -32003,6 +35622,7 @@ async fn build_organization_container_response(
         })
         .unwrap_or(0);
     let viewer_can_enroll = actor_id.is_some()
+        && authorization.viewer.is_guest
         && !authorization.viewer.is_organization_admin
         && !authorization.viewer.is_organization_member
         && !authorization.viewer.is_site_admin;
@@ -32213,6 +35833,7 @@ async fn build_project_container_response(
     };
     let viewer_can_enroll = can_request_project_enrollment(
         actor_id.is_some(),
+        authorization.viewer.is_guest,
         authorization.viewer.is_organization_admin,
         authorization.viewer.is_organization_member,
         authorization.viewer.is_project_manager,
@@ -33000,6 +36621,7 @@ impl PilotServiceImpl {
         let access = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -33036,16 +36658,17 @@ impl PilotServiceImpl {
     ) -> Result<(OrganizationDetail, Context), ConnectError> {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
         let PilotBackend::Repository(repository) = &self.backend else {
             return Err(ConnectError::unimplemented(
                 "organization requires repository backend",
             ));
         };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        if actor.is_guest {
+            return Err(ConnectError::permission_denied(
+                "guest users cannot create organizations",
+            ));
+        }
 
         if !is_valid_organization_name(request.organization_name) || request.description.len() > 255
         {
@@ -33075,7 +36698,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?;
         repository
-            .add_organization_membership(organization.id, user_id, "org_admin")
+            .add_organization_membership(organization.id, actor.id, "org_admin")
             .await
             .map_err(internal_error)?;
         attach_session_headers(&mut ctx, &self.session_manager, &session);
@@ -33437,6 +37060,11 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::invalid_argument("organization member is unknown"))?;
+        if target_user.is_guest {
+            return Err(ConnectError::invalid_argument(
+                "guest users cannot be added to organizations directly",
+            ));
+        }
         repository
             .add_organization_membership(
                 authorization.organization.id,
@@ -33686,11 +37314,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::invalid_argument("organization not found"))?;
-        if authorization.viewer.is_organization_admin
+        if !authorization.viewer.is_guest
+            || authorization.viewer.is_organization_admin
             || authorization.viewer.is_organization_member
             || authorization.viewer.is_site_admin
         {
-            return Err(ConnectError::already_exists(
+            return Err(ConnectError::invalid_argument(
                 "Organization enrollment is only available to guests.",
             ));
         }
@@ -33738,11 +37367,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::invalid_argument("organization not found"))?;
-        if authorization.viewer.is_organization_admin
+        if !authorization.viewer.is_guest
+            || authorization.viewer.is_organization_admin
             || authorization.viewer.is_organization_member
             || authorization.viewer.is_site_admin
         {
-            return Err(ConnectError::already_exists(
+            return Err(ConnectError::invalid_argument(
                 "Organization enrollment is only available to guests.",
             ));
         }
@@ -34011,6 +37641,7 @@ impl PilotServiceImpl {
         let decision = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: actor_id.is_none(),
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -34049,6 +37680,7 @@ impl PilotServiceImpl {
                 authorize_project_access(
                     &ProjectAccessFacts {
                         is_anonymous: actor_id.is_none(),
+                        is_guest: authorization.viewer.is_guest,
                         is_organization_admin: authorization.viewer.is_organization_admin,
                         is_organization_member: authorization.viewer.is_organization_member,
                         is_project_manager: authorization.viewer.is_project_manager,
@@ -34061,6 +37693,7 @@ impl PilotServiceImpl {
                 .allowed,
                 can_request_project_enrollment(
                     actor_id.is_some(),
+                    authorization.viewer.is_guest,
                     authorization.viewer.is_organization_admin,
                     authorization.viewer.is_organization_member,
                     authorization.viewer.is_project_manager,
@@ -34097,6 +37730,7 @@ impl PilotServiceImpl {
         let can_update = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -34122,77 +37756,6 @@ impl PilotServiceImpl {
                 false,
             )
             .await?,
-            ctx,
-        ))
-    }
-
-    async fn read_project_members(
-        &self,
-        ctx: Context,
-        request: OwnedView<ReadProjectMembersRequestView<'static>>,
-    ) -> Result<(ReadProjectMembersResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let can_update = authorize_project_access(
-            &ProjectAccessFacts {
-                is_anonymous: false,
-                is_organization_admin: authorization.viewer.is_organization_admin,
-                is_organization_member: authorization.viewer.is_organization_member,
-                is_project_manager: authorization.viewer.is_project_manager,
-                is_project_member: authorization.viewer.is_project_member,
-                is_site_admin: authorization.viewer.is_site_admin,
-                project_scope: map_project_scope(&authorization.project.project_scope)?,
-            },
-            ProjectOperation::Update,
-        )
-        .allowed;
-        if !can_update {
-            return Err(ConnectError::permission_denied(
-                "project update is not allowed",
-            ));
-        }
-
-        let directory = repository
-            .read_project_members(request.owner_name, request.project_name)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            ReadProjectMembersResponse {
-                enrollment_requests: directory
-                    .enrollment_requests
-                    .into_iter()
-                    .map(|request| ProjectEnrollmentRequest {
-                        login_id: request.login_id,
-                        user_label: request.user_label,
-                        ..Default::default()
-                    })
-                    .collect(),
-                members: directory
-                    .members
-                    .into_iter()
-                    .map(|member| ProjectMember {
-                        login_id: member.login_id,
-                        role: member.role,
-                        user_label: member.user_label,
-                        ..Default::default()
-                    })
-                    .collect(),
-                ..Default::default()
-            },
             ctx,
         ))
     }
@@ -34242,55 +37805,6 @@ impl PilotServiceImpl {
                 actor_id,
             )
             .await?,
-            ctx,
-        ))
-    }
-
-    async fn read_code_browser(
-        &self,
-        ctx: Context,
-        request: OwnedView<ReadCodeBrowserRequestView<'static>>,
-    ) -> Result<(ReadCodeBrowserResponse, Context), ConnectError> {
-        let actor_id = self
-            .session_manager
-            .read_session_from_headers(&ctx.headers)
-            .and_then(|session| session.user_id);
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "code browser requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, actor_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        if !project_read_allowed(&authorization, actor_id.is_none())?
-            || !project_code_menu_visible(&authorization, true)
-        {
-            return if actor_id.is_none() {
-                Err(ConnectError::unauthenticated("project read is not allowed"))
-            } else {
-                Err(ConnectError::permission_denied(
-                    "project read is not allowed",
-                ))
-            };
-        }
-
-        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-        let snapshot = yona_rust_vcs::read_code_browser(
-            &repo_path,
-            Some(request.branch).filter(|value| !value.trim().is_empty()),
-            request.path,
-        )
-        .map_err(code_browser_error)?;
-
-        Ok((
-            code_browser_response_from_snapshot(
-                &authorization.project.owner_name,
-                &authorization.project.project_name,
-                snapshot,
-            ),
             ctx,
         ))
     }
@@ -34442,6 +37956,7 @@ impl PilotServiceImpl {
         let can_update = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -34533,13 +38048,14 @@ impl PilotServiceImpl {
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
         if !can_request_project_enrollment(
             true,
+            authorization.viewer.is_guest,
             authorization.viewer.is_organization_admin,
             authorization.viewer.is_organization_member,
             authorization.viewer.is_project_manager,
             authorization.viewer.is_project_member,
             authorization.viewer.is_site_admin,
         ) {
-            return Err(ConnectError::already_exists(
+            return Err(ConnectError::invalid_argument(
                 "Project enrollment is only available to guests.",
             ));
         }
@@ -34580,13 +38096,14 @@ impl PilotServiceImpl {
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
         if !can_request_project_enrollment(
             true,
+            authorization.viewer.is_guest,
             authorization.viewer.is_organization_admin,
             authorization.viewer.is_organization_member,
             authorization.viewer.is_project_manager,
             authorization.viewer.is_project_member,
             authorization.viewer.is_site_admin,
         ) {
-            return Err(ConnectError::already_exists(
+            return Err(ConnectError::invalid_argument(
                 "Project enrollment is only available to guests.",
             ));
         }
@@ -34628,6 +38145,7 @@ impl PilotServiceImpl {
         let can_read = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -34683,6 +38201,7 @@ impl PilotServiceImpl {
         let can_read = authorize_project_access(
             &ProjectAccessFacts {
                 is_anonymous: false,
+                is_guest: authorization.viewer.is_guest,
                 is_organization_admin: authorization.viewer.is_organization_admin,
                 is_organization_member: authorization.viewer.is_organization_member,
                 is_project_manager: authorization.viewer.is_project_manager,
@@ -34854,6 +38373,7 @@ impl PilotServiceImpl {
                     filter: Some(request.filter.to_string())
                         .filter(|value| !value.trim().is_empty()),
                     items_per_page: request.items_per_page,
+                    mention_user_id: None,
                     order_by: request.order_by.to_string(),
                     order_dir: request.order_dir.to_string(),
                     page_num: request.page_num,
@@ -34966,22 +38486,6 @@ impl PilotServiceImpl {
             },
             ctx,
         ))
-    }
-
-    async fn list_user_issues(
-        &self,
-        ctx: Context,
-        request: OwnedView<ListUserIssuesRequestView<'static>>,
-    ) -> Result<(ListUserIssuesResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "user issues require repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let response = build_user_issues_response(repository, actor.id, &request).await?;
-        Ok((response, ctx))
     }
 
     async fn read_issue_detail(
@@ -35097,384 +38601,6 @@ impl PilotServiceImpl {
         }
 
         Ok((pilot_issue_response(request.state), ctx))
-    }
-
-    async fn create_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<CreateIssueRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.title.trim().is_empty() {
-            return Err(ConnectError::invalid_argument("issue title is required"));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        let issue = repository
-            .create_issue(persistence::CreateIssueInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-                values: issue_mutation_input_from_create(&request),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
-            ctx,
-        ))
-    }
-
-    async fn update_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<UpdateIssueRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.issue_number <= 0 || request.title.trim().is_empty() {
-            return Err(ConnectError::invalid_argument(
-                "invalid issue update request",
-            ));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        let existing = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied(
-                "issue update is not allowed",
-            ));
-        }
-        let issue = repository
-            .update_issue(persistence::UpdateIssueInput {
-                actor_login_id: actor.login_id,
-                issue_number: request.issue_number,
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-                values: issue_mutation_input_from_update(&request),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
-            ctx,
-        ))
-    }
-
-    async fn delete_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<DeleteIssueRequestView<'static>>,
-    ) -> Result<(DeleteIssueResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        let existing = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied(
-                "issue delete is not allowed",
-            ));
-        }
-        if !repository
-            .delete_issue(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-        {
-            return Err(ConnectError::not_found("pilot issue not found"));
-        }
-        Ok((
-            DeleteIssueResponse {
-                issue_number: request.issue_number,
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-                ..Default::default()
-            },
-            ctx,
-        ))
-    }
-
-    async fn create_issue_comment(
-        &self,
-        ctx: Context,
-        request: OwnedView<CreateIssueCommentRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.issue_number <= 0 || request.contents_markdown.trim().is_empty() {
-            return Err(ConnectError::invalid_argument(
-                "invalid issue comment request",
-            ));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            session.user_id,
-        )
-        .await?;
-        if !access.viewer_can_comment() {
-            return Err(ConnectError::permission_denied(
-                "issue comment create is not allowed",
-            ));
-        }
-        let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let issue = repository
-            .create_issue_comment(persistence::CreateIssueCommentInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_ids: request.attachment_ids.to_vec(),
-                contents_markdown: request.contents_markdown.to_string(),
-                issue_number: request.issue_number,
-                owner_name: request.owner_name.to_string(),
-                parent_comment_id: None,
-                project_name: request.project_name.to_string(),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
-            ctx,
-        ))
-    }
-
-    async fn update_issue_comment(
-        &self,
-        ctx: Context,
-        request: OwnedView<UpdateIssueCommentRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.issue_number <= 0 || request.comment_id <= 0 {
-            return Err(ConnectError::invalid_argument(
-                "invalid issue comment request",
-            ));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            session.user_id,
-        )
-        .await?;
-        let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let comment_author = access
-            .issue
-            .comments
-            .iter()
-            .find(|comment| comment.id == request.comment_id)
-            .and_then(|comment| comment.author_id);
-        if comment_author != Some(actor.id) && !access.viewer_can_manage() {
-            return Err(ConnectError::permission_denied(
-                "issue comment update is not allowed",
-            ));
-        }
-        let issue = repository
-            .update_issue_comment(persistence::UpdateIssueCommentInput {
-                actor_id: actor.id,
-                attachment_ids: request.attachment_ids.to_vec(),
-                comment_id: request.comment_id,
-                contents_markdown: request.contents_markdown.to_string(),
-                issue_number: request.issue_number,
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record_with_sharer_flags(
-                &issue,
-                access.viewer_can_manage(),
-                access.viewer_can_comment(),
-                access.share_status.direct,
-                access.share_status.inherited_from_parent,
-                session.user_id,
-                &self.base_path,
-            ),
-            ctx,
-        ))
-    }
-
-    async fn delete_issue_comment(
-        &self,
-        ctx: Context,
-        request: OwnedView<DeleteIssueCommentRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            session.user_id,
-        )
-        .await?;
-        let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let comment_author = access
-            .issue
-            .comments
-            .iter()
-            .find(|comment| comment.id == request.comment_id)
-            .and_then(|comment| comment.author_id);
-        if comment_author != Some(actor.id) && !access.viewer_can_manage() {
-            return Err(ConnectError::permission_denied(
-                "issue comment delete is not allowed",
-            ));
-        }
-        let issue = repository
-            .delete_issue_comment(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-                request.comment_id,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record_with_sharer_flags(
-                &issue,
-                access.viewer_can_manage(),
-                access.viewer_can_comment(),
-                access.share_status.direct,
-                access.share_status.inherited_from_parent,
-                session.user_id,
-                &self.base_path,
-            ),
-            ctx,
-        ))
-    }
-
-    async fn list_issue_timeline(
-        &self,
-        ctx: Context,
-        request: OwnedView<ListIssueTimelineRequestView<'static>>,
-    ) -> Result<(ListIssueTimelineResponse, Context), ConnectError> {
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let session = self.session_manager.read_session_from_headers(&ctx.headers);
-        let actor_id = session.as_ref().and_then(|session| session.user_id);
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            actor_id,
-        )
-        .await?;
-        let can_manage = access.viewer_can_manage();
-        let current_issue_reference = MarkdownIssueReference {
-            owner_name: access.issue.owner_name.clone(),
-            project_name: access.issue.project_name.clone(),
-            issue_number: access.issue.issue_number,
-            state: access.issue.state.clone(),
-            title: access.issue.title.clone(),
-        };
-        Ok((
-            ListIssueTimelineResponse {
-                items: access
-                    .issue
-                    .timeline
-                    .iter()
-                    .map(|item| {
-                        issue_timeline_item_from_record(
-                            item,
-                            can_manage,
-                            actor_id,
-                            &self.base_path,
-                            &access.issue.owner_name,
-                            &access.issue.project_name,
-                            std::slice::from_ref(&current_issue_reference),
-                            &[],
-                        )
-                    })
-                    .collect(),
-                ..Default::default()
-            },
-            ctx,
-        ))
     }
 
     async fn watch_issue(
@@ -35612,148 +38738,6 @@ impl PilotServiceImpl {
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         Ok((
             issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
-            ctx,
-        ))
-    }
-
-    async fn unassign_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueParticipationRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        let existing = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied(
-                "issue assign is not allowed",
-            ));
-        }
-        let issue = repository
-            .assign_issue(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-                None,
-                &actor.login_id,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
-            ctx,
-        ))
-    }
-
-    async fn share_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueShareRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_sharer_mutation(ctx, request, "share", "user")
-            .await
-    }
-
-    async fn unshare_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueShareRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_sharer_mutation(ctx, request, "unshare", "user")
-            .await
-    }
-
-    async fn mass_update_issues(
-        &self,
-        ctx: Context,
-        request: OwnedView<MassUpdateIssuesRequestView<'static>>,
-    ) -> Result<(MassUpdateIssuesResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        for issue_number in request.issue_numbers.iter().copied() {
-            let issue = repository
-                .read_issue_detail(request.owner_name, request.project_name, issue_number)
-                .await
-                .map_err(internal_error)?
-                .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-            if !issue_can_mutate(&authorization, &issue, &actor) {
-                return Err(ConnectError::permission_denied(
-                    "issue mass update is not allowed",
-                ));
-            }
-        }
-        let items = repository
-            .mass_update_issues(
-                persistence::MassUpdateIssuesInput {
-                    add_label_ids: request.add_label_ids.to_vec(),
-                    assignee_login_id: (!request.assignee_login_id.trim().is_empty())
-                        .then(|| request.assignee_login_id.trim().to_string()),
-                    assignee_update: request.assignee_update,
-                    issue_numbers: request.issue_numbers.to_vec(),
-                    milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
-                    milestone_update: request.milestone_update,
-                    owner_name: request.owner_name.to_string(),
-                    project_name: request.project_name.to_string(),
-                    remove_label_ids: request.remove_label_ids.to_vec(),
-                    state: (!request.state.trim().is_empty())
-                        .then(|| request.state.trim().to_string()),
-                },
-                actor.id,
-                &actor.login_id,
-            )
-            .await
-            .map_err(internal_error)?
-            .into_iter()
-            .map(|issue| {
-                issue_detail_response_from_record(
-                    &issue,
-                    true,
-                    true,
-                    session.user_id,
-                    &self.base_path,
-                )
-            })
-            .collect();
-        Ok((
-            MassUpdateIssuesResponse {
-                items,
-                ..Default::default()
-            },
             ctx,
         ))
     }
@@ -36404,30 +39388,6 @@ impl PilotServiceImpl {
         self.set_project_milestone_state(ctx, request, "closed")
             .await
     }
-
-    async fn render_markdown(
-        &self,
-        ctx: Context,
-        request: OwnedView<RenderMarkdownRequestView<'static>>,
-    ) -> Result<(RenderMarkdownResponse, Context), ConnectError> {
-        if let PilotBackend::Repository(repository) = &self.backend {
-            let session = self.session_manager.read_session_from_headers(&ctx.headers);
-            require_project_read(
-                repository,
-                request.owner_name,
-                request.project_name,
-                session.as_ref().and_then(|session| session.user_id),
-            )
-            .await?;
-        }
-        Ok((
-            RenderMarkdownResponse {
-                html: String::new(),
-                ..Default::default()
-            },
-            ctx,
-        ))
-    }
 }
 
 fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
@@ -36463,10 +39423,57 @@ fn project_issue_list_item_to_proto(
     }
 }
 
+fn rest_issue_list_item_from_record(
+    item: persistence::ProjectIssueListItemRecord,
+) -> RestIssueListItem {
+    RestIssueListItem {
+        assignee_avatar_url: if item.assignee_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.assignee_email_address)
+        },
+        assignee_label: item.assignee_label,
+        assignee_login_id: item.assignee_login_id,
+        author_avatar_url: if item.author_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.author_email_address)
+        },
+        author_label: item.author_label,
+        author_login_id: item.author_login_id,
+        child_closed_count: item.child_closed_count,
+        child_issues: item
+            .child_issues
+            .iter()
+            .map(rest_issue_child_issue_from_record)
+            .collect(),
+        child_open_count: item.child_open_count,
+        comment_count: item.comment_count,
+        due_date_label: item.due_date_label,
+        due_date_overdue: item.due_date_overdue,
+        id: item.id,
+        issue_number: item.issue_number,
+        labels: item.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        parent_issue_number: item.parent_issue_number,
+        parent_issue_title: item.parent_issue_title,
+        project_name: item.project_name,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
+        weight: item.weight,
+    }
+}
+
 fn rest_pull_request_user_from_record(
     record: persistence::PullRequestUserRecord,
 ) -> RestPullRequestUser {
     RestPullRequestUser {
+        avatar_url: gravatar_url(&record.email_address),
         login_id: record.login_id,
         user_id: record.user_id,
         user_label: record.user_label,
@@ -36477,6 +39484,7 @@ fn rest_pull_request_list_item_from_record(
     record: persistence::PullRequestListItemRecord,
 ) -> RestPullRequestListItem {
     RestPullRequestListItem {
+        closed_comment_thread_count: record.closed_comment_thread_count,
         comment_thread_count: record.comment_thread_count,
         conflict: record.conflict,
         contributor_label: record.contributor_label,
@@ -36503,29 +39511,101 @@ fn rest_pull_request_list_from_record(
     record: persistence::PullRequestListRecord,
 ) -> RestPullRequestListResponse {
     RestPullRequestListResponse {
+        accepted_count: record.accepted_count,
         category: record.category,
+        closed_count: record.closed_count,
+        contributors: record
+            .contributors
+            .into_iter()
+            .map(rest_pull_request_user_from_record)
+            .collect(),
         items: record
             .items
             .into_iter()
             .map(rest_pull_request_list_item_from_record)
             .collect(),
+        open_count: record.open_count,
         page_num: record.page_num,
         page_size: record.page_size,
+        recently_pushed_branches: Vec::new(),
+        sent_count: record.sent_count,
         total_count: record.total_count,
     }
 }
 
-fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
-    rest_review_comment_from_record_with_permissions(record, false, &[], &[])
+fn rest_project_pull_request_list_from_record(
+    record: persistence::PullRequestListRecord,
+) -> RestPullRequestListResponse {
+    RestPullRequestListResponse {
+        accepted_count: record.accepted_count,
+        category: record.category,
+        closed_count: record.closed_count,
+        contributors: record
+            .contributors
+            .into_iter()
+            .map(rest_pull_request_user_from_record)
+            .collect(),
+        items: record
+            .items
+            .into_iter()
+            .map(rest_pull_request_list_item_from_record)
+            .collect(),
+        open_count: record.open_count,
+        page_num: record.page_num,
+        page_size: record.page_size,
+        recently_pushed_branches: record
+            .recently_pushed_branches
+            .into_iter()
+            .map(rest_pull_request_pushed_branch_from_record)
+            .collect(),
+        sent_count: record.sent_count,
+        total_count: record.total_count,
+    }
+}
+
+fn rest_pull_request_pushed_branch_from_record(
+    record: persistence::PullRequestPushedBranchRecord,
+) -> RestPullRequestPushedBranch {
+    RestPullRequestPushedBranch {
+        branch_name: record.branch_name,
+        default_branch: default_branch_for_project_id(record.default_branch_project_id),
+        id: record.id,
+        owner_name: record.owner_name,
+        project_name: record.project_name,
+        pushed_label: record.pushed_label,
+        short_name: record.short_name,
+    }
+}
+
+fn default_branch_for_project_id(project_id: i64) -> String {
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+    yona_rust_vcs::read_branch_list(&repo_path)
+        .ok()
+        .map(|snapshot| snapshot.default_branch)
+        .filter(|branch| !branch.trim().is_empty())
+        .unwrap_or_else(|| "HEAD".to_string())
+}
+
+fn rest_review_comment_from_record(
+    record: persistence::ReviewCommentRecord,
+    base_path: &str,
+) -> RestReviewComment {
+    rest_review_comment_from_record_with_permissions(record, false, base_path, &[], &[])
 }
 
 fn rest_review_comment_from_record_with_permissions(
     record: persistence::ReviewCommentRecord,
     can_delete: bool,
+    base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestReviewComment {
     RestReviewComment {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
         author_id: record.author_id.unwrap_or_default(),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
@@ -36547,15 +39627,19 @@ fn rest_review_comment_from_record_with_permissions(
     }
 }
 
-fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> RestReviewThread {
+fn rest_review_thread_from_record(
+    record: persistence::ReviewThreadRecord,
+    base_path: &str,
+) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
         comments: record
             .comments
             .into_iter()
-            .map(rest_review_comment_from_record)
+            .map(|comment| rest_review_comment_from_record(comment, base_path))
             .collect(),
         commit_id: record.commit_id,
         created_label: record.created_label,
@@ -36564,6 +39648,7 @@ fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> Re
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
+        pull_request_number: record.pull_request_number,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -36574,11 +39659,13 @@ fn rest_pull_request_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
     can_moderate: bool,
+    base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
         comments: record
@@ -36589,6 +39676,7 @@ fn rest_pull_request_thread_from_record(
                 rest_review_comment_from_record_with_permissions(
                     comment,
                     can_delete,
+                    base_path,
                     issue_references,
                     mention_references,
                 )
@@ -36601,6 +39689,7 @@ fn rest_pull_request_thread_from_record(
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
+        pull_request_number: record.pull_request_number,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -36611,11 +39700,13 @@ fn rest_commit_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
     can_moderate: bool,
+    base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
         comments: record
@@ -36626,6 +39717,7 @@ fn rest_commit_thread_from_record(
                 rest_review_comment_from_record_with_permissions(
                     comment,
                     can_delete,
+                    base_path,
                     issue_references,
                     mention_references,
                 )
@@ -36638,6 +39730,7 @@ fn rest_commit_thread_from_record(
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
+        pull_request_number: record.pull_request_number,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -36771,7 +39864,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     record: persistence::PullRequestDetailRecord,
     authorization: &persistence::ProjectAuthorizationRecord,
     actor_id: Option<i64>,
-    _base_path: &str,
+    base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
     source_branch_state: RestPullRequestSourceBranchState,
@@ -36816,6 +39909,11 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             .events
             .into_iter()
             .map(|event| RestPullRequestEvent {
+                commits: event
+                    .commits
+                    .into_iter()
+                    .map(rest_pull_request_commit_from_record)
+                    .collect(),
                 created_label: event.created_label,
                 event_type: event.event_type,
                 id: event.id,
@@ -36871,6 +39969,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
                     thread,
                     actor_id,
                     can_moderate_review_comments,
+                    base_path,
                     issue_references,
                     mention_references,
                 )
@@ -36925,59 +40024,20 @@ fn code_branch_error(error: VcsError) -> ConnectError {
     }
 }
 
-fn code_browser_response_from_snapshot(
-    owner_name: &str,
-    project_name: &str,
-    snapshot: CodeBrowserSnapshot,
-) -> ReadCodeBrowserResponse {
-    ReadCodeBrowserResponse {
-        branches: snapshot
-            .branches
-            .into_iter()
-            .map(|branch| CodeBranch {
-                name: branch.name,
-                ..Default::default()
-            })
-            .collect(),
-        breadcrumbs: snapshot
-            .breadcrumbs
-            .into_iter()
-            .map(|breadcrumb| CodeBreadcrumb {
-                name: breadcrumb.name,
-                path: breadcrumb.path,
-                ..Default::default()
-            })
-            .collect(),
-        entries: snapshot
-            .entries
-            .into_iter()
-            .map(code_entry_to_proto)
-            .collect(),
-        file: snapshot.file.map(code_file_to_proto).into(),
-        no_head: snapshot.no_head,
-        owner_name: owner_name.to_string(),
-        path: snapshot.path,
-        project_name: project_name.to_string(),
-        selected_branch: snapshot.selected_branch,
-        ..Default::default()
-    }
-}
-
 fn code_browser_rest_response_from_snapshot(
     owner_name: &str,
     project_name: &str,
     snapshot: CodeBrowserSnapshot,
     base_path: &str,
 ) -> RestCodeBrowserResponse {
-    let proto = code_browser_response_from_snapshot(owner_name, project_name, snapshot);
-    let selected_branch = proto.selected_branch.clone();
+    let selected_branch = snapshot.selected_branch.clone();
     RestCodeBrowserResponse {
-        branches: proto
+        branches: snapshot
             .branches
             .into_iter()
             .map(|branch| RestCodeBranch { name: branch.name })
             .collect(),
-        breadcrumbs: proto
+        breadcrumbs: snapshot
             .breadcrumbs
             .into_iter()
             .map(|breadcrumb| RestCodeBreadcrumb {
@@ -36985,20 +40045,28 @@ fn code_browser_rest_response_from_snapshot(
                 path: breadcrumb.path,
             })
             .collect(),
-        entries: proto.entries,
-        file: proto.file.into_option().map(|file| {
+        entries: snapshot
+            .entries
+            .into_iter()
+            .map(code_entry_to_rest)
+            .collect(),
+        file: snapshot.file.map(|file| {
             code_file_to_rest(file, base_path, owner_name, project_name, &selected_branch)
         }),
-        no_head: proto.no_head,
-        owner_name: proto.owner_name,
-        path: proto.path,
-        project_name: proto.project_name,
+        no_head: snapshot.no_head,
+        owner_name: owner_name.to_string(),
+        path: snapshot.path,
+        project_name: project_name.to_string(),
         selected_branch,
     }
 }
 
-fn code_entry_to_proto(entry: CodeEntryRecord) -> CodeEntry {
-    CodeEntry {
+fn code_entry_to_rest(entry: CodeEntryRecord) -> RestCodeEntry {
+    RestCodeEntry {
+        author_avatar_url: String::new(),
+        author_email: entry.author_email,
+        author_label: entry.author_label,
+        author_login_id: String::new(),
         commit_date: entry.commit_date,
         commit_message: entry.commit_message,
         commit_short_id: entry.commit_short_id,
@@ -37006,18 +40074,17 @@ fn code_entry_to_proto(entry: CodeEntryRecord) -> CodeEntry {
         name: entry.name,
         path: entry.path,
         size: entry.size,
-        ..Default::default()
     }
 }
 
 fn code_file_to_rest(
-    file: CodeFile,
+    file: CodeFileRecord,
     base_path: &str,
     owner_name: &str,
     project_name: &str,
     branch: &str,
 ) -> RestCodeFile {
-    let (html, text) = if code_file_is_renderable_markdown(&file) {
+    let (html, text) = if code_file_record_is_renderable_markdown(&file) {
         (
             String::new(),
             rewrite_code_browser_markdown_image_links(
@@ -37032,10 +40099,20 @@ fn code_file_to_rest(
         (String::new(), file.text)
     };
     RestCodeFile {
+        author_avatar_url: String::new(),
+        author_email: file.author_email,
+        author_label: file.author_label,
+        author_login_id: String::new(),
+        commit_date: file.commit_date,
+        commit_id: file.commit_id,
+        comment_count: 0,
+        commit_message: file.commit_message,
+        commit_short_id: file.commit_short_id,
         html,
         is_binary: file.is_binary,
         is_too_large: file.is_too_large,
         mime_type: file.mime_type,
+        mention_references: Vec::new(),
         name: file.name,
         path: file.path,
         size: file.size,
@@ -37073,6 +40150,7 @@ fn project_readme_file_from_git(
                 return Ok(Some(RestProjectReadmeFile {
                     body_html: String::new(),
                     body_markdown,
+                    mention_references: Vec::new(),
                     name: file.name,
                 }));
             }
@@ -37082,10 +40160,6 @@ fn project_readme_file_from_git(
     }
 
     Ok(None)
-}
-
-fn code_file_is_renderable_markdown(file: &CodeFile) -> bool {
-    !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
 }
 
 fn code_file_record_is_renderable_markdown(file: &CodeFileRecord) -> bool {
@@ -37101,19 +40175,6 @@ fn code_path_is_markdown(path: &str) -> bool {
         extension.as_str(),
         "markdown" | "mdown" | "mkdn" | "mkd" | "md" | "mdwn"
     )
-}
-
-fn code_file_to_proto(file: CodeFileRecord) -> CodeFile {
-    CodeFile {
-        is_binary: file.is_binary,
-        is_too_large: file.is_too_large,
-        mime_type: file.mime_type,
-        name: file.name,
-        path: file.path,
-        size: file.size,
-        text: file.text,
-        ..Default::default()
-    }
 }
 
 fn code_history_response_from_snapshot(
@@ -37156,7 +40217,7 @@ fn code_commit_detail_response_from_snapshot(
     actor_id: Option<i64>,
     snapshot: CodeCommitDetailSnapshot,
     threads: Vec<persistence::ReviewThreadRecord>,
-    _base_path: &str,
+    base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestCodeCommitDetailResponse {
@@ -37202,6 +40263,7 @@ fn code_commit_detail_response_from_snapshot(
                     thread,
                     actor_id,
                     can_moderate,
+                    base_path,
                     issue_references,
                     mention_references,
                 )
@@ -37297,8 +40359,14 @@ async fn code_branch_pull_requests(
 
 fn code_commit_to_rest(commit: CodeCommitRecord) -> RestCodeCommit {
     RestCodeCommit {
+        author_avatar_url: if commit.author_email.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&commit.author_email)
+        },
         author_date: commit.author_date,
         author_email: commit.author_email,
+        author_login_id: String::new(),
         author_name: commit.author_name,
         comment_count: commit.comment_count,
         commit_id: commit.commit_id,
@@ -37498,6 +40566,44 @@ mod tests {
             max_uploaded_file_size_from_env_value(Some("not-a-number")),
             LEGACY_DEFAULT_MAX_FILE_SIZE
         );
+    }
+
+    #[test]
+    fn configured_commands_preserve_quoted_programs_and_arguments() {
+        let (program, args) = configured_command_parts(
+            r#""/opt/Yona Tools/fetch mailbox" --mode "unseen only" 'folder name'"#,
+            "empty",
+        )
+        .expect("configured command");
+        assert_eq!(program, "/opt/Yona Tools/fetch mailbox");
+        assert_eq!(args, vec!["--mode", "unseen only", "folder name"]);
+
+        assert_eq!(
+            split_configured_command(r#"runner escaped\ value "two words""#)
+                .expect("escaped command"),
+            vec!["runner", "escaped value", "two words"]
+        );
+        assert!(split_configured_command(r#""unterminated"#).is_err());
+    }
+
+    #[test]
+    fn site_update_https_fetch_command_preserves_quoted_override() {
+        std::env::set_var(
+            "YONA_UPDATE_HTTPS_FETCH_COMMAND",
+            r#""/opt/Yona Tools/fetch update" --header "X-Test: yes""#,
+        );
+        let (program, args) = site_update_https_fetch_command("https://downloads.example/yona.zip")
+            .expect("fetch command");
+        assert_eq!(program, "/opt/Yona Tools/fetch update");
+        assert_eq!(
+            args,
+            vec![
+                "--header".to_string(),
+                "X-Test: yes".to_string(),
+                "https://downloads.example/yona.zip".to_string(),
+            ]
+        );
+        std::env::remove_var("YONA_UPDATE_HTTPS_FETCH_COMMAND");
     }
 
     #[test]

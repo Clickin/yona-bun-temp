@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createPostCommentRest,
   updatePostCommentRest,
   updateProjectPostRest,
   listOrganizationBoardsQueryOptions,
@@ -18,9 +19,88 @@ import {
   organizationSearchQueryOptions,
   projectSearchQueryOptions,
 } from "./api/search";
+import { translateLegacyResource } from "./api/translation";
 import { readUserStatisticsQueryOptions } from "./api/users";
 
 describe("api query keys", () => {
+  it("posts legacy translation requests outside the canonical api/v1 prefix", async () => {
+    const calls: Array<{ body: string | null; headers: Headers; url: string }> = [];
+    const translated = await translateLegacyResource(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      {
+        number: 1,
+        owner: "owner",
+        projectName: "projectYobi",
+        type: "issue",
+      },
+      async (url, init) => {
+        calls.push({
+          body: String(init?.body ?? ""),
+          headers: init?.headers as Headers,
+          url: String(url),
+        });
+        return new Response(
+          JSON.stringify({ translated: "<p>server html</p>", translatedMarkdown: "**translated**" }),
+          {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          },
+        );
+      },
+    );
+
+    expect(translated).toBe("**translated**");
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe("/yona/-_-api/v1/translation");
+    expect(calls[0].headers.get("x-csrf-token")).toBe("csrf-token");
+    expect(JSON.parse(calls[0].body ?? "{}")).toEqual({
+      number: 1,
+      owner: "owner",
+      projectName: "projectYobi",
+      type: "issue",
+    });
+  });
+
+  it("sends legacy board child-comment parent ids in comment create requests", async () => {
+    const calls: Array<{ body: string | null; headers: Headers; method: string | undefined; url: string }> =
+      [];
+    await createPostCommentRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      {
+        attachmentIds: [],
+        contentsMarkdown: "child reply",
+        ownerName: "owner",
+        parentCommentId: "9",
+        postNumber: 16,
+        projectName: "projectYobi",
+      },
+      async (url, init) => {
+        calls.push({
+          body: String(init?.body ?? ""),
+          headers: init?.headers as Headers,
+          method: init?.method,
+          url: String(url),
+        });
+        return new Response(JSON.stringify({ comments: [] }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      },
+    );
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe("/yona/api/v1/projects/owner/projectYobi/posts/16/comments");
+    expect(calls[0].method).toBe("POST");
+    expect(calls[0].headers.get("x-csrf-token")).toBe("csrf-token");
+    expect(JSON.parse(calls[0].body ?? "{}")).toEqual({
+      attachmentIds: [],
+      contentsMarkdown: "child reply",
+      parentCommentId: "9",
+    });
+  });
+
   it("includes owner, project, and query in project issue-reference keys", () => {
     const key = apiQueryKeys.project.issueReferences("owner", "projectYobi", {
       query: "12",

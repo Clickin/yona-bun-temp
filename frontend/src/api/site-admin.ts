@@ -13,6 +13,7 @@ export interface SiteUserListInput {
 }
 
 export interface SiteUser {
+  avatarUrl: string;
   createdAt: string;
   displayName: string;
   emailAddress: string;
@@ -55,6 +56,7 @@ export interface SiteProject {
   id: number;
   ownerName: string;
   overview: string;
+  projectLogoUrl: string;
   projectName: string;
 }
 
@@ -77,6 +79,7 @@ export interface SitePostListInput {
 }
 
 export interface SitePost {
+  authorAvatarUrl: string;
   authorLabel: string;
   authorLoginId: string;
   commentCount: number;
@@ -85,6 +88,7 @@ export interface SitePost {
   notice: boolean;
   ownerName: string;
   postNumber: string;
+  projectLogoUrl: string;
   projectName: string;
   readme: boolean;
   title: string;
@@ -106,6 +110,7 @@ export interface SiteIssueListInput {
 
 export interface SiteIssue {
   assigneeLabel: string;
+  authorAvatarUrl: string;
   authorLabel: string;
   authorLoginId: string;
   commentCount: number;
@@ -114,6 +119,7 @@ export interface SiteIssue {
   labels: Array<{ id: string; name: string }>;
   milestoneTitle: string;
   ownerName: string;
+  projectLogoUrl: string;
   projectName: string;
   state: SiteIssueState;
   title: string;

@@ -237,12 +237,14 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let _guard = runtime_config_env_lock().lock().unwrap();
     std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
+    std::env::set_var("YONA_SHOW_USER_EMAIL", "false");
     std::env::set_var("YONA_LANGS", "ko-KR, en-US, ja-JP");
     let app = create_router_with_embedded_assets(RuntimeConfig {
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
     std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    std::env::remove_var("YONA_SHOW_USER_EMAIL");
     std::env::remove_var("YONA_LANGS");
 
     let index = app
@@ -262,6 +264,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"projectDefaultScope\":\"private\""));
+    assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
 
     let asset = app
@@ -296,6 +299,93 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let fallback_body = fallback.into_body().collect().await.unwrap().to_bytes();
     let fallback_html = String::from_utf8(fallback_body.to_vec()).unwrap();
     assert!(fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
+}
+
+#[tokio::test]
+async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
+    let _guard = runtime_config_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let app = create_router_with_embedded_assets(RuntimeConfig {
+        base_path: "/yona".to_string(),
+        public_origin: String::new(),
+    });
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/messages.js")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let content_type = response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(content_type.contains("application/javascript"));
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let script = String::from_utf8(body.to_vec()).unwrap();
+    assert!(script.contains("function Messages(key)"));
+    assert!(script.contains("global.Messages = Messages"));
+    assert!(script.contains("Messages._messages = _messages"));
+    assert!(script.contains("\"title.login\": \"title.login\""));
+    assert!(script.contains("\"button.confirm\": \"button.confirm\""));
+    assert!(script.contains("Object.prototype.hasOwnProperty.call(_messages, key)"));
+    assert!(script.contains("return arguments.length > 1 ? format(value"));
+}
+
+#[tokio::test]
+async fn legacy_init_redirects_home_and_recreates_project_repositories() {
+    let _guard = runtime_config_env_lock().lock().unwrap();
+    let data_root = tempdir().expect("data root");
+    std::env::set_var("YONA_DATA", data_root.path());
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let (app, repository, _) = build_auth_router().await;
+    let project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Init route parity".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/_init")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+    std::env::remove_var("YONA_DATA");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
+    assert!(
+        yona_rust_vcs::repository_path(data_root.path(), project.id)
+            .join("HEAD")
+            .is_file(),
+        "legacy /_init should recreate missing Git repository storage before redirecting"
+    );
 }
 
 #[tokio::test]
@@ -728,8 +818,12 @@ async fn attachment_binding_uses_legacy_container_type_names() {
                 assignee_login_id: None,
                 attachment_ids: vec![other_issue_file_id, issue_file_id],
                 body_markdown: "issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "Issue with attachment".to_string(),
             },
         })
@@ -770,8 +864,12 @@ async fn attachment_binding_uses_legacy_container_type_names() {
                 assignee_login_id: None,
                 attachment_ids: vec![replacement_issue_file_id],
                 body_markdown: "updated issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
                 label_ids: Vec::new(),
                 milestone_id: None,
+                parent_issue_id: None,
                 title: "Updated issue with attachment".to_string(),
             },
         })
@@ -1026,6 +1124,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             attachment_ids: vec![board_comment_file_id],
             contents_markdown: "board comment body".to_string(),
             owner_name: "owner".to_string(),
+            parent_comment_id: None,
             post_number: posting.post_number,
             project_name: "projectYobi".to_string(),
         })
@@ -1567,7 +1666,7 @@ async fn workspace_files_list_returns_current_users_legacy_attachment_rows() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/api/v1/workspace/files?filter=avatar&page=1")
+                .uri("/yona/api/v1/workspace/files?filter=avatar&pageNum=1")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::empty())
                 .unwrap(),
@@ -1579,7 +1678,7 @@ async fn workspace_files_list_returns_current_users_legacy_attachment_rows() {
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(payload["filter"], "avatar");
     assert_eq!(payload["page"], 1);
-    assert_eq!(payload["pageSize"], 30);
+    assert_eq!(payload["pageSize"], 50);
     assert_eq!(payload["total"], 1);
     assert_eq!(payload["totalPages"], 1);
     let files = payload["files"].as_array().expect("files");
