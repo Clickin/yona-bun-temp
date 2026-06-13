@@ -14,6 +14,7 @@ pub struct StartupConfig {
     pub auth_login_id_placeholder: Option<String>,
     pub auth_password_placeholder: Option<String>,
     pub auth_signup_require_confirm: Option<bool>,
+    pub auth_social_login_support: Option<Vec<String>>,
     pub auth_social_login_only: Option<bool>,
     pub allowed_sending_mail_domains: Option<Vec<String>>,
     pub bind_addr: String,
@@ -106,6 +107,7 @@ struct AuthConfigFile {
     login_id_placeholder: Option<String>,
     password_placeholder: Option<String>,
     signup_require_confirm: Option<bool>,
+    social_login_support: Option<Vec<String>>,
     social_login_only: Option<bool>,
 }
 
@@ -255,6 +257,9 @@ pub fn load_startup_config(
         .or_else(|| non_empty_string(auth.password_placeholder));
     let auth_signup_require_confirm =
         env_bool(&env, "YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").or(auth.signup_require_confirm);
+    let auth_social_login_support = env_string(&env, "YONA_AUTH_SOCIAL_LOGIN_SUPPORT")
+        .map(|value| split_csv(&value))
+        .or(auth.social_login_support);
     let auth_social_login_only =
         env_bool(&env, "YONA_AUTH_SOCIAL_LOGIN_ONLY").or(auth.social_login_only);
     let session_timeout_seconds = env
@@ -343,6 +348,7 @@ pub fn load_startup_config(
         auth_login_id_placeholder,
         auth_password_placeholder,
         auth_signup_require_confirm,
+        auth_social_login_support,
         auth_social_login_only,
         allowed_sending_mail_domains,
         bind_addr,
@@ -496,6 +502,12 @@ pub fn apply_startup_runtime_env(config: &StartupConfig) {
         std::env::set_var(
             "YONA_AUTH_SOCIAL_LOGIN_ONLY",
             if social_login_only { "true" } else { "false" },
+        );
+    }
+    if let Some(social_login_support) = &config.auth_social_login_support {
+        std::env::set_var(
+            "YONA_AUTH_SOCIAL_LOGIN_SUPPORT",
+            social_login_support.join(","),
         );
     }
     if let Some(session_timeout_seconds) = config.session_timeout_seconds {

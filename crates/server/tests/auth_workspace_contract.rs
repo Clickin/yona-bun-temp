@@ -253,6 +253,7 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
 
     let (app, _, _) = build_auth_router().await;
 
@@ -290,6 +291,10 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
             .and_then(|value| value.as_bool()),
         Some(true)
     );
+    assert!(payload
+        .get("enabledSocialProviders")
+        .and_then(|value| value.as_array())
+        .map_or(true, |items| items.is_empty()));
 }
 
 #[tokio::test]
@@ -298,6 +303,7 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
     std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
     std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
     std::env::set_var("YONA_AUTH_SOCIAL_LOGIN_ONLY", "true");
+    std::env::set_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT", "github, google");
     std::env::set_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER", "Use employee number");
     std::env::set_var("YONA_AUTH_PASSWORD_PLACEHOLDER", "Company password");
 
@@ -318,6 +324,7 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
     std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
     std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
 
@@ -342,6 +349,18 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
             .get("socialLoginOnly")
             .and_then(|value| value.as_bool()),
         Some(true)
+    );
+    assert_eq!(
+        payload
+            .get("enabledSocialProviders")
+            .and_then(|value| value.as_array())
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_str())
+                    .collect::<Vec<_>>()
+            }),
+        Some(vec!["github", "google"])
     );
     assert_eq!(
         payload

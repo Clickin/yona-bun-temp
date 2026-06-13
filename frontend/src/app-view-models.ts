@@ -227,6 +227,7 @@ export function toAuthUiCapabilitiesView(
 ): AuthUiCapabilitiesViewModel {
   return {
     emailVerificationEnabled: response.emailVerificationEnabled,
+    enabledSocialProviders: response.enabledSocialProviders,
     loginIdPlaceholder: response.loginIdPlaceholder,
     passwordPlaceholder: response.passwordPlaceholder,
     signupRequireConfirm: response.signupRequireConfirm,

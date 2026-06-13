@@ -32297,9 +32297,21 @@ fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
             .unwrap_or(false)
     }
 
+    fn parse_provider_env(name: &str) -> Vec<String> {
+        std::env::var(name)
+            .map(|value| {
+                value
+                    .split(',')
+                    .map(|provider| provider.trim().to_ascii_lowercase())
+                    .filter(|provider| !provider.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     ReadAuthUiCapabilitiesResponse {
         email_verification_enabled: parse_bool_env("YONA_AUTH_EMAIL_VERIFICATION_ENABLED"),
-        enabled_social_providers: vec![],
+        enabled_social_providers: parse_provider_env("YONA_AUTH_SOCIAL_LOGIN_SUPPORT"),
         login_id_placeholder: std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER")
             .unwrap_or_default()
             .trim()

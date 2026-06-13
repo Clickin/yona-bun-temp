@@ -92,6 +92,7 @@ email_verification = true
 login_id_placeholder = "Employee ID"
 password_placeholder = "Employee password"
 signup_require_confirm = true
+social_login_support = ["github", "google"]
 social_login_only = true
 
 [session]
@@ -186,6 +187,10 @@ draft_time = "1s"
         Some("Employee password")
     );
     assert_eq!(config.auth_signup_require_confirm, Some(true));
+    assert_eq!(
+        config.auth_social_login_support,
+        Some(vec!["github".to_string(), "google".to_string()])
+    );
     assert_eq!(config.auth_social_login_only, Some(true));
     assert_eq!(config.session_timeout_seconds, Some(1800));
     assert_eq!(config.issue_event_draft_time.as_deref(), Some("1s"));
@@ -367,6 +372,10 @@ draft_time = "30s"
                 "Env Password".to_string(),
             ),
             (
+                "YONA_AUTH_SOCIAL_LOGIN_SUPPORT".to_string(),
+                "github, google".to_string(),
+            ),
+            (
                 "YONA_SESSION_TIMEOUT_SECONDS".to_string(),
                 "7200".to_string(),
             ),
@@ -502,6 +511,10 @@ draft_time = "30s"
         config.auth_password_placeholder.as_deref(),
         Some("Env Password")
     );
+    assert_eq!(
+        config.auth_social_login_support,
+        Some(vec!["github".to_string(), "google".to_string()])
+    );
     assert_eq!(config.session_timeout_seconds, Some(7200));
     assert_eq!(
         config.mailbox_fetch_command.as_deref(),
@@ -583,6 +596,7 @@ fn applies_startup_runtime_env_for_browser_runtime_flags() {
     std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
     std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
     std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
     std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
     std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");
@@ -637,6 +651,7 @@ email_verification = true
 login_id_placeholder = "Employee ID"
 password_placeholder = "Employee password"
 signup_require_confirm = true
+social_login_support = ["github", "google"]
 social_login_only = true
 
 [session]
@@ -742,6 +757,10 @@ draft_time = "1s"
     assert_eq!(
         std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").as_deref(),
         Ok("true")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").as_deref(),
+        Ok("github,google")
     );
     assert_eq!(
         std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").as_deref(),
@@ -882,6 +901,7 @@ draft_time = "1s"
     std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
     std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
     std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
     std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
     std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");

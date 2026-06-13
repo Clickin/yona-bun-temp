@@ -164,7 +164,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 
 Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능 동작**을 분리한다.
 
-- `YONA_AUTH_SOCIAL_LOGIN_ONLY`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 message-key copy로 노출한다. `/authenticate/:provider`는 unsupported provider를 `/users/loginform?error=unsupported&provider=...`로 되돌려 로그인 화면에 명시 상태를 표시한다.
+- `YONA_AUTH_SOCIAL_LOGIN_ONLY` / `YONA_AUTH_SOCIAL_LOGIN_SUPPORT`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating과 configured provider button rendering은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 message-key copy로 노출한다. `/authenticate/:provider`는 unsupported provider를 `/users/loginform?error=unsupported&provider=...`로 되돌려 로그인 화면에 명시 상태를 표시한다.
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
 - `YONA_SHOW_USER_EMAIL`: legacy `application.show.user.email`처럼 기본값은 `true`이며, `false`일 때 공개 사용자 프로필과 `/me` user card의 email 표시를 숨긴다. 프로필/메일 설정 폼의 email 관리 기능은 이 표시 설정의 대상이 아니다.
 - `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row와 create-form checkbox 기본값에 반영한다. settings 화면은 legacy menu checkbox mutation으로 `project_menu_setting`을 갱신한다.
