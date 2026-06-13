@@ -1,7 +1,11 @@
 #![recursion_limit = "256"]
 
 use serde_json::json;
-use yona_rust_pilot_migration::legacy_external::project_export_mapper::map_project_export_json_to_yobi_data;
+use std::collections::BTreeMap;
+use yona_rust_pilot_migration::legacy_external::project_export_mapper::{
+    map_project_export_json_to_yobi_data,
+    map_project_export_json_to_yobi_data_with_attachment_content_base64,
+};
 
 #[test]
 fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
@@ -165,6 +169,7 @@ fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
     assert_eq!(issue.attachments[0].name, "issue.png");
     assert_eq!(issue.attachments[0].mime_type, "image/png");
     assert_eq!(issue.attachments[0].size, 123);
+    assert_eq!(issue.attachments[0].content_base64, None);
     assert_eq!(issue.attachments[0].legacy_hash, "issue-hash");
     assert_eq!(issue.comments[0].attachments[0].name, "issue-comment.txt");
 
@@ -174,6 +179,113 @@ fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
     assert_eq!(post.body_markdown, "legacy post body");
     assert_eq!(post.comments[0].contents_markdown, "post comment");
     assert_eq!(post.attachments[0].name, "post.png");
+}
+
+#[test]
+fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
+    let payload = json!({
+        "owner": "alice",
+        "projectName": "demo",
+        "members": [{
+            "loginId": "alice",
+            "name": "Alice Owner",
+            "role": "manager",
+            "email": "alice@example.com"
+        }],
+        "issues": [{
+            "number": 1,
+            "title": "Portable issue",
+            "author": {
+                "loginId": "alice",
+                "name": "Alice Owner",
+                "email": "alice@example.com"
+            },
+            "body": "issue body",
+            "attachments": [{
+                "id": 11,
+                "name": "issue.txt",
+                "hash": "issue-hash",
+                "mimeType": "text/plain",
+                "size": 12,
+                "containerType": "ISSUE_POST",
+                "containerId": "1",
+                "ownerLoginId": "alice"
+            }],
+            "comments": [{
+                "author": {
+                    "loginId": "alice",
+                    "name": "Alice Owner",
+                    "email": "alice@example.com"
+                },
+                "body": "comment body",
+                "attachments": [{
+                    "id": 12,
+                    "name": "comment.txt",
+                    "hash": "comment-hash",
+                    "mimeType": "text/plain",
+                    "size": 14,
+                    "containerType": "ISSUE_COMMENT",
+                    "containerId": "2",
+                    "ownerLoginId": "alice"
+                }]
+            }]
+        }],
+        "posts": [{
+            "number": 2,
+            "title": "Portable post",
+            "author": {
+                "loginId": "alice",
+                "name": "Alice Owner",
+                "email": "alice@example.com"
+            },
+            "body": "post body",
+            "attachments": [{
+                "id": 13,
+                "name": "post.txt",
+                "hash": "post-hash",
+                "mimeType": "text/plain",
+                "size": 10,
+                "containerType": "BOARD_POST",
+                "containerId": "3",
+                "ownerLoginId": "alice"
+            }]
+        }]
+    });
+    let attachment_content = BTreeMap::from([
+        (11, "aXNzdWUtZmlsZQ==".to_string()),
+        (12, "Y29tbWVudC1maWxl".to_string()),
+        (13, "cG9zdC1maWxl".to_string()),
+    ]);
+
+    let snapshot = map_project_export_json_to_yobi_data_with_attachment_content_base64(
+        &payload.to_string(),
+        &attachment_content,
+    )
+    .unwrap();
+
+    assert_eq!(
+        snapshot.issues[0].attachments[0].content_base64.as_deref(),
+        Some("aXNzdWUtZmlsZQ==")
+    );
+    assert_eq!(
+        snapshot.issues[0].comments[0].attachments[0]
+            .content_base64
+            .as_deref(),
+        Some("Y29tbWVudC1maWxl")
+    );
+    assert_eq!(
+        snapshot.posts[0].attachments[0].content_base64.as_deref(),
+        Some("cG9zdC1maWxl")
+    );
+    assert!(!snapshot
+        .unsupported_sections
+        .contains(&"attachmentContentFiles".to_string()));
+
+    let json = serde_json::to_value(&snapshot).unwrap();
+    assert_eq!(
+        json["issues"][0]["attachments"][0]["contentBase64"],
+        "aXNzdWUtZmlsZQ=="
+    );
 }
 
 #[test]
@@ -196,6 +308,16 @@ fn mapper_defers_child_comments_link_rewrite_and_attachment_content_files() {
                 "email": "alice@example.com"
             },
             "body": "see /files/123",
+            "attachments": [{
+                "id": 123,
+                "name": "linked.txt",
+                "hash": "linked-hash",
+                "mimeType": "text/plain",
+                "size": 6,
+                "containerType": "ISSUE_POST",
+                "containerId": "9",
+                "ownerLoginId": "alice"
+            }],
             "comments": [{
                 "author": {
                     "loginId": "alice",

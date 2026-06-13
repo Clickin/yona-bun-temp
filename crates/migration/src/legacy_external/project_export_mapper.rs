@@ -212,6 +212,8 @@ pub struct YobiDataCommentItem {
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct YobiDataAttachmentItem {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content_base64: Option<String>,
     pub id: i64,
     pub mime_type: String,
     pub name: String,
@@ -225,11 +227,24 @@ pub struct YobiDataAttachmentItem {
 pub fn map_project_export_json_to_yobi_data(
     payload: &str,
 ) -> Result<YobiDataSnapshot, ProjectExportMapError> {
-    let export: LegacyProjectExport = serde_json::from_str(payload)?;
-    Ok(map_project_export_to_yobi_data(export))
+    map_project_export_json_to_yobi_data_with_attachment_content_base64(payload, &BTreeMap::new())
 }
 
-fn map_project_export_to_yobi_data(export: LegacyProjectExport) -> YobiDataSnapshot {
+pub fn map_project_export_json_to_yobi_data_with_attachment_content_base64(
+    payload: &str,
+    attachment_content_base64: &BTreeMap<i64, String>,
+) -> Result<YobiDataSnapshot, ProjectExportMapError> {
+    let export: LegacyProjectExport = serde_json::from_str(payload)?;
+    Ok(map_project_export_to_yobi_data(
+        export,
+        attachment_content_base64,
+    ))
+}
+
+fn map_project_export_to_yobi_data(
+    export: LegacyProjectExport,
+    attachment_content_base64: &BTreeMap<i64, String>,
+) -> YobiDataSnapshot {
     let mut users = BTreeMap::new();
     for user in &export.authors {
         insert_user(&mut users, user);
@@ -270,7 +285,19 @@ fn map_project_export_to_yobi_data(export: LegacyProjectExport) -> YobiDataSnaps
     {
         unsupported_sections.push("markdownFileLinkRewrite".to_string());
     }
-    unsupported_sections.push("attachmentContentFiles".to_string());
+    if export
+        .issues
+        .iter()
+        .chain(export.posts.iter())
+        .flat_map(posting_attachments)
+        .any(|attachment| {
+            !attachment_content_base64
+                .get(&attachment.id)
+                .map_or(false, |content| !content.trim().is_empty())
+        })
+    {
+        unsupported_sections.push("attachmentContentFiles".to_string());
+    }
 
     let labels = export.labels.iter().map(map_label).collect();
     let milestones = export.milestones.iter().map(map_milestone).collect();
@@ -293,9 +320,17 @@ fn map_project_export_to_yobi_data(export: LegacyProjectExport) -> YobiDataSnaps
             .iter()
             .map(|post| YobiDataPostItem {
                 author_login_id: post.author.login_id.trim().to_string(),
-                attachments: post.attachments.iter().map(map_attachment).collect(),
+                attachments: post
+                    .attachments
+                    .iter()
+                    .map(|attachment| map_attachment(attachment, attachment_content_base64))
+                    .collect(),
                 body_markdown: post.body.clone(),
-                comments: post.comments.iter().map(map_comment).collect(),
+                comments: post
+                    .comments
+                    .iter()
+                    .map(|comment| map_comment(comment, attachment_content_base64))
+                    .collect(),
                 history_markdown: String::new(),
                 labels: post.labels.iter().map(map_label).collect(),
                 notice: false,
@@ -316,9 +351,17 @@ fn map_project_export_to_yobi_data(export: LegacyProjectExport) -> YobiDataSnaps
                     .map(|user| user.login_id.trim().to_string())
                     .unwrap_or_default(),
                 author_login_id: issue.author.login_id.trim().to_string(),
-                attachments: issue.attachments.iter().map(map_attachment).collect(),
+                attachments: issue
+                    .attachments
+                    .iter()
+                    .map(|attachment| map_attachment(attachment, attachment_content_base64))
+                    .collect(),
                 body_markdown: issue.body.clone(),
-                comments: issue.comments.iter().map(map_comment).collect(),
+                comments: issue
+                    .comments
+                    .iter()
+                    .map(|comment| map_comment(comment, attachment_content_base64))
+                    .collect(),
                 history_markdown: String::new(),
                 issue_number: posting_number(&issue.number),
                 labels: issue.labels.iter().map(map_label).collect(),
@@ -375,10 +418,17 @@ fn insert_user(users: &mut BTreeMap<String, YobiDataUserItem>, user: &LegacyUser
         });
 }
 
-fn map_comment(comment: &LegacyComment) -> YobiDataCommentItem {
+fn map_comment(
+    comment: &LegacyComment,
+    attachment_content_base64: &BTreeMap<i64, String>,
+) -> YobiDataCommentItem {
     YobiDataCommentItem {
         author_login_id: comment.author.login_id.trim().to_string(),
-        attachments: comment.attachments.iter().map(map_attachment).collect(),
+        attachments: comment
+            .attachments
+            .iter()
+            .map(|attachment| map_attachment(attachment, attachment_content_base64))
+            .collect(),
         contents_markdown: comment.body.clone(),
     }
 }
@@ -401,8 +451,15 @@ fn map_milestone(milestone: &LegacyMilestone) -> YobiDataMilestoneItem {
     }
 }
 
-fn map_attachment(attachment: &LegacyAttachment) -> YobiDataAttachmentItem {
+fn map_attachment(
+    attachment: &LegacyAttachment,
+    attachment_content_base64: &BTreeMap<i64, String>,
+) -> YobiDataAttachmentItem {
     YobiDataAttachmentItem {
+        content_base64: attachment_content_base64
+            .get(&attachment.id)
+            .map(|content| content.trim().to_string())
+            .filter(|content| !content.is_empty()),
         id: attachment.id,
         mime_type: attachment.mime_type.clone(),
         name: attachment.name.clone(),
@@ -436,4 +493,21 @@ fn comment_has_child_comments(comment: &LegacyComment) -> bool {
             .child_comments
             .iter()
             .any(comment_has_child_comments)
+}
+
+fn posting_attachments(posting: &LegacyPosting) -> Vec<&LegacyAttachment> {
+    let mut attachments = Vec::new();
+    attachments.extend(posting.attachments.iter());
+    collect_comment_attachments(&posting.comments, &mut attachments);
+    attachments
+}
+
+fn collect_comment_attachments<'a>(
+    comments: &'a [LegacyComment],
+    attachments: &mut Vec<&'a LegacyAttachment>,
+) {
+    for comment in comments {
+        attachments.extend(comment.attachments.iter());
+        collect_comment_attachments(&comment.child_comments, attachments);
+    }
 }
