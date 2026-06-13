@@ -316,10 +316,21 @@ impl Context {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeConfig {
+    pub allow_anonymous_access: bool,
     pub base_path: String,
     pub public_origin: String,
+}
+
+impl Default for RuntimeConfig {
+    fn default() -> Self {
+        Self {
+            allow_anonymous_access: true,
+            base_path: String::new(),
+            public_origin: String::new(),
+        }
+    }
 }
 
 pub fn create_router(config: RuntimeConfig) -> Router {
@@ -379,6 +390,7 @@ pub fn create_router_with_repository_and_embedded_assets(
 fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode) -> Router {
     let base_path = normalize_base_path(&config.base_path);
     let public_origin = default_public_origin(&config.public_origin);
+    let allow_anonymous_access = config.allow_anonymous_access;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
@@ -544,6 +556,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let thread_close_session_manager = session_manager.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
+    let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
     let raw_code_backend = route_backend.clone();
     let raw_code_session_manager = session_manager.clone();
     let raw_code_base_path = base_path.clone();
@@ -2565,7 +2578,17 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     base_router = base_router.layer(from_fn(move |request: Request, next: Next| {
         let session_manager = anonymous_gate_session_manager.clone();
         let base_path = anonymous_gate_base_path.clone();
-        async move { anonymous_access_gate(request, next, session_manager, base_path).await }
+        let allow_anonymous_access = anonymous_gate_allow_anonymous_access;
+        async move {
+            anonymous_access_gate(
+                request,
+                next,
+                session_manager,
+                base_path,
+                allow_anonymous_access,
+            )
+            .await
+        }
     }));
 
     if base_path == "/" {
@@ -2756,8 +2779,9 @@ async fn anonymous_access_gate(
     next: Next,
     session_manager: SessionManager,
     base_path: String,
+    allow_anonymous_access: bool,
 ) -> Response {
-    if allows_anonymous_access()
+    if allow_anonymous_access
         || anonymous_access_path_is_public(request.uri().path())
         || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
         || svn_protocol_route_from_path(request.uri().path(), &base_path).is_some()
@@ -2783,17 +2807,6 @@ async fn anonymous_access_gate(
     }
 
     anonymous_access_rest_response()
-}
-
-fn allows_anonymous_access() -> bool {
-    std::env::var("YONA_ALLOW_ANONYMOUS_ACCESS")
-        .map(|value| {
-            matches!(
-                value.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            )
-        })
-        .unwrap_or(true)
 }
 
 fn configured_session_timeout_seconds() -> Option<u64> {

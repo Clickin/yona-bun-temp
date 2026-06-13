@@ -35,6 +35,7 @@ async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection
     (
         create_router_with_app_repository(
             RuntimeConfig {
+                allow_anonymous_access: true,
                 base_path: "/yona".to_string(),
                 public_origin: String::new(),
             },
@@ -175,6 +176,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 
     let app = create_router_with_filesystem_assets(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
@@ -240,6 +242,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     std::env::set_var("YONA_SHOW_USER_EMAIL", "false");
     std::env::set_var("YONA_LANGS", "ko-KR, en-US, ja-JP");
     let app = create_router_with_embedded_assets(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -303,13 +306,11 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
 
 #[tokio::test]
 async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
-    let _guard = runtime_config_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
     let app = create_router_with_embedded_assets(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
 
     let response = app
         .oneshot(
@@ -345,7 +346,6 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
     let _guard = runtime_config_env_lock().lock().unwrap();
     let data_root = tempdir().expect("data root");
     std::env::set_var("YONA_DATA", data_root.path());
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
     let (app, repository, _) = build_auth_router().await;
     let project = repository
         .create_project(CreateProjectInput {
@@ -369,7 +369,6 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
         .await
         .unwrap();
 
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
     std::env::remove_var("YONA_DATA");
 
     assert_eq!(response.status(), StatusCode::SEE_OTHER);

@@ -37,6 +37,7 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
     let app_repo = AppRepository::new(db.clone());
     let app = create_router_with_app_repository(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },

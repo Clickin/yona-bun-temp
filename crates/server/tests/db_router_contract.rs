@@ -26,6 +26,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
     .expect("create seeded organization");
     let app = create_router_with_repository(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },

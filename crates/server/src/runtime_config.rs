@@ -358,6 +358,7 @@ pub fn load_startup_config(
         project_default_menus,
         project_default_scope,
         runtime: RuntimeConfig {
+            allow_anonymous_access: site_allow_anonymous_access.unwrap_or(true),
             base_path,
             public_origin,
         },

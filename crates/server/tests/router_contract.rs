@@ -2,16 +2,10 @@ use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection};
-use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
-
-fn router_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -21,6 +15,7 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
     let app_repo = AppRepository::new(db.clone());
     let app = create_router_with_app_repository(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
@@ -91,6 +86,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> String {
 #[tokio::test]
 async fn mounts_session_bootstrap_under_base_path() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -112,6 +108,7 @@ async fn mounts_session_bootstrap_under_base_path() {
 #[tokio::test]
 async fn session_bootstrap_issues_cookies_and_csrf_header() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -152,6 +149,7 @@ async fn session_bootstrap_issues_cookies_and_csrf_header() {
 #[tokio::test]
 async fn read_current_session_works_over_connect_json() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -178,6 +176,7 @@ async fn read_current_session_works_over_connect_json() {
 #[tokio::test]
 async fn list_projects_works_over_connect_json() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -205,6 +204,7 @@ async fn list_projects_works_over_connect_json() {
 #[tokio::test]
 async fn list_organizations_works_over_connect_json() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -231,6 +231,7 @@ async fn list_organizations_works_over_connect_json() {
 #[tokio::test]
 async fn read_issue_detail_applies_the_go_pilot_status_contract() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -270,6 +271,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
 #[tokio::test]
 async fn update_issue_state_requires_bootstrapped_csrf() {
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -398,9 +400,8 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
 
 #[tokio::test]
 async fn legacy_migration_requires_login_when_anonymous_access_is_disabled() {
-    let _guard = router_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
     let app = create_router(RuntimeConfig {
+        allow_anonymous_access: false,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
@@ -415,8 +416,6 @@ async fn legacy_migration_requires_login_when_anonymous_access_is_disabled() {
         )
         .await
         .unwrap();
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
-
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     let location = response
         .headers()

@@ -27,6 +27,12 @@ fn auth_env_lock() -> &'static Mutex<()> {
 }
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_auth_router_with_anonymous_access(true).await
+}
+
+async fn build_auth_router_with_anonymous_access(
+    allow_anonymous_access: bool,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
@@ -36,6 +42,7 @@ async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection
     (
         create_router_with_app_repository(
             RuntimeConfig {
+                allow_anonymous_access,
                 base_path: "/yona".to_string(),
                 public_origin: String::new(),
             },
@@ -119,9 +126,7 @@ fn days_ago_datetime(days: u64) -> DateTime {
 
 #[tokio::test]
 async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
-    let (_, repository, _) = build_auth_router().await;
+    let (_, repository, _) = build_auth_router_with_anonymous_access(false).await;
 
     repository
         .create_project(CreateProjectInput {
@@ -149,6 +154,7 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
     .expect("index html");
     let app = create_router_with_repository_and_filesystem_assets(
         RuntimeConfig {
+            allow_anonymous_access: false,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
@@ -239,8 +245,6 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
     let json: serde_json::Value =
         serde_json::from_str(&response_text(project_container).await).expect("error json");
     assert_eq!(json["error"]["code"], "unauthorized");
-
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
 }
 
 #[tokio::test]
@@ -355,9 +359,7 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
 
 #[tokio::test]
 async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
     let response = app
         .oneshot(
@@ -378,14 +380,11 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
             .and_then(|value| value.to_str().ok()),
         Some("/yona/users/loginform?error=unsupported&provider=github")
     );
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
 }
 
 #[tokio::test]
 async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
     let response = app
         .oneshot(
@@ -406,7 +405,6 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
             .and_then(|value| value.to_str().ok()),
         Some("/yona/users/loginform?error=oauthDenied&provider=github")
     );
-    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
 }
 
 #[tokio::test]

@@ -20,6 +20,7 @@ mod rest_test_support;
 
 fn build_router() -> axum::Router {
     create_router(RuntimeConfig {
+        allow_anonymous_access: true,
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     })
@@ -38,6 +39,7 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let app_repo = AppRepository::new(db);
     let app = create_router_with_app_repository(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
@@ -54,6 +56,7 @@ async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, Dat
     let app_repo = AppRepository::new(db.clone());
     let app = create_router_with_app_repository(
         RuntimeConfig {
+            allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
