@@ -19874,6 +19874,12 @@ async fn rest_import_site_data(
             &post.labels,
         )
         .await?;
+        let imported_attachments =
+            rest_site_import_attachments(repository, &actor, &post.attachments).await?;
+        let body_markdown = rewrite_site_import_file_links(
+            &post.body_markdown,
+            &imported_attachments.link_rewrites,
+        );
         let created = repository
             .create_posting(persistence::CreatePostingInput {
                 actor_display_name: actor.display_name.clone(),
@@ -19882,13 +19888,8 @@ async fn rest_import_site_data(
                 owner_name: post.owner_name.trim().to_string(),
                 project_name: post.project_name.trim().to_string(),
                 values: persistence::PostingMutationInput {
-                    attachment_ids: rest_site_import_attachment_ids(
-                        repository,
-                        &actor,
-                        &post.attachments,
-                    )
-                    .await?,
-                    body_markdown: post.body_markdown,
+                    attachment_ids: imported_attachments.ids,
+                    body_markdown,
                     label_ids,
                     notice: post.notice,
                     readme: post.readme,
@@ -19957,6 +19958,12 @@ async fn rest_import_site_data(
             &actor,
         )
         .await?;
+        let imported_attachments =
+            rest_site_import_attachments(repository, &actor, &issue.attachments).await?;
+        let body_markdown = rewrite_site_import_file_links(
+            &issue.body_markdown,
+            &imported_attachments.link_rewrites,
+        );
         let created = repository
             .create_issue(persistence::CreateIssueInput {
                 actor_display_name: actor.display_name.clone(),
@@ -19966,13 +19973,8 @@ async fn rest_import_site_data(
                 project_name: issue.project_name.trim().to_string(),
                 values: persistence::IssueMutationInput {
                     assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
-                    attachment_ids: rest_site_import_attachment_ids(
-                        repository,
-                        &actor,
-                        &issue.attachments,
-                    )
-                    .await?,
-                    body_markdown: issue.body_markdown,
+                    attachment_ids: imported_attachments.ids,
+                    body_markdown,
                     due_date: None,
                     is_draft: false,
                     is_publish: false,
@@ -20053,15 +20055,17 @@ async fn rest_site_import_post_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let attachment_ids =
-            rest_site_import_attachment_ids(repository, &actor, &comment.attachments).await?;
+        let imported_attachments =
+            rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
+        let contents_markdown =
+            rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         repository
             .create_posting_comment(persistence::CreatePostingCommentInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
                 actor_login_id: actor.login_id.clone(),
-                attachment_ids,
-                contents_markdown: contents_markdown.to_string(),
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
                 owner_name: owner_name.trim().to_string(),
                 parent_comment_id: None,
                 post_number,
@@ -20089,15 +20093,17 @@ async fn rest_site_import_issue_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let attachment_ids =
-            rest_site_import_attachment_ids(repository, &actor, &comment.attachments).await?;
+        let imported_attachments =
+            rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
+        let contents_markdown =
+            rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         repository
             .create_issue_comment(persistence::CreateIssueCommentInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
                 actor_login_id: actor.login_id.clone(),
-                attachment_ids,
-                contents_markdown: contents_markdown.to_string(),
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
                 issue_number,
                 owner_name: owner_name.trim().to_string(),
                 parent_comment_id: None,
@@ -20126,67 +20132,118 @@ async fn rest_site_import_comment_actor(
     Ok(fallback_actor.clone())
 }
 
-async fn rest_site_import_attachment_ids(
+struct RestSiteImportedAttachments {
+    ids: Vec<i64>,
+    link_rewrites: Vec<(i64, i64)>,
+}
+
+async fn rest_site_import_attachments(
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
-) -> Result<Vec<i64>, RestRouteError> {
+) -> Result<RestSiteImportedAttachments, RestRouteError> {
     let mut attachment_ids = Vec::new();
+    let mut link_rewrites = Vec::new();
     for attachment in attachments {
-        if attachment.id > 0 {
-            attachment_ids.push(attachment.id);
-            continue;
-        }
-        let Some(content_base64) = attachment
+        if let Some(content_base64) = attachment
             .content_base64
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
-        else {
-            continue;
-        };
-        let bytes = general_purpose::STANDARD
-            .decode(content_base64)
-            .map_err(|_| RestRouteError::bad_request("site.import.attachment.invalidContent"))?;
-        if bytes.len() > max_uploaded_file_size() {
-            return Err(RestRouteError::bad_request(
-                "site.import.attachment.tooLarge",
-            ));
-        }
-        let file_name = attachment
-            .name
-            .trim()
-            .is_empty()
-            .then(|| "attachment.bin".to_string())
-            .unwrap_or_else(|| attachment.name.trim().to_string());
-        let mime_type = attachment
-            .mime_type
-            .trim()
-            .is_empty()
-            .then(|| detect_upload_mime_type(&file_name, None, &bytes))
-            .unwrap_or_else(|| attachment.mime_type.trim().to_string());
-        let hash = random_storage_token();
-        let path = uploaded_file_path(&hash);
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
+        {
+            let bytes = general_purpose::STANDARD
+                .decode(content_base64)
+                .map_err(|_| {
+                    RestRouteError::bad_request("site.import.attachment.invalidContent")
+                })?;
+            if bytes.len() > max_uploaded_file_size() {
+                return Err(RestRouteError::bad_request(
+                    "site.import.attachment.tooLarge",
+                ));
+            }
+            let file_name = attachment
+                .name
+                .trim()
+                .is_empty()
+                .then(|| "attachment.bin".to_string())
+                .unwrap_or_else(|| attachment.name.trim().to_string());
+            let mime_type = attachment
+                .mime_type
+                .trim()
+                .is_empty()
+                .then(|| detect_upload_mime_type(&file_name, None, &bytes))
+                .unwrap_or_else(|| attachment.mime_type.trim().to_string());
+            let hash = random_storage_token();
+            let path = uploaded_file_path(&hash);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            }
+            std::fs::write(&path, &bytes)
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            let created = repository
+                .create_user_attachment_upload(
+                    actor.id,
+                    &actor.login_id,
+                    &file_name,
+                    &mime_type,
+                    bytes.len() as i64,
+                    &hash,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            attachment_ids.push(created.id);
+            if attachment.id > 0 && attachment.id != created.id {
+                link_rewrites.push((attachment.id, created.id));
+            }
+            continue;
         }
-        std::fs::write(&path, &bytes)
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        let created = repository
-            .create_user_attachment_upload(
-                actor.id,
-                &actor.login_id,
-                &file_name,
-                &mime_type,
-                bytes.len() as i64,
-                &hash,
-            )
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        attachment_ids.push(created.id);
+
+        if attachment.id > 0 {
+            attachment_ids.push(attachment.id);
+        }
     }
-    Ok(attachment_ids)
+    Ok(RestSiteImportedAttachments {
+        ids: attachment_ids,
+        link_rewrites,
+    })
+}
+
+fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> String {
+    if rewrites.is_empty() || !markdown.contains("/files/") {
+        return markdown.to_string();
+    }
+    let rewrite_map = rewrites
+        .iter()
+        .copied()
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let bytes = markdown.as_bytes();
+    let mut rewritten = String::with_capacity(markdown.len());
+    let mut index = 0;
+    while let Some(relative_start) = markdown[index..].find("/files/") {
+        let start = index + relative_start;
+        rewritten.push_str(&markdown[index..start]);
+        let number_start = start + "/files/".len();
+        let mut number_end = number_start;
+        while number_end < bytes.len() && bytes[number_end].is_ascii_digit() {
+            number_end += 1;
+        }
+        if number_end == number_start {
+            rewritten.push_str("/files/");
+            index = number_start;
+            continue;
+        }
+        let old_id = markdown[number_start..number_end].parse::<i64>().ok();
+        if let Some(new_id) = old_id.and_then(|id| rewrite_map.get(&id)) {
+            rewritten.push_str("/files/");
+            rewritten.push_str(&new_id.to_string());
+        } else {
+            rewritten.push_str(&markdown[start..number_end]);
+        }
+        index = number_end;
+    }
+    rewritten.push_str(&markdown[index..]);
+    rewritten
 }
 
 async fn rest_site_import_label_ids(

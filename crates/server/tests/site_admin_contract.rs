@@ -1359,20 +1359,22 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
             "authorLoginId": "member",
             "attachments": [{
                 "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "id": 901,
                 "mimeType": "text/plain",
                 "name": "portable-post.txt",
                 "size": 18
             }],
-            "bodyMarkdown": "post with portable attachment",
+            "bodyMarkdown": "post with portable attachment /files/901",
             "comments": [{
                 "attachments": [{
                     "contentBase64": "cG9ydGFibGUtY29tbWVudC1maWxl",
+                    "id": 902,
                     "mimeType": "text/plain",
                     "name": "portable-comment.txt",
                     "size": 21
                 }],
                 "authorLoginId": "member",
-                "contentsMarkdown": "comment with portable attachment"
+                "contentsMarkdown": "comment with portable attachment /files/902"
             }],
             "ownerName": "member",
             "projectName": "portable",
@@ -1409,6 +1411,13 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         std::fs::read(data_dir.path().join("uploads").join(post_hash)).expect("post bytes"),
         b"portable-post-file"
     );
+    assert_eq!(
+        post_detail.body_markdown,
+        format!(
+            "post with portable attachment /files/{}",
+            post_attachment.id
+        )
+    );
 
     assert_eq!(
         post_detail.comments[0].attachments[0].name,
@@ -1423,6 +1432,13 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
     assert_eq!(
         std::fs::read(data_dir.path().join("uploads").join(comment_hash)).expect("comment bytes"),
         b"portable-comment-file"
+    );
+    assert_eq!(
+        post_detail.comments[0].contents_markdown,
+        format!(
+            "comment with portable attachment /files/{}",
+            comment_attachment.id
+        )
     );
     std::env::remove_var("YONA_DATA");
 }
