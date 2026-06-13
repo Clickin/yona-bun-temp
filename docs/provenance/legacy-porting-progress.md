@@ -357,6 +357,7 @@ Interpretation:
 - [x] Local VisualSVN/Subversion 1.14.5 verification: `cargo test -p yona-rust-pilot-server --test svn_protocol_contract -- --nocapture` passes all 42 executable-backed SVN protocol and external-client smokes with `svn`, `svnadmin`, and `svnlook` installed, including `svn update --set-depth empty` / `files` checkout shrinking, `svn update --set-depth exclude` child-directory exclusion, and revision-targeted `svn update -r REV` downgrade/HEAD restore.
 - [x] SVN PROPFIND edge contract refresh: root and default VCC `PROPFIND` now have focused contract coverage for `Label` revision selection, and baseline resource `!svn/bln/:rev` has invalid-revision `400` plus out-of-range `404` mapping coverage. Local execution skips these fixtures when `svnadmin`/`svnlook`/`svn` are unavailable.
 - [x] Git direct file route traversal hardening: `rawcode`, `files`, and `image` direct blob routes reject encoded `..` traversal with `400 Bad Request`.
+- [x] Git direct encoded branch route contract: legacy `URLEncoder`-style branch segments such as `topic%2Fencoded%2Bplus` resolve on `rawcode`, `files`, and archive `code/:branch/download` routes.
 - [x] Git Smart HTTP receive-pack oversized request guard: `git-receive-pack` rejects an oversized announced `Content-Length` with `413 Payload Too Large` before invoking Git.
 
 ## Pull Request / Review

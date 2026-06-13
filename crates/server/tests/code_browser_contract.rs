@@ -1800,6 +1800,74 @@ async fn direct_code_archive_download_streams_branch_zip() {
 }
 
 #[tokio::test]
+async fn direct_code_file_and_archive_routes_decode_legacy_encoded_branch_names() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    create_bare_repository_branch(data_dir.path(), project.id, "topic/encoded+plus");
+
+    let (raw_status, _raw_headers, raw_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/rawcode/topic%2Fencoded%2Bplus/src/main.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(raw_status, StatusCode::OK);
+    assert_eq!(raw_body, b"fn main() {}\n");
+
+    let (open_status, open_headers, open_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/files/topic%2Fencoded%2Bplus/src/main.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(open_status, StatusCode::OK);
+    assert_eq!(open_body, raw_body);
+    assert!(open_headers[http::header::CONTENT_DISPOSITION]
+        .to_str()
+        .unwrap()
+        .contains("inline"));
+
+    let (archive_status, archive_headers, archive_body) = response_bytes(
+        direct_get(
+            app,
+            "/owner/projectYobi/code/topic%2Fencoded%2Bplus/download",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(archive_status, StatusCode::OK);
+    assert_eq!(
+        archive_headers[http::header::CONTENT_TYPE]
+            .to_str()
+            .unwrap(),
+        "application/zip"
+    );
+    assert!(archive_body.starts_with(b"PK"));
+    assert!(archive_body
+        .windows(b"README.md".len())
+        .any(|window| window == b"README.md"));
+}
+
+#[tokio::test]
 async fn direct_code_file_routes_redirect_missing_raw_and_reject_path_traversal() {
     let _guard = yona_data_env_lock()
         .lock()
