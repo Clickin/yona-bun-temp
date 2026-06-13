@@ -3241,6 +3241,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">page=</span>');
   });
 
+  it("recognizes legacy Highlight.js Handlebars alias in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```handlebars",
+          "{{#each-in users as |id user|}}",
+          "{{input value=user.name}}",
+          "{{/each-in}}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="handlebars">');
+    expect(html).toContain('class="syntax-token syntax-keyword">each-in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">as</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">input</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">value=</span>');
+  });
+
   it("recognizes legacy Handlebars comments in HTMLBars fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

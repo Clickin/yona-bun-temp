@@ -3012,7 +3012,7 @@ function normalizeCodeLanguage(language: string) {
   if (["django", "jinja"].includes(normalized)) {
     return "django";
   }
-  if (normalized === "htmlbars") {
+  if (["handlebars", "htmlbars"].includes(normalized)) {
     return "htmlbars";
   }
   if (normalized === "accesslog") {

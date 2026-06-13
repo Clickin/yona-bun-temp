@@ -1,6 +1,7 @@
 pub mod boards;
 pub mod issues;
 pub mod milestones;
+pub mod project_export_mapper;
 pub mod projects;
 pub mod users;
 pub mod watchers;

@@ -508,6 +508,8 @@ export interface ProjectMilestoneListViewModel {
 
 export interface AuthUiCapabilitiesViewModel {
   emailVerificationEnabled: boolean;
+  enabledSocialProviders?: string[];
+  enabled_social_providers?: string[];
   loginIdPlaceholder?: string;
   passwordPlaceholder?: string;
   signupRequireConfirm: boolean;

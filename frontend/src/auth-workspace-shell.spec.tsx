@@ -85,6 +85,7 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain('placeholder="Password"');
     expect(html).not.toContain(">title.resetPassword<");
     expect(html).toContain('href="/yona/lostPassword"');
+    expect(html).not.toContain("oauth-login-btn");
   });
 
   it("renders the common legacy login dialog shell", () => {
@@ -123,6 +124,107 @@ describe("auth and workspace views", () => {
     expect(html).toContain('href="/yona/users/signupform"');
     expect(html).toContain(">title.signup<");
     expect(html).not.toContain(">title.forgotpassword<");
+    expect(html).not.toContain("oauth-login-btn");
+  });
+
+  it("renders configured OAuth provider buttons on the login page", () => {
+    const html = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        enabledSocialProviders: ["github", "google"],
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      },
+      routeHref: "/users/loginform",
+    });
+
+    expect(html).toContain('class="social-login-title-line"');
+    expect(html).toContain(">title.or<");
+    expect(html).toContain('class="ybtn oauth-login-btn"');
+    expect(html).toContain('href="/yona/authenticate/github"');
+    expect(html).toContain('href="/yona/authenticate/google"');
+    expect(html).toContain('class="auth-provider-logo"');
+    expect(html).toContain('class="provider-name"');
+    expect(html).toContain("Sign in with GitHub");
+    expect(html).toContain("Sign in with Google");
+  });
+
+  it("preserves no-button behavior when the configured OAuth provider list is empty", () => {
+    const html = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        enabledSocialProviders: [],
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      },
+      routeHref: "/users/loginform",
+    });
+
+    expect(html).not.toContain("oauth-login-btn");
+    expect(html).not.toContain("social-login-title-line");
+    expect(html).toContain('name="loginIdOrEmail"');
+    expect(html).toContain('name="password"');
+  });
+
+  it("renders configured OAuth provider buttons on the legacy login dialog", () => {
+    const html = renderToStaticMarkup(
+      <LegacyLoginDialog
+        authUiCapabilities={{
+          emailVerificationEnabled: false,
+          enabled_social_providers: ["github"],
+          loginIdPlaceholder: "",
+          passwordPlaceholder: "",
+          signupRequireConfirm: false,
+          socialLoginOnly: false,
+        }}
+        csrfToken="csrf-1"
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('id="loginDialog"');
+    expect(html).toContain('class="social-login-title-line"');
+    expect(html).toContain('href="/yona/authenticate/github"');
+    expect(html).toContain('class="ybtn oauth-login-btn"');
+    expect(html).toContain("Sign in with GitHub");
+  });
+
+  it("keeps social-login-only warning while rendering configured provider buttons", () => {
+    const loginHtml = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        enabledSocialProviders: ["github"],
+        signupRequireConfirm: false,
+        socialLoginOnly: true,
+      },
+      routeHref: "/users/loginform",
+    });
+
+    expect(loginHtml).toContain("app.warn.support.social.login.only");
+    expect(loginHtml).not.toContain('name="loginIdOrEmail"');
+    expect(loginHtml).not.toContain('name="password"');
+    expect(loginHtml).toContain('href="/yona/authenticate/github"');
+    expect(loginHtml).toContain('class="ybtn oauth-login-btn"');
+    expect(loginHtml).not.toContain('class="social-login-title-line"');
+
+    const dialogHtml = renderToStaticMarkup(
+      <LegacyLoginDialog
+        authUiCapabilities={{
+          emailVerificationEnabled: false,
+          enabledSocialProviders: ["google"],
+          signupRequireConfirm: false,
+          socialLoginOnly: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(dialogHtml).toContain("app.warn.support.social.login.only");
+    expect(dialogHtml).not.toContain('name="loginIdOrEmail"');
+    expect(dialogHtml).not.toContain('name="password"');
+    expect(dialogHtml).toContain('href="/yona/authenticate/google"');
+    expect(dialogHtml).toContain('class="ybtn oauth-login-btn"');
+    expect(dialogHtml).not.toContain('class="social-login-title-line"');
   });
 
   it("uses configured legacy login placeholders from auth capabilities", () => {

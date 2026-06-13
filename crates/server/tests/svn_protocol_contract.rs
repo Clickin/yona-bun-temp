@@ -5712,6 +5712,82 @@ async fn svn_protocol_root_and_default_vcc_propfind_honor_label_revision() {
 }
 
 #[tokio::test]
+async fn svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping executable SVN root/VCC allprop PROPFIND test because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let revision =
+        seed_svn_readme(&repo_path, "hello before root vcc allprop\n").expect("seed svn readme");
+    let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    for (path, href, displayname) in [
+        (
+            "/svn/owner/projectYobi",
+            "/yona/svn/owner/projectYobi",
+            "projectYobi",
+        ),
+        (
+            "/svn/owner/projectYobi/!svn/vcc/default",
+            "/yona/svn/owner/projectYobi/!svn/vcc/default",
+            "default",
+        ),
+    ] {
+        let response = direct_request_with_body(
+            app.clone(),
+            propfind.clone(),
+            path,
+            None,
+            Body::from(
+                r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:allprop/>
+</D:propfind>"#,
+            ),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains(&format!("<D:href>{href}</D:href>"))
+                && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+                && text.contains(&format!("<D:displayname>{displayname}</D:displayname>"))
+                && text.contains("<D:supportedlock>")
+                && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+                && text.contains(&format!(
+                    "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/bln/{revision}</D:href></D:checked-in>"
+                ))
+                && text.contains(&format!(
+                    "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}/</D:href></D:baseline-collection>"
+                ))
+                && text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>"))
+                && text.contains(
+                    "<D:activity-collection-set><D:href>/yona/svn/owner/projectYobi/!svn/act/</D:href></D:activity-collection-set>"
+                )
+                && text.contains("<D:supported-report-set>")
+                && text.contains("<S:log-report/>")
+                && text.contains("<S:update-report/>"),
+            "SVN root/default VCC PROPFIND allprop should expose DeltaV live metadata for {path}: {text}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn svn_protocol_baseline_propfind_maps_invalid_and_out_of_range_revisions() {
     if !svn_tools_available() {
         eprintln!(

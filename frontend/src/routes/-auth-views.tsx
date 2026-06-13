@@ -10,6 +10,64 @@ function readSearchParams(href: string): URLSearchParams {
   return new URL(href, "http://yona.local").searchParams;
 }
 
+function readEnabledSocialProviders(
+  authUiCapabilities: AuthUiCapabilitiesViewModel | null | undefined,
+): string[] {
+  const providers =
+    authUiCapabilities?.enabledSocialProviders ?? authUiCapabilities?.enabled_social_providers ?? [];
+  return providers.map((provider) => provider.trim()).filter(Boolean);
+}
+
+function renderProviderLogo(provider: string): React.ReactNode {
+  if (provider === "github") {
+    return (
+      <span className="auth-provider-logo">
+        <span className="github"></span> <span className="provider-name">Sign in with GitHub</span>
+      </span>
+    );
+  }
+
+  if (provider === "google") {
+    return (
+      <span className="auth-provider-logo">
+        <span className="google"></span> Sign in with Google
+      </span>
+    );
+  }
+
+  return <span className="auth-provider-logo">{provider}</span>;
+}
+
+function SocialProviderButtons({
+  authUiCapabilities,
+  runtimeConfig,
+}: {
+  authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const providers = readEnabledSocialProviders(authUiCapabilities);
+  if (providers.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="btns-row nm">
+      {!authUiCapabilities?.socialLoginOnly ? (
+        <div className="social-login-title-line">title.or</div>
+      ) : null}
+      {providers.map((provider) => (
+        <a
+          className="ybtn oauth-login-btn"
+          href={appHref(runtimeConfig, `/authenticate/${encodeURIComponent(provider)}`)}
+          key={provider}
+        >
+          {renderProviderLogo(provider)}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function resolvePostAuthHref(
   redirectPath: null | string | undefined,
   savedDefaultLandingPath: null | string | undefined,
@@ -151,6 +209,10 @@ export function LoginPage({
                     {pending ? "button.login" : "button.login"}
                   </button>
                 </div>
+                <SocialProviderButtons
+                  authUiCapabilities={authUiCapabilities}
+                  runtimeConfig={runtimeConfig}
+                />
                 <div className="act-row mt5">
                   <div className="remember-me-wrap pull-left">
                     <input
@@ -176,6 +238,12 @@ export function LoginPage({
                 </div>
               </>
             ) : null}
+            {!canRenderLocalForm ? (
+              <SocialProviderButtons
+                authUiCapabilities={authUiCapabilities}
+                runtimeConfig={runtimeConfig}
+              />
+            ) : null}
           </form>
         </div>
       </div>
@@ -198,12 +266,7 @@ export function LegacyLoginDialog({
     <div className="modal hide loginDialog" id="loginDialog" role="dialog" tabIndex={-1}>
       <div className="modal-body">
         <div className="pull-right">
-          <button
-            aria-hidden="true"
-            className="close mr10"
-            data-dismiss="modal"
-            type="button"
-          >
+          <button className="close mr10" data-dismiss="modal" type="button">
             &times;
           </button>
         </div>
@@ -249,6 +312,14 @@ export function LegacyLoginDialog({
                   button.login
                 </button>
               </div>
+            </>
+          ) : null}
+          <SocialProviderButtons
+            authUiCapabilities={authUiCapabilities}
+            runtimeConfig={runtimeConfig}
+          />
+          {canRenderLocalForm ? (
+            <>
               <div className="act-row right-txt mt20">
                 <div className="pull-left">
                   <input

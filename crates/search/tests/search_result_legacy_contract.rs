@@ -1,4 +1,4 @@
-use yona_rust_search::{make_snippets, SearchHighlight};
+use yona_rust_search::{keyword_matches, make_snippets, SearchHighlight};
 
 #[test]
 fn snippets_follow_legacy_korean_window_boundaries() {
@@ -33,4 +33,19 @@ fn snippets_merge_legacy_overlap_windows() {
         snippets[1].text,
         "바꿔주면됨 * back버튼으로 마일스톤 리스트화면으로 이동이 가능하며, 이슈리스트의 검색기능을 그대로 활용가능 2. 마일스톤내 이슈화면에 검색기능을 추가 * 추가기능을 개발하다보면, 이슈리스트화면과 같아짐 * 향후, 마일스톤내 이슈페이지만의 기능을 넣고자 한다면, 이 방법이 나아보임 그럼 의견주시면 주"
     );
+}
+
+#[test]
+fn keyword_helpers_keep_legacy_literal_keyword_spacing() {
+    let snippets = make_snippets("앞 이슈 본문 뒤 이슈본문", "이슈 ", 2);
+
+    assert_eq!(snippets.len(), 1);
+    assert_eq!(snippets[0].text, "앞 이슈 본문");
+    assert_eq!(
+        snippets[0].highlights,
+        vec![SearchHighlight { start: 2, end: 5 }]
+    );
+
+    assert!(keyword_matches("앞 이슈 본문", "이슈 "));
+    assert!(!keyword_matches("앞 이슈본문", "이슈 "));
 }

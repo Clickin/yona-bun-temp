@@ -101,7 +101,6 @@ pub fn resolve_search_type(
 }
 
 pub fn keyword_matches(value: &str, keyword: &str) -> bool {
-    let keyword = keyword.trim();
     !keyword.is_empty() && value.to_lowercase().contains(&keyword.to_lowercase())
 }
 
@@ -113,7 +112,7 @@ pub fn relevance_score(title: &str, body: &str, keyword: &str) -> u32 {
 }
 
 fn count_keyword_matches(value: &str, keyword: &str) -> u32 {
-    let keyword = keyword.trim().to_lowercase();
+    let keyword = keyword.to_lowercase();
     if keyword.is_empty() {
         return 0;
     }
@@ -161,12 +160,12 @@ struct Window {
 
 pub fn make_snippets(contents: &str, keyword: &str, threshold: usize) -> Vec<SearchSnippet> {
     let chars = contents.chars().collect::<Vec<_>>();
-    let keyword_chars = keyword.trim().chars().count();
+    let keyword_chars = keyword.chars().count();
     if chars.is_empty() || keyword_chars == 0 || keyword_chars > chars.len() {
         return Vec::new();
     }
 
-    let lower_keyword = keyword.trim().to_lowercase();
+    let lower_keyword = keyword.to_lowercase();
     let mut matches = Vec::new();
     let mut index = 0;
     while index + keyword_chars <= chars.len() {
