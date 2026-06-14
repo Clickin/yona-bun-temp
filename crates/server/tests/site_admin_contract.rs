@@ -11,8 +11,8 @@ use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     attachment, project_user, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, MilestoneMutationInput,
-    PostingMutationInput,
+    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, MilestoneListFilter,
+    MilestoneMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -788,6 +788,15 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "text/plain",
     )
     .await;
+    let export_milestone_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "milestone-export.txt",
+        "text/plain",
+    )
+    .await;
     write_uploaded_test_file(&data_dir, &export_post_attachment, b"post-export-binary");
     write_uploaded_test_file(
         &data_dir,
@@ -800,11 +809,16 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         &export_issue_comment_attachment,
         b"issue-comment-export-binary",
     );
+    write_uploaded_test_file(
+        &data_dir,
+        &export_milestone_attachment,
+        b"milestone-export-binary",
+    );
     let milestone = repo
         .create_project_milestone(MilestoneMutationInput {
             actor_id: Some(member_id),
-            attachment_ids: vec![],
-            contents_markdown: String::new(),
+            attachment_ids: vec![export_milestone_attachment.id],
+            contents_markdown: "legacy data export milestone".to_string(),
             due_date: None,
             owner_name: "member".to_string(),
             project_name: "dataproj".to_string(),
@@ -946,6 +960,20 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .any(|user| user["loginId"] == "member"));
     assert_eq!(payload["projects"][0]["ownerName"], "member");
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
+    assert_eq!(payload["milestones"][0]["title"], "Export milestone");
+    assert_eq!(
+        payload["milestones"][0]["contentsMarkdown"],
+        "legacy data export milestone"
+    );
+    assert_eq!(payload["milestones"][0]["state"], "open");
+    assert_eq!(
+        payload["milestones"][0]["attachments"][0]["name"],
+        "milestone-export.txt"
+    );
+    assert_eq!(
+        payload["milestones"][0]["attachments"][0]["contentBase64"],
+        "bWlsZXN0b25lLWV4cG9ydC1iaW5hcnk="
+    );
     assert_eq!(payload["posts"][0]["title"], "Data export post");
     assert_eq!(
         payload["posts"][0]["bodyMarkdown"],
@@ -1043,6 +1071,15 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "ownerName": "imported",
             "projectName": "restored",
             "overview": "Restored from site import"
+        }],
+        "milestones": [{
+            "attachments": [],
+            "contentsMarkdown": "restored milestone body",
+            "dueDate": "",
+            "ownerName": "imported",
+            "projectName": "restored",
+            "state": "closed",
+            "title": "Imported milestone"
         }],
         "posts": [{
             "authorLoginId": "imported",
@@ -1187,6 +1224,23 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     .await;
     assert_eq!(projects["projects"][0]["ownerName"], "imported");
     assert_eq!(projects["projects"][0]["projectName"], "restored");
+
+    let milestones = repo
+        .list_project_milestones(
+            "imported",
+            "restored",
+            MilestoneListFilter {
+                order_by: "dueDate".to_string(),
+                order_dir: "asc".to_string(),
+                state: "all".to_string(),
+            },
+        )
+        .await
+        .expect("list imported milestones");
+    assert_eq!(milestones.len(), 1);
+    assert_eq!(milestones[0].title, "Imported milestone");
+    assert_eq!(milestones[0].state, "closed");
+    assert_eq!(milestones[0].contents_markdown, "restored milestone body");
 
     let posts =
         response_json(rest_get(app.clone(), "/yona/api/v1/site/posts", Some(&admin_cookie)).await)

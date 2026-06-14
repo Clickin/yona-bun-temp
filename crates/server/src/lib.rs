@@ -13753,6 +13753,7 @@ struct RestSiteExportResponse {
     provenance: String,
     users: Vec<RestSiteUserItem>,
     projects: Vec<RestSiteProjectItem>,
+    milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
     issues: Vec<RestSiteExportIssueItem>,
 }
@@ -13763,6 +13764,7 @@ struct RestSiteImportPayload {
     format: String,
     users: Vec<RestSiteImportUserItem>,
     projects: Vec<RestSiteImportProjectItem>,
+    milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
     issues: Vec<RestSiteExportIssueItem>,
 }
@@ -13783,6 +13785,18 @@ struct RestSiteImportProjectItem {
     owner_name: String,
     overview: String,
     project_name: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportMilestoneItem {
+    attachments: Vec<RestSiteExportAttachmentItem>,
+    contents_markdown: String,
+    due_date: String,
+    owner_name: String,
+    project_name: String,
+    state: String,
+    title: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -13856,9 +13870,11 @@ struct RestSiteExportLabelItem {
 struct RestSiteImportResponse {
     imported_projects: u32,
     imported_issues: u32,
+    imported_milestones: u32,
     imported_posts: u32,
     imported_users: u32,
     skipped_issues: u32,
+    skipped_milestones: u32,
     skipped_posts: u32,
     skipped_projects: u32,
     skipped_users: u32,
@@ -19746,13 +19762,16 @@ async fn rest_export_site_data(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
     let mut projects = Vec::new();
+    let mut milestone_project_refs = Vec::new();
     for project in project_records {
+        milestone_project_refs.push((project.owner_name.clone(), project.project_name.clone()));
         projects.push(
             rest_site_project_from_record(repository, &service.base_path, project)
                 .await
                 .map_err(RestRouteError::from_connect_error)?,
         );
     }
+    let milestones = rest_export_site_milestones(repository, &milestone_project_refs).await?;
     let posts = rest_export_site_posts(repository).await?;
     let issues = rest_export_site_issues(repository).await?;
 
@@ -19761,6 +19780,7 @@ async fn rest_export_site_data(
         provenance: "rust-app-runtime".to_string(),
         users,
         projects,
+        milestones,
         posts,
         issues,
     })
@@ -19849,6 +19869,59 @@ async fn rest_import_site_data(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_projects += 1;
+    }
+
+    let mut imported_milestones = 0;
+    let mut skipped_milestones = 0;
+    for milestone in payload.milestones {
+        let owner_name = milestone.owner_name.trim();
+        let project_name = milestone.project_name.trim();
+        let title = milestone.title.trim();
+        let Some(actor) = rest_site_import_actor(repository, "", owner_name).await? else {
+            skipped_milestones += 1;
+            continue;
+        };
+        if title.is_empty()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+            || repository
+                .project_milestone_title_exists(owner_name, project_name, title, None)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            skipped_milestones += 1;
+            continue;
+        }
+        let imported_attachments =
+            rest_site_import_attachments(repository, &actor, &milestone.attachments).await?;
+        let contents_markdown = rewrite_site_import_file_links(
+            &milestone.contents_markdown,
+            &imported_attachments.link_rewrites,
+        );
+        if repository
+            .create_project_milestone(persistence::MilestoneMutationInput {
+                actor_id: Some(actor.id),
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
+                due_date: parse_milestone_due_date(&milestone.due_date)
+                    .map_err(RestRouteError::from_connect_error)?,
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                state: normalize_milestone_state(&milestone.state)
+                    .map_err(RestRouteError::from_connect_error)?,
+                title: title.to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some()
+        {
+            imported_milestones += 1;
+        } else {
+            skipped_milestones += 1;
+        }
     }
 
     let mut imported_posts = 0;
@@ -20032,10 +20105,12 @@ async fn rest_import_site_data(
 
     Ok(Json(RestSiteImportResponse {
         imported_issues,
+        imported_milestones,
         imported_posts,
         imported_projects,
         imported_users,
         skipped_issues,
+        skipped_milestones,
         skipped_posts,
         skipped_projects,
         skipped_users,
@@ -20419,6 +20494,55 @@ async fn rest_export_site_users(
     let mut users = users_by_id.into_values().collect::<Vec<_>>();
     users.sort_by(|left, right| left.login_id.cmp(&right.login_id));
     Ok(users)
+}
+
+async fn rest_export_site_milestones(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportMilestoneItem>, RestRouteError> {
+    let mut milestones = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .list_project_milestones(
+                owner_name,
+                project_name,
+                persistence::MilestoneListFilter {
+                    order_by: "dueDate".to_string(),
+                    order_dir: "asc".to_string(),
+                    state: "all".to_string(),
+                },
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for record in records {
+            milestones.push(rest_site_export_milestone_from_record(
+                owner_name,
+                project_name,
+                &record,
+            ));
+        }
+    }
+    Ok(milestones)
+}
+
+fn rest_site_export_milestone_from_record(
+    owner_name: &str,
+    project_name: &str,
+    milestone: &persistence::IssueMilestoneRecord,
+) -> RestSiteExportMilestoneItem {
+    RestSiteExportMilestoneItem {
+        attachments: milestone
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        contents_markdown: milestone.contents_markdown.clone(),
+        due_date: milestone.due_date_label.clone(),
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+        state: milestone.state.clone(),
+        title: milestone.title.clone(),
+    }
 }
 
 async fn rest_export_site_posts(
