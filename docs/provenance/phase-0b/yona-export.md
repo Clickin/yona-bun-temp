@@ -55,7 +55,7 @@ The Node tool calls these external surfaces:
 - Build as a migration/export CLI or migration tool surface, not as SPA internals.
 - Keep schema validation explicit and versioned.
 - Separate external compatibility adapters from `/api/v1` app-facing REST APIs, and keep those adapters out of the app server until the migrator/export/import deliverable owns them.
-- The Rust migration mapper now supports pure `ProjectApi.exports` JSON to semantic `yobi-data` conversion, nested child comment preservation, and optional downloaded attachment content injection as `contentBase64`; `/sites/export` projects child comments as nested `childComments` and standalone milestones with body/state/attachment metadata, and `/sites/import` restores nested child comments, standalone milestones, and Markdown `/files/:oldId` links to restored portable attachment ids when `contentBase64` is present. The CLI/source adapter remains follow-up work.
+- The Rust migration mapper now supports pure `ProjectApi.exports` JSON to semantic `yobi-data` conversion, nested child comment preservation, and optional downloaded attachment content injection as `contentBase64`; `/sites/export` projects child comments as nested `childComments`, standalone labels with category metadata, and standalone milestones with body/state/attachment metadata, and `/sites/import` restores nested child comments, standalone labels, standalone milestones, and Markdown `/files/:oldId` links to restored portable attachment ids when `contentBase64` is present. The CLI/source adapter remains follow-up work.
 - Add dry-run, resumable import reports, duplicate policy, and attachment checksum validation before claiming production migration parity.
 
 ## Guardrail

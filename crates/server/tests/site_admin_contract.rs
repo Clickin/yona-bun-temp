@@ -11,8 +11,8 @@ use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     attachment, project_user, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, MilestoneListFilter,
-    MilestoneMutationInput, PostingMutationInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectLabelInput, IssueMutationInput,
+    MilestoneListFilter, MilestoneMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -814,6 +814,17 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         &export_milestone_attachment,
         b"milestone-export-binary",
     );
+    repo.create_project_label(CreateProjectLabelInput {
+        category_is_exclusive: true,
+        category_name: "Priority".to_string(),
+        label_color: "#ff9800".to_string(),
+        label_name: "Unused export label".to_string(),
+        owner_name: "member".to_string(),
+        project_name: "dataproj".to_string(),
+    })
+    .await
+    .expect("create export label")
+    .expect("export label created");
     let milestone = repo
         .create_project_milestone(MilestoneMutationInput {
             actor_id: Some(member_id),
@@ -960,6 +971,12 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .any(|user| user["loginId"] == "member"));
     assert_eq!(payload["projects"][0]["ownerName"], "member");
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
+    assert_eq!(payload["labels"][0]["ownerName"], "member");
+    assert_eq!(payload["labels"][0]["projectName"], "dataproj");
+    assert_eq!(payload["labels"][0]["name"], "Unused export label");
+    assert_eq!(payload["labels"][0]["categoryName"], "Priority");
+    assert_eq!(payload["labels"][0]["categoryIsExclusive"], true);
+    assert_eq!(payload["labels"][0]["color"], "#ff9800");
     assert_eq!(payload["milestones"][0]["title"], "Export milestone");
     assert_eq!(
         payload["milestones"][0]["contentsMarkdown"],
@@ -1071,6 +1088,14 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "ownerName": "imported",
             "projectName": "restored",
             "overview": "Restored from site import"
+        }],
+        "labels": [{
+            "categoryIsExclusive": true,
+            "categoryName": "Priority",
+            "color": "#ff9800",
+            "name": "Standalone label",
+            "ownerName": "imported",
+            "projectName": "restored"
         }],
         "milestones": [{
             "attachments": [],
@@ -1224,6 +1249,18 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     .await;
     assert_eq!(projects["projects"][0]["ownerName"], "imported");
     assert_eq!(projects["projects"][0]["projectName"], "restored");
+
+    let labels = repo
+        .list_project_labels("imported", "restored")
+        .await
+        .expect("list imported labels");
+    let standalone_label = labels
+        .iter()
+        .find(|label| label.name == "Standalone label")
+        .expect("standalone label restored");
+    assert_eq!(standalone_label.category_name, "Priority");
+    assert_eq!(standalone_label.category_is_exclusive, true);
+    assert_eq!(standalone_label.color, "#ff9800");
 
     let milestones = repo
         .list_project_milestones(

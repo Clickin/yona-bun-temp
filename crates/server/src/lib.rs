@@ -13753,6 +13753,7 @@ struct RestSiteExportResponse {
     provenance: String,
     users: Vec<RestSiteUserItem>,
     projects: Vec<RestSiteProjectItem>,
+    labels: Vec<RestSiteExportProjectLabelItem>,
     milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
     issues: Vec<RestSiteExportIssueItem>,
@@ -13764,6 +13765,7 @@ struct RestSiteImportPayload {
     format: String,
     users: Vec<RestSiteImportUserItem>,
     projects: Vec<RestSiteImportProjectItem>,
+    labels: Vec<RestSiteExportProjectLabelItem>,
     milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
     issues: Vec<RestSiteExportIssueItem>,
@@ -13784,6 +13786,18 @@ struct RestSiteImportUserItem {
 struct RestSiteImportProjectItem {
     owner_name: String,
     overview: String,
+    project_name: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportProjectLabelItem {
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    #[serde(alias = "labelName")]
+    name: String,
+    owner_name: String,
     project_name: String,
 }
 
@@ -13870,10 +13884,12 @@ struct RestSiteExportLabelItem {
 struct RestSiteImportResponse {
     imported_projects: u32,
     imported_issues: u32,
+    imported_labels: u32,
     imported_milestones: u32,
     imported_posts: u32,
     imported_users: u32,
     skipped_issues: u32,
+    skipped_labels: u32,
     skipped_milestones: u32,
     skipped_posts: u32,
     skipped_projects: u32,
@@ -19771,6 +19787,7 @@ async fn rest_export_site_data(
                 .map_err(RestRouteError::from_connect_error)?,
         );
     }
+    let labels = rest_export_site_labels(repository, &milestone_project_refs).await?;
     let milestones = rest_export_site_milestones(repository, &milestone_project_refs).await?;
     let posts = rest_export_site_posts(repository).await?;
     let issues = rest_export_site_issues(repository).await?;
@@ -19780,6 +19797,7 @@ async fn rest_export_site_data(
         provenance: "rust-app-runtime".to_string(),
         users,
         projects,
+        labels,
         milestones,
         posts,
         issues,
@@ -19869,6 +19887,53 @@ async fn rest_import_site_data(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_projects += 1;
+    }
+
+    let mut imported_labels = 0;
+    let mut skipped_labels = 0;
+    for label in payload.labels {
+        let owner_name = label.owner_name.trim();
+        let project_name = label.project_name.trim();
+        let label_name = label.name.trim();
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || label_name.is_empty()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+        {
+            skipped_labels += 1;
+            continue;
+        }
+        let label_color = if label.color.trim().is_empty() {
+            "#999999".to_string()
+        } else {
+            normalize_issue_label_color(label.color.trim())
+                .map_err(RestRouteError::from_connect_error)?
+        };
+        let category_name = if label.category_name.trim().is_empty() {
+            "Imported"
+        } else {
+            label.category_name.trim()
+        };
+        match repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: label.category_is_exclusive,
+                category_name: category_name.to_string(),
+                label_color,
+                label_name: label_name.to_string(),
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            Some((_record, true)) => imported_labels += 1,
+            Some((_record, false)) => skipped_labels += 1,
+            None => skipped_labels += 1,
+        }
     }
 
     let mut imported_milestones = 0;
@@ -20105,11 +20170,13 @@ async fn rest_import_site_data(
 
     Ok(Json(RestSiteImportResponse {
         imported_issues,
+        imported_labels,
         imported_milestones,
         imported_posts,
         imported_projects,
         imported_users,
         skipped_issues,
+        skipped_labels,
         skipped_milestones,
         skipped_posts,
         skipped_projects,
@@ -20523,6 +20590,42 @@ async fn rest_export_site_milestones(
         }
     }
     Ok(milestones)
+}
+
+async fn rest_export_site_labels(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportProjectLabelItem>, RestRouteError> {
+    let mut labels = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .list_project_labels(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for record in records {
+            labels.push(rest_site_export_project_label_from_record(
+                owner_name,
+                project_name,
+                &record,
+            ));
+        }
+    }
+    Ok(labels)
+}
+
+fn rest_site_export_project_label_from_record(
+    owner_name: &str,
+    project_name: &str,
+    label: &persistence::IssueLabelRecord,
+) -> RestSiteExportProjectLabelItem {
+    RestSiteExportProjectLabelItem {
+        category_is_exclusive: label.category_is_exclusive,
+        category_name: label.category_name.clone(),
+        color: label.color.clone(),
+        name: label.name.clone(),
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+    }
 }
 
 fn rest_site_export_milestone_from_record(
