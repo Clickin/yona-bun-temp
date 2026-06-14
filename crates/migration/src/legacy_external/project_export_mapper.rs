@@ -139,6 +139,7 @@ pub struct YobiDataSnapshot {
     pub provenance: String,
     pub users: Vec<YobiDataUserItem>,
     pub projects: Vec<YobiDataProjectItem>,
+    pub project_members: Vec<YobiDataProjectMemberItem>,
     pub labels: Vec<YobiDataLabelItem>,
     pub milestones: Vec<YobiDataMilestoneItem>,
     pub posts: Vec<YobiDataPostItem>,
@@ -164,6 +165,15 @@ pub struct YobiDataProjectItem {
     pub project_name: String,
     pub project_scope: String,
     pub vcs: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct YobiDataProjectMemberItem {
+    pub login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub role: String,
 }
 
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
@@ -306,6 +316,22 @@ fn map_project_export_to_yobi_data(
             project_scope: export.project_scope.to_ascii_lowercase(),
             vcs: export.project_vcs,
         }],
+        project_members: export
+            .members
+            .iter()
+            .filter_map(|member| {
+                let login_id = member.login_id.trim();
+                if login_id.is_empty() {
+                    return None;
+                }
+                Some(YobiDataProjectMemberItem {
+                    login_id: login_id.to_string(),
+                    owner_name: export.owner.clone(),
+                    project_name: export.project_name.clone(),
+                    role: normalize_project_member_role(&member.role),
+                })
+            })
+            .collect(),
         labels,
         milestones,
         posts: export
@@ -482,6 +508,14 @@ fn normalize_state(state: &str) -> String {
         "closed".to_string()
     } else {
         "open".to_string()
+    }
+}
+
+fn normalize_project_member_role(role: &str) -> String {
+    if role.trim().eq_ignore_ascii_case("manager") {
+        "manager".to_string()
+    } else {
+        "member".to_string()
     }
 }
 

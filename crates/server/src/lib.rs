@@ -13757,6 +13757,7 @@ struct RestSiteExportResponse {
     provenance: String,
     users: Vec<RestSiteUserItem>,
     projects: Vec<RestSiteProjectItem>,
+    project_members: Vec<RestSiteExportProjectMemberItem>,
     labels: Vec<RestSiteExportProjectLabelItem>,
     milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
@@ -13769,6 +13770,7 @@ struct RestSiteImportPayload {
     format: String,
     users: Vec<RestSiteImportUserItem>,
     projects: Vec<RestSiteImportProjectItem>,
+    project_members: Vec<RestSiteExportProjectMemberItem>,
     labels: Vec<RestSiteExportProjectLabelItem>,
     milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
@@ -13794,6 +13796,15 @@ struct RestSiteImportProjectItem {
     project_scope: String,
     #[serde(alias = "projectVcs")]
     vcs: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportProjectMemberItem {
+    login_id: String,
+    owner_name: String,
+    project_name: String,
+    role: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -13890,6 +13901,7 @@ struct RestSiteExportLabelItem {
 #[serde(rename_all = "camelCase")]
 struct RestSiteImportResponse {
     imported_projects: u32,
+    imported_project_members: u32,
     imported_issues: u32,
     imported_labels: u32,
     imported_milestones: u32,
@@ -13900,6 +13912,7 @@ struct RestSiteImportResponse {
     skipped_milestones: u32,
     skipped_posts: u32,
     skipped_projects: u32,
+    skipped_project_members: u32,
     skipped_users: u32,
     unsupported_sections: Vec<String>,
 }
@@ -19796,6 +19809,8 @@ async fn rest_export_site_data(
     }
     let labels = rest_export_site_labels(repository, &milestone_project_refs).await?;
     let milestones = rest_export_site_milestones(repository, &milestone_project_refs).await?;
+    let project_members =
+        rest_export_site_project_members(repository, &milestone_project_refs).await?;
     let posts = rest_export_site_posts(repository).await?;
     let issues = rest_export_site_issues(repository).await?;
 
@@ -19804,6 +19819,7 @@ async fn rest_export_site_data(
         provenance: "rust-app-runtime".to_string(),
         users,
         projects,
+        project_members,
         labels,
         milestones,
         posts,
@@ -19896,6 +19912,36 @@ async fn rest_import_site_data(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_projects += 1;
+    }
+
+    let mut imported_project_members = 0;
+    let mut skipped_project_members = 0;
+    for member in payload.project_members {
+        let owner_name = member.owner_name.trim();
+        let project_name = member.project_name.trim();
+        let login_id = member.login_id.trim();
+        let role = normalize_site_import_project_member_role(&member.role);
+        let Some(project) = repository
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            skipped_project_members += 1;
+            continue;
+        };
+        let Some(user) = repository
+            .find_user_by_login_id(login_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            skipped_project_members += 1;
+            continue;
+        };
+        repository
+            .add_project_membership(project.id, user.id, &role)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_project_members += 1;
     }
 
     let mut imported_labels = 0;
@@ -20183,12 +20229,14 @@ async fn rest_import_site_data(
         imported_milestones,
         imported_posts,
         imported_projects,
+        imported_project_members,
         imported_users,
         skipped_issues,
         skipped_labels,
         skipped_milestones,
         skipped_posts,
         skipped_projects,
+        skipped_project_members,
         skipped_users,
         unsupported_sections: Vec::new(),
     }))
@@ -20554,6 +20602,14 @@ fn normalize_site_import_project_vcs(value: &str) -> String {
     }
 }
 
+fn normalize_site_import_project_member_role(value: &str) -> String {
+    if value.trim().eq_ignore_ascii_case("manager") {
+        "manager".to_string()
+    } else {
+        "member".to_string()
+    }
+}
+
 async fn rest_export_site_users(
     repository: &PilotRepository,
     base_path: &str,
@@ -20637,6 +20693,28 @@ async fn rest_export_site_labels(
         }
     }
     Ok(labels)
+}
+
+async fn rest_export_site_project_members(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportProjectMemberItem>, RestRouteError> {
+    let mut project_members = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .read_project_members(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for member in records.members {
+            project_members.push(RestSiteExportProjectMemberItem {
+                login_id: member.login_id,
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                role: normalize_site_import_project_member_role(&member.role),
+            });
+        }
+    }
+    Ok(project_members)
 }
 
 fn rest_site_export_project_label_from_record(

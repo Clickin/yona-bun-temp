@@ -152,6 +152,11 @@ fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
     assert_eq!(snapshot.projects[0].project_name, "demo");
     assert_eq!(snapshot.projects[0].overview, "Legacy project");
     assert_eq!(snapshot.projects[0].project_scope, "public");
+    assert_eq!(snapshot.project_members.len(), 1);
+    assert_eq!(snapshot.project_members[0].owner_name, "alice");
+    assert_eq!(snapshot.project_members[0].project_name, "demo");
+    assert_eq!(snapshot.project_members[0].login_id, "alice");
+    assert_eq!(snapshot.project_members[0].role, "manager");
     assert_eq!(snapshot.labels[0].name, "Bug");
     assert_eq!(snapshot.labels[0].category_name, "Type");
     assert_eq!(snapshot.labels[0].color, "#2196f3");

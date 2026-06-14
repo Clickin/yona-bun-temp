@@ -973,6 +973,14 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
     assert_eq!(payload["projects"][0]["projectScope"], "public");
     assert_eq!(payload["projects"][0]["vcs"], "GIT");
+    assert!(payload["projectMembers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|member| member["ownerName"] == "member"
+            && member["projectName"] == "dataproj"
+            && member["loginId"] == "member"
+            && member["role"] == "manager"));
     assert_eq!(payload["labels"][0]["ownerName"], "member");
     assert_eq!(payload["labels"][0]["projectName"], "dataproj");
     assert_eq!(payload["labels"][0]["name"], "Unused export label");
@@ -1085,6 +1093,12 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "emailAddress": "imported@example.com",
             "isSiteAdmin": false,
             "state": "ACTIVE"
+        }, {
+            "loginId": "imported-member",
+            "displayName": "Imported Member",
+            "emailAddress": "imported-member@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
         }],
         "projects": [{
             "ownerName": "imported",
@@ -1092,6 +1106,17 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "overview": "Restored from site import",
             "projectScope": "protected",
             "projectVcs": "Subversion"
+        }],
+        "projectMembers": [{
+            "loginId": "imported",
+            "ownerName": "imported",
+            "projectName": "restored",
+            "role": "manager"
+        }, {
+            "loginId": "imported-member",
+            "ownerName": "imported",
+            "projectName": "restored",
+            "role": "member"
         }],
         "labels": [{
             "categoryIsExclusive": true,
@@ -1239,8 +1264,11 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         .await,
     )
     .await;
-    assert_eq!(users["users"][0]["loginId"], "imported");
-    assert_eq!(users["users"][0]["displayName"], "Imported User");
+    assert!(users["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|user| { user["loginId"] == "imported" && user["displayName"] == "Imported User" }));
 
     let projects = response_json(
         rest_get(
@@ -1255,6 +1283,19 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(projects["projects"][0]["projectName"], "restored");
     assert_eq!(projects["projects"][0]["projectScope"], "protected");
     assert_eq!(projects["projects"][0]["vcs"], "Subversion");
+
+    let members = repo
+        .read_project_members("imported", "restored")
+        .await
+        .expect("read imported project members");
+    assert!(members
+        .members
+        .iter()
+        .any(|member| { member.login_id == "imported" && member.role == "manager" }));
+    assert!(members
+        .members
+        .iter()
+        .any(|member| { member.login_id == "imported-member" && member.role == "member" }));
 
     let labels = repo
         .list_project_labels("imported", "restored")
