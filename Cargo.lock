@@ -4937,10 +4937,12 @@ dependencies = [
 name = "yona-rust-pilot-migration"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "sea-orm",
  "sea-orm-migration",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "yona-rust-persistence",
 ]

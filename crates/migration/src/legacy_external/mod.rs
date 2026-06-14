@@ -5,6 +5,7 @@ pub mod project_export_mapper;
 pub mod projects;
 pub mod users;
 pub mod watchers;
+pub mod yona_export_adapter;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EndpointDomain {

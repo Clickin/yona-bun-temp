@@ -5,6 +5,7 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
+base64.workspace = true
 sea-orm.workspace = true
 sea-orm-migration.workspace = true
 serde.workspace = true
@@ -12,4 +13,5 @@ serde_json.workspace = true
 yona-rust-persistence = { path = "../persistence" }
 
 [dev-dependencies]
+tempfile.workspace = true
 tokio.workspace = true

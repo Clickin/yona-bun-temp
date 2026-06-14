@@ -6,6 +6,7 @@ use yona_rust_pilot_migration::legacy_external::project_export_mapper::{
     map_project_export_json_to_yobi_data,
     map_project_export_json_to_yobi_data_with_attachment_content_base64,
 };
+use yona_rust_pilot_migration::legacy_external::yona_export_adapter::map_yona_export_project_directory_to_yobi_data;
 
 #[test]
 fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
@@ -375,4 +376,66 @@ fn mapper_preserves_child_comments_and_defers_unresolved_link_rewrite_and_attach
     assert!(snapshot
         .unsupported_sections
         .contains(&"attachmentContentFiles".to_string()));
+}
+
+#[test]
+fn yona_export_adapter_embeds_downloaded_attachment_tree_content() {
+    let temp = tempfile::tempdir().unwrap();
+    let project_dir = temp.path().join("exported").join("alice").join("demo");
+    std::fs::create_dir_all(project_dir.join("files").join("123")).unwrap();
+    std::fs::write(
+        project_dir.join("files").join("123").join("linked.txt"),
+        b"linked-file",
+    )
+    .unwrap();
+    let json_path = temp.path().join("exported").join("alice").join("demo.json");
+    std::fs::write(
+        &json_path,
+        json!({
+            "owner": "alice",
+            "projectName": "demo",
+            "members": [{
+                "loginId": "alice",
+                "name": "Alice Owner",
+                "role": "manager",
+                "email": "alice@example.com"
+            }],
+            "issues": [{
+                "number": 1,
+                "title": "Attached issue",
+                "author": {
+                    "loginId": "alice",
+                    "name": "Alice Owner",
+                    "email": "alice@example.com"
+                },
+                "body": "see /files/123",
+                "attachments": [{
+                    "id": 123,
+                    "name": "linked.txt",
+                    "hash": "linked-hash",
+                    "mimeType": "text/plain",
+                    "size": 11,
+                    "containerType": "ISSUE_POST",
+                    "containerId": "1",
+                    "ownerLoginId": "alice"
+                }]
+            }]
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let snapshot =
+        map_yona_export_project_directory_to_yobi_data(&json_path, &project_dir).unwrap();
+
+    assert_eq!(
+        snapshot.issues[0].attachments[0].content_base64.as_deref(),
+        Some("bGlua2VkLWZpbGU=")
+    );
+    assert!(!snapshot
+        .unsupported_sections
+        .contains(&"attachmentContentFiles".to_string()));
+    assert!(snapshot
+        .unsupported_sections
+        .contains(&"markdownFileLinkRewrite".to_string()));
 }
