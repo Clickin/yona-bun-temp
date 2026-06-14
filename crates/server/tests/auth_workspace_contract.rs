@@ -135,6 +135,7 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
             overview: Some("Public project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2144,6 +2145,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
             overview: Some("Yona project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2236,6 +2238,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
             overview: Some("Yona project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2329,6 +2332,7 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
             overview: Some("Yona project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2522,6 +2526,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
             overview: Some("Yona project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2818,6 +2823,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
             overview: Some("Public".to_string()),
             project_name: "publicProject".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2828,6 +2834,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
             overview: Some("Private".to_string()),
             project_name: "privateProject".to_string(),
             project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -3065,6 +3072,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
             overview: Some("Yona project".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -3075,6 +3083,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
             overview: Some("Private project".to_string()),
             project_name: "hiddenYobi".to_string(),
             project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();

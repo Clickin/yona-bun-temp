@@ -971,6 +971,8 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .any(|user| user["loginId"] == "member"));
     assert_eq!(payload["projects"][0]["ownerName"], "member");
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
+    assert_eq!(payload["projects"][0]["projectScope"], "public");
+    assert_eq!(payload["projects"][0]["vcs"], "GIT");
     assert_eq!(payload["labels"][0]["ownerName"], "member");
     assert_eq!(payload["labels"][0]["projectName"], "dataproj");
     assert_eq!(payload["labels"][0]["name"], "Unused export label");
@@ -1087,7 +1089,9 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         "projects": [{
             "ownerName": "imported",
             "projectName": "restored",
-            "overview": "Restored from site import"
+            "overview": "Restored from site import",
+            "projectScope": "protected",
+            "projectVcs": "Subversion"
         }],
         "labels": [{
             "categoryIsExclusive": true,
@@ -1249,6 +1253,8 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     .await;
     assert_eq!(projects["projects"][0]["ownerName"], "imported");
     assert_eq!(projects["projects"][0]["projectName"], "restored");
+    assert_eq!(projects["projects"][0]["projectScope"], "protected");
+    assert_eq!(projects["projects"][0]["vcs"], "Subversion");
 
     let labels = repo
         .list_project_labels("imported", "restored")

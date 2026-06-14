@@ -1234,6 +1234,7 @@ async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users(
             overview: None,
             project_name: "protectedBoard".to_string(),
             project_scope: "protected".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();

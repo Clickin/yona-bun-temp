@@ -354,6 +354,7 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
             overview: Some("Init route parity".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -744,6 +745,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             overview: Some("attachment container parity".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();

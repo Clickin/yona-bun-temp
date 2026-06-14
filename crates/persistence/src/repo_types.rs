@@ -918,6 +918,7 @@ pub struct CreateProjectInput {
     pub overview: Option<String>,
     pub project_name: String,
     pub project_scope: String,
+    pub vcs: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

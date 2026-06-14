@@ -6392,7 +6392,7 @@ impl AppRepository {
             id: NotSet,
             name: Set(Some(input.project_name.trim().to_string())),
             overview: Set(empty_to_none(input.overview)),
-            vcs: Set(Some("GIT".to_string())),
+            vcs: Set(Some(input.vcs.trim().to_string())),
             siteurl: Set(None),
             owner: Set(Some(input.owner_name.trim().to_string())),
             created_date: Set(Some(current_datetime())),

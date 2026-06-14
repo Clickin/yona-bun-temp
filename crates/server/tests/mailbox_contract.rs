@@ -61,6 +61,7 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
             overview: None,
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -226,6 +227,7 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
             overview: None,
             project_name: "projectWithoutThread".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -585,6 +587,7 @@ async fn mailbox_processing_keeps_message_id_idempotent() {
         overview: None,
         project_name: "projectYobi".to_string(),
         project_scope: "public".to_string(),
+        vcs: "GIT".to_string(),
     })
     .await
     .unwrap();
@@ -679,6 +682,7 @@ async fn mailbox_project_targets_follow_legacy_detail_and_read_filtering() {
             overview: None,
             project_name: "public".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -689,6 +693,7 @@ async fn mailbox_project_targets_follow_legacy_detail_and_read_filtering() {
             overview: None,
             project_name: "private".to_string(),
             project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -739,6 +744,7 @@ async fn mailbox_polling_tick_fetches_raw_messages_and_threads_replies() {
         overview: None,
         project_name: "projectYobi".to_string(),
         project_scope: "public".to_string(),
+        vcs: "GIT".to_string(),
     })
     .await
     .unwrap();

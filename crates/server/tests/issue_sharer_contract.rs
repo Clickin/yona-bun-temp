@@ -356,6 +356,7 @@ async fn issue_sharer_contract_searches_public_project_targets() {
             overview: Some("Target public project".to_string()),
             project_name: "targetShare".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -365,6 +366,7 @@ async fn issue_sharer_contract_searches_public_project_targets() {
         overview: Some("Target private project".to_string()),
         project_name: "targetSecret".to_string(),
         project_scope: "private".to_string(),
+        vcs: "GIT".to_string(),
     })
     .await
     .unwrap();
@@ -414,6 +416,7 @@ async fn issue_sharer_contract_caps_large_sharable_results_by_user_and_project()
             overview: Some(format!("Target project {index}")),
             project_name: format!("targetProject{index}"),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -466,6 +469,7 @@ async fn issue_sharer_contract_project_target_mutation_expands_project_members()
             overview: Some("Bulk target".to_string()),
             project_name: "targetShare".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();

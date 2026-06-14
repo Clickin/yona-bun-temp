@@ -2210,6 +2210,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
             overview: Some("Workspace rest parity".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2573,6 +2574,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
             overview: Some("Visible member project".to_string()),
             project_name: "publicYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2583,6 +2585,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
             overview: Some("Hidden member project".to_string()),
             project_name: "secretYobi".to_string(),
             project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2684,6 +2687,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             overview: Some("statistics parity".to_string()),
             project_name: "statsYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2855,6 +2859,7 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
             overview: Some("Public".to_string()),
             project_name: "publicProject".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();
@@ -2865,6 +2870,7 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
             overview: Some("Private".to_string()),
             project_name: "privateProject".to_string(),
             project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .unwrap();

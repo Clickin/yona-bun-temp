@@ -11877,6 +11877,7 @@ async fn direct_import_project(
                 overview: Some(overview.clone()),
                 project_name: project_name.clone(),
                 project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
             })
             .await
     } else {
@@ -11890,6 +11891,7 @@ async fn direct_import_project(
                 overview: Some(overview.clone()),
                 project_name: project_name.clone(),
                 project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
             })
             .await
     };
@@ -13609,6 +13611,8 @@ struct RestSiteProjectItem {
     overview: String,
     project_logo_url: String,
     project_name: String,
+    project_scope: String,
+    vcs: String,
 }
 
 #[derive(Serialize)]
@@ -13787,6 +13791,9 @@ struct RestSiteImportProjectItem {
     owner_name: String,
     overview: String,
     project_name: String,
+    project_scope: String,
+    #[serde(alias = "projectVcs")]
+    vcs: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -19882,7 +19889,9 @@ async fn rest_import_site_data(
                 owner_name: owner_name.to_string(),
                 overview: Some(project.overview.trim().to_string()),
                 project_name: project_name.to_string(),
-                project_scope: "public".to_string(),
+                project_scope: normalize_site_import_project_scope(&project.project_scope)
+                    .map_err(RestRouteError::from_connect_error)?,
+                vcs: normalize_site_import_project_vcs(&project.vcs),
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
@@ -20526,6 +20535,23 @@ async fn rest_site_import_actor(
         }
     }
     Ok(None)
+}
+
+fn normalize_site_import_project_scope(value: &str) -> Result<String, ConnectError> {
+    let trimmed = value.trim();
+    let scope = if trimmed.is_empty() {
+        ProjectScope::Public
+    } else {
+        map_project_scope(trimmed)?
+    };
+    Ok(scope.as_str().to_string())
+}
+
+fn normalize_site_import_project_vcs(value: &str) -> String {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "svn" | "subversion" => "Subversion".to_string(),
+        _ => "GIT".to_string(),
+    }
 }
 
 async fn rest_export_site_users(
@@ -26585,6 +26611,8 @@ async fn rest_site_project_from_record(
         overview: record.overview.unwrap_or_default(),
         project_logo_url,
         project_name: record.project_name,
+        project_scope: record.project_scope,
+        vcs: record.vcs,
     })
 }
 
@@ -37959,6 +37987,7 @@ impl PilotServiceImpl {
                     overview: Some(request.overview.trim().to_string()),
                     project_name: request.project_name.trim().to_string(),
                     project_scope: scope.as_str().to_string(),
+                    vcs: "GIT".to_string(),
                 })
                 .await
                 .map_err(internal_error)?
@@ -37973,6 +38002,7 @@ impl PilotServiceImpl {
                     overview: Some(request.overview.trim().to_string()),
                     project_name: request.project_name.trim().to_string(),
                     project_scope: scope.as_str().to_string(),
+                    vcs: "GIT".to_string(),
                 })
                 .await
                 .map_err(internal_error)?
