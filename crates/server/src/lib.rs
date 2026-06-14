@@ -26372,11 +26372,7 @@ fn rest_site_export_post_from_record(
             .map(rest_site_export_attachment_from_record)
             .collect(),
         body_markdown: record.body_markdown.clone(),
-        comments: record
-            .comments
-            .iter()
-            .map(rest_site_export_post_comment_from_record)
-            .collect(),
+        comments: rest_site_export_post_comments_from_records(&record.comments),
         history_markdown: record.history_markdown.clone(),
         labels: record
             .labels
@@ -26404,11 +26400,7 @@ fn rest_site_export_issue_from_record(
             .map(rest_site_export_attachment_from_record)
             .collect(),
         body_markdown: record.body_markdown.clone(),
-        comments: record
-            .comments
-            .iter()
-            .map(rest_site_export_issue_comment_from_record)
-            .collect(),
+        comments: rest_site_export_issue_comments_from_records(&record.comments),
         history_markdown: record.history_markdown.clone(),
         issue_number: record.issue_number.to_string(),
         labels: record
@@ -26426,6 +26418,7 @@ fn rest_site_export_issue_from_record(
 
 fn rest_site_export_post_comment_from_record(
     record: &persistence::PostingCommentRecord,
+    child_comments: Vec<RestSiteExportCommentItem>,
 ) -> RestSiteExportCommentItem {
     RestSiteExportCommentItem {
         author_login_id: record.author_login_id.clone(),
@@ -26434,13 +26427,14 @@ fn rest_site_export_post_comment_from_record(
             .iter()
             .map(rest_site_export_attachment_from_record)
             .collect(),
-        child_comments: Vec::new(),
+        child_comments,
         contents_markdown: record.contents_markdown.clone(),
     }
 }
 
 fn rest_site_export_issue_comment_from_record(
     record: &persistence::IssueCommentRecord,
+    child_comments: Vec<RestSiteExportCommentItem>,
 ) -> RestSiteExportCommentItem {
     RestSiteExportCommentItem {
         author_login_id: record.author_login_id.clone(),
@@ -26449,9 +26443,53 @@ fn rest_site_export_issue_comment_from_record(
             .iter()
             .map(rest_site_export_attachment_from_record)
             .collect(),
-        child_comments: Vec::new(),
+        child_comments,
         contents_markdown: record.contents_markdown.clone(),
     }
+}
+
+fn rest_site_export_post_comments_from_records(
+    records: &[persistence::PostingCommentRecord],
+) -> Vec<RestSiteExportCommentItem> {
+    records
+        .iter()
+        .filter(|record| record.parent_comment_id.is_none())
+        .map(|record| rest_site_export_post_comment_tree(record, records))
+        .collect()
+}
+
+fn rest_site_export_post_comment_tree(
+    record: &persistence::PostingCommentRecord,
+    records: &[persistence::PostingCommentRecord],
+) -> RestSiteExportCommentItem {
+    let children = records
+        .iter()
+        .filter(|child| child.parent_comment_id == Some(record.id))
+        .map(|child| rest_site_export_post_comment_tree(child, records))
+        .collect();
+    rest_site_export_post_comment_from_record(record, children)
+}
+
+fn rest_site_export_issue_comments_from_records(
+    records: &[persistence::IssueCommentRecord],
+) -> Vec<RestSiteExportCommentItem> {
+    records
+        .iter()
+        .filter(|record| record.parent_comment_id.is_none())
+        .map(|record| rest_site_export_issue_comment_tree(record, records))
+        .collect()
+}
+
+fn rest_site_export_issue_comment_tree(
+    record: &persistence::IssueCommentRecord,
+    records: &[persistence::IssueCommentRecord],
+) -> RestSiteExportCommentItem {
+    let children = records
+        .iter()
+        .filter(|child| child.parent_comment_id == Some(record.id))
+        .map(|child| rest_site_export_issue_comment_tree(child, records))
+        .collect();
+    rest_site_export_issue_comment_from_record(record, children)
 }
 
 fn rest_site_export_attachment_from_record(

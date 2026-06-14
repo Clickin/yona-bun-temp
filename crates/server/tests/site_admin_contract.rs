@@ -832,20 +832,36 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     .await
     .expect("create export posting")
     .expect("posting created");
+    let posting_with_parent_comment = repo
+        .create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "Member Name".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            attachment_ids: vec![export_post_comment_attachment.id],
+            contents_markdown: "legacy data export post comment".to_string(),
+            owner_name: "member".to_string(),
+            parent_comment_id: None,
+            post_number: 1,
+            project_name: "dataproj".to_string(),
+        })
+        .await
+        .expect("create export posting comment")
+        .expect("posting comment created");
+    let post_parent_comment_id = posting_with_parent_comment.comments[0].id;
     repo.create_posting_comment(CreatePostingCommentInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
         actor_login_id: "member".to_string(),
-        attachment_ids: vec![export_post_comment_attachment.id],
-        contents_markdown: "legacy data export post comment".to_string(),
+        attachment_ids: vec![],
+        contents_markdown: "legacy data export post child comment".to_string(),
         owner_name: "member".to_string(),
-        parent_comment_id: None,
+        parent_comment_id: Some(post_parent_comment_id),
         post_number: 1,
         project_name: "dataproj".to_string(),
     })
     .await
-    .expect("create export posting comment")
-    .expect("posting comment created");
+    .expect("create export posting child comment")
+    .expect("posting child comment created");
     repo.create_issue(CreateIssueInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
@@ -868,20 +884,36 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     .await
     .expect("create export issue")
     .expect("issue created");
+    let issue_with_parent_comment = repo
+        .create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: "Member Name".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            attachment_ids: vec![export_issue_comment_attachment.id],
+            contents_markdown: "legacy data export issue comment".to_string(),
+            issue_number: 1,
+            owner_name: "member".to_string(),
+            parent_comment_id: None,
+            project_name: "dataproj".to_string(),
+        })
+        .await
+        .expect("create export issue comment")
+        .expect("issue comment created");
+    let issue_parent_comment_id = issue_with_parent_comment.comments[0].id;
     repo.create_issue_comment(CreateIssueCommentInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
         actor_login_id: "member".to_string(),
-        attachment_ids: vec![export_issue_comment_attachment.id],
-        contents_markdown: "legacy data export issue comment".to_string(),
+        attachment_ids: vec![],
+        contents_markdown: "legacy data export issue child comment".to_string(),
         issue_number: 1,
         owner_name: "member".to_string(),
-        parent_comment_id: None,
+        parent_comment_id: Some(issue_parent_comment_id),
         project_name: "dataproj".to_string(),
     })
     .await
-    .expect("create export issue comment")
-    .expect("issue comment created");
+    .expect("create export issue child comment")
+    .expect("issue child comment created");
 
     let unauthenticated = rest_get(app.clone(), "/yona/sites/export", None).await;
     assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
@@ -944,6 +976,11 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         payload["posts"][0]["comments"][0]["attachments"][0]["contentBase64"],
         "cG9zdC1jb21tZW50LWV4cG9ydC1iaW5hcnk="
     );
+    assert_eq!(
+        payload["posts"][0]["comments"][0]["childComments"][0]["contentsMarkdown"],
+        "legacy data export post child comment"
+    );
+    assert_eq!(payload["posts"][0]["comments"].as_array().unwrap().len(), 1);
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
     assert_eq!(payload["issues"][0]["milestoneTitle"], "Export milestone");
     assert_eq!(
@@ -974,6 +1011,14 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert_eq!(
         payload["issues"][0]["comments"][0]["attachments"][0]["contentBase64"],
         "aXNzdWUtY29tbWVudC1leHBvcnQtYmluYXJ5"
+    );
+    assert_eq!(
+        payload["issues"][0]["comments"][0]["childComments"][0]["contentsMarkdown"],
+        "legacy data export issue child comment"
+    );
+    assert_eq!(
+        payload["issues"][0]["comments"].as_array().unwrap().len(),
+        1
     );
     std::env::remove_var("YONA_DATA");
 }
