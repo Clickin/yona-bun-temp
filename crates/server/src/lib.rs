@@ -13825,6 +13825,8 @@ struct RestSiteExportIssueItem {
 struct RestSiteExportCommentItem {
     author_login_id: String,
     attachments: Vec<RestSiteExportAttachmentItem>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    child_comments: Vec<RestSiteExportCommentItem>,
     contents_markdown: String,
 }
 
@@ -19920,6 +19922,7 @@ async fn rest_import_site_data(
             created.post_number,
             &post.comments,
             &actor,
+            None,
         )
         .await?;
         imported_posts += 1;
@@ -20021,6 +20024,7 @@ async fn rest_import_site_data(
             created.issue_number,
             &issue.comments,
             &actor,
+            None,
         )
         .await?;
         imported_issues += 1;
@@ -20046,6 +20050,7 @@ async fn rest_site_import_post_comments(
     post_number: i64,
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
+    parent_comment_id: Option<i64>,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -20059,7 +20064,7 @@ async fn rest_site_import_post_comments(
             rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
-        repository
+        let detail = repository
             .create_posting_comment(persistence::CreatePostingCommentInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
@@ -20067,12 +20072,27 @@ async fn rest_site_import_post_comments(
                 attachment_ids: imported_attachments.ids,
                 contents_markdown,
                 owner_name: owner_name.trim().to_string(),
-                parent_comment_id: None,
+                parent_comment_id,
                 post_number,
                 project_name: project_name.trim().to_string(),
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        if let Some(created_comment_id) = detail
+            .as_ref()
+            .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
+        {
+            Box::pin(rest_site_import_post_comments(
+                repository,
+                owner_name,
+                project_name,
+                post_number,
+                &comment.child_comments,
+                &actor,
+                Some(created_comment_id),
+            ))
+            .await?;
+        }
     }
     Ok(())
 }
@@ -20084,6 +20104,7 @@ async fn rest_site_import_issue_comments(
     issue_number: i64,
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
+    parent_comment_id: Option<i64>,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -20097,7 +20118,7 @@ async fn rest_site_import_issue_comments(
             rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
-        repository
+        let detail = repository
             .create_issue_comment(persistence::CreateIssueCommentInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
@@ -20106,11 +20127,26 @@ async fn rest_site_import_issue_comments(
                 contents_markdown,
                 issue_number,
                 owner_name: owner_name.trim().to_string(),
-                parent_comment_id: None,
+                parent_comment_id,
                 project_name: project_name.trim().to_string(),
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        if let Some(created_comment_id) = detail
+            .as_ref()
+            .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
+        {
+            Box::pin(rest_site_import_issue_comments(
+                repository,
+                owner_name,
+                project_name,
+                issue_number,
+                &comment.child_comments,
+                &actor,
+                Some(created_comment_id),
+            ))
+            .await?;
+        }
     }
     Ok(())
 }
@@ -26398,6 +26434,7 @@ fn rest_site_export_post_comment_from_record(
             .iter()
             .map(rest_site_export_attachment_from_record)
             .collect(),
+        child_comments: Vec::new(),
         contents_markdown: record.contents_markdown.clone(),
     }
 }
@@ -26412,6 +26449,7 @@ fn rest_site_export_issue_comment_from_record(
             .iter()
             .map(rest_site_export_attachment_from_record)
             .collect(),
+        child_comments: Vec::new(),
         contents_markdown: record.contents_markdown.clone(),
     }
 }

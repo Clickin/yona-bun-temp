@@ -218,6 +218,14 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
                     "email": "alice@example.com"
                 },
                 "body": "comment body",
+                "childComments": [{
+                    "author": {
+                        "loginId": "alice",
+                        "name": "Alice Owner",
+                        "email": "alice@example.com"
+                    },
+                    "body": "child body"
+                }],
                 "attachments": [{
                     "id": 12,
                     "name": "comment.txt",
@@ -274,6 +282,10 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
         Some("Y29tbWVudC1maWxl")
     );
     assert_eq!(
+        snapshot.issues[0].comments[0].child_comments[0].contents_markdown,
+        "child body"
+    );
+    assert_eq!(
         snapshot.posts[0].attachments[0].content_base64.as_deref(),
         Some("cG9zdC1maWxl")
     );
@@ -289,7 +301,7 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
 }
 
 #[test]
-fn mapper_defers_child_comments_link_rewrite_and_attachment_content_files() {
+fn mapper_preserves_child_comments_and_defers_unresolved_link_rewrite_and_attachment_files() {
     let payload = json!({
         "owner": "alice",
         "projectName": "demo",
@@ -342,9 +354,16 @@ fn mapper_defers_child_comments_link_rewrite_and_attachment_content_files() {
     assert_eq!(snapshot.issues[0].body_markdown, "see /files/123");
     assert_eq!(snapshot.issues[0].comments.len(), 1);
     assert_eq!(snapshot.issues[0].comments[0].contents_markdown, "parent");
-    assert!(snapshot
-        .unsupported_sections
-        .contains(&"childComments".to_string()));
+    assert_eq!(snapshot.issues[0].comments[0].child_comments.len(), 1);
+    assert_eq!(
+        snapshot.issues[0].comments[0].child_comments[0].contents_markdown,
+        "child"
+    );
+    let json = serde_json::to_value(&snapshot).unwrap();
+    assert_eq!(
+        json["issues"][0]["comments"][0]["childComments"][0]["contentsMarkdown"],
+        "child"
+    );
     assert!(snapshot
         .unsupported_sections
         .contains(&"markdownFileLinkRewrite".to_string()));

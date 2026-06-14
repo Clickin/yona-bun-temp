@@ -206,6 +206,8 @@ pub struct YobiDataIssueItem {
 pub struct YobiDataCommentItem {
     pub author_login_id: String,
     pub attachments: Vec<YobiDataAttachmentItem>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub child_comments: Vec<YobiDataCommentItem>,
     pub contents_markdown: String,
 }
 
@@ -268,15 +270,6 @@ fn map_project_export_to_yobi_data(
     }
 
     let mut unsupported_sections = Vec::new();
-    if export
-        .issues
-        .iter()
-        .chain(export.posts.iter())
-        .flat_map(|posting| posting.comments.iter())
-        .any(comment_has_child_comments)
-    {
-        unsupported_sections.push("childComments".to_string());
-    }
     if export
         .issues
         .iter()
@@ -429,6 +422,11 @@ fn map_comment(
             .iter()
             .map(|attachment| map_attachment(attachment, attachment_content_base64))
             .collect(),
+        child_comments: comment
+            .child_comments
+            .iter()
+            .map(|comment| map_comment(comment, attachment_content_base64))
+            .collect(),
         contents_markdown: comment.body.clone(),
     }
 }
@@ -485,14 +483,6 @@ fn normalize_state(state: &str) -> String {
     } else {
         "open".to_string()
     }
-}
-
-fn comment_has_child_comments(comment: &LegacyComment) -> bool {
-    !comment.child_comments.is_empty()
-        || comment
-            .child_comments
-            .iter()
-            .any(comment_has_child_comments)
 }
 
 fn posting_attachments(posting: &LegacyPosting) -> Vec<&LegacyAttachment> {

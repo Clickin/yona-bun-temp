@@ -1374,6 +1374,10 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
                     "size": 21
                 }],
                 "authorLoginId": "member",
+                "childComments": [{
+                    "authorLoginId": "member",
+                    "contentsMarkdown": "child comment with portable attachment"
+                }],
                 "contentsMarkdown": "comment with portable attachment /files/902"
             }],
             "ownerName": "member",
@@ -1440,6 +1444,21 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
             comment_attachment.id
         )
     );
+    let parent_comment = post_detail
+        .comments
+        .iter()
+        .find(|comment| {
+            comment
+                .contents_markdown
+                .starts_with("comment with portable")
+        })
+        .expect("parent comment");
+    let child_comment = post_detail
+        .comments
+        .iter()
+        .find(|comment| comment.contents_markdown == "child comment with portable attachment")
+        .expect("child comment");
+    assert_eq!(child_comment.parent_comment_id, Some(parent_comment.id));
     std::env::remove_var("YONA_DATA");
 }
 
