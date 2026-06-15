@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -6,6 +8,7 @@ import {
   createDefaultAvatarCrop,
   drawAvatarCropToCanvas,
   getAvatarCropPreviewStyle,
+  workspaceAvatarUploadErrorForMimeType,
 } from "./routes/-workspace-settings-view";
 import {
   LegacyLoginDialog,
@@ -145,8 +148,12 @@ describe("auth and workspace views", () => {
     expect(html).toContain('href="/yona/authenticate/google"');
     expect(html).toContain('class="auth-provider-logo"');
     expect(html).toContain('class="provider-name"');
-    expect(html).toContain("Sign in with GitHub");
+    expect(html).toContain("Sign in with github");
+    expect(html).not.toContain("Sign in with GitHub");
+    expect(html).toContain('src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
+    expect(html).toContain('alt="login with Google"');
     expect(html).toContain("Sign in with Google");
+    expect(html).not.toContain('class="google"');
   });
 
   it("preserves no-button behavior when the configured OAuth provider list is empty", () => {
@@ -186,7 +193,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain('class="social-login-title-line"');
     expect(html).toContain('href="/yona/authenticate/github"');
     expect(html).toContain('class="ybtn oauth-login-btn"');
-    expect(html).toContain("Sign in with GitHub");
+    expect(html).toContain("Sign in with github");
+    expect(html).not.toContain("Sign in with GitHub");
   });
 
   it("keeps social-login-only warning while rendering configured provider buttons", () => {
@@ -224,6 +232,10 @@ describe("auth and workspace views", () => {
     expect(dialogHtml).not.toContain('name="password"');
     expect(dialogHtml).toContain('href="/yona/authenticate/google"');
     expect(dialogHtml).toContain('class="ybtn oauth-login-btn"');
+    expect(dialogHtml).toContain(
+      'src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"',
+    );
+    expect(dialogHtml).toContain('alt="login with Google"');
     expect(dialogHtml).not.toContain('class="social-login-title-line"');
   });
 
@@ -268,6 +280,11 @@ describe("auth and workspace views", () => {
     expect(html).toContain('class="advanced-options"');
     expect(html).toContain('id="vcs"');
     expect(html).toContain('name="vcs"');
+    expect(html).toContain('value="GIT"');
+    expect(html).toContain("project.new.vcsType.git");
+    expect(html).toContain('value="SVN"');
+    expect(html).toContain("project.new.vcsType.subversion");
+    expect(html).not.toContain(">Subversion</option>");
     expect(html).toContain('id="svn"');
     expect(html).toContain('class="actions mt20"');
   });
@@ -606,11 +623,15 @@ describe("auth and workspace views", () => {
       {
         items: [
           {
+            createdLabel: "2026-04-01",
+            lastPushedLabel: "2026-04-10",
             logoUrl: "/yona/files/1",
+            memberCount: 4,
             overview: "Yona project",
             ownerName: "yobi",
             projectName: "projectYobi",
             projectScope: "public",
+            watchCount: 3,
           },
         ],
       },
@@ -620,9 +641,19 @@ describe("auth and workspace views", () => {
     expect(projectsHtml).toContain("project.public title.projectList");
     expect(projectsHtml).toContain("title.organization.list");
     expect(projectsHtml).toContain('action="/yona/projects"');
-    expect(projectsHtml).toContain('src="/yona/files/1"');
+    expect(projectsHtml).toContain('class="owner-avatar-wrap"');
+    expect(projectsHtml).toContain('<a href="/yona/yobi/projectYobi"><img alt="projectYobi" src="/yona/files/1"/></a>');
+    expect(projectsHtml).not.toContain('class="project-avatar"');
+    expect(projectsHtml).not.toContain('<img alt="" src="/yona/files/1"/>');
     expect(projectsHtml).toContain("projectYobi");
-    expect(projectsHtml).toContain("yobi");
+    expect(projectsHtml).toContain('class="owner-name-small" href="/yona/yobi"');
+    expect(projectsHtml).toContain('title="2026-04-01">2026-04-01</strong>');
+    expect(projectsHtml).toContain("project.codeUpdate");
+    expect(projectsHtml).toContain('class="yobicon-friends yobicon-middle"');
+    expect(projectsHtml).toContain("<strong>4</strong>");
+    expect(projectsHtml).toContain('class="yobicon-eye yobicon-middle"');
+    expect(projectsHtml).toContain("<strong>3</strong>");
+    expect(projectsHtml).not.toContain('<p class="name-tag">by yobi</p>');
 
     const organizationsHtml = renderOrganizationDirectory(
       {
@@ -640,7 +671,11 @@ describe("auth and workspace views", () => {
     expect(organizationsHtml).toContain("project.public title.projectList");
     expect(organizationsHtml).toContain("title.organization.list");
     expect(organizationsHtml).toContain('action="/yona/orgs"');
-    expect(organizationsHtml).toContain('src="/yona/files/2"');
+    expect(organizationsHtml).toContain('class="owner-avatar-wrap"');
+    expect(organizationsHtml).toContain('href="/yona/organizations/weblabs"');
+    expect(organizationsHtml).toContain('<img alt="weblabs" src="/yona/files/2"/>');
+    expect(organizationsHtml).not.toContain('class="project-avatar"');
+    expect(organizationsHtml).not.toContain('<img alt="" src="/yona/files/2"/>');
     expect(organizationsHtml).toContain("weblabs");
     expect(organizationsHtml).toContain("web labs");
   });
@@ -648,11 +683,27 @@ describe("auth and workspace views", () => {
   it("renders organization and project baseline views", () => {
     const orgHtml = renderOrganizationDetail({
       description: "web labs",
+      enrollmentRequested: false,
       organizationName: "weblabs",
+      viewerCanEnroll: true,
       viewerCanUpdate: true,
     });
     expect(orgHtml).toContain("weblabs");
     expect(orgHtml).toContain("web labs");
+    expect(orgHtml).toContain("organization.member.enrollment.title");
+    expect(orgHtml).toContain("organization.member.enrollment.help.before");
+    expect(orgHtml).toContain("button.new.enrollment");
+    expect(orgHtml).not.toContain("Member enrollment request");
+    expect(orgHtml).not.toContain("Send sign-up request");
+    const leaveOrgHtml = renderOrganizationDetail({
+      description: "web labs",
+      organizationName: "weblabs",
+      viewerCanLeave: true,
+      viewerCanUpdate: false,
+    });
+    expect(leaveOrgHtml).toContain("organization.member.leave");
+    expect(leaveOrgHtml).not.toContain("Membership");
+    expect(leaveOrgHtml).not.toContain("Leave the group");
 
     const projectHtml = renderProjectDetail({
       enrollmentRequested: false,
@@ -666,8 +717,11 @@ describe("auth and workspace views", () => {
       viewerCanUpdate: false,
     });
     expect(projectHtml).toContain("admin/projectYobi");
-    expect(projectHtml).toContain("Request enrollment");
-    expect(projectHtml).toContain("Favorite project");
+    expect(projectHtml).toContain("button.new.enrollment");
+    expect(projectHtml).not.toContain("Request enrollment");
+    expect(projectHtml).toContain('title="title.favorite"');
+    expect(projectHtml).toContain("material-icons va-text-top");
+    expect(projectHtml).not.toContain("Favorite project");
   });
 
   it("renders the legacy organization members management shell", () => {
@@ -699,6 +753,11 @@ describe("auth and workspace views", () => {
     });
 
     expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="group-title-head">group</span>');
+    expect(html).toContain('<a href="/yona/organizations/weblabs">weblabs</a>');
+    expect(html).toContain('class="project-menu-nav project-menu-gruop"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="addNewMember"');
     expect(html).toContain('action="/yona/organizations/weblabs/members"');
@@ -736,6 +795,11 @@ describe("auth and workspace views", () => {
     });
 
     expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="group-title-head">group</span>');
+    expect(html).toContain('<a href="/yona/organizations/weblabs">weblabs</a>');
+    expect(html).toContain('class="project-menu-nav project-menu-gruop"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="nav nav-tabs"');
     expect(html).toContain('href="/yona/organizations/weblabs/settingform"');
@@ -918,8 +982,43 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="avatarCropWrap"');
     expect(html).toContain("button.cancel");
     expect(html).toContain("button.save");
+    expect(html).not.toContain('src=""');
     expect(html).not.toContain("Change avatar");
     expect(html).not.toContain("Crop Avatar");
+  });
+
+  it("uses legacy message keys for avatar upload validation errors", () => {
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/editform/index.tsx"),
+      "utf8",
+    );
+
+    expect(workspaceAvatarUploadErrorForMimeType("image/png")).toBeNull();
+    expect(workspaceAvatarUploadErrorForMimeType("text/plain")).toBe("user.avatar.onlyImage");
+    expect(workspaceAvatarUploadErrorForMimeType("")).toBe("user.avatar.onlyImage");
+    expect(routeSource).toContain("user.avatar.uploadError");
+    expect(routeSource).not.toContain("Avatar upload failed.");
+  });
+
+  it("keeps workspace settings mutation fallbacks on legacy common bad-request keys", () => {
+    const routeSources = [
+      "routes/user/editform/index.tsx",
+      "routes/user/editform/password/route.tsx",
+      "routes/user/editform/token/route.tsx",
+      "routes/user/editform/notifications/route.tsx",
+      "routes/user/editform/emails/route.tsx",
+    ]
+      .map((routePath) => fs.readFileSync(path.resolve(__dirname, routePath), "utf8"))
+      .join("\n");
+
+    expect(routeSources).toContain("error.badrequest");
+    expect(routeSources).not.toContain("Update profile failed.");
+    expect(routeSources).not.toContain("Change password failed.");
+    expect(routeSources).not.toContain("Reset token failed.");
+    expect(routeSources).not.toContain("Toggle notification failed.");
+    expect(routeSources).not.toContain("Add email failed.");
+    expect(routeSources).not.toContain("Delete email failed.");
+    expect(routeSources).not.toContain("Set main email failed.");
   });
 
   it("renders issue sharer list and manager controls in the issue sidebar", () => {
@@ -966,7 +1065,7 @@ describe("auth and workspace views", () => {
         state={{ items: [], status: "loading", truncated: false }}
       />,
     );
-    expect(loadingHtml).toContain("Searching…");
+    expect(loadingHtml).toContain("Searching...");
 
     const emptyHtml = renderToStaticMarkup(
       <IssueAssignableUserSuggestions
@@ -974,7 +1073,8 @@ describe("auth and workspace views", () => {
         state={{ items: [], status: "loaded", truncated: false }}
       />,
     );
-    expect(emptyHtml).toContain("No matches found");
+    expect(emptyHtml).toContain("title.no.results");
+    expect(emptyHtml).not.toContain("No matches found");
     expect(emptyHtml).not.toContain("No matching users");
 
     const errorHtml = renderToStaticMarkup(
@@ -1006,7 +1106,7 @@ describe("auth and workspace views", () => {
     );
     expect(suggestionHtml).toContain("Door User");
     expect(suggestionHtml).toContain("@door");
-    expect(suggestionHtml).toContain("More matches available");
+    expect(suggestionHtml).toContain("Loading more results...");
   });
 
   it("renders issue mention and reference autocomplete like legacy At.js", () => {
@@ -1168,6 +1268,8 @@ describe("auth and workspace views", () => {
     expect(createHtml).toContain('value="55"');
     expect(createHtml).toContain("Source comment body");
     expect(createHtml).toContain('placeholder="issue.noAssignee"');
+    expect(createHtml).toContain('<h1 class="sr-only">button.newIssue</h1>');
+    expect(createHtml).not.toContain("New Issue");
     expect(createHtml).not.toContain("Searching…");
 
     const editHtml = renderToStaticMarkup(
@@ -1188,6 +1290,8 @@ describe("auth and workspace views", () => {
       />,
     );
     expect(editHtml).toContain('value="guest"');
+    expect(editHtml).toContain('<h1 class="sr-only">button.edit</h1>');
+    expect(editHtml).not.toContain("Edit Issue");
   });
 
   it("builds create and edit issue submit payloads with selected, manual, and blank assignee values", () => {
@@ -1327,7 +1431,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain("Shared issue");
     expect(html).toContain("favorite-issue");
     expect(html).toContain("starred");
-    expect(html).toContain('aria-label="Unfavorite issue"');
+    expect(html).toContain('aria-label="title.favorite"');
+    expect(html).not.toContain('aria-label="Unfavorite issue"');
   });
 
   it("renders legacy issue author info with avatar", () => {
@@ -1439,7 +1544,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain("Guest User");
     expect(html).toContain("comment-vote");
     expect(html).toContain('data-via-email="true"');
-    expect(html).toContain('aria-label="Agree with comment"');
+    expect(html).toContain('aria-label="common.comment.vote"');
+    expect(html).not.toContain('aria-label="Agree with comment"');
     expect(html).toContain("vote-heart-off");
   });
 
@@ -1486,7 +1592,8 @@ describe("auth and workspace views", () => {
     );
 
     expect(html).toContain("1 Agreement");
-    expect(html).toContain('aria-label="Withdraw comment agreement"');
+    expect(html).toContain('aria-label="common.comment.unvote"');
+    expect(html).not.toContain('aria-label="Withdraw comment agreement"');
     expect(html).toContain("vote-heart-on");
   });
 

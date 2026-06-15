@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
@@ -10,14 +9,40 @@ import {
 } from "../../../auth-workspace-client";
 import { listProjectPostsQueryOptions } from "../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import { RestApiError } from "../../../api/rest-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
 import { ProjectDetailPage } from "../../-project-views";
-import { useCurrentHref } from "../../-shared";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useCurrentHref,
+} from "../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName")({
   component: ProjectLayoutRouteComponent,
 });
+
+function legacyProjectEnrollFallback(error: unknown): string {
+  if (error instanceof RestApiError) {
+    if (error.status === 403) {
+      return "error.forbidden";
+    }
+    if (error.status >= 400 && error.status < 500) {
+      return "user.enroll.failed.client";
+    }
+    if (error.status >= 500 && error.status < 600) {
+      return "user.enroll.failed.server";
+    }
+    return "user.enroll.failed";
+  }
+  if (error instanceof TypeError) {
+    return "user.enroll.failed.network";
+  }
+  return "user.enroll.failed";
+}
 
 function ProjectLayoutRouteComponent() {
   return <Outlet />;
@@ -49,13 +74,18 @@ export function ProjectDetailRouteComponent() {
     }),
     enabled: !bootstrapping,
   });
+  const readError = detailQuery.error ?? postsQuery.error;
+  const failureKind = classifyConnectFailure(readError);
 
-  React.useEffect(() => {
-    const error = detailQuery.error ?? postsQuery.error;
-    if (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Read project failed.");
-    }
-  }, [detailQuery.error, postsQuery.error, setErrorMessage]);
+  if (failureKind === "forbidden") {
+    return <ForbiddenPage href={href} />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href={href} />;
+  }
+  if (readError) {
+    return <BadRequestPage href={href} />;
+  }
 
   return (
     <ProjectDetailPage
@@ -71,7 +101,7 @@ export function ProjectDetailRouteComponent() {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Cancel enrollment failed.");
+          setErrorMessage(legacyProjectEnrollFallback(error));
         }
       }}
       onEnrollProject={async (nextOwnerName, nextProjectName) => {
@@ -82,7 +112,7 @@ export function ProjectDetailRouteComponent() {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Enroll failed.");
+          setErrorMessage(legacyProjectEnrollFallback(error));
         }
       }}
       onToggleFavoriteProject={async (nextOwnerName, nextProjectName) => {
@@ -93,7 +123,7 @@ export function ProjectDetailRouteComponent() {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Toggle favorite failed.");
+          setErrorMessage(error instanceof Error ? error.message : "Update failed: ");
         }
       }}
       onToggleProjectWatch={async (nextOwnerName, nextProjectName, watching) => {
@@ -107,7 +137,7 @@ export function ProjectDetailRouteComponent() {
           );
           await detailQuery.refetch();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Toggle watch failed.");
+          setErrorMessage(error instanceof Error ? error.message : "Server Error");
         }
       }}
       onUpdateProjectOverview={async (nextOwnerName, nextProjectName, overview) => {
@@ -119,7 +149,7 @@ export function ProjectDetailRouteComponent() {
           });
           await detailQuery.refetch();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Update overview failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

@@ -79,7 +79,15 @@ export function classifyConnectFailure(error: unknown): null | RouteFailureKind 
   return null;
 }
 
-function RouteStatusPage({ href, lede, title }: { href: string; lede: string; title: string }) {
+function RouteStatusPage({
+  buttonClassName = "ybtn ybtn-info",
+  href,
+  title,
+}: {
+  buttonClassName?: string;
+  href: string;
+  title: string;
+}) {
   useDocumentTitle(title);
 
   return (
@@ -89,8 +97,9 @@ function RouteStatusPage({ href, lede, title }: { href: string; lede: string; ti
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
             <p>{title}</p>
-            <p className="hide">{href}</p>
-            <p className="lede">{lede}</p>
+            <a className={buttonClassName} href={href}>
+              menu.home
+            </a>
           </div>
         </div>
       </div>
@@ -98,18 +107,8 @@ function RouteStatusPage({ href, lede, title }: { href: string; lede: string; ti
   );
 }
 
-export function PlaceholderPage({ href, title }: { href: string; title: string }) {
-  return (
-    <RouteStatusPage
-      href={href}
-      lede="error.notfound"
-      title={title}
-    />
-  );
-}
-
 export function BadRequestPage({ href = "/" }: { href?: string }) {
-  useDocumentTitle("The request cannot be fulfilled due to bad syntax");
+  useDocumentTitle("error.badrequest");
 
   return (
     <main className="app-shell">
@@ -117,9 +116,9 @@ export function BadRequestPage({ href = "/" }: { href?: string }) {
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico-404"></i>
-            <p>The request cannot be fulfilled due to bad syntax</p>
+            <p>error.badrequest</p>
             <a className="ybtn ybtn-info" href={href}>
-              Home
+              menu.home
             </a>
           </div>
         </div>
@@ -131,8 +130,8 @@ export function BadRequestPage({ href = "/" }: { href?: string }) {
 export function ForbiddenPage({ href }: { href: string }) {
   return (
     <RouteStatusPage
+      buttonClassName="ybtn ybtn-primary"
       href={href}
-      lede="You do not have permission to view this page."
       title="error.forbidden"
     />
   );
@@ -142,7 +141,6 @@ export function NotFoundPage({ href }: { href: string }) {
   return (
     <RouteStatusPage
       href={href}
-      lede="The requested page could not be found."
       title="error.notfound"
     />
   );
@@ -155,7 +153,7 @@ export function RedirectPage({ basePath, to }: { basePath: string; to: string })
 
   return (
     <main className="app-shell">
-      <h1>Redirecting…</h1>
+      <h1>common.loading</h1>
     </main>
   );
 }

@@ -50,7 +50,7 @@ function RuntimeErrorBanner() {
     <div className="runtime-error-banner" role="alert">
       <span>{errorMessage}</span>
       <button onClick={() => setErrorMessage(null)} type="button">
-        Dismiss
+        button.close
       </button>
     </div>
   );

@@ -11,8 +11,13 @@ import type {
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
 import type { RuntimeConfig } from "../runtime-config";
-import { LegacyMarkdownEditorShell, LegacyMarkdownHelp, MarkdownRenderer } from "./-markdown-renderer";
-import { buildProjectHref, ProjectMenu } from "./-project-views";
+import {
+  addLegacyTasklistTemplateFromButton,
+  LegacyMarkdownEditorShell,
+  LegacyMarkdownHelp,
+  MarkdownRenderer,
+} from "./-markdown-renderer";
+import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
   ProjectIssueDetailViewModel,
@@ -39,9 +44,49 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
     ownerName: "",
     projectName: "",
     projectScope: "public",
+    showCode: true,
     viewerCanEnroll: false,
     viewerCanUpdate: false,
   };
+}
+
+function LegacyTwoColumnModeCheckboxArea() {
+  return (
+    <div
+      className="two-column-icon mr10 hide-in-mobile"
+      data-content="common.two.column.mode.desc"
+      id="two-column-mode-checkbox"
+      title="common.two.column.mode"
+    >
+      <label className="checkbox" aria-label="common.two.column.view">
+        <div className="two-column-icon-border">
+          <input id="two-column-mode" type="checkbox" />
+          <span className="two-column-mode-text">common.two.column.view</span>
+        </div>
+      </label>
+    </div>
+  );
+}
+
+function LegacyShowSubtasksCheckbox() {
+  return (
+    <div
+      className="show-subtasks mr10"
+      data-content="common.show.subtasks.desc"
+      data-placement="top"
+      data-toggle="popover"
+      data-trigger="hover"
+      id="two-column-mode-checkbox"
+      title="common.show.subtasks"
+    >
+      <label className="checkbox" aria-label="common.show.subtasks">
+        <div className="show-subtasks-button-border">
+          <input id="toggle-show-subtasks" type="checkbox" />
+          <span className="show-subtasks-text">common.show.subtasks</span>
+        </div>
+      </label>
+    </div>
+  );
 }
 
 function IssueSubtaskList(props: {
@@ -232,8 +277,13 @@ function IssueDetailVoters(props: {
       </div>
       <div className="modal hide voters-dialog" id="voters">
         <div className="modal-header">
-          <button aria-hidden="true" className="close" data-dismiss="modal" type="button">
-            x
+          <button
+            aria-label="button.close"
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
+            ×
           </button>
           <h5 className="nm">issue.voters</h5>
         </div>
@@ -381,8 +431,13 @@ function PostingHistoryModal(props: {
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button className="close" data-dismiss="modal" type="button">
-            x
+          <button
+            aria-label="button.close"
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
+            ×
           </button>
           <h5 className="nm">change.history</h5>
         </div>
@@ -475,9 +530,11 @@ export function ProjectIssueListPage(props: {
   };
 
   return (
-    <main className="app-shell issue-list-page page-wrap-outer">
+    <main className="app-shell issue-list-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="row-fluid issue-list-wrap" pjax-container="">
           <div className=" left-menu span2 span-hard-wrap">
             <ul className="lst-stacked unstyled">
@@ -658,9 +715,10 @@ export function ProjectIssueListPage(props: {
                     <dt>label</dt>
                     <dd>
                       <select
-                        aria-label="Labels"
+                        aria-label="label.select"
                         className="issue-label-filter"
                         data-search="labelIds"
+                        data-placeholder="label.select"
                         defaultValue={selectedLabelIds}
                         multiple
                         name="labelIds"
@@ -705,12 +763,10 @@ export function ProjectIssueListPage(props: {
                 </a>
               </li>
               <li>
-                <div className="two-column-mode-checkbox-area"></div>
+                <LegacyTwoColumnModeCheckboxArea />
               </li>
               <li className="show-subtasks-li">
-                <span className="show-subtasks">
-                  <input id="show-subtasks" type="checkbox" />
-                </span>
+                <LegacyShowSubtasksCheckbox />
               </li>
             </ul>
             {issueRows.length === 0 ? (
@@ -783,6 +839,7 @@ export function ProjectIssueListPage(props: {
               </>
             )}
           </div>
+        </div>
         </div>
       </div>
     </main>
@@ -1186,7 +1243,7 @@ export function ProjectIssueDetailPage(props: {
     return commentsByParent;
   }, [issue?.comments]);
   const issueAuthorLoginId = issue?.authorLoginId ?? "";
-  const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "Unknown";
+  const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "issue.noAuthor";
   const issueAuthorHref = issueAuthorLoginId
     ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAuthorLoginId}`)
     : "#";
@@ -1265,14 +1322,21 @@ export function ProjectIssueDetailPage(props: {
   };
 
   return (
-    <main className="app-shell issue-detail-page page-wrap-outer">
+    <main className="app-shell issue-detail-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap board-view">
-        <header className="board-header issue">
-          <div className="pull-right mr10 mt10 hide-in-mobile">
-            {issueState ? (
-              <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
-            ) : null}
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap board-view">
+          <header className="board-header issue">
+            <div className="pull-right mr10 mt10 hide-in-mobile">
+              {issue?.createdLabel ? (
+                <div className="date" title={issue.createdLabel}>
+                  {issue.createdLabel}
+                </div>
+              ) : null}
+              {issueState ? (
+                <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
+              ) : null}
           </div>
           <div className="title">
             {issueNumberLabel ? (
@@ -1284,7 +1348,7 @@ export function ProjectIssueDetailPage(props: {
               {issueTitle}
               {issue && props.onFavoriteToggle ? (
                 <button
-                  aria-label={issue.isFavorited ? "Unfavorite issue" : "Favorite issue"}
+                  aria-label="title.favorite"
                   className="favorite-issue"
                   onClick={() => void props.onFavoriteToggle?.()}
                   type="button"
@@ -1301,6 +1365,11 @@ export function ProjectIssueDetailPage(props: {
             </h1>
             {issueState ? (
               <div className="pull-right hide show-in-mobile">
+                {issue?.createdLabel ? (
+                  <span className="date" title={issue.createdLabel}>
+                    {issue.createdLabel}
+                  </span>
+                ) : null}
                 <span className={`badge badge-small badge-issue-${issueStateClass}`}>
                   {issueState}
                 </span>
@@ -1496,7 +1565,6 @@ export function ProjectIssueDetailPage(props: {
                     title="button.edit"
                   >
                     <i className="yobicon-edit-2"></i>
-                    Edit
                   </a>
                 ) : null}
                 {issue?.viewerCanUpdate && onStateChange ? (
@@ -1505,7 +1573,7 @@ export function ProjectIssueDetailPage(props: {
                     onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
                     type="button"
                   >
-                    {issue.state === "open" ? "Close" : "Reopen"}
+                    {issue.state === "open" ? "button.nextState.closed" : "button.nextState.open"}
                   </button>
                 ) : null}
                 {issue?.viewerCanDelete && onDeleteIssue ? (
@@ -1523,7 +1591,6 @@ export function ProjectIssueDetailPage(props: {
                       type="button"
                     >
                       <i className="yobicon-trash"></i>
-                      Delete
                     </button>
                   </a>
                 ) : null}
@@ -1663,8 +1730,8 @@ export function ProjectIssueDetailPage(props: {
                                     <button
                                       aria-label={
                                         comment.viewerHasVoted
-                                          ? "Withdraw comment agreement"
-                                          : "Agree with comment"
+                                          ? "common.comment.unvote"
+                                          : "common.comment.vote"
                                       }
                                       className="comment-vote btn-transparent-with-fontsize-lineheight"
                                       data-request-type="comment-vote"
@@ -1996,8 +2063,13 @@ export function ProjectIssueDetailPage(props: {
             style={deleteConfirmOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header">
-              <button className="close" onClick={() => setDeleteConfirmOpen(false)} type="button">
-                x
+              <button
+                aria-label="button.close"
+                className="close"
+                onClick={() => setDeleteConfirmOpen(false)}
+                type="button"
+              >
+                ×
               </button>
               <h3>issue.delete</h3>
             </div>
@@ -2028,12 +2100,13 @@ export function ProjectIssueDetailPage(props: {
           >
             <div className="modal-header">
               <button
+                aria-label="button.close"
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setCommentDeleteTargetId(null)}
                 type="button"
               >
-                x
+                ×
               </button>
               <h3>common.comment.delete</h3>
             </div>
@@ -2069,6 +2142,7 @@ export function ProjectIssueDetailPage(props: {
             </div>
           </div>
         ) : null}
+        </div>
       </div>
     </main>
   );
@@ -2244,8 +2318,9 @@ export function UserIssueListPage(props: {
   const legacyFilterUserId = (filter: string) => (query.filter === filter ? viewerUserId : "");
 
   return (
-    <main className="app-shell user-issue-list-page page-wrap-outer">
-      <div className="page-wrap">
+    <main className="app-shell user-issue-list-page">
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
         <UserIssueMySeriesMenuTabs
           basePath={props.runtimeConfig.basePath}
           canSetDefaultLoginPage={props.canSetDefaultLoginPage ?? false}
@@ -2353,14 +2428,10 @@ export function UserIssueListPage(props: {
               </a>
             </li>
             <li>
-              <span className="two-column-mode">
-                <input id="two-column-mode" type="checkbox" />
-              </span>
+              <LegacyTwoColumnModeCheckboxArea />
             </li>
             <li className="show-subtasks-li">
-              <span className="show-subtasks">
-                <input id="show-subtasks" type="checkbox" />
-              </span>
+              <LegacyShowSubtasksCheckbox />
             </li>
           </ul>
           {issueItems.length > 0 ? (
@@ -2495,14 +2566,11 @@ export function UserIssueListPage(props: {
                         </div>
                         <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
                           {query.filter === "authored" ? null : (
-                            <span
-                              className="infos-item infos-link-item author-cell"
-                              data-placement="bottom"
-                              data-toggle="tooltip"
-                              title={item.authorLabel || "issue.noAuthor"}
-                            >
-                              {item.authorLabel || "issue.noAuthor"}
-                            </span>
+                            <UserIssueAuthorCell
+                              authorLabel={item.authorLabel}
+                              authorLoginId={item.authorLoginId}
+                              runtimeConfig={props.runtimeConfig}
+                            />
                           )}
                         </div>
                         <div
@@ -2513,9 +2581,11 @@ export function UserIssueListPage(props: {
                           <span className="meta-cell">
                             <span className="hide show-in-mobile">
                               {query.filter === "authored" ? null : (
-                                <span className="infos-item">
-                                  {item.authorLabel || "issue.noAuthor"}
-                                </span>
+                                <UserIssueAuthorCell
+                                  authorLabel={item.authorLabel}
+                                  authorLoginId={item.authorLoginId}
+                                  runtimeConfig={props.runtimeConfig}
+                                />
                               )}
                             </span>
                             <span className="infos-item">{item.updatedLabel}</span>
@@ -2582,8 +2652,46 @@ export function UserIssueListPage(props: {
           )}
         </section>
         </div>
+        </div>
       </div>
     </main>
+  );
+}
+
+function UserIssueAuthorCell({
+  authorLabel,
+  authorLoginId,
+  runtimeConfig,
+}: {
+  authorLabel: string;
+  authorLoginId?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  if (!authorLabel) {
+    return <span className="infos-item">issue.noAuthor</span>;
+  }
+  if (!authorLoginId) {
+    return (
+      <span
+        className="infos-item infos-link-item author-cell"
+        data-placement="bottom"
+        data-toggle="tooltip"
+        title={authorLabel}
+      >
+        {authorLabel}
+      </span>
+    );
+  }
+  return (
+    <a
+      className="infos-item infos-link-item author-cell"
+      data-placement="bottom"
+      data-toggle="tooltip"
+      href={prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`)}
+      title={authorLoginId}
+    >
+      {authorLabel}
+    </a>
   );
 }
 
@@ -2773,14 +2881,14 @@ export function IssueAssignableUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="assignee-autocomplete-status">Searching…</p>;
+    return <p className="assignee-autocomplete-status">Searching...</p>;
   }
   if (props.state.status === "error") {
     return null;
   }
   if (props.state.items.length === 0) {
     return (
-      <p className="assignee-autocomplete-status">{props.emptyMessage ?? "No matches found"}</p>
+      <p className="assignee-autocomplete-status">{props.emptyMessage ?? "title.no.results"}</p>
     );
   }
 
@@ -2800,7 +2908,7 @@ export function IssueAssignableUserSuggestions(props: {
         ))}
       </ul>
       {props.state.truncated ? (
-        <p className="assignee-autocomplete-status">More matches available</p>
+        <p className="assignee-autocomplete-status">Loading more results...</p>
       ) : null}
     </div>
   );
@@ -3415,7 +3523,11 @@ function IssueCommentForm(props: {
             </li>
             <li>
               <div className="task-list-button">
-                <button className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline" type="button">
+                <button
+                  className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+                  onClick={(event) => addLegacyTasklistTemplateFromButton(event.currentTarget)}
+                  type="button"
+                >
                   <i className="yobicon-list task-list-icon"></i> button.add.checklist
                 </button>
               </div>
@@ -3709,10 +3821,12 @@ export function ProjectIssueFormPage(props: {
   };
 
   return (
-    <main className="app-shell issue-form-page page-wrap-outer">
-      <h1 className="sr-only">{props.mode === "create" ? "New Issue" : "Edit Issue"}</h1>
+    <main className="app-shell issue-form-page">
+      <h1 className="sr-only">{props.mode === "create" ? "button.newIssue" : "button.edit"}</h1>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="content-wrap frm-wrap">
           <form
             action={action}
@@ -4037,6 +4151,7 @@ export function ProjectIssueFormPage(props: {
                       </dt>
                       <dd>
                         <select
+                          aria-label="label.select"
                           className="hide"
                           data-allow-clear="true"
                           data-container-css-class="issue-labels bordered fullsize"
@@ -4094,6 +4209,7 @@ export function ProjectIssueFormPage(props: {
               </div>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </main>

@@ -5,6 +5,7 @@ import { listOrganizationBoardsQueryOptions } from "../../../../api/boards";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { OrganizationBoardListPage } from "../../../-board-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -24,8 +25,10 @@ function readSearchParams() {
 
 function OrganizationBoardsRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const searchParams = readSearchParams();
   const filter = searchParams.get("filter") ?? "";
   const orderBy = searchParams.get("orderBy") ?? "";
@@ -46,10 +49,11 @@ function OrganizationBoardsRouteComponent() {
     enabled: !bootstrapping,
   });
 
-  useDocumentTitle("Organization Boards");
+  useDocumentTitle("menu.board");
 
   React.useEffect(() => {
     if (!boardsQuery.error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(boardsQuery.error);
@@ -57,17 +61,13 @@ function OrganizationBoardsRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      boardsQuery.error instanceof Error
-        ? boardsQuery.error.message
-        : "Read organization boards failed.",
-    );
-  }, [boardsQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [boardsQuery.error]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -76,6 +76,9 @@ function OrganizationBoardsRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/organizations/${organizationName}/boards`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/organizations/${organizationName}/boards`} />;
   }
 
   return (

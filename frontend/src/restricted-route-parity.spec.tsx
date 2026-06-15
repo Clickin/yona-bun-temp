@@ -21,6 +21,8 @@ describe("legacy restricted route parity", () => {
     expect(legacyController).toContain("@Security.Authenticated(Secured.class)");
     expect(routeSource).toContain('createFileRoute("/restricted")');
     expect(routeSource).toContain('useRequireAuthenticatedRoute("/restricted")');
+    expect(routeSource).toContain("common.loading");
+    expect(routeSource).not.toContain("Loading...");
   });
 
   it("renders the legacy restricted sample page identity copy", () => {

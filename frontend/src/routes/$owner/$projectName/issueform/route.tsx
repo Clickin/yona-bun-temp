@@ -13,6 +13,7 @@ import { toProjectContainerView, toProjectMilestoneListView } from "../../../../
 import { ProjectIssueFormPage } from "../../../-issue-views";
 import type { ProjectIssueParentOptionViewModel, ProjectMilestoneViewModel } from "../../../-view-models";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/$owner/$projectName/issueform")({
 
 function IssueCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issueform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -34,9 +35,11 @@ function IssueCreateRouteComponent() {
   const [parentIssueOptions, setParentIssueOptions] = React.useState<
     ProjectIssueParentOptionViewModel[]
   >([]);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("New Issue");
+  useDocumentTitle("title.newIssue");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -73,18 +76,18 @@ function IssueCreateRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read project failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [owner, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -93,6 +96,9 @@ function IssueCreateRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

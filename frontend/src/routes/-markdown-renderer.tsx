@@ -1,4 +1,9 @@
 import * as React from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 
 import { highlightCodeBlock } from "./-syntax-highlighting";
 
@@ -62,6 +67,7 @@ type MarkdownContext = {
   mentionReferenceMap?: Map<string, MarkdownMentionReference>;
   ownerName?: string;
   projectName?: string;
+  reactMarkdownReferenceDefinitions?: string;
   referenceMap?: Map<string, MarkdownReferenceDefinition>;
 };
 
@@ -158,6 +164,58 @@ type RawHtmlNode = {
 };
 
 type RawHtmlChild = RawHtmlNode | string | React.ReactElement;
+
+type HastNode = {
+  children?: HastNode[];
+  properties?: Record<string, unknown>;
+  tagName?: string;
+  type?: string;
+  value?: string;
+};
+
+type LegacyMarkedPreprocessResult = {
+  markdown: string;
+  opaqueRawHtmlBlocks: Map<string, string>;
+};
+
+const legacyEmptyTaskItemPlaceholder = "yona-empty-task-item-placeholder";
+const legacyDirectTabListItemPlaceholder = "yona-direct-tab-list-item-placeholder";
+const legacyExtraListContinuationPaddingPlaceholder = "yona-extra-list-continuation-padding";
+const legacyListLeadingCodePaddingPlaceholder = "yona-list-leading-code-padding";
+const legacySpaceTabListItemPaddingPlaceholder = "yona-space-tab-list-item-padding";
+const legacyTasklistTemplate = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+
+export function insertLegacyTasklistTemplate(value: string, cursorIndex: number) {
+  let cursor = Math.max(0, Math.min(cursorIndex, value.length));
+  if (cursor === 0 && value.length > 0) {
+    cursor = value.length;
+  }
+  return {
+    cursorIndex: cursor + legacyTasklistTemplate.length,
+    value: `${value.slice(0, cursor)}${legacyTasklistTemplate}${value.slice(cursor)}`,
+  };
+}
+
+function updateTextareaValue(textarea: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+  if (setter) {
+    setter.call(textarea, value);
+  } else {
+    textarea.value = value;
+  }
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+export function addLegacyTasklistTemplateFromButton(button: HTMLButtonElement) {
+  const textarea = button.closest("form")?.querySelector("textarea");
+  if (!textarea) {
+    return;
+  }
+  const inserted = insertLegacyTasklistTemplate(textarea.value, textarea.selectionStart ?? 0);
+  updateTextareaValue(textarea, inserted.value);
+  textarea.focus();
+  textarea.setSelectionRange(inserted.cursorIndex, inserted.cursorIndex);
+}
 
 function isSafeUrl(value: string) {
   const normalized = value.toLowerCase();
@@ -1296,6 +1354,268 @@ function parseMarkdownTableSpan(
   return { consumedLineCount, table: { headers, rows } };
 }
 
+function legacyGfmTableSeparatorCell(cell: string): string | undefined {
+  const trimmed = cell.trim();
+  if (!/^[-:]+$/.test(trimmed)) {
+    return undefined;
+  }
+  if (/^:-+:$/.test(trimmed)) {
+    return ":---:";
+  }
+  if (/^:-+$/.test(trimmed)) {
+    return ":---";
+  }
+  if (/^-+:$/.test(trimmed)) {
+    return "---:";
+  }
+  return "---";
+}
+
+function normalizeLegacyGfmTableSeparatorLine(previousLine: string, line: string): string | undefined {
+  if (!markdownTableLineHasUnescapedPipe(previousLine) && !markdownTableLineHasUnescapedPipe(line)) {
+    return undefined;
+  }
+  const separator = splitTableRow(line);
+  if (separator.length === 0) {
+    return undefined;
+  }
+  const normalized = separator.map(legacyGfmTableSeparatorCell);
+  if (normalized.some((cell) => cell === undefined)) {
+    return undefined;
+  }
+  const indent = /^ */.exec(line)?.[0] ?? "";
+  const hasLeadingPipe = line.trimStart().startsWith("|");
+  const hasTrailingPipe = line.trimEnd().endsWith("|");
+  const body = normalized.join(" | ");
+  return `${indent}${hasLeadingPipe ? "| " : ""}${body}${hasTrailingPipe ? " |" : ""}`;
+}
+
+function normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine: string, line: string): string | undefined {
+  const previousMatch = /^ {0,3}>(.*)$/.exec(previousLine);
+  const lineMatch = /^( {0,3})>(.*)$/.exec(line);
+  if (!previousMatch || !lineMatch) {
+    return undefined;
+  }
+  const normalized = normalizeLegacyGfmTableSeparatorLine(
+    blockquoteTextAfterMarker(previousMatch[1] ?? ""),
+    blockquoteTextAfterMarker(lineMatch[2] ?? ""),
+  );
+  return normalized === undefined ? undefined : `${lineMatch[1] ?? ""}> ${normalized}`;
+}
+
+function markdownLineStartsOrderedList(line: string): { orderedStartsWithOne: boolean } | undefined {
+  const match = /^ {0,3}(\d{1,9})[.)][ \t]+/.exec(line);
+  if (!match) {
+    return undefined;
+  }
+  return { orderedStartsWithOne: match[1] === "1" };
+}
+
+function escapeLegacyNonInterruptingOrderedListLine(line: string): string {
+  return line.replace(/^(\s{0,3}\d{1,9})([.)])([ \t]+)/, "$1\\$2$3");
+}
+
+function normalizeLegacyEmptyTaskItemLine(line: string) {
+  return line.replace(
+    /^( {0,3}(?:[-+*]|\d{1,9}[.)])[ \t]+\[[ xX]\] )$/,
+    `$1${legacyEmptyTaskItemPlaceholder}`,
+  );
+}
+
+function normalizeLegacyTaskItemLine(line: string) {
+  const tabSeparatedTask = /^( {0,3}(?:[-+*]|\d{1,9}[.)]) +\[[ xX]\])\t([^\t]*)$/.exec(line);
+  if (tabSeparatedTask) {
+    const taskText = tabSeparatedTask[2] ?? "";
+    return `${tabSeparatedTask[1] ?? ""} ${taskText || legacyEmptyTaskItemPlaceholder}`;
+  }
+  return normalizeLegacyEmptyTaskItemLine(line);
+}
+
+function normalizeLegacyDirectTabListItemLine(line: string) {
+  return line.replace(
+    /^( {0,3}(?:[-+*]|\d{1,9}[.)]))\t(?![-+*][ \t]|\d{1,9}[.)][ \t])([^\t]*)$/,
+    `$1 ${legacyDirectTabListItemPlaceholder}$2`,
+  );
+}
+
+function normalizeLegacySpaceTabContinuationListItemLine(line: string) {
+  const match = /^( {0,3})([-+*]|\d{1,9}[.)])( +)\t([^\t]*)$/.exec(line);
+  if (!match) {
+    return line;
+  }
+  const marker = match[2] ?? "";
+  const spaceCount = (match[3] ?? "").length;
+  const visiblePadding = spaceCount + 4 - (marker.length + 2);
+  if (visiblePadding >= 4) {
+    const leadingCodePadding = visiblePadding - 4;
+    const placeholder =
+      leadingCodePadding === 0
+        ? ""
+        : `${legacyListLeadingCodePaddingPlaceholder}:${leadingCodePadding}:`;
+    return `${match[1] ?? ""}${marker}${match[3] ?? ""}\t${placeholder}${match[4] ?? ""}`;
+  }
+  if (visiblePadding < 0) {
+    return line;
+  }
+  const placeholder =
+    visiblePadding === 0 ? "" : `${legacySpaceTabListItemPaddingPlaceholder}:${visiblePadding}:`;
+  return `${match[1] ?? ""}${marker} ${placeholder}${match[4] ?? ""}`;
+}
+
+function normalizeLegacyExtraListContinuationLine(line: string, markerPadding: number | null) {
+  if (markerPadding === null) {
+    return line;
+  }
+  const match = /^( +)(\S.*)$/.exec(line);
+  if (!match) {
+    return line;
+  }
+  const indent = (match[1] ?? "").length;
+  const visiblePadding = indent - markerPadding;
+  if (visiblePadding <= 0 || visiblePadding >= 4) {
+    return line;
+  }
+  return `${" ".repeat(markerPadding)}${legacyExtraListContinuationPaddingPlaceholder}:${visiblePadding}:${
+    match[2] ?? ""
+  }`;
+}
+
+function normalizeLegacyLineStartTripleTildeText(line: string) {
+  if (!/^ {0,3}~~~\S.*~~~\s*$/.test(line)) {
+    return line;
+  }
+  return line.replace(/^( {0,3})~~~(?=\S)/, "$1\\~~~");
+}
+
+function normalizeLegacyFenceClosingLine(openFence: string, line: string): string | undefined {
+  const closeFence = closingFenceFromLine(line);
+  if (!closeFence || !closesMarkdownFence(openFence, closeFence)) {
+    return undefined;
+  }
+  const indent = /^ {0,3}/.exec(line)?.[0] ?? "";
+  return `${indent}${openFence}`;
+}
+
+function splitYonaRawHtmlOpaqueBlocks(lines: string[]) {
+  const output: string[] = [];
+  const opaqueRawHtmlBlocks = new Map<string, string>();
+  let openFence = "";
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (openFence) {
+      output.push(line);
+      const closeFence = closingFenceFromLine(line);
+      if (closeFence && closesMarkdownFence(openFence, closeFence)) {
+        openFence = "";
+      }
+      continue;
+    }
+    const nextOpenFence = openingFenceFromLine(line);
+    if (nextOpenFence) {
+      output.push(line);
+      openFence = nextOpenFence;
+      continue;
+    }
+    const boundaryTag = rawBlockTagWithClosingBoundaryFromLine(line);
+    if (
+      !boundaryTag &&
+      !markdownLineIsStandaloneRawHtmlDirectiveBlock(line) &&
+      !markdownLineStartsRawHtmlBlock(line) &&
+      !markdownLineIsStandaloneRawHtmlVoidBlock(line)
+    ) {
+      output.push(line);
+      continue;
+    }
+
+    const rawLines = [line];
+    if (boundaryTag) {
+      const closingPattern = new RegExp(String.raw`<\/${boundaryTag}\s*>`, "i");
+      while (index < lines.length - 1 && !closingPattern.test(rawLines.at(-1) ?? "")) {
+        index += 1;
+        rawLines.push(lines[index] ?? "");
+      }
+    } else if (markdownLineStartsRawHtmlBlock(line) || markdownLineIsStandaloneRawHtmlVoidBlock(line)) {
+      while (index < lines.length - 1 && (lines[index + 1] ?? "").trim() !== "") {
+        index += 1;
+        rawLines.push(lines[index] ?? "");
+      }
+    }
+
+    const id = String(opaqueRawHtmlBlocks.size);
+    opaqueRawHtmlBlocks.set(id, rawLines.join("\n"));
+    output.push(`<!-- yona-raw-html-block:${id} -->`);
+  }
+  return { lines: output, opaqueRawHtmlBlocks };
+}
+
+function preprocessLegacyMarkedBlockGrammar(markdown: string): LegacyMarkedPreprocessResult {
+  const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+  const rawHtmlSplit = splitYonaRawHtmlOpaqueBlocks(lines);
+  const output: string[] = [];
+  let openFence = "";
+  let activeListMarkerPadding: number | null = null;
+  let previousLineCanBeInterrupted = false;
+  for (let index = 0; index < rawHtmlSplit.lines.length; index += 1) {
+    const line = rawHtmlSplit.lines[index] ?? "";
+    if (openFence) {
+      const normalizedClosingLine = normalizeLegacyFenceClosingLine(openFence, line);
+      output.push(normalizedClosingLine ?? line);
+      if (normalizedClosingLine) {
+        openFence = "";
+      }
+      previousLineCanBeInterrupted = false;
+      continue;
+    }
+    const previousLine = output.at(-1) ?? "";
+    const normalizedSeparator =
+      index > 0 && !/^ {4}/.test(line)
+        ? normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine, line) ??
+          normalizeLegacyGfmTableSeparatorLine(previousLine, line)
+        : undefined;
+    const candidateLine = normalizedSeparator ?? line;
+    const orderedList = markdownLineStartsOrderedList(candidateLine);
+    const protectedLine =
+      previousLineCanBeInterrupted && orderedList && !orderedList.orderedStartsWithOne
+        ? escapeLegacyNonInterruptingOrderedListLine(candidateLine)
+        : candidateLine;
+    const listLine = parseMarkdownListLine({ key: `preprocess-${index}`, text: protectedLine });
+    const normalizedContinuationLine =
+      listLine === null
+        ? normalizeLegacyExtraListContinuationLine(protectedLine, activeListMarkerPadding)
+        : protectedLine;
+    const normalizedLineStartTildeText =
+      listLine === null
+        ? normalizeLegacyLineStartTripleTildeText(normalizedContinuationLine)
+        : normalizedContinuationLine;
+
+    output.push(
+      normalizeLegacySpaceTabContinuationListItemLine(
+        normalizeLegacyDirectTabListItemLine(normalizeLegacyTaskItemLine(normalizedLineStartTildeText)),
+      ),
+    );
+    const nextOpenFence = openingFenceFromLine(protectedLine);
+    if (nextOpenFence) {
+      openFence = nextOpenFence;
+      previousLineCanBeInterrupted = false;
+      continue;
+    }
+    if (/^\s*$/.test(line)) {
+      activeListMarkerPadding = null;
+      previousLineCanBeInterrupted = false;
+    } else if (/^\s*(?:[-*+]|\d{1,9}[.)])([ \t]+).*$/.test(line)) {
+      activeListMarkerPadding =
+        listLine === null ? null : listLine.indent + listLine.markerWidth + 1;
+      previousLineCanBeInterrupted = false;
+    } else {
+      previousLineCanBeInterrupted = !markdownLineStartsBlock(line);
+    }
+  }
+  return {
+    markdown: output.join("\n"),
+    opaqueRawHtmlBlocks: rawHtmlSplit.opaqueRawHtmlBlocks,
+  };
+}
+
 function MarkdownTable(props: { context?: MarkdownContext; table: MarkdownTableRecord }) {
   return (
     <table>
@@ -1938,13 +2258,22 @@ function markdownLineStartsRawLineStartVoidBlock(line: string) {
   ).test(line);
 }
 
-function rawBlockTagWithClosingBoundaryFromLine(line: string): "pre" | "script" | "style" | undefined {
+function markdownLineIsStandaloneRawHtmlDirectiveBlock(line: string) {
+  return /^ {0,3}(?:<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<![A-Z][^>]*>)\s*$/i.test(
+    line,
+  );
+}
+
+function rawBlockTagWithClosingBoundaryFromLine(line: string): "code" | "pre" | "script" | "style" | undefined {
   const match = new RegExp(
     String.raw`^ {0,3}<([A-Za-z][A-Za-z0-9-]*)${rawHtmlAttributePattern}>`,
     "i",
   ).exec(line);
   const tag = (match?.[1] ?? "").toLowerCase();
-  return tag === "pre" || tag === "script" || tag === "style" ? tag : undefined;
+  if (tag === "code" && !new RegExp(String.raw`^ {0,3}<code${rawHtmlAttributePattern}>\s*$`, "i").test(line)) {
+    return undefined;
+  }
+  return tag === "code" || tag === "pre" || tag === "script" || tag === "style" ? tag : undefined;
 }
 
 function rawBlockHasTrailingLinesAfterClosingTag(lines: MarkdownLineRecord[]) {
@@ -2402,6 +2731,2741 @@ function MarkdownHeading(props: { context?: MarkdownContext; level: number; text
   return <h6 id={id}>{children}</h6>;
 }
 
+function reactMarkdownNodeText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(reactMarkdownNodeText).join("");
+  }
+  if (React.isValidElement<{ children?: React.ReactNode; alt?: string }>(node)) {
+    if (typeof node.props.alt === "string") {
+      return node.props.alt ?? "";
+    }
+    return reactMarkdownNodeText(node.props.children);
+  }
+  return "";
+}
+
+function remarkYonaAutolinks(context: MarkdownContext) {
+  return function attacher() {
+    return function transformYonaAutolinks(tree: unknown) {
+      transformYonaAutolinkNode(tree as { children?: unknown[]; type?: string });
+    };
+  };
+
+  function transformYonaAutolinkNode(node: { children?: unknown[]; type?: string }) {
+    if (!node.children || !Array.isArray(node.children)) {
+      return;
+    }
+    if (["code", "definition", "html", "image", "inlineCode", "link", "linkReference"].includes(node.type ?? "")) {
+      return;
+    }
+
+    const transformedChildren: unknown[] = [];
+    for (let index = 0; index < node.children.length; index += 1) {
+      const child = node.children[index];
+      const childNode = child as { type?: string; value?: string };
+      if (childNode.type === "text" && typeof childNode.value === "string") {
+        const previousNode = node.children[index - 1] as { type?: string } | undefined;
+        const nextNode = node.children[index + 1] as { type?: string } | undefined;
+        if (previousNode?.type === "html" || nextNode?.type === "html") {
+          transformedChildren.push(child);
+          continue;
+        }
+        transformedChildren.push(...markdownInlinePartsToMdast(childNode.value, context));
+      } else {
+        transformYonaAutolinkNode(child as { children?: unknown[]; type?: string });
+        transformedChildren.push(child);
+      }
+    }
+    node.children = transformedChildren;
+  }
+}
+
+function markdownInlinePartsToMdast(value: string, context: MarkdownContext): unknown[] {
+  return parseTextWithAutolinks(value, "react-markdown", context).map((part) => {
+    if (part.kind !== "link") {
+      return { type: "text", value: "value" in part ? part.value : part.label };
+    }
+    return {
+      children: [{ type: "text", value: part.label }],
+      data: {
+        hProperties: {
+          className: part.className?.split(/\s+/),
+          "data-issue-state": part.issueState,
+        },
+      },
+      title: part.title,
+      type: "link",
+      url: part.target ?? "",
+    };
+  });
+}
+
+const yonaMarkdownSanitizeSchema = {
+  ...defaultSchema,
+  allowComments: true,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": [
+      ...(defaultSchema.attributes?.["*"] ?? []),
+      "className",
+      "style",
+      "dataX",
+      ["dataIssueState"],
+      ["data-issue-state"],
+    ],
+    a: [
+      ...(defaultSchema.attributes?.a ?? []),
+      "className",
+      "dataIssueState",
+      "data-issue-state",
+      "href",
+      "title",
+    ],
+    code: [...(defaultSchema.attributes?.code ?? []), "className"],
+    div: [...(defaultSchema.attributes?.div ?? []), "className", "style"],
+    iframe: [
+      ...(defaultSchema.attributes?.iframe ?? []),
+      "allow",
+      "allowFullScreen",
+      "frameBorder",
+      "height",
+      "src",
+      "width",
+    ],
+    img: [...(defaultSchema.attributes?.img ?? []), "alt", "src", "title"],
+    input: [...(defaultSchema.attributes?.input ?? []), "checked", "disabled", "type"],
+    li: [...(defaultSchema.attributes?.li ?? []), "className"],
+    ol: [...(defaultSchema.attributes?.ol ?? []), "start"],
+    pre: [...(defaultSchema.attributes?.pre ?? []), "className"],
+    source: [...(defaultSchema.attributes?.source ?? []), "src", "type"],
+    span: [...(defaultSchema.attributes?.span ?? []), "className", "style"],
+    table: [...(defaultSchema.attributes?.table ?? []), "className"],
+    ul: [...(defaultSchema.attributes?.ul ?? []), "className"],
+    video: [
+      ...(defaultSchema.attributes?.video ?? []),
+      "controls",
+      "height",
+      "preload",
+      "src",
+      "width",
+    ],
+  },
+  clobberPrefix: "",
+  protocols: {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href ?? []), "file", "ftp", "zpl"],
+    src: [...(defaultSchema.protocols?.src ?? []), "file", "zpl"],
+  },
+  required: {
+    ...defaultSchema.required,
+    input: {},
+  },
+  tagNames: [
+    ...(defaultSchema.tagNames ?? []),
+    "iframe",
+    "input",
+    "source",
+    "video",
+  ],
+};
+
+function reactMarkdownUrlTransform(url: string) {
+  const target = sanitizedMarkdownTarget(url);
+  return target === undefined ? "#" : encodeMarkdownUrlTarget(target);
+}
+
+function reactMarkdownClassName(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string").join(" ") || undefined;
+  }
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function reactMarkdownLinkClassName(props: {
+  children?: React.ReactNode;
+  className?: unknown;
+  href?: string;
+  title?: string;
+  ["data-issue-state"]?: unknown;
+  dataIssueState?: unknown;
+}) {
+  const className = reactMarkdownClassName(props.className);
+  if (className) {
+    return className;
+  }
+  const label = reactMarkdownNodeText(props.children);
+  const href = props.href ?? "";
+  if (props["data-issue-state"] || props.dataIssueState || /\/issue\/\d+(?:$|[#?])/.test(href)) {
+    return "issueLink";
+  }
+  if (/\/commit\/[0-9a-f]{7,40}(?:$|[#?])/i.test(href)) {
+    return "commit-link";
+  }
+  if (label.startsWith("@") && /^\/?[^/@]+\/[^/@]+$/.test(label.slice(1))) {
+    return "no-text-decoration project-link";
+  }
+  if (label.startsWith("@") && /^@[^/@]+$/.test(label)) {
+    return "no-text-decoration user-link";
+  }
+  return undefined;
+}
+
+function rawHtmlPropsToHastProperties(
+  props: Record<string, boolean | React.CSSProperties | string | number | undefined>,
+) {
+  const properties: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (value !== undefined) {
+      properties[key] =
+        key === "style" && typeof value === "object"
+          ? rawHtmlStyleToCssText(value as React.CSSProperties)
+          : value;
+    }
+  }
+  return properties;
+}
+
+function rawHtmlChildToHast(child: RawHtmlChild): HastNode[] {
+  if (typeof child === "string") {
+    return child.length > 0 ? [{ type: "text", value: child }] : [];
+  }
+  if (React.isValidElement(child)) {
+    return [];
+  }
+  if (child.tag === "fragment") {
+    return child.children.flatMap(rawHtmlChildToHast);
+  }
+  return [
+    {
+      children: child.children.flatMap(rawHtmlChildToHast),
+      properties: rawHtmlPropsToHastProperties(child.props),
+      tagName: child.tag,
+      type: "element",
+    },
+  ];
+}
+
+function sanitizedRawHtmlToHast(source: string): HastNode[] {
+  return parseSanitizedRawHtmlTree(source).children.flatMap(rawHtmlChildToHast);
+}
+
+function normalizeRawHtmlElementProperties(node: HastNode) {
+  if (!node.properties || !node.tagName) {
+    return;
+  }
+  const tagName = node.tagName.toLowerCase();
+  const href = node.properties.href;
+  if (tagName === "a" && typeof href === "string") {
+    const compact = href.replace(/[^\w:]/g, "").toLowerCase();
+    node.properties.href =
+      compact.startsWith("javascript:") || sanitizedMarkdownTarget(href) === undefined
+        ? "#"
+        : href;
+  }
+
+  const src = node.properties.src;
+  if (
+    typeof src === "string" &&
+    ["iframe", "img", "source", "video"].includes(tagName) &&
+    !isSafeRawHtmlUrl(src)
+  ) {
+    delete node.properties.src;
+  }
+
+  const style = node.properties.style;
+  if (typeof style === "string") {
+    const parsed = parseRawHtmlStyle(style);
+    if (parsed) {
+      node.properties.style = rawHtmlStyleToCssText(parsed);
+    } else {
+      delete node.properties.style;
+    }
+  }
+}
+
+function rehypeYonaRawHtmlCompatibility(opaqueRawHtmlBlocks: Map<string, string>) {
+  return function attacher() {
+    return function transformYonaRawHtmlCompatibility(tree: unknown) {
+      transformRawHtmlNode(tree as HastNode);
+    };
+  };
+
+  function transformRawHtmlNode(node: HastNode) {
+    if (!node) {
+      return;
+    }
+    if (node.children && Array.isArray(node.children)) {
+      const children: HastNode[] = [];
+      for (const child of node.children) {
+        if (child.type === "comment") {
+          const id = /^ ?yona-raw-html-block:(\d+) ?$/.exec(child.value ?? "")?.[1];
+          const source = id === undefined ? undefined : opaqueRawHtmlBlocks.get(id);
+          if (source !== undefined) {
+            const sanitizedNodes = sanitizedRawHtmlToHast(source);
+            if (
+              /^ {0,3}<!--/.test(source) &&
+              sanitizedNodes.length > 0 &&
+              sanitizedNodes.every((node) => node.type === "text")
+            ) {
+              children.push({
+                children: sanitizedNodes,
+                properties: {},
+                tagName: "p",
+                type: "element",
+              });
+            } else {
+              children.push(...sanitizedNodes);
+            }
+          }
+          continue;
+        }
+        transformRawHtmlNode(child);
+        children.push(child);
+      }
+      node.children = children;
+    }
+    normalizeRawHtmlElementProperties(node);
+  }
+}
+
+function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisOrder?: boolean }) {
+  return function transformYonaRenderedDomCompatibility(tree: unknown) {
+    transformRenderedDomNode(tree as { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string; value?: string });
+  };
+
+  function transformRenderedDomNode(node: {
+    children?: unknown[];
+    properties?: Record<string, unknown>;
+    tagName?: string;
+    type?: string;
+    value?: string;
+  }, parentHasTaskListClass = false, parentTagName = "") {
+    normalizeRawHtmlElementProperties(node as HastNode);
+    const nodeClassName = node.properties?.className;
+    const nodeClasses = Array.isArray(nodeClassName)
+      ? nodeClassName.filter((item): item is string => typeof item === "string")
+      : typeof nodeClassName === "string"
+        ? nodeClassName.split(/\s+/)
+        : [];
+    const nodeHasTaskListClass = nodeClasses.includes("task-list-item");
+
+    if (node.children && Array.isArray(node.children)) {
+      node.children = node.children.filter((child) => {
+        const childNode = child as { type?: string; value?: string };
+        return !(childNode.type === "text" && /^\n\s*$/.test(childNode.value ?? ""));
+      });
+      if (node.tagName === "ul" || node.tagName === "ol") {
+        normalizeLooseTaskListItems(node.children);
+      }
+      if (options?.normalizeStrongEmphasisOrder) {
+        node.children = node.children.map((child) => normalizeLegacyStrongEmphasisOrder(child));
+      }
+      for (let index = 1; index < node.children.length; index += 1) {
+        const previousNode = node.children[index - 1] as { tagName?: string } | undefined;
+        const childNode = node.children[index] as { type?: string; value?: string };
+        if (previousNode?.tagName === "br" && childNode.type === "text") {
+          childNode.value = childNode.value?.replace(/^\n/, "");
+        }
+      }
+      if (nodeHasTaskListClass) {
+        const firstParagraphIndex = node.children.findIndex(
+          (child) => (child as { tagName?: string }).tagName === "p",
+        );
+        if (
+          node.tagName === "li" &&
+          firstParagraphIndex > 0 &&
+          hastNodesHaveRenderableContent(node.children.slice(0, firstParagraphIndex))
+        ) {
+          wrapLeadingTaskListItemChildren(node, firstParagraphIndex);
+        }
+        for (const child of node.children) {
+          const childNode = child as { type?: string; value?: string };
+          if (childNode.type === "text") {
+            childNode.value = childNode.value?.replace(legacyEmptyTaskItemPlaceholder, "");
+          }
+        }
+      }
+      if (node.tagName === "li") {
+        normalizeLeadingListItemCodeBlock(node);
+        for (const child of node.children) {
+          const childNode = child as { type?: string; value?: string };
+          if (childNode.type === "text") {
+            childNode.value = childNode.value
+              ?.replace(
+                new RegExp(`${legacyExtraListContinuationPaddingPlaceholder}:(\\d):`, "g"),
+                (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+              )
+              ?.replace(legacyDirectTabListItemPlaceholder, "   ")
+              .replace(
+                new RegExp(`${legacySpaceTabListItemPaddingPlaceholder}:(\\d):`, "g"),
+                (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+              );
+          }
+        }
+      }
+      for (const child of node.children) {
+        transformRenderedDomNode(
+          child as { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string; value?: string },
+          parentHasTaskListClass || nodeHasTaskListClass,
+          node.tagName ?? "",
+        );
+      }
+    }
+
+    if (node.tagName === "code" && parentTagName !== "pre" && node.children && Array.isArray(node.children)) {
+      const lastChild = node.children.at(-1) as { type?: string; value?: string } | undefined;
+      if (lastChild?.type === "text") {
+        lastChild.value = lastChild.value?.replace(/\n$/, "");
+      }
+    }
+
+    if ((node.tagName === "ul" || node.tagName === "ol") && node.properties) {
+      const filtered = nodeClasses.filter((item) => item !== "contains-task-list");
+      if (filtered.length > 0) {
+        node.properties.className = filtered;
+      } else {
+        delete node.properties.className;
+      }
+    }
+
+    if (node.tagName === "input" && node.properties?.type === "checkbox" && parentHasTaskListClass) {
+      node.properties.className = ["task-list-item-checkbox"];
+    }
+  }
+
+  function normalizeLeadingListItemCodeBlock(node: { children?: unknown[]; tagName?: string }) {
+    const firstChild = node.children?.[0] as HastNode | undefined;
+    if (!firstChild) {
+      return;
+    }
+    const codeNode = firstChild?.tagName === "pre" ? firstChild.children?.[0] : undefined;
+    const textNode = codeNode?.tagName === "code" ? codeNode.children?.[0] : undefined;
+    if (textNode?.type !== "text" || typeof textNode.value !== "string") {
+      return;
+    }
+    const hasContinuationText = (node.children ?? [])
+      .slice(1)
+      .some((child) => {
+        const childNode = child as { type?: string; value?: string };
+        return childNode.type !== "text" || !/^\s*$/.test(childNode.value ?? "");
+      });
+    if (!hasContinuationText) {
+      return;
+    }
+    firstChild.properties = {
+      ...(firstChild.properties ?? {}),
+      dataLegacyListLeadingCode: "true",
+    };
+    textNode.value = `${textNode.value
+      .replace(/^ {1,2}/, "")
+      .replace(
+        new RegExp(`${legacyListLeadingCodePaddingPlaceholder}:(\\d):`, "g"),
+        (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+      )
+      .replace(/\n?$/, "")}\n`;
+  }
+
+  function normalizeLegacyStrongEmphasisOrder(child: unknown) {
+    const node = child as HastNode;
+    if (node?.tagName !== "em" || !Array.isArray(node.children) || node.children.length !== 1) {
+      return child;
+    }
+    const strongNode = node.children[0];
+    if (strongNode?.tagName !== "strong") {
+      return child;
+    }
+    return {
+      ...strongNode,
+      children: [
+        {
+          ...node,
+          children: strongNode.children ?? [],
+        },
+      ],
+    };
+  }
+
+  function hastNodeClasses(node: { properties?: Record<string, unknown> }) {
+    const className = node.properties?.className;
+    return Array.isArray(className)
+      ? className.filter((item): item is string => typeof item === "string")
+      : typeof className === "string"
+        ? className.split(/\s+/)
+        : [];
+  }
+
+  function hastNodeHasClass(node: { properties?: Record<string, unknown> }, className: string) {
+    return hastNodeClasses(node).includes(className);
+  }
+
+  function hastNodeIsBlockChild(node: { tagName?: string }) {
+    return ["blockquote", "ol", "p", "pre", "table", "ul"].includes(node.tagName ?? "");
+  }
+
+  function normalizeLooseTaskListItems(children: unknown[]) {
+    const listItems = children.filter(
+      (child): child is { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string } =>
+        (child as { tagName?: string }).tagName === "li",
+    );
+    const hasLooseTaskItem = listItems.some(
+      (item) =>
+        hastNodeHasClass(item, "task-list-item") &&
+        (item.children ?? []).some((child) =>
+          hastNodeIsBlockChild(child as { tagName?: string }),
+        ),
+    );
+    if (!hasLooseTaskItem) {
+      return;
+    }
+    for (const item of listItems) {
+      if (!hastNodeHasClass(item, "task-list-item") || !item.children) {
+        continue;
+      }
+      const firstBlockIndex = item.children.findIndex((child) =>
+        hastNodeIsBlockChild(child as { tagName?: string }),
+      );
+      if (firstBlockIndex > 0 && hastNodesHaveRenderableContent(item.children.slice(0, firstBlockIndex))) {
+        wrapLeadingTaskListItemChildren(item, firstBlockIndex);
+      } else if (firstBlockIndex === -1 && hastNodesHaveRenderableContent(item.children)) {
+        wrapLeadingTaskListItemChildren(item, item.children.length);
+      }
+    }
+  }
+
+  function hastNodesHaveRenderableContent(children: unknown[]) {
+    return children.some((child) => {
+      const childNode = child as { type?: string; value?: string };
+      return childNode.type !== "text" || !/^\s*$/.test(childNode.value ?? "");
+    });
+  }
+
+  function wrapLeadingTaskListItemChildren(
+    node: { children?: unknown[] },
+    firstBlockIndex: number,
+  ) {
+    if (!node.children) {
+      return;
+    }
+    const leadingChildren = node.children.slice(0, firstBlockIndex);
+    node.children = [
+      {
+        children: leadingChildren,
+        properties: {},
+        tagName: "p",
+        type: "element",
+      },
+      ...node.children.slice(firstBlockIndex),
+    ];
+  }
+}
+
+function reactMarkdownComponents(context: MarkdownContext): Components {
+  const headingComponent = (level: 1 | 2 | 3 | 4 | 5 | 6) =>
+    function HeadingComponent(props: React.HTMLAttributes<HTMLHeadingElement> & { node?: unknown }) {
+      const { children: propChildren, node: _node, ...rest } = props;
+      if (typeof rest.className === "string" && rest.className.split(/\s+/).includes("sr-only")) {
+        return React.createElement(`h${level}`, rest, propChildren);
+      }
+      const id = nextHeadingId(context, reactMarkdownNodeText(propChildren));
+      const children = (
+        <>
+          {propChildren}
+          <a className="head-anchor" href={`#${id}`}>
+            #
+          </a>
+        </>
+      );
+      return React.createElement(`h${level}`, { ...rest, id }, children);
+    };
+  const tableCellComponent = (tagName: "td" | "th") =>
+    function TableCellComponent(
+      props: React.TdHTMLAttributes<HTMLTableCellElement> &
+        React.ThHTMLAttributes<HTMLTableCellElement> & { node?: unknown },
+    ) {
+      const { children, node: _node, style, ...rest } = props;
+      const textAlign =
+        typeof style?.textAlign === "string" &&
+        ["center", "left", "right"].includes(style.textAlign)
+          ? (style.textAlign as "center" | "left" | "right")
+          : undefined;
+      return React.createElement(tagName, { ...rest, align: textAlign }, children);
+    };
+
+  return {
+    a(props) {
+      const { children, className, href, node: _node, ...rest } = props;
+      const transformedHref = href === undefined ? undefined : reactMarkdownUrlTransform(href);
+      return (
+        <a
+          className={reactMarkdownLinkClassName({ ...rest, children, className, href: transformedHref })}
+          href={transformedHref}
+          {...rest}
+        >
+          {children}
+        </a>
+      );
+    },
+    code(props) {
+      const { children, className, node: _node, ...rest } = props;
+      return (
+        <code className={reactMarkdownClassName(className)} {...rest}>
+          {children}
+        </code>
+      );
+    },
+    h1: headingComponent(1),
+    h2: headingComponent(2),
+    h3: headingComponent(3),
+    h4: headingComponent(4),
+    h5: headingComponent(5),
+    h6: headingComponent(6),
+    img(props) {
+      const { alt, node: _node, src, ...rest } = props;
+      return <img alt={alt} src={src ? reactMarkdownUrlTransform(src) : undefined} {...rest} />;
+    },
+    input(props) {
+      const { checked, className, disabled, node: _node, type, ...rest } = props;
+      const normalizedClassName = reactMarkdownClassName(className);
+      const isTaskListCheckbox =
+        type === "checkbox" &&
+        (normalizedClassName === "task-list-item-checkbox" ||
+          (checked !== undefined && disabled === true && Object.keys(rest).length === 0));
+      if (isTaskListCheckbox) {
+        return (
+          <input
+            className="task-list-item-checkbox"
+            disabled={disabled}
+            readOnly
+            type="checkbox"
+            checked={checked}
+          />
+        );
+      }
+      return (
+        <input
+          type={type}
+          checked={checked}
+          disabled={disabled}
+          readOnly={checked !== undefined ? true : undefined}
+          className={normalizedClassName}
+          {...rest}
+        />
+      );
+    },
+    pre(props) {
+      const { children, node: _node, ...rest } = props;
+      const preserveTrailingNewline =
+        (props as Record<string, unknown>).dataLegacyListLeadingCode === "true" ||
+        (props as Record<string, unknown>)["data-legacy-list-leading-code"] === "true";
+      const child = React.Children.toArray(children)[0];
+      if (React.isValidElement<{ children?: React.ReactNode; className?: string }>(child)) {
+        const language = /^language-(.+)$/.exec(child.props.className ?? "")?.[1];
+        if (!language && child.props.className) {
+          return (
+            <pre>
+              <code className={child.props.className}>{child.props.children}</code>
+            </pre>
+          );
+        }
+        const rawCode = reactMarkdownNodeText(child.props.children);
+        const code = preserveTrailingNewline ? rawCode : rawCode.replace(/\n$/, "");
+        if (!language) {
+          return (
+            <pre>
+              <code>{code}</code>
+            </pre>
+          );
+        }
+        return (
+          <pre>
+            <code className={language}>{highlightCodeBlock(code, language)}</code>
+          </pre>
+        );
+      }
+      return <pre {...rest}>{children}</pre>;
+    },
+    td: tableCellComponent("td"),
+    th: tableCellComponent("th"),
+  };
+}
+
+function ReactMarkdownPlainParagraph(props: { breaks: boolean; markdown: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p(paragraphProps) {
+          const { children, node: _node, ...rest } = paragraphProps;
+          return <p {...rest}>{children}</p>;
+        },
+      }}
+      remarkPlugins={props.breaks ? [remarkBreaks] : []}
+    >
+      {props.markdown}
+    </ReactMarkdown>
+  );
+}
+
+function ReactMarkdownCompatibleBlock(props: {
+  allowRawHtml?: boolean;
+  context: MarkdownContext;
+  markdown: string;
+}) {
+  const preprocessed = preprocessLegacyMarkedBlockGrammar(props.markdown);
+  const markdown = props.context.reactMarkdownReferenceDefinitions
+    ? `${preprocessed.markdown}\n\n${props.context.reactMarkdownReferenceDefinitions}`
+    : preprocessed.markdown;
+  const allowRawHtml = props.allowRawHtml || preprocessed.opaqueRawHtmlBlocks.size > 0;
+  const rehypePlugins = (
+    allowRawHtml
+      ? [
+          rehypeRaw,
+          [rehypeSanitize, yonaMarkdownSanitizeSchema],
+          rehypeYonaRawHtmlCompatibility(preprocessed.opaqueRawHtmlBlocks),
+          rehypeYonaRenderedDomCompatibility,
+        ]
+      : [[rehypeYonaRenderedDomCompatibility, { normalizeStrongEmphasisOrder: true }]]
+  ) as React.ComponentProps<typeof ReactMarkdown>["rehypePlugins"];
+  return (
+    <ReactMarkdown
+      components={reactMarkdownComponents(props.context)}
+      rehypePlugins={rehypePlugins}
+      remarkPlugins={[
+        remarkYonaAutolinks(props.context),
+        remarkGfm,
+        ...(props.context.breaks ? [remarkBreaks] : []),
+      ]}
+      urlTransform={reactMarkdownUrlTransform}
+    >
+      {markdown}
+    </ReactMarkdown>
+  );
+}
+
+function reactMarkdownReferenceDefinitions(referenceMap: Map<string, MarkdownReferenceDefinition>) {
+  return Array.from(referenceMap.entries())
+    .map(([label, definition]) => {
+      const escapedLabel = label.replace(/\\/g, "\\\\").replace(/([\[\]])/g, "\\$1");
+      const target = definition.target === "<" ? "%3C" : (definition.target ?? "");
+      const title =
+        definition.title === undefined
+          ? ""
+          : ` "${definition.title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+      return `[${escapedLabel}]: <${target.replace(/>/g, "%3E")}>${title}`;
+    })
+    .join("\n");
+}
+
+function headingTextCanUseReactMarkdown(headingText: string, context?: MarkdownContext) {
+  if (headingText.length === 0 || headingText.endsWith("#")) {
+    return false;
+  }
+  if (reactMarkdownSafePlainText(headingText)) {
+    return true;
+  }
+  if (markdownBlockContainsRawHtmlTag([{ key: "heading-probe", text: headingText }])) {
+    return headingTextCanUseReactMarkdownRawFormatting(headingText);
+  }
+  if (/[@#]/.test(headingText)) {
+    return markdownListItemTextCanUseReactMarkdown(headingText, context);
+  }
+  return (
+    /(?:!?\[[^\]\n]+\]\([^)\n]+\)|`[^`\n]+`)/.test(headingText) ||
+    markdownListItemTextCanUseReactMarkdown(headingText, context)
+  );
+}
+
+function headingTextCanUseReactMarkdownRawFormatting(headingText: string) {
+  if (
+    markdownLineStartsRawHtmlBlock(headingText) ||
+    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(headingText)
+  ) {
+    return false;
+  }
+  return /<\/?(?:b|br|em|i|s|span|strong|u)\b/i.test(headingText);
+}
+
+function markdownBlockCanUseReactMarkdownAtxHeading(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const line = lines[0]?.text ?? "";
+  const match = /^ {0,3}#{1,6} (?<text>.+)$/.exec(line);
+  const headingText = match?.groups?.text ?? "";
+  return headingTextCanUseReactMarkdown(headingText, context);
+}
+
+function markdownBlockCanUseReactMarkdownSetextHeading(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 2) {
+    return false;
+  }
+  const headingText = lines[0]?.text.trim() ?? "";
+  const underline = lines[1]?.text ?? "";
+  return (
+    /^ {0,3}(?:=+|-+)\s*$/.test(underline) &&
+    headingTextCanUseReactMarkdown(headingText, context)
+  );
+}
+
+function markdownBlockReactMarkdownHeadingNeedsRawHtml(lines: MarkdownLineRecord[]) {
+  if (lines.length === 1) {
+    const match = /^ {0,3}#{1,6} (?<text>.+)$/.exec(lines[0]?.text ?? "");
+    const headingText = match?.groups?.text ?? "";
+    return headingTextCanUseReactMarkdownRawFormatting(headingText);
+  }
+  if (lines.length === 2 && /^ {0,3}(?:=+|-+)\s*$/.test(lines[1]?.text ?? "")) {
+    return headingTextCanUseReactMarkdownRawFormatting(lines[0]?.text.trim() ?? "");
+  }
+  return false;
+}
+
+function markdownBlockCanUseReactMarkdownSimpleBlockquote(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length === 0) {
+    return false;
+  }
+  return lines.every((line) => {
+    const match = /^ {0,3}>(.*)$/.exec(line.text);
+    if (!match) {
+      return false;
+    }
+    if ((match[1] ?? "").startsWith("\t")) {
+      return false;
+    }
+    const text = blockquoteTextAfterMarker(match[1] ?? "");
+    const textLine = [{ key: `${line.key}-blockquote-text`, text }];
+    return text.length > 0 && (
+      markdownListItemTextCanUseReactMarkdown(text, context) ||
+      markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(textLine) ||
+      markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(textLine) ||
+      markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(textLine) ||
+      markdownBlockCanUseReactMarkdownMixedReferenceParagraph(textLine, context) ||
+      markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(textLine, context) ||
+      markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(textLine, context)
+    );
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLazyBlockquote(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length < 2 || !/^ {0,3}>/.test(lines[0]?.text ?? "")) {
+    return false;
+  }
+  const quoteLines = parseMarkdownBlockquote(lines);
+  if (!quoteLines || quoteLines.length !== lines.length) {
+    return false;
+  }
+  return lines.every((line, index) => {
+    if (index === 0) {
+      const match = /^ {0,3}>(.*)$/.exec(line.text);
+      if (!match || (match[1] ?? "").startsWith("\t")) {
+        return false;
+      }
+      const text = blockquoteTextAfterMarker(match[1] ?? "");
+      const textLine = [{ key: `${line.key}-blockquote-text`, text }];
+      return text.length > 0 && markdownLineCanUseReactMarkdownInlineParagraphText(textLine[0], context);
+    }
+    if (
+      /^ {0,3}>/.test(line.text) ||
+      line.text.trim() === "" ||
+      markdownLineStartsLazyBlockquoteInterrupt(line.text)
+    ) {
+      return false;
+    }
+    return markdownLineCanUseReactMarkdownInlineParagraphText(
+      { key: `${line.key}-lazy-blockquote`, text: line.text },
+      context,
+    );
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLazyBlockquoteList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length < 3 || !/^ {0,3}>/.test(lines[0]?.text ?? "")) {
+    return false;
+  }
+  const quoteLines = parseMarkdownBlockquote(lines);
+  if (!quoteLines || quoteLines.length !== lines.length) {
+    return false;
+  }
+  const contentLines = quoteLines.map((line) => ({ key: line.key, text: line.text }));
+  if (!markdownBlockCanUseReactMarkdownNestedList(contentLines, context) &&
+    !markdownBlockCanUseReactMarkdownSimpleList(contentLines, context)) {
+    return false;
+  }
+  return lines.some((line) => !/^ {0,3}>/.test(line.text));
+}
+
+function reactMarkdownBlockquoteContentLines(lines: MarkdownLineRecord[]) {
+  const contentLines: MarkdownLineRecord[] = [];
+  for (const line of lines) {
+    const match = /^ {0,3}>(.*)$/.exec(line.text);
+    if (!match || (match[1] ?? "").startsWith("\t")) {
+      return undefined;
+    }
+    contentLines.push({
+      key: `${line.key}-blockquote-block`,
+      text: blockquoteTextAfterMarker(match[1] ?? ""),
+    });
+  }
+  return contentLines;
+}
+
+function markdownBlockCanUseReactMarkdownBlockquoteParagraphBlocks(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  const contentLines = reactMarkdownBlockquoteContentLines(lines);
+  if (!contentLines || contentLines.length === 0 || !contentLines.some((line) => line.text.trim() === "")) {
+    return false;
+  }
+  const paragraphs: MarkdownLineRecord[][] = [];
+  let current: MarkdownLineRecord[] = [];
+  for (const line of contentLines) {
+    if (line.text.trim() === "") {
+      if (current.length > 0) {
+        paragraphs.push(current);
+        current = [];
+      }
+      continue;
+    }
+    if (markdownLineStartsBlock(line.text) || markdownLineStartsParagraphInterrupt(line.text)) {
+      return false;
+    }
+    current.push(line);
+  }
+  if (current.length > 0) {
+    paragraphs.push(current);
+  }
+  return paragraphs.length > 1 &&
+    paragraphs.every((paragraph) =>
+      markdownBlockCanUseReactMarkdownMultilineInlineParagraph(paragraph, context) ||
+      markdownBlockCanUseReactMarkdownPlainParagraph(paragraph),
+    );
+}
+
+function markdownBlockCanUseReactMarkdownBlockquoteBlocks(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  const contentLines = reactMarkdownBlockquoteContentLines(lines);
+  if (!contentLines || contentLines.length === 0) {
+    return false;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleFencedCode(contentLines)) {
+    return true;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleTable(contentLines, context)) {
+    return true;
+  }
+  if (markdownBlockCanUseReactMarkdownSetextHeading(contentLines, context)) {
+    return true;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleIndentedCode(contentLines)) {
+    return true;
+  }
+  if (markdownBlockCanUseReactMarkdownLooseSimpleList(contentLines, context)) {
+    return true;
+  }
+  if (markdownBlockCanUseReactMarkdownBlockquoteParagraphBlocks(lines, context)) {
+    return true;
+  }
+  return contentLines.every((line) => {
+    const text = line.text;
+    const textLine = [line];
+    return (
+      text.length > 0 &&
+      ((Boolean(/^ {0,3}#{1,6} (?=.+)/.exec(text)) &&
+        markdownBlockCanUseReactMarkdownAtxHeading(textLine, context)) ||
+        (textLine.length === 1 &&
+          /^ {0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$/.test(text)))
+    );
+  });
+}
+
+function markdownBlockReactMarkdownBlockquoteNeedsRawHtml(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (
+    !markdownBlockCanUseReactMarkdownSimpleBlockquote(lines, context) &&
+    !markdownBlockCanUseReactMarkdownBlockquoteBlocks(lines, context)
+  ) {
+    return false;
+  }
+  return lines.some((line) => {
+    const match = /^ {0,3}>(.*)$/.exec(line.text);
+    const text = blockquoteTextAfterMarker(match?.[1] ?? "");
+    return markdownBlockContainsRawHtmlTag([{ key: `${line.key}-blockquote-text`, text }]);
+  });
+}
+
+function reactMarkdownSafePlainText(value: string) {
+  return !/[\\`*_~[\]<>#!|&@]/.test(value) && !/\b(?:https?|ftp):\/\/|www\./i.test(value);
+}
+
+function markdownBlockCanUseReactMarkdownPlainParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  if (
+    lines.some((line, index) => {
+      if (
+        line.text.trim() === "" ||
+        /^\s/.test(line.text) ||
+        markdownBlockContainsRawHtmlTag([line])
+      ) {
+        return true;
+      }
+      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+    })
+  ) {
+    return false;
+  }
+  const text = lines.map((line) => line.text).join("\n");
+  return reactMarkdownSafePlainText(text);
+}
+
+function markdownBlockCanUseReactMarkdownParagraphShape(lines: MarkdownLineRecord[]) {
+  return lines.length > 0 &&
+    !lines.some((line, index) => {
+      if (
+        line.text.trim() === "" ||
+        /^\s/.test(line.text) ||
+        markdownBlockContainsRawHtmlTag([line])
+      ) {
+        return true;
+      }
+      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+    });
+}
+
+function markdownBlockCanUseReactMarkdownRawInlineParagraphShape(lines: MarkdownLineRecord[]) {
+  return lines.length > 0 &&
+    !lines.some((line, index) => {
+      if (
+        line.text.trim() === "" ||
+        /^\s/.test(line.text) ||
+        markdownLineStartsRawHtmlBlock(line.text)
+      ) {
+        return true;
+      }
+      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+    });
+}
+
+function markdownBlockCanUseReactMarkdownSimpleInlineParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (/[\\`[\]<>#!|&@]/.test(text) || /\b(?:https?|ftp):\/\/|www\./i.test(text)) {
+    return false;
+  }
+  return (
+    /^\*[^*\s][^*\n]*[^*\s]\*$/.test(text) ||
+    /^_[^_\s][^_\n]*[^_\s]_$/.test(text) ||
+    /^\*\*[^*\s][^*\n]*[^*\s]\*\*$/.test(text) ||
+    /^__[^_\s][^_\n]*[^_\s]__$/.test(text) ||
+    /^`[^`\n]+`$/.test(text) ||
+    /^~~[^~\s][^~\n]*[^~\s]~~$/.test(text)
+  );
+}
+
+function markdownLineCanUseReactMarkdownMixedInline(text: string) {
+  if (
+    text.trim() === "" ||
+    /[\\[\]<>#!|&@]/.test(text) ||
+    /\b(?:https?|ftp):\/\/|www\./i.test(text)
+  ) {
+    return false;
+  }
+  const tokenPattern =
+    /(?:\*\*\*[^*\s][^*\n]*[^*\s]\*\*\*|___[^_\s][^_\n]*[^_\s]___|\*\*[^*\s][^*\n]*[^*\s]\*\*|__[^_\s][^_\n]*[^_\s]__|\*[^*\s][^*\n]*[^*\s]\*|_[^_\s][^_\n]*[^_\s]_|`[^`\n]+`|~~[^~\s][^~\n]*[^~\s]~~|~[^~\s][^~\n]*[^~\s]~)/g;
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (/[*_~`]/.test(text.slice(cursor, start))) {
+      return false;
+    }
+    if ((match[0] ?? "").startsWith("`") && (match[0] ?? "").includes("\t")) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && !/[*_~`]/.test(text.slice(cursor));
+}
+
+function markdownLineCanUseReactMarkdownEscapedInline(text: string) {
+  if (
+    text.trim() === "" ||
+    text.includes("\t") ||
+    !/\\[!"$%&'()*+,./:;=?@[\\\]^_`{|}~-]/.test(text) ||
+    /\\[@#]/.test(text) ||
+    /[<>#!|&@]/.test(text) ||
+    /\b(?:https?|ftp):\/\/|www\./i.test(text)
+  ) {
+    return false;
+  }
+  const escapedAsPlain = text.replace(/\\[!"$%&'()*+,./:;=?@[\\\]^_`{|}~-]/g, "x");
+  return reactMarkdownSafePlainText(escapedAsPlain) || markdownLineCanUseReactMarkdownMixedInline(escapedAsPlain);
+}
+
+function markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  if (
+    lines.some((line, index) => {
+      if (
+        line.text.trim() === "" ||
+        /^\s/.test(line.text) ||
+        markdownBlockContainsRawHtmlTag([line])
+      ) {
+        return true;
+      }
+      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+    })
+  ) {
+    return false;
+  }
+  return lines.some((line) =>
+    markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+    markdownLineCanUseReactMarkdownEscapedInline(line.text)
+  ) &&
+    lines.every((line) =>
+      reactMarkdownSafePlainText(line.text) ||
+      markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+      markdownLineCanUseReactMarkdownEscapedInline(line.text),
+    );
+}
+
+function markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  return lines.every((line, index) => {
+    const text = line.text;
+    if (
+      text.trim() === "" ||
+      text.includes("\t") ||
+      /^ {0,3}~~~/.test(text) ||
+      /^\s/.test(text) ||
+      /[\\`*_[\]<>#!|&@]/.test(text) ||
+      /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
+      markdownBlockContainsRawHtmlTag([line])
+    ) {
+      return false;
+    }
+    if (/(?:~~[^~\s]|[^~\s]~~|~~~)/.test(text)) {
+      return false;
+    }
+    if (index === 0 ? markdownLineStartsBlock(text) : markdownLineStartsParagraphInterrupt(text)) {
+      return false;
+    }
+    return /~~\s[^~]*?\s~~/.test(text);
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  return lines.every((line, index) => {
+    const text = line.text;
+    if (
+      text.trim() === "" ||
+      text.includes("\t") ||
+      /^\s{4,}/.test(text) ||
+      /[\\`*_[\]<>#!|&@]/.test(text) ||
+      /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
+      markdownBlockContainsRawHtmlTag([line])
+    ) {
+      return false;
+    }
+    if (index === 0 ? markdownLineStartsBlock(text) && !/^ {0,3}~~~\S/.test(text) : markdownLineStartsParagraphInterrupt(text)) {
+      return false;
+    }
+    return /^ {0,3}~~~\S.*~~~\s*$/.test(text);
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  return lines.every((line, index) => {
+    const text = line.text;
+    if (
+      text.trim() === "" ||
+      text.includes("\t") ||
+      /^\s/.test(text) ||
+      /[\\`~[\]<>#!|&@]/.test(text) ||
+      /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
+      markdownBlockContainsRawHtmlTag([line])
+    ) {
+      return false;
+    }
+    if (index === 0 ? markdownLineStartsBlock(text) : markdownLineStartsParagraphInterrupt(text)) {
+      return false;
+    }
+    return /(?:\*\s[^*]*?\s\*|_\s[^_]*?\s_|(?:\*\*)\s[^*]*?\s(?:\*\*)|__\s[^_]*?\s__)/.test(text) &&
+      !/(?:\*{3}|_{3})/.test(text);
+  });
+}
+
+function reactMarkdownSafePlainOrMixedInlineText(text: string) {
+  return reactMarkdownSafePlainText(text) ||
+    markdownLineCanUseReactMarkdownMixedInline(text) ||
+    markdownLineCanUseReactMarkdownEscapedInline(text);
+}
+
+function markdownLineCanUseReactMarkdownInlineParagraphText(
+  line: MarkdownLineRecord,
+  context?: MarkdownContext,
+) {
+  const lines = [line];
+  return (
+    reactMarkdownSafePlainText(line.text) ||
+    markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+    markdownLineCanUseReactMarkdownEscapedInline(line.text) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, context)
+  );
+}
+
+function markdownBlockCanUseReactMarkdownMultilineInlineParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (!markdownBlockCanUseReactMarkdownParagraphShape(lines)) {
+    return false;
+  }
+  let hasInlineMarkdown = false;
+  for (const line of lines) {
+    if (!markdownLineCanUseReactMarkdownInlineParagraphText(line, context)) {
+      return false;
+    }
+    hasInlineMarkdown ||= !reactMarkdownSafePlainText(line.text);
+  }
+  return hasInlineMarkdown;
+}
+
+function markdownBlockCanUseReactMarkdownMultilineRawInlineParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (!markdownBlockCanUseReactMarkdownRawInlineParagraphShape(lines)) {
+    return false;
+  }
+  let hasRawInlineMarkdown = false;
+  for (const line of lines) {
+    const lineBlock = [line];
+    if (markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lineBlock, context)) {
+      hasRawInlineMarkdown = true;
+      continue;
+    }
+    if (
+      reactMarkdownSafePlainText(line.text) ||
+      markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+      markdownLineCanUseReactMarkdownEscapedInline(line.text) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lineBlock) ||
+      markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lineBlock) ||
+      markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lineBlock) ||
+      markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lineBlock) ||
+      markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lineBlock, context) ||
+      markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lineBlock, context) ||
+      markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lineBlock) ||
+      markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lineBlock, context)
+    ) {
+      continue;
+    }
+    return false;
+  }
+  return hasRawInlineMarkdown;
+}
+
+function markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^\[([^\][\\`*_~<>#!|&@]+)\]\(([^()\s]+)\)$/.exec(text);
+  if (!match) {
+    return false;
+  }
+  const target = match[2] ?? "";
+  return sanitizedMarkdownTarget(normalizeInlineTarget(target)) !== undefined;
+}
+
+function markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^!\[([^\][\\`*_~<>#!|&@]+)\]\(([^()\s]+)\)$/.exec(text);
+  if (!match) {
+    return false;
+  }
+  const target = match[2] ?? "";
+  return sanitizedMarkdownTarget(normalizeInlineTarget(target)) !== undefined;
+}
+
+function markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const tokenPattern = /!?\[([^\][\\`*_~<>#!|&@]+)\]\(([^()\s]+)\)/g;
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const target = match[2] ?? "";
+    if ((match[0] ?? "").startsWith("!") && normalizeInlineTarget(target) === "") {
+      return false;
+    }
+    if (sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+function markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const escapedPunctuation = String.raw`\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` + "`" + String.raw`{|}~]`;
+  const targetPattern = String.raw`(?:<[^<>\n]*>|(?:${escapedPunctuation}|[^()\s\\]|\([^()\s\\]*\))*)`;
+  const tokenPattern = new RegExp(
+    String.raw`!?\[([^\][\\` +
+      "`" +
+      String.raw`*_~<>#!|&@]*)\]\(\s*(${targetPattern})\s*(?:(?:"[^"\\&\n]*"|'[^'\\&\n]*'|\([^()\\&\n]*\)))?\s*\)`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const target = match[2] ?? "";
+    if (sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+const reactMarkdownInlineMediaTargetPattern = String.raw`(?:<[^<>\n]*>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` + "`" + String.raw`{|}~]|[^()\s\\]|\([^()\s\\]*\))*)`;
+
+function markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.trim() === "" ||
+    text.includes("\t") ||
+    markdownLineStartsBlock(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  const tokenPattern = new RegExp(
+    String.raw`!?\[([^\][\\` +
+      "`" +
+      String.raw`*_~<>#!|&@]+)\]\(\s*(${reactMarkdownInlineMediaTargetPattern})\s*(?:(?:"[^"\\&\n]*"|'[^'\\&\n]*'|\([^()\\&\n]*\)))?\s*\)`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (!reactMarkdownSafePlainText(text.slice(cursor, start))) {
+      return false;
+    }
+    if ((match[1] ?? "").includes("\t")) {
+      return false;
+    }
+    const target = match[2] ?? "";
+    if ((match[0] ?? "").startsWith("!") && normalizeInlineTarget(target) === "") {
+      return false;
+    }
+    if (sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && reactMarkdownSafePlainText(text.slice(cursor));
+}
+
+function markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.trim() === "" ||
+    text.includes("\t") ||
+    markdownLineStartsBlock(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  const tokenPattern = new RegExp(
+    String.raw`!?\[([^\][\\` +
+      "`" +
+      String.raw`*_~<>#!|&@]+)\]\(\s*(${reactMarkdownInlineMediaTargetPattern})\s*(?:(?:"[^"\\&\n]*"|'[^'\\&\n]*'|\([^()\\&\n]*\)))?\s*\)`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (!reactMarkdownSafePlainOrMixedInlineText(text.slice(cursor, start))) {
+      return false;
+    }
+    if ((match[1] ?? "").includes("\t")) {
+      return false;
+    }
+    const target = match[2] ?? "";
+    if ((match[0] ?? "").startsWith("!") && normalizeInlineTarget(target) === "") {
+      return false;
+    }
+    if (sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && reactMarkdownSafePlainOrMixedInlineText(text.slice(cursor));
+}
+
+function markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const tokenPattern = new RegExp(
+    String.raw`!?\[(${inlineLabelPattern})\]\(([^()\s]+)\)`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const token = match[0] ?? "";
+    const label = match[1] ?? "";
+    const target = match[2] ?? "";
+    if (
+      label.includes("<") ||
+      label.includes("](") ||
+      (token.startsWith("!") && label.includes("`")) ||
+      sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined
+    ) {
+      return false;
+    }
+    cursor = start + token.length;
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+function markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  const text = lines.map((line) => line.text).join("\n");
+  if (/\n\s*\n/.test(text)) {
+    return false;
+  }
+  const tokenPattern =
+    /!?\[([^\][\\`*_~<>#!|&@]+)\]\((<[^<>\s]+>|[^()\s]+)(?:[ \t]|\n[ \t]*)+(?:"[^"\\&\n]+"|'[^'\\&\n]+'|\([^()\\&\n]+\))\)/g;
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const target = match[2] ?? "";
+    if (sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+function markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1 || !context?.referenceMap || context.referenceMap.size === 0) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (/[\\`*_~<>#!|&@()]/.test(text)) {
+    return false;
+  }
+  const tokenPattern = /!?\[([^\[\]]+)\](?:\[([^\[\]]*)\])?/g;
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const label = match[2] === undefined || match[2] === "" ? (match[1] ?? "") : (match[2] ?? "");
+    if (!context.referenceMap.has(normalizeReferenceLabel(label))) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+function markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1 || !context?.referenceMap || context.referenceMap.size === 0) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const tokenPattern = new RegExp(
+    String.raw`(!?)\[(${inlineLabelPattern})\](?:\[(${referenceLabelPattern})\]|\[\])?`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text.slice(cursor, start).trim() !== "") {
+      return false;
+    }
+    const marker = match[1] ?? "";
+    const label = match[2] ?? "";
+    const explicitLabel = match[3];
+    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
+    const reference = context.referenceMap.get(normalizedReferenceLabel);
+    if (
+      label.includes("<") ||
+      label.includes("](") ||
+      (marker === "!" && label.includes("`")) ||
+      !reference ||
+      (reference.target !== "<" && reference.target?.includes("<"))
+    ) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && text.slice(cursor).trim() === "";
+}
+
+function reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(
+  text: string,
+  formatted: boolean,
+  context?: MarkdownContext,
+) {
+  if (
+    formatted
+      ? reactMarkdownSafePlainOrMixedInlineText(text)
+      : reactMarkdownSafePlainText(text) || markdownLineCanUseReactMarkdownEscapedInline(text)
+  ) {
+    return true;
+  }
+  const lines = [{ key: "reference-surrounding-text", text }];
+  return (
+    (formatted
+      ? markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines)
+      : markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines)) ||
+    markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, context)
+  );
+}
+
+function markdownBlockCanUseReactMarkdownMixedReferenceParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1 || !context?.referenceMap || context.referenceMap.size === 0) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (text.includes("\t") || markdownBlockContainsRawHtmlTag(lines)) {
+    return false;
+  }
+  const tokenPattern = new RegExp(
+    String.raw`(!?)\[(${inlineLabelPattern})\](?:\[(${referenceLabelPattern})\]|\[\])?`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text[start + (match[0]?.length ?? 0)] === "(") {
+      continue;
+    }
+    if (!reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor, start), false, context)) {
+      return false;
+    }
+    const marker = match[1] ?? "";
+    const label = match[2] ?? "";
+    const explicitLabel = match[3];
+    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
+    const reference = context.referenceMap.get(normalizedReferenceLabel);
+    if (
+      label.includes("<") ||
+      label.includes("](") ||
+      (marker === "!" && label.includes("`")) ||
+      !reference ||
+      (reference.target !== "<" && reference.target?.includes("<"))
+    ) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), false, context);
+}
+
+function markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1 || !context?.referenceMap || context.referenceMap.size === 0) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (text.includes("\t") || markdownBlockContainsRawHtmlTag(lines)) {
+    return false;
+  }
+  const tokenPattern = new RegExp(
+    String.raw`(!?)\[(${inlineLabelPattern})\](?:\[(${referenceLabelPattern})\]|\[\])?`,
+    "g",
+  );
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text[start + (match[0]?.length ?? 0)] === "(") {
+      continue;
+    }
+    if (!reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor, start), true, context)) {
+      return false;
+    }
+    const marker = match[1] ?? "";
+    const label = match[2] ?? "";
+    const explicitLabel = match[3];
+    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
+    const reference = context.referenceMap.get(normalizedReferenceLabel);
+    if (
+      label.includes("<") ||
+      label.includes("](") ||
+      (marker === "!" && label.includes("`")) ||
+      !reference ||
+      (reference.target !== "<" && reference.target?.includes("<"))
+    ) {
+      return false;
+    }
+    cursor = start + (match[0]?.length ?? 0);
+    matched = true;
+  }
+  return matched && reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), true, context);
+}
+
+function markdownInlineMediaTokensCanUseReactMarkdown(text: string) {
+  const tokenPattern = new RegExp(
+    String.raw`!?\[([^\]\n]+)\]\(\s*(${reactMarkdownInlineMediaTargetPattern})\s*(?:(?:"[^"\\&\n]*"|'[^'\\&\n]*'|\([^()\\&\n]*\)))?\s*\)`,
+    "g",
+  );
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const token = match[0] ?? "";
+    const label = match[1] ?? "";
+    const target = match[2] ?? "";
+    if (
+      label.includes("\t") ||
+      label.includes("<") ||
+      label.includes("](") ||
+      (token.startsWith("!") && (label.includes("`") || normalizeInlineTarget(target) === "")) ||
+      sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined
+    ) {
+      return false;
+    }
+    matched = true;
+  }
+  return matched;
+}
+
+function markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    markdownLineStartsRawHtmlBlock(text) ||
+    /!?\[[^\]]/.test(text) ||
+    /<\/?(?:a|code|div|hr|img|input|p|source|sup|table|tbody|td|th|thead|tr|video)\b/i.test(text)
+  ) {
+    return false;
+  }
+  return /<\/?(?:b|br|em|i|s|span|strong|u)\b/i.test(text);
+}
+
+function markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    markdownLineStartsRawHtmlBlock(text) ||
+    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(text)
+  ) {
+    return false;
+  }
+  if (!/<\/?(?:b|br|em|i|s|span|strong|u)\b/i.test(text)) {
+    return false;
+  }
+  if (
+    /\[[^\]\n]*[<>][^\]\n]*\]\(/.test(text) ||
+    /\[[^\]\n]*\[[^\]\n]+\]\([^)]+\)[^\]\n]*\]\(/.test(text)
+  ) {
+    return false;
+  }
+  let matched = markdownInlineMediaTokensCanUseReactMarkdown(text);
+  const tokenPattern = new RegExp(
+    String.raw`(!?)\[(${inlineLabelPattern})\](?:\[(${referenceLabelPattern})\]|\[\])?`,
+    "g",
+  );
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    if (text[start + (match[0]?.length ?? 0)] === "(") {
+      continue;
+    }
+    const marker = match[1] ?? "";
+    const label = match[2] ?? "";
+    const explicitLabel = match[3];
+    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const reference = context?.referenceMap?.get(normalizeReferenceLabel(referenceLabel));
+    if (
+      label.includes("<") ||
+      label.includes("](") ||
+      (marker === "!" && label.includes("`")) ||
+      !reference ||
+      (reference.target !== "<" && reference.target?.includes("<"))
+    ) {
+      return false;
+    }
+    matched = true;
+  }
+  return matched || bareAutolinkRegex.test(text) || new RegExp(angleAutolinkPattern).test(text);
+}
+
+function markdownBlockCanUseReactMarkdownSimpleRawAnchorParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^<a\b(?<attributes>[^>]*)>(?<label>[^<>\n]+)<\/a\s*>$/i.exec(text);
+  const label = match?.groups?.label ?? "";
+  if (!match?.groups?.attributes || !reactMarkdownSafePlainText(label)) {
+    return false;
+  }
+  const props = parseRawHtmlAttributes("a", match.groups.attributes);
+  return typeof props.href === "string" && props.href.length > 0;
+}
+
+function markdownBlockCanUseReactMarkdownSimpleRawOrderedList(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^<ol\b(?<attributes>[^>]*)><li>(?<label>[^<>\n]+)<\/li><\/ol>$/i.exec(text);
+  const label = match?.groups?.label ?? "";
+  if (!match || !reactMarkdownSafePlainText(label)) {
+    return false;
+  }
+  const start = /\bstart\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i.exec(
+    match.groups?.attributes ?? "",
+  );
+  return !start || /^\d+$/.test(start[1] ?? start[2] ?? start[3] ?? "");
+}
+
+function markdownBlockCanUseReactMarkdownSimpleRawIframe(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^<iframe\b(?<attributes>[^>]*)><\/iframe>$/i.exec(text);
+  return Boolean(match);
+}
+
+function markdownBlockCanUseReactMarkdownSimpleRawVoidBlock(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  return /^<(?:hr|img|input|source)\b[^>]*\/?>$/i.test(text);
+}
+
+function markdownBlockCanUseReactMarkdownSimpleRawVideo(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match =
+    /^<video\b(?<videoAttributes>[^>]*)><source\b(?<sourceAttributes>[^>]*)><\/video>$/i.exec(text);
+  if (!match) {
+    return false;
+  }
+  return true;
+}
+
+function markdownBlockCanUseReactMarkdownOpaqueRawPreBlock(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  const firstLine = lines[0]?.text ?? "";
+  const boundaryTag = rawBlockTagWithClosingBoundaryFromLine(firstLine);
+  if (boundaryTag !== "pre" && boundaryTag !== "code") {
+    return false;
+  }
+  const closingPattern = new RegExp(String.raw`<\/${boundaryTag}\s*>`, "i");
+  const closingIndex = lines.findIndex((line) => closingPattern.test(line.text));
+  return closingIndex === lines.length - 1;
+}
+
+function markdownBlockCanUseReactMarkdownOpaqueRawHtmlBlock(lines: MarkdownLineRecord[]) {
+  if (lines.length === 0) {
+    return false;
+  }
+  const firstLine = lines[0]?.text ?? "";
+  return (
+    markdownLineStartsRawHtmlBlock(firstLine) ||
+    markdownLineIsStandaloneRawHtmlVoidBlock(firstLine) ||
+    markdownLineIsStandaloneRawHtmlDirectiveBlock(firstLine)
+  );
+}
+
+function markdownBlockCanUseReactMarkdownStandaloneRawDirectiveBlock(lines: MarkdownLineRecord[]) {
+  return lines.length === 1 && markdownLineIsStandaloneRawHtmlDirectiveBlock(lines[0]?.text ?? "");
+}
+
+function markdownBlockCanUseReactMarkdownRawCheckboxLine(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^<input\b(?<attributes>[^>]*)>\s+(?<label>[^\n<]+)$/i.exec(text);
+  const label = match?.groups?.label ?? "";
+  if (!match || !reactMarkdownSafePlainText(label)) {
+    return false;
+  }
+  const props = parseRawHtmlAttributes("input", match.groups?.attributes ?? "");
+  return props.type === "checkbox";
+}
+
+function markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  return bareAutolinkRegex.test(text) && !/[<>&]/.test(text);
+}
+
+function markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  const match = /^<([^<>\s]+)>$/.exec(text);
+  if (!match) {
+    return false;
+  }
+  const target = match[1] ?? "";
+  return sanitizedMarkdownTarget(angleEmailRegex.test(target) ? `mailto:${target}` : target) !== undefined;
+}
+
+function markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (/[\\`*_~[\]<>!|&']/.test(text) || markdownBlockContainsRawHtmlTag(lines)) {
+    return false;
+  }
+  return parseTextWithAutolinks(text, "react-markdown-probe").some((part) => part.kind === "link");
+}
+
+function markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.includes("\t") ||
+    /[\\`[\]<>#!|&"']/.test(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  const parts = parseTextWithAutolinks(text, "react-markdown-probe");
+  return parts.some((part) => part.kind === "link") &&
+    parts.every((part) => {
+      if (part.kind !== "link") {
+        return "value" in part ? reactMarkdownSafePlainOrMixedInlineText(part.value) : true;
+      }
+      const target = part.target ?? "";
+      return /^(?:https?|ftp):\/\//i.test(target) || /^http:\/\/www\./.test(target) || /^mailto:/i.test(target);
+    });
+}
+
+function markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines: MarkdownLineRecord[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.includes("\t") ||
+    /[\\`[\]&"]/.test(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  const tokenPattern = new RegExp(angleAutolinkPattern, "g");
+  let cursor = 0;
+  let matched = false;
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index ?? 0;
+    const prefix = text.slice(cursor, start);
+    if (!reactMarkdownSafePlainOrMixedInlineText(prefix)) {
+      return false;
+    }
+    const token = match[0] ?? "";
+    const label = token.slice(1, -1);
+    if (
+      sanitizedMarkdownTarget(angleEmailRegex.test(label) ? `mailto:${label}` : label) === undefined
+    ) {
+      return false;
+    }
+    cursor = start + token.length;
+    matched = true;
+  }
+  return matched && reactMarkdownSafePlainOrMixedInlineText(text.slice(cursor));
+}
+
+function markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.includes("\t") ||
+    /[\\`[\]<>!|&]/.test(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  const parts = parseTextWithAutolinks(text, "react-markdown-probe", context);
+  return parts.some((part) => part.kind === "link" && Boolean(part.className || part.issueState)) &&
+    parts.every((part) => {
+      if (part.kind !== "link") {
+        return "value" in part ? reactMarkdownSafePlainOrMixedInlineText(part.value) : true;
+      }
+      return Boolean(part.className || part.issueState);
+    });
+}
+
+function markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length !== 1) {
+    return false;
+  }
+  const text = lines[0]?.text ?? "";
+  if (
+    text.trim() === "" ||
+    text.includes("\t") ||
+    markdownLineStartsBlock(text) ||
+    /[\\`*_~[\]<>!|&]/.test(text) ||
+    /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
+    markdownBlockContainsRawHtmlTag(lines)
+  ) {
+    return false;
+  }
+  if (!/(?:^|[\s(])(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/.test(text)) {
+    return false;
+  }
+  const parts = parseTextWithAutolinks(text, "react-markdown-probe", context);
+  return parts.every((part) => part.kind !== "link") &&
+    text.split(/(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/)
+      .every((part) => reactMarkdownSafePlainText(part.replace(/[()]/g, "")));
+}
+
+function markdownListItemTextCanUseReactMarkdown(text: string, context?: MarkdownContext) {
+  const lines = [{ key: "list-item", text }];
+  if (reactMarkdownSafePlainText(text)) {
+    return true;
+  }
+  if (text.includes("\t") || text.includes("\n")) {
+    return false;
+  }
+  if (markdownBlockContainsRawHtmlTag(lines)) {
+    return markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines);
+  }
+  if (/[\\[\]<>#!|&@]/.test(text) || /\b(?:https?|ftp):\/\/|www\./i.test(text)) {
+    return (
+      markdownLineCanUseReactMarkdownEscapedInline(text) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines) ||
+      markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines) ||
+      markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines) ||
+      markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines) ||
+      markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines) ||
+      markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, context)
+    );
+  }
+  return (
+    /^\*[^*\s][^*\n]*[^*\s]\*$/.test(text) ||
+    /^_[^_\s][^_\n]*[^_\s]_$/.test(text) ||
+    /^\*\*[^*\s][^*\n]*[^*\s]\*\*$/.test(text) ||
+    /^__[^_\s][^_\n]*[^_\s]__$/.test(text) ||
+    /^`[^`\n]+`$/.test(text) ||
+    /^~~[^~\s][^~\n]*[^~\s]~~$/.test(text)
+  );
+}
+
+function markdownBlockCanUseReactMarkdownSimpleList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+  terminalNewline?: boolean,
+) {
+  if (lines.length === 0) {
+    return false;
+  }
+  const firstLine = parseMarkdownListLine(lines[0] as MarkdownLineRecord);
+  if (
+    !firstLine ||
+    (firstLine.text === "" && !terminalNewline) ||
+    firstLine.text.startsWith("[ ]") ||
+    firstLine.text.startsWith("[x]")
+  ) {
+    return false;
+  }
+  for (const [index, line] of lines.entries()) {
+    if (
+      line.text.includes("\t") &&
+      !/^ {0,3}(?:[-+*]|\d{1,9}[.)])\t(?![-+*][ \t]|\d{1,9}[.)][ \t])[^\t]*$/.test(line.text)
+    ) {
+      return false;
+    }
+    const listLine = parseMarkdownListLine(line);
+    const isAllowedEmptyItem =
+      listLine?.text === "" && (terminalNewline || index < lines.length - 1);
+    if (
+      !listLine ||
+      listLine.indent !== firstLine.indent ||
+      listLine.ordered !== firstLine.ordered ||
+      listLine.markerKind !== firstLine.markerKind ||
+      (listLine.text === "" && !isAllowedEmptyItem) ||
+      listLine.text.startsWith("[ ]") ||
+      listLine.text.startsWith("[x]") ||
+      (!isAllowedEmptyItem && !markdownListItemTextCanUseReactMarkdown(listLine.text, context))
+    ) {
+      return false;
+    }
+    if (firstLine.ordered && listLine.start !== (firstLine.start ?? 1) + index) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function markdownBlockCanUseReactMarkdownSmartList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length < 2) {
+    return false;
+  }
+  const parsedLines = lines.map(parseMarkdownListLine);
+  const firstLine = parsedLines[0];
+  if (!firstLine || parsedLines.some((line) => line === null)) {
+    return false;
+  }
+  let hasMarkerChange = false;
+  for (const [index, parsed] of parsedLines.entries()) {
+    const listLine = parsed as ParsedMarkdownListLine;
+    if (
+      listLine.indent !== firstLine.indent ||
+      listLine.ordered !== firstLine.ordered ||
+      listLine.text === "" ||
+      listLine.text.startsWith("[ ]") ||
+      listLine.text.startsWith("[x]") ||
+      !markdownListItemTextCanUseReactMarkdown(listLine.text, context)
+    ) {
+      return false;
+    }
+    if (listLine.markerKind !== firstLine.markerKind) {
+      hasMarkerChange = true;
+    }
+    if (firstLine.ordered && listLine.start !== (firstLine.start ?? 1) + index) {
+      return false;
+    }
+  }
+  return hasMarkerChange;
+}
+
+function markdownBlockCanUseReactMarkdownRootIndentedList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length < 2) {
+    return false;
+  }
+  const parsedLines = lines.map(parseMarkdownListLine);
+  const firstLine = parsedLines[0];
+  if (
+    !firstLine ||
+    parsedLines.some((line) => line === null) ||
+    parsedLines.some((line) => (line?.indent ?? 0) > 3)
+  ) {
+    return false;
+  }
+  let hasIndentChange = false;
+  let hasMarkerChange = false;
+  for (const [index, parsed] of parsedLines.entries()) {
+    const listLine = parsed as ParsedMarkdownListLine;
+    if (
+      listLine.ordered !== firstLine.ordered ||
+      (index > 0 && listLine.indent >= firstLine.indent + firstLine.markerWidth + 1) ||
+      listLine.text === "" ||
+      listLine.text.startsWith("[ ]") ||
+      listLine.text.startsWith("[x]") ||
+      !markdownListItemTextCanUseReactMarkdown(listLine.text, context)
+    ) {
+      return false;
+    }
+    if (listLine.indent !== firstLine.indent) {
+      hasIndentChange = true;
+    }
+    if (listLine.markerKind !== firstLine.markerKind) {
+      hasMarkerChange = true;
+    }
+    if (firstLine.ordered && listLine.start !== (firstLine.start ?? 1) + index) {
+      return false;
+    }
+  }
+  return hasIndentChange || hasMarkerChange;
+}
+
+function markdownBlockCanUseReactMarkdownNestedList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length < 2) {
+    return false;
+  }
+  const parsedLines = lines.map(parseMarkdownListLine);
+  const firstLine = parsedLines[0];
+  if (!firstLine || parsedLines.some((line) => line === null) || firstLine.indent > 3 || firstLine.ordered) {
+    return false;
+  }
+  let hasNestedLine = false;
+  for (const [index, parsed] of parsedLines.entries()) {
+    const listLine = parsed as ParsedMarkdownListLine;
+    if (
+      listLine.text === "" ||
+      listLine.text.startsWith("[ ]") ||
+      listLine.text.startsWith("[x]") ||
+      !markdownListItemTextCanUseReactMarkdown(listLine.text, context)
+    ) {
+      return false;
+    }
+    if (index === 0) {
+      continue;
+    }
+    if (listLine.indent <= firstLine.indent + firstLine.markerWidth) {
+      if (
+        listLine.indent !== firstLine.indent ||
+        listLine.ordered !== firstLine.ordered ||
+        listLine.markerKind !== firstLine.markerKind
+      ) {
+        return false;
+      }
+      continue;
+    }
+    hasNestedLine = true;
+  }
+  return hasNestedLine;
+}
+
+function markdownBlockCanUseReactMarkdownTightContinuationList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+  terminalNewline?: boolean,
+) {
+  const list = parseMarkdownList(lines, terminalNewline);
+  if (!list || list.loose || list.items.length === 0) {
+    return false;
+  }
+  const firstLine = parseMarkdownListLine(lines[0] as MarkdownLineRecord);
+  if (!firstLine || firstLine.indent > 3) {
+    return false;
+  }
+  let itemIndex = 0;
+  for (const line of lines) {
+    const listLine = parseMarkdownListLine(line);
+    if (!listLine) {
+      continue;
+    }
+    if (
+      listLine.indent !== firstLine.indent ||
+      listLine.ordered !== firstLine.ordered ||
+      listLine.markerKind !== firstLine.markerKind
+    ) {
+      return false;
+    }
+    if (firstLine.ordered && listLine.start !== (firstLine.start ?? 1) + itemIndex) {
+      return false;
+    }
+    itemIndex += 1;
+  }
+  return list.items.every((item) => markdownListItemCanUseReactMarkdownTightContinuation(item, context));
+}
+
+function markdownListItemCanUseReactMarkdownTightContinuation(
+  item: MarkdownListItem,
+  context?: MarkdownContext,
+): boolean {
+  if (
+    item.children ||
+    item.task ||
+    !item.text.includes("\n")
+  ) {
+    return false;
+  }
+  if (item.continuedLeadingIndentedCode && item.continuedText?.includes("\n")) {
+    const lines = item.continuedText.split("\n");
+    const firstLine = lines[0] ?? "";
+    const firstText = firstLine.trimStart();
+    return firstLine.length - firstText.length >= 4 &&
+      markdownListItemTextCanUseReactMarkdown(firstText, context) &&
+      lines.slice(1).every((line) => line.length > 0 && markdownListItemTextCanUseReactMarkdown(line, context));
+  }
+  if (item.leadingIndentedCode && item.continuedText === undefined) {
+    return false;
+  }
+  const lines = markdownListItemRenderText(item).split("\n");
+  return lines.every((line, index) => {
+    if (line.length === 0) {
+      return false;
+    }
+    if (index === 0 && item.leadingIndentedCode) {
+      const text = line.trimStart();
+      return line.length - text.length < 4 && markdownListItemTextCanUseReactMarkdown(text, context);
+    }
+    if (/^ {1,3}\S/.test(line)) {
+      return markdownListItemTextCanUseReactMarkdown(line.trimStart(), context);
+    }
+    return !/^\s/.test(line) && markdownListItemTextCanUseReactMarkdown(line, context);
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLooseSimpleList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+  terminalNewline?: boolean,
+) {
+  const list = parseMarkdownList(lines, terminalNewline);
+  if (!list?.loose || list.items.length === 0) {
+    return false;
+  }
+  return list.items.every((item) => {
+    if (
+      item.children ||
+      item.leadingIndentedCode ||
+      item.continuedLeadingIndentedCode
+    ) {
+      return false;
+    }
+    const paragraphs = markdownListItemRenderText(item)
+      .split(`\n${looseListBreakMarker}\n`)
+      .map((paragraph) => paragraph.replaceAll(looseListBreakMarker, "").trim())
+      .filter(Boolean);
+    return paragraphs.length > 0 &&
+      paragraphs.every((paragraph) => markdownListItemTextCanUseReactMarkdown(paragraph, context));
+  });
+}
+
+function markdownBlockCanUseReactMarkdownLooseNestedTaskList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+  terminalNewline?: boolean,
+) {
+  const list = parseMarkdownList(lines, terminalNewline);
+  return Boolean(list?.loose && markdownListRecordCanUseReactMarkdownLooseNestedTaskList(list, context));
+}
+
+function markdownListRecordCanUseReactMarkdownLooseNestedTaskList(
+  list: MarkdownListRecord,
+  context?: MarkdownContext,
+): boolean {
+  return markdownListRecordReactMarkdownLooseNestedTaskListStatus(list, context).valid;
+}
+
+function markdownListRecordReactMarkdownLooseNestedTaskListStatus(
+  list: MarkdownListRecord,
+  context?: MarkdownContext,
+): { hasNestedTask: boolean; valid: boolean } {
+  if (list.ordered || list.items.length === 0) {
+    return { hasNestedTask: false, valid: false };
+  }
+  let hasNestedTask = false;
+  for (const item of list.items) {
+    if (item.leadingIndentedCode || item.continuedLeadingIndentedCode) {
+      return { hasNestedTask: false, valid: false };
+    }
+    hasNestedTask = hasNestedTask || item.task;
+    const childLists = item.children ?? [];
+    for (const child of childLists) {
+      const childStatus = markdownListRecordReactMarkdownLooseNestedTaskListStatus(child, context);
+      if (!childStatus.valid) {
+        return { hasNestedTask: false, valid: false };
+      }
+      hasNestedTask = hasNestedTask || childStatus.hasNestedTask || child.items.some((childItem) => childItem.task);
+    }
+    const paragraphs = markdownListItemRenderText(item)
+      .split(`\n${looseListBreakMarker}\n`)
+      .map((paragraph) => paragraph.replaceAll(looseListBreakMarker, "").trim())
+      .filter(Boolean);
+    if (
+      paragraphs.length === 0 ||
+      !paragraphs.every((paragraph) => markdownListItemTextCanUseReactMarkdown(paragraph, context))
+    ) {
+      return { hasNestedTask: false, valid: false };
+    }
+  }
+  return { hasNestedTask, valid: hasNestedTask };
+}
+
+function markdownBlockCanUseReactMarkdownSimpleTaskList(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  if (lines.length === 0) {
+    return false;
+  }
+  const firstLine = parseMarkdownListLine(lines[0] as MarkdownLineRecord);
+  if (!firstLine) {
+    return false;
+  }
+  for (const [index, line] of lines.entries()) {
+    const listLine = parseMarkdownListLine(line);
+    const taskMatch = /^\[([ xX])\][ \t](?<text>[^\s\t][^\t]*|)$/.exec(listLine?.text ?? "");
+    const taskText = taskMatch?.groups?.text ?? "";
+    if (
+      !listLine ||
+      listLine.indent !== firstLine.indent ||
+      listLine.ordered !== firstLine.ordered ||
+      listLine.markerKind !== firstLine.markerKind ||
+      !taskMatch ||
+      (taskText !== "" && !markdownListItemTextCanUseReactMarkdown(taskText, context))
+    ) {
+      return false;
+    }
+    if (firstLine.ordered && listLine.start !== (firstLine.start ?? 1) + index) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function markdownBlockReactMarkdownListNeedsRawHtml(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+  terminalNewline?: boolean,
+) {
+  if (
+    !markdownBlockCanUseReactMarkdownSimpleList(lines, context) &&
+    !markdownBlockCanUseReactMarkdownSimpleTaskList(lines, context) &&
+    !markdownBlockCanUseReactMarkdownSmartList(lines, context) &&
+    !markdownBlockCanUseReactMarkdownRootIndentedList(lines, context) &&
+    !markdownBlockCanUseReactMarkdownNestedList(lines, context) &&
+    !markdownBlockCanUseReactMarkdownTightContinuationList(lines, context, terminalNewline) &&
+    !markdownBlockCanUseReactMarkdownLooseSimpleList(lines, context, terminalNewline) &&
+    !markdownBlockCanUseReactMarkdownLooseNestedTaskList(lines, context, terminalNewline)
+  ) {
+    return false;
+  }
+  return markdownListReactMarkdownTextLines(lines, terminalNewline).some((line) =>
+    markdownBlockContainsRawHtmlTag([line]),
+  );
+}
+
+function markdownListReactMarkdownTextLines(
+  lines: MarkdownLineRecord[],
+  terminalNewline?: boolean,
+) {
+  const list = parseMarkdownList(lines, terminalNewline);
+  if (!list) {
+    return lines.flatMap((line) => {
+      const listLine = parseMarkdownListLine(line);
+      const taskMatch = /^\[([ xX])\][ \t](?<text>[^\s\t][^\t]*|)$/.exec(listLine?.text ?? "");
+      const text = taskMatch?.groups?.text ?? listLine?.text ?? "";
+      return [{ key: `${line.key}-item`, text }];
+    });
+  }
+  return list.items.flatMap(markdownListItemReactMarkdownTextLines);
+}
+
+function markdownListItemReactMarkdownTextLines(item: MarkdownListItem): MarkdownLineRecord[] {
+  const itemText = markdownListItemRenderText(item);
+  const ownLines = itemText
+    .replaceAll(looseListBreakMarker, "")
+    .split("\n")
+    .filter(Boolean)
+    .map((text, index) => ({ key: `${item.key}-item-${index}`, text }));
+  const childLines = (item.children ?? []).flatMap((child) =>
+    child.items.flatMap(markdownListItemReactMarkdownTextLines),
+  );
+  return [...ownLines, ...childLines];
+}
+
+function markdownTableCellCanUseReactMarkdown(cell: string, context?: MarkdownContext) {
+  const line = { key: "table-cell", text: cell };
+  const lines = [line];
+  if (markdownBlockContainsRawHtmlTag(lines)) {
+    return markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines);
+  }
+  if (!/[<>\[\]&@]/.test(cell)) {
+    return true;
+  }
+  if (cell.includes("\t") || cell.includes("\n")) {
+    return false;
+  }
+  return (
+    markdownLineCanUseReactMarkdownEscapedInline(cell) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, context)
+  );
+}
+
+function markdownBlockCanUseReactMarkdownSimpleTable(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  const tableSpan = parseMarkdownTableSpan(lines);
+  if (!tableSpan || tableSpan.consumedLineCount !== lines.length) {
+    return false;
+  }
+  const cells = [
+    ...tableSpan.table.headers.map((cell) => cell.text),
+    ...tableSpan.table.rows.flatMap((row) => row.cells.map((cell) => cell.text)),
+  ];
+  return cells.every((cell) => markdownTableCellCanUseReactMarkdown(cell, context));
+}
+
+function markdownBlockReactMarkdownSimpleTableNeedsRawHtml(
+  lines: MarkdownLineRecord[],
+  context?: MarkdownContext,
+) {
+  const tableSpan = parseMarkdownTableSpan(lines);
+  if (
+    !tableSpan ||
+    tableSpan.consumedLineCount !== lines.length ||
+    !markdownBlockCanUseReactMarkdownSimpleTable(lines, context)
+  ) {
+    return false;
+  }
+  const cells = [
+    ...tableSpan.table.headers.map((cell) => cell.text),
+    ...tableSpan.table.rows.flatMap((row) => row.cells.map((cell) => cell.text)),
+  ];
+  return cells.some((cell) => markdownBlockContainsRawHtmlTag([{ key: "table-cell", text: cell }]));
+}
+
+function markdownBlockCanUseReactMarkdownSimpleFencedCode(lines: MarkdownLineRecord[]) {
+  if (lines.length < 2) {
+    return false;
+  }
+  const firstLine = lines[0]?.text ?? "";
+  const lastLine = lines.at(-1)?.text ?? "";
+  const opening =
+    /^(?<indent> {0,3})(?<fence>`{3,}|~{3,})(?:[ \t]*(?<language>[^ \t`]+)(?:[ \t]+.*)?)?[ \t]*$/.exec(
+      firstLine,
+    );
+  if (!opening) {
+    return false;
+  }
+  const fence = opening.groups?.fence ?? "";
+  const indent = opening.groups?.indent ?? "";
+  const language = opening.groups?.language ?? "";
+  if (indent !== "" && !fence.startsWith("`")) {
+    return false;
+  }
+  const hasClosingFence = new RegExp(`^ {0,3}${fence}[ \\t]*$`).test(lastLine);
+  if (fence.startsWith("~") && language === "") {
+    return false;
+  }
+  const legacyCloseFence = closingFenceFromLine(lastLine);
+  const closesWithLegacyFence = Boolean(legacyCloseFence && closesMarkdownFence(fence, legacyCloseFence));
+  if (fence.startsWith("~") && !closesWithLegacyFence) {
+    return false;
+  }
+  const contentLines = lines.slice(1, hasClosingFence || closesWithLegacyFence ? -1 : undefined);
+  if (markdownBlockContainsRawHtmlBlockTag(contentLines)) {
+    return false;
+  }
+  return contentLines.every((line) => !new RegExp(`^${fence}`).test(line.text));
+}
+
+function markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines: MarkdownLineRecord[]) {
+  return lines.length > 0 && lines.every((line) => /^(?: {4}|\t).*$/.test(line.text));
+}
+
+function markdownBlockCanUseReactMarkdownCompatibleBlock(
+  block: MarkdownBlockRecord,
+  context?: MarkdownContext,
+) {
+  const lines = markdownLines(block.text);
+  const firstLine = lines[0]?.text ?? "";
+  const secondLine = lines[1]?.text ?? "";
+  return (
+    (lines.length === 1 &&
+      /^ {0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$/.test(firstLine)) ||
+    markdownBlockCanUseReactMarkdownSetextHeading(lines, context) ||
+    (Boolean(parseFencedCodeBlock(lines, block.terminalNewline ?? false)) &&
+      markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) ||
+    (Boolean(parseIndentedCodeBlock(lines)) &&
+      markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines)) ||
+    Boolean(parseMarkdownTableSpan(lines) && markdownBlockCanUseReactMarkdownSimpleTable(lines, context)) ||
+    markdownBlockCanUseReactMarkdownSimpleTaskList(lines, context) ||
+    markdownBlockCanUseReactMarkdownSimpleList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownSmartList(lines, context) ||
+    markdownBlockCanUseReactMarkdownRootIndentedList(lines, context) ||
+    markdownBlockCanUseReactMarkdownNestedList(lines, context) ||
+    markdownBlockCanUseReactMarkdownTightContinuationList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownLooseSimpleList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownLooseNestedTaskList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownSimpleBlockquote(lines, context) ||
+    markdownBlockCanUseReactMarkdownLazyBlockquote(lines, context) ||
+    markdownBlockCanUseReactMarkdownLazyBlockquoteList(lines, context) ||
+    markdownBlockCanUseReactMarkdownBlockquoteBlocks(lines, context) ||
+    (Boolean(/^ {0,3}(#{1,6})(?=\s|$)(.*)$/.exec(firstLine)) &&
+      markdownBlockCanUseReactMarkdownAtxHeading(lines, context)) ||
+    markdownBlockCanUseReactMarkdownMultilineRawInlineParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownMultilineInlineParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownFootnoteLine(lines) ||
+    markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines) ||
+    markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+    markdownBlockReactMarkdownSimpleTableNeedsRawHtml(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawAnchorParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawOrderedList(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawIframe(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawVoidBlock(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawVideo(lines) ||
+    markdownBlockCanUseReactMarkdownOpaqueRawPreBlock(lines) ||
+    markdownBlockCanUseReactMarkdownStandaloneRawDirectiveBlock(lines) ||
+    markdownBlockCanUseReactMarkdownRawCheckboxLine(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownPlainParagraph(lines) ||
+    (lines.length === 2 &&
+      (/^ {0,3}=+\s*$/.test(secondLine) || /^ {0,3}-+\s*$/.test(secondLine)) &&
+      markdownBlockCanUseReactMarkdownSetextHeading(lines, context))
+  );
+}
+
+function markdownBlockCanUseReactMarkdownFootnoteLine(lines: MarkdownLineRecord[]) {
+  return lines.some((line) => /\[\^[^\]\n]+\]/.test(line.text) || /^ {0,3}\[\^[^\]\n]+\]:/.test(line.text));
+}
+
+function markdownBlockIsReactMarkdownListBlock(block: MarkdownBlockRecord, context?: MarkdownContext) {
+  const lines = markdownLines(block.text);
+  return (
+    markdownBlockCanUseReactMarkdownSimpleTaskList(lines, context) ||
+    markdownBlockCanUseReactMarkdownSimpleList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownSmartList(lines, context) ||
+    markdownBlockCanUseReactMarkdownRootIndentedList(lines, context) ||
+    markdownBlockCanUseReactMarkdownNestedList(lines, context) ||
+    markdownBlockCanUseReactMarkdownTightContinuationList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownLooseSimpleList(lines, context, block.terminalNewline) ||
+    markdownBlockCanUseReactMarkdownLooseNestedTaskList(lines, context, block.terminalNewline)
+  );
+}
+
+function markdownBlockReactMarkdownListMarker(block: MarkdownBlockRecord, context?: MarkdownContext) {
+  if (!markdownBlockIsReactMarkdownListBlock(block, context)) {
+    return undefined;
+  }
+  const firstLine = parseMarkdownListLine(markdownLines(block.text)[0] as MarkdownLineRecord);
+  return firstLine ? `${firstLine.ordered ? "ordered" : "unordered"}:${firstLine.markerKind}` : undefined;
+}
+
+function markdownDocumentHasAdjacentReactMarkdownListBlocks(
+  blocks: MarkdownBlockRecord[],
+  context?: MarkdownContext,
+) {
+  let previousListMarker: string | undefined;
+  for (const block of blocks) {
+    const currentListMarker = markdownBlockReactMarkdownListMarker(block, context);
+    if (previousListMarker !== undefined && currentListMarker === previousListMarker) {
+      return true;
+    }
+    previousListMarker = currentListMarker;
+  }
+  return false;
+}
+
+function markdownBlockNeedsReactMarkdownRawHtml(
+  block: MarkdownBlockRecord,
+  context?: MarkdownContext,
+) {
+  const lines = markdownLines(block.text);
+  return (
+    markdownBlockReactMarkdownHeadingNeedsRawHtml(lines) ||
+    markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+    markdownBlockCanUseReactMarkdownMultilineRawInlineParagraph(lines, context) ||
+    markdownBlockReactMarkdownBlockquoteNeedsRawHtml(lines, context) ||
+    markdownBlockReactMarkdownListNeedsRawHtml(lines, context, block.terminalNewline) ||
+    markdownBlockReactMarkdownSimpleTableNeedsRawHtml(lines, context) ||
+    markdownBlockCanUseReactMarkdownSimpleRawAnchorParagraph(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawOrderedList(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawIframe(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawVoidBlock(lines) ||
+    markdownBlockCanUseReactMarkdownSimpleRawVideo(lines) ||
+    markdownBlockCanUseReactMarkdownOpaqueRawPreBlock(lines) ||
+    markdownBlockCanUseReactMarkdownStandaloneRawDirectiveBlock(lines) ||
+    markdownBlockCanUseReactMarkdownRawCheckboxLine(lines)
+  );
+}
+
+function markdownDocumentCanUseReactMarkdown(
+  blocks: MarkdownBlockRecord[],
+  context?: MarkdownContext,
+) {
+  if (!blocks.every((block) => markdownBlockCanUseReactMarkdownCompatibleBlock(block, context))) {
+    return false;
+  }
+  return !markdownDocumentHasAdjacentReactMarkdownListBlocks(blocks, context);
+}
+
 function markdownBlockContainsRawHtmlTag(lines: MarkdownLineRecord[]) {
   const tagPattern = new RegExp(
     String.raw`<\/?[A-Za-z][A-Za-z0-9-]*${rawHtmlAttributePattern}>`,
@@ -2558,6 +5622,10 @@ function rawHtmlStylePropertyName(name: string) {
   return name.replace(/-([a-z])/g, (_, letter) => String(letter).toUpperCase());
 }
 
+function rawHtmlStyleCssPropertyName(name: string) {
+  return name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
 function parseRawHtmlStyle(value: string): React.CSSProperties | undefined {
   const style: Record<string, string> = {};
   for (const declaration of value.split(";")) {
@@ -2576,6 +5644,12 @@ function parseRawHtmlStyle(value: string): React.CSSProperties | undefined {
     style[rawHtmlStylePropertyName(property)] = propertyValue;
   }
   return Object.keys(style).length > 0 ? (style as React.CSSProperties) : undefined;
+}
+
+function rawHtmlStyleToCssText(style: React.CSSProperties) {
+  return Object.entries(style)
+    .map(([name, value]) => `${rawHtmlStyleCssPropertyName(name)}:${String(value)}`)
+    .join(";");
 }
 
 function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
@@ -2692,7 +5766,7 @@ function renderRawHtmlChild(child: RawHtmlChild, key: string): React.ReactNode {
   );
 }
 
-function renderSanitizedRawHtml(source: string, keyPrefix: string) {
+function parseSanitizedRawHtmlTree(source: string) {
   const root: RawHtmlNode = { children: [], props: {}, tag: "fragment" };
   const stack = [root];
   const withoutDangerousBlocks = source
@@ -2749,6 +5823,11 @@ function renderSanitizedRawHtml(source: string, keyPrefix: string) {
       decodeMarkdownHtmlEntities(withoutDangerousBlocks.slice(index)),
     );
   }
+  return root;
+}
+
+function renderSanitizedRawHtml(source: string, keyPrefix: string) {
+  const root = parseSanitizedRawHtmlTree(source);
   return (
     <>
       {root.children.map((child, childIndex) =>
@@ -2793,7 +5872,16 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     lines.length === 1 &&
     /^ {0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$/.test(firstLine)
   ) {
-    return <hr />;
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSetextHeading(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownHeadingNeedsRawHtml(lines)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
   }
   if (lines.length === 2 && /^ {0,3}=+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={1} text={firstLine.trim()} />;
@@ -2803,6 +5891,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const codeBlock = parseFencedCodeBlock(lines, props.block.terminalNewline ?? false);
   if (codeBlock) {
+    if (markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) {
+      return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    }
     return (
       <pre>
         <code className={codeBlock.language}>
@@ -2813,6 +5904,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const indentedCodeBlock = parseIndentedCodeBlock(lines);
   if (indentedCodeBlock) {
+    if (markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines)) {
+      return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    }
     return (
       <pre>
         <code>{indentedCodeBlock.code}</code>
@@ -2821,6 +5915,15 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const tableSpan = parseMarkdownTableSpan(lines);
   if (tableSpan) {
+    if (markdownBlockCanUseReactMarkdownSimpleTable(lines, props.context)) {
+      return (
+        <ReactMarkdownCompatibleBlock
+          allowRawHtml={markdownBlockReactMarkdownSimpleTableNeedsRawHtml(lines, props.context)}
+          context={props.context ?? {}}
+          markdown={props.block.text}
+        />
+      );
+    }
     const remainingLines = lines.slice(tableSpan.consumedLineCount);
     return (
       <>
@@ -2836,6 +5939,69 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
           />
         ) : null}
       </>
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleTaskList(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleList(lines, props.context, props.block.terminalNewline)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSmartList(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownRootIndentedList(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownNestedList(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownTightContinuationList(lines, props.context, props.block.terminalNewline)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownLooseSimpleList(lines, props.context, props.block.terminalNewline)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
     );
   }
   const list = parseMarkdownList(lines, props.block.terminalNewline);
@@ -2903,6 +6069,20 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const blockquote = parseMarkdownBlockquote(lines);
   if (blockquote) {
+    if (
+      markdownBlockCanUseReactMarkdownSimpleBlockquote(lines, props.context) ||
+      markdownBlockCanUseReactMarkdownLazyBlockquote(lines, props.context) ||
+      markdownBlockCanUseReactMarkdownLazyBlockquoteList(lines, props.context) ||
+      markdownBlockCanUseReactMarkdownBlockquoteBlocks(lines, props.context)
+    ) {
+      return (
+        <ReactMarkdownCompatibleBlock
+          allowRawHtml={markdownBlockReactMarkdownBlockquoteNeedsRawHtml(lines, props.context)}
+          context={props.context ?? {}}
+          markdown={props.block.text}
+        />
+      );
+    }
     const interruptIndex = lazyBlockquoteInterruptIndex(lines);
     if (interruptIndex !== null) {
       const blockquoteLines = lines.slice(0, interruptIndex);
@@ -2970,6 +6150,15 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     );
   }
   const headingMatch = /^ {0,3}(#{1,6})(?=\s|$)(.*)$/.exec(firstLine);
+  if (headingMatch && markdownBlockCanUseReactMarkdownAtxHeading(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml={markdownBlockReactMarkdownHeadingNeedsRawHtml(lines)}
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
   if (headingMatch) {
     const headingText = (headingMatch[2] ?? "").trim();
     const trailingHashTrimmed = headingText.replace(/#+$/, "");
@@ -2985,8 +6174,199 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       />
     );
   }
+  if (markdownBlockCanUseReactMarkdownOpaqueRawPreBlock(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownStandaloneRawDirectiveBlock(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownOpaqueRawHtmlBlock(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
   if (markdownBlockContainsRawHtmlBlockTag(lines)) {
     return <MarkdownRawHtmlBlock lines={lines} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMultilineRawInlineParagraph(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownMultilineInlineParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleInlineParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, props.context)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleRawAnchorParagraph(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleRawOrderedList(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleRawIframe(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleRawVoidBlock(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleRawVideo(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownRawCheckboxLine(lines)) {
+    return (
+      <ReactMarkdownCompatibleBlock
+        allowRawHtml
+        context={props.context ?? {}}
+        markdown={props.block.text}
+      />
+    );
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(lines, props.context)) {
+    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+  }
+  if (markdownBlockCanUseReactMarkdownPlainParagraph(lines)) {
+    return (
+      <ReactMarkdownPlainParagraph
+        breaks={props.context?.breaks ?? true}
+        markdown={props.block.text}
+      />
+    );
   }
   const normalizedLines = markdownLines(
     normalizeInlineLinkTitleNewlines(normalizeCodeSpanNewlines(props.block.text)),
@@ -3065,6 +6445,7 @@ export function MarkdownRenderer(props: {
     mentionReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,
+    reactMarkdownReferenceDefinitions: reactMarkdownReferenceDefinitions(parsedMarkdown.referenceMap),
     referenceMap: parsedMarkdown.referenceMap,
   };
   const Container = props.containerElement ?? "div";
@@ -3078,6 +6459,10 @@ export function MarkdownRenderer(props: {
       />
     );
   }
+  const canRenderDocumentWithReactMarkdown = markdownDocumentCanUseReactMarkdown(blocks, context);
+  const documentNeedsReactMarkdownRawHtml = blocks.some((block) =>
+    markdownBlockNeedsReactMarkdownRawHtml(block, context),
+  );
 
   return (
     <>
@@ -3088,9 +6473,15 @@ export function MarkdownRenderer(props: {
         data-via-email={props["data-via-email"]}
         id={props.id}
       >
-        {blocks.map((block) => (
-          <MarkdownBlock block={block} context={context} key={block.key} />
-        ))}
+        {canRenderDocumentWithReactMarkdown ? (
+          <ReactMarkdownCompatibleBlock
+            allowRawHtml={documentNeedsReactMarkdownRawHtml}
+            context={context}
+            markdown={parsedMarkdown.markdown}
+          />
+        ) : (
+          blocks.map((block) => <MarkdownBlock block={block} context={context} key={block.key} />)
+        )}
       </Container>
     </>
   );
@@ -3243,7 +6634,11 @@ export function LegacyMarkdownEditorShell(props: {
         </li>
         <li>
           <div className="task-list-button">
-            <button className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline" type="button">
+            <button
+              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+              onClick={(event) => addLegacyTasklistTemplateFromButton(event.currentTarget)}
+              type="button"
+            >
               <i className="yobicon-list task-list-icon"></i> button.add.checklist
             </button>
           </div>

@@ -540,7 +540,7 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
                 .body(Body::from(
-                    "{\"loginId\":\"bad\",\"name\":\"Bad\",\"emailAddress\":\"bad@example.com\",\"password\":\"short\",\"retypedPassword\":\"short\"}",
+                    "{\"loginId\":\"bad\",\"name\":\"Bad\",\"emailAddress\":\"bad@example.com\",\"password\":\"bad\",\"retypedPassword\":\"bad\"}",
                 ))
                 .unwrap(),
         )
@@ -552,7 +552,7 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     assert_eq!(invalid_json["error"]["code"], "bad_request");
     assert_eq!(
         invalid_json["error"]["message"],
-        "Password must be at least 8 characters."
+        "validation.tooShortPassword"
     );
     assert_eq!(invalid_json["error"]["status"], 400);
 }
@@ -1166,7 +1166,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
-                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"admin\",\"retypedPassword\":\"admin\"}"))
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"bad\",\"retypedPassword\":\"bad\"}"))
                 .unwrap(),
         )
         .await
@@ -1174,7 +1174,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
     assert_eq!(short_password.status(), StatusCode::BAD_REQUEST);
     let short_password_json = response_text(short_password).await;
     assert!(short_password_json.contains("\"code\":\"bad_request\""));
-    assert!(short_password_json.contains("Password must be at least 8 characters."));
+    assert!(short_password_json.contains("validation.tooShortPassword"));
 
     let mismatch = app
         .clone()
@@ -1193,7 +1193,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
     assert_eq!(mismatch.status(), StatusCode::BAD_REQUEST);
     let mismatch_json = response_text(mismatch).await;
     assert!(mismatch_json.contains("\"code\":\"bad_request\""));
-    assert!(mismatch_json.contains("Passwords do not match."));
+    assert!(mismatch_json.contains("validation.passwordMismatch"));
 
     let register = app
         .clone()
@@ -1293,7 +1293,7 @@ async fn register_rejects_duplicate_login_id_and_email() {
         .unwrap();
     assert_eq!(duplicate_login.status(), StatusCode::CONFLICT);
     let duplicate_login_json = response_text(duplicate_login).await;
-    assert!(duplicate_login_json.contains("Login ID or email is already in use."));
+    assert!(duplicate_login_json.contains("user.loginId.duplicate"));
 
     let duplicate_email = app
         .oneshot(
@@ -1310,7 +1310,7 @@ async fn register_rejects_duplicate_login_id_and_email() {
         .unwrap();
     assert_eq!(duplicate_email.status(), StatusCode::CONFLICT);
     let duplicate_email_json = response_text(duplicate_email).await;
-    assert!(duplicate_email_json.contains("Login ID or email is already in use."));
+    assert!(duplicate_email_json.contains("user.email.duplicate"));
 }
 
 #[tokio::test]
@@ -2544,6 +2544,26 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .await
         .unwrap();
 
+    let empty_profile_name = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"name\":\"\",\"email\":\"door-updated@example.com\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(empty_profile_name.status(), StatusCode::BAD_REQUEST);
+    let empty_profile_name_json = response_text(empty_profile_name).await;
+    assert!(empty_profile_name_json.contains("validation.required"));
+
     let updated_profile = app
         .clone()
         .oneshot(
@@ -2756,6 +2776,42 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .unwrap();
     assert_eq!(deleted_email.status(), StatusCode::OK);
 
+    let wrong_old_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/ChangePassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"oldPassword\":\"wrongpass\",\"password\":\"doorpass2\",\"retypedPassword\":\"doorpass2\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(wrong_old_password.status(), StatusCode::BAD_REQUEST);
+    let wrong_old_password_json = response_text(wrong_old_password).await;
+    assert!(wrong_old_password_json.contains("user.wrongPassword.alert"));
+
+    let mismatched_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/ChangePassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"oldPassword\":\"doorpass1\",\"password\":\"doorpass2\",\"retypedPassword\":\"doorpass3\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(mismatched_password.status(), StatusCode::BAD_REQUEST);
+    let mismatched_password_json = response_text(mismatched_password).await;
+    assert!(mismatched_password_json.contains("validation.passwordMismatch"));
+
     let changed_password = app
         .clone()
         .oneshot(
@@ -2950,6 +3006,96 @@ async fn update_profile_replaces_existing_avatar_attachment() {
     .insert(&db)
     .await
     .unwrap();
+
+    let invalid_avatar_id = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"name\":\"Door\",\"email\":\"door@example.com\",\"avatarAttachmentId\":\"not-a-number\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(invalid_avatar_id.status(), StatusCode::BAD_REQUEST);
+    let invalid_avatar_id_json = response_text(invalid_avatar_id).await;
+    assert!(invalid_avatar_id_json.contains("user.avatar.uploadError"));
+
+    let text_attachment = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("avatar.txt".to_string())),
+        hash: Set(Some("avatar-text-hash".to_string())),
+        container_type: Set(Some("USER".to_string())),
+        mime_type: Set(Some("text/plain".to_string())),
+        size: Set(Some(256)),
+        container_id: Set(user.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("door".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let non_image_avatar = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"name\":\"Door\",\"email\":\"door@example.com\",\"avatarAttachmentId\":\"{}\"}}",
+                    text_attachment.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(non_image_avatar.status(), StatusCode::BAD_REQUEST);
+    let non_image_avatar_json = response_text(non_image_avatar).await;
+    assert!(non_image_avatar_json.contains("user.avatar.onlyImage"));
+
+    let large_attachment = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("large-avatar.png".to_string())),
+        hash: Set(Some("large-avatar-hash".to_string())),
+        container_type: Set(Some("USER".to_string())),
+        mime_type: Set(Some("image/png".to_string())),
+        size: Set(Some(1024 * 1000 + 1)),
+        container_id: Set(user.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("door".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let too_large_avatar = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"name\":\"Door\",\"email\":\"door@example.com\",\"avatarAttachmentId\":\"{}\"}}",
+                    large_attachment.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(too_large_avatar.status(), StatusCode::BAD_REQUEST);
+    let too_large_avatar_json = response_text(too_large_avatar).await;
+    assert!(too_large_avatar_json.contains("user.avatar.fileSizeAlert"));
 
     let updated_avatar = app
         .oneshot(

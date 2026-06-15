@@ -7,6 +7,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationContainerView } from "../../../../app-view-models";
 import { OrganizationPullRequestListPage } from "../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/organizations/$organizationName/pullreque
 
 function OrganizationPullRequestsRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -36,19 +37,14 @@ function OrganizationPullRequestsRouteComponent() {
     }),
   );
   const error = containerQuery.error ?? listQuery.error;
-  const failureKind = classifyConnectFailure(error);
+  const failureKind = error ? (classifyConnectFailure(error) ?? "bad-request") : null;
 
-  useDocumentTitle("Organization Pull Requests");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read organization PRs failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle("title.pullrequest");
 
   if (bootstrapping || containerQuery.isLoading || listQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -57,6 +53,9 @@ function OrganizationPullRequestsRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/organizations/${organizationName}/pullrequests`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/organizations/${organizationName}/pullrequests`} />;
   }
 
   return (

@@ -5,7 +5,7 @@ import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } fro
 import { useAppRuntime } from "../../app-runtime-context";
 import type { WorkspaceOverviewViewModel } from "../-view-models";
 import { PublicUserProfilePage } from "../-workspace-views";
-import { classifyConnectFailure, navigateToAppHref, NotFoundPage } from "../-shared";
+import { BadRequestPage, classifyConnectFailure, navigateToAppHref, NotFoundPage } from "../-shared";
 
 export const Route = createFileRoute("/$user")({
   component: PublicUserProfileRouteComponent,
@@ -97,8 +97,8 @@ function toPublicProfileOverview(
 
 function PublicUserProfileRouteComponent() {
   const { user } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [failureKind, setFailureKind] = React.useState<null | "not-found">(null);
+  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const [failureKind, setFailureKind] = React.useState<null | "bad-request" | "not-found">(null);
   const search = publicProfileSearch();
   const profileQuery = useQuery({
     ...readPublicUserProfileQueryOptions(runtimeConfig, {
@@ -117,28 +117,28 @@ function PublicUserProfileRouteComponent() {
 
   React.useEffect(() => {
     if (!profileQuery.error) {
+      setFailureKind(null);
       return;
     }
     if (classifyConnectFailure(profileQuery.error) === "not-found") {
       setFailureKind("not-found");
       return;
     }
-    setErrorMessage(
-      profileQuery.error instanceof Error
-        ? profileQuery.error.message
-        : "Read public user profile failed.",
-    );
-  }, [profileQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [profileQuery.error]);
 
   if (bootstrapping || profileQuery.isPending || profileQuery.data?.redirectPath) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${user}`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/${user}`} />;
   }
 
   const session = currentSession

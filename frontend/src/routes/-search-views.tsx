@@ -24,6 +24,9 @@ import {
   NotFoundPage,
   useDocumentTitle,
 } from "./-shared";
+import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
+import { ProjectHeader, ProjectMenu } from "./-project-views";
+import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
 
 type SearchRouteScope =
   | { type: "global" }
@@ -37,14 +40,14 @@ type SearchRouteQuery =
 
 const SEARCH_CATEGORIES: Array<{ countKey: keyof SearchCounts; label: string; type: SearchType }> =
   [
-    { countKey: "issues", label: "Issues", type: "issue" },
-    { countKey: "users", label: "Users", type: "user" },
-    { countKey: "projects", label: "Projects", type: "project" },
-    { countKey: "posts", label: "Posts", type: "post" },
-    { countKey: "milestones", label: "Milestones", type: "milestone" },
-    { countKey: "issueComments", label: "Issue Comments", type: "issue_comment" },
-    { countKey: "postComments", label: "Post Comments", type: "post_comment" },
-    { countKey: "reviews", label: "Code Reviews", type: "review" },
+    { countKey: "issues", label: "search.menu.issues", type: "issue" },
+    { countKey: "users", label: "search.menu.users", type: "user" },
+    { countKey: "projects", label: "search.menu.projects", type: "project" },
+    { countKey: "posts", label: "search.menu.boards", type: "post" },
+    { countKey: "milestones", label: "search.menu.milestones", type: "milestone" },
+    { countKey: "issueComments", label: "search.menu.issue.comments", type: "issue_comment" },
+    { countKey: "postComments", label: "search.menu.board.comments", type: "post_comment" },
+    { countKey: "reviews", label: "search.menu.reviews", type: "review" },
   ];
 
 function readSearchParams() {
@@ -117,7 +120,7 @@ function emptyCounts(): SearchCounts {
 }
 
 function categoryLabel(type: SearchType) {
-  return SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "Issues";
+  return SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "search.menu.issues";
 }
 
 function HighlightedSnippet({ snippet }: { snippet: SearchSnippet }) {
@@ -183,7 +186,7 @@ function SearchCategories(props: {
 function SearchResultTitle(props: { activeType: SearchType; count: number }) {
   return (
     <h3 className="search-result-title">
-      Found <strong>{props.count}</strong> result(s) in {categoryLabel(props.activeType)}
+      search.result.title <strong>{props.count}</strong> {categoryLabel(props.activeType)}
     </h3>
   );
 }
@@ -207,17 +210,23 @@ function SearchMeta({
           {item.ownerName}/{item.projectName}
         </a>
       ) : null}
-      {item.authorLoginId ? (
+      {item.authorLoginId && item.authorLabel ? (
         <a
           className="meta-item"
-          href={prefixBasePath(runtimeConfig.basePath, `/users/${item.authorLoginId}`)}
+          data-placement="top"
+          data-toggle="tooltip"
+          href={prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`)}
           title={item.authorLoginId}
         >
-          {item.authorLabel || item.authorLoginId}
+          {item.authorLabel}
         </a>
-      ) : null}
+      ) : (
+        <span className="meta-item">issue.noAuthor</span>
+      )}
       {item.createdLabel || item.updatedLabel ? (
-        <span className="meta-item">{item.updatedLabel || item.createdLabel}</span>
+        <span className="meta-item" title={item.createdLabel || item.updatedLabel}>
+          {item.updatedLabel || item.createdLabel}
+        </span>
       ) : null}
       {item.state ? <span className="meta-item">{item.state}</span> : null}
     </div>
@@ -255,7 +264,7 @@ function SearchResultItem(props: {
   );
 }
 
-function SearchResults(props: {
+export function SearchResults(props: {
   activeType: SearchType;
   input: SearchInput | null;
   isLoading: boolean;
@@ -267,7 +276,7 @@ function SearchResults(props: {
     return <div className="empty-result"></div>;
   }
   if (props.isLoading) {
-    return <div className="empty-result">Loading&hellip;</div>;
+    return <div className="empty-result"></div>;
   }
   if (!props.response || props.response.items.length === 0) {
     return <div className="empty-result"></div>;
@@ -362,6 +371,39 @@ export function SearchPagination(props: {
   );
 }
 
+function projectSearchDetail(scope: SearchRouteScope): ProjectDetailViewModel | null {
+  if (scope.type !== "project") {
+    return null;
+  }
+  return {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: scope.ownerName,
+    projectName: scope.projectName,
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+}
+
+function organizationSearchDetail(scope: SearchRouteScope): OrganizationDetailViewModel | null {
+  if (scope.type !== "organization") {
+    return null;
+  }
+  return {
+    description: "",
+    enrollmentRequested: false,
+    organizationName: scope.organizationName,
+    viewerCanCreateProject: false,
+    viewerCanEnroll: false,
+    viewerCanLeave: false,
+    viewerCanUpdate: false,
+  };
+}
+
 export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   const { bootstrapping, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
@@ -412,8 +454,10 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   const counts = response?.counts ?? emptyCounts();
   const activeCategory = SEARCH_CATEGORIES.find((category) => category.type === activeType);
   const activeCount = activeCategory ? counts[activeCategory.countKey] : 0;
+  const projectDetail = projectSearchDetail(scope);
+  const organizationDetail = organizationSearchDetail(scope);
 
-  useDocumentTitle("Search");
+  useDocumentTitle("title.search");
 
   React.useEffect(() => {
     if (!searchQuery.error) {
@@ -430,7 +474,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -449,9 +493,21 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
 
   return (
     <main className="app-shell search-page">
+      {projectDetail ? (
+        <>
+          <ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />
+          <ProjectMenu detail={projectDetail} runtimeConfig={runtimeConfig} />
+        </>
+      ) : null}
+      {organizationDetail ? (
+        <>
+          <OrganizationHeader detail={organizationDetail} runtimeConfig={runtimeConfig} />
+          <OrganizationMenu detail={organizationDetail} runtimeConfig={runtimeConfig} />
+        </>
+      ) : null}
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>Search</h3>
+          <h3>title.search</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -483,7 +539,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
                   />
                   <input name="pageNum" type="hidden" value="1" />
                   <button className="ybtn" type="submit">
-                    Search
+                    title.search
                   </button>
                 </form>
                 <SearchResultTitle activeType={activeType} count={activeCount} />

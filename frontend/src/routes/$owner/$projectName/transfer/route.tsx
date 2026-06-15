@@ -11,6 +11,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectTransferPage } from "../../../-project-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -27,7 +28,9 @@ function ProjectTransferRouteComponent() {
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/transfer`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const containerQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -47,6 +50,7 @@ function ProjectTransferRouteComponent() {
   React.useEffect(() => {
     const error = containerQuery.error ?? transferQuery.error;
     if (!error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(error);
@@ -54,8 +58,8 @@ function ProjectTransferRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(error instanceof Error ? error.message : "Read project transfer failed.");
-  }, [containerQuery.error, setErrorMessage, transferQuery.error]);
+    setFailureKind("bad-request");
+  }, [containerQuery.error, transferQuery.error]);
 
   const transferMutation = useMutation({
     mutationFn: (destination: string) =>
@@ -63,9 +67,9 @@ function ProjectTransferRouteComponent() {
         destination,
         ownerName: owner,
         projectName,
-      }),
+    }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Request project transfer failed.");
+      setErrorMessage(error instanceof Error ? error.message : "project.transfer.error");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(transferQueryKey, detail);
@@ -79,7 +83,7 @@ function ProjectTransferRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -88,6 +92,9 @@ function ProjectTransferRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
   if (containerQuery.data && !containerQuery.data.viewerCanUpdate) {
     return <ForbiddenPage href={routeHref} />;

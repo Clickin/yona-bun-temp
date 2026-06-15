@@ -9,11 +9,13 @@ import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
+type WorkspaceProfileWithGuest = WorkspaceProfile & { isGuest?: boolean };
+
 export type PublicUserProfileResponse = {
   daysAgo: number;
   issueItems: WorkspaceIssueItem[];
   memberProjects: WorkspaceMemberProjectItem[];
-  profile?: WorkspaceProfile;
+  profile?: WorkspaceProfileWithGuest;
   pullRequestItems: WorkspacePullRequestItem[];
   redirectPath?: string;
   selected: string;
@@ -51,6 +53,7 @@ function normalizePublicUserProfileResponse(
           displayName: response.profile.displayName ?? "",
           englishName: response.profile.englishName ?? "",
           isBlocked: response.profile.isBlocked ?? false,
+          isGuest: (response.profile as WorkspaceProfileWithGuest).isGuest ?? false,
           isSiteAdmin: response.profile.isSiteAdmin ?? false,
           loginId: response.profile.loginId ?? "",
           primaryEmailAddress: response.profile.primaryEmailAddress ?? "",

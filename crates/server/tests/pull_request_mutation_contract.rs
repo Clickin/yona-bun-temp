@@ -1796,7 +1796,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     let merged_payload: Value =
         serde_json::from_str(&deliveries[6].body).expect("merged webhook payload");
     let merged_text = merged_payload["text"].as_str().unwrap_or_default();
-    assert!(merged_text.contains("pullRequest.event.message.MERGED"));
+    assert!(merged_text.contains("pullRequest.event.message.merged"));
     assert!(merged_text
         .contains("/yona/owner/projectYobi/pullRequest/1|#1: Updated interaction parity"));
 

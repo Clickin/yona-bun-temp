@@ -441,6 +441,25 @@ function projectMenuSettingsFromDetail(
   };
 }
 
+function projectShellDetail(input: {
+  ownerName: string;
+  projectName: string;
+  viewerCanUpdate?: boolean;
+}): ProjectDetailViewModel {
+  return {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: input.ownerName,
+    projectName: input.projectName,
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: Boolean(input.viewerCanUpdate),
+  };
+}
+
 export function ProjectMenu(props: {
   activeMenu?:
     | "home"
@@ -459,7 +478,6 @@ export function ProjectMenu(props: {
     {
       key: "home",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName),
-      label: "Home",
       menuName: "title.projectHome",
       show: true,
       shortMenu: "H",
@@ -468,7 +486,6 @@ export function ProjectMenu(props: {
       className: "code-menu",
       key: "code",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "code"),
-      label: "Code",
       menuName: "menu.code",
       show: detail.showCode,
       shortMenu: "C",
@@ -477,7 +494,6 @@ export function ProjectMenu(props: {
       count: detail.openIssueCount,
       key: "issue",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "issues"),
-      label: `Issues ${detail.openIssueCount ?? 0}`,
       menuName: "menu.issue",
       show: detail.showIssue,
       shortMenu: "I",
@@ -486,7 +502,6 @@ export function ProjectMenu(props: {
       count: detail.openPullRequestCount,
       key: "pullRequest",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"),
-      label: `Pull requests ${detail.openPullRequestCount ?? 0}`,
       menuName: "menu.pullRequest",
       show: detail.showPullRequest,
       shortMenu: "P",
@@ -495,7 +510,6 @@ export function ProjectMenu(props: {
       count: detail.reviewCount,
       key: "review",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "reviews"),
-      label: `Reviews ${detail.reviewCount ?? 0}`,
       menuName: "menu.review",
       show: detail.showReview,
       shortMenu: "R",
@@ -503,7 +517,6 @@ export function ProjectMenu(props: {
     {
       key: "milestone",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "milestones"),
-      label: "Milestones",
       menuName: "milestone",
       show: detail.showMilestone,
       shortMenu: "M",
@@ -512,7 +525,6 @@ export function ProjectMenu(props: {
       count: detail.boardCount,
       key: "board",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "posts"),
-      label: `Boards ${detail.boardCount ?? 0}`,
       menuName: "menu.board",
       show: detail.showBoard,
       shortMenu: "B",
@@ -532,7 +544,7 @@ export function ProjectMenu(props: {
               .join(" ");
             return [
               <li className={classNames || undefined} key={item.key}>
-                <a href={item.href} title={item.label}>
+                <a href={item.href}>
                   <span className="menu-name">{item.menuName}</span>
                   <span className="short-menu">{item.shortMenu}</span>{" "}
                   {(item.count ?? 0) > 0 ? (
@@ -554,7 +566,6 @@ export function ProjectMenu(props: {
                     detail.projectName,
                     "settingform",
                   )}
-                  title="Settings"
                 >
                   <i className="yobicon-cog" />
                   <span className="blind">
@@ -570,7 +581,10 @@ export function ProjectMenu(props: {
   );
 }
 
-function ProjectHeader(props: { detail: ProjectDetailViewModel; runtimeConfig: RuntimeConfig }) {
+export function ProjectHeader(props: {
+  detail: ProjectDetailViewModel;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { detail, runtimeConfig } = props;
   const projectHref = buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName);
   const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${detail.ownerName}`);
@@ -852,8 +866,8 @@ export function ProjectNewPage(props: {
                     style={{ minWidth: 220 }}
                     value={formState.vcs}
                   >
-                    <option value="GIT">Git</option>
-                    <option value="SVN">Subversion</option>
+                    <option value="GIT">project.new.vcsType.git</option>
+                    <option value="SVN">project.new.vcsType.subversion</option>
                   </select>
                   <span className="ml10 notice" id="svn" style={{ display: "none" }}>
                     project.svn.warning
@@ -1194,7 +1208,7 @@ export function ProjectImportPage(props: {
                     style={{ minWidth: 220 }}
                     defaultValue={formState.vcs}
                   >
-                    <option value="GIT">Git</option>
+                    <option value="GIT">project.new.vcsType.git</option>
                   </select>
                   <input name="vcs" type="hidden" value={formState.vcs} />
                 </div>
@@ -1325,10 +1339,10 @@ export function ProjectDetailPage(props: {
                   )}
                   {detail.overviewEditable || detail.viewerCanUpdate ? (
                     <button
-                      aria-label="Edit overview"
+                      aria-label="button.edit"
                       className="ybtn ybtn-minimum"
                       data-toggle="description-edit"
-                      title="Edit overview"
+                      title="button.edit"
                       type="button"
                       onClick={() => setEditingOverview(true)}
                     >
@@ -1378,11 +1392,11 @@ export function ProjectDetailPage(props: {
             {detail.showCode ? (
               <div className="project-clone-wrap span3 hide-in-mobile">
                 <input
-                  aria-label="Clone URL"
+                  aria-label="code.copyUrl"
                   className="project-clone-url"
                   id="cloneURL"
                   readOnly
-                  title="Clone URL"
+                  title="code.copyUrl"
                   type="text"
                   value={detail.cloneUrl ?? ""}
                 />
@@ -1404,10 +1418,10 @@ export function ProjectDetailPage(props: {
                   <a href={projectHref}>README</a>
                 </li>
                 <li className={activeTab === "history" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=history`}>Recent history</a>
+                  <a href={`${projectHref}?tabId=history`}>project.history.recent</a>
                 </li>
                 <li className={activeTab === "dashboard" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=dashboard`}>Dashboard</a>
+                  <a href={`${projectHref}?tabId=dashboard`}>project.dashboard</a>
                 </li>
               </ul>
               <div className="tab-content">
@@ -1487,15 +1501,18 @@ export function ProjectDetailPage(props: {
                   ) : null}
                 </div>
                 <section>
-                  <h3>Project actions</h3>
+                  <h3>project.dashboard</h3>
                   <div className="runtime-grid">
                     <button
                       type="button"
+                      title="title.favorite"
                       onClick={() =>
                         props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
                       }
                     >
-                      {detail.isFavorited ? "Unfavorite project" : "Favorite project"}
+                      <i className={`${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`}>
+                        star
+                      </i>
                     </button>
                     {detail.viewerCanWatch ? (
                       <button
@@ -1508,7 +1525,7 @@ export function ProjectDetailPage(props: {
                           )
                         }
                       >
-                        {detail.isWatching ? "Unwatch project" : "Watch project"}
+                        {detail.isWatching ? "project.unwatch" : "project.watch"}
                       </button>
                     ) : null}
                     {detail.viewerCanEnroll ? (
@@ -1519,7 +1536,7 @@ export function ProjectDetailPage(props: {
                             props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)
                           }
                         >
-                          Cancel enrollment request
+                          button.cancel.enrollment
                         </button>
                       ) : (
                         <button
@@ -1528,14 +1545,14 @@ export function ProjectDetailPage(props: {
                             props.onEnrollProject?.(detail.ownerName, detail.projectName)
                           }
                         >
-                          Request enrollment
+                          button.new.enrollment
                         </button>
                       )
                     ) : null}
                   </div>
                 </section>
                 <section>
-                  <h3>Watchers</h3>
+                  <h3>project.watcher.title</h3>
                   <a
                     className="btn watcher-count no-border"
                     href={buildProjectHref(
@@ -1550,7 +1567,7 @@ export function ProjectDetailPage(props: {
                 </section>
                 <section className="inner member-info">
                   <header>
-                    <h3>Members</h3>
+                    <h3>project.members</h3>
                   </header>
                   <ul>
                     {(detail.members ?? []).map((member) => (
@@ -1561,14 +1578,32 @@ export function ProjectDetailPage(props: {
                   </ul>
                 </section>
                 {detail.currentMilestone ? (
-                  <section>
-                    <h3>Current milestone</h3>
-                    <p>{detail.currentMilestone.title}</p>
-                    <p>{detail.currentMilestone.dueDateLabel}</p>
-                    <p>{`Open issues: ${detail.currentMilestone.openIssueCount}`}</p>
-                    <p>{`Closed issues: ${detail.currentMilestone.closedIssueCount}`}</p>
-                    <p>{`Progress: ${detail.currentMilestone.completionPercent}%`}</p>
-                  </section>
+                  <div className="milestone-info">
+                    <div className="meta-info">
+                      <span className="title">{detail.currentMilestone.title}</span>
+                      {detail.currentMilestone.dueDateLabel ? (
+                        <span className="due-date">
+                          label.dueDate <strong>{detail.currentMilestone.dueDateLabel}</strong>
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="progress-wrap">
+                      <div className="progress progress-success nm">
+                        <div
+                          className="bar"
+                          style={{ width: `${detail.currentMilestone.completionPercent}%` }}
+                        />
+                      </div>
+                      <div className="progress-info">
+                        <span className="pull-right">
+                          <strong>{`${detail.currentMilestone.closedIssueCount} / ${
+                            detail.currentMilestone.openIssueCount +
+                            detail.currentMilestone.closedIssueCount
+                          }`}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -1589,9 +1624,15 @@ export function ProjectWatchersPage(props: {
     totalCount: 0,
     watchers: [],
   };
+  const shellDetail = projectShellDetail({
+    ownerName: detail.ownerName,
+    projectName: detail.projectName,
+  });
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h4>
@@ -1642,9 +1683,16 @@ export function ProjectMembersPage(props: {
   };
   const [loginId, setLoginId] = React.useState("");
   const memberPath = `/${detail.ownerName}/${detail.projectName}/members`;
+  const shellDetail = projectShellDetail({
+    ownerName: detail.ownerName,
+    projectName: detail.projectName,
+    viewerCanUpdate: detail.viewerCanUpdate,
+  });
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="inner-bubble">
@@ -1865,6 +1913,7 @@ export function ProjectWebhooksPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={menuDetail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={menuDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap webhook-editor-wrap">
@@ -1874,6 +1923,7 @@ export function ProjectWebhooksPage(props: {
             runtimeConfig={props.runtimeConfig}
           />
           <div className="content-wrap frm-wrap">
+            {detail.viewerCanUpdate ? (
             <form
               action={prefixBasePath(props.runtimeConfig.basePath, webhooksPath)}
               className="new-webhook-wrap"
@@ -1970,6 +2020,7 @@ export function ProjectWebhooksPage(props: {
               </div>
               <div>project.webhook.help</div>
             </form>
+            ) : null}
 
             <div className="webhook-list-wrap" id="webhooksList">
               {detail.webhooks.length === 0 ? (
@@ -2107,6 +2158,7 @@ export function ProjectTransferPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2115,14 +2167,11 @@ export function ProjectTransferPage(props: {
             detail={detail}
             runtimeConfig={props.runtimeConfig}
           />
-          <div className="content-wrap frm-wrap">
-            <section className="bubble-wrap gray wp">
-              <h1>project.transfer</h1>
-              <div className="row-fluid">
-                <label className="cu-label" htmlFor="owner">
-                  project.transfer.owner
-                </label>
-                <div className="cu-desc">
+          <div className="bubble-wrap gray wp">
+            <div className="row-fluid">
+              <div className="cu-label">project.transfer.new.owner</div>
+              <div className="cu-desc">
+                <p>
                   <input
                     autoComplete="off"
                     id="owner"
@@ -2131,11 +2180,32 @@ export function ProjectTransferPage(props: {
                     type="text"
                     value={destination}
                   />
-                </div>
+                </p>
               </div>
-              <div className="row-fluid">
-                <div className="cu-desc">
+            </div>
+            <div className="row-fluid">
+              <div className="cu-label">project.transfer</div>
+              <div className="cu-desc">
+                <ul>
+                  <li className="notice">
+                    <strong>project.transfer.description1</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>project.transfer.description2</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>project.transfer.description3</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>project.transfer.description4</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>project.transfer.description5</strong>
+                  </li>
+                </ul>
+                <p>
                   <input
+                    autoComplete="off"
                     checked={accepted}
                     className="checkbox"
                     id="accept"
@@ -2146,54 +2216,67 @@ export function ProjectTransferPage(props: {
                   <label className="bg-checkbox label-agreement" htmlFor="accept">
                     project.transfer.accept
                   </label>
-                </div>
+                </p>
               </div>
-              <div className="box-wrap bottom">
-                <button
-                  className="ybtn ybtn-danger"
-                  disabled={!canSubmit}
-                  id="btnTransfer"
-                  onClick={() => setModalOpen(true)}
-                  type="button"
-                >
-                  project.transfer
-                </button>
-              </div>
-            </section>
+            </div>
           </div>
-        </div>
-      </div>
-      <div className={modalOpen ? "modal" : "modal hide"} id="alertTransfer">
-        <div className="modal-header">
-          <button
-            aria-label="Close"
-            className="close"
-            onClick={() => setModalOpen(false)}
-            type="button"
-          >
-            x
-          </button>
-          <h3>project.transfer</h3>
-        </div>
-        <div className="modal-body">
-          <p>{`${detail.ownerName}/${detail.projectName} -> ${destination.trim()}`}</p>
-          {props.transfer?.acceptPath ? <p>{props.transfer.acceptPath}</p> : null}
-        </div>
-        <div className="modal-footer">
-          <button
-            className="ybtn ybtn-danger"
-            disabled={props.pending}
-            id="btnTransferExec"
-            onClick={() => {
-              void props.onRequestTransfer?.(destination.trim());
-            }}
-            type="button"
-          >
-            button.confirm
-          </button>
-          <button className="ybtn" onClick={() => setModalOpen(false)} type="button">
-            button.cancel
-          </button>
+          <div className="box-wrap bottom">
+            <a
+              className="ybtn ybtn-danger"
+              data-toggle="modal"
+              href="#alertTransfer"
+              id="btnTransfer"
+              onClick={(event) => {
+                event.preventDefault();
+                if (canSubmit) {
+                  setModalOpen(true);
+                }
+              }}
+            >
+              <i className="yobicon-database" /> project.transfer.this
+            </a>
+          </div>
+
+          <div className={modalOpen ? "modal" : "modal hide"} id="alertTransfer">
+            <div className="modal-header">
+              <button
+                aria-label="button.close"
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+              <h3>project.transfer.requestion</h3>
+            </div>
+            <div className="modal-body">
+              <p>project.transfer.description</p>
+              <p>project.transfer.reaccept</p>
+              {props.transfer?.acceptPath ? <p>{props.transfer.acceptPath}</p> : null}
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                disabled={props.pending}
+                id="btnTransferExec"
+                onClick={() => {
+                  void props.onRequestTransfer?.(destination.trim());
+                }}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                button.no
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -2255,6 +2338,7 @@ export function ProjectForkPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2448,6 +2532,7 @@ export function ProjectChangeVcsPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2487,26 +2572,31 @@ export function ProjectChangeVcsPage(props: {
             </div>
           </div>
           <div className="box-wrap bottom">
-            <button
+            <a
               className="ybtn ybtn-danger"
               data-toggle="modal"
-              disabled={!canSubmit}
+              href="#alertChangeVCS"
               id="btnChangeVCS"
-              onClick={() => setModalOpen(true)}
-              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                if (canSubmit) {
+                  setModalOpen(true);
+                }
+              }}
             >
               <i className="yobicon-database" /> project.changeVCS.this
-            </button>
+            </a>
           </div>
           <div className={modalOpen ? "modal" : "modal hide"} id="alertChangeVCS">
             <div className="modal-header">
               <button
+                aria-label="button.close"
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                x
+                ×
               </button>
               <h3>{`project.changeVCS.requestion ${changeVcs.nextVcs}`}</h3>
             </div>
@@ -2560,6 +2650,7 @@ export function ProjectStatisticsPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2663,6 +2754,7 @@ export function ProjectDeletePage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2709,12 +2801,13 @@ export function ProjectDeletePage(props: {
           <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
             <div className="modal-header">
               <button
+                aria-label="button.close"
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                x
+                ×
               </button>
               <h3>project.delete.requestion</h3>
             </div>
@@ -2814,6 +2907,7 @@ export function ProjectSettingsPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">

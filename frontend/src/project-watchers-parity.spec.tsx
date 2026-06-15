@@ -39,6 +39,12 @@ describe("project watchers parity", () => {
 
     expect(html).toContain("project.watcher.title");
     expect(html).toContain("project.watcher.description");
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/weblabs">weblabs</a>');
+    expect(html).toContain('<a href="/yona/weblabs/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
@@ -56,8 +62,10 @@ describe("project watchers parity", () => {
     );
 
     expect(routeSource).toContain("classifyConnectFailure");
+    expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain("ForbiddenPage");
     expect(routeSource).toContain("NotFoundPage");
-    expect(routeSource).toContain("Read project watchers failed.");
+    expect(routeSource).toContain('"bad-request"');
+    expect(routeSource).not.toContain("Read project watchers failed.");
   });
 });

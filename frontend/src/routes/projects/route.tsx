@@ -20,7 +20,7 @@ export const Route = createFileRoute("/projects")({
 function ProjectsRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
   const currentHref = useCurrentHref();
-  useDocumentTitle("Project List");
+  useDocumentTitle("title.projectList");
   const [projectDirectory, setProjectDirectory] = React.useState<ReturnType<typeof toProjectDirectoryView> | null>(null);
   const [failureKind, setFailureKind] = React.useState<null | RouteFailureKind>(null);
 

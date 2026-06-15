@@ -11,6 +11,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
 import { OrganizationMembersPage } from "../../../-organization-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -29,7 +30,9 @@ function OrganizationMembersRouteComponent() {
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
     null,
   );
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -52,7 +55,7 @@ function OrganizationMembersRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read organization admin failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
@@ -63,7 +66,7 @@ function OrganizationMembersRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -72,6 +75,9 @@ function OrganizationMembersRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (
@@ -86,7 +92,7 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Accept enrollment failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onAddMember={async (nextOrganizationName, loginId) => {
@@ -97,7 +103,7 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Add member failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onDeleteMember={async (nextOrganizationName, userId) => {
@@ -108,7 +114,7 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Delete member failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onUpdateMemberRole={async (nextOrganizationName, userId, role) => {
@@ -120,7 +126,7 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Update member failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

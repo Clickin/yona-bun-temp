@@ -6,18 +6,19 @@ import {
 } from "../../api/org-project";
 import { useAppRuntime } from "../../app-runtime-context";
 import { ProjectImportPage } from "../-project-views";
-import { useRequireAuthenticatedRoute } from "../-shared";
+import { BadRequestPage, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRouteComponent,
 });
 
 function ProjectImportRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
+  const [readFailed, setReadFailed] = React.useState(false);
 
   React.useEffect(() => {
     if (bootstrapping || !canRender) {
@@ -25,28 +26,30 @@ function ProjectImportRouteComponent() {
     }
     const owner = new URLSearchParams(window.location.search).get("owner") ?? undefined;
     let cancelled = false;
+    setReadFailed(false);
     void readProjectCreateFormOptionsRest(runtimeConfig, { owner })
       .then((options) => {
         if (!cancelled) {
           setFormOptions(options);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (!cancelled) {
-          setErrorMessage(
-            error instanceof Error ? error.message : "Read project import options failed.",
-          );
+          setReadFailed(true);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [bootstrapping, canRender, runtimeConfig, setErrorMessage]);
+  }, [bootstrapping, canRender, runtimeConfig]);
 
   if (bootstrapping || !canRender || !formOptions) {
+    if (readFailed) {
+      return <BadRequestPage href="/_import" />;
+    }
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }

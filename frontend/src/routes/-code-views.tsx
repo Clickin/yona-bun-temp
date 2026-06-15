@@ -5,10 +5,19 @@ import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/is
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
-import { buildProjectHref, ProjectMenu } from "./-project-views";
+import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
 
-const MARKDOWN_CODE_EXTENSIONS = new Set(["markdown", "mdown", "mkdn", "mkd", "md", "mdwn"]);
+const MARKDOWN_CODE_EXTENSIONS = new Set([
+  "license",
+  "markdown",
+  "mdown",
+  "mkdn",
+  "mkd",
+  "md",
+  "mdwn",
+  "readme",
+]);
 
 export interface CodeHistoryViewModel {
   branches: Array<{ name: string }>;
@@ -138,6 +147,7 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
     ownerName: "",
     projectName: "",
     projectScope: "public",
+    showCode: true,
     viewerCanEnroll: false,
     viewerCanUpdate: false,
   };
@@ -618,169 +628,172 @@ export function CodeBrowserPage(props: {
 
   return (
     <main className="app-shell">
-      <h1>menu.code</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <section className="code-browse-wrap">
-        {!isFileView ? (
-          <nav aria-label="Code tabs">
-            <a
-              aria-current="page"
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "code",
-              )}
-            >
-              code.files
-            </a>
-            <a
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "commits",
-              )}
-            >
-              code.commits
-            </a>
-            <a
-              href={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "branches",
-              )}
-            >
-              title.branches
-            </a>
-          </nav>
-        ) : null}
-        {code?.noHead ? (
-          <CodeNoHeadBlock detail={detail} />
-        ) : (
-          <>
-            <div className="code-browse-header">
-              <select
-                className={code?.file ? "pull-left mb10" : "pull-left"}
-                data-dropdown-css-class="branches"
-                data-format="branch"
-                data-toggle="select2"
-                id="branches"
-                onChange={(event) => {
-                  window.location.assign(event.currentTarget.value);
-                }}
-                value={selectedBranchHref}
-              >
-                {(code?.branches ?? []).map((branch) => {
-                  const branchHref = codeHref(
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <section className="code-browse-wrap">
+            {!isFileView ? (
+              <nav aria-label="Code tabs">
+                <a
+                  aria-current="page"
+                  href={buildProjectHref(
                     props.runtimeConfig,
                     detail.ownerName,
                     detail.projectName,
-                    branch.name,
-                    code?.path ?? "",
-                  );
-                  return (
-                    <option key={branch.name} value={branchHref}>
-                      {branch.name}
-                    </option>
-                  );
-                })}
-              </select>
-              <div
-                aria-label="Breadcrumbs"
-                className="code-breadcrumb-wrap ml10 pull-left"
-                id="breadcrumbs"
-              >
+                    "code",
+                  )}
+                >
+                  code.files
+                </a>
                 <a
-                  href={
-                    selectedBranch
-                      ? codeHref(
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "commits",
+                  )}
+                >
+                  code.commits
+                </a>
+                <a
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "branches",
+                  )}
+                >
+                  title.branches
+                </a>
+              </nav>
+            ) : null}
+            {code?.noHead ? (
+              <CodeNoHeadBlock detail={detail} />
+            ) : (
+              <>
+                <div className="code-browse-header">
+                  <select
+                    className={code?.file ? "pull-left mb10" : "pull-left"}
+                    data-dropdown-css-class="branches"
+                    data-format="branch"
+                    data-toggle="select2"
+                    id="branches"
+                    onChange={(event) => {
+                      window.location.assign(event.currentTarget.value);
+                    }}
+                    value={selectedBranchHref}
+                  >
+                    {(code?.branches ?? []).map((branch) => {
+                      const branchHref = codeHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        branch.name,
+                        code?.path ?? "",
+                      );
+                      return (
+                        <option key={branch.name} value={branchHref}>
+                          {branch.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <div
+                    aria-label="Breadcrumbs"
+                    className="code-breadcrumb-wrap ml10 pull-left"
+                    id="breadcrumbs"
+                  >
+                    <a
+                      href={
+                        selectedBranch
+                          ? codeHref(
+                              props.runtimeConfig,
+                              detail.ownerName,
+                              detail.projectName,
+                              selectedBranch,
+                            )
+                          : "#"
+                      }
+                    >
+                      {detail.projectName}
+                    </a>
+                    {(code?.breadcrumbs ?? []).map((breadcrumb) => (
+                      <a
+                        href={codeHref(
                           props.runtimeConfig,
                           detail.ownerName,
                           detail.projectName,
                           selectedBranch,
-                        )
-                      : "#"
-                  }
-                >
-                  {detail.projectName}
-                </a>
-                {(code?.breadcrumbs ?? []).map((breadcrumb) => (
-                  <a
-                    href={codeHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                      breadcrumb.path,
-                    )}
-                    key={breadcrumb.path}
-                  >
-                    {breadcrumb.name}
-                  </a>
-                ))}
-              </div>
-              {selectedBranch ? (
-                <div className="pull-right">
-                  <a
-                    className="ybtn"
-                    href={codeArchiveHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                    )}
-                  >
-                    code.download
-                  </a>
+                          breadcrumb.path,
+                        )}
+                        key={breadcrumb.path}
+                      >
+                        {breadcrumb.name}
+                      </a>
+                    ))}
+                  </div>
+                  {selectedBranch ? (
+                    <div className="pull-right">
+                      <a
+                        className="ybtn"
+                        href={codeArchiveHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                        )}
+                      >
+                        code.download
+                      </a>
+                    </div>
+                  ) : null}
+                  {selectedBranch && detail.viewerCanUpdate ? (
+                    <div className="pull-right">
+                      <a
+                        className="ybtn"
+                        href={codeNewFileHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                          code?.path ?? "",
+                          Boolean(code?.file),
+                        )}
+                        id="new-file-link"
+                      >
+                        code.new.file
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-              {selectedBranch && detail.viewerCanUpdate ? (
-                <div className="pull-right">
-                  <a
-                    className="ybtn"
-                    href={codeNewFileHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                      code?.path ?? "",
-                      Boolean(code?.file),
-                    )}
-                    id="new-file-link"
-                  >
-                    code.new.file
-                  </a>
+                <div className="code-viewer-wrap">
+                  <div id="spin" style={{ left: "50%", position: "fixed", top: "50%" }}></div>
+                  {code?.file ? (
+                    <CodeFileView
+                      file={code.file}
+                      ownerName={detail.ownerName}
+                      projectName={detail.projectName}
+                      runtimeConfig={props.runtimeConfig}
+                      selectedBranch={selectedBranch}
+                      viewerCanUpdate={detail.viewerCanUpdate}
+                    />
+                  ) : (
+                    <CodeFolderView
+                      entries={code?.entries ?? []}
+                      listPath={code?.path ?? ""}
+                      ownerName={detail.ownerName}
+                      projectName={detail.projectName}
+                      runtimeConfig={props.runtimeConfig}
+                      selectedBranch={selectedBranch}
+                    />
+                  )}
                 </div>
-              ) : null}
-            </div>
-            <div className="code-viewer-wrap">
-              <div id="spin" style={{ left: "50%", position: "fixed", top: "50%" }}></div>
-              {code?.file ? (
-                <CodeFileView
-                  file={code.file}
-                  ownerName={detail.ownerName}
-                  projectName={detail.projectName}
-                  runtimeConfig={props.runtimeConfig}
-                  selectedBranch={selectedBranch}
-                  viewerCanUpdate={detail.viewerCanUpdate}
-                />
-              ) : (
-                <CodeFolderView
-                  entries={code?.entries ?? []}
-                  listPath={code?.path ?? ""}
-                  ownerName={detail.ownerName}
-                  projectName={detail.projectName}
-                  runtimeConfig={props.runtimeConfig}
-                  selectedBranch={selectedBranch}
-                />
-              )}
-            </div>
-          </>
-        )}
-      </section>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
     </main>
   );
 }
@@ -815,8 +828,7 @@ export function CodeCommitDetailPage(props: {
 
   return (
     <main className="app-shell">
-      <h1>{commit?.shortMessage ?? "code.commits"}</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -894,34 +906,35 @@ export function CodeComparePage(props: {
 
   return (
     <main className="app-shell">
-      <h1>{revA && revB ? `${revA}..${revB}` : "code.fullDiff"}</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
-        <div className="code-browse-wrap">
-          {compare?.noHead ? (
-            <CodeNoHeadBlock detail={detail} />
-          ) : (
-            <>
-              <p className="commitInfo">
-                <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
-              </p>
-              {files.length === 0 ? (
-                <div className="alert">code.noChanges</div>
-              ) : (
-                <div className="diff-body discommentable">
-                  {files.map((file) => (
-                    <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
-                      <h2>{file.path}</h2>
-                      <pre className="diff-code">
-                        <code>{file.patch}</code>
-                      </pre>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="code-browse-wrap">
+            {compare?.noHead ? (
+              <CodeNoHeadBlock detail={detail} />
+            ) : (
+              <>
+                <p className="commitInfo">
+                  <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
+                </p>
+                {files.length === 0 ? (
+                  <div className="alert">code.noChanges</div>
+                ) : (
+                  <div className="diff-body discommentable">
+                    {files.map((file) => (
+                      <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
+                        <h2>{file.path}</h2>
+                        <pre className="diff-code">
+                          <code>{file.patch}</code>
+                        </pre>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>
@@ -942,8 +955,7 @@ export function CodeBranchListPage(props: {
 
   return (
     <main className="app-shell">
-      <h1>title.branches</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -1092,7 +1104,12 @@ function CodeBranchRow(props: {
         >
           {branch.commitShortId}
         </a>
-        <span className="date" title={branch.commitDate}>
+        <span
+          className="date"
+          data-placement="top"
+          data-toggle="tooltip"
+          title={branch.commitDate}
+        >
           {branch.commitDate}
         </span>
         {branch.commitMessage ? (
@@ -1103,6 +1120,8 @@ function CodeBranchRow(props: {
         {branch.pullRequest ? (
           <a
             className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            data-placement="top"
+            data-toggle="tooltip"
             href={pullRequestHref(
               props.runtimeConfig,
               branch.pullRequest.ownerName,
@@ -1650,12 +1669,35 @@ function CommitDiscussionThread(props: {
         {props.thread.comments.map((comment) => (
           <li className="comment" id={`comment-${comment.id}`} key={comment.id}>
             <div className="comment-avatar">
-              <span className="avatar-wrap">{comment.authorLoginId || comment.authorLabel}</span>
+              {comment.authorLoginId ? (
+                <a
+                  className="avatar-wrap"
+                  data-placement="top"
+                  data-toggle="tooltip"
+                  href={codeAuthorHref(props.runtimeConfig, comment.authorLoginId)}
+                  title={comment.authorLabel}
+                >
+                  {comment.authorLoginId}
+                </a>
+              ) : (
+                <span className="avatar-wrap">{comment.authorLabel || "issue.noAuthor"}</span>
+              )}
             </div>
             <div className="media-body">
               <div className="meta-info">
                 <span className="comment_author pull-left">
-                  <strong>{comment.authorLoginId || comment.authorLabel}</strong>
+                  {comment.authorLoginId ? (
+                    <a
+                      data-placement="top"
+                      data-toggle="tooltip"
+                      href={codeAuthorHref(props.runtimeConfig, comment.authorLoginId)}
+                      title={comment.authorLabel}
+                    >
+                      <strong>{comment.authorLoginId} </strong>
+                    </a>
+                  ) : (
+                    <strong>{comment.authorLabel || "issue.noAuthor"}</strong>
+                  )}
                 </span>
                 <span className="ago">
                   <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
@@ -1841,113 +1883,116 @@ export function CodeHistoryPage(props: {
 
   return (
     <main className="app-shell">
-      <h1>code.commits</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <section className="code-browse-wrap">
-        {history?.noHead ? (
-          <CodeNoHeadBlock detail={detail} />
-        ) : (
-          <>
-            {selectedPath ? (
-              <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
-                <a
-                  href={codeHistoryHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    selectedBranch,
-                  )}
-                >
-                  {detail.projectName}
-                </a>
-                {(history?.breadcrumbs ?? []).map((breadcrumb) => (
-                  <a
-                    href={codeHistoryHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                      breadcrumb.path,
-                    )}
-                    key={breadcrumb.path}
-                  >
-                    {breadcrumb.name}
-                  </a>
-                ))}
-              </nav>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <section className="code-browse-wrap">
+            {history?.noHead ? (
+              <CodeNoHeadBlock detail={detail} />
             ) : (
-              <div className="code-browse-header">
-                <select
-                  className="pull-right"
-                  data-dropdown-css-class="branches"
-                  data-format="branch"
-                  data-toggle="select2"
-                  id="branches"
-                  onChange={(event) => {
-                    window.location.assign(event.currentTarget.value);
-                  }}
-                  value={selectedHistoryBranchHref}
-                >
-                  {(history?.branches ?? []).map((branch) => {
-                    const branchHref = codeHistoryHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      branch.name,
-                    );
-                    return (
-                      <option key={branch.name} value={branchHref}>
-                        {branch.name}
-                      </option>
-                    );
-                  })}
-                </select>
-                <nav aria-label="Code tabs">
-                  <a
-                    href={codeHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                    )}
-                  >
-                    code.files
-                  </a>
-                  <a
-                    aria-current="page"
-                    href={codeHistoryHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      selectedBranch,
-                    )}
-                  >
-                    code.commits
-                  </a>
-                  <a
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "branches",
-                    )}
-                  >
-                    title.branches
-                  </a>
-                </nav>
-              </div>
+              <>
+                {selectedPath ? (
+                  <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
+                    <a
+                      href={codeHistoryHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        selectedBranch,
+                      )}
+                    >
+                      {detail.projectName}
+                    </a>
+                    {(history?.breadcrumbs ?? []).map((breadcrumb) => (
+                      <a
+                        href={codeHistoryHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                          breadcrumb.path,
+                        )}
+                        key={breadcrumb.path}
+                      >
+                        {breadcrumb.name}
+                      </a>
+                    ))}
+                  </nav>
+                ) : (
+                  <div className="code-browse-header">
+                    <select
+                      className="pull-right"
+                      data-dropdown-css-class="branches"
+                      data-format="branch"
+                      data-toggle="select2"
+                      id="branches"
+                      onChange={(event) => {
+                        window.location.assign(event.currentTarget.value);
+                      }}
+                      value={selectedHistoryBranchHref}
+                    >
+                      {(history?.branches ?? []).map((branch) => {
+                        const branchHref = codeHistoryHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          branch.name,
+                        );
+                        return (
+                          <option key={branch.name} value={branchHref}>
+                            {branch.name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <nav aria-label="Code tabs">
+                      <a
+                        href={codeHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                        )}
+                      >
+                        code.files
+                      </a>
+                      <a
+                        aria-current="page"
+                        href={codeHistoryHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                        )}
+                      >
+                        code.commits
+                      </a>
+                      <a
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          "branches",
+                        )}
+                      >
+                        title.branches
+                      </a>
+                    </nav>
+                  </div>
+                )}
+                <CodeHistoryTable
+                  history={history}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedBranch={selectedBranch}
+                />
+              </>
             )}
-            <CodeHistoryTable
-              history={history}
-              ownerName={detail.ownerName}
-              projectName={detail.projectName}
-              runtimeConfig={props.runtimeConfig}
-              selectedBranch={selectedBranch}
-            />
-          </>
-        )}
-      </section>
+          </section>
+        </div>
+      </div>
     </main>
   );
 }
@@ -2052,11 +2097,9 @@ function CodeHistoryTable(props: {
                     <td className="commit-id">
                       <button
                         className="ybtn ybtn-mini btn-copy-commitId"
+                        data-commit-id={commit.commitId}
                         title="code.copyCommitId"
                         type="button"
-                        {...({
-                          "data-commitId": commit.commitId,
-                        } as unknown as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                       >
                         <i className="yobicon-copy"></i>
                       </button>
@@ -2089,7 +2132,9 @@ function CodeHistoryTable(props: {
                         </a>
                       </td>
                     ) : null}
-                    <td className="date">{commit.authorDate}</td>
+                    <td className="date" title={commit.authorDate}>
+                      {commit.authorDate}
+                    </td>
                     <td className="author">
                       <CodeHistoryAuthorCell commit={commit} runtimeConfig={props.runtimeConfig} />
                     </td>
@@ -2134,7 +2179,7 @@ function CodeFolderView(props: {
   return (
     <div
       className="list-wrap"
-      data-listPath={props.listPath ? props.listPath : undefined}
+      data-list-path={props.listPath ? props.listPath : undefined}
       data-type="folder"
     >
       <div className="row-fluid listhead">
@@ -2170,7 +2215,7 @@ function CodeFolderView(props: {
             <div className="span6 filename">
               <a
                 className={entry.kind === "folder" ? "folder" : "file"}
-                data-targetPath={entry.path}
+                data-target-path={entry.path}
                 data-type={entry.kind === "folder" ? "folder" : undefined}
                 href={entry.kind === "folder" ? `${entryHref}#${rowId}` : entryHref}
                 title={entry.name}
@@ -2307,7 +2352,6 @@ function CodeTextView(props: { file: NonNullable<CodeBrowserViewModel["file"]> }
     <pre
       className="code-wrap code-syntax-wrap"
       data-language={language}
-      data-mimeType={props.file.mimeType}
       data-mime-type={props.file.mimeType}
       id="showCode"
     >
@@ -2340,8 +2384,44 @@ function codeLanguageFromFile(path: string, mimeType: string) {
   if (extension === "rs") {
     return "rust";
   }
+  if (["a", "a86"].includes(extension)) {
+    return "assembly_x86";
+  }
+  if (extension === "ada") {
+    return "ada";
+  }
+  if (extension === "d") {
+    return "d";
+  }
   if (extension === "java") {
     return "java";
+  }
+  if (extension === "jsp") {
+    return "jsp";
+  }
+  if (extension === "py") {
+    return "python";
+  }
+  if (extension === "sh") {
+    return "sh";
+  }
+  if (extension === "erl") {
+    return "erlang";
+  }
+  if (extension === "r") {
+    return "r";
+  }
+  if (["rb", "ruby"].includes(extension)) {
+    return "ruby";
+  }
+  if (["inc", "php", "php3", "php4", "php5", "php6", "phps"].includes(extension)) {
+    return "php";
+  }
+  if (["c", "cp", "cpp", "c__", "cxx", "h", "h++", "hpp"].includes(extension)) {
+    return "c_cpp";
+  }
+  if (extension === "cs") {
+    return "csharp";
   }
   if (extension === "js" || extension === "jsx" || extension === "ts" || extension === "tsx") {
     return "javascript";
@@ -2349,14 +2429,67 @@ function codeLanguageFromFile(path: string, mimeType: string) {
   if (extension === "scala") {
     return "scala";
   }
-  if (extension === "html" || extension === "xml") {
-    return "markup";
+  if (extension === "sql") {
+    return "sql";
   }
-  if (extension === "css" || extension === "less" || extension === "scss") {
+  if (extension === "dart") {
+    return "dart";
+  }
+  if (["dtx", "tex"].includes(extension)) {
+    return "latex";
+  }
+  if (extension === "diff") {
+    return "diff";
+  }
+  if (extension === "json") {
+    return "json";
+  }
+  if (extension === "coffee") {
+    return "coffee";
+  }
+  if (extension === "bat") {
+    return "batchfile";
+  }
+  if (["actionscript", "as"].includes(extension)) {
+    return "actionscript";
+  }
+  if (["yaml", "yml"].includes(extension)) {
+    return "yaml";
+  }
+  if (extension === "jade") {
+    return "jade";
+  }
+  if (["htm", "html"].includes(extension)) {
+    return "html";
+  }
+  if (extension === "svg") {
+    return "svg";
+  }
+  if (
+    ["atom", "plist", "rss", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(extension)
+  ) {
+    return "xml";
+  }
+  if (extension === "less") {
+    return "less";
+  }
+  if (extension === "css" || extension === "scss") {
     return "css";
   }
   if (extension === "md" || extension === "markdown") {
     return "markdown";
+  }
+  if (["emakrfile", "emakerfile", "mak", "makefile", "mk"].includes(extension)) {
+    return "makefile";
+  }
+  if (["config", "ini"].includes(extension)) {
+    return "ini";
+  }
+  if (["gitignore", "sbt", "txt"].includes(extension)) {
+    return "text";
+  }
+  if (extension === "vbs") {
+    return "vbscript";
   }
   if (mimeType.includes("json")) {
     return "json";

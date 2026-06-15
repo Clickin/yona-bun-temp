@@ -12,6 +12,7 @@ import { toProjectContainerView } from "../../../../app-view-models";
 import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectForkPage } from "../../../-project-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -28,7 +29,9 @@ function ProjectForkRouteComponent() {
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/newFork`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const containerQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -48,6 +51,7 @@ function ProjectForkRouteComponent() {
   React.useEffect(() => {
     const error = containerQuery.error ?? forkOptionsQuery.error;
     if (!error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(error);
@@ -55,8 +59,8 @@ function ProjectForkRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(error instanceof Error ? error.message : "Read project fork failed.");
-  }, [containerQuery.error, forkOptionsQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [containerQuery.error, forkOptionsQuery.error]);
 
   const forkMutation = useMutation({
     mutationFn: (input: { name: string; owner: string; projectScope: string }) =>
@@ -64,9 +68,9 @@ function ProjectForkRouteComponent() {
         ...input,
         ownerName: owner,
         projectName,
-      }),
+    }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Fork project failed.");
+      setErrorMessage(error instanceof Error ? error.message : "fork.failed");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(forkOptionsQueryKey, undefined);
@@ -87,7 +91,7 @@ function ProjectForkRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -96,6 +100,9 @@ function ProjectForkRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

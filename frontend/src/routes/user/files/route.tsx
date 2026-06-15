@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { listWorkspaceFilesRest, type WorkspaceFilesResponse } from "../../../api/workspace";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { prefixBasePath } from "../../../runtime-config";
-import { useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
+import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
 
 export const Route = createFileRoute("/user/files")({
   component: UserFilesRouteComponent,
@@ -11,6 +11,60 @@ export const Route = createFileRoute("/user/files")({
 
 function appHref(basePath: string, href: string): string {
   return prefixBasePath(basePath, href);
+}
+
+function legacyUserFileIconClass(fileName: string): string {
+  if (/\.a?png$|\.svgz$/i.test(fileName)) {
+    return "icon image-icon light-orange font-larger";
+  }
+  if (/\.gif$|\.ora$|\.sgi$/i.test(fileName)) {
+    return "icon image-icon medium-yellow font-larger";
+  }
+  if (/\.jpe?g$/i.test(fileName)) {
+    return "icon image-icon medium-green font-larger";
+  }
+  if (/\.svg$/i.test(fileName)) {
+    return "icon svg-icon dark-yellow font-larger";
+  }
+  if (/\.(?:zip|z|xz)$/i.test(fileName)) {
+    return "icon zip-icon null font-larger";
+  }
+  if (/\.rar$|\.iso$/i.test(fileName)) {
+    return "icon zip-icon medium-blue font-larger";
+  }
+  if (/\.t?gz$|\.tar$|\.whl$/i.test(fileName)) {
+    return "icon zip-icon dark-blue font-larger";
+  }
+  if (/\.7z$/i.test(fileName)) {
+    return "icon zip-icon medium-maroon font-larger";
+  }
+  if (/\.doc$/i.test(fileName)) {
+    return "icon word-icon medium-blue font-larger";
+  }
+  if (/\.docx$/i.test(fileName)) {
+    return "icon word-icon dark-blue font-larger";
+  }
+  if (/\.xls$/i.test(fileName)) {
+    return "icon excel-icon dark-orange font-larger";
+  }
+  if (/\.xlsx$/i.test(fileName)) {
+    return "icon excel-icon dark-green font-larger";
+  }
+  if (/\.ppt$/i.test(fileName)) {
+    return "icon powerpoint-icon dark-orange font-larger";
+  }
+  if (/\.pptx$/i.test(fileName)) {
+    return "icon powerpoint-icon medium-red font-larger";
+  }
+  if (/\.pdf$/i.test(fileName)) {
+    return "icon pdf-icon medium-red font-larger";
+  }
+  const legacyReadmePattern =
+    /^README(?:\b|_)|^(?:licen[sc]es?|(?:read|readme|click|delete|keep|test)\.me)$|\.(?:readme|1st)$/i;
+  if (legacyReadmePattern.test(fileName)) {
+    return "icon book-icon medium-blue font-larger";
+  }
+  return "icon text-icon";
 }
 
 function userFilesQueryFromLocation(): { filter: string; page: number } {
@@ -23,10 +77,11 @@ function userFilesQueryFromLocation(): { filter: string; page: number } {
 }
 
 function UserFilesRouteComponent() {
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/files");
   const [query, setQuery] = React.useState(() => userFilesQueryFromLocation());
   const [files, setFiles] = React.useState<WorkspaceFilesResponse | null>(null);
+  const [readFailed, setReadFailed] = React.useState(false);
 
   useDocumentTitle("user.files");
 
@@ -35,6 +90,7 @@ function UserFilesRouteComponent() {
       return;
     }
     let cancelled = false;
+    setReadFailed(false);
     void (async () => {
       try {
         const nextQuery = userFilesQueryFromLocation();
@@ -43,23 +99,26 @@ function UserFilesRouteComponent() {
           setQuery(nextQuery);
           setFiles(nextFiles);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          setErrorMessage(error instanceof Error ? error.message : "Read user files failed.");
+          setReadFailed(true);
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [canRender, runtimeConfig, setErrorMessage]);
+  }, [canRender, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
+  }
+  if (readFailed) {
+    return <BadRequestPage href="/user/files" />;
   }
 
   return <UserFilesPage basePath={runtimeConfig.basePath} files={files} query={query} />;
@@ -82,7 +141,7 @@ export function UserFilesPage(props: {
             <div className="user-file-search search search-bar">
               <input
                 className="textbox"
-                defaultValue={props.query.filter}
+                defaultValue=""
                 name="filter"
                 placeholder="search.title"
                 type="text"
@@ -110,7 +169,7 @@ export function UserFilesPage(props: {
                 </div>
                 <div className="span5 file-name">
                   <a href={file.url} target="_blank">
-                    <i className="icon text-icon" />
+                    <i className={legacyUserFileIconClass(file.name)} />
                     {file.name}
                   </a>
                 </div>

@@ -1785,18 +1785,39 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
   const normalizedLanguage = normalizeCodeLanguage(language ?? "");
   if (normalizedLanguage === "asciidoc") {
     let inCommentBlock = false;
+    let inQuoteBlock = false;
+    let inPassthroughBlock = false;
     return lines.flatMap((line, lineIndex) => {
       const isCommentBoundary = /^\/{4,}\s*$/.test(line);
+      const isQuoteBoundary = /^_{4,}\s*$/.test(line);
+      const isPassthroughBoundary = /^\+{4,}\s*$/.test(line);
       const isCommentLine = inCommentBlock || isCommentBoundary;
+      const isQuoteLine = !isCommentLine && (inQuoteBlock || isQuoteBoundary);
+      const isPassthroughLine =
+        !isCommentLine && !isQuoteLine && (inPassthroughBlock || isPassthroughBoundary);
       const nodes = isCommentLine
         ? [
             <span className="syntax-token syntax-comment" key={`asciidoc-comment-${lineIndex}`}>
               {line.length > 0 ? line : "\u00a0"}
             </span>,
           ]
+        : isQuoteLine
+          ? [
+              <span className="syntax-token syntax-quote" key={`asciidoc-quote-${lineIndex}`}>
+                {line.length > 0 ? line : "\u00a0"}
+              </span>,
+            ]
+          : isPassthroughLine && !isPassthroughBoundary
+            ? highlightCodeLine(line, "xml")
         : highlightCodeLine(line, language ?? "");
       if (isCommentBoundary) {
         inCommentBlock = !inCommentBlock;
+      }
+      if (isQuoteBoundary && !isCommentLine) {
+        inQuoteBlock = !inQuoteBlock;
+      }
+      if (isPassthroughBoundary && !isCommentLine && !isQuoteLine) {
+        inPassthroughBlock = !inPassthroughBlock;
       }
       return lineIndex === lines.length - 1 ? nodes : [...nodes, "\n"];
     });
@@ -2290,11 +2311,11 @@ export function highlightCodeLine(line: string, language: string) {
   const normalizedLanguage = normalizeCodeLanguage(language);
   const tokenPattern =
     normalizedLanguage === "powershell"
-      ? /(@"[\s\S]*?"@|@'[\s\S]*?'@|"(?:`[\s\S]|\\.|[^"\\])*"|'(?:`[\s\S]|\\.|[^'\\])*'|<#.*?#>|#.*$|\$(?:null|true|false)\b|\$[\w\d][\w\d_:]*|\b\d+(?:\.\d+)?\b|\b-?[A-Za-z.][A-Za-z.\-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+      ? /(@"[\s\S]*?"@|@'[\s\S]*?'@|"(?:`[\s\S]|\\.|[^"\\])*"|'(?:`[\s\S]|\\.|[^'\\])*'|<#.*?#>|#.*$|\$(?:null|true|false)\b|\$\{[^}\n]*\}|\$[\w\d][\w\d_:]*|-?(?:\b0[xX][0-9A-Fa-f_]+|\b\d[\d_]*(?:\.[\d_]*)?(?:[eE][-+]?[\d_]+)?)\b|\b-?[A-Za-z.][A-Za-z.\-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
       : normalizedLanguage === "dos"
-        ? /(%%[^ ]|%[^ ]+?%|![^ ]+?!|^\s*@?rem\b.*$|:[A-Za-z._?][A-Za-z0-9_$#@~.?]*|\b\d+\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/=<>!&|?@]+)/g
+        ? /(%%[^ ]|%~[A-Za-z]*[0-9A-Za-z]|%[^ ]+?%|![^ ]+?!|^\s*@?rem\b.*$|:[A-Za-z._?][A-Za-z0-9_$#@~.?]*|\b\d+\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/=<>!&|?@]+)/g
       : normalizedLanguage === "htmlbars"
-        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{\{!--.*?--\}\}|\{\{![^}\n]*\}\}|[A-Za-z0-9_]+=|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{\{!--.*?--\}\}|\{\{![^}\n]*\}\}|\{\{[#/]?|\}\}|[A-Za-z0-9_]+=|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
         : normalizedLanguage === "xml"
           ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|<!\[CDATA\[[^\n]*?\]\]>|<!DOCTYPE[^>\n]*>|<\?\w+[^?\n]*(?:\?>|$)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "django"
@@ -2302,9 +2323,11 @@ export function highlightCodeLine(line: string, language: string) {
             : normalizedLanguage === "python"
               ? /((?:fr|rf|f)"""(?:\\.|[\s\S])*?"""|(?:fr|rf|f)'''(?:\\.|[\s\S])*?'''|(?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|(?:u|r|ur|b|br)"""(?:\\.|[\s\S])*?"""|(?:u|r|ur|b|br)'''(?:\\.|[\s\S])*?'''|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)(?=\s*(?:->|:))|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[bB][01]+[lLjJ]?\b|\b0[oO][0-7]+[lLjJ]?\b|-?\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
-                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*|\$[-#?*!@$0-9]|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
-                  ? /("(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b[^"\n]*"|"[^"\n]*"|\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+\b|\b(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b|\[[^\]\n]*\]|[A-Za-z][A-Za-z0-9._/-]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                  ? /("(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b[^"\n]*"|"[^"\n]*"|(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}|\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+\b|\b(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b|\[[^\]\n]*\]|[A-Za-z][A-Za-z0-9._/-]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                  : normalizedLanguage === "diff"
+                    ? /(^diff --git .*$|^index [0-9A-Fa-f.,]+\b.*$|^--- .*$|^\+\+\+ .*$|^@@ .*@@.*$|[+\-!](?=.)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_/-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                   : normalizedLanguage === "clojure"
                     ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\^[A-Za-z_\-!.?+*=<>&#'][A-Za-z0-9_\-!.?+*=<>&#'/;:]*|:{1,2}[A-Za-z_\-!.?+*=<>&#'][A-Za-z0-9_\-!.?+*=<>&#'/;:]*|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                     : normalizedLanguage === "clojure-repl"
@@ -2312,55 +2335,57 @@ export function highlightCodeLine(line: string, language: string) {
                       : normalizedLanguage === "haml"
                         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^\s*(?:!=#|=#|-#|\/).*$|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                         : normalizedLanguage === "cmake"
-                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                          : normalizedLanguage === "gradle"
+                            ? /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|-?(?:\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@]+)/g
                           : normalizedLanguage === "excel"
-                            ? /(\bN\([^)\n]*\)|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                            ? /(\bN\([^)\n]*\)|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|(?:'[^'\n]+'|[A-Za-z_][A-Za-z0-9_.]*)!\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?|\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                             : normalizedLanguage === "makefile"
-                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\([A-Za-z_][A-Za-z0-9_]*\)|\$[@%<?^+*]|^\.[A-Za-z][\w.]*:|^[^\s:]+:|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
+                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\([A-Za-z_][A-Za-z0-9_]*\)|\$[@%<?^+*]|^\.[A-Za-z][\w.]*:|^[^\s:]+:|-?(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
                               : normalizedLanguage === "markdown"
-                                ? /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]|\([^)\n]+\)|^#{1,6}|^>|^[-*+]|\d+\.|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                ? /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]|\([^)\n]+\)|^#{1,6}|^>|^[-*+]|\b\d+\.|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                 : normalizedLanguage === "ruby"
-                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|\b[A-Za-z_][A-Za-z0-9_]*(?:[!?=]|\b)|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
+                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|(?:@@?|\$)[A-Za-z_][A-Za-z0-9_]*\b|:(?!\s)[A-Za-z_][A-Za-z0-9_]*[!?=]?|[A-Za-z_][A-Za-z0-9_]*[!?=]?:|\b[A-Za-z_][A-Za-z0-9_]*(?:[!?=]|\b)|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
                                   : normalizedLanguage === "php"
-                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\$[A-Za-z_][A-Za-z0-9_]*\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\$[A-Za-z_][A-Za-z0-9_]*\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                     : normalizedLanguage === "lua"
-                                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                      ? /(--\[=*\[[\s\S]*?\]=*\]|\[=*\[[\s\S]*?\]=*\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                       : normalizedLanguage === "yaml"
-                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|---|!![A-Za-z_][A-Za-z0-9_]*|[&*][A-Za-z_][A-Za-z0-9_]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|---|\.\.\.|!![A-Za-z_][A-Za-z0-9_]*|[&*][A-Za-z_][A-Za-z0-9_]*|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                         : normalizedLanguage === "sql"
-                                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\/\*.*?\*\/|-?(?:\b0[xX][0-9A-Fa-f_]+|\b\d[\d_]*(?:\.[\d_]*)?(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                           : normalizedLanguage === "perl"
-                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|#.*$|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
+                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|#.*$|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|[$@%][A-Za-z_][A-Za-z0-9_]*\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
                                             : normalizedLanguage === "basic"
-                                              ? /("(?:\\.|[^"\\])*"|[Rr][Ee][Mm]\b.*$|'.*$|\b[0-9]+[0-9edED.]*[#!]?|&[hH][0-9A-Fa-f]{1,4}|&[oO][0-7]{1,6}|\b[A-Za-z][A-Za-z0-9_$%!#]*\b|[{}()[\].,;:+\-*/%=<>!&|?&'])/g
+                                              ? /("(?:\\.|[^"\\])*"|[Rr][Ee][Mm]\b.*$|'.*$|\b[0-9]+(?:\.[0-9]*)?(?:[eEdD][+-]?[0-9]+)?[#!]?|&[hH][0-9A-Fa-f]{1,4}|&[oO][0-7]{1,6}|\b[A-Za-z][A-Za-z0-9_$%!#]*\b|[{}()[\].,;:+\-*/%=<>!&|?&'])/g
                                               : normalizedLanguage === "arduino"
-                                                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                 : normalizedLanguage === "coffeescript"
-                                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|@[A-Za-z_$][A-Za-z0-9_$]*\b|\b[A-Za-z_$][A-Za-z0-9_$]*\b|[{}()[\].,;:+\-*/%=<>!&|?@#]+)/g
+                                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|@[A-Za-z_$][A-Za-z0-9_$]*\b|\b[A-Za-z_$][A-Za-z0-9_$]*\b|[{}()[\].,;:+\-*/%=<>!&|?@#]+)/g
                                                   : normalizedLanguage === "swift"
-                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?|\b(?:[\d_]+(?:\.[\d_]+)?(?:[eE][+-]?[\d_]+)?|0[xX][A-Fa-f0-9_]+(?:\.[A-Fa-f0-9_]+)?(?:[pP][+-]?[0-9_]+)?|0[bB][01_]+|0[oO][0-7_]+)\b|\b[A-Za-z_\u00C0-\u02B8][A-Za-z0-9_\u00C0-\u02B8']*\b|[{}()[\].,;:+\-*/%=<>!&|?@]+)/g
+                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|[@#][A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?|\b(?:[\d_]+(?:\.[\d_]+)?(?:[eE][+-]?[\d_]+)?|0[xX][A-Fa-f0-9_]+(?:\.[A-Fa-f0-9_]+)?(?:[pP][+-]?[0-9_]+)?|0[bB][01_]+|0[oO][0-7_]+)\b|\b[A-Za-z_\u00C0-\u02B8][A-Za-z0-9_\u00C0-\u02B8']*\b|[{}()[\].,;:+\-*/%=<>!&|?@#]+)/g
                                                     : normalizedLanguage === "dart"
-                                                      ? /(r?"""[\s\S]*?"""|r?'''[\s\S]*?'''|r"(?:\\.|[^"\\])*"|r'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@[A-Za-z_][A-Za-z0-9_]*|\$\{[^}\n]*\}|=>|-?(?:\b0[xX][0-9A-Fa-f]+|(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@$]+)/g
+                                                      ? /(r?"""[\s\S]*?"""|r?'''[\s\S]*?'''|r"(?:\\.|[^"\\])*"|r'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?|\$\{[^}\n]*\}|=>|-?(?:\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@$]+)/g
                                                       : normalizedLanguage === "kotlin"
-                                                        ? /("""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@(?:file|property|field|get|set|receiver|param|setparam|delegate)\s*:\s*[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?|[A-Za-z_][A-Za-z0-9_]*@|\$[A-Za-z_][A-Za-z0-9_]*|\$\{[^}\n]*\}|-?(?:\b0[xX][0-9A-Fa-f]+|(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@$]+)/g
+                                                        ? /("""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@(?:file|property|field|get|set|receiver|param|setparam|delegate)\s*:\s*[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?|[A-Za-z_][A-Za-z0-9_]*@|\$[A-Za-z_][A-Za-z0-9_]*|\$\{[^}\n]*\}|-?(?:\b0[xX][0-9A-Fa-f_]+|\b0[bB][01_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@$]+)/g
                                                         : normalizedLanguage === "objectivec"
-                                                          ? /(@"(?:\\.|[^"\\])*"|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|#[A-Za-z_][A-Za-z0-9_]*\s*(?:"[^"\n]*"|<[^>\n]*>)?|@(?:interface|class|protocol|implementation)\b|@(?:private|protected|public|try|property|end|throw|catch|finally|autoreleasepool|synthesize|dynamic|selector|optional|required|encode|package|import|defs|compatibility_alias)\b|\.[A-Za-z_][A-Za-z0-9_]*|-?(?:\b0[xX][0-9A-Fa-f]+|(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@#]+)/g
+                                                          ? /(@"(?:\\.|[^"\\])*"|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|#[A-Za-z_][A-Za-z0-9_]*\s*(?:"[^"\n]*"|<[^>\n]*>)?|@(?:interface|class|protocol|implementation)\b|@(?:private|protected|public|try|property|end|throw|catch|finally|autoreleasepool|synthesize|dynamic|selector|optional|required|encode|package|import|defs|compatibility_alias)\b|\.[A-Za-z_][A-Za-z0-9_]*|-?(?:\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@#]+)/g
                                                           : normalizedLanguage === "dockerfile"
-                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*|-?(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                                                             : normalizedLanguage === "nginx"
-                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\d+|\$\{[^}\n]*\}|[$@][A-Za-z_][A-Za-z0-9_]*|\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+[kKmMgGdshdwy]*\b|\b[A-Za-z_][A-Za-z0-9_/-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
+                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$\d+|\$\{[^}\n]*\}|[$@][A-Za-z_][A-Za-z0-9_]*|\[[0-9A-Fa-f:]+\](?::\d{1,5})?|\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+[kKmMgGdshdwy]*\b|\b[A-Za-z_][A-Za-z0-9_/-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$@]+)/g
                                                               : normalizedLanguage === "apache"
                                                                 ? /(<\/?[A-Za-z][^>\n]*>|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\[[^\]\n]*\]|[$%]\{[^}\n]*\}|[$%]\d+|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/=<>!&|?#]+)/g
                                                                 : normalizedLanguage === "http"
-                                                                  ? /(HTTP\/[0-9.]+|^[A-Za-z][A-Za-z0-9-]*:|^[A-Z]+|\/[^\s]+(?=\s+HTTP\/[0-9.]+$)|\b\d{3}\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                  ? /(HTTP\/[0-9.]+|^[A-Za-z][A-Za-z0-9-]*:|^[A-Z]+|(?:\*|[A-Za-z][A-Za-z0-9+.-]*:\/\/\S+|\/[^\s]+)(?=\s+HTTP\/[0-9.]+$)|\b\d{3}\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                 : normalizedLanguage === "ini"
-                                                                  ? /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|#.*$|\[\[?[^\]\n]*\]\]?|\$\{[^}\n]*\}|\$[\w\d"][\w\d_]*|[+\-]?\b\d[\d_]*\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                                                  ? /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|#.*$|\[\[?[^\]\n]*\]\]?|\$\{[^}\n]*\}|\$[\w\d"][\w\d_]*|[+\-]?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)+\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                                                                   : normalizedLanguage === "r"
                                                                     ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`[^`]*`|#.*$|\b0[xX][0-9A-Fa-f]+[Li]?\b|\b\d+(?:[eE][+\-]?\d*)?L\b|\b\d+\.(?!\d)(?:i\b)?|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d*)?i?\b|\.\d+(?:[eE][+\-]?\d*)?i?\b|[A-Za-z.][A-Za-z0-9._]*|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                   : isCssFamilyLanguage(
                                                                         normalizedLanguage,
                                                                       )
-                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*.*?\*\/|\[[^\]\n]+\]|\$[A-Za-z-][A-Za-z0-9_-]*|@@?[A-Za-z-][A-Za-z0-9_-]*|@\{[A-Za-z-][A-Za-z0-9_-]*\}|@[A-Za-z-]+|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|::?[A-Za-z0-9_-]+(?:\([^)\n]*\))?|\b\d+(?:\.\d+)?(?:%|[A-Za-z]+)?\b|\b[A-Za-z-][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?$]+)/g
+                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|!important\b|#[0-9A-Fa-f]{3,8}\b|\[[^\]\n]+\]|\$[A-Za-z-][A-Za-z0-9_-]*|@@?[A-Za-z-][A-Za-z0-9_-]*|@\{[A-Za-z-][A-Za-z0-9_-]*\}|@[A-Za-z-]+|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|::?[A-Za-z0-9_-]+(?:\([^)\n]*\))?|\b\d+(?:\.\d+)?(?:%|[A-Za-z]+)?\b|\b[A-Za-z-][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?$#]+)/g
                                                                     : normalizedLanguage ===
                                                                         "llvm"
                                                                       ? /("(?:\\.|[^"\\])*"|;.*$|[@!][-A-Za-z$._][\w\-$.]*|[@!]\d+[-A-Za-z$._\w]*|%[-A-Za-z$._][\w\-$.]*|%\d+|#\d+|0[xX][A-Fa-f0-9]+|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+(?:\.\d+)?)?|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#@%]+)/g
@@ -2377,26 +2402,26 @@ export function highlightCodeLine(line: string, language: string) {
                                                                           ? /(#\s*[A-Za-z]+\b.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01']+\b|-?(?:\b0[xX][0-9A-Fa-f']+|(?:\b[\d']+(?:\.[\d']*)?|\.[\d']+)(?:[uUlLfFbB]|ul|UL)|(?:\b[\d']+(?:\.[\d']*)?|\.[\d']+)(?:[eE][-+]?[\d']+)?)|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                           : normalizedLanguage ===
                                                                               "scala"
-                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@[A-Za-z]+|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@]+)/g
+                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|@[A-Za-z]+|-?(?:\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)[dflDFL]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?@]+)/g
                                                                             : normalizedLanguage ===
                                                                                 "go"
-                                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`[^`]*`|\/\/.*$|\/\*.*?\*\/|-?\b0[xX][0-9A-Fa-f]+[dflsi]?\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[dflsi]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|:=|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`[^`]*`|\/\/.*$|\/\*.*?\*\/|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)[dflsi]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|:=|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                               : normalizedLanguage ===
                                                                                   "csharp"
-                                                                                ? /(\$@?"(?:""|\\.|[^"\\])*"|@\$?"(?:""|\\.|[^"\\])*"|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|#.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                                ? /(\$@?"(?:""|\\.|[^"\\])*"|@\$?"(?:""|\\.|[^"\\])*"|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|#.*$|-?(?:\b0[bB][01_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)[dflmuDFLMU]*\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                                 : normalizedLanguage ===
                                                                                     "elixir"
-                                                                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|:(?!\s)[A-Za-z_][A-Za-z0-9_]*[!?=]?|[A-Za-z_][A-Za-z0-9_]*[!?=]?:|\$\W|(?:\$|@@?)[A-Za-z_][A-Za-z0-9_]*|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|\b[A-Za-z_][A-Za-z0-9_]*[!?]?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|:(?!\s)[A-Za-z_][A-Za-z0-9_]*[!?=]?|[A-Za-z_][A-Za-z0-9_]*[!?=]?:|\$\W|(?:\$|@@?)[A-Za-z_][A-Za-z0-9_]*|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b[0-9_]+(?:\.[0-9_]*)?|\.[0-9_]+)(?:[eE][-+]?[0-9_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_]*[!?]?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                                   : normalizedLanguage ===
                                                                                       "haskell"
-                                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\{-[\s\S]*?-\}|\{-#.*?#-\}|#!\/usr\/bin\/env runhaskell|#.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\{-[\s\S]*?-\}|\{-#.*?#-\}|#!\/usr\/bin\/env runhaskell|#.*$|-?(?:\b0[bB][01_]+|\b0[oO][0-7_]+|\b0[xX][0-9A-Fa-f_]+|(?:\b\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                                     : normalizedLanguage ===
                                                                                         "erlang"
                                                                                       ? /^[a-z'][A-Za-z0-9_']*\s*\(/.test(
                                                                                           line,
                                                                                         )
-                                                                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)|%.*$|\b\d+#[A-Fa-f0-9]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
-                                                                                        : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+#[A-Fa-f0-9]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)|%.*$|\b\d+#[0-9A-Za-z_]+\b|\b\d[\d_]*(?:\.[\d_]*)?(?:[eE][-+]?[\d_]+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                        : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+#[0-9A-Za-z_]+\b|\b\d[\d_]*(?:\.[\d_]*)?(?:[eE][-+]?[\d_]+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                                       : normalizedLanguage ===
                                                                                           "r"
                                                                                         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`[^`]*`|#.*$|\b0[xX][0-9A-Fa-f]+[Li]?\b|\b\d+(?:\.\d*)?(?:[eE][+-]?\d*)?[Li]?\b|\.\d+(?:[eE][+-]?\d*)?\b|\b[A-Za-z.][A-Za-z0-9._]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
@@ -2405,8 +2430,8 @@ export function highlightCodeLine(line: string, language: string) {
                                                                                           ? /^\s*function\b/.test(
                                                                                               line,
                                                                                             )
-                                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)|\[[^\]\n]*\]|%.*$|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
-                                                                                            : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)|\[[^\]\n]*\]|%.*$|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[ij]?(?=\W|$)|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                            : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[ij]?(?=\W|$)|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                                           : normalizedLanguage ===
                                                                                               "tex"
                                                                                             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\\[A-Za-z]+[*]?|\\[^A-Za-z0-9]|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
@@ -2415,8 +2440,18 @@ export function highlightCodeLine(line: string, language: string) {
                                                                                               ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\{-[\s\S]*?-\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                                               : normalizedLanguage ===
                                                                                                   "awk"
-                                                                                                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
-                                                                                                : [
+                                                                                                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                                : normalizedLanguage ===
+                                                                                                  "asciidoc"
+                                                                                                  ? /^\/\/.*$|^\.\w.*$|^\[.+?\]$|\[[^\]\n]*\]|:{1,2}[A-Za-z_][A-Za-z0-9_-]*:|^={1,6}(?=\s)|\b[A-Z][A-Z0-9_-]*(?=:)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+/g
+                                                                                                  : normalizedLanguage ===
+                                                                                                      "json"
+                                                                                                    ? /("(?:\\.|[^"\\])*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                                                : isCssFamilyLanguage(
+                                                                                                    normalizedLanguage,
+                                                                                                  )
+                                                                                                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|!important\b|#[0-9A-Fa-f]{3,8}\b|@[A-Za-z-][A-Za-z0-9_-]*|\$[A-Za-z-][A-Za-z0-9_-]*|@\{[A-Za-z-][A-Za-z0-9_-]*\}|@@?[A-Za-z-][A-Za-z0-9_-]*|\[[^\]\n]+\]|[#.][A-Za-z0-9_-]+|::?[A-Za-z0-9_-]+|\b\d+(?:\.\d+)?(?:%|em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|pt|pc|px|deg|grad|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?\b|\b[A-Za-z-][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                                                  : [
                                                                                                       "actionscript",
                                                                                                       "javascript",
                                                                                                     ].includes(
@@ -2481,9 +2516,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "dockerfile" && token.startsWith("#")) ||
     (normalizedLanguage === "nginx" && token.startsWith("#")) ||
     (normalizedLanguage === "apache" && token.startsWith("#")) ||
-    (normalizedLanguage === "sql" && token.startsWith("--")) ||
+    (normalizedLanguage === "sql" && (token.startsWith("--") || token.startsWith("/*"))) ||
     (normalizedLanguage === "ruby" && token.startsWith("#")) ||
-    (normalizedLanguage === "php" && token.startsWith("#")) ||
+    (normalizedLanguage === "php" && (token.startsWith("#") || token.startsWith("//") || token.startsWith("/*"))) ||
     (normalizedLanguage === "ini" && (token.startsWith(";") || token.startsWith("#"))) ||
     (normalizedLanguage === "powershell" && (token.startsWith("#") || token.startsWith("<#"))) ||
     (normalizedLanguage === "dos" && /^\s*@?rem\b/i.test(token)) ||
@@ -2520,6 +2555,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-keyword";
   }
   if (normalizedLanguage === "diff" && diffLineMarkerIsChange(token, line, tokenStart)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "diff" && diffMetaTokenIsKeyword(token)) {
     return "syntax-keyword";
   }
   if (
@@ -2690,7 +2728,13 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "django" && djangoFilterTokenIsKeyword(token)) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "django" && djangoDelimiterTokenIsKeyword(token)) {
+    return "syntax-keyword";
+  }
   if (normalizedLanguage === "htmlbars" && htmlbarsAttributeTokenIsKeyword(token)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "htmlbars" && htmlbarsDelimiterTokenIsKeyword(token)) {
     return "syntax-keyword";
   }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
@@ -2702,8 +2746,35 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "markdown") {
     return markdownTokenClass(token);
   }
+  if (isCssFamilyLanguage(normalizedLanguage) && cssMetaTokenIsMeta(token)) {
+    return "syntax-meta";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocAttributeEntryTokenIsMeta(token)) {
+    return "syntax-meta";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocStructuralTokenIsKeyword(token)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocTitleTokenIsTitle(token)) {
+    return "syntax-title";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocBracketMetaTokenIsMeta(token, line, tokenStart)) {
+    return "syntax-meta";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocBracketLabelTokenIsString(token)) {
+    return "syntax-string";
+  }
+  if (normalizedLanguage === "asciidoc" && asciidocAdmonitionSymbolIsString(token)) {
+    return "syntax-string";
+  }
   if (isCssFamilyLanguage(normalizedLanguage) && /^#[0-9A-Fa-f]{3,8}$/.test(token)) {
     return "syntax-number";
+  }
+  if (normalizedLanguage === "shell" && shellVariableTokenIsIdentifier(token)) {
+    return "syntax-identifier";
+  }
+  if (normalizedLanguage === "cmake" && cmakeVariableTokenIsIdentifier(token)) {
+    return "syntax-identifier";
   }
   if (
     isCssFamilyLanguage(normalizedLanguage) &&
@@ -2768,6 +2839,18 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "ini" && iniNumberTokenIsNumber(token)) {
     return "syntax-number";
   }
+  if (normalizedLanguage === "ruby" && rubyVariableTokenIsIdentifier(token)) {
+    return "syntax-identifier";
+  }
+  if (normalizedLanguage === "ruby" && rubySymbolTokenIsKeyword(token)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "php" && phpVariableTokenIsIdentifier(token)) {
+    return "syntax-identifier";
+  }
+  if (normalizedLanguage === "perl" && perlVariableTokenIsIdentifier(token)) {
+    return "syntax-identifier";
+  }
   if (normalizedLanguage === "powershell" && powershellLiteralTokenIsKeyword(token)) {
     return "syntax-keyword";
   }
@@ -2799,6 +2882,12 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-string";
   }
   if (normalizedLanguage === "rust" && rustRawStringIsString(token)) {
+    return "syntax-string";
+  }
+  if (normalizedLanguage === "lua" && luaLongBracketStringIsString(token)) {
+    return "syntax-string";
+  }
+  if (normalizedLanguage === "r" && rBacktickIdentifierIsString(token)) {
     return "syntax-string";
   }
   if (normalizedLanguage === "dart" && dartPrefixedStringIsString(token)) {
@@ -2834,13 +2923,23 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "cpp" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "go" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "csharp" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "elixir" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "haskell" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "dart" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "kotlin" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "objectivec" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "matlab" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "arduino" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "coffeescript" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "r" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "yaml" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "powershell" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "makefile" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "dockerfile" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "gradle" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "sql" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "awk" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "json" && /^-?\d/.test(token)) ||
     (normalizedLanguage === "accesslog" && isAccesslogAddressToken(token))
   ) {
     return "syntax-number";
@@ -2946,7 +3045,7 @@ function normalizeCodeLanguage(language: string) {
   if (["php", "php3", "php4", "php5", "php6"].includes(normalized)) {
     return "php";
   }
-  if (["c", "cc", "cpp", "c++", "h", "h++", "hpp"].includes(normalized)) {
+  if (["c", "c_cpp", "cc", "cpp", "c++", "h", "h++", "hpp"].includes(normalized)) {
     return "cpp";
   }
   if (["mm", "obj-c", "objc", "objectivec"].includes(normalized)) {
@@ -2973,13 +3072,13 @@ function normalizeCodeLanguage(language: string) {
   if (["diff", "patch"].includes(normalized)) {
     return "diff";
   }
-  if (["ini", "toml"].includes(normalized)) {
+  if (["config", "ini", "toml"].includes(normalized)) {
     return "ini";
   }
   if (["powershell", "ps"].includes(normalized)) {
     return "powershell";
   }
-  if (["bat", "cmd", "dos"].includes(normalized)) {
+  if (["bat", "batchfile", "cmd", "dos"].includes(normalized)) {
     return "dos";
   }
   if (normalized === "kotlin") {
@@ -3021,7 +3120,11 @@ function normalizeCodeLanguage(language: string) {
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
-  if (["atom", "html", "plist", "rss", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(normalized)) {
+  if (
+    ["atom", "html", "plist", "rss", "svg", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(
+      normalized,
+    )
+  ) {
     return "xml";
   }
   return normalized;
@@ -3055,6 +3158,10 @@ function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: str
 function diffLineMarkerIsChange(token: string, line: string, tokenStart: number) {
   const marker = token[0];
   return tokenStart === 0 && ["+", "-", "!"].includes(marker) && line.startsWith(marker);
+}
+
+function diffMetaTokenIsKeyword(token: string) {
+  return /^(?:diff --git |index |--- |\+\+\+ |@@ )/.test(token);
 }
 
 function javascriptMetaTokenIsKeyword(token: string) {
@@ -3245,6 +3352,14 @@ function rubyDeclarationTitleIsTitle(token: string, line: string, tokenStart: nu
   );
 }
 
+function rubyVariableTokenIsIdentifier(token: string) {
+  return /^(?:@@?|\$)[A-Za-z_][A-Za-z0-9_]*$/.test(token);
+}
+
+function rubySymbolTokenIsKeyword(token: string) {
+  return /^:(?!\s)[A-Za-z_][A-Za-z0-9_]*[!?=]?$/.test(token) || /^[A-Za-z_][A-Za-z0-9_]*[!?=]?:$/.test(token);
+}
+
 function phpDeclarationTitleIsTitle(token: string, line: string, tokenStart: number) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
     return false;
@@ -3254,11 +3369,19 @@ function phpDeclarationTitleIsTitle(token: string, line: string, tokenStart: num
   );
 }
 
+function phpVariableTokenIsIdentifier(token: string) {
+  return /^\$[A-Za-z_][A-Za-z0-9_]*$/.test(token);
+}
+
 function perlDeclarationTitleIsTitle(token: string, line: string, tokenStart: number) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
     return false;
   }
   return /\bsub\s+$/.test(line.slice(0, tokenStart));
+}
+
+function perlVariableTokenIsIdentifier(token: string) {
+  return /^[$@%][A-Za-z_][A-Za-z0-9_]*$/.test(token);
 }
 
 function luaFunctionTitleIsTitle(token: string, line: string, tokenStart: number) {
@@ -3268,6 +3391,10 @@ function luaFunctionTitleIsTitle(token: string, line: string, tokenStart: number
   const before = line.slice(0, tokenStart);
   const after = line.slice(tokenStart + token.length);
   return /\bfunction\s+(?:[_A-Za-z]\w*[.:])*$/.test(before) && /^\s*\(/.test(after);
+}
+
+function luaLongBracketStringIsString(token: string) {
+  return /^\[=*\[[\s\S]*\]=*\]$/.test(token);
 }
 
 function coffeescriptDeclarationTitleIsTitle(token: string, line: string, tokenStart: number) {
@@ -3296,7 +3423,7 @@ function kotlinInterpolationTokenIsIdentifier(token: string) {
 }
 
 function swiftMetaTokenIsKeyword(token: string) {
-  return /^@[A-Za-z_][A-Za-z0-9_]*/.test(token);
+  return /^[@#][A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?$/.test(token);
 }
 
 function rustMetaTokenIsKeyword(token: string) {
@@ -3305,6 +3432,10 @@ function rustMetaTokenIsKeyword(token: string) {
 
 function rustLifetimeTokenIsKeyword(token: string) {
   return /^'[A-Za-z_][A-Za-z0-9_]*$/.test(token);
+}
+
+function rBacktickIdentifierIsString(token: string) {
+  return /^`[^`\n]*`$/.test(token);
 }
 
 function javaMetaTokenIsKeyword(token: string) {
@@ -3316,7 +3447,7 @@ function swiftTypeTokenIsKeyword(token: string) {
 }
 
 function dartMetaTokenIsKeyword(token: string) {
-  return /^@[A-Za-z_][A-Za-z0-9_]*$/.test(token);
+  return /^@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?$/.test(token);
 }
 
 function dartInterpolationTokenIsIdentifier(token: string) {
@@ -3388,6 +3519,9 @@ function yamlKeyIsAttribute(token: string, line: string, tokenStart: number) {
 function yamlStructuralTokenIsKeyword(token: string, line: string, tokenStart: number) {
   if (token === "---") {
     return /^\s*---\s*$/.test(line);
+  }
+  if (token === "...") {
+    return /^\s*\.\.\.\s*$/.test(line);
   }
   if (/^!![A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
     return true;
@@ -3508,6 +3642,10 @@ function isCssFamilyLanguage(language: string) {
   return language === "css" || language === "scss" || language === "less";
 }
 
+function cssMetaTokenIsMeta(token: string) {
+  return token === "!important";
+}
+
 function cssFamilyVariableTokenIsIdentifier(token: string, language: string) {
   if (language === "scss") {
     return /^\$[A-Za-z-][A-Za-z0-9_-]*$/.test(token);
@@ -3519,6 +3657,18 @@ function cssFamilyVariableTokenIsIdentifier(token: string, language: string) {
     );
   }
   return false;
+}
+
+function shellVariableTokenIsIdentifier(token: string) {
+  return (
+    /^\$\{[^}\n]*\}$/.test(token) ||
+    /^\$[A-Za-z_][A-Za-z0-9_]*$/.test(token) ||
+    /^\$[-#?*!@$0-9]$/.test(token)
+  );
+}
+
+function cmakeVariableTokenIsIdentifier(token: string) {
+  return /^\$\{[^}\n]*\}$/.test(token);
 }
 
 function awkVariableTokenIsIdentifier(token: string) {
@@ -3545,7 +3695,11 @@ function nginxDirectiveTokenIsKeyword(token: string, line: string, tokenStart: n
 }
 
 function nginxNumberTokenIsNumber(token: string) {
-  return /^\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?$/.test(token) || /^\d+[kKmMgGdshdwy]*$/.test(token);
+  return (
+    /^\[[0-9A-Fa-f:]+\](?::\d{1,5})?$/.test(token) ||
+    /^\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?$/.test(token) ||
+    /^\d+[kKmMgGdshdwy]*$/.test(token)
+  );
 }
 
 function apacheSectionTokenIsKeyword(token: string) {
@@ -3573,7 +3727,7 @@ function httpProtocolTokenIsKeyword(token: string) {
 }
 
 function httpRequestTargetIsString(token: string, line: string, tokenStart: number) {
-  if (!/^\/\S*$/.test(token)) {
+  if (!/^(?:\*|[A-Za-z][A-Za-z0-9+.-]*:\/\/\S+|\/\S*)$/.test(token)) {
     return false;
   }
   return /^[A-Z]+\s+$/.test(line.slice(0, tokenStart)) && /\s+HTTP\/[0-9.]+$/.test(line);
@@ -3592,7 +3746,7 @@ function iniSectionTokenIsKeyword(token: string) {
 }
 
 function iniAttributeTokenIsKeyword(token: string, line: string, tokenStart: number) {
-  return /^[A-Za-z0-9_[\]-]+$/.test(token) && /^\s*=/.test(line.slice(tokenStart + token.length));
+  return /^[A-Za-z0-9_[\].-]+$/.test(token) && /^\s*=/.test(line.slice(tokenStart + token.length));
 }
 
 function iniVariableTokenIsIdentifier(token: string) {
@@ -3600,7 +3754,7 @@ function iniVariableTokenIsIdentifier(token: string) {
 }
 
 function iniNumberTokenIsNumber(token: string) {
-  return /^[+\-]?\d[\d_]*$/.test(token);
+  return /^[+\-]?(?:0[bB][01_]+|0[oO][0-7_]+|0[xX][0-9A-Fa-f_]+|(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?[\d_]+)?)$/.test(token);
 }
 
 function powershellLiteralTokenIsKeyword(token: string) {
@@ -3608,7 +3762,7 @@ function powershellLiteralTokenIsKeyword(token: string) {
 }
 
 function powershellVariableTokenIsIdentifier(token: string) {
-  return /^\$[\w\d][\w\d_:]*$/.test(token);
+  return /^\$\{[^}\n]*\}$/.test(token) || /^\$[\w\d][\w\d_:]*$/.test(token);
 }
 
 function powershellHereStringTokenIsString(token: string) {
@@ -3616,7 +3770,12 @@ function powershellHereStringTokenIsString(token: string) {
 }
 
 function dosVariableTokenIsIdentifier(token: string) {
-  return /^%%[^ ]$/.test(token) || /^%[^ ]+?%$/.test(token) || /^![^ ]+?!$/.test(token);
+  return (
+    /^%%[^ ]$/.test(token) ||
+    /^%~[A-Za-z]*[0-9A-Za-z]$/.test(token) ||
+    /^%[^ ]+?%$/.test(token) ||
+    /^![^ ]+?!$/.test(token)
+  );
 }
 
 function dosLabelTokenIsTitle(token: string) {
@@ -3628,8 +3787,40 @@ function djangoFilterTokenIsKeyword(token: string) {
   return token.startsWith("|") && djangoKeywords.has(filterName);
 }
 
+function djangoDelimiterTokenIsKeyword(token: string) {
+  return /^(?:\{\{|\}\}|\{%|%\})$/.test(token);
+}
+
 function htmlbarsAttributeTokenIsKeyword(token: string) {
   return /^[A-Za-z0-9_]+=$/.test(token);
+}
+
+function htmlbarsDelimiterTokenIsKeyword(token: string) {
+  return /^(?:\{\{[#/]?|\}\})$/.test(token);
+}
+
+function asciidocStructuralTokenIsKeyword(token: string) {
+  return /^={1,6}$/.test(token);
+}
+
+function asciidocAttributeEntryTokenIsMeta(token: string) {
+  return /^:{1,2}[A-Za-z_][A-Za-z0-9_-]*:$/.test(token);
+}
+
+function asciidocTitleTokenIsTitle(token: string) {
+  return /^\.\w.*$/.test(token);
+}
+
+function asciidocBracketMetaTokenIsMeta(token: string, line: string, tokenStart: number) {
+  return tokenStart === 0 && token.length === line.length && /^\[.+?\]$/.test(token);
+}
+
+function asciidocBracketLabelTokenIsString(token: string) {
+  return /^\[[^\]\n]*\]$/.test(token);
+}
+
+function asciidocAdmonitionSymbolIsString(token: string) {
+  return asciidocKeywords.has(token);
 }
 
 function isCodeKeyword(token: string, language: string) {
@@ -3695,5 +3886,8 @@ function isCodeKeyword(token: string, language: string) {
 }
 
 function isAccesslogAddressToken(token: string) {
-  return /^\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?$/.test(token);
+  return (
+    /^\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?$/.test(token) ||
+    /^(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}$/.test(token)
+  );
 }

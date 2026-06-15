@@ -72,6 +72,11 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="project-menu-nav project-menu-gruop"');
     expect(html).toContain('class="code-menu');
     expect(html).toContain('class="project-menu-count"');
+    expect(html).toContain('href="/yona/yona/projectYobi"><span class="menu-name">title.projectHome</span>');
+    expect(html).toContain('href="/yona/yona/projectYobi/code"><span class="menu-name">menu.code</span>');
+    expect(html).not.toContain('title="Home"');
+    expect(html).not.toContain('title="Code"');
+    expect(html).not.toContain('title="Settings"');
     expect(html).toContain('class="project-setting"');
     expect(html).toContain('class="yobicon-cog"');
     expect(html).toContain('class="page-wrap-outer"');

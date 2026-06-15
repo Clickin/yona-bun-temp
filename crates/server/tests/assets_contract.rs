@@ -335,8 +335,262 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains("function Messages(key)"));
     assert!(script.contains("global.Messages = Messages"));
     assert!(script.contains("Messages._messages = _messages"));
-    assert!(script.contains("\"title.login\": \"title.login\""));
-    assert!(script.contains("\"button.confirm\": \"button.confirm\""));
+    assert!(script.contains("\"app.name\": \"Yona\""));
+    assert!(script.contains("\"title.login\": \"Log in\""));
+    assert!(script.contains("\"button.cancel\": \"Cancel\""));
+    assert!(script.contains("\"button.confirm\": \"Confirm\""));
+    assert!(script.contains("\"button.delete\": \"Delete\""));
+    assert!(script.contains("\"button.login\": \"Log in\""));
+    assert!(script.contains("\"button.save\": \"Save\""));
+    assert!(script.contains("\"button.download\": \"Download a file\""));
+    assert!(script.contains("\"button.upload\": \"File upload\""));
+    assert!(script.contains("\"button.commentAndNextState.closed\": \"Comment & Close issue\""));
+    assert!(script.contains("\"button.commentAndNextState.open\": \"Comment & Reopen issue\""));
+    assert!(script.contains("\"button.no\": \"No\""));
+    assert!(script.contains("\"button.yes\": \"Yes\""));
+    assert!(script.contains("\"button.nextState.closed\": \"Close issue\""));
+    assert!(script.contains("\"button.nextState.open\": \"Reopen issue\""));
+    assert!(script.contains("\"button.prevPage\": \"Previous page\""));
+    assert!(script.contains("\"button.nextPage\": \"Next page\""));
+    assert!(script.contains(
+        "\"common.attach.attachIfYouSave\": \"Selected file will be attached when your comment is saved.\""
+    ));
+    assert!(script.contains("\"common.attach.clickToPost\": \"Click to post\""));
+    assert!(script.contains("\"common.attach.clickbutton\": \"Click upload button\""));
+    assert!(
+        script.contains("\"common.attach.dropFilesHere\": \"Drag & Drop files here to upload.\"")
+    );
+    assert!(script.contains("\"common.attach.drophere\": \"Drag & Drop files to attach here or\""));
+    assert!(script.contains("\"common.attach.error.upload\": \"Failed to upload. <br>{1} ({0})\""));
+    assert!(
+        script.contains("\"common.attach.error.delete\": \"Failed to delete file. <br>{1} ({0})\"")
+    );
+    assert!(script.contains("\"common.attach.pastehere\": \"Paste the clipboard image\""));
+    assert!(script.contains("\"common.attachment\": \"Attachment\""));
+    assert!(script.contains("\"common.comment.delete\": \"Delete comment\""));
+    assert!(script.contains(
+        "\"common.comment.beforeunload.confirm\": \" Would you like to exit this page without submitting comment?\""
+    ));
+    assert!(script.contains("\"code.closeCommentBox\": \"Close comment box\""));
+    assert!(script.contains("\"code.copyUrl.copied\": \"URL is copied\""));
+    assert!(script.contains("\"code.isBinary\": \"Binary file is not shown\""));
+    assert!(script.contains("\"code.openCommentBox\": \"Open comment box\""));
+    assert!(script.contains(
+        "\"error.toolargefile\": \"Wow, that's huge!<br>Please submit file smaller than {0}.\""
+    ));
+    assert!(script
+        .contains("\"error.badrequest\": \"The request cannot be fulfilled due to bad syntax\""));
+    assert!(script.contains("\"error.failedTo\": \"Failed to {0}<br>({1} {2})\""));
+    assert!(script.contains("\"error.forbidden\": \"You are not authorized\""));
+    assert!(script.contains("\"error.notfound\": \"Page not found\""));
+    assert!(script.contains(
+        "\"issue.favorite.added\": \"Added as a favorite issue. See it on the My Issues page\""
+    ));
+    assert!(script.contains("\"issue.favorite.deleted\": \"Removed from favorite issues\""));
+    assert!(script.contains(
+        "\"issue.error.beforeunload\": \"Issue is not saved yet. Would you like to exit this page without saving?\""
+    ));
+    assert!(script.contains("\"issue.error.emptyTitle\": \"Issue title is a required field.\""));
+    assert!(script
+        .contains("\"issue.error.invalid.duedate\": \"Issue due date is not valid date type.\""));
+    assert!(script.contains("\"issue.menu.new\": \"New issue\""));
+    assert!(script.contains("\"issue.unwatch\": \"Unsubscribe from this issue\""));
+    assert!(script.contains(
+        "\"issue.unwatch.start\": \"You will no longer get notifications about this issue\""
+    ));
+    assert!(script.contains("\"issue.update.assignee.id\": \"Update assignee\""));
+    assert!(script.contains("\"issue.update.attachLabel\": \"Attach label\""));
+    assert!(script.contains("\"issue.update.detachLabel\": \"Detach label\""));
+    assert!(script.contains("\"issue.update.dueDate\": \"Update due date\""));
+    assert!(script.contains("\"issue.update.labelIds\": \"Update label\""));
+    assert!(script.contains("\"issue.update.milestone.id\": \"Update milestone\""));
+    assert!(script.contains("\"issue.update.state\": \"Update status\""));
+    assert!(script.contains("\"issue.watch\": \"Subscribe\""));
+    assert!(script
+        .contains("\"issue.watch.start\": \"Now you will get notifications about this issue\""));
+    assert!(script.contains("\"label.add\": \"Add label\""));
+    assert!(script.contains(
+        "\"label.category.new.confirm\": \"{0} is a new category.<br>In this category, you can choose\""
+    ));
+    assert!(script.contains("\"label.category.option\": \"In this category, you can choose\""));
+    assert!(script.contains("\"label.category.option.multiple\": \"multiple labels\""));
+    assert!(script.contains("\"label.category.option.single\": \"only a single label\""));
+    assert!(script.contains(
+        "\"label.confirm.delete\": \"Once you delete this label, instances of this label attached to issues will also be removed. Do you still want to delete this label?\""
+    ));
+    assert!(script.contains(
+        "\"label.error.color\": \"Please define the label color using HEX or RGB values.\""
+    ));
+    assert!(script.contains(
+        "\"label.error.creationFailed\": \"Failed to create a new label. A server error may have occurred or the request may be invalid.\""
+    ));
+    assert!(script.contains(
+        "\"label.error.duplicated\": \"Failed to create a new label. The label may already exist.\""
+    ));
+    assert!(script.contains(
+        "\"label.error.duplicated.in.category\": \"A label with the same name already exists in the category {0}.\""
+    ));
+    assert!(script
+        .contains("\"label.error.empty\": \"Category, Color, and Name are required fields.\""));
+    assert!(script.contains("\"label.failedTo\": \"Failed to {0}.\""));
+    assert!(script.contains("\"menu.home\": \"Home\""));
+    assert!(script
+        .contains("\"milestone.error.content\": \"Milestone description is a required field\""));
+    assert!(script.contains(
+        "\"milestone.error.duedateFormat\": \"Invalid format. Enter the due date in YYYY-MM-DD format.\""
+    ));
+    assert!(script.contains("\"milestone.error.title\": \"Milestone title is a required field.\""));
+    assert!(script.contains("\"milestone.state.all\": \"All\""));
+    assert!(script.contains("\"milestone.state.closed\": \"Closed\""));
+    assert!(script.contains("\"milestone.state.open\": \"Open\""));
+    assert!(script.contains(
+        "\"organization.name.alert\": \"Enter the group name in alphanumerical or symbol characters(_-.)\""
+    ));
+    assert!(script.contains(
+        "\"organization.name.duplicate\": \"Already existent user's login id or group name.\""
+    ));
+    assert!(script.contains(
+        "\"organization.member.leave.unknownerror\": \"Failed to leave this group. Please ask site admin\""
+    ));
+    assert!(script.contains("\"organization.member.unknownOrganization\": \"Non existent group\""));
+    assert!(script.contains(
+        "\"post.error.beforeunload\": \"This post has not been saved yet. Would you like to exit this page without saving?\""
+    ));
+    assert!(script.contains("\"post.error.emptyTitle\": \"Title is a required field.\""));
+    assert!(script.contains("\"post.unwatch\": \"Stop watching\""));
+    assert!(
+        script.contains("\"post.unwatch.start\": \"Notifications about this post has been muted\"")
+    );
+    assert!(script.contains("\"post.watch\": \"Watch\""));
+    assert!(
+        script.contains("\"post.watch.start\": \"You will receive notifications about this post\"")
+    );
+    assert!(script.contains("\"project.is.empty\": \"Project is non existent\""));
+    assert!(script.contains(
+        "\"project.changeVCS.alert\": \"You should agree with changing the repository type.\""
+    ));
+    assert!(script.contains("\"project.changeVCS.error\": \"Can't change repository type\""));
+    assert!(
+        script.contains("\"project.delete.alert\": \"You should agree to delete this project.\"")
+    );
+    assert!(
+        script.contains("\"project.delete.error\": \"Error occurred while deleting a project.\"")
+    );
+    assert!(script
+        .contains("\"project.import.error.empty.url\": \"Please type the Git repository URL.\""));
+    assert!(script.contains("\"project.logo.alert\": \"This is not an image file.\""));
+    assert!(script.contains(
+        "\"project.member.deleteConfirm\": \"Are you sure you want this user to leave this project?\""
+    ));
+    assert!(script.contains(
+        "\"project.member.ownerCannotLeave\": \"Project owner cannot leave his own project.\""
+    ));
+    assert!(script.contains("\"project.member.notExist\": \"User does not exist.\""));
+    assert!(script
+        .contains("\"project.webhook.payloadUrl.empty\": \"Payload URL is a required field.\""));
+    assert!(script.contains(
+        "\"project.name.alert\": \"Enter name in alphabetnumerical or symbol characters(_-.)\""
+    ));
+    assert!(script.contains("\"project.name.duplicate\": \"This project name already exists.\""));
+    assert!(script.contains("\"project.name.reserved.alert\": \"You can't use reserved names.\""));
+    assert!(script.contains(
+        "\"project.transfer.alert\": \"You should agree with the transfer of this project.\""
+    ));
+    assert!(script.contains(
+        "\"project.transfer.error\": \" User or group not available. Please check whether the user's login id or the gorup's name is correct.\""
+    ));
+    assert!(script.contains("\"project.unwatch\": \"Unwatch\""));
+    assert!(script.contains("\"project.watch\": \"Watch\""));
+    assert!(script.contains("\"pullRequest.body.required\": \"Enter pull request description.\""));
+    assert!(script.contains("\"pullRequest.diff.noChanges\": \"No changes have been made.\""));
+    assert!(script.contains(
+        "\"pullRequest.fromBranch.required\": \"Select branch that contains the code to be sent.\""
+    ));
+    assert!(script.contains(
+        "\"pullRequest.ignore.conflict\": \"This code seems to have conflicts when merging. Do you really want to continue?\""
+    ));
+    assert!(script.contains(
+        "\"pullRequest.is.merging\": \"We are checking if the code is safe. Please wait for a while to complete this process.\""
+    ));
+    assert!(script.contains(
+        "\"pullRequest.is.not.safe\": \"A conflict occurred when merging. This pull request cannot be merged safely.\""
+    ));
+    assert!(script.contains("\"pullRequest.is.safe\": \"This pull request can be merged safely.\""));
+    assert!(script.contains("\"pullRequest.title.required\": \"Title is a required field.\""));
+    assert!(script.contains(
+        "\"pullRequest.toBranch.required\": \"Select branch that will receive code to be sent.\""
+    ));
+    assert!(script.contains(
+        "\"pullRequest.unwatch.start\": \"Notifications of this pull request are muted\""
+    ));
+    assert!(script.contains(
+        "\"pullRequest.watch.start\": \"You will receive notifications of this pull request\""
+    ));
+    assert!(script.contains("\"post.comment.empty\": \"Comment should not be empty. \""));
+    assert!(script.contains("\"site.mail.sended\": \"Mail has been sent.\""));
+    assert!(script.contains(
+        "\"site.resetPasswordEmail.invalidRequest\": \"Invalid password reset request\""
+    ));
+    assert!(script.contains("\"title.help\": \"Help\""));
+    assert!(script.contains("\"title.logout\": \"Log out\""));
+    assert!(script.contains("\"title.no.results\": \"No results\""));
+    assert!(script.contains("\"title.resetPassword\": \"Reset password\""));
+    assert!(script.contains("\"title.signup\": \"Sign up\""));
+    assert!(script.contains(
+        "\"user.login.failed\": \"Failed to log in. A serve error may have occurred or the request may be invalid.\""
+    ));
+    assert!(script.contains(
+        "\"user.login.failed.client\": \"Failed to log in. The request is invalid.\\nPlease ask site admin.\""
+    ));
+    assert!(script.contains(
+        "\"user.login.failed.network\": \"Failed to log in because of network trouble.\\nPlease ask site admin.\""
+    ));
+    assert!(script.contains(
+        "\"user.login.failed.server\": \"Failed to log in because a server error has occurred.\\nPlease ask site admin.\""
+    ));
+    assert!(script
+        .contains("\"user.avatar.fileSizeAlert\": \"Images should be less than 1MB in size..\""));
+    assert!(script
+        .contains("\"user.avatar.onlyImage\": \"Only image files are allowed to be uploaded.\""));
+    assert!(
+        script.contains("\"user.avatar.uploadError\": \"Failed to upload. Please ask site admin\"")
+    );
+    assert!(script.contains(
+        "\"user.enroll.failed\": \"Failed to sign-up. A server error may have occurred or the request may be invalid.\""
+    ));
+    assert!(script.contains(
+        "\"user.enroll.failed.client\": \"Failed to sign-up. The request is invalid.\\nPlease ask site admin.\""
+    ));
+    assert!(script.contains(
+        "\"user.enroll.failed.network\": \"Failed to sign-up because of network trouble.\\nPlease ask site admin.\""
+    ));
+    assert!(script.contains(
+        "\"user.enroll.failed.server\": \"Failed to sign-up because a server error has occurred.\\nPlease ask site admin.\""
+    ));
+    assert!(script.contains("\"userinfo.changeNotifications\": \"Notification settings\""));
+    assert!(script.contains("\"userinfo.leaveProject.confirm\": \"Are you sure to leave {0}?\""));
+    assert!(script
+        .contains("\"user.login.invalid\": \"Your log in ID, E-mail or password is not valid.\""));
+    assert!(script.contains("\"user.loginId.duplicate\": \"This log in ID already exists.\""));
+    assert!(script.contains(
+        "\"user.login.required\": \"Login ID or E-mail and password is required field.\""
+    ));
+    assert!(script.contains("\"user.email.duplicate\": \"Email address already exists\""));
+    assert!(script.contains("\"user.password\": \"Password\""));
+    assert!(script.contains("\"user.wrongPassword.alert\": \"Wrong password!\""));
+    assert!(script.contains("\"user.wrongloginId.alert\": \"Enter Valid ID\""));
+    assert!(script.contains(
+        "\"validation.allowedCharsForLoginId\": \"Login ID may contain alphanumeric characters as well as dashes, underscores or dots, but cannot begin or end with underscores or dots.\""
+    ));
+    assert!(script.contains("\"validation.duplicated\": \"Already exists!\""));
+    assert!(script.contains("\"validation.invalidEmail\": \"Enter valid email address!\""));
+    assert!(script.contains("\"validation.passwordMismatch\": \"Retyped password doesn't match\""));
+    assert!(script.contains("\"validation.required\": \"Required field!\""));
+    assert!(script.contains("\"validation.reservedWord\": \"This is a reserved system word.\""));
+    assert!(script.contains(
+        "\"validation.tooShortPassword\": \"Password must be at least 4 characters in length.\""
+    ));
+    assert!(script.contains("\"watchers.more\": \"and {0} others\""));
     assert!(script.contains("Object.prototype.hasOwnProperty.call(_messages, key)"));
     assert!(script.contains("return arguments.length > 1 ? format(value"));
 }

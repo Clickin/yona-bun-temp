@@ -7,6 +7,7 @@ import { toProjectContainerView } from "../../../../../app-view-models";
 import type { RuntimeConfig } from "../../../../../runtime-config";
 import { CodeComparePage, type CodeCompareViewModel } from "../../../../-code-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -60,14 +61,16 @@ function toCodeCompareView(response: CodeCompareResponse): CodeCompareViewModel 
 
 function CodeCompareRouteComponent() {
   const { owner, projectName, revisionRange } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [compare, setCompare] = React.useState<CodeCompareViewModel | null>(null);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Compare");
+  useDocumentTitle(revisionRange);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -91,18 +94,18 @@ function CodeCompareRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read compare diff failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, revisionRange, runtimeConfig, setErrorMessage]);
+  }, [owner, projectName, revisionRange, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -111,6 +114,9 @@ function CodeCompareRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/compare/${revisionRange}`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/${owner}/${projectName}/compare/${revisionRange}`} />;
   }
 
   return <CodeComparePage compare={compare} detail={detail} runtimeConfig={runtimeConfig} />;

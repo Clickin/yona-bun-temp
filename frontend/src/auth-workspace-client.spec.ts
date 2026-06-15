@@ -593,6 +593,7 @@ describe("workspace REST clients", () => {
           defaultLandingPath: "/me",
           profile: {
             displayName: "Door",
+            isGuest: true,
             loginId: "door",
           },
           watchedProjects: [
@@ -617,6 +618,7 @@ describe("workspace REST clients", () => {
     expect(result.profile?.avatarUrl).toBe("");
     expect(result.profile?.connectedSocialProviders).toEqual([]);
     expect(result.profile?.englishName).toBe("");
+    expect((result.profile as typeof result.profile & { isGuest?: boolean })?.isGuest).toBe(true);
     expect(result.profile?.primaryEmailAddress).toBe("");
   });
 

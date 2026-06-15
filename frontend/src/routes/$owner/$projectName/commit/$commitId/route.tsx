@@ -16,6 +16,7 @@ import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
 import { CodeCommitDetailPage, type CodeCommitDetailViewModel } from "../../../../-code-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -70,8 +71,8 @@ function CodeCommitDetailRouteComponent() {
     enabled: !bootstrapping,
   });
   const mutationError = React.useCallback(
-    (fallback: string) => (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : fallback);
+    (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     [setErrorMessage],
   );
@@ -93,7 +94,7 @@ function CodeCommitDetailRouteComponent() {
         startLine: input.startLine,
         threadId: input.threadId,
       }),
-    onError: mutationError("Create commit comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(detailQueryKey, updated);
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
@@ -105,7 +106,7 @@ function CodeCommitDetailRouteComponent() {
         ...scope,
         commentId,
       }),
-    onError: mutationError("Delete commit comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(detailQueryKey, updated);
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
@@ -121,7 +122,7 @@ function CodeCommitDetailRouteComponent() {
         ...scope,
         ...input,
       }),
-    onError: mutationError("Update commit comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(detailQueryKey, updated);
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
@@ -130,7 +131,7 @@ function CodeCommitDetailRouteComponent() {
   const closeThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       closeCommitDiscussionThreadRest(runtimeConfig, csrfToken, { ...scope, threadId }),
-    onError: mutationError("Close commit thread failed."),
+    onError: mutationError,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
     },
@@ -138,7 +139,7 @@ function CodeCommitDetailRouteComponent() {
   const openThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       openCommitDiscussionThreadRest(runtimeConfig, csrfToken, { ...scope, threadId }),
-    onError: mutationError("Open commit thread failed."),
+    onError: mutationError,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
     },
@@ -146,17 +147,12 @@ function CodeCommitDetailRouteComponent() {
   const error = containerQuery.error ?? commitDetailQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle("Commit");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read commit detail failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle(`code.commits @${commitId}`);
 
   if (bootstrapping || containerQuery.isLoading || commitDetailQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -165,6 +161,9 @@ function CodeCommitDetailRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/commit/${commitId}`} />;
+  }
+  if (error) {
+    return <BadRequestPage href={`/${owner}/${projectName}/commit/${commitId}`} />;
   }
 
   return (

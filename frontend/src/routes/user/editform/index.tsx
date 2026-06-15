@@ -23,7 +23,7 @@ function EditProfileRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -41,14 +41,14 @@ function EditProfileRouteComponent() {
           await syncWorkspaceFromOverview(overview);
           navigateToAppHref(runtimeConfig.basePath, "/me");
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Update profile failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onUploadAvatar={async (blob, filename) => {
         try {
           return await uploadProfileAvatar(runtimeConfig, filename, blob);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Avatar upload failed.");
+          setErrorMessage(error instanceof Error ? error.message : "user.avatar.uploadError");
           throw error;
         }
       }}

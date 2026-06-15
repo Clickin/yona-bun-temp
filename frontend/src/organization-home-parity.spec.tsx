@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderOrganizationDetail } from "./auth-workspace-shell.test-helpers";
 
@@ -13,6 +15,7 @@ describe("organization home parity", () => {
         },
       ],
       description: "Web labs",
+      logoUrl: "/logos/weblabs.png",
       memberMembers: [
         {
           avatarUrl: "/avatars/member.png",
@@ -22,6 +25,7 @@ describe("organization home parity", () => {
         },
       ],
       organizationName: "weblabs",
+      viewerCanEnroll: true,
       viewerCanCreateProject: true,
       viewerCanUpdate: true,
       visibleProjects: [
@@ -42,8 +46,32 @@ describe("organization home parity", () => {
       ],
     } as never);
 
-    expect(html).toContain('class="app-shell organization-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell organization-page"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap organization-home-wrap"');
+    expect(html).not.toContain('class="app-shell organization-page page-wrap-outer"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain("background-image:url(&#x27;/logos/weblabs.png&#x27;)");
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('class="project-header-avatar"');
+    expect(html).toContain('<img alt="" src="/logos/weblabs.png"/>');
+    expect(html).toContain('class="group-title-head">group</span>');
+    expect(html).toContain('<a href="/yona/organizations/weblabs">weblabs</a>');
+    expect(html).toContain('class="project-util-wrap"');
+    expect(html).toContain('class="project-util"');
+    expect(html).toContain('data-toggle="dropdown" type="button"');
+    expect(html).toContain("organization.member.enrollment.title");
+    expect(html).toContain('class="dropdown-menu flat right title"');
+    expect(html).toContain("organization.you.may.want.to.be.a.member weblabs");
+    expect(html).toContain("organization.member.enrollment.help.before");
+    expect(html).toContain('class="ybtn ybtn-info enrollBtn" href="/yona/organizations/weblabs/enroll" id="enrollBtn"');
+    expect(html).toContain("button.new.enrollment");
+    expect(html).toContain('class="project-menu-nav project-menu-gruop"');
+    expect(html).toContain('<li class="active"><a href="/yona/organizations/weblabs">title.organizationHome</a>');
+    expect(html).toContain('href="/yona/organizations/weblabs/issues"');
+    expect(html).toContain('href="/yona/organizations/weblabs/boards"');
+    expect(html).toContain('href="/yona/organizations/weblabs/pullrequests"');
     expect(html).toContain('class="project-home-header row-fluid"');
     expect(html).toContain('class="project-overview span9 span-hard-wrap"');
     expect(html).toContain('class="project-description"');
@@ -52,8 +80,27 @@ describe("organization home parity", () => {
     expect(html).toContain('class="span9 span-left-pane"');
     expect(html).toContain('class="project-list-wrap organization-project-list"');
     expect(html).toContain('class="listitem organization-project-card"');
+    expect(html).toContain('class="yobicon-friends yobicon-middle"');
+    expect(html).toContain("<strong>4</strong>");
+    expect(html).toContain('class="yobicon-eye"');
+    expect(html).toContain("<strong>3</strong>");
+    expect(html).not.toContain("project.onmember 4");
+    expect(html).not.toContain("project.onwatching 3");
     expect(html).toContain('class="span3 span-right-pane"');
     expect(html).toContain('class="bubble-wrap gray organization-home"');
     expect(html).toContain('class="organization-member-wrap"');
+  });
+
+  it("keeps organization leave mutation fallback on the legacy unknown-error key", () => {
+    const routeSource = readFileSync(
+      resolve(process.cwd(), "src/routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+
+    expect(routeSource).toContain("organization.member.leave.unknownerror");
+    expect(routeSource).not.toContain("Leave organization failed.");
+    expect(routeSource).toContain("Server Error");
+    expect(routeSource).not.toContain("Cancel enrollment failed.");
+    expect(routeSource).not.toContain("Enroll failed.");
   });
 });

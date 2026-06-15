@@ -41,6 +41,7 @@ import {
 import { useAppRuntime } from "../../../app-runtime-context";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -213,7 +214,7 @@ function SiteAdminRouteComponent() {
   const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
     useAppRuntime();
 
-  useDocumentTitle("Site Admin");
+  useDocumentTitle("title.siteSetting");
 
   const currentIsSiteAdmin = currentSession?.isSiteAdmin ?? false;
   const updateBadgeQuery = useQuery({
@@ -257,7 +258,6 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
-        setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
       />
     );
@@ -270,7 +270,6 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
-        setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
       />
     );
@@ -336,7 +335,6 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
-        setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
       />
     );
@@ -365,7 +363,7 @@ function SiteDataRoute({
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -404,7 +402,7 @@ function SiteUpdateRoute({
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -449,14 +447,14 @@ function SiteUserListRoute({
     enabled: canRender && currentIsSiteAdmin,
   });
   const mutationError = React.useCallback(
-    (fallback: string) => (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : fallback);
+    (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     [setErrorMessage],
   );
   const adminMutation = useMutation({
     mutationFn: (loginId: string) => toggleSiteUserAdminRest(runtimeConfig, csrfToken, loginId),
-    onError: mutationError("Site admin role update failed."),
+    onError: mutationError,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
@@ -464,21 +462,21 @@ function SiteUserListRoute({
   const lockMutation = useMutation({
     mutationFn: (loginId: string) =>
       toggleSiteUserAccountLockRest(runtimeConfig, csrfToken, loginId),
-    onError: mutationError("Account lock update failed."),
+    onError: mutationError,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
   const guestMutation = useMutation({
     mutationFn: (loginId: string) => toggleSiteUserGuestRest(runtimeConfig, csrfToken, loginId),
-    onError: mutationError("Guest mode update failed."),
+    onError: mutationError,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
   const deleteMutation = useMutation({
     mutationFn: (loginId: string) => deleteSiteUserRest(runtimeConfig, csrfToken, loginId),
-    onError: mutationError("User delete failed."),
+    onError: mutationError,
     onSuccess: async () => {
       setDeleteTarget(null);
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
@@ -486,7 +484,7 @@ function SiteUserListRoute({
   });
   const resetPasswordMutation = useMutation({
     mutationFn: (loginId: string) => resetSiteUserPasswordRest(runtimeConfig, csrfToken, loginId),
-    onError: mutationError("Password reset failed."),
+    onError: mutationError,
     onSuccess: async (response) => {
       setResetPasswords((current) => ({
         ...current,
@@ -495,18 +493,12 @@ function SiteUserListRoute({
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(query.error instanceof Error ? query.error.message : "Read users failed.");
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -515,6 +507,9 @@ function SiteUserListRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/userList" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/userList" />;
   }
 
   return (
@@ -571,25 +566,19 @@ function SiteProjectListRoute({
   const deleteMutation = useMutation({
     mutationFn: (projectId: number) => deleteSiteProjectRest(runtimeConfig, csrfToken, projectId),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Project delete failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: async () => {
       setDeleteTarget(null);
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
     },
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(query.error instanceof Error ? query.error.message : "Read projects failed.");
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -598,6 +587,9 @@ function SiteProjectListRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/projectList" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/projectList" />;
   }
 
   return (
@@ -620,14 +612,12 @@ function SitePostListRoute({
   currentIsSiteAdmin,
   href,
   runtimeConfig,
-  setErrorMessage,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
-  setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
@@ -636,18 +626,12 @@ function SitePostListRoute({
     ...sitePostsQueryOptions(runtimeConfig, input),
     enabled: canRender && currentIsSiteAdmin,
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(query.error instanceof Error ? query.error.message : "Read posts failed.");
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -656,6 +640,9 @@ function SitePostListRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/postList" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/postList" />;
   }
 
   return (
@@ -673,14 +660,12 @@ function SiteIssueListRoute({
   currentIsSiteAdmin,
   href,
   runtimeConfig,
-  setErrorMessage,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
-  setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
@@ -689,18 +674,12 @@ function SiteIssueListRoute({
     ...siteIssuesQueryOptions(runtimeConfig, input),
     enabled: canRender && currentIsSiteAdmin,
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(query.error instanceof Error ? query.error.message : "Read issues failed.");
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -709,6 +688,9 @@ function SiteIssueListRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/issueList" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/issueList" />;
   }
 
   return (
@@ -748,25 +730,19 @@ function SiteMailRoute({
   const sendMutation = useMutation({
     mutationFn: (input: SiteMailSendInput) => sendSiteMailRest(runtimeConfig, csrfToken, input),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Mail send failed.");
+      setErrorMessage(error instanceof Error ? error.message : "site.mail.fail");
     },
     onSuccess: (response) => {
       setSent(response.sent);
       queryClient.setQueryData(apiQueryKeys.siteAdmin.mail(), response);
     },
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(query.error instanceof Error ? query.error.message : "Read mail failed.");
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -775,6 +751,9 @@ function SiteMailRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/mail" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/mail" />;
   }
 
   return (
@@ -812,7 +791,7 @@ function SiteMassMailRoute({
   const mailListMutation = useMutation({
     mutationFn: (input: SiteMailListInput) => readSiteMailListRest(runtimeConfig, csrfToken, input),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Mail recipient lookup failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: async (response) => {
       setMailtoHref(`mailto:${response.recipients.join(",")}`);
@@ -823,7 +802,7 @@ function SiteMassMailRoute({
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -847,14 +826,12 @@ function SiteDiagnosticRoute({
   currentIsSiteAdmin,
   href,
   runtimeConfig,
-  setErrorMessage,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
-  setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
@@ -862,20 +839,12 @@ function SiteDiagnosticRoute({
     ...siteDiagnosticsQueryOptions(runtimeConfig),
     enabled: canRender && currentIsSiteAdmin,
   });
-  const failureKind = classifyConnectFailure(query.error);
-
-  React.useEffect(() => {
-    if (query.error && !classifyConnectFailure(query.error)) {
-      setErrorMessage(
-        query.error instanceof Error ? query.error.message : "Read diagnostics failed.",
-      );
-    }
-  }, [query.error, setErrorMessage]);
+  const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
     return (
       <main className="app-shell site-admin-page">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -884,6 +853,9 @@ function SiteDiagnosticRoute({
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href="/sites/diagnostic" />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href="/sites/diagnostic" />;
   }
 
   return (
@@ -1783,7 +1755,7 @@ function SiteIssueRow({
         <a className="post-meta-item" href={appHref(runtimeConfig, `/${issue.authorLoginId}`)}>
           {authorLabel}
         </a>
-        <span className="post-meta-item" title={issue.createdLabel}>
+        <span className="post-meta-item" title={issue.createdTitle || issue.createdLabel}>
           {issue.createdLabel}
         </span>
         <span className="post-comments post-meta-item">
@@ -1834,7 +1806,7 @@ function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: R
         <a className="post-meta-item" href={appHref(runtimeConfig, `/${post.authorLoginId}`)}>
           {authorLabel}
         </a>
-        <span className="post-meta-item" title={post.createdLabel}>
+        <span className="post-meta-item" title={post.createdTitle || post.createdLabel}>
           {post.createdLabel}
         </span>
         <span className="post-comments post-meta-item">
@@ -1867,6 +1839,28 @@ function SiteProjectListHeader() {
   );
 }
 
+function siteProjectCreatedDateLabel(createdAt: string) {
+  return createdAt.split(/[ T]/, 1)[0] ?? createdAt;
+}
+
+function siteUserSocialDateLabel(createdAt: string) {
+  const match = createdAt.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/);
+  if (!match) {
+    return createdAt;
+  }
+  const [, date, hourText, minute] = match;
+  if (!hourText || !minute) {
+    return date ?? createdAt;
+  }
+  const hour = Number(hourText);
+  if (!Number.isFinite(hour)) {
+    return createdAt;
+  }
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${date} ${displayHour}:${minute} ${suffix}`;
+}
+
 function SiteProjectRow({
   pendingDelete,
   project,
@@ -1896,7 +1890,9 @@ function SiteProjectRow({
         </a>
       </div>
       <div className="span4 listitem-col project-overview">{project.overview}</div>
-      <div className="span2 listitem-col created-date">{project.createdAt}</div>
+      <div className="span2 listitem-col created-date">
+        {siteProjectCreatedDateLabel(project.createdAt)}
+      </div>
       <div className="span1 listitem-col action-buttons">
         <button
           className="ybtn ybtn-danger"
@@ -1943,7 +1939,7 @@ function SiteDeleteProjectModal({
     >
       <div className="modal-header">
         <button
-          aria-label="Close"
+          aria-label="button.close"
           className="close"
           data-dismiss="modal"
           type="button"
@@ -2093,10 +2089,10 @@ function SiteUserRow({
         <span className="email">{user.emailAddress}</span>
       </div>
       <div className="span2 listitem-col created-date">
-        <span>{user.createdAt}</span>
+        <span>{siteUserSocialDateLabel(user.createdAt)}</span>
       </div>
       {selectedState === "DELETED" ? (
-        <div className="span4 listitem-col">{user.createdAt}</div>
+        <div className="span4 listitem-col">{user.lastStateModifiedAt || user.createdAt}</div>
       ) : (
         <div className="span5 listitem-col action-buttons">
           <button
@@ -2204,7 +2200,7 @@ function SiteDeleteUserModal({
     >
       <div className="modal-header">
         <button
-          aria-label="Close"
+          aria-label="button.close"
           className="close"
           data-dismiss="modal"
           type="button"

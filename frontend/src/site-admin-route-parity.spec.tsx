@@ -28,6 +28,22 @@ describe("site-admin route parity harness", () => {
       "utf8",
     );
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read users failed.");
+    expect(routeSource).not.toContain("Read projects failed.");
+    expect(routeSource).not.toContain("Read posts failed.");
+    expect(routeSource).not.toContain("Read issues failed.");
+    expect(routeSource).not.toContain("Read mail failed.");
+    expect(routeSource).not.toContain("Read diagnostics failed.");
+    expect(routeSource).toContain("error.badrequest");
+    expect(routeSource).not.toContain("Site admin role update failed.");
+    expect(routeSource).not.toContain("Account lock update failed.");
+    expect(routeSource).not.toContain("Guest mode update failed.");
+    expect(routeSource).not.toContain("User delete failed.");
+    expect(routeSource).not.toContain("Password reset failed.");
+    expect(routeSource).not.toContain("Project delete failed.");
+    expect(routeSource).not.toContain("Mail recipient lookup failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("NotFoundPage");
     expect(routeSource).toContain("return <NotFoundPage href={`/sites/${pageName}`} />;");
   });
@@ -112,7 +128,7 @@ describe("site-admin route parity harness", () => {
       <SiteAdminUserListPage
         deleteTarget={{
           avatarUrl: "/yona/files/202",
-          createdAt: "2026-01-01",
+          createdAt: "2026-01-01 10:20:30",
           displayName: "Door User",
           emailAddress: "door@yona.test",
           id: 7,
@@ -138,7 +154,7 @@ describe("site-admin route parity harness", () => {
           users: [
             {
               avatarUrl: "/yona/files/202",
-              createdAt: "2026-01-01",
+              createdAt: "2026-01-01 10:20:30",
               displayName: "Door User",
               emailAddress: "door@yona.test",
               id: 7,
@@ -164,6 +180,8 @@ describe("site-admin route parity harness", () => {
     expect(userHtml).toContain(">user.name<");
     expect(userHtml).toContain(">user.email<");
     expect(userHtml).toContain(">userinfo.since<");
+    expect(userHtml).toContain(">2026-01-01 10:20 AM<");
+    expect(userHtml).not.toContain("10:20:30");
     expect(userHtml).toContain(">site.userList.unlocked<");
     expect(userHtml).toContain(
       '<img alt="Door User" height="32" src="/yona/files/202" width="32"/>',
@@ -177,8 +195,9 @@ describe("site-admin route parity harness", () => {
     expect(userHtml).toContain(">site.user.delete<");
     expect(userHtml).toContain(">site.user.deleteConfirm<");
     expect(userHtml).toContain(
-      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
+      '<button aria-label="button.close" class="close" data-dismiss="modal" type="button">×</button>',
     );
+    expect(userHtml).not.toContain('aria-label="Close"');
     expect(userHtml).toContain(">button.yes<");
     expect(userHtml).toContain(
       '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
@@ -188,10 +207,60 @@ describe("site-admin route parity harness", () => {
     expect(userHtml).not.toContain(">Reset Password<");
     expect(userHtml).not.toContain(">Delete User<");
 
+    const deletedUserHtml = renderToStaticMarkup(
+      <SiteAdminUserListPage
+        deleteTarget={null}
+        input={{ page: 1, query: "", state: "DELETED" }}
+        pendingAccountLockLoginId={undefined}
+        pendingDeleteLoginId={undefined}
+        pendingGuestLoginId={undefined}
+        pendingResetPasswordLoginId={undefined}
+        pendingSiteAdminLoginId={undefined}
+        response={{
+          page: 1,
+          pageSize: 30,
+          query: "",
+          siteAdminCount: 0,
+          state: "DELETED",
+          total: 1,
+          totalPages: 1,
+          users: [
+            {
+              avatarUrl: "/yona/files/303",
+              createdAt: "2025-12-31 09:10:11",
+              displayName: "[DELETED]Gone User",
+              emailAddress: "deleted-gone@noreply.yona.io",
+              id: 8,
+              isGuest: false,
+              isSiteAdmin: false,
+              lastStateModifiedAt: "2026-01-02 11:12:13",
+              loginId: "gone",
+              state: "DELETED",
+            },
+          ],
+        }}
+        resetPasswords={{}}
+        runtimeConfig={runtimeConfig}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+        onResetPassword={noop}
+        onToggleAccountLock={noop}
+        onToggleGuest={noop}
+        onToggleSiteAdmin={noop}
+      />,
+    );
+
+    expect(deletedUserHtml).toContain(">userinfo.leave<");
+    expect(deletedUserHtml).toContain(">2026-01-02 11:12:13<");
+    expect(deletedUserHtml).not.toContain(">2025-12-31 09:10:11</div>");
+    expect(deletedUserHtml).not.toContain(">button.user.make.guest.mode<");
+    expect(deletedUserHtml).not.toContain(">title.resetPassword<");
+
     const projectHtml = renderToStaticMarkup(
       <SiteAdminProjectListPage
         deleteTarget={{
-          createdAt: "2026-01-01",
+          createdAt: "2026-01-01 10:20:30",
           id: 11,
           overview: "A project",
           ownerName: "yona",
@@ -206,7 +275,7 @@ describe("site-admin route parity harness", () => {
           pageSize: 30,
           projects: [
             {
-              createdAt: "2026-01-01",
+              createdAt: "2026-01-01 10:20:30",
               id: 11,
               overview: "A project",
               ownerName: "yona",
@@ -229,12 +298,15 @@ describe("site-admin route parity harness", () => {
     expect(projectHtml).toContain(">project.created<");
     expect(projectHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
     expect(projectHtml).toContain(">yona/alpha<");
+    expect(projectHtml).toContain(">2026-01-01<");
+    expect(projectHtml).not.toContain("10:20:30");
     expect(projectHtml).toContain(">button.delete<");
     expect(projectHtml).toContain(">site.project.delete<");
     expect(projectHtml).toContain(">site.project.deleteConfirm<");
     expect(projectHtml).toContain(
-      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
+      '<button aria-label="button.close" class="close" data-dismiss="modal" type="button">×</button>',
     );
+    expect(projectHtml).not.toContain('aria-label="Close"');
     expect(projectHtml).toContain(">button.yes<");
     expect(projectHtml).toContain(
       '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
@@ -291,6 +363,7 @@ describe("site-admin route parity harness", () => {
               authorLoginId: "door",
               commentCount: 3,
               createdLabel: "2026-01-01",
+              createdTitle: "2026-01-01 10:20:30 AM",
               labels: [],
               notice: false,
               ownerName: "yona",
@@ -324,7 +397,8 @@ describe("site-admin route parity harness", () => {
       '<img alt="Door User" height="16" src="/yona/avatar/door.png" width="16"/>',
     );
     expect(postHtml).toContain(">Door User<");
-    expect(postHtml).toContain('title="2026-01-01"');
+    expect(postHtml).toContain('title="2026-01-01 10:20:30 AM"');
+    expect(postHtml).toContain(">2026-01-01</span>");
     expect(postHtml).toContain('href="/yona/yona/alpha/post/15#comments"');
     expect(postHtml).toContain('<i class="yobicon-comments"></i>3');
     expect(postHtml).toContain('class="page-navigation-wrap" id="pagination"');
@@ -348,6 +422,7 @@ describe("site-admin route parity harness", () => {
               authorLoginId: "door",
               commentCount: 4,
               createdLabel: "2026-01-03",
+              createdTitle: "2026-01-03 3:04:05 PM",
               issueNumber: "21",
               labels: [],
               milestoneTitle: "",
@@ -388,7 +463,8 @@ describe("site-admin route parity harness", () => {
       '<img alt="Door User" height="16" src="/yona/avatar/door.png" width="16"/>',
     );
     expect(issueHtml).toContain(">Door User<");
-    expect(issueHtml).toContain('title="2026-01-03"');
+    expect(issueHtml).toContain('title="2026-01-03 3:04:05 PM"');
+    expect(issueHtml).toContain(">2026-01-03</span>");
     expect(issueHtml).toContain('href="/yona/yona/alpha/issue/21#comments"');
     expect(issueHtml).toContain('<i class="yobicon-comments"></i>4');
     expect(issueHtml).toContain('class="page-navigation-wrap" id="pagination"');
@@ -458,6 +534,15 @@ describe("site-admin route parity harness", () => {
     expect(mailHtml).toContain("<strong>site.mail.send</strong>");
     expect(mailHtml).not.toContain("Mail configuration is incomplete.");
     expect(mailHtml).not.toContain("Mail was sent.");
+
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+    expect(routeSource).toContain("site.mail.fail");
+    expect(routeSource).toContain("error.badrequest");
+    expect(routeSource).not.toContain("Mail send failed.");
+    expect(routeSource).not.toContain("Mail recipient lookup failed.");
 
     const massMailHtml = renderToStaticMarkup(
       <SiteAdminMassMailPage

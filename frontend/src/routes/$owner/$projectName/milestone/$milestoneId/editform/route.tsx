@@ -13,6 +13,7 @@ import {
 import { buildProjectHref } from "../../../../../-project-views";
 import { ProjectMilestoneFormPage } from "../../../../../-milestone-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -25,16 +26,18 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 
 function ProjectMilestoneEditFormRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}/editform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [milestone, setMilestone] =
     React.useState<ReturnType<typeof toProjectMilestoneDetailView>>(null);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Edit Milestone");
+  useDocumentTitle("title.editMilestone");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -58,18 +61,18 @@ function ProjectMilestoneEditFormRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read milestone failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [milestoneId, owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [milestoneId, owner, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -78,6 +81,9 @@ function ProjectMilestoneEditFormRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

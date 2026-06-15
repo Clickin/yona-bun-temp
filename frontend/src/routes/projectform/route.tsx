@@ -7,7 +7,7 @@ import {
 } from "../../api/org-project";
 import { useAppRuntime } from "../../app-runtime-context";
 import { ProjectNewPage } from "../-project-views";
-import { navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
+import { BadRequestPage, navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/projectform")({
   component: ProjectNewRouteComponent,
@@ -19,6 +19,7 @@ function ProjectNewRouteComponent() {
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
+  const [readFailed, setReadFailed] = React.useState(false);
 
   React.useEffect(() => {
     if (bootstrapping || !canRender) {
@@ -26,17 +27,16 @@ function ProjectNewRouteComponent() {
     }
     const owner = new URLSearchParams(window.location.search).get("owner") ?? undefined;
     let cancelled = false;
+    setReadFailed(false);
     void readProjectCreateFormOptionsRest(runtimeConfig, { owner })
       .then((options) => {
         if (!cancelled) {
           setFormOptions(options);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (!cancelled) {
-          setErrorMessage(
-            error instanceof Error ? error.message : "Read project form options failed.",
-          );
+          setReadFailed(true);
         }
       });
     return () => {
@@ -45,9 +45,12 @@ function ProjectNewRouteComponent() {
   }, [bootstrapping, canRender, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender || !formOptions) {
+    if (readFailed) {
+      return <BadRequestPage href="/projectform" />;
+    }
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -62,7 +65,7 @@ function ProjectNewRouteComponent() {
           const detail = await createProject(runtimeConfig, csrfToken, input);
           navigateToAppHref(runtimeConfig.basePath, `/${detail.ownerName}/${detail.projectName}`);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Create project failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       selectedOwnerName={formOptions.selectedOwnerName}

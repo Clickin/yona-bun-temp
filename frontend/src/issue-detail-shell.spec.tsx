@@ -45,7 +45,14 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
       />,
     );
 
-    expect(html).toContain('class="app-shell issue-detail-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell issue-detail-page"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/owner">owner</a>');
+    expect(html).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("<p>owner/projectYobi</p>");
     expect(html).toContain('class="project-page-wrap board-view"');
@@ -75,6 +82,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('id="translate"');
     expect(html).toContain('title="button.translation"');
     expect(html).toContain('class="yobicon-lang"');
+    expect(html).toContain('title="button.edit"');
+    expect(html).toContain('class="yobicon-edit-2"');
+    expect(html).not.toContain(">Edit</a>");
     expect(html).toContain('id="vote"');
     expect(html).toContain('class="vote-wrap voter-exists"');
     expect(html).toContain('data-request-method="post"');
@@ -100,6 +110,37 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).not.toContain('class="label issue-label list-label active"');
     expect(html).toContain("<strong>markdown</strong>");
     expect(html).toContain("<code>React</code>");
+  });
+
+  it("renders legacy issue next-state button labels", () => {
+    const openHtml = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onStateChange={async () => undefined}
+      />,
+    );
+    const closedHtml = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          state: "closed",
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onStateChange={async () => undefined}
+      />,
+    );
+
+    expect(openHtml).toContain(">button.nextState.closed</button>");
+    expect(openHtml).not.toContain(">Close</button>");
+    expect(closedHtml).toContain(">button.nextState.open</button>");
+    expect(closedHtml).not.toContain(">Reopen</button>");
   });
 
   it("renders legacy issue child comments under their parent with one-line reply form", () => {
@@ -179,6 +220,24 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/78/delete"');
   });
 
+  it("uses the legacy no-author label for issue detail author fallback", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          authorLabel: "",
+          authorLoginId: "",
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('<strong class="name">issue.noAuthor</strong>');
+    expect(html).toContain('alt="issue.noAuthor"');
+    expect(html).not.toContain("Unknown");
+  });
+
   it("renders the legacy delete confirmation modal shell for deletable issues", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage
@@ -200,6 +259,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("post.delete.confirm");
     expect(html).toContain('class="ybtn ybtn-danger"');
     expect(html).toContain('data-request-method="delete"');
+    expect(html).toContain('title="button.delete"');
+    expect(html).toContain('class="yobicon-trash"');
+    expect(html).not.toContain(">Delete</button>");
   });
 
   it("renders the legacy comment delete trigger and confirmation modal shell", () => {
@@ -536,6 +598,7 @@ const issueDetail: ProjectIssueDetailViewModel = {
   bodyHtml: "",
   bodyMarkdown: "Body",
   commentCount: 0,
+  createdLabel: "now",
   comments: [],
   childClosedCount: 0,
   childIssues: [],

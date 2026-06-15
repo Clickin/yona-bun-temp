@@ -78,11 +78,41 @@ async fn response_text(response: axum::response::Response) -> String {
     .unwrap()
 }
 
+fn write_legacy_translation_stub_response(translated_text: &str) -> (String, std::path::PathBuf) {
+    let response_path = std::env::temp_dir().join(format!(
+        "yona-translation-stub-{}-{}.json",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos(),
+    ));
+    std::fs::write(
+        &response_path,
+        json!({
+            "result": {
+                "translatedText": translated_text,
+            }
+        })
+        .to_string(),
+    )
+    .expect("translation stub response write");
+    (format!("file://{}", response_path.display()), response_path)
+}
+
 async fn ok_json(response: axum::response::Response) -> Value {
     let status = response.status();
     let text = response_text(response).await;
     assert_eq!(status, StatusCode::OK, "{text}");
     serde_json::from_str(&text).expect("json response")
+}
+
+async fn assert_legacy_external_unauthorized(response: axum::response::Response) {
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        response_json(response).await,
+        json!({ "message": "unauthorized request" })
+    );
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
@@ -1456,6 +1486,28 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(token_refavorited["projectId"], project_id.to_string());
     assert_eq!(token_refavorited["favored"], true);
 
+    let anonymous_legacy_favorites = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/favoriteProjects",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_favorites).await;
+
+    let anonymous_legacy_favorite_toggle = rest(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_favorite_toggle).await;
+
     let issue_created = ok_json(
         rpc(
             app.clone(),
@@ -1494,7 +1546,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_issue_favorited["issueId"], issue_id.to_string());
     assert_eq!(legacy_issue_favorited["favored"], true);
-    assert_eq!(legacy_issue_favorited["message"], "issue.favorite.added");
+    assert_eq!(
+        legacy_issue_favorited["message"],
+        "Added as a favorite issue. See it on the My Issues page"
+    );
     let legacy_issues = ok_json(
         rest(
             app.clone(),
@@ -1527,8 +1582,30 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_unfavorited["favored"], false);
     assert_eq!(
         legacy_issue_unfavorited["message"],
-        "issue.favorite.deleted"
+        "Removed from favorite issues"
     );
+
+    let anonymous_legacy_issues = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/favoriteIssues",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issues).await;
+
+    let anonymous_legacy_issue_toggle = rest(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_toggle).await;
 
     let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
     std::env::set_var("YONA_TRANSLATION_API", "");
@@ -1554,6 +1631,62 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_text(translation_without_config).await,
         "Precondition Failed"
     );
+    if let Some(value) = previous_translation_api {
+        std::env::set_var("YONA_TRANSLATION_API", value);
+    } else {
+        std::env::remove_var("YONA_TRANSLATION_API");
+    }
+
+    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
+    std::env::set_var("YONA_TRANSLATION_API", "http://127.0.0.1:9/translate");
+    let anonymous_translation = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/translation",
+        None,
+        None,
+        Some(json!({
+            "owner": "owner",
+            "projectName": "projectYobi",
+            "type": "issue",
+            "number": 1
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_translation).await;
+    if let Some(value) = previous_translation_api {
+        std::env::set_var("YONA_TRANSLATION_API", value);
+    } else {
+        std::env::remove_var("YONA_TRANSLATION_API");
+    }
+
+    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
+    let (translation_api, translation_stub_path) =
+        write_legacy_translation_stub_response("Translated **issue**");
+    std::env::set_var("YONA_TRANSLATION_API", translation_api);
+    let translated_issue = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/translation",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "owner": "owner",
+                "projectName": "projectYobi",
+                "type": "issue",
+                "number": 1
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(translated_issue["translated"], "Translated **issue**");
+    assert_eq!(
+        translated_issue["translatedMarkdown"],
+        "Translated **issue**"
+    );
+    std::fs::remove_file(translation_stub_path).expect("translation stub cleanup");
     if let Some(value) = previous_translation_api {
         std::env::set_var("YONA_TRANSLATION_API", value);
     } else {
@@ -1633,6 +1766,28 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         organization_id.to_string()
     );
     assert_eq!(legacy_organization_unfavorited["favored"], false);
+
+    let anonymous_legacy_organizations = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/favoriteOrganizations",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_organizations).await;
+
+    let anonymous_legacy_organization_toggle = rest(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_organization_toggle).await;
 
     let watched = ok_json(
         rest(
@@ -1757,6 +1912,41 @@ async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
     )
     .await;
     assert_eq!(owner_issue["issueNumber"], "1");
+
+    let empty_issue_title = rpc(
+        app.clone(),
+        "CreateIssue",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({
+            "ownerName": "owner",
+            "projectName": "projectYobi",
+            "title": "",
+            "bodyMarkdown": "Missing title"
+        }),
+    )
+    .await;
+    assert_eq!(empty_issue_title.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(empty_issue_title)
+        .await
+        .contains("issue.error.emptyTitle"));
+
+    let empty_post_title = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/projects/owner/projectYobi/posts",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "title": "",
+            "bodyMarkdown": "Missing title"
+        })),
+    )
+    .await;
+    assert_eq!(empty_post_title.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(empty_post_title)
+        .await
+        .contains("post.error.emptyTitle"));
 
     let public_detail = ok_json(
         rest(
@@ -3139,6 +3329,26 @@ async fn rest_milestone_routes_manage_crud_and_state() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    let empty_title = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/milestones",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "title": "",
+            "contentsMarkdown": "Missing title",
+            "dueDate": "2026-05-09",
+            "state": "open",
+            "attachmentIds": []
+        })),
+    )
+    .await;
+    assert_eq!(empty_title.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(empty_title)
+        .await
+        .contains("milestone.error.title"));
 
     let created = ok_json(
         rest(

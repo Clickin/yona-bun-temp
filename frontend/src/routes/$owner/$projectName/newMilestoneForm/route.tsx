@@ -6,6 +6,7 @@ import { toProjectContainerView } from "../../../../app-view-models";
 import { buildProjectHref } from "../../../-project-views";
 import { ProjectMilestoneFormPage } from "../../../-milestone-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -18,14 +19,16 @@ export const Route = createFileRoute("/$owner/$projectName/newMilestoneForm")({
 
 function NewMilestoneFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/newMilestoneForm`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("New Milestone");
+  useDocumentTitle("title.newMilestone");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -45,18 +48,18 @@ function NewMilestoneFormRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read project failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [owner, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -65,6 +68,9 @@ function NewMilestoneFormRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

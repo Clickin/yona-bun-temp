@@ -16,6 +16,7 @@ import { useAppRuntime } from "../../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../../app-view-models";
 import { PullRequestChangesPage } from "../../../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -113,8 +114,8 @@ export function PullRequestChangesRouteContent(props: {
   const error = containerQuery.error ?? changesQuery.error;
   const failureKind = classifyConnectFailure(error);
   const mutationError = React.useCallback(
-    (fallback: string) => (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : fallback);
+    (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     [setErrorMessage],
   );
@@ -132,7 +133,7 @@ export function PullRequestChangesRouteContent(props: {
         ...scope,
         ...input,
       }),
-    onError: mutationError("Create pull request inline review comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(pullRequestDetailKey, updated);
       queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
@@ -159,7 +160,7 @@ export function PullRequestChangesRouteContent(props: {
         contentsMarkdown: input.contentsMarkdown,
         threadId: input.threadId,
       }),
-    onError: mutationError("Create pull request comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(pullRequestDetailKey, updated);
       queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
@@ -183,7 +184,7 @@ export function PullRequestChangesRouteContent(props: {
         ...scope,
         commentId,
       }),
-    onError: mutationError("Delete pull request review comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(pullRequestDetailKey, updated);
       queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
@@ -211,7 +212,7 @@ export function PullRequestChangesRouteContent(props: {
         ...scope,
         ...input,
       }),
-    onError: mutationError("Update pull request review comment failed."),
+    onError: mutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(pullRequestDetailKey, updated);
       queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
@@ -235,9 +236,7 @@ export function PullRequestChangesRouteContent(props: {
         ...scope,
         threadId,
       }),
-    onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Close review thread failed.");
-    },
+    onError: mutationError,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
@@ -257,9 +256,7 @@ export function PullRequestChangesRouteContent(props: {
         ...scope,
         threadId,
       }),
-    onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Open review thread failed.");
-    },
+    onError: mutationError,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
@@ -274,17 +271,12 @@ export function PullRequestChangesRouteContent(props: {
     },
   });
 
-  useDocumentTitle("Pull Request Changes");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read pull request changes failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle("menu.pullRequest");
 
   if (bootstrapping || containerQuery.isLoading || changesQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -296,6 +288,11 @@ export function PullRequestChangesRouteContent(props: {
   if (failureKind === "not-found") {
     return (
       <NotFoundPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}/changes`} />
+    );
+  }
+  if (error) {
+    return (
+      <BadRequestPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}/changes`} />
     );
   }
 

@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -11,6 +10,7 @@ import { useAppRuntime } from "../../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../../app-view-models";
 import { ProjectPullRequestFormPage } from "../../../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   navigateToAppHref,
@@ -72,29 +72,18 @@ function PullRequestEditFormRouteComponent() {
       );
     },
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Update pull request failed.");
+      setErrorMessage(error instanceof Error ? error.message : "pullRequest.error.newPullRequestForm");
     },
   });
   const error = containerQuery.error ?? formOptionsQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle(
-    formOptionsQuery.data?.pullRequest?.title
-      ? `Edit ${formOptionsQuery.data.pullRequest.title}`
-      : "Edit Pull Request",
-  );
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Read pull request form options failed.",
-      );
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle("title.editPullRequest");
 
   if (bootstrapping || containerQuery.isLoading || formOptionsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -106,6 +95,11 @@ function PullRequestEditFormRouteComponent() {
   if (failureKind === "not-found") {
     return (
       <NotFoundPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}/editform`} />
+    );
+  }
+  if (error) {
+    return (
+      <BadRequestPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}/editform`} />
     );
   }
 

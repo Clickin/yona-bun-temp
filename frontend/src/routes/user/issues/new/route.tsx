@@ -13,6 +13,7 @@ import { toProjectContainerView, toProjectMilestoneListView } from "../../../../
 import { ProjectIssueFormPage } from "../../../-issue-views";
 import type { ProjectMilestoneViewModel } from "../../../-view-models";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -34,7 +35,7 @@ function DirectIssueCreateRouteComponent() {
 }
 
 export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; routeHref: string }) {
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(props.routeHref);
   const [options, setOptions] = React.useState<Awaited<
     ReturnType<typeof readDirectIssueFormOptions>
@@ -43,9 +44,11 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
     null,
   );
   const [milestones, setMilestones] = React.useState<ProjectMilestoneViewModel[]>([]);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("New Issue");
+  useDocumentTitle("title.newIssue");
 
   React.useEffect(() => {
     if (!canRender) {
@@ -94,18 +97,18 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read direct issue form failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [canRender, props.mine, runtimeConfig, setErrorMessage]);
+  }, [canRender, props.mine, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -115,10 +118,13 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
   if (failureKind === "not-found") {
     return <NotFoundPage href={props.routeHref} />;
   }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={props.routeHref} />;
+  }
   if (!options) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }

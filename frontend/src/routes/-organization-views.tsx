@@ -56,6 +56,24 @@ function buildOrganizationIssueHref(
   return buildOrganizationHref(runtimeConfig, organizationName, suffix);
 }
 
+function LegacyTwoColumnModeCheckboxArea() {
+  return (
+    <div
+      className="two-column-icon mr10 hide-in-mobile"
+      data-content="common.two.column.mode.desc"
+      id="two-column-mode-checkbox"
+      title="common.two.column.mode"
+    >
+      <label className="checkbox" aria-label="common.two.column.view">
+        <div className="two-column-icon-border">
+          <input id="two-column-mode" type="checkbox" />
+          <span className="two-column-mode-text">common.two.column.view</span>
+        </div>
+      </label>
+    </div>
+  );
+}
+
 function userInfoHref(runtimeConfig: RuntimeConfig, loginId: string) {
   return prefixBasePath(runtimeConfig.basePath, `/${loginId}`);
 }
@@ -80,40 +98,143 @@ export function OrganizationMenu(props: {
   const { detail, runtimeConfig } = props;
 
   return (
-    <nav aria-label="Organization menu">
-      <a
-        aria-current={props.active === "home" ? "page" : undefined}
-        href={buildOrganizationHref(runtimeConfig, detail.organizationName)}
-      >
-        Group Home
-      </a>
-      <a
-        aria-current={props.active === "issues" ? "page" : undefined}
-        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}
-      >
-        Issue
-      </a>
-      <a
-        aria-current={props.active === "boards" ? "page" : undefined}
-        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}
-      >
-        Board
-      </a>
-      <a
-        aria-current={props.active === "pullrequests" ? "page" : undefined}
-        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}
-      >
-        Pull request
-      </a>
-      {detail.viewerCanUpdate ? (
-        <a
-          aria-current={props.active === "settings" ? "page" : undefined}
-          href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}
-        >
-          Settings
-        </a>
-      ) : null}
-    </nav>
+    <div className="project-menu-outer">
+      <div className="project-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop">
+          <li className={props.active === "home" ? "active" : undefined}>
+            <a href={buildOrganizationHref(runtimeConfig, detail.organizationName)}>
+              title.organizationHome
+            </a>
+          </li>
+          <li className={props.active === "issues" ? "active" : undefined}>
+            <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}>
+              menu.issue
+            </a>
+          </li>
+          <li className={props.active === "boards" ? "active" : undefined}>
+            <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}>
+              menu.board
+            </a>
+          </li>
+          <li className={props.active === "pullrequests" ? "active" : undefined}>
+            <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}>
+              menu.pullRequest
+            </a>
+          </li>
+        </ul>
+        <div className="project-setting">
+          <ul className="project-menu-nav">
+            {detail.viewerCanUpdate ? (
+              <li className={props.active === "settings" ? "active" : undefined}>
+                <a
+                  href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}
+                >
+                  <i className="yobicon-cog" />
+                  <span className="blind">menu.admin</span>
+                </a>
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function OrganizationHeader(props: {
+  detail: OrganizationDetailViewModel;
+  onCancelEnrollOrganization?: (organizationName: string) => void;
+  onEnrollOrganization?: (organizationName: string) => void;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { detail, runtimeConfig } = props;
+  const organizationHref = buildOrganizationHref(runtimeConfig, detail.organizationName);
+  const logoUrl =
+    detail.logoUrl ?? prefixBasePath(runtimeConfig.basePath, "/assets/images/organization_default_logo.png");
+  const enrollmentHref = buildOrganizationHref(
+    runtimeConfig,
+    detail.organizationName,
+    detail.enrollmentRequested ? "cancel/enroll" : "enroll",
+  );
+
+  return (
+    <div
+      className="project-header-outer"
+      style={logoUrl ? { backgroundImage: `url('${logoUrl}')` } : undefined}
+    >
+      <div className="project-header-inner">
+        <div className="project-header-wrap">
+          <div className="project-header-avatar">
+            <img alt="" src={logoUrl} />
+          </div>
+          <div className="project-breadcrumb-wrap">
+            <div className="project-breadcrumb">
+              <span className="project-author">
+                <span className="group-title-head">group</span>
+                <a href={organizationHref}>{detail.organizationName}</a>
+              </span>
+            </div>
+          </div>
+          {detail.viewerCanEnroll ? (
+            <div className="project-util-wrap">
+              <ul className="project-util">
+                <li>
+                  <button
+                    className={`ybtn ybtn-small${
+                      detail.enrollmentRequested ? " ybtn-info" : ""
+                    } dropdown-toggle`}
+                    data-toggle="dropdown"
+                    type="button"
+                  >
+                    <i className="yobicon-addfriend" /> organization.member.enrollment.title
+                  </button>
+                  <div className="dropdown-menu flat right title">
+                    <div className="pop-title">
+                      {detail.enrollmentRequested
+                        ? `organization.you.want.to.be.a.member ${detail.organizationName}`
+                        : `organization.you.may.want.to.be.a.member ${detail.organizationName}`}
+                    </div>
+                    <div className="pop-content">
+                      {detail.enrollmentRequested
+                        ? "organization.member.enrollment.help.after"
+                        : "organization.member.enrollment.help.before"}
+                    </div>
+                    <div className="pop-content btn-wrap">
+                      <a
+                        className={`ybtn${
+                          detail.enrollmentRequested ? "" : " ybtn-info"
+                        } enrollBtn`}
+                        href={enrollmentHref}
+                        id="enrollBtn"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (detail.enrollmentRequested) {
+                            props.onCancelEnrollOrganization?.(detail.organizationName);
+                            return;
+                          }
+                          props.onEnrollOrganization?.(detail.organizationName);
+                        }}
+                      >
+                        <i
+                          className={
+                            detail.enrollmentRequested
+                              ? "yobicon-removefriend"
+                              : "yobicon-addfriend"
+                          }
+                        />{" "}
+                        {detail.enrollmentRequested
+                          ? "button.cancel.enrollment"
+                          : "button.new.enrollment"}
+                      </a>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -196,43 +317,16 @@ function OrganizationMemberBubble(props: {
 
 function OrganizationMembershipActions(props: {
   detail: OrganizationDetailViewModel;
-  onCancelEnrollOrganization?: (organizationName: string) => void;
-  onEnrollOrganization?: (organizationName: string) => void;
   onLeaveOrganization?: (organizationName: string) => void;
 }) {
   const { detail } = props;
 
-  if (detail.viewerCanEnroll) {
-    return (
-      <section>
-        <h2>Member enrollment request</h2>
-        <p>
-          {detail.enrollmentRequested
-            ? "You can be a member if the members of this group accept this request."
-            : "Admins of this group can check your enrollment request."}
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            if (detail.enrollmentRequested) {
-              props.onCancelEnrollOrganization?.(detail.organizationName);
-              return;
-            }
-            props.onEnrollOrganization?.(detail.organizationName);
-          }}
-        >
-          {detail.enrollmentRequested ? "Cancel sign-up request" : "Send sign-up request"}
-        </button>
-      </section>
-    );
-  }
-
   if (detail.viewerCanLeave) {
     return (
       <section>
-        <h2>Membership</h2>
+        <h2>organization.member.leave</h2>
         <button type="button" onClick={() => props.onLeaveOrganization?.(detail.organizationName)}>
-          Leave the group
+          organization.member.leave
         </button>
       </section>
     );
@@ -349,175 +443,185 @@ export function OrganizationDetailPage(props: {
   };
 
   return (
-    <main className="app-shell organization-page page-wrap-outer">
-      <div className="project-page-wrap organization-home-wrap">
-        <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-        <div className="project-home-header row-fluid">
-          <div className="project-overview span9 span-hard-wrap">
-            <h3 className="markdown-wrap">
-              <span className="project-description" id="project-description">
-                {detail.description}
-              </span>
-            </h3>
-          </div>
-        </div>
-        <div className="row-fluid organization-home-body">
-          <div className="span9 span-left-pane">
-            <div className="project-search-wrap row-fluid mt10">
-              <div className="span7">
-                <div className="search-bar">
-                  <input
-                    className="textbox full"
-                    data-items="project-item"
-                    data-toggle="item-search"
-                    id="mylist-filter"
-                    name="mylist-filter"
-                    placeholder="title.type.name"
-                    type="text"
-                    defaultValue=""
-                  />
-                  <button className="search-btn" type="button">
-                    <i className="yobicon-search" />
-                  </button>
-                </div>
-              </div>
-              {detail.viewerCanCreateProject ? (
-                <div className="pull-right">
-                  <a
-                    className="ybtn ybtn-primary"
-                    href={prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
-                    )}
-                  >
-                    button.newProject
-                  </a>
-                </div>
-              ) : null}
+    <main className="app-shell organization-page">
+      <OrganizationHeader
+        detail={detail}
+        onCancelEnrollOrganization={props.onCancelEnrollOrganization}
+        onEnrollOrganization={props.onEnrollOrganization}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu active="home" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap organization-home-wrap">
+          <div className="project-home-header row-fluid">
+            <div className="project-overview span9 span-hard-wrap">
+              <h3 className="markdown-wrap">
+                <span className="project-description" id="project-description">
+                  {detail.description}
+                </span>
+              </h3>
             </div>
-            <div className="project-list-wrap organization-project-list">
-              <ul className="all-projects organization-project-list">
-                {(detail.visibleProjects ?? []).map((project) => {
-                  const projectHref = prefixBasePath(
-                    props.runtimeConfig.basePath,
-                    `/${project.ownerName}/${project.projectName}`,
-                  );
-                  const ownerHref = prefixBasePath(
-                    props.runtimeConfig.basePath,
-                    `/${project.ownerName}`,
-                  );
-                  const originHref =
-                    project.originOwnerName && project.originProjectName
-                      ? prefixBasePath(
-                          props.runtimeConfig.basePath,
-                          `/${project.originOwnerName}/${project.originProjectName}`,
-                        )
-                      : "";
-                  return (
-                    <li
-                      className="project"
-                      data-item="project-item"
-                      data-value={`${project.projectName} ${project.overview}`}
-                      key={`${project.ownerName}/${project.projectName}`}
+          </div>
+          <div className="row-fluid organization-home-body">
+            <div className="span9 span-left-pane">
+              <div className="project-search-wrap row-fluid mt10">
+                <div className="span7">
+                  <div className="search-bar">
+                    <input
+                      className="textbox full"
+                      data-items="project-item"
+                      data-toggle="item-search"
+                      id="mylist-filter"
+                      name="mylist-filter"
+                      placeholder="title.type.name"
+                      type="text"
+                      defaultValue=""
+                    />
+                    <button className="search-btn" type="button">
+                      <i className="yobicon-search" />
+                    </button>
+                  </div>
+                </div>
+                {detail.viewerCanCreateProject ? (
+                  <div className="pull-right">
+                    <a
+                      className="ybtn ybtn-primary"
+                      href={prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
+                      )}
                     >
-                      <div className="listitem organization-project-card">
-                        <div className="info-wrap">
-                          <div className="owner-avatar-wrap hide-in-mobile">
-                            <a href={projectHref}>
-                              {project.logoUrl ? (
-                                <img alt={`${project.projectName}.name`} src={project.logoUrl} />
-                              ) : null}
-                            </a>
-                          </div>
-                          <div className="organization-project-info">
-                            <div className="header">
-                              <a className="black" href={projectHref}>
-                                {project.projectName}
+                      button.newProject
+                    </a>
+                  </div>
+                ) : null}
+              </div>
+              <div className="project-list-wrap organization-project-list">
+                <ul className="all-projects organization-project-list">
+                  {(detail.visibleProjects ?? []).map((project) => {
+                    const projectHref = prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      `/${project.ownerName}/${project.projectName}`,
+                    );
+                    const ownerHref = prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      `/${project.ownerName}`,
+                    );
+                    const originHref =
+                      project.originOwnerName && project.originProjectName
+                        ? prefixBasePath(
+                            props.runtimeConfig.basePath,
+                            `/${project.originOwnerName}/${project.originProjectName}`,
+                          )
+                        : "";
+                    return (
+                      <li
+                        className="project"
+                        data-item="project-item"
+                        data-value={`${project.projectName} ${project.overview}`}
+                        key={`${project.ownerName}/${project.projectName}`}
+                      >
+                        <div className="listitem organization-project-card">
+                          <div className="info-wrap">
+                            <div className="owner-avatar-wrap hide-in-mobile">
+                              <a href={projectHref}>
+                                {project.logoUrl ? (
+                                  <img alt={`${project.projectName}.name`} src={project.logoUrl} />
+                                ) : null}
                               </a>
-                              {originHref ? (
-                                <span className="small-font blue-txt">
-                                  <a className="origin-title" href={originHref}>
-                                    <i className="yobicon-split" />
-                                    {project.originOwnerName} / {project.originProjectName}
-                                  </a>
-                                </span>
-                              ) : null}
-                              {project.projectScope === "private" ? (
-                                <i className="yobicon-lock yobicon-small" />
-                              ) : null}
-                              {project.projectScope === "protected" ? (
-                                <span className="project-protected" title="Group Project">
-                                  G
-                                </span>
-                              ) : null}
                             </div>
-                            <div className="desc">{project.overview}</div>
-                            <p className="name-tag">
-                              by{" "}
-                              <a className="owner-name-small" href={ownerHref}>
-                                {project.ownerName}
-                              </a>{" "}
-                              at <strong>{project.createdLabel}</strong>
-                              {project.lastPushedLabel ? (
-                                <span className="small-font">
-                                  , project.codeUpdate <strong>{project.lastPushedLabel}</strong>
-                                </span>
-                              ) : null}
-                            </p>
+                            <div className="organization-project-info">
+                              <div className="header">
+                                <a className="black" href={projectHref}>
+                                  {project.projectName}
+                                </a>
+                                {originHref ? (
+                                  <span className="small-font blue-txt">
+                                    <a className="origin-title" href={originHref}>
+                                      <i className="yobicon-split" />
+                                      {project.originOwnerName} / {project.originProjectName}
+                                    </a>
+                                  </span>
+                                ) : null}
+                                {project.projectScope === "private" ? (
+                                  <i className="yobicon-lock yobicon-small" />
+                                ) : null}
+                                {project.projectScope === "protected" ? (
+                                  <span className="project-protected" title="Group Project">
+                                    G
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="desc">{project.overview}</div>
+                              <p className="name-tag">
+                                by{" "}
+                                <a className="owner-name-small" href={ownerHref}>
+                                  {project.ownerName}
+                                </a>{" "}
+                                at <strong title={project.createdLabel}>{project.createdLabel}</strong>
+                                {project.lastPushedLabel ? (
+                                  <span className="small-font">
+                                    , project.codeUpdate{" "}
+                                    <strong title={project.lastPushedLabel}>
+                                      {project.lastPushedLabel}
+                                    </strong>
+                                  </span>
+                                ) : null}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="stats-wrap pull-right">
+                            <div className="members">
+                              <ul className="unstyled" />
+                              <p>
+                                <i className="yobicon-friends yobicon-middle" />
+                                <strong>{project.memberCount}</strong>{" "}
+                                <i className="yobicon-eye" />{" "}
+                                <strong>{project.watchCount}</strong>{" "}
+                                {project.isWatching ? (
+                                  <i
+                                    className="yobicon-lightbulb ramp-on"
+                                    data-toggle="tooltip"
+                                    title="project.default.group.watching"
+                                  />
+                                ) : (
+                                  <i
+                                    className="yobicon-lightbulb ramp-off"
+                                    data-toggle="tooltip"
+                                    title="project.you.are.not.watching"
+                                  />
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="stats-wrap pull-right">
-                          <div className="members">
-                            <ul className="unstyled" />
-                            <p>
-                              <span>{`project.onmember ${project.memberCount}`}</span>{" "}
-                              <i className="yobicon-eye" />{" "}
-                              <span>{`project.onwatching ${project.watchCount}`}</span>{" "}
-                              {project.isWatching ? (
-                                <i
-                                  className="yobicon-lightbulb ramp-on"
-                                  data-toggle="tooltip"
-                                  title="project.default.group.watching"
-                                />
-                              ) : (
-                                <i
-                                  className="yobicon-lightbulb ramp-off"
-                                  data-toggle="tooltip"
-                                  title="project.you.are.not.watching"
-                                />
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
+            <aside className="span3 span-right-pane">
+              <OrganizationMembershipActions
+                detail={detail}
+                onLeaveOrganization={props.onLeaveOrganization}
+              />
+              {detail.adminMembers?.length ? (
+                <OrganizationMemberBubble
+                  members={detail.adminMembers}
+                  runtimeConfig={props.runtimeConfig}
+                  title="user.role.org_admin"
+                />
+              ) : null}
+              {detail.memberMembers?.length ? (
+                <OrganizationMemberBubble
+                  members={detail.memberMembers}
+                  runtimeConfig={props.runtimeConfig}
+                  title="user.role.org_member"
+                />
+              ) : null}
+            </aside>
           </div>
-          <aside className="span3 span-right-pane">
-            <OrganizationMembershipActions
-              detail={detail}
-              onCancelEnrollOrganization={props.onCancelEnrollOrganization}
-              onEnrollOrganization={props.onEnrollOrganization}
-              onLeaveOrganization={props.onLeaveOrganization}
-            />
-            {detail.adminMembers?.length ? (
-              <OrganizationMemberBubble
-                members={detail.adminMembers}
-                runtimeConfig={props.runtimeConfig}
-                title="user.role.org_admin"
-              />
-            ) : null}
-            {detail.memberMembers?.length ? (
-              <OrganizationMemberBubble
-                members={detail.memberMembers}
-                runtimeConfig={props.runtimeConfig}
-                title="user.role.org_member"
-              />
-            ) : null}
-          </aside>
         </div>
       </div>
     </main>
@@ -585,6 +689,7 @@ export function OrganizationIssueListPage(props: {
 
   return (
     <main>
+      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <OrganizationMenu active="issues" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="page-wrap">
@@ -733,9 +838,7 @@ export function OrganizationIssueListPage(props: {
                   </a>
                 </li>
                 <li>
-                  <span className="two-column-mode">
-                    <input id="two-column-mode" type="checkbox" />
-                  </span>
+                  <LegacyTwoColumnModeCheckboxArea />
                 </li>
               </ul>
               {issueItems.length > 0 ? (
@@ -981,6 +1084,7 @@ export function OrganizationSettingsPage(props: {
 
   return (
     <main className="app-shell organization-settings-shell">
+      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -1127,9 +1231,16 @@ export function OrganizationMembersPage(props: {
   const [loginId, setLoginId] = React.useState("");
   const [deleteTarget, setDeleteTarget] = React.useState<null | string>(null);
   const memberPath = buildOrganizationHref(props.runtimeConfig, detail.organizationName, "members");
+  const organizationDetail = {
+    description: "",
+    organizationName: detail.organizationName,
+    viewerCanUpdate: detail.viewerCanUpdate,
+  };
 
   return (
     <main className="app-shell">
+      <OrganizationHeader detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMenu detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
@@ -1250,8 +1361,13 @@ export function OrganizationMembersPage(props: {
 
           <div className={`modal hide${deleteTarget ? " in" : ""}`} id="alertDeletion">
             <div className="modal-header">
-              <button className="close" data-dismiss="modal" type="button">
-                x
+              <button
+                aria-label="button.close"
+                className="close"
+                data-dismiss="modal"
+                type="button"
+              >
+                ×
               </button>
               <h3>organization.member.delete</h3>
             </div>
@@ -1345,9 +1461,16 @@ export function OrganizationDeletePage(props: {
     roleOptions: [],
     viewerCanUpdate: false,
   };
+  const organizationDetail = {
+    description: "",
+    organizationName: detail.organizationName,
+    viewerCanUpdate: detail.viewerCanUpdate,
+  };
 
   return (
     <main className="app-shell">
+      <OrganizationHeader detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMenu detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
@@ -1371,12 +1494,13 @@ export function OrganizationDeletePage(props: {
           <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
             <div className="modal-header">
               <button
+                aria-label="button.close"
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                x
+                ×
               </button>
               <h3>organization.delete.requestion</h3>
             </div>

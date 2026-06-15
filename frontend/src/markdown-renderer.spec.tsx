@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LegacyMarkdownHelp, MarkdownRenderer } from "./routes/-markdown-renderer";
+import {
+  insertLegacyTasklistTemplate,
+  LegacyMarkdownHelp,
+  MarkdownRenderer,
+} from "./routes/-markdown-renderer";
 
 describe("MarkdownRenderer", () => {
   it("renders the legacy embedded Markdown help shell used by common.editor", () => {
@@ -19,6 +23,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("Markdown Output");
     expect(html).toContain("Issue no: #2");
     expect(html).toContain("commit: @763575");
+  });
+
+  it("inserts the legacy checklist template like common/scripts.scala.html", () => {
+    expect(insertLegacyTasklistTemplate("", 0)).toEqual({
+      cursorIndex: 39,
+      value: "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C",
+    });
+    expect(insertLegacyTasklistTemplate("Before", 0)).toEqual({
+      cursorIndex: 45,
+      value: "Before\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C",
+    });
+    expect(insertLegacyTasklistTemplate("BeforeAfter", 6)).toEqual({
+      cursorIndex: 45,
+      value: "Before\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo CAfter",
+    });
   });
 
   it("renders legacy preview autolinks on the React side", () => {
@@ -226,6 +245,54 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("alert(");
   });
 
+  it("drops unsafe raw video source URLs through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          'before\n\n<video controls><source src="javascript:alert(2)" type="video/mp4"></video>\n\nafter'
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain('<video controls=""><source type="video/mp4"/></video>');
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("alert(");
+  });
+
+  it("preserves unsafe raw iframe elements through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={'before\n\n<iframe src="javascript:alert(1)"></iframe>\n\nafter'} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<iframe></iframe>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("alert(");
+  });
+
+  it("renders single raw void blocks through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          'before\n\n<input type="checkbox" checked disabled onclick="bad()">\n\n<img src="/a.png" alt="A">\n\n<hr>\n\n<source src="zpl:movie">\n\nafter'
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<input type="checkbox" disabled="" readOnly="" checked=""/>',
+    );
+    expect(html).not.toContain("onclick");
+    expect(html).toContain('<img alt="A" src="/a.png"/>');
+    expect(html).toContain("<hr/>");
+    expect(html).toContain('<source src="zpl:movie"/>');
+    expect(html).toContain("<p>after</p>");
+  });
+
   it("preserves safe legacy raw HTML style declarations and drops unsafe CSS values", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -310,6 +377,87 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<p><a href="#">#1</a> <a href="https://example.com/outside">outside</a></p>',
     );
+  });
+
+  it("renders inline raw formatting with Markdown links through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          'before\n\nhello <em title="A > B">world [quoted](https://example.com/quoted)</em> outside\n\nhello <span class="x">world</span> http://example.com\n\nhello <strong>[guide][docs]</strong>\n\nhello <br> [break](https://example.com/break)\n\nhello <em>[titled]( <https://example.com/titled> "Title" ) and ![logo]( /logo.png "Logo" )</em>\n\nhello <em>\\*literal\\* and **strong**</em>\n\nhello <em>See <https://example.com/angle></em>\n\nafter\n\n[docs]: https://example.com/docs "Docs"'
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<p>hello <em title="A &gt; B">world <a href="https://example.com/quoted">quoted</a></em> outside</p>',
+    );
+    expect(html).toContain(
+      '<p>hello <span class="x">world</span> <a href="http://example.com">http://example.com</a></p>',
+    );
+    expect(html).toContain(
+      '<p>hello <strong><a href="https://example.com/docs" title="Docs">guide</a></strong></p>',
+    );
+    expect(html).toContain(
+      '<p>hello <br/> <a href="https://example.com/break">break</a></p>',
+    );
+    expect(html).toContain(
+      '<p>hello <em><a href="https://example.com/titled" title="Title">titled</a> and <img alt="logo" src="/logo.png" title="Logo"/></em></p>',
+    );
+    expect(html).toContain(
+      "<p>hello <em>*literal* and <strong>strong</strong></em></p>",
+    );
+    expect(html).toContain(
+      '<p>hello <em>See <a href="https://example.com/angle">https://example.com/angle</a></em></p>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("[docs]:");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
+  it("renders a mixed compatible post body through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Document issue",
+          },
+        ]}
+        markdown={
+          '# **Summary** [guide][docs]\n\n<span class="state">open</span> owner#7\nNext [guide][docs]\n\n- First [guide][docs]\n+ <em>Second http://example.com</em>\n\nName | Value\n- | -\n<span class="state">open</span> | <strong>[guide][docs]</strong>\n\n> <em>Quote [guide][docs]</em>\n\n[docs]: https://example.com/docs "Docs"'
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="summary-guide"><strong>Summary</strong> <a href="https://example.com/docs" title="Docs">guide</a><a class="head-anchor" href="#summary-guide">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<p><span class="state">open</span> <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain(
+      'Next <a href="https://example.com/docs" title="Docs">guide</a></p>',
+    );
+    expect(html).toContain(
+      '<ul><li>First <a href="https://example.com/docs" title="Docs">guide</a></li></ul><ul><li><em>Second <a href="http://example.com">http://example.com</a></em></li></ul>',
+    );
+    expect(html).toContain("<table>");
+    expect(html).toContain('<td><span class="state">open</span></td>');
+    expect(html).toContain(
+      '<td><strong><a href="https://example.com/docs" title="Docs">guide</a></strong></td>',
+    );
+    expect(html).toContain(
+      '<blockquote><p><em>Quote <a href="https://example.com/docs" title="Docs">guide</a></em></p></blockquote>',
+    );
+    expect(html).not.toContain("[docs]:");
   });
 
   it("keeps block raw HTML opaque while parsing inline raw HTML paragraphs", () => {
@@ -478,6 +626,36 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="https://example.com/inside"');
   });
 
+  it("renders raw pre and code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        issueReferences={[
+          {
+            issueNumber: 1,
+            ownerName: "owner",
+            projectName: "project",
+            title: "Raw issue",
+          },
+        ]}
+        markdown={
+          'before\n\n<pre>\n#1 http://example.com [inside](https://example.com/inside)\n</pre>\n\nmiddle\n\n<code>\n#1 [code](https://example.com/code)\n</code>\n\nafter'
+        }
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<pre>\n\n#1 http://example.com [inside](https://example.com/inside)\n</pre>");
+    expect(html).toContain("<p>middle</p>");
+    expect(html).toContain("<code>\n#1 [code](https://example.com/code)</code>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain('href="http://example.com"');
+    expect(html).not.toContain('href="https://example.com/inside"');
+    expect(html).not.toContain('href="https://example.com/code"');
+  });
+
   it("keeps raw HTML comments opaque to autolinks like legacy marked", () => {
     const inlineHtml = renderToStaticMarkup(
       <MarkdownRenderer
@@ -530,6 +708,35 @@ describe("MarkdownRenderer", () => {
       '<p>before<br/> <a href="https://example.com/doctype">doctype</a></p>',
     );
     expect(html).not.toContain("#1");
+    expect(html).not.toContain("CDATA");
+    expect(html).not.toContain("&lt;?php");
+    expect(html).not.toContain("&lt;!DOCTYPE");
+  });
+
+  it("renders standalone raw directives through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        issueReferences={[
+          {
+            issueNumber: 1,
+            ownerName: "owner",
+            projectName: "project",
+            title: "Directive issue",
+          },
+        ]}
+        markdown={
+          'before\n\n<!-- #1 http://example.com -->\n\n<![CDATA[#1 http://example.com]]>\n\n<?php echo "#1"; ?>\n\n<!DOCTYPE html>\n\nafter'
+        }
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("#1");
+    expect(html).not.toContain("http://example.com");
     expect(html).not.toContain("CDATA");
     expect(html).not.toContain("&lt;?php");
     expect(html).not.toContain("&lt;!DOCTYPE");
@@ -705,6 +912,75 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("https-example-com");
   });
 
+  it("uses rendered inline text for setext heading ids like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"[Tom &amp; Jerry](https://example.com/a) and `code`\n-----"} />,
+    );
+
+    expect(html).toContain(
+      '<h2 id="tom-jerry-and-code"><a href="https://example.com/a">Tom &amp; Jerry</a> and <code>code</code><a class="head-anchor" href="#tom-jerry-and-code">#</a></h2>',
+    );
+  });
+
+  it("renders titled heading links and images through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '# [Title]( <https://example.com/title> "Title" ) and ![Logo]( /logo.png "Logo" )'
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="title-and-logo"><a href="https://example.com/title" title="Title">Title</a> and <img alt="Logo" src="/logo.png" title="Logo"/><a class="head-anchor" href="#title-and-logo">#</a></h1>',
+    );
+  });
+
+  it("renders safe escaped punctuation headings through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"# Keep \\*literal\\* beside **strong**"} />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="keep-literal-beside-strong">Keep *literal* beside <strong>strong</strong><a class="head-anchor" href="#keep-literal-beside-strong">#</a></h1>',
+    );
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
+  it("renders formatted reference and Yona autolink headings through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Heading issue",
+          },
+        ]}
+        markdown={
+          "# **See** [guide][docs]\n\n_Issue_ owner#7\n-----\n\n[docs]: https://example.com/docs \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="see-guide"><strong>See</strong> <a href="https://example.com/docs" title="Docs">guide</a><a class="head-anchor" href="#see-guide">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="issue-owner7"><em>Issue</em> <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Heading issue"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).toContain('<a class="head-anchor" href="#issue-owner7">#</a></h2>');
+    expect(html).not.toContain("[docs]:");
+  });
+
   it("renders raw inline HTML inside headings like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -723,6 +999,24 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<h1 id="-title"><img src="/a.png" alt="Alt"/> Title<a class="head-anchor" href="#-title">#</a></h1>',
     );
+  });
+
+  it("renders raw formatting headings through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '# <em>Title</em>\n\n<span class="x">Secondary</span> &amp; More\n-----\n\nafter'
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="title"><em>Title</em><a class="head-anchor" href="#title">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="secondary-more"><span class="x">Secondary</span> &amp; More<a class="head-anchor" href="#secondary-more">#</a></h2>',
+    );
+    expect(html).toContain("<p>after</p>");
   });
 
   it("uses legacy marked entity unescape behavior for heading ids", () => {
@@ -894,18 +1188,22 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```scala",
-          "val color = 0xCAFE",
+          "val color = 0xCAFE_F00D",
           "val ratio = -1.5e-2",
+          "val precise = 1_000.25e+3d",
           "val leading = .25e+2",
+          "val longValue = 42L",
           "```",
         ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="scala">');
-    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3d</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">42L</span>');
   });
 
   it("recognizes legacy Highlight.js JavaScript and TypeScript built-ins in fenced blocks", () => {
@@ -1025,8 +1323,12 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```go",
+          "var binary = 0b1010_0110",
+          "var octal = 0o755",
           "var color = 0xFF",
+          "var mask = 0xFF_00",
           "var ratio = -1.5e-2",
+          "var precise = 1_000.25e+3",
           "var imaginary = 42i",
           "```",
         ].join("\n")}
@@ -1034,8 +1336,12 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="go">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0110</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_00</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
     expect(html).toContain('class="syntax-token syntax-number">42i</span>');
   });
 
@@ -1073,18 +1379,24 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```csharp",
-          "var color = 0xFF;",
+          "var flags = 0b1010_0101;",
+          "var color = 0xFF_AA;",
           "var ratio = -1.5e-2;",
+          "var precise = 1_000.25e+3M;",
           "var leading = .25e+2;",
+          "var count = 42UL;",
           "```",
         ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="csharp">');
-    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3M</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">42UL</span>');
   });
 
   it("recognizes legacy Highlight.js C# verbatim and interpolated strings in fenced blocks", () => {
@@ -1162,16 +1474,28 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js Elixir numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```elixir", "value = 0xFF_AA", "mode = 0755", "count = 1_000.25", "```"].join(
-          "\n",
-        )}
+        markdown={[
+          "```elixir",
+          "flags = 0b1010_0101",
+          "mode = 0o755",
+          "legacy_mode = 0755",
+          "value = 0xFF_AA",
+          "count = 1_000.25",
+          "ratio = -1.5e-2",
+          "leading = .25e+2",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="elixir">');
-    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
     expect(html).toContain('class="syntax-token syntax-number">0755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">1_000.25</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
   });
 
   it("recognizes legacy Highlight.js Elixir symbols and variables in fenced blocks", () => {
@@ -1264,6 +1588,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
   });
 
+  it("recognizes legacy Highlight.js Haskell common number-mode literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```haskell",
+          "binaryValue = 0b1010_0101",
+          "octalValue = 0o755",
+          "hexValue = 0xCAFE_F00D",
+          "ratio = 1_000.25e+3",
+          "negative = -42",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="haskell">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-42</span>');
+  });
+
   it("recognizes legacy Highlight.js Lua language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -1301,6 +1648,10 @@ describe("MarkdownRenderer", () => {
         markdown={[
           "```lua",
           "-- render count",
+          "--[[ legacy long comment ]]",
+          "--[=[ legacy equal long comment ]=]",
+          "local message = [[legacy long string]]",
+          "local literal = [=[legacy equal long string]=]",
           "local value = 0xFF",
           "local ratio = .25e+2",
           "```",
@@ -1310,6 +1661,10 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="lua">');
     expect(html).toContain('class="syntax-token syntax-comment">-- render count</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">--[[ legacy long comment ]]</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">--[=[ legacy equal long comment ]=]</span>');
+    expect(html).toContain('class="syntax-token syntax-string">[[legacy long string]]</span>');
+    expect(html).toContain('class="syntax-token syntax-string">[=[legacy equal long string]=]</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
   });
@@ -1366,6 +1721,7 @@ describe("MarkdownRenderer", () => {
           "# Release Notes",
           "> quoted **strong** and *emphasis*",
           "- [docs](https://example.com)",
+          "10. ordered item",
           "`code`",
           "```",
         ].join("\n")}
@@ -1378,6 +1734,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">**strong**</span>');
     expect(html).toContain('class="syntax-token syntax-string">*emphasis*</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">10.</span>');
     expect(html).toContain('class="syntax-token syntax-string">[docs]</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">(https://example.com)</span>');
     expect(html).toContain('class="syntax-token syntax-string">`code`</span>');
@@ -1388,7 +1745,7 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```scss",
-          "@media screen { .board #main:hover { color: #fff; margin-top: 1px; } }",
+          "@media screen { .board #main:hover { color: #fff !important; margin-top: 1px; } }",
           '.item[data-state="open"] { display: none; }',
           "```",
         ].join("\n")}
@@ -1402,6 +1759,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">:hover</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">color</span>');
     expect(html).toContain('class="syntax-token syntax-number">#fff</span>');
+    expect(html).toContain('class="syntax-token syntax-meta">!important</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">margin-top</span>');
     expect(html).toContain('class="syntax-token syntax-number">1px</span>');
     expect(html).toContain(
@@ -1475,15 +1833,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
   });
 
+  it("recognizes legacy Highlight.js CMake variable tokens in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```cmake",
+          "set(SOURCE_DIR ${PROJECT_SOURCE_DIR})",
+          "message(STATUS ${SOURCE_DIR})",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="cmake">');
+    expect(html).toContain('class="syntax-token syntax-identifier">${PROJECT_SOURCE_DIR}</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">${SOURCE_DIR}</span>');
+  });
+
   it("recognizes legacy Highlight.js Gradle language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={[
           "```gradle",
           "buildscript {",
+          "  // legacy comment",
           "  repositories { flatDir { dirs 'libs' } }",
           "}",
           "task copyAssets(type: Copy) {",
+          "  maxParallelForks = 1_000",
+          "  versionCode = -1.5e+2",
           "  from sourceSets.main.resources",
           "  into destinationDir",
           "  doLast { println true }",
@@ -1494,11 +1872,14 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="gradle">');
+    expect(html).toContain('class="syntax-token syntax-comment">// legacy comment</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">buildscript</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">repositories</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">flatDir</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">task</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">Copy</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e+2</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">from</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">sourceSets</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">into</span>');
@@ -1525,6 +1906,7 @@ describe("MarkdownRenderer", () => {
           ".PHONY: all",
           "all: build",
           "\t@echo $(MODE) $@",
+          "\t@echo 1_000 -1.5e+2 .25e-2",
           "```",
         ].join("\n")}
       />,
@@ -1543,6 +1925,9 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">all:</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$(MODE)</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$@</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e-2</span>');
   });
 
   it("recognizes legacy Highlight.js Makefile hash comments in fenced blocks", () => {
@@ -1584,6 +1969,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">my</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">split</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">foreach</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$item</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">@items</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">print</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
@@ -1605,6 +1992,9 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="perl">');
     expect(html).toContain('class="syntax-token syntax-comment"># render counts</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$mode</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$color</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$total</span>');
     expect(html).toContain('class="syntax-token syntax-number">0755</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">1_000.25</span>');
@@ -1648,7 +2038,8 @@ describe("MarkdownRenderer", () => {
           "20 PRINT &HFF",
           "30 PRINT &O755",
           "40 PRINT 123.5#",
-          "50 ' done",
+          "50 PRINT 1.25D+3",
+          "60 ' done",
           "```",
         ].join("\n")}
       />,
@@ -1659,6 +2050,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">&amp;HFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">&amp;O755</span>');
     expect(html).toContain('class="syntax-token syntax-number">123.5#</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1.25D+3</span>');
     expect(html).toContain('class="syntax-token syntax-comment">&#x27; done</span>');
   });
 
@@ -1668,7 +2060,11 @@ describe("MarkdownRenderer", () => {
         markdown={[
           "```adoc",
           "= Yona Port",
+          ".Legacy caption",
+          "[source,rust]",
           ":toc:",
+          "link:https://example.com/yona[Yona Docs]",
+          "image::logo.png[Logo]",
           "NOTE: Keep the legacy screen flow",
           "IMPORTANT: Render Markdown in React",
           "WARNING: Do not redesign the UI",
@@ -1678,9 +2074,15 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="adoc">');
-    expect(html).toContain('class="syntax-token syntax-keyword">NOTE</span>');
-    expect(html).toContain('class="syntax-token syntax-keyword">IMPORTANT</span>');
-    expect(html).toContain('class="syntax-token syntax-keyword">WARNING</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">=</span>');
+    expect(html).toContain('class="syntax-token syntax-title">.Legacy caption</span>');
+    expect(html).toContain('class="syntax-token syntax-meta">[source,rust]</span>');
+    expect(html).toContain('class="syntax-token syntax-meta">:toc:</span>');
+    expect(html).toContain('class="syntax-token syntax-string">[Yona Docs]</span>');
+    expect(html).toContain('class="syntax-token syntax-string">[Logo]</span>');
+    expect(html).toContain('class="syntax-token syntax-string">NOTE</span>');
+    expect(html).toContain('class="syntax-token syntax-string">IMPORTANT</span>');
+    expect(html).toContain('class="syntax-token syntax-string">WARNING</span>');
   });
 
   it("recognizes legacy Highlight.js AsciiDoc comments in fenced blocks", () => {
@@ -1701,7 +2103,43 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="adoc">');
     expect(html).toContain('class="syntax-token syntax-comment">// keep legacy layout</span>');
     expect(html).toContain('class="syntax-token syntax-comment">legacy block comment</span>');
-    expect(html).toContain('class="syntax-token syntax-keyword">NOTE</span>');
+    expect(html).toContain('class="syntax-token syntax-string">NOTE</span>');
+  });
+
+  it("recognizes legacy Highlight.js AsciiDoc quote blocks in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```adoc", "____", "Keep the legacy quote tone", "____", "NOTE: Back out", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="adoc">');
+    expect(html).toContain('class="syntax-token syntax-quote">____</span>');
+    expect(html).toContain('class="syntax-token syntax-quote">Keep the legacy quote tone</span>');
+    expect(html).toContain('class="syntax-token syntax-string">NOTE</span>');
+  });
+
+  it("recognizes legacy Highlight.js AsciiDoc passthrough XML blocks in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```adoc",
+          "++++",
+          '<span class="state">open</span>',
+          "++++",
+          "NOTE: Back out",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="adoc">');
+    expect(html).toContain('class="syntax-token syntax-keyword">span</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;state&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">NOTE</span>');
   });
 
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
@@ -1968,6 +2406,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
   });
 
+  it("recognizes legacy Highlight.js shell variable tokens in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```bash",
+          "echo $APP_HOME ${BUILD_DIR} $?",
+          "test $# -gt 0 && echo $1",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="bash">');
+    expect(html).toContain('class="syntax-token syntax-identifier">$APP_HOME</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">${BUILD_DIR}</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$?</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$#</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$1</span>');
+  });
+
   it("recognizes legacy Highlight.js SQL keywords in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -1989,24 +2447,45 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">desc</span>');
   });
 
-  it("recognizes legacy Highlight.js SQL line comments in fenced blocks", () => {
+  it("recognizes legacy Highlight.js SQL comments and numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```sql", "-- legacy comment", "select * from issues", "```"].join("\n")}
+        markdown={[
+          "```sql",
+          "-- legacy comment",
+          "/* legacy block comment */",
+          "select 0xFF_AA, -1_000.25e+3 from issues",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="sql">');
     expect(html).toContain('class="syntax-token syntax-comment">-- legacy comment</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">/* legacy block comment */</span>',
+    );
     expect(html).toContain('class="syntax-token syntax-keyword">select</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1_000.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js Ruby language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```rb", "class Issue", "  def open?", "    true", "  end", "end", "```"].join(
-          "\n",
-        )}
+        markdown={[
+          "```rb",
+          "class Issue",
+          "  def open?",
+          "    @issue = $global",
+          "    @@count = 1",
+          "    status = :open",
+          "    options = { legacy: true }",
+          "    true",
+          "  end",
+          "end",
+          "```",
+        ].join("\n")}
       />,
     );
 
@@ -2015,6 +2494,11 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-title">Issue</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
     expect(html).toContain('class="syntax-token syntax-title">open?</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">@issue</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$global</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">@@count</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">:open</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">legacy:</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
@@ -2080,21 +2564,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="php3">');
     expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
     expect(html).toContain('class="syntax-token syntax-title">render_issue</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$issue</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
-  it("recognizes legacy Highlight.js PHP hash comments in fenced blocks", () => {
+  it("recognizes legacy Highlight.js PHP comments in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```php", "<?php", "# legacy comment", "echo true;", "```"].join("\n")}
+        markdown={[
+          "```php",
+          "<?php",
+          "# legacy comment",
+          "// slash comment",
+          "/* block comment */",
+          "echo true;",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="php">');
     expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">// slash comment</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">/* block comment */</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
   });
 
@@ -2113,6 +2608,9 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="php">');
+    expect(html).toContain('class="syntax-token syntax-identifier">$mask</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$flags</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$ratio</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">0b1010</span>');
     expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
@@ -2231,18 +2729,20 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```objc",
-          "NSInteger mask = 0xCAFE;",
+          "NSInteger mask = 0xCAFE_F00D;",
           "CGFloat ratio = -1.5e-2;",
           "CGFloat offset = .25e+2;",
+          "CGFloat total = 1_000.25e+3;",
           "```",
         ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="objc">');
-    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js CoffeeScript aliases in fenced blocks", () => {
@@ -2274,16 +2774,26 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js CoffeeScript hash comments and numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```coffee", "# render counts", "mask = 0xFF", "ratio = .25e+2", "```"].join(
-          "\n",
-        )}
+        markdown={[
+          "```coffee",
+          "# render counts",
+          "flags = 0b1010_0101",
+          "mode = 0o755",
+          "mask = 0xFF_AA",
+          "ratio = .25e+2",
+          "precise = 1_000.25e+3",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="coffee">');
     expect(html).toContain('class="syntax-token syntax-comment"># render counts</span>');
-    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js CoffeeScript built-ins in fenced blocks", () => {
@@ -2343,8 +2853,11 @@ describe("MarkdownRenderer", () => {
         markdown={[
           "```arduino",
           "// pin mask",
-          "int mask = 0xFF;",
+          "int flags = 0b1010_0101;",
+          "int mode = 0o755;",
+          "int mask = 0xFF_AA;",
           "float ratio = .25e+2;",
+          "float precise = 1_000.25e+3;",
           "/* ready */",
           "```",
         ].join("\n")}
@@ -2353,8 +2866,11 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="arduino">');
     expect(html).toContain('class="syntax-token syntax-comment">// pin mask</span>');
-    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
     expect(html).toContain('class="syntax-token syntax-comment">/* ready */</span>');
   });
 
@@ -2365,9 +2881,11 @@ describe("MarkdownRenderer", () => {
           "```docker",
           "FROM rust:1.80",
           "ARG APP_HOME=/app",
+          "ARG BUILD_COUNT=1_000",
           "ENV RUST_LOG=info",
           "WORKDIR $APP_HOME",
           "RUN mkdir -p ${APP_HOME}/logs",
+          "RUN echo -1.5e+2 .25e-2",
           "COPY . .",
           "RUN cargo build --release",
           "EXPOSE 9000",
@@ -2384,6 +2902,9 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">WORKDIR</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$APP_HOME</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">${APP_HOME}</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e-2</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">COPY</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">RUN</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">EXPOSE</span>');
@@ -2409,6 +2930,7 @@ describe("MarkdownRenderer", () => {
           "```nginxconf",
           "server {",
           "  listen 80;",
+          "  listen [::]:443 ssl;",
           "  server_name yona.example;",
           "  gzip on;",
           "  set $backend ${upstream};",
@@ -2424,6 +2946,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="nginxconf">');
     expect(html).toContain('class="syntax-token syntax-keyword">server</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">listen</span>');
+    expect(html).toContain('class="syntax-token syntax-number">[::]:443</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">server_name</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">gzip</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">on</span>');
@@ -2525,6 +3048,8 @@ describe("MarkdownRenderer", () => {
         markdown={[
           "```https",
           "GET /api/v1/projects HTTP/1.1",
+          "POST http://yona.example/api/v1/projects?state=open HTTP/1.1",
+          "OPTIONS * HTTP/1.1",
           "Host: yona.example",
           "X-Request-Id: abc123",
           "HTTP/1.1 200 OK",
@@ -2536,6 +3061,10 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="https">');
     expect(html).toContain('class="syntax-token syntax-keyword">GET</span>');
     expect(html).toContain('class="syntax-token syntax-string">/api/v1/projects</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">http://yona.example/api/v1/projects?state=open</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-string">*</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">HTTP/1.1</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">Host:</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">X-Request-Id:</span>');
@@ -2545,11 +3074,31 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js Diff aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```patch", "+added line", "-removed line", "!changed line", "```"].join("\n")}
+        markdown={[
+          "```patch",
+          "diff --git a/app.js b/app.js",
+          "index 123abc..456def 100644",
+          "--- a/app.js",
+          "+++ b/app.js",
+          "@@ -1,2 +1,2 @@",
+          "+added line",
+          "-removed line",
+          "!changed line",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="patch">');
+    expect(html).toContain(
+      'class="syntax-token syntax-keyword">diff --git a/app.js b/app.js</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-keyword">index 123abc..456def 100644</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">--- a/app.js</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">+++ b/app.js</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">@@ -1,2 +1,2 @@</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">+</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">!</span>');
@@ -2558,7 +3107,11 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js JSON language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```json", '{ "enabled": true, "owner": null, "count": 3 }', "```"].join("\n")}
+        markdown={[
+          "```json",
+          '{ "enabled": true, "owner": null, "count": 3, "ratio": -1.25e+3 }',
+          "```",
+        ].join("\n")}
       />,
     );
 
@@ -2569,6 +3122,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">&quot;count&quot;</span>');
     expect(html).toContain('class="syntax-token syntax-number">3</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;ratio&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js ini aliases in fenced blocks", () => {
@@ -2579,9 +3134,12 @@ describe("MarkdownRenderer", () => {
           "[server]",
           "enabled = true",
           "backup = no",
+          "database.url = \"sqlite:///yona.db\"",
           "home = ${APP_HOME}",
           "path = $APP_HOME",
           "workers = +1_000",
+          "mask = 0xCAFE_F00D",
+          "ratio = -1_000.25e+3",
           'notes = """legacy"""',
           "```",
         ].join("\n")}
@@ -2593,12 +3151,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">enabled</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">database.url</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">${APP_HOME}</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$APP_HOME</span>');
     expect(html).toContain('class="syntax-token syntax-number">+1_000</span>');
-    expect(html).toContain(
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1_000.25e+3</span>');
+  expect(html).toContain(
       'class="syntax-token syntax-string">&quot;&quot;&quot;legacy&quot;&quot;&quot;</span>',
     );
+  });
+
+  it("recognizes legacy Yona config extension alias as INI in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```config", "[site]", "enabled = true", "home = ${APP_HOME}", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="config">');
+    expect(html).toContain('class="syntax-token syntax-keyword">[site]</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">enabled</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">${APP_HOME}</span>');
   });
 
   it("recognizes legacy Highlight.js ini and TOML comments in fenced blocks", () => {
@@ -2622,6 +3199,7 @@ describe("MarkdownRenderer", () => {
           "function Get-YonaStatus {",
           "  param($Path)",
           "  $script:enabled = $true",
+          "  ${env:PATH} = $Path",
           "  foreach ($item in Get-ChildItem $Path) {",
           "    # legacy comment",
           "    return $item",
@@ -2643,11 +3221,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$Path</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$script:enabled</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">${env:PATH}</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">$true</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$item</span>');
     expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
     expect(html).toContain('class="syntax-token syntax-string">@&quot;ready&quot;@</span>');
     expect(html).toContain('class="syntax-token syntax-comment">&lt;# block comment #&gt;</span>');
+  });
+
+  it("recognizes legacy Highlight.js PowerShell numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```powershell",
+          "$mask = 0xFF_AA",
+          "$ratio = -1.5e+2",
+          "$workers = 1_000",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="powershell">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000</span>');
   });
 
   it("recognizes legacy Highlight.js DOS aliases in fenced blocks", () => {
@@ -2657,6 +3255,7 @@ describe("MarkdownRenderer", () => {
           "```bat",
           "@echo off",
           "setlocal",
+          "set ROOT=%~dp0",
           "if exist yona.exe goto done",
           "for %%A in (%PATH%) do echo !STATUS! 123",
           "echo ready",
@@ -2672,6 +3271,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">off</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">setlocal</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">%~dp0</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">exist</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">goto</span>');
@@ -2733,18 +3333,22 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```kotlin",
-          "val mask = 0xCAFE",
+          "val flags = 0b1010_0101",
+          "val mask = 0xCAFE_F00D",
           "val ratio = -1.5e-2",
           "val offset = .25e+2",
+          "val total = 1_000.25e+3",
           "```",
         ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="kotlin">');
-    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js Swift language in fenced blocks", () => {
@@ -2757,6 +3361,7 @@ describe("MarkdownRenderer", () => {
           "  let name: String?",
           "  let owner: User",
           "  func status(value: Int) -> Bool {",
+          "    if #available(iOS 15, *) { return true }",
           "    guard value > 0 else { return false }",
           "    return name != nil",
           "  }",
@@ -2775,6 +3380,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">User</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">func</span>');
     expect(html).toContain('class="syntax-token syntax-title">status</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">#available(iOS 15, *)</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">Int</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">Bool</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">guard</span>');
@@ -2813,6 +3419,7 @@ describe("MarkdownRenderer", () => {
           "```dart",
           "import 'dart:async';",
           "@deprecated",
+          "@RoutePage()",
           "final class IssueState {",
           "  final label = r'raw';",
           '  final body = """Hello ${user.name}""";',
@@ -2829,6 +3436,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="dart">');
     expect(html).toContain('class="syntax-token syntax-keyword">import</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">@deprecated</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">@RoutePage()</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">final</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
     expect(html).toContain('class="syntax-token syntax-title">IssueState</span>');
@@ -2849,18 +3457,20 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer
         markdown={[
           "```dart",
-          "final mask = 0xCAFE;",
+          "final mask = 0xCAFE_F00D;",
           "final ratio = -1.5e-2;",
           "final offset = .25e+2;",
+          "final total = 1_000.25e+3;",
           "```",
         ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="dart">');
-    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
   });
 
   it("recognizes legacy Highlight.js Elm language in fenced blocks", () => {
@@ -2962,6 +3572,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">receive</span>');
   });
 
+  it("recognizes legacy Highlight.js Erlang numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```erl",
+          "Mask = 16#FF_AA,",
+          "Flags = 2#1010_0101,",
+          "Ratio = 1_000.25e+3,",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="erl">');
+    expect(html).toContain('class="syntax-token syntax-number">16#FF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">2#1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25e+3</span>');
+  });
+
   it("recognizes legacy Highlight.js R language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -2969,6 +3598,7 @@ describe("MarkdownRenderer", () => {
           "```r",
           "library(stats)",
           "render <- function(values) {",
+          "  `issue state` <- values",
           "  if (length(values) == 0) return(NULL)",
           "  for (value in values) {",
           "    if (is.na(value)) next",
@@ -2983,6 +3613,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="r">');
     expect(html).toContain('class="syntax-token syntax-keyword">library</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-string">`issue state`</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">NULL</span>');
@@ -3082,6 +3713,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">disp</span>');
   });
 
+  it("recognizes legacy Highlight.js MATLAB numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```matlab",
+          "offset = .25e+2;",
+          "ratio = -1.5e-2;",
+          "complex = 3i;",
+          "trailing = 4.;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="matlab">');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">3i</span>');
+    expect(html).toContain('class="syntax-token syntax-number">4.</span>');
+  });
+
   it("recognizes legacy Highlight.js AWK language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -3090,6 +3742,7 @@ describe("MarkdownRenderer", () => {
           "BEGIN { count = 0 }",
           '{ if ($1 == "open") { count++; next } else { delete seen[$1] } }',
           '{ owner = ${owner}; total += $NF; fields += $# }',
+          "{ ratio = -1.5e+2; offset = .25e-2 }",
           "END { while (count > 0) { exit } }",
           "function render(value) {",
           "  for (index in value) { continue }",
@@ -3109,6 +3762,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-identifier">${owner}</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$NF</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">$#</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e-2</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">END</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">while</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">exit</span>');
@@ -3187,6 +3842,10 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="jinja">');
+    expect(html).toContain('class="syntax-token syntax-keyword">{%</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">%}</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">{{</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">}}</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">extends</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">|default_if_none:</span>');
@@ -3232,6 +3891,10 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="htmlbars">');
+    expect(html).toContain('class="syntax-token syntax-keyword">{{#</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">{{</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">{{/</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">}}</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">each-in</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">as</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">link-to</span>');
@@ -3288,6 +3951,7 @@ describe("MarkdownRenderer", () => {
           "```accesslog",
           '127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /projects/yona HTTP/1.1" 200 2326',
           '192.168.0.10 - - [10/Oct/2000:13:55:37 -0700] "PATCH /issues/1 HTTP/1.1" 204 0',
+          '2001:db8::1 - - [10/Oct/2000:13:55:38 -0700] "GET /ipv6 HTTP/1.1" 304 0',
           "```",
         ].join("\n")}
       />,
@@ -3303,6 +3967,8 @@ describe("MarkdownRenderer", () => {
       'class="syntax-token syntax-string">&quot;PATCH /issues/1 HTTP/1.1&quot;</span>',
     );
     expect(html).toContain('class="syntax-token syntax-number">204</span>');
+    expect(html).toContain('class="syntax-token syntax-number">2001:db8::1</span>');
+    expect(html).toContain('class="syntax-token syntax-number">304</span>');
   });
 
   it("recognizes legacy Highlight.js Groovy language in fenced blocks", () => {
@@ -3426,6 +4092,7 @@ describe("MarkdownRenderer", () => {
           "```xlsx",
           '=SUM(A1:B2, IF(C3>0, "open", "closed"))',
           '=AVERAGEIF(D1:D4, ">0", E1:E4) + 10%',
+          "=SUM(Sheet1!$A$1:$B$2, $C$3)",
           '=N("legacy note")',
           "```",
         ].join("\n")}
@@ -3438,6 +4105,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">AVERAGEIF</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">A1:B2</span>');
     expect(html).toContain('class="syntax-token syntax-identifier">C3</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">Sheet1!$A$1:$B$2</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$C$3</span>');
     expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
     expect(html).toContain('class="syntax-token syntax-string">&quot;&gt;0&quot;</span>');
     expect(html).toContain('class="syntax-token syntax-number">10%</span>');
@@ -3493,6 +4162,7 @@ describe("MarkdownRenderer", () => {
           "defaults: &defaults",
           "kind: !!str api",
           "- *defaults",
+          "...",
           "```",
         ].join("\n")}
       />,
@@ -3503,6 +4173,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">!!str</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">*defaults</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">...</span>');
+  });
+
+  it("recognizes legacy Highlight.js YAML numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```yaml",
+          "binary: 0b1010_0101",
+          "octal: 0o755",
+          "hex: 0xCAFE_F00D",
+          "ratio: -1_000.25e+3",
+          "offset: .25e-2",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="yaml">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1_000.25e+3</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e-2</span>');
   });
 
   it("uses legacy Highlight.js Ruby sublanguage inside YAML ERB template blocks", () => {
@@ -3819,6 +4513,25 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("renders indented fenced code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n  ``` js\n  const value = '#1';\n    nested();\n  ```\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain('class="js"');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain('  <span class="syntax-token syntax-identifier">nested</span>');
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("    nested();");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("closes fenced code blocks at EOF like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n#1 stays text\n"} />,
@@ -3826,6 +4539,24 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="js"');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain('#<span class="syntax-token syntax-number">1</span>');
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("```js");
+  });
+
+  it("renders EOF-closed fenced code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n```js\nconst value = '#1';\n#1 stays text\n"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain('<code class="js">');
     expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
     expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
     expect(html).toContain('#<span class="syntax-token syntax-number">1</span>');
@@ -3842,6 +4573,24 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="js"');
     expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
     expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("~~~");
+  });
+
+  it("renders tilde fenced code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n~~~ js\nconst value = '#1';\n~~~\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain('<code class="js">');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain("<p>After</p>");
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain("~~~");
   });
@@ -3866,6 +4615,27 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("renders legacy first-token fenced code info strings through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "Before\n\n```js=bad extra words\nconst value = '#1';\n```\n\n```foo/bar\npath\n```\n\nAfter"
+        }
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain('<code class="js=bad">');
+    expect(html).toContain('<code class="foo/bar">');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">path</span>');
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("accepts legacy mixed trailing closing-fence characters", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -3879,6 +4649,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<code class="js"><span class="syntax-token syntax-identifier">tilde</span></code>');
     expect(html).toContain("<p><code>js wrong ~~</code></p>");
     expect(html).toContain("<p>~~~js<br/>short<br/>~~</p>");
+  });
+
+  it("renders legacy mixed trailing closing fences through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n```js\nbacktick\n```~~\n\n~~~js\ntilde\n~~~``\n\nAfter"}
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain(
+      '<code class="js"><span class="syntax-token syntax-identifier">backtick</span></code>',
+    );
+    expect(html).toContain(
+      '<code class="js"><span class="syntax-token syntax-identifier">tilde</span></code>',
+    );
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("```~~");
+    expect(html).not.toContain("~~~``");
   });
 
   it("does not extract reference definitions from tilde fences like legacy marked", () => {
@@ -3908,6 +4697,23 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("After");
   });
 
+  it("renders matching long fenced code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n```` rust\n#1 stays text\n````\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain('<code class="rust">');
+    expect(html).toContain('#<span class="syntax-token syntax-number">1</span>');
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("```` rust");
+  });
+
   it("renders indented code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"    let value = '#1';\n    [guide]: https://example.com"} />,
@@ -3918,6 +4724,53 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("[guide]: https://example.com");
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain('<a href="https://example.com">');
+  });
+
+  it("renders tab-indented code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n\tlet value = '#1';\n\t[guide]: https://example.com\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain("<pre><code>let value = &#x27;#1&#x27;;\n[guide]: https://example.com</code></pre>");
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain('<a href="https://example.com">');
+  });
+
+  it("renders plain fenced code blocks through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Before\n\n```\n#1 stays text\n[guide]: https://example.com\n```\n\nAfter"} />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain("<pre><code>#1 stays text\n[guide]: https://example.com</code></pre>");
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain('<a href="https://example.com">');
+  });
+
+  it("renders no-space language fenced code blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"Before\n\n```js\nconst value = '#1';\n```\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("```js");
   });
 
   it("renders horizontal rules like legacy marked", () => {
@@ -4002,6 +4855,106 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="/yona/missing/projectYobi/issue/99"');
   });
 
+  it("renders resolved issue references and project mentions inside plain paragraphs through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Owner-scoped reference",
+          },
+        ]}
+        markdown="See owner#7 and @owner/projectYobi"
+        mentionReferences={[{ kind: "project", ownerName: "owner", projectName: "projectYobi" }]}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain('<p>See <a class="issueLink"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Owner-scoped reference"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).toContain(
+      '<a class="no-text-decoration project-link" href="/yona/owner/projectYobi">@owner/projectYobi</a>',
+    );
+  });
+
+  it("renders quoted Yona autolinks inside plain paragraphs through ReactMarkdown", () => {
+    const sha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        commitReferences={[
+          {
+            commitId: sha,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            title: "Quoted commit",
+          },
+        ]}
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Quoted issue",
+          },
+        ]}
+        markdown={`"See" owner#7, @owner/projectYobi, @yobi, and ${sha} in user's note`}
+        mentionReferences={[
+          { kind: "project", ownerName: "owner", projectName: "projectYobi" },
+          { kind: "user", loginId: "yobi" },
+        ]}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("&quot;See&quot; ");
+    expect(html).toContain("user&#x27;s note");
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Quoted issue"');
+    expect(html).toContain('href="/yona/owner/projectYobi"');
+    expect(html).toContain('class="no-text-decoration user-link" href="/yona/yobi"');
+    expect(html).toContain(`href="/yona/owner/projectYobi/commit/${sha}"`);
+    expect(html).toContain('title="Quoted commit"');
+  });
+
+  it("renders formatted text around Yona autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Formatted issue",
+          },
+        ]}
+        markdown="**See** owner#7 and ~~project~~ @owner/projectYobi"
+        mentionReferences={[{ kind: "project", ownerName: "owner", projectName: "projectYobi" }]}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<p><strong>See</strong> ");
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Formatted issue"');
+    expect(html).toContain("<del>project</del>");
+    expect(html).toContain(
+      '<a class="no-text-decoration project-link" href="/yona/owner/projectYobi">@owner/projectYobi</a>',
+    );
+  });
+
   it("renders Hangul project and user path autolinks like legacy AutoLinkRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -4063,6 +5016,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("owner#12345");
     expect(html).toContain("owner/projectYobi#12345");
     expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("/issue/12345");
+  });
+
+  it("renders unresolved Yona references through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[]}
+        markdown={
+          "before\n\nKeep owner#12345 owner/projectYobi#12345 @missing @missing/project as text\n\nafter"
+        }
+        mentionReferences={[]}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<p>Keep owner#12345 owner/projectYobi#12345 @missing @missing/project as text</p>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("user-link");
+    expect(html).not.toContain("project-link");
     expect(html).not.toContain("/issue/12345");
   });
 
@@ -4195,6 +5173,33 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<del>single</del>");
   });
 
+  it("renders GFM footnotes as a useful react-markdown extension", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Footnote ref[^1]\n\n[^1]: Useful note"} />,
+    );
+
+    expect(html).toContain('data-footnote-ref="true"');
+    expect(html).toContain('class="footnotes"');
+    expect(html).toContain('class="sr-only"');
+    expect(html).not.toContain('class="head-anchor" href="#footnotes"');
+    expect(html).toContain("Useful note");
+    expect(html).not.toContain("[^1]");
+  });
+
+  it("renders GFM footnotes when raw HTML enables the sanitizer path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"<span>raw</span>\n\nFootnote ref[^1]\n\n[^1]: Useful note"} />,
+    );
+
+    expect(html).toContain("<span>raw</span>");
+    expect(html).toContain('data-footnote-ref=""');
+    expect(html).toContain('class="footnotes"');
+    expect(html).toContain('class="sr-only"');
+    expect(html).not.toContain('class="head-anchor" href="#footnotes"');
+    expect(html).toContain("Useful note");
+    expect(html).not.toContain("[^1]");
+  });
+
   it("keeps spaced and triple tilde delete delimiters literal like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="Keep ~~ deleted ~~ and ~~deleted ~~ and ~~ deleted~~ plus ~~~triple~~~ literal" />,
@@ -4207,6 +5212,36 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<del> deleted </del>");
     expect(html).not.toContain("<del>deleted </del>");
     expect(html).not.toContain("<del> deleted</del>");
+    expect(html).not.toContain("<del>triple</del>");
+  });
+
+  it("renders literal tilde delimiters through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\nKeep ~~ deleted ~~ and ~~ also literal ~~ as text\n\nafter"
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<p>Keep ~~ deleted ~~ and ~~ also literal ~~ as text</p>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<del> deleted </del>");
+    expect(html).not.toContain("<del> also literal </del>");
+  });
+
+  it("renders line-start triple tilde delimiter text through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n~~~triple~~~\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<p>~~~triple~~~</p>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<pre><code");
     expect(html).not.toContain("<del>triple</del>");
   });
 
@@ -4258,6 +5293,22 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<strong> d </strong>");
   });
 
+  it("renders spaced emphasis literals through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"before\n\nKeep * a * and ** b ** plus _ c _ and __ d __ plain\n\nafter"}
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<p>Keep * a * and ** b ** plus _ c _ and __ d __ plain</p>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<em> a </em>");
+    expect(html).not.toContain("<strong> b </strong>");
+    expect(html).not.toContain("<em> c </em>");
+    expect(html).not.toContain("<strong> d </strong>");
+  });
+
   it("renders triple emphasis like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="Keep ***both*** and ___also both___ text" />,
@@ -4267,6 +5318,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<strong><em>also both</em></strong>");
     expect(html).not.toContain("***both***");
     expect(html).not.toContain("___also both___");
+  });
+
+  it("renders triple emphasis through the ReactMarkdown document path with legacy DOM order", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\nKeep ***both*** and ___also both___ text\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<strong><em>both</em></strong>");
+    expect(html).toContain("<strong><em>also both</em></strong>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<em><strong>both</strong></em>");
   });
 
   it("renders spaced triple emphasis as outer strong like legacy marked", () => {
@@ -4293,6 +5356,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<strong>https://example.com</strong>");
   });
 
+  it("renders inline Markdown inside emphasis tokens through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n**https://example.com** *`code`* ~~www.example.com~~\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<strong><a href="https://example.com">https://example.com</a></strong>',
+    );
+    expect(html).toContain("<em><code>code</code></em>");
+    expect(html).toContain('<del><a href="http://www.example.com">www.example.com</a></del>');
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<strong>https://example.com</strong>");
+  });
+
   it("honors legacy marked backslash escapes before inline parsing", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -4316,6 +5394,22 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<em>literal</em>");
     expect(html).not.toContain('href="/yona/owner"');
     expect(html).not.toContain('href="target"');
+  });
+
+  it("renders safe escaped punctuation paragraphs through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"before\n\nKeep \\*literal\\* and \\_plain\\_ beside **strong** and `code`\n\nafter"}
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<p>Keep *literal* and _plain_ beside <strong>strong</strong> and <code>code</code></p>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<em>literal</em>");
+    expect(html).not.toContain("<em>plain</em>");
   });
 
   it("normalizes inline code spans like legacy marked", () => {
@@ -4368,6 +5462,23 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("```");
   });
 
+  it("renders matching backtick-run code spans through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\nKeep `` `literal` `` beside ``` ``literal`` ``` and `plain` text\n\nafter"
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<code>`literal`</code>");
+    expect(html).toContain("<code>``literal``</code>");
+    expect(html).toContain("<code>plain</code>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("```");
+  });
+
   it("normalizes newlines inside inline code spans like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"Keep ` line\nbreak ` beside\nplain text"} />,
@@ -4407,6 +5518,96 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("hard tab    <br/>");
   });
 
+  it("renders README soft breaks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="readme-body markdown-wrap"
+        markdown={
+          "# README\n\nfirst line\nsecond line\nhard break\\\nnext\n\n- item\n  continuation\n\nfinal line\nsoft next"
+        }
+      />,
+    );
+
+    expect(html).toContain('<div class="readme-body markdown-wrap">');
+    expect(html).toContain('<h1 id="readme">README<a class="head-anchor" href="#readme">#</a></h1>');
+    expect(html).toContain("<p>first line\nsecond line\nhard break<br/>next</p>");
+    expect(html).toContain("<ul><li>item\ncontinuation</li></ul>");
+    expect(html).toContain("<p>final line\nsoft next</p>");
+    expect(html).not.toContain("first line<br/>second line");
+    expect(html).not.toContain("final line<br/>soft next");
+  });
+
+  it("renders multi-line simple inline paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"first **strong**\nsecond ~~deleted~~\nthird `code`"} />,
+    );
+
+    expect(html).toContain(
+      "<p>first <strong>strong</strong><br/>second <del>deleted</del><br/>third <code>code</code></p>",
+    );
+  });
+
+  it("renders multi-line inline link, reference, and Yona autolink paragraphs through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Multiline issue",
+          },
+        ]}
+        markdown={
+          "**Read** [docs](https://example.com/docs)\nThen [guide][docs]\nTitled [title]( <https://example.com/title> \"Title\" )\nFinally owner#7\n\n[docs]: https://example.com/ref \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<p><strong>Read</strong> <a href="https://example.com/docs">docs</a><br/>Then <a href="https://example.com/ref" title="Docs">guide</a><br/>Titled <a href="https://example.com/title" title="Title">title</a><br/>Finally <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Multiline issue"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).not.toContain("[docs]:");
+  });
+
+  it("renders multi-line inline raw formatting paragraphs through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Raw multiline issue",
+          },
+        ]}
+        markdown={
+          '<span class="state">open</span> [docs](https://example.com/docs)\nNext <em>See http://example.com</em>\nplain **strong**\nescaped \\*literal\\* text\nThen [guide][docs]\nTitled [title]( <https://example.com/title> "Title" ) and ![logo]( /logo.png "Logo" )\nFinally owner#7\n\n[docs]: https://example.com/ref "Docs"'
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<p><span class="state">open</span> <a href="https://example.com/docs">docs</a><br/>Next <em>See <a href="http://example.com">http://example.com</a></em><br/>plain <strong>strong</strong><br/>escaped *literal* text<br/>Then <a href="https://example.com/ref" title="Docs">guide</a><br/>Titled <a href="https://example.com/title" title="Title">title</a> and <img alt="logo" src="/logo.png" title="Logo"/><br/>Finally <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Raw multiline issue"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).not.toContain("[docs]:");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
   it("renders inline link and image titles like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -4419,6 +5620,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
     expect(html).toContain(
       '<img alt="logo" src="https://example.com/logo.png" title="Logo title"/>',
+    );
+  });
+
+  it("renders simple inline links and images inside plain paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"See [docs](https://example.com/docs) and ![logo](/files/logo.png) now"} />,
+    );
+
+    expect(html).toContain(
+      '<p>See <a href="https://example.com/docs">docs</a> and <img alt="logo" src="/files/logo.png"/> now</p>',
+    );
+  });
+
+  it("renders formatted text around inline links and images through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "**Read** [docs](https://example.com/docs) and ~~see~~ ![logo](/files/logo.png) with `code`"
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<p><strong>Read</strong> <a href="https://example.com/docs">docs</a> and <del>see</del> <img alt="logo" src="/files/logo.png"/> with <code>code</code></p>',
     );
   });
 
@@ -4896,6 +6121,73 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("[nested]:");
   });
 
+  it("renders reference-style links and images inside plain paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Reference paragraph issue",
+          },
+        ]}
+        markdown={
+          'See \\*literal\\* and [home](https://example.com/home) and http://example.com then owner#7 and [docs][guide] and ![logo][asset] now\n\n[guide]: https://example.com/docs "Read docs"\n[asset]: /files/logo.png "Logo title"'
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<p>See *literal* and <a href="https://example.com/home">home</a> and <a href="http://example.com">http://example.com</a> then <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Reference paragraph issue"');
+    expect(html).toContain(
+      '<a href="https://example.com/docs" title="Read docs">docs</a> and <img alt="logo" src="/files/logo.png" title="Logo title"/> now</p>',
+    );
+    expect(html).not.toContain("[guide]:");
+    expect(html).not.toContain("[asset]:");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
+  it("renders formatted text around reference-style links through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Formatted reference issue",
+          },
+        ]}
+        markdown={
+          '**See** [home](https://example.com/home) and ~~url~~ http://example.com then _issue_ owner#7 and [docs][guide] and ~~asset~~ ![logo][asset] now\n\n[guide]: https://example.com/docs "Read docs"\n[asset]: /files/logo.png "Logo title"'
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(
+      '<p><strong>See</strong> <a href="https://example.com/home">home</a> and <del>url</del> <a href="http://example.com">http://example.com</a> then <em>issue</em> <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Formatted reference issue"');
+    expect(html).toContain(
+      '<a href="https://example.com/docs" title="Read docs">docs</a> and <del>asset</del> <img alt="logo" src="/files/logo.png" title="Logo title"/> now</p>',
+    );
+    expect(html).not.toContain("[guide]:");
+    expect(html).not.toContain("[asset]:");
+  });
+
   it("resolves collapsed reference-style links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
@@ -5006,9 +6298,10 @@ describe("MarkdownRenderer", () => {
 
   it("resolves empty angle reference targets like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'[guide][ref] ![logo][img] [split][next]\n\n[ref]: <> "Read docs"\n[img]: <>\n[next]: <>\n  "Split title"'} />,
+      <MarkdownRenderer markdown={'See [guide][ref] and ![logo][img] before [split][next]\n\n[ref]: <> "Read docs"\n[img]: <>\n[next]: <>\n  "Split title"'} />,
     );
 
+    expect(html).toContain("<p>See ");
     expect(html).toContain('<a href="%3C" title="Read docs">guide</a>');
     expect(html).toContain('<img alt="logo" src="%3C"/>');
     expect(html).toContain('<a href="%3C" title="Split title">split</a>');
@@ -5021,13 +6314,15 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          "[docs][guide\\]] ![logo][asset\\]]\n\n[guide\\]]: https://example.com/docs\n[asset\\]]: /files/logo.png"
+          "See [docs][guide\\]] and ![logo][asset\\]] now\n\n[guide\\]]: https://example.com/docs\n[asset\\]]: /files/logo.png"
         }
       />,
     );
 
+    expect(html).toContain("<p>See ");
     expect(html).toContain('<a href="https://example.com/docs">docs</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo.png"/>');
+    expect(html).toContain(" now</p>");
     expect(html).not.toContain("[guide\\]]:");
     expect(html).not.toContain("[asset\\]]:");
   });
@@ -5094,6 +6389,16 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="mailto:foo^bar@example.com"');
   });
 
+  it("renders mixed extended angle email autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Mail <foo#bar@example.com> and <foo'bar@example.com> plus <foo|bar@example.com>"} />,
+    );
+
+    expect(html).toContain(
+      '<p>Mail <a href="mailto:foo#bar@example.com">foo#bar@example.com</a> and <a href="mailto:foo&#x27;bar@example.com">foo&#x27;bar@example.com</a> plus <a href="mailto:foo%7Cbar@example.com">foo|bar@example.com</a></p>',
+    );
+  });
+
   it("uses legacy angle-bracket email domain validation", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"Mail <foo@example.c> <foo@example.12> <foo@example-domain.com> but keep <foo@example_domain.com> <foo@example.com-> <foo@-example.com> <foo@example..com>"} />,
@@ -5123,6 +6428,28 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="tel:123"');
   });
 
+  it("renders mixed file and zpl angle autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "- File <file:///tmp/report.txt>\n- ZPL <zpl:movie>\n\nKind | Link\n- | -\nfile | <file:///tmp/report.txt>\nzpl | <zpl:movie>\n\n> File <file:///tmp/report.txt>\n> ZPL <zpl:movie>"
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<li>File <a href="file:///tmp/report.txt">file:///tmp/report.txt</a></li>',
+    );
+    expect(html).toContain('<li>ZPL <a href="zpl:movie">zpl:movie</a></li>');
+    expect(html).toContain(
+      '<td><a href="file:///tmp/report.txt">file:///tmp/report.txt</a></td>',
+    );
+    expect(html).toContain('<td><a href="zpl:movie">zpl:movie</a></td>');
+    expect(html).toContain(
+      '<blockquote><p>File <a href="file:///tmp/report.txt">file:///tmp/report.txt</a><br/>ZPL <a href="zpl:movie">zpl:movie</a></p></blockquote>',
+    );
+  });
+
   it("renders uppercase URL autolinks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See <HTTP://EXAMPLE.COM> and plain HTTP://EXAMPLE.COM" />,
@@ -5140,6 +6467,36 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<a href="HTTP://EXAMPLE.COM">HTTP://EXAMPLE.COM</a>');
     expect(html).toContain(
       '<a href="FTP://FILES.EXAMPLE.COM/archive.zip">FTP://FILES.EXAMPLE.COM/archive.zip</a>',
+    );
+  });
+
+  it("renders bare URLs inside plain paragraphs through the ReactMarkdown path like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="See https://example.com/docs and www.example.com/end." />,
+    );
+
+    expect(html).toContain(
+      '<p>See <a href="https://example.com/docs">https://example.com/docs</a> and <a href="http://www.example.com/end">www.example.com/end</a>.</p>',
+    );
+  });
+
+  it("renders formatted text around bare URLs through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="**See** https://example.com/docs and ~~mail~~ support@example.com" />,
+    );
+
+    expect(html).toContain(
+      '<p><strong>See</strong> <a href="https://example.com/docs">https://example.com/docs</a> and <del>mail</del> <a href="mailto:support@example.com">support@example.com</a></p>',
+    );
+  });
+
+  it("renders unquoted bare emails inside plain paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Mail support@example.com for help" />,
+    );
+
+    expect(html).toContain(
+      '<p>Mail <a href="mailto:support@example.com">support@example.com</a> for help</p>',
     );
   });
 
@@ -5316,6 +6673,55 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<td align="right">R</td>');
   });
 
+  it("renders inline links and images in GFM table cells through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "Name | Link | Image\n- | - | -\nDocs | [Guide](https://example.com/guide) | ![Logo](/files/logo.png)"
+        }
+      />,
+    );
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<td>Docs</td>");
+    expect(html).toContain(
+      '<td><a href="https://example.com/guide">Guide</a></td>',
+    );
+    expect(html).toContain('<td><img alt="Logo" src="/files/logo.png"/></td>');
+  });
+
+  it("renders reference links and Yona autolinks in GFM table cells through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Table issue",
+          },
+        ]}
+        markdown={
+          "Kind | Value\n- | -\nRef | See [guide][docs]\nIssue | owner#7\n\n[docs]: https://example.com/docs \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<table>");
+    expect(html).toContain(
+      '<td>See <a href="https://example.com/docs" title="Docs">guide</a></td>',
+    );
+    expect(html).toContain('<td><a class="issueLink"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Table issue"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).not.toContain("[docs]:");
+  });
+
   it("accepts one-dash table separators like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"A | B\n- | -:\n1 | 2"} />);
 
@@ -5415,6 +6821,38 @@ describe("MarkdownRenderer", () => {
     expect(blockHtml).toContain("3 | 4");
   });
 
+  it("renders safe inline raw formatting in GFM table cells through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          'before\n\nState | Link\n- | -\n<span class="state">open</span> | <em>[docs](https://example.com/docs)</em>\n<strong>[guide][docs]</strong> | <em>[titled]( <https://example.com/titled> "Title" )</em>\nKeep \\*literal\\* beside **strong** | See <https://example.com/docs>\n\nafter\n\n[docs]: https://example.com/ref "Docs"'
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<table>");
+    expect(html).toContain('<td><span class="state">open</span></td>');
+    expect(html).toContain(
+      '<td><em><a href="https://example.com/docs">docs</a></em></td>',
+    );
+    expect(html).toContain(
+      '<td><strong><a href="https://example.com/ref" title="Docs">guide</a></strong></td>',
+    );
+    expect(html).toContain(
+      '<td><em><a href="https://example.com/titled" title="Title">titled</a></em></td>',
+    );
+    expect(html).toContain(
+      "<td>Keep *literal* beside <strong>strong</strong></td>",
+    );
+    expect(html).toContain(
+      '<td>See <a href="https://example.com/docs">https://example.com/docs</a></td>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("[docs]:");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
   it("only lets ordered list item 1 interrupt GFM table rows like legacy marked", () => {
     const nonInterruptingHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"A | B\n- | -\n1 | 2\n2. not interrupt"} />,
@@ -5479,6 +6917,16 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).not.toContain("<p>1. </p>");
   });
 
+  it("renders terminal-newline empty list markers through the ReactMarkdown document path", () => {
+    const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"before\n\n- \n"} />);
+    const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"before\n\n1. \n"} />);
+
+    expect(unorderedHtml).toContain("<p>before</p><ul><li></li></ul>");
+    expect(unorderedHtml).not.toContain("<p>- </p>");
+    expect(orderedHtml).toContain("<p>before</p><ol><li></li></ol>");
+    expect(orderedHtml).not.toContain("<p>1. </p>");
+  });
+
   it("renders empty list items before following items like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- \n- second"} />);
     const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"1. \n2. second"} />);
@@ -5489,6 +6937,20 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).not.toContain("<p>1. </p>");
   });
 
+  it("renders leading empty list items through the ReactMarkdown document path", () => {
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- \n- second\n\nafter"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n1. \n2. second\n\nafter"} />,
+    );
+
+    expect(unorderedHtml).toContain("<p>before</p><ul><li></li><li>second</li></ul><p>after</p>");
+    expect(unorderedHtml).not.toContain("<p>- </p>");
+    expect(orderedHtml).toContain("<p>before</p><ol><li></li><li>second</li></ol><p>after</p>");
+    expect(orderedHtml).not.toContain("<p>1. </p>");
+  });
+
   it("keeps blank-line separated same-marker list items together like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n\n- second"} />);
     const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"1. first\n\n2. second"} />);
@@ -5496,6 +6958,24 @@ describe("MarkdownRenderer", () => {
     expect(unorderedHtml).toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
     expect(unorderedHtml).not.toContain("</ul><ul>");
     expect(orderedHtml).toContain("<ol><li><p>first</p></li><li><p>second</p></li></ol>");
+    expect(orderedHtml).not.toContain("</ol><ol");
+  });
+
+  it("renders blank-line separated same-marker lists through the ReactMarkdown document path", () => {
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\n\n- second\n\nafter"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n1. first\n\n2. second\n\nafter"} />,
+    );
+
+    expect(unorderedHtml).toContain(
+      "<p>before</p><ul><li><p>first</p></li><li><p>second</p></li></ul><p>after</p>",
+    );
+    expect(unorderedHtml).not.toContain("</ul><ul>");
+    expect(orderedHtml).toContain(
+      "<p>before</p><ol><li><p>first</p></li><li><p>second</p></li></ol><p>after</p>",
+    );
     expect(orderedHtml).not.toContain("</ol><ol");
   });
 
@@ -5524,6 +7004,170 @@ describe("MarkdownRenderer", () => {
     expect(unorderedHtml).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
     expect(orderedHtml).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
     expect(orderedHtml).not.toContain("<ol><li><p>first</p></li><li><p>second</p></li></ol>");
+  });
+
+  it("renders blank-line separated marker-change lists through the ReactMarkdown document path", () => {
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\n\n+ second\n\nafter"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n1. first\n\n2) second\n\nafter"} />,
+    );
+
+    expect(unorderedHtml).toContain(
+      "<p>before</p><ul><li>first</li></ul><ul><li>second</li></ul><p>after</p>",
+    );
+    expect(unorderedHtml).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
+    expect(orderedHtml).toContain("<p>before</p>");
+    expect(orderedHtml).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
+    expect(orderedHtml).toContain("<p>after</p>");
+    expect(orderedHtml).not.toContain("<ol><li><p>first</p></li><li><p>second</p></li></ol>");
+  });
+
+  it("renders non-adjacent simple list blocks through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n\nmiddle paragraph\n\n- second"} />,
+    );
+
+    expect(html).toContain("<ul><li>first</li></ul><p>middle paragraph</p><ul><li>second</li></ul>");
+    expect(html).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
+  });
+
+  it("renders list item inline links, images, references, and Yona autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "List issue",
+          },
+        ]}
+        markdown={
+          "- See [guide](https://example.com/guide)\n- Logo ![logo](/files/logo.png)\n- Ref [docs][guide]\n- Angle <https://example.com/docs>\n- Issue owner#7\n\n[guide]: https://example.com/docs \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<ul>");
+    expect(html).toContain('<li>See <a href="https://example.com/guide">guide</a></li>');
+    expect(html).toContain('<li>Logo <img alt="logo" src="/files/logo.png"/></li>');
+    expect(html).toContain('<li>Ref <a href="https://example.com/docs" title="Docs">docs</a></li>');
+    expect(html).toContain(
+      '<li>Angle <a href="https://example.com/docs">https://example.com/docs</a></li>',
+    );
+    expect(html).toContain('<li>Issue <a class="issueLink"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="List issue"');
+    expect(html).not.toContain("[guide]:");
+  });
+
+  it("renders list item safe escaped punctuation through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- Keep \\*literal\\* beside **strong**\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<ul><li>Keep *literal* beside <strong>strong</strong></li></ul>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
+  it("renders list item inline raw formatting through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '- <span class="state">open</span> [docs](https://example.com/docs)\n- <em>See http://example.com</em>\n- <strong>[guide][docs]</strong>\n- <em>[titled]( <https://example.com/titled> "Title" )</em>\n\n[docs]: https://example.com/ref "Docs"'
+        }
+      />,
+    );
+
+    expect(html).toContain("<ul>");
+    expect(html).toContain(
+      '<li><span class="state">open</span> <a href="https://example.com/docs">docs</a></li>',
+    );
+    expect(html).toContain(
+      '<li><em>See <a href="http://example.com">http://example.com</a></em></li>',
+    );
+    expect(html).toContain(
+      '<li><strong><a href="https://example.com/ref" title="Docs">guide</a></strong></li>',
+    );
+    expect(html).toContain(
+      '<li><em><a href="https://example.com/titled" title="Title">titled</a></em></li>',
+    );
+    expect(html).not.toContain("[docs]:");
+  });
+
+  it("renders task list item references and Yona autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Task issue",
+          },
+        ]}
+        markdown={
+          "- [ ] Read [docs][guide]\n- [x] Close owner#7\n\n[guide]: https://example.com/docs \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+        showTasklistBar
+      />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(1/2)</span>');
+    expect(html).toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> Read <a href="https://example.com/docs" title="Docs">docs</a></li>',
+    );
+    expect(html).toContain('<li class="task-list-item"><input class="task-list-item-checkbox"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Task issue"');
+    expect(html).not.toContain("[guide]:");
+  });
+
+  it("renders task list item safe escaped punctuation through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"before\n\n- [ ] Keep \\*literal\\* beside **strong**\n\nafter"}
+        showTasklistBar
+      />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(0/1)</span>');
+    expect(html).toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> Keep *literal* beside <strong>strong</strong></li>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<em>literal</em>");
+  });
+
+  it("renders task list item inline raw formatting through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '- [ ] <span class="state">open</span> [docs](https://example.com/docs)\n- [x] <em>done</em>'
+        }
+        showTasklistBar
+      />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(1/2)</span>');
+    expect(html).toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> <span class="state">open</span> <a href="https://example.com/docs">docs</a></li>',
+    );
+    expect(html).toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> <em>done</em></li>',
+    );
   });
 
   it("preserves empty loose list items like legacy marked", () => {
@@ -5572,6 +7216,17 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).not.toContain("<li>item</li>");
   });
 
+  it("renders direct-tab list marker padding through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Before\n\n-\titem\n-\tsecond\n\nAfter"} />,
+    );
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain("<ul><li>   item</li><li>   second</li></ul>");
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("<li>item</li>");
+  });
+
   it("renders space-tab list item padding as indented code like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- \titem"} />);
     const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"1. \titem"} />);
@@ -5606,6 +7261,26 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).not.toContain("<pre><code>item");
   });
 
+  it("renders small space-tab tight continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\n- \t**item**\n  continuation\n-  \tsecond\n  [guide][docs]\n\nmiddle\n\n1. \tordered\n   continuation\n\nafter\n\n[docs]: https://example.com/docs \"Docs\""
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<ul><li>  <strong>item</strong><br/>continuation</li><li>   second<br/><a href="https://example.com/docs" title="Docs">guide</a></li></ul>',
+    );
+    expect(html).toContain("<p>middle</p>");
+    expect(html).toContain("<ol><li> ordered<br/>continuation</li></ol>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("yona-space-tab-list-item-padding");
+    expect(html).not.toContain("[docs]:");
+  });
+
   it("keeps large space-tab list continuations as leading code blocks like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"-   \titem\n  continuation"} />,
@@ -5626,6 +7301,17 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).toContain(
       "<ol><li><pre><code>item\n</code></pre>continuation</li></ol>",
     );
+  });
+
+  it("renders large space-tab continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n-   \titem\n  continuation\n\n1.    \tordered\n   continuation\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<ul><li><pre><code>item\n</code></pre>continuation</li></ul>");
+    expect(html).toContain("<ol><li><pre><code>ordered\n</code></pre>continuation</li></ol>");
+    expect(html).toContain("<p>after</p>");
   });
 
   it("preserves loose space-tab list continuations like legacy marked", () => {
@@ -5663,11 +7349,33 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<ul><li>first</li><li>second</li><li>third</li></ul>");
   });
 
+  it("renders same-indent unordered smart-list splits through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\n+ second\n- third\n\nafter"} />,
+    );
+
+    expect(html).toContain(
+      "<p>before</p><ul><li>first</li></ul><ul><li>second</li></ul><ul><li>third</li></ul><p>after</p>",
+    );
+    expect(html).not.toContain("<ul><li>first</li><li>second</li><li>third</li></ul>");
+  });
+
   it("splits same-indent ordered lists when delimiters change like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"1. first\n2) second\n3. third"} />);
 
     expect(html).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
     expect(html).toContain('<ol start="3"><li>third</li></ol>');
+    expect(html).not.toContain("<ol><li>first</li><li>second</li><li>third</li></ol>");
+  });
+
+  it("renders same-indent ordered delimiter smart-list splits through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n1. first\n2) second\n3. third\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
+    expect(html).toContain('<ol start="3"><li>third</li></ol><p>after</p>');
     expect(html).not.toContain("<ol><li>first</li><li>second</li><li>third</li></ol>");
   });
 
@@ -5679,6 +7387,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       "<ul><li>parent<ul><li><strong>child</strong></li></ul></li><li>next</li></ul>",
     );
+    expect(html).not.toContain("<li>parent</li><li><strong>child</strong></li>");
+  });
+
+  it("renders simple nested lists through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- parent\n  - **child**\n- next\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<ul><li>parent<ul><li><strong>child</strong></li></ul></li><li>next</li></ul>",
+    );
+    expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<li>parent</li><li><strong>child</strong></li>");
   });
 
@@ -5694,6 +7415,24 @@ describe("MarkdownRenderer", () => {
     expect(tightHtml).not.toContain("<li>parent<ul><li>child</li></ul>");
     expect(looseHtml).toContain("<ul><li><p>parent</p></li><li><p>child</p></li></ul>");
     expect(looseHtml).not.toContain("<li><p>parent</p><ul>");
+  });
+
+  it("renders root-indented same-level lists through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\n- parent\n - **child**\n- next\n\nmiddle\n\n   1. first\n  2. second\n3. third\n\nafter"
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<ul><li>parent</li><li><strong>child</strong></li><li>next</li></ul>");
+    expect(html).toContain("<p>middle</p>");
+    expect(html).toContain("<ol><li>first</li><li>second</li><li>third</li></ol>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<li>parent<ul>");
+    expect(html).not.toContain("<li>first<ol");
   });
 
   it("keeps two- and three-space root list markers at the same level like legacy marked", () => {
@@ -5718,6 +7457,19 @@ describe("MarkdownRenderer", () => {
     expect(markerChangeHtml).not.toContain("<ul><li>first</li><li>second</li></ul>");
     expect(delimiterChangeHtml).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
     expect(delimiterChangeHtml).not.toContain("<ol><li>first</li><li>second</li></ol>");
+  });
+
+  it("renders root-indented marker changes through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n   - first\n  + second\n\n   1. first\n  2) second\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<ul><li>first</li></ul><ul><li>second</li></ul>");
+    expect(html).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<ul><li>first</li><li>second</li></ul>");
+    expect(html).not.toContain("<ol><li>first</li><li>second</li></ol>");
   });
 
   it("keeps four-space list-looking lines as indented code before root lists like legacy marked", () => {
@@ -5767,6 +7519,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<ul><li>first child</li><li>second child</li></ul>");
   });
 
+  it("renders nested unordered smart-list splits through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"before\n\n- parent\n  + first child\n  - second child\n\nafter"}
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<ul><li>parent<ul><li>first child</li></ul><ul><li>second child</li></ul></li></ul>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<ul><li>first child</li><li>second child</li></ul>");
+  });
+
   it("keeps indented continuation lines inside list items like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- first\n  continuation with **style**\n- second"} />,
@@ -5778,10 +7545,43 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>continuation with");
   });
 
+  it("renders tight list continuation lines through the ReactMarkdown document path", () => {
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\n  continuation with **style**\n- second\n\nafter"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n12. first\n    continuation with **style**\n13. second\n\nafter"} />,
+    );
+
+    expect(unorderedHtml).toContain("<p>before</p>");
+    expect(unorderedHtml).toContain(
+      "<ul><li>first<br/>continuation with <strong>style</strong></li><li>second</li></ul>",
+    );
+    expect(unorderedHtml).toContain("<p>after</p>");
+    expect(unorderedHtml).not.toContain("<p>continuation with");
+    expect(orderedHtml).toContain("<p>before</p>");
+    expect(orderedHtml).toContain(
+      '<ol start="12"><li>first<br/>continuation with <strong>style</strong></li><li>second</li></ol>',
+    );
+    expect(orderedHtml).toContain("<p>after</p>");
+  });
+
   it("preserves extra continuation indentation inside list items like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n    code\n- second"} />);
 
     expect(html).toContain("<ul><li>first<br/>  code</li><li>second</li></ul>");
+    expect(html).not.toContain("<li>first<br/>code</li>");
+    expect(html).not.toContain("<pre><code>code</code></pre>");
+  });
+
+  it("renders extra-indented list continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\n    code\n- second\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<ul><li>first<br/>  code</li><li>second</li></ul>");
+    expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<li>first<br/>code</li>");
     expect(html).not.toContain("<pre><code>code</code></pre>");
   });
@@ -5797,6 +7597,37 @@ describe("MarkdownRenderer", () => {
     );
     expect(html).not.toContain("</ul><p>continued");
     expect(html).not.toContain("<p>more</p>");
+  });
+
+  it("renders lazy list continuation lines through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- first\ncontinued with **style**\nmore\n- second\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      "<ul><li>first<br/>continued with <strong>style</strong><br/>more</li><li>second</li></ul>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("</ul><p>continued");
+    expect(html).not.toContain("<p>more</p>");
+  });
+
+  it("renders list continuation references and raw formatting through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          'before\n\n- first\n  <em>[guide][docs]</em>\n- second\n\nafter\n\n[docs]: https://example.com/docs "Docs"'
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<ul><li>first<br/><em><a href="https://example.com/docs" title="Docs">guide</a></em></li><li>second</li></ul>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("[docs]:");
   });
 
   it("keeps lazy nested blocks inside list items like legacy marked", () => {
@@ -5871,6 +7702,24 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("renders loose task-list paragraphs through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- [x] done\n\n  more detail\n- [ ] open\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> done</p><p>more detail</p></li>',
+    );
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open</p></li>',
+    );
+    expect(html).toContain("</ul><p>after</p>");
+    expect(html).not.toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> <p>',
+    );
+  });
+
   it("keeps nested loose task-list checkboxes inside their first paragraphs", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [x] parent\n  - [ ] child\n\n    child detail\n- [ ] next"} />,
@@ -5882,6 +7731,28 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> next</p></li>',
     );
+    expect(html).not.toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> <p>child</p>',
+    );
+  });
+
+  it("renders nested loose task-list paragraphs through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\n- [x] parent\n  - [ ] child\n\n    child detail\n- [ ] next\n\nafter"
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> parent</p><ul><li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> child</p><p>child detail</p></li></ul></li>',
+    );
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> next</p></li>',
+    );
+    expect(html).toContain("</ul><p>after</p>");
     expect(html).not.toContain(
       '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> <p>child</p>',
     );
@@ -5931,6 +7802,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> </li>',
     );
+    expect(html).not.toContain("yona-empty-task-item-placeholder");
+  });
+
+  it("renders trailing-space empty task items through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n- [ ] \n- [x] \n- [X] done\n\nafter"} showTasklistBar />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(2/3)</span>');
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain(
+      '<ul><li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> </li><li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> </li><li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> done</li></ul>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("yona-empty-task-item-placeholder");
   });
 
   it("renders and counts tab-separated task items like legacy marked", () => {
@@ -5953,6 +7839,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> done</li>',
     );
+  });
+
+  it("renders same-marker tab-separated task lists through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- [ ]\topen\n- [x]\t"} showTasklistBar />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(1/2)</span>');
+    expect(html).toContain(
+      '<ul><li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open</li><li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> </li></ul>',
+    );
+    expect(html).not.toContain("yona-empty-task-item-placeholder");
   });
 
   it("counts legacy task items across unordered markers and ordered paren markers", () => {
@@ -6055,6 +7953,136 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<del>style</del>");
   });
 
+  it("renders blockquote links and bare URLs through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> See [docs](https://example.com/docs)\n> and <https://example.com/angle>\n> and www.example.com/end."} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<p>See <a href="https://example.com/docs">docs</a><br/>and <a href="https://example.com/angle">https://example.com/angle</a><br/>and <a href="http://www.example.com/end">www.example.com/end</a>.</p>',
+    );
+    expect(html).not.toContain("<p>&gt;");
+  });
+
+  it("renders blockquote Yona autolinks through the ReactMarkdown path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Quoted issue",
+          },
+        ]}
+        markdown={"> See owner#7 and @owner/projectYobi"}
+        mentionReferences={[{ kind: "project", ownerName: "owner", projectName: "projectYobi" }]}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Quoted issue"');
+    expect(html).toContain('data-issue-state="open"');
+    expect(html).toContain(
+      '<a class="no-text-decoration project-link" href="/yona/owner/projectYobi">@owner/projectYobi</a>',
+    );
+    expect(html).not.toContain("<p>&gt;");
+  });
+
+  it("renders formatted blockquote links, references, and Yona autolinks through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Formatted quote issue",
+          },
+        ]}
+        markdown={
+          "> **See** [docs](https://example.com/docs)\n> ~~Ref~~ [guide][docs]\n> _Issue_ owner#7\n\n[docs]: https://example.com/ref \"Docs\""
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<p><strong>See</strong> <a href="https://example.com/docs">docs</a><br/><del>Ref</del> <a href="https://example.com/ref" title="Docs">guide</a><br/><em>Issue</em> <a class="issueLink"',
+    );
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Formatted quote issue"');
+    expect(html).not.toContain("[docs]:");
+    expect(html).not.toContain("<p>&gt;");
+  });
+
+  it("renders blockquote inline raw formatting through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '> <span class="state">open</span> [docs](https://example.com/docs)\n> <em>See http://example.com</em>\n> <strong>[guide][docs]</strong>\n> <em>[titled]( <https://example.com/titled> "Title" )</em>\n\n[docs]: https://example.com/ref "Docs"'
+        }
+      />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<p><span class="state">open</span> <a href="https://example.com/docs">docs</a><br/><em>See <a href="http://example.com">http://example.com</a></em><br/><strong><a href="https://example.com/ref" title="Docs">guide</a></strong><br/><em><a href="https://example.com/titled" title="Title">titled</a></em></p>',
+    );
+    expect(html).not.toContain("<p>&gt;");
+    expect(html).not.toContain("[docs]:");
+  });
+
+  it("renders blockquote safe escaped punctuation through ReactMarkdown", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> Keep \\*literal\\* beside **strong**"} />,
+    );
+
+    expect(html).toContain(
+      "<blockquote><p>Keep *literal* beside <strong>strong</strong></p></blockquote>",
+    );
+    expect(html).not.toContain("<em>literal</em>");
+    expect(html).not.toContain("<p>&gt;");
+  });
+
+  it("renders blockquote headings through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> # Quoted **Heading**\n> ## Child\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<h1 id="quoted-heading">Quoted <strong>Heading</strong><a class="head-anchor" href="#quoted-heading">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="child">Child<a class="head-anchor" href="#child">#</a></h2>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<p>&gt;");
+  });
+
+  it("renders blockquote horizontal rules through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> ---\n> ***\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote><hr/><hr/></blockquote>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<p>&gt;");
+  });
+
   it("keeps lazy blockquote continuations inside the quote like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> quoted\ncontinued with **style**"} />,
@@ -6062,6 +8090,21 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<blockquote>");
     expect(html).toContain("<p>quoted<br/>continued with <strong>style</strong></p>");
+    expect(html).not.toContain("<p>&gt; quoted");
+    expect(html).not.toContain("</blockquote><p>continued");
+  });
+
+  it("renders lazy blockquote continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> quoted\ncontinued with **style**\nmore `code`\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      "<p>quoted<br/>continued with <strong>style</strong><br/>more <code>code</code></p>",
+    );
+    expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<p>&gt; quoted");
     expect(html).not.toContain("</blockquote><p>continued");
   });
@@ -6116,6 +8159,20 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("</ul><p>continued");
   });
 
+  it("renders lazy blockquote list continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> - first\ncontinued with **style**\n> - second\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      "<ul><li>first<br/>continued with <strong>style</strong></li><li>second</li></ul>",
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("</ul><p>continued");
+  });
+
   it("parses Markdown blocks inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"> # Quoted\n> - item"} />);
 
@@ -6127,6 +8184,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<li>item</li>");
     expect(html).not.toContain("<p># Quoted");
     expect(html).not.toContain("<p>- item");
+  });
+
+  it("renders blockquote fenced code through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> ```js\n> const value = '#1';\n> ```\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote><pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain("</code></pre></blockquote>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("<p>&gt;");
   });
 
   it("stops blockquote tables at blank lines like legacy marked", () => {
@@ -6143,6 +8216,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<td>4</td>");
   });
 
+  it("renders blockquote tables through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> A | B\n> - | -\n> 1 | 2\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote><table>");
+    expect(html).toContain("<th>A</th>");
+    expect(html).toContain("<th>B</th>");
+    expect(html).toContain("<td>1</td>");
+    expect(html).toContain("<td>2</td>");
+    expect(html).toContain("</table></blockquote>");
+    expect(html).toContain("<p>after</p>");
+  });
+
   it("keeps loose-list continuations inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> - first\n>\n>   continuation with **style**\n> - second"} />,
@@ -6152,6 +8240,24 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       "<ul><li><p>first</p><p>continuation with <strong>style</strong></p></li><li><p>second</p></li></ul>",
     );
+    expect(html).not.toContain("</ul><p>  continuation");
+    expect(html).not.toContain("<p>- second</p>");
+  });
+
+  it("renders blockquote loose-list continuations through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "before\n\n> - first\n>\n>   continuation with **style**\n> - second\n\nafter"
+        }
+      />,
+    );
+
+    expect(html).toContain("<p>before</p><blockquote>");
+    expect(html).toContain(
+      "<ul><li><p>first</p><p>continuation with <strong>style</strong></p></li><li><p>second</p></li></ul>",
+    );
+    expect(html).toContain("</blockquote><p>after</p>");
     expect(html).not.toContain("</ul><p>  continuation");
     expect(html).not.toContain("<p>- second</p>");
   });
@@ -6172,11 +8278,36 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>Secondary<br/>---");
   });
 
+  it("renders blockquote setext headings through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> Primary **Heading**\n> ===\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<h1 id="primary-heading">Primary <strong>Heading</strong><a class="head-anchor" href="#primary-heading">#</a></h1>',
+    );
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<p>Primary");
+  });
+
   it("parses indented code blocks inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={">     const value = 1;"} />);
 
     expect(html).toContain("<blockquote>");
     expect(html).toContain("<pre><code>const value = 1;</code></pre>");
+    expect(html).not.toContain("<p>    const value = 1;");
+  });
+
+  it("renders blockquote indented code through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n>     const value = 1;\n\nafter"} />,
+    );
+
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<blockquote><pre><code>const value = 1;</code></pre></blockquote>");
+    expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<p>    const value = 1;");
   });
 
@@ -6206,12 +8337,16 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>before<br/><br/>---");
   });
 
-  it("splits blank-line paragraphs inside blockquotes like legacy marked", () => {
-    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"> first\n>\n> second"} />);
+  it("renders blank-line blockquote paragraphs through the ReactMarkdown document path", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"before\n\n> first\n>\n> second with **style**\n\nafter"} />,
+    );
 
+    expect(html).toContain("<p>before</p>");
     expect(html).toContain("<blockquote>");
     expect(html).toContain("<p>first</p>");
-    expect(html).toContain("<p>second</p>");
-    expect(html).not.toContain("<p>first<br/><br/>second</p>");
+    expect(html).toContain("<p>second with <strong>style</strong></p>");
+    expect(html).toContain("</blockquote><p>after</p>");
+    expect(html).not.toContain("<p>first<br/><br/>second");
   });
 });

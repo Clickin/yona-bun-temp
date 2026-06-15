@@ -14,6 +14,7 @@ import { apiQueryKeys } from "../../../../../api/query-keys";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { ProjectBoardDetailPage } from "../../../../-board-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   navigateToAppHref,
@@ -30,7 +31,10 @@ function BoardDetailRouteComponent() {
   const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
     useAppRuntime();
   const queryClient = useQueryClient();
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const routeHref = `/${owner}/${projectName}/post/${postNumber}`;
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const isEditFormRoute = window.location.pathname.endsWith("/editform");
   const postQueryOptions = readProjectPostQueryOptions(runtimeConfig, {
     ownerName: owner,
@@ -42,7 +46,7 @@ function BoardDetailRouteComponent() {
     enabled: !bootstrapping,
   });
 
-  useDocumentTitle(postQuery.data?.title ?? "Board");
+  useDocumentTitle(postQuery.data?.title ?? "menu.board");
 
   React.useEffect(() => {
     if (!postQuery.error) {
@@ -53,30 +57,31 @@ function BoardDetailRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      postQuery.error instanceof Error ? postQuery.error.message : "Read post failed.",
-    );
-  }, [postQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [postQuery.error]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={`/${owner}/${projectName}/post/${postNumber}`} />;
+    return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href={`/${owner}/${projectName}/post/${postNumber}`} />;
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
   if (isEditFormRoute) {
     return <Outlet />;
   }
 
-  const reportMutationError = (error: unknown, fallback: string) => {
-    setErrorMessage(error instanceof Error ? error.message : fallback);
+  const reportMutationError = (error: unknown) => {
+    setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
   };
 
   return (
@@ -96,7 +101,7 @@ function BoardDetailRouteComponent() {
           queryClient.setQueryData(postQueryOptions.queryKey, nextPost);
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
         } catch (error) {
-          reportMutationError(error, "Delete board comment failed.");
+          reportMutationError(error);
         }
       }}
       onCommentSubmit={async (contentsMarkdown, attachmentIds, parentCommentId) => {
@@ -112,7 +117,7 @@ function BoardDetailRouteComponent() {
           queryClient.setQueryData(postQueryOptions.queryKey, nextPost);
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
         } catch (error) {
-          reportMutationError(error, "Create board comment failed.");
+          reportMutationError(error);
         }
       }}
       onCommentUpdate={async (commentId, contentsMarkdown, attachmentIds) => {
@@ -128,7 +133,7 @@ function BoardDetailRouteComponent() {
           queryClient.setQueryData(postQueryOptions.queryKey, nextPost);
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
         } catch (error) {
-          reportMutationError(error, "Update board comment failed.");
+          reportMutationError(error);
         }
       }}
       onDeletePost={async () => {
@@ -141,7 +146,7 @@ function BoardDetailRouteComponent() {
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
           navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/posts`);
         } catch (error) {
-          reportMutationError(error, "Delete board post failed.");
+          reportMutationError(error);
         }
       }}
       onWatchToggle={async () => {
@@ -155,7 +160,7 @@ function BoardDetailRouteComponent() {
           queryClient.setQueryData(postQueryOptions.queryKey, nextPost);
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
         } catch (error) {
-          reportMutationError(error, "Update board watch failed.");
+          reportMutationError(error);
         }
       }}
     />

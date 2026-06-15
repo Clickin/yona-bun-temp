@@ -18,9 +18,14 @@ import type {
 } from "../api/pull-requests";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
-import { LegacyMarkdownEditorShell, LegacyMarkdownHelp, MarkdownRenderer } from "./-markdown-renderer";
-import { buildOrganizationHref, OrganizationMenu } from "./-organization-views";
-import { buildProjectHref, ProjectMenu } from "./-project-views";
+import {
+  addLegacyTasklistTemplateFromButton,
+  LegacyMarkdownEditorShell,
+  LegacyMarkdownHelp,
+  MarkdownRenderer,
+} from "./-markdown-renderer";
+import { buildOrganizationHref, OrganizationHeader, OrganizationMenu } from "./-organization-views";
+import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
 
 function fallbackProjectDetail(): ProjectDetailViewModel {
@@ -32,6 +37,7 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
     ownerName: "",
     projectName: "",
     projectScope: "public",
+    showCode: true,
     viewerCanEnroll: false,
     viewerCanUpdate: false,
   };
@@ -609,7 +615,7 @@ function PullRequestListRows(props: {
           item.projectName,
           item.pullRequestNumber,
         );
-        const contributorLabel =
+        const contributorAvatarLabel =
           item.contributorLabel || item.contributorLoginId || "issue.noAuthor";
         const receiverLabel = item.receiverLabel || item.receiverLoginId;
         const progressWidth =
@@ -639,7 +645,7 @@ function PullRequestListRows(props: {
                 )}`}
                 title={item.contributorLoginId}
               >
-                <span className="avatar-img">{contributorLabel}</span>
+                <span className="avatar-img">{contributorAvatarLabel}</span>
               </a>
               <div className="title-wrap">
                 <span className="post-id">{item.pullRequestNumber}</span>
@@ -648,7 +654,7 @@ function PullRequestListRows(props: {
                 </a>
               </div>
               <div className="infos">
-                {item.contributorLoginId ? (
+                {item.contributorLoginId && item.contributorLabel ? (
                   <a
                     className="infos-item infos-link-item"
                     data-placement="top"
@@ -658,7 +664,7 @@ function PullRequestListRows(props: {
                     )}`}
                     title={item.contributorLoginId}
                   >
-                    {contributorLabel}
+                    {item.contributorLabel}
                   </a>
                 ) : (
                   <span className="infos-item">issue.noAuthor</span>
@@ -901,9 +907,11 @@ export function ProjectPullRequestListPage(props: {
   const list = props.list;
 
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="row-fluid cb" pjax-container="">
           <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
             <ProjectPullRequestSearchForm
@@ -956,6 +964,7 @@ export function ProjectPullRequestListPage(props: {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </main>
@@ -1033,10 +1042,12 @@ export function OrganizationPullRequestListPage(props: {
   ];
 
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
+    <main className="app-shell pull-request-page">
+      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <OrganizationMenu active="pullrequests" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
-        <div className="row-fluid cb" pjax-container="">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="row-fluid cb" pjax-container="">
           <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
             <OrganizationPullRequestSearchForm
               category={props.category}
@@ -1110,6 +1121,7 @@ export function OrganizationPullRequestListPage(props: {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
     </main>
@@ -1179,9 +1191,11 @@ export function ProjectPullRequestFormPage(props: {
   );
 
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
-      <div className="project-page-wrap">
-        <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="content-wrap frm-wrap">
           <section className="pull-request-wrap">
             <header className="board-header issue">
@@ -1406,6 +1420,7 @@ export function ProjectPullRequestFormPage(props: {
               </div>
             </form>
           </section>
+        </div>
         </div>
       </div>
     </main>
@@ -1878,7 +1893,11 @@ function pullRequestEventStateClass(event: PullRequestEvent) {
   ) {
     return "changed";
   }
-  return newValue.trim() || eventType.trim().toLowerCase() || "changed";
+  return legacyPullRequestEventState(newValue) || eventType.trim().toLowerCase() || "changed";
+}
+
+function legacyPullRequestEventState(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function pullRequestEventStateLabel(event: PullRequestEvent) {
@@ -1892,7 +1911,7 @@ function pullRequestEventStateLabel(event: PullRequestEvent) {
   if (eventType === "PULL_REQUEST_COMMIT_CHANGED") {
     return "pullRequest.event.commit";
   }
-  const state = newValue.trim();
+  const state = legacyPullRequestEventState(newValue);
   return state ? `pullRequest.event.${state}` : eventType;
 }
 
@@ -1907,7 +1926,7 @@ function pullRequestEventMessage(event: PullRequestEvent) {
   if (eventType === "PULL_REQUEST_COMMIT_CHANGED") {
     return "pullRequest.event.message.commit";
   }
-  const state = newValue.trim();
+  const state = legacyPullRequestEventState(newValue);
   return state ? `pullRequest.event.message.${state}` : eventType;
 }
 
@@ -1954,7 +1973,7 @@ function PullRequestEventTimeline(props: {
                 href={`${props.runtimeConfig.basePath}/${encodeURIComponent(event.senderLoginId)}`}
                 title={event.senderLoginId}
               >
-                <strong>{event.senderLoginId || "Anonymous"}</strong>
+                <strong>{event.senderLoginId || "User.anonymous.name"}</strong>
               </a>
               <span>{` ${pullRequestEventMessage(event)}`}</span>
               {pullRequestEventHasMergedCommit(event) && mergedCommitId ? (
@@ -2063,9 +2082,11 @@ export function ProjectPullRequestDetailPage(props: {
   const pr = props.pullRequest;
 
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
-      <div className="project-page-wrap">
-        <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         {pr ? (
           <>
             <div className="board-header issue">
@@ -2189,8 +2210,9 @@ export function ProjectPullRequestDetailPage(props: {
             </div>
           </>
         ) : (
-          <div className="warning-none">Loading&hellip;</div>
+          <div className="warning-none"></div>
         )}
+        </div>
       </div>
     </main>
   );
@@ -2534,6 +2556,7 @@ function ReviewThreadItem(props: {
                       <div className="task-list-button">
                         <button
                           className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+                          onClick={(event) => addLegacyTasklistTemplateFromButton(event.currentTarget)}
                           type="button"
                         >
                           <i className="yobicon-list task-list-icon"></i> button.add.checklist
@@ -3121,9 +3144,11 @@ export function PullRequestChangesPage(props: {
     props.changes?.nonRangedThreads ??
     threads.filter((thread) => !thread.path);
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
-      <div className="project-page-wrap">
-        <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="code-browse-wrap">
           {pr ? (
             <>
@@ -3326,6 +3351,7 @@ export function PullRequestChangesPage(props: {
             />
           </section>
         </div>
+        </div>
       </div>
     </main>
   );
@@ -3375,7 +3401,7 @@ function ProjectReviewListRows(props: {
     <ul className="post-list-wrap">
       {props.threads.map((thread) => {
         const firstComment = thread.comments[0];
-        const authorLabel = thread.authorLabel || thread.authorLoginId || "issue.noAuthor";
+        const authorAvatarLabel = thread.authorLabel || thread.authorLoginId || "issue.noAuthor";
         const replyCount = Math.max(thread.comments.length - 1, 0);
         const threadHref = projectReviewThreadHref(props.runtimeConfig, props.detail, thread);
         return (
@@ -3387,7 +3413,7 @@ function ProjectReviewListRows(props: {
               href={`${props.runtimeConfig.basePath}/${encodeURIComponent(thread.authorLoginId)}`}
               title={thread.authorLoginId}
             >
-              <img alt={authorLabel} height={32} src={thread.authorAvatarUrl} width={32} />
+              <img alt={authorAvatarLabel} height={32} src={thread.authorAvatarUrl} width={32} />
             </a>
             <div className="title-wrap">
               <span className="post-id">{thread.id}</span>
@@ -3396,7 +3422,7 @@ function ProjectReviewListRows(props: {
               </a>
             </div>
             <div className="infos">
-              {thread.authorLoginId ? (
+              {thread.authorLoginId && thread.authorLabel ? (
                 <a
                   className="infos-item infos-link-item"
                   data-placement="top"
@@ -3404,7 +3430,7 @@ function ProjectReviewListRows(props: {
                   href={`${props.runtimeConfig.basePath}/${encodeURIComponent(thread.authorLoginId)}`}
                   title={thread.authorLoginId}
                 >
-                  {authorLabel}
+                  {thread.authorLabel}
                 </a>
               ) : (
                 <span className="infos-item">issue.noAuthor</span>
@@ -3467,9 +3493,11 @@ export function ProjectReviewsPage(props: {
   const reviewsHref = (query: string) =>
     buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, `reviews?${query}`);
   return (
-    <main className="app-shell pull-request-page page-wrap-outer">
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
         <div className="row-fluid issue-list-wrap">
           <div className="span2 search-wrap span-hard-wrap">
             <div className="inner advanced">
@@ -3624,6 +3652,7 @@ export function ProjectReviewsPage(props: {
               runtimeConfig={props.runtimeConfig}
             />
           </div>
+        </div>
         </div>
       </div>
     </main>

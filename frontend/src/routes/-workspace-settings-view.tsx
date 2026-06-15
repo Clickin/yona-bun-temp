@@ -22,6 +22,9 @@ export interface AvatarCropSelection {
   y: number;
 }
 
+export const WORKSPACE_AVATAR_ONLY_IMAGE_MESSAGE = "user.avatar.onlyImage";
+export const WORKSPACE_AVATAR_UPLOAD_ERROR_MESSAGE = "user.avatar.uploadError";
+
 const WORKSPACE_SETTINGS_TABS: Array<{
   href: string;
   label: string;
@@ -88,7 +91,7 @@ export function drawAvatarCropToCanvas(
 ) {
   const context = canvas.getContext("2d");
   if (!context) {
-    throw new Error("Canvas 2D context is not available.");
+    throw new Error(WORKSPACE_AVATAR_UPLOAD_ERROR_MESSAGE);
   }
 
   const imageWidth = image.naturalWidth || canvas.width;
@@ -113,12 +116,16 @@ function blobFromCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
-        reject(new Error("Avatar crop failed."));
+        reject(new Error(WORKSPACE_AVATAR_UPLOAD_ERROR_MESSAGE));
         return;
       }
       resolve(blob);
     }, "image/png");
   });
+}
+
+export function workspaceAvatarUploadErrorForMimeType(fileType: string): string | null {
+  return fileType.startsWith("image/") ? null : WORKSPACE_AVATAR_ONLY_IMAGE_MESSAGE;
 }
 
 export function buildProfileUpdateInput(
@@ -223,8 +230,9 @@ export function WorkspaceSettingsPage(props: {
     if (!file) {
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      setAvatarErrorMessage("Only image files are allowed to be uploaded.");
+    const avatarUploadError = workspaceAvatarUploadErrorForMimeType(file.type);
+    if (avatarUploadError) {
+      setAvatarErrorMessage(avatarUploadError);
       return;
     }
 
@@ -261,7 +269,11 @@ export function WorkspaceSettingsPage(props: {
       setAvatarPreviewUrl(URL.createObjectURL(blob));
       closeCropModal();
     } catch (error) {
-      setAvatarErrorMessage(error instanceof Error ? error.message : "Avatar upload failed.");
+      setAvatarErrorMessage(
+        error instanceof Error && error.message
+          ? error.message
+          : WORKSPACE_AVATAR_UPLOAD_ERROR_MESSAGE,
+      );
     } finally {
       setUploadingAvatar(false);
     }
@@ -372,11 +384,20 @@ export function WorkspaceSettingsPage(props: {
           >
             <div className="modal-header center-txt">
               <div className="avatar-wrap xlarge">
-                <img alt="" src={cropSourceUrl} style={cropPreviewStyle} />
+                <img
+                  alt=""
+                  src={isCropModalOpen ? cropSourceUrl : undefined}
+                  style={cropPreviewStyle}
+                />
               </div>
             </div>
             <div className="modal-body">
-              <img alt="" ref={cropImageRef} src={cropSourceUrl} style={{ maxWidth: "500px" }} />
+              <img
+                alt=""
+                ref={cropImageRef}
+                src={isCropModalOpen ? cropSourceUrl : undefined}
+                style={{ maxWidth: "500px" }}
+              />
               <label className="hide">
                 <input
                   aria-label="crop-x"

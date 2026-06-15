@@ -5,6 +5,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
 import { OrganizationDeletePage } from "../../../-organization-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   navigateToAppHref,
@@ -24,7 +25,9 @@ function OrganizationDeleteRouteComponent() {
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
     null,
   );
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -47,7 +50,7 @@ function OrganizationDeleteRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read organization admin failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
@@ -58,7 +61,7 @@ function OrganizationDeleteRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -67,6 +70,9 @@ function OrganizationDeleteRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (
@@ -78,7 +84,7 @@ function OrganizationDeleteRouteComponent() {
           const result = await deleteOrganization(runtimeConfig, csrfToken, nextOrganizationName);
           navigateToAppHref(runtimeConfig.basePath, result.redirectPath || "/");
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Delete organization failed.");
+          setErrorMessage(error instanceof Error ? error.message : "organization.delete.error");
         }
       }}
     />

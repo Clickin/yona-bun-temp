@@ -28,6 +28,7 @@ import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView, toProjectIssueDetailView } from "../../../../../app-view-models";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -48,9 +49,11 @@ function IssueDetailRouteComponent() {
   const [issue, setIssue] = React.useState<ReturnType<typeof toProjectIssueDetailView> | null>(
     null,
   );
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle(issue?.title ?? "Issue");
+  useDocumentTitle(issue?.title ?? "title.issueDetail");
 
   const loadIssue = React.useCallback(() => {
     let cancelled = false;
@@ -74,20 +77,20 @@ function IssueDetailRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read issue detail failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [issueNumber, owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [issueNumber, owner, projectName, runtimeConfig]);
 
   React.useEffect(() => loadIssue(), [loadIssue]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -96,6 +99,9 @@ function IssueDetailRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

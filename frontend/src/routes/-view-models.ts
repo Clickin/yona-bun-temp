@@ -33,6 +33,7 @@ export interface WorkspaceOverviewViewModel {
     displayName: string;
     englishName: string;
     isBlocked: boolean;
+    isGuest?: boolean;
     isSiteAdmin: boolean;
     loginId: string;
     primaryEmailAddress: string;
@@ -380,6 +381,7 @@ export interface ProjectIssueDetailViewModel {
   bodyHtml: string;
   bodyMarkdown: string;
   commentCount: number;
+  createdLabel: string;
   dueDateLabel: string;
   comments: Array<{
     authorAvatarUrl: string;
@@ -518,11 +520,15 @@ export interface AuthUiCapabilitiesViewModel {
 
 export interface ProjectDirectoryViewModel {
   items: Array<{
+    createdLabel: string;
+    lastPushedLabel: string;
     logoUrl: string;
+    memberCount: number;
     ownerName: string;
     overview: string;
     projectName: string;
     projectScope: string;
+    watchCount: number;
   }>;
 }
 

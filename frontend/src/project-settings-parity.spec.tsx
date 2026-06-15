@@ -34,6 +34,12 @@ describe("project settings parity", () => {
     );
 
     expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/admin">admin</a>');
+    expect(html).toContain('<a href="/yona/admin/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="saveSetting"');
     expect(html).toContain('class="bubble-wrap gray"');

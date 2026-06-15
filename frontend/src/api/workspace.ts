@@ -46,6 +46,10 @@ export type WorkspaceFilesResponse = {
   totalPages: number;
 };
 
+type WorkspaceProfileWithGuest = NonNullable<ReadWorkspaceOverviewResponse["profile"]> & {
+  isGuest?: boolean;
+};
+
 function normalizeWorkspaceOverview(
   response: ReadWorkspaceOverviewResponse,
 ): ReadWorkspaceOverviewResponse {
@@ -63,11 +67,12 @@ function normalizeWorkspaceOverview(
           displayName: response.profile.displayName ?? "",
           englishName: response.profile.englishName ?? "",
           isBlocked: response.profile.isBlocked ?? false,
+          isGuest: (response.profile as WorkspaceProfileWithGuest).isGuest ?? false,
           isSiteAdmin: response.profile.isSiteAdmin ?? false,
           loginId: response.profile.loginId ?? "",
           primaryEmailAddress: response.profile.primaryEmailAddress ?? "",
           sinceLabel: response.profile.sinceLabel ?? "",
-        }
+        } as NonNullable<ReadWorkspaceOverviewResponse["profile"]>
       : undefined,
     pullRequestItems: response.pullRequestItems ?? [],
     recentProjects: response.recentProjects ?? [],

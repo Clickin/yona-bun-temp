@@ -15,6 +15,9 @@ function toWorkspaceOverview(
   session: Awaited<ReturnType<typeof readCurrentSession>>,
   overview: Awaited<ReturnType<typeof readWorkspaceOverview>>,
 ): WorkspaceOverviewViewModel {
+  const profile = overview.profile as
+    | (typeof overview.profile & { isGuest?: boolean })
+    | undefined;
   return {
     apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
@@ -49,17 +52,18 @@ function toWorkspaceOverview(
       projectScope: project.projectScope,
       watchCount: project.watchCount,
     })),
-    profile: overview.profile
+    profile: profile
       ? {
-          avatarUrl: overview.profile.avatarUrl,
-          connectedSocialProviders: [...overview.profile.connectedSocialProviders],
-          displayName: overview.profile.displayName,
-          englishName: overview.profile.englishName,
-          isBlocked: overview.profile.isBlocked,
-          isSiteAdmin: overview.profile.isSiteAdmin,
-          loginId: overview.profile.loginId,
-          primaryEmailAddress: overview.profile.primaryEmailAddress,
-          sinceLabel: overview.profile.sinceLabel,
+          avatarUrl: profile.avatarUrl,
+          connectedSocialProviders: [...profile.connectedSocialProviders],
+          displayName: profile.displayName,
+          englishName: profile.englishName,
+          isBlocked: profile.isBlocked,
+          isGuest: profile.isGuest,
+          isSiteAdmin: profile.isSiteAdmin,
+          loginId: profile.loginId,
+          primaryEmailAddress: profile.primaryEmailAddress,
+          sinceLabel: profile.sinceLabel,
         }
       : undefined,
     pullRequestItems: overview.pullRequestItems.map((item) => ({
@@ -211,7 +215,7 @@ export function AppRuntimeProvider({
         }
       } catch (error) {
         if (!cancelled) {
-          setErrorMessage(error instanceof Error ? error.message : "Auth bootstrap failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.internalServerError");
         }
       }
     })();

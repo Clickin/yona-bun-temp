@@ -91,11 +91,18 @@ export function ProjectDirectoryPage({
                 {visibleProjects.map((project) => (
                   <li className="project" key={`${project.ownerName}/${project.projectName}`}>
                     <div className="info-wrap">
-                      {project.logoUrl ? (
-                        <div className="project-avatar">
-                          <img alt="" src={project.logoUrl} />
-                        </div>
-                      ) : null}
+                      <div className="owner-avatar-wrap">
+                        <a
+                          href={appHref(
+                            runtimeConfig,
+                            `/${project.ownerName}/${project.projectName}`,
+                          )}
+                        >
+                          {project.logoUrl ? (
+                            <img alt={project.projectName} src={project.logoUrl} />
+                          ) : null}
+                        </a>
+                      </div>
                       <div className="project-main-copy">
                         <div className="header">
                           <a
@@ -107,11 +114,46 @@ export function ProjectDirectoryPage({
                           >
                             {project.projectName}
                           </a>
+                          {project.projectScope === "private" ? (
+                            <i className="yobicon-lock yobicon-small" />
+                          ) : null}
                         </div>
                         <div className="desc">{project.overview}</div>
-                        <p className="name-tag">by {project.ownerName}</p>
+                        <p className="name-tag">
+                          by{" "}
+                          <a
+                            className="owner-name-small"
+                            href={appHref(runtimeConfig, `/${project.ownerName}`)}
+                          >
+                            {project.ownerName}
+                          </a>{" "}
+                          {project.createdLabel ? (
+                            <>
+                              at{" "}
+                              <strong title={project.createdLabel}>{project.createdLabel}</strong>{" "}
+                            </>
+                          ) : null}
+                          {project.lastPushedLabel ? (
+                            <span className="small-font">
+                              , project.codeUpdate <strong>{project.lastPushedLabel}</strong>
+                            </span>
+                          ) : null}
+                        </p>
                       </div>
                     </div>
+                    {project.projectScope === "public" ? (
+                      <div className="stats-wrap pull-right">
+                        <div className="members">
+                          <ul className="unstyled" />
+                          <p>
+                            <i className="yobicon-friends yobicon-middle" />
+                            <strong>{project.memberCount}</strong>{" "}
+                            <i className="yobicon-eye yobicon-middle" />{" "}
+                            <strong>{project.watchCount}</strong>
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -201,11 +243,18 @@ export function OrganizationDirectoryPage({
                 {visibleOrganizations.map((organization) => (
                   <li className="project" key={organization.organizationName}>
                     <div className="info-wrap">
-                      {organization.logoUrl ? (
-                        <div className="project-avatar">
-                          <img alt="" src={organization.logoUrl} />
-                        </div>
-                      ) : null}
+                      <div className="owner-avatar-wrap">
+                        <a
+                          href={appHref(
+                            runtimeConfig,
+                            `/organizations/${organization.organizationName}`,
+                          )}
+                        >
+                          {organization.logoUrl ? (
+                            <img alt={organization.organizationName} src={organization.logoUrl} />
+                          ) : null}
+                        </a>
+                      </div>
                       <div className="project-main-copy">
                         <div className="header">
                           <a

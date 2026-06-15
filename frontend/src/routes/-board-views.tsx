@@ -10,8 +10,46 @@ import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attac
 import { translateLegacyResource } from "../api/translation";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
-import { buildProjectHref, ProjectMenu } from "./-project-views";
-import type { ProjectDetailViewModel } from "./-view-models";
+import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
+import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
+import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
+
+function boardProjectShellDetail(input: {
+  ownerName: string;
+  projectName: string;
+  viewerCanUpdate?: boolean;
+}): ProjectDetailViewModel {
+  return {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: input.ownerName,
+    projectName: input.projectName,
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: Boolean(input.viewerCanUpdate),
+  };
+}
+
+function LegacyTwoColumnModeCheckboxArea() {
+  return (
+    <div
+      className="two-column-icon mr10 hide-in-mobile"
+      data-content="common.two.column.mode.desc"
+      id="two-column-mode-checkbox"
+      title="common.two.column.mode"
+    >
+      <label className="checkbox" aria-label="common.two.column.view">
+        <div className="two-column-icon-border">
+          <input id="two-column-mode" type="checkbox" />
+          <span className="two-column-mode-text">common.two.column.view</span>
+        </div>
+      </label>
+    </div>
+  );
+}
 
 function projectPostHref(
   runtimeConfig: RuntimeConfig,
@@ -87,8 +125,13 @@ function PostingHistoryModal(props: {
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button className="close" data-dismiss="modal" type="button">
-            x
+          <button
+            aria-label="button.close"
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
+            ×
           </button>
           <h5 className="nm">change.history</h5>
         </div>
@@ -464,22 +507,26 @@ function PostRows(props: {
               </a>
             ) : null}
             {props.showProject ? <span className="post-id">#{post.postNumber}</span> : null}
-            <a
-              className="infos-item infos-link-item"
-              data-placement="bottom"
-              data-toggle="tooltip"
-              href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
-              title={post.authorLoginId}
-            >
-              {post.authorLabel || post.authorLoginId || "issue.noAuthor"}
-            </a>
+            {post.authorLoginId && post.authorLabel ? (
+              <a
+                className="infos-item infos-link-item"
+                data-placement="bottom"
+                data-toggle="tooltip"
+                href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
+                title={post.authorLoginId}
+              >
+                {post.authorLabel}
+              </a>
+            ) : (
+              <span className="infos-item">issue.noAuthor</span>
+            )}
             <span
               className="infos-item"
               data-placement="bottom"
               data-toggle="tooltip"
               title={post.createdLabel}
             >
-              {post.updatedLabel || post.createdLabel}
+              {post.createdLabel}
             </span>
             {post.commentCount > 0 ? (
               <span className="infos-item item-count-groups">
@@ -533,107 +580,121 @@ export function ProjectBoardListPage(props: {
   const detail = props.detail;
   const ownerName = props.posts?.ownerName || detail?.ownerName || "";
   const projectName = props.posts?.projectName || detail?.projectName || "";
+  const shellDetail =
+    detail ??
+    (ownerName && projectName
+      ? boardProjectShellDetail({ ownerName, projectName, viewerCanUpdate: props.canCreate })
+      : null);
 
   const totalRows = (props.posts?.items.length ?? 0) + (props.posts?.notices.length ?? 0);
 
   return (
-    <main className="app-shell board-page page-wrap-outer">
-      {detail ? <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} /> : null}
-      <div className="post-list project-page-wrap">
-        <div className="search-wrap underline board-toolbar">
-          <form
-            action={prefixBasePath(
-              props.runtimeConfig.basePath,
-              `/${ownerName}/${projectName}/posts`,
-            )}
-            className="pull-left"
-            id="option_form"
-            method="get"
-          >
-            <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
-            <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
-            <div className="search-bar">
-              <input
-                className="textbox"
-                defaultValue={props.filter}
-                name="filter"
-                placeholder="project.searchPlaceholder"
-                type="text"
-              />
-              <button className="search-btn" type="submit">
-                <i className="yobicon-search" />
-              </button>
-            </div>
-            {props.labels.length ? (
-              <div className="board-labels">
-                <select aria-label="Labels" defaultValue={props.labelIds} multiple name="labelIds[]">
-                  {props.labels.map((label) => (
-                    <option key={label.id} value={label.id}>
-                      {label.name}
-                    </option>
-                  ))}
-                </select>
+    <main className="app-shell board-page">
+      {shellDetail ? <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} /> : null}
+      {shellDetail ? <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} /> : null}
+      <div className="page-wrap-outer">
+        <div className="post-list project-page-wrap">
+          <div className="search-wrap underline board-toolbar">
+            <form
+              action={prefixBasePath(
+                props.runtimeConfig.basePath,
+                `/${ownerName}/${projectName}/posts`,
+              )}
+              className="pull-left"
+              id="option_form"
+              method="get"
+            >
+              <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
+              <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
+              <div className="search-bar">
+                <input
+                  className="textbox"
+                  defaultValue={props.filter}
+                  name="filter"
+                  placeholder="project.searchPlaceholder"
+                  type="text"
+                />
+                <button className="search-btn" type="submit">
+                  <i className="yobicon-search" />
+                </button>
               </div>
-            ) : null}
-            <div className="two-column-mode-checkbox-area" />
-          </form>
-          <div className="pull-right">
-            {props.canCreate ? (
-              <a
-                className="ybtn ybtn-success"
-                href={prefixBasePath(
-                  props.runtimeConfig.basePath,
-                  `/${ownerName}/${projectName}/postform`,
-                )}
-              >
-                post.write
-              </a>
-            ) : null}
+              {props.labels.length ? (
+                <div className="board-labels">
+                  <select
+                    aria-label="label.select"
+                    data-placeholder="label.select"
+                    defaultValue={props.labelIds}
+                    multiple
+                    name="labelIds[]"
+                  >
+                    {props.labels.map((label) => (
+                      <option key={label.id} value={label.id}>
+                        {label.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+              <LegacyTwoColumnModeCheckboxArea />
+            </form>
+            <div className="pull-right">
+              {props.canCreate ? (
+                <a
+                  className="ybtn ybtn-success"
+                  href={prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${ownerName}/${projectName}/postform`,
+                  )}
+                >
+                  post.write
+                </a>
+              ) : null}
+            </div>
           </div>
+          {totalRows === 0 ? (
+            <div className="error-wrap">
+              <i className="ico ico-err1" />
+              <p>post.is.empty</p>
+            </div>
+          ) : (
+            <>
+              {props.posts && props.posts.totalCount > 1 ? (
+                <BoardSortLinks
+                  basePathname={`/${ownerName}/${projectName}/posts`}
+                  filter={props.filter}
+                  labelIds={props.labelIds}
+                  orderBy={props.orderBy}
+                  orderDir={props.orderDir}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+              {props.posts?.notices.length ? (
+                <PostRows
+                  className="post-list-wrap notice-wrap"
+                  items={props.posts.notices}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+              <PostRows items={props.posts?.items ?? []} runtimeConfig={props.runtimeConfig} />
+            </>
+          )}
+          <div className="write-btn-wrap" />
+          {props.posts ? (
+            <BoardPagination
+              basePathname={`/${ownerName}/${projectName}/posts`}
+              filter={props.filter}
+              labelIds={props.labelIds}
+              orderBy={props.orderBy}
+              orderDir={props.orderDir}
+              pageNum={props.posts.pageNum}
+              pageSize={props.posts.pageSize}
+              runtimeConfig={props.runtimeConfig}
+              totalCount={props.posts.totalCount}
+            />
+          ) : (
+            <div className="page-navigation-wrap" id="pagination" />
+          )}
         </div>
-        {totalRows === 0 ? (
-          <div className="error-wrap">
-            <i className="ico ico-err1" />
-            <p>post.is.empty</p>
-          </div>
-        ) : (
-          <>
-            {props.posts && props.posts.totalCount > 1 ? (
-              <BoardSortLinks
-                basePathname={`/${ownerName}/${projectName}/posts`}
-                filter={props.filter}
-                labelIds={props.labelIds}
-                orderBy={props.orderBy}
-                orderDir={props.orderDir}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : null}
-            {props.posts?.notices.length ? (
-              <PostRows
-                className="post-list-wrap notice-wrap"
-                items={props.posts.notices}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : null}
-            <PostRows items={props.posts?.items ?? []} runtimeConfig={props.runtimeConfig} />
-          </>
-        )}
-        <div className="write-btn-wrap" />
-        {props.posts ? (
-          <BoardPagination
-            basePathname={`/${ownerName}/${projectName}/posts`}
-            filter={props.filter}
-            labelIds={props.labelIds}
-            orderBy={props.orderBy}
-            orderDir={props.orderDir}
-            pageNum={props.posts.pageNum}
-            pageSize={props.posts.pageSize}
-            runtimeConfig={props.runtimeConfig}
-            totalCount={props.posts.totalCount}
-          />
-        ) : (
-          <div className="page-navigation-wrap" id="pagination" />
-        )}
       </div>
     </main>
   );
@@ -679,7 +740,7 @@ export function ProjectBoardDetailPage(props: {
   if (!post) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -702,6 +763,11 @@ export function ProjectBoardDetailPage(props: {
     props.runtimeConfig.basePath,
     `/${post.ownerName}/${post.projectName}/post/${post.postNumber}/editform`,
   );
+  const shellDetail = boardProjectShellDetail({
+    ownerName: post.ownerName,
+    projectName: post.projectName,
+    viewerCanUpdate: post.permissions.canUpdate,
+  });
   const translatePost = async () => {
     if (translatingPost || translatedPostMarkdown !== null) {
       return;
@@ -757,8 +823,11 @@ export function ProjectBoardDetailPage(props: {
   };
 
   return (
-    <main className="app-shell board-page page-wrap-outer">
-      <div className="project-page-wrap board-view">
+    <main className="app-shell board-page">
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap board-view">
         <div className="board-header issue">
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={post.createdLabel}>
@@ -863,14 +932,14 @@ export function ProjectBoardDetailPage(props: {
                 </button>
                 {post.permissions.canUpdate ? (
                   <a
-                    aria-label="Edit"
+                    aria-label="button.edit"
                     className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
                     data-toggle="tooltip"
                     href={editPostHref}
                     title="button.edit"
                   >
                     <i className="yobicon-edit-2" />
-                    <span className="sr-only">Edit</span>
+                    <span className="sr-only">button.edit</span>
                   </a>
                 ) : (
                   <a href={editPostHref}>
@@ -881,7 +950,7 @@ export function ProjectBoardDetailPage(props: {
                       type="button"
                     >
                       <i className="yobicon-edit-2" />
-                      <span className="sr-only">Edit</span>
+                      <span className="sr-only">button.show.original</span>
                     </button>
                   </a>
                 )}
@@ -895,7 +964,7 @@ export function ProjectBoardDetailPage(props: {
                       type="button"
                     >
                       <i className="yobicon-trash" />
-                      <span className="sr-only">Delete</span>
+                      <span className="sr-only">button.delete</span>
                     </button>
                   </a>
                 ) : null}
@@ -1003,7 +1072,7 @@ export function ProjectBoardDetailPage(props: {
                                 </button>
                                 {canEdit ? (
                                   <button
-                                    aria-label="Edit"
+                                    aria-label="common.comment.edit"
                                     className="btn-transparent ml10"
                                     data-comment-id={comment.id}
                                     data-toggle="comment-edit"
@@ -1016,12 +1085,12 @@ export function ProjectBoardDetailPage(props: {
                                     type="button"
                                   >
                                     <i className="yobicon-edit-2" />
-                                    <span className="sr-only">Edit</span>
+                                    <span className="sr-only">common.comment.edit</span>
                                   </button>
                                 ) : null}
                                 {canDelete ? (
                                   <button
-                                    aria-label="Delete"
+                                    aria-label="common.comment.delete"
                                     className="btn-transparent ml6 danger"
                                     data-request-uri={commentAction}
                                     data-toggle="comment-delete"
@@ -1030,7 +1099,7 @@ export function ProjectBoardDetailPage(props: {
                                     type="button"
                                   >
                                     <i className="yobicon-trash" />
-                                    <span className="sr-only">Delete</span>
+                                    <span className="sr-only">common.comment.delete</span>
                                   </button>
                                 ) : null}
                               </span>
@@ -1071,7 +1140,7 @@ export function ProjectBoardDetailPage(props: {
                                       previewId={`preview-${comment.id}`}
                                     >
                                       <BoardMarkdownTextarea
-                                        ariaLabel="Edit comment"
+                                        ariaLabel="common.comment.edit"
                                         className="editorSeries content comment nm"
                                         csrfToken={props.csrfToken}
                                         dataEditorMode="update-comment-body"
@@ -1372,7 +1441,9 @@ export function ProjectBoardDetailPage(props: {
                     type="button"
                   >
                     <i className="yobicon-edit-2" />
-                    <span className="sr-only">Edit</span>
+                    <span className="sr-only">
+                      {post.permissions.canUpdate ? "button.edit" : "button.show.original"}
+                    </span>
                   </button>
                 </a>
                 {post.permissions.canDelete ? (
@@ -1385,7 +1456,7 @@ export function ProjectBoardDetailPage(props: {
                       type="button"
                     >
                       <i className="yobicon-trash" />
-                      <span className="sr-only">Delete</span>
+                      <span className="sr-only">button.delete</span>
                     </button>
                   </a>
                 ) : null}
@@ -1393,7 +1464,8 @@ export function ProjectBoardDetailPage(props: {
             </div>
           </div>
         </div>
-        <div className="board-footer" />
+          <div className="board-footer" />
+        </div>
       </div>
     </main>
   );
@@ -1458,32 +1530,40 @@ export function ProjectPostFormPage(props: {
           `/${props.ownerName}/${props.projectName}/post/${props.initialPost.postNumber}`,
         )
       : prefixBasePath(props.runtimeConfig.basePath, `/${props.ownerName}/${props.projectName}/post`);
+  const shellDetail = boardProjectShellDetail({
+    ownerName: props.ownerName,
+    projectName: props.projectName,
+    viewerCanUpdate: props.mode === "edit" ? props.initialPost?.permissions.canUpdate : true,
+  });
   const titlePlaceholder = isOnlineCommit ? "code.commitMsg" : "title";
   const textareaTabIndex = props.mode === "create" ? 3 : 2;
 
   return (
-    <main className="app-shell board-page page-wrap-outer">
-      <h1 className="sr-only">{props.mode === "create" ? "New post" : "Edit post"}</h1>
-      <div className="project-page-wrap">
-      <form
-        action={formAction}
-        className="nm board-form"
-        encType="multipart/form-data"
-        method="post"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void props.onSubmit({
-            attachmentIds,
-            bodyMarkdown,
-            labelIds: [...selectedLabelIds],
-            newFileName,
-            notice,
-            readme,
-            title,
-          });
-        }}
-      >
-        <div className="content-wrap frm-wrap">
+    <main className="app-shell board-page">
+      <h1 className="sr-only">{props.mode === "create" ? "post.write" : "post.modify"}</h1>
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+        <form
+          action={formAction}
+          className="nm board-form"
+          encType="multipart/form-data"
+          method="post"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void props.onSubmit({
+              attachmentIds,
+              bodyMarkdown,
+              labelIds: [...selectedLabelIds],
+              newFileName,
+              notice,
+              readme,
+              title,
+            });
+          }}
+        >
+          <div className="content-wrap frm-wrap">
           <dl>
             {props.mode === "edit" ? (
               <dt>
@@ -1561,7 +1641,7 @@ export function ProjectPostFormPage(props: {
           </dl>
           {props.labels.length && !isOnlineCommit ? (
             <fieldset className="board-label-picker">
-              <legend>Labels</legend>
+              <legend>label</legend>
               {props.labels.map((label) => (
                 <label key={label.id}>
                   <input
@@ -1663,8 +1743,9 @@ export function ProjectPostFormPage(props: {
               button.cancel
             </a>
           </div>
+          </div>
+        </form>
         </div>
-      </form>
       </div>
     </main>
   );
@@ -1672,6 +1753,7 @@ export function ProjectPostFormPage(props: {
 
 export function OrganizationBoardListPage(props: {
   boards: OrganizationBoardsResponse | null | undefined;
+  detail?: OrganizationDetailViewModel | null;
   filter: string;
   organizationName: string;
   orderBy: string;
@@ -1684,17 +1766,25 @@ export function OrganizationBoardListPage(props: {
     `/organizations/${props.organizationName}/boards`,
   );
   const totalRows = props.boards?.items.length ?? 0;
+  const detail = props.detail ?? {
+    description: "",
+    organizationName: props.organizationName,
+    viewerCanUpdate: false,
+  };
 
   return (
-    <main className="app-shell board-page page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="search-wrap underline board-toolbar">
+    <main className="app-shell board-page">
+      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMenu active="boards" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="search-wrap underline board-toolbar">
           <form action={action} className="pull-left" id="option_form" method="get">
             <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
             <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
             <div className="project-selects span7">
               <select
-                aria-label="Projects"
+                aria-label="organization.choose.projects"
                 data-container-css-class="fullsize"
                 data-format="projects"
                 data-placeholder="organization.choose.projects"
@@ -1728,49 +1818,50 @@ export function OrganizationBoardListPage(props: {
                 <i className="yobicon-search" />
               </button>
             </div>
-            <div className="two-column-mode-checkbox-area" />
+            <LegacyTwoColumnModeCheckboxArea />
           </form>
-        </div>
-        {totalRows === 0 ? (
-          <div className="error-wrap">
-            <i className="ico ico-err1" />
-            <p>post.is.empty</p>
           </div>
-        ) : (
-          <>
-            {props.boards && props.boards.totalCount > 1 ? (
-              <BoardSortLinks
-                basePathname={`/organizations/${props.organizationName}/boards`}
-                filter={props.filter}
-                orderBy={props.orderBy}
-                orderDir={props.orderDir}
-                projectNames={props.projectNames}
+          {totalRows === 0 ? (
+            <div className="error-wrap">
+              <i className="ico ico-err1" />
+              <p>post.is.empty</p>
+            </div>
+          ) : (
+            <>
+              {props.boards && props.boards.totalCount > 1 ? (
+                <BoardSortLinks
+                  basePathname={`/organizations/${props.organizationName}/boards`}
+                  filter={props.filter}
+                  orderBy={props.orderBy}
+                  orderDir={props.orderDir}
+                  projectNames={props.projectNames}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+              <PostRows
+                items={props.boards?.items ?? []}
                 runtimeConfig={props.runtimeConfig}
+                showProject
               />
-            ) : null}
-            <PostRows
-              items={props.boards?.items ?? []}
+            </>
+          )}
+          <div className="write-btn-wrap" />
+          {props.boards ? (
+            <BoardPagination
+              basePathname={`/organizations/${props.organizationName}/boards`}
+              filter={props.filter}
+              orderBy={props.orderBy}
+              orderDir={props.orderDir}
+              pageNum={props.boards.pageNum}
+              pageSize={props.boards.pageSize}
+              projectNames={props.projectNames}
               runtimeConfig={props.runtimeConfig}
-              showProject
+              totalCount={props.boards.totalCount}
             />
-          </>
-        )}
-        <div className="write-btn-wrap" />
-        {props.boards ? (
-          <BoardPagination
-            basePathname={`/organizations/${props.organizationName}/boards`}
-            filter={props.filter}
-            orderBy={props.orderBy}
-            orderDir={props.orderDir}
-            pageNum={props.boards.pageNum}
-            pageSize={props.boards.pageSize}
-            projectNames={props.projectNames}
-            runtimeConfig={props.runtimeConfig}
-            totalCount={props.boards.totalCount}
-          />
-        ) : (
-          <div className="page-navigation-wrap" id="pagination" />
-        )}
+          ) : (
+            <div className="page-navigation-wrap" id="pagination" />
+          )}
+        </div>
       </div>
     </main>
   );

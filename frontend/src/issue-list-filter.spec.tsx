@@ -97,7 +97,14 @@ describe("project issue list filters", () => {
     );
 
     expect(html).toContain('action="/yona/admin/projectYobi/issues"');
-    expect(html).toContain('class="app-shell issue-list-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell issue-list-page"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/admin">admin</a>');
+    expect(html).toContain('<a href="/yona/admin/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');
     expect(html).toContain('class=" left-menu span2 span-hard-wrap"');
@@ -125,7 +132,19 @@ describe("project issue list filters", () => {
     expect(html).toContain('class="nav nav-tabs nm"');
     expect(html).toContain("issue.state.open");
     expect(html).toContain("issue.state.closed");
+    expect(html).toContain('class="two-column-icon mr10 hide-in-mobile"');
+    expect(html).toContain('title="common.two.column.mode"');
+    expect(html).toContain('data-content="common.two.column.mode.desc"');
+    expect(html).toContain('id="two-column-mode"');
+    expect(html).toContain('class="two-column-mode-text">common.two.column.view</span>');
     expect(html).toContain('class="show-subtasks-li"');
+    expect(html).toContain('class="show-subtasks mr10"');
+    expect(html).toContain('data-toggle="popover"');
+    expect(html).toContain('data-trigger="hover"');
+    expect(html).toContain('title="common.show.subtasks"');
+    expect(html).toContain('data-content="common.show.subtasks.desc"');
+    expect(html).toContain('id="toggle-show-subtasks"');
+    expect(html).toContain('class="show-subtasks-text">common.show.subtasks</span>');
     expect(html).toContain('class="filter-wrap board"');
     expect(html).toContain('class="ybtn small"');
     expect(html).toContain('class="yobicon-file-excel"');

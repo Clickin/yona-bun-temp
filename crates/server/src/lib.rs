@@ -2646,37 +2646,369 @@ async fn session_bootstrap(
 }
 
 async fn legacy_js_messages() -> impl IntoResponse {
-    let message_keys = [
-        "app.name",
-        "button.cancel",
-        "button.confirm",
-        "button.delete",
-        "button.login",
-        "button.save",
-        "common.comment.delete",
-        "error.forbidden",
-        "error.notfound",
-        "issue.menu.new",
-        "menu.home",
-        "project.is.empty",
-        "site.mail.sended",
-        "site.resetPasswordEmail.invalidRequest",
-        "title.help",
-        "title.login",
-        "title.logout",
-        "title.no.results",
-        "title.resetPassword",
-        "title.signup",
-        "user.login.invalid",
-        "user.login.required",
-        "user.password",
+    let messages = [
+        ("app.name", "Yona"),
+        ("button.cancel", "Cancel"),
+        ("button.confirm", "Confirm"),
+        ("button.delete", "Delete"),
+        ("button.login", "Log in"),
+        (
+            "button.commentAndNextState.closed",
+            "Comment & Close issue",
+        ),
+        (
+            "button.commentAndNextState.open",
+            "Comment & Reopen issue",
+        ),
+        ("button.nextPage", "Next page"),
+        ("button.nextState.closed", "Close issue"),
+        ("button.nextState.open", "Reopen issue"),
+        ("button.no", "No"),
+        ("button.prevPage", "Previous page"),
+        ("button.save", "Save"),
+        ("button.download", "Download a file"),
+        ("button.upload", "File upload"),
+        ("button.yes", "Yes"),
+        (
+            "common.attach.attachIfYouSave",
+            "Selected file will be attached when your comment is saved.",
+        ),
+        ("common.attach.clickToPost", "Click to post"),
+        ("common.attach.clickbutton", "Click upload button"),
+        (
+            "common.attach.dropFilesHere",
+            "Drag & Drop files here to upload.",
+        ),
+        (
+            "common.attach.drophere",
+            "Drag & Drop files to attach here or",
+        ),
+        (
+            "common.attach.error.delete",
+            "Failed to delete file. <br>{1} ({0})",
+        ),
+        (
+            "common.attach.error.upload",
+            "Failed to upload. <br>{1} ({0})",
+        ),
+        ("common.attach.pastehere", "Paste the clipboard image"),
+        ("common.attachment", "Attachment"),
+        ("common.comment.delete", "Delete comment"),
+        (
+            "common.comment.beforeunload.confirm",
+            " Would you like to exit this page without submitting comment?",
+        ),
+        ("code.closeCommentBox", "Close comment box"),
+        ("code.copyUrl.copied", "URL is copied"),
+        ("code.isBinary", "Binary file is not shown"),
+        ("code.openCommentBox", "Open comment box"),
+        (
+            "error.badrequest",
+            "The request cannot be fulfilled due to bad syntax",
+        ),
+        ("error.failedTo", "Failed to {0}<br>({1} {2})"),
+        ("error.forbidden", "You are not authorized"),
+        ("error.notfound", "Page not found"),
+        (
+            "error.toolargefile",
+            "Wow, that's huge!<br>Please submit file smaller than {0}.",
+        ),
+        (
+            "issue.favorite.added",
+            "Added as a favorite issue. See it on the My Issues page",
+        ),
+        ("issue.favorite.deleted", "Removed from favorite issues"),
+        (
+            "issue.error.beforeunload",
+            "Issue is not saved yet. Would you like to exit this page without saving?",
+        ),
+        (
+            "issue.error.emptyTitle",
+            "Issue title is a required field.",
+        ),
+        (
+            "issue.error.invalid.duedate",
+            "Issue due date is not valid date type.",
+        ),
+        ("issue.menu.new", "New issue"),
+        ("issue.unwatch", "Unsubscribe from this issue"),
+        (
+            "issue.unwatch.start",
+            "You will no longer get notifications about this issue",
+        ),
+        ("issue.update.assignee.id", "Update assignee"),
+        ("issue.update.attachLabel", "Attach label"),
+        ("issue.update.detachLabel", "Detach label"),
+        ("issue.update.dueDate", "Update due date"),
+        ("issue.update.labelIds", "Update label"),
+        ("issue.update.milestone.id", "Update milestone"),
+        ("issue.update.state", "Update status"),
+        ("issue.watch", "Subscribe"),
+        (
+            "issue.watch.start",
+            "Now you will get notifications about this issue",
+        ),
+        ("label.add", "Add label"),
+        (
+            "label.category.new.confirm",
+            "{0} is a new category.<br>In this category, you can choose",
+        ),
+        ("label.category.option", "In this category, you can choose"),
+        ("label.category.option.multiple", "multiple labels"),
+        ("label.category.option.single", "only a single label"),
+        (
+            "label.confirm.delete",
+            "Once you delete this label, instances of this label attached to issues will also be removed. Do you still want to delete this label?",
+        ),
+        ("label.error.color", "Please define the label color using HEX or RGB values."),
+        (
+            "label.error.creationFailed",
+            "Failed to create a new label. A server error may have occurred or the request may be invalid.",
+        ),
+        (
+            "label.error.duplicated",
+            "Failed to create a new label. The label may already exist.",
+        ),
+        (
+            "label.error.duplicated.in.category",
+            "A label with the same name already exists in the category {0}.",
+        ),
+        (
+            "label.error.empty",
+            "Category, Color, and Name are required fields.",
+        ),
+        ("label.failedTo", "Failed to {0}."),
+        ("menu.home", "Home"),
+        (
+            "milestone.error.content",
+            "Milestone description is a required field",
+        ),
+        (
+            "milestone.error.duedateFormat",
+            "Invalid format. Enter the due date in YYYY-MM-DD format.",
+        ),
+        (
+            "milestone.error.title",
+            "Milestone title is a required field.",
+        ),
+        ("milestone.state.all", "All"),
+        ("milestone.state.closed", "Closed"),
+        ("milestone.state.open", "Open"),
+        (
+            "organization.name.alert",
+            "Enter the group name in alphanumerical or symbol characters(_-.)",
+        ),
+        (
+            "organization.name.duplicate",
+            "Already existent user's login id or group name.",
+        ),
+        (
+            "organization.member.leave.unknownerror",
+            "Failed to leave this group. Please ask site admin",
+        ),
+        ("organization.member.unknownOrganization", "Non existent group"),
+        (
+            "post.error.beforeunload",
+            "This post has not been saved yet. Would you like to exit this page without saving?",
+        ),
+        ("post.error.emptyTitle", "Title is a required field."),
+        ("post.unwatch", "Stop watching"),
+        (
+            "post.unwatch.start",
+            "Notifications about this post has been muted",
+        ),
+        ("post.watch", "Watch"),
+        (
+            "post.watch.start",
+            "You will receive notifications about this post",
+        ),
+        ("project.is.empty", "Project is non existent"),
+        (
+            "project.changeVCS.alert",
+            "You should agree with changing the repository type.",
+        ),
+        ("project.changeVCS.error", "Can't change repository type"),
+        (
+            "project.delete.alert",
+            "You should agree to delete this project.",
+        ),
+        (
+            "project.delete.error",
+            "Error occurred while deleting a project.",
+        ),
+        (
+            "project.import.error.empty.url",
+            "Please type the Git repository URL.",
+        ),
+        ("project.logo.alert", "This is not an image file."),
+        (
+            "project.member.deleteConfirm",
+            "Are you sure you want this user to leave this project?",
+        ),
+        (
+            "project.member.ownerCannotLeave",
+            "Project owner cannot leave his own project.",
+        ),
+        ("project.member.notExist", "User does not exist."),
+        (
+            "project.webhook.payloadUrl.empty",
+            "Payload URL is a required field.",
+        ),
+        (
+            "project.name.alert",
+            "Enter name in alphabetnumerical or symbol characters(_-.)",
+        ),
+        (
+            "project.name.duplicate",
+            "This project name already exists.",
+        ),
+        ("project.name.reserved.alert", "You can't use reserved names."),
+        (
+            "project.transfer.alert",
+            "You should agree with the transfer of this project.",
+        ),
+        (
+            "project.transfer.error",
+            " User or group not available. Please check whether the user's login id or the gorup's name is correct.",
+        ),
+        ("project.unwatch", "Unwatch"),
+        ("project.watch", "Watch"),
+        (
+            "pullRequest.body.required",
+            "Enter pull request description.",
+        ),
+        (
+            "pullRequest.diff.noChanges",
+            "No changes have been made.",
+        ),
+        (
+            "pullRequest.fromBranch.required",
+            "Select branch that contains the code to be sent.",
+        ),
+        (
+            "pullRequest.ignore.conflict",
+            "This code seems to have conflicts when merging. Do you really want to continue?",
+        ),
+        (
+            "pullRequest.is.merging",
+            "We are checking if the code is safe. Please wait for a while to complete this process.",
+        ),
+        (
+            "pullRequest.is.not.safe",
+            "A conflict occurred when merging. This pull request cannot be merged safely.",
+        ),
+        (
+            "pullRequest.is.safe",
+            "This pull request can be merged safely.",
+        ),
+        (
+            "pullRequest.title.required",
+            "Title is a required field.",
+        ),
+        (
+            "pullRequest.toBranch.required",
+            "Select branch that will receive code to be sent.",
+        ),
+        (
+            "pullRequest.unwatch.start",
+            "Notifications of this pull request are muted",
+        ),
+        (
+            "pullRequest.watch.start",
+            "You will receive notifications of this pull request",
+        ),
+        ("post.comment.empty", "Comment should not be empty. "),
+        ("site.mail.sended", "Mail has been sent."),
+        (
+            "site.resetPasswordEmail.invalidRequest",
+            "Invalid password reset request",
+        ),
+        ("title.help", "Help"),
+        ("title.login", "Log in"),
+        ("title.logout", "Log out"),
+        ("title.no.results", "No results"),
+        ("title.resetPassword", "Reset password"),
+        ("title.signup", "Sign up"),
+        (
+            "user.login.failed",
+            "Failed to log in. A serve error may have occurred or the request may be invalid.",
+        ),
+        (
+            "user.login.failed.client",
+            "Failed to log in. The request is invalid.\nPlease ask site admin.",
+        ),
+        (
+            "user.login.failed.network",
+            "Failed to log in because of network trouble.\nPlease ask site admin.",
+        ),
+        (
+            "user.login.failed.server",
+            "Failed to log in because a server error has occurred.\nPlease ask site admin.",
+        ),
+        (
+            "user.avatar.fileSizeAlert",
+            "Images should be less than 1MB in size..",
+        ),
+        (
+            "user.avatar.onlyImage",
+            "Only image files are allowed to be uploaded.",
+        ),
+        (
+            "user.avatar.uploadError",
+            "Failed to upload. Please ask site admin",
+        ),
+        (
+            "user.enroll.failed",
+            "Failed to sign-up. A server error may have occurred or the request may be invalid.",
+        ),
+        (
+            "user.enroll.failed.client",
+            "Failed to sign-up. The request is invalid.\nPlease ask site admin.",
+        ),
+        (
+            "user.enroll.failed.network",
+            "Failed to sign-up because of network trouble.\nPlease ask site admin.",
+        ),
+        (
+            "user.enroll.failed.server",
+            "Failed to sign-up because a server error has occurred.\nPlease ask site admin.",
+        ),
+        (
+            "user.login.invalid",
+            "Your log in ID, E-mail or password is not valid.",
+        ),
+        ("user.loginId.duplicate", "This log in ID already exists."),
+        (
+            "user.login.required",
+            "Login ID or E-mail and password is required field.",
+        ),
+        ("user.password", "Password"),
+        ("user.email.duplicate", "Email address already exists"),
+        ("user.wrongPassword.alert", "Wrong password!"),
+        ("user.wrongloginId.alert", "Enter Valid ID"),
+        ("userinfo.changeNotifications", "Notification settings"),
+        ("userinfo.leaveProject.confirm", "Are you sure to leave {0}?"),
+        (
+            "validation.allowedCharsForLoginId",
+            "Login ID may contain alphanumeric characters as well as dashes, underscores or dots, but cannot begin or end with underscores or dots.",
+        ),
+        ("validation.duplicated", "Already exists!"),
+        ("validation.invalidEmail", "Enter valid email address!"),
+        ("validation.passwordMismatch", "Retyped password doesn't match"),
+        ("validation.required", "Required field!"),
+        ("validation.reservedWord", "This is a reserved system word."),
+        (
+            "validation.tooShortPassword",
+            "Password must be at least 4 characters in length.",
+        ),
+        ("watchers.more", "and {0} others"),
     ];
     let mut entries = String::new();
-    for key in message_keys {
+    for (key, value) in messages {
         entries.push_str("    ");
         entries.push_str(&js_string_literal(key));
         entries.push_str(": ");
-        entries.push_str(&js_string_literal(key));
+        entries.push_str(&js_string_literal(value));
         entries.push_str(",\n");
     }
     let body = format!(
@@ -9649,7 +9981,7 @@ async fn direct_reset_password(
     let password = form.get("password").cloned().unwrap_or_default();
     let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
 
-    if password.len() < 8 || password != retyped_password {
+    if password.len() < LEGACY_MIN_PASSWORD_LENGTH || password != retyped_password {
         let query = if hash_string.is_empty() {
             "/resetPassword?error=invalid".to_string()
         } else {
@@ -13534,6 +13866,7 @@ struct RestSiteUserItem {
     id: i64,
     is_guest: bool,
     is_site_admin: bool,
+    last_state_modified_at: String,
     login_id: String,
     state: String,
 }
@@ -13626,6 +13959,26 @@ struct RestSiteProjectListResponse {
     total_pages: u32,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDirectoryItem {
+    created_label: String,
+    last_pushed_label: String,
+    logo_url: String,
+    member_count: u32,
+    overview: String,
+    owner_name: String,
+    project_name: String,
+    project_scope: String,
+    watch_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDirectoryResponse {
+    items: Vec<RestProjectDirectoryItem>,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSitePostsQuery {
@@ -13651,6 +14004,7 @@ struct RestSitePostItem {
     author_login_id: String,
     comment_count: u32,
     created_label: String,
+    created_title: String,
     labels: Vec<RestBoardLabel>,
     notice: bool,
     owner_name: String,
@@ -13679,6 +14033,7 @@ struct RestSiteIssueItem {
     author_login_id: String,
     comment_count: u32,
     created_label: String,
+    created_title: String,
     issue_number: String,
     labels: Vec<RestBoardLabel>,
     milestone_title: String,
@@ -21754,6 +22109,42 @@ async fn rest_list_projects(
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let records = repository
+            .list_projects()
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+        let mut items = Vec::with_capacity(records.len());
+        for project in records {
+            items.push(RestProjectDirectoryItem {
+                created_label: format_project_date_label(project.created_date),
+                last_pushed_label: format_project_date_label(project.last_pushed_date),
+                logo_url: project_logo_url(repository, &service.base_path, project.id)
+                    .await
+                    .map_err(RestRouteError::from_connect_error)?,
+                member_count: repository
+                    .count_project_members(project.id)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?,
+                overview: project.overview.unwrap_or_default(),
+                owner_name: project.owner_name,
+                project_name: project.project_name,
+                project_scope: project.project_scope,
+                watch_count: repository
+                    .count_project_watchers(project.id)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?,
+            });
+        }
+        return Ok(rest_json_response(
+            RestProjectDirectoryResponse { items },
+            Context::new(headers),
+        ));
+    }
+
     let request = ListProjectsRequest::default();
     let request = rest_owned_view::<ListProjectsRequestView<'static>>(&request)?;
     let (payload, ctx) = service
@@ -23019,7 +23410,7 @@ fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
         "NEW_ISSUE" => "notification.type.new.issue",
         "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
         "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
-        "PULL_REQUEST_MERGED" => "pullRequest.event.message.MERGED",
+        "PULL_REQUEST_MERGED" => "pullRequest.event.message.merged",
         _ => event_type,
     }
 }
@@ -23500,7 +23891,7 @@ async fn rest_create_project_webhook(
     let secret = body.secret.trim().to_string();
     if payload_url.is_empty() {
         return Err(RestRouteError::bad_request(
-            "project.webhook.payloadUrl.required",
+            "project.webhook.payloadUrl.empty",
         ));
     }
     if payload_url.len() > 2000 {
@@ -23937,7 +24328,7 @@ async fn rest_fork_project(
         .map_err(RestRouteError::from_connect_error)?
     {
         return Err(RestRouteError::from_connect_error(
-            ConnectError::already_exists("Project name is already in use for this owner."),
+            ConnectError::already_exists("project.name.duplicate"),
         ));
     }
 
@@ -25187,6 +25578,19 @@ fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String>
     }
 }
 
+fn legacy_external_api_auth_error_response(error: ConnectError) -> Response {
+    if error.code == ErrorCode::Unauthenticated {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "message": "unauthorized request",
+            })),
+        )
+            .into_response();
+    }
+    RestRouteError::from_connect_error(error).into_response()
+}
+
 async fn legacy_external_authenticated_user_id(
     headers: &HeaderMap,
     session_manager: &SessionManager,
@@ -25242,7 +25646,7 @@ async fn legacy_external_favorite_projects(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
 
     let favorite_projects = match repository
@@ -25289,7 +25693,7 @@ async fn legacy_external_toggle_favorite_project(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
     let project = match repository.read_project_by_id(project_id).await {
         Ok(Some(project)) => project,
@@ -25357,7 +25761,7 @@ async fn legacy_external_favorite_issues(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
 
     let favorite_issues = match repository
@@ -25404,7 +25808,7 @@ async fn legacy_external_toggle_favorite_issue(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
     let Some((owner_name, project_name, issue_number)) =
         (match repository.read_legacy_favorite_issue_target(issue_id).await {
@@ -25434,9 +25838,9 @@ async fn legacy_external_toggle_favorite_issue(
         "issueId": issue_id.to_string(),
         "favored": result.favorited,
         "message": if result.favorited {
-            "issue.favorite.added"
+            "Added as a favorite issue. See it on the My Issues page"
         } else {
-            "issue.favorite.deleted"
+            "Removed from favorite issues"
         },
     }))
     .into_response()
@@ -25458,7 +25862,7 @@ async fn legacy_external_favorite_organizations(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
 
     let favorite_organizations = match repository
@@ -25506,7 +25910,7 @@ async fn legacy_external_toggle_favorite_organization(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
     let favored = match repository
         .toggle_favorite_organization(user_id, organization_id)
@@ -25555,7 +25959,7 @@ async fn legacy_external_translation(
             .await
         {
             Ok(user_id) => user_id,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            Err(error) => return legacy_external_api_auth_error_response(error),
         };
 
     let text = match legacy_translation_source(repository, &body, actor_id).await {
@@ -26620,6 +27024,10 @@ async fn rest_site_user_from_record(
         id: record.id,
         is_guest: record.is_guest,
         is_site_admin: record.is_site_admin,
+        last_state_modified_at: record
+            .last_state_modified_at
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
         login_id: record.login_id,
         state: record.state,
     })
@@ -26871,6 +27279,7 @@ async fn rest_site_post_from_record(
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
+        created_title: record.created_title.clone(),
         labels: record
             .labels
             .iter()
@@ -26899,6 +27308,7 @@ async fn rest_site_issue_from_record(
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
+        created_title: record.created_title.clone(),
         issue_number: record.issue_number.to_string(),
         labels: record
             .labels
@@ -27102,12 +27512,10 @@ fn rest_pull_request_mutation_input(
     attachment_ids: Vec<i64>,
 ) -> Result<persistence::PullRequestMutationInput, RestRouteError> {
     if title.trim().is_empty() {
-        return Err(RestRouteError::bad_request(
-            "pull request title is required",
-        ));
+        return Err(RestRouteError::bad_request("pullRequest.title.required"));
     }
     if body_markdown.trim().is_empty() {
-        return Err(RestRouteError::bad_request("pull request body is required"));
+        return Err(RestRouteError::bad_request("pullRequest.body.required"));
     }
     Ok(persistence::PullRequestMutationInput {
         attachment_ids,
@@ -29920,7 +30328,7 @@ async fn rest_create_posting(
         .map_err(RestRouteError::from_connect_error)?;
     let online_commit = rest_post_online_commit_input(&body);
     if !online_commit.enabled && body.title.trim().is_empty() {
-        return Err(RestRouteError::bad_request("post title is required"));
+        return Err(RestRouteError::bad_request("post.error.emptyTitle"));
     }
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
@@ -31133,7 +31541,7 @@ async fn rest_create_issue(
     require_valid_csrf(&session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if body.title.trim().is_empty() {
-        return Err(RestRouteError::bad_request("issue title is required"));
+        return Err(RestRouteError::bad_request("issue.error.emptyTitle"));
     }
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
@@ -32139,9 +32547,7 @@ fn direct_milestone_input_from_form(
 ) -> Result<persistence::MilestoneMutationInput, ConnectError> {
     let title = form_value(form, &["title"]).trim().to_string();
     if title.is_empty() {
-        return Err(ConnectError::invalid_argument(
-            "milestone title is required",
-        ));
+        return Err(ConnectError::invalid_argument("milestone.error.title"));
     }
     Ok(persistence::MilestoneMutationInput {
         actor_id,
@@ -32799,6 +33205,7 @@ fn confirmation_session_required() -> bool {
 
 const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
 const LEGACY_LOGIN_REQUIRED_MESSAGE: &str = "user.login.required";
+const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
 
 fn normalize_identifier(value: &str) -> String {
     value.trim().to_ascii_lowercase()
@@ -33106,6 +33513,7 @@ fn workspace_profile_from_record(
         display_name: record.display_name.clone(),
         english_name: record.english_name.clone(),
         is_blocked: record.is_blocked,
+        is_guest: record.is_guest,
         is_site_admin: record.is_site_admin,
         login_id: record.login_id.clone(),
         primary_email_address: record.primary_email_address.clone(),
@@ -34764,9 +35172,7 @@ fn milestone_mutation_input(
 ) -> Result<persistence::MilestoneMutationInput, ConnectError> {
     let title = title.trim();
     if title.is_empty() {
-        return Err(ConnectError::invalid_argument(
-            "milestone title is required",
-        ));
+        return Err(ConnectError::invalid_argument("milestone.error.title"));
     }
     Ok(persistence::MilestoneMutationInput {
         actor_id,
@@ -36627,37 +37033,38 @@ impl PilotServiceImpl {
         let login_id = normalize_identifier(request.login_id);
         let email_address = normalize_identifier(request.email_address);
         if login_id.is_empty() {
-            return Err(ConnectError::invalid_argument("Login ID is required."));
+            return Err(ConnectError::invalid_argument("user.wrongloginId.alert"));
         }
         if email_address.is_empty() {
-            return Err(ConnectError::invalid_argument("Email address is required."));
+            return Err(ConnectError::invalid_argument("validation.invalidEmail"));
         }
         if request.name.trim().is_empty() {
-            return Err(ConnectError::invalid_argument("Name is required."));
+            return Err(ConnectError::invalid_argument("validation.required"));
         }
-        if request.password.len() < 8 {
+        if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
             return Err(ConnectError::invalid_argument(
-                "Password must be at least 8 characters.",
+                "validation.tooShortPassword",
             ));
         }
         if request.password != request.retyped_password {
-            return Err(ConnectError::invalid_argument("Passwords do not match."));
+            return Err(ConnectError::invalid_argument(
+                "validation.passwordMismatch",
+            ));
         }
 
         if repository
-            .find_user_by_identifier(&login_id)
+            .user_login_id_exists(&login_id)
             .await
             .map_err(internal_error)?
-            .is_some()
-            || repository
-                .find_user_by_identifier(&email_address)
-                .await
-                .map_err(internal_error)?
-                .is_some()
         {
-            return Err(ConnectError::already_exists(
-                "Login ID or email is already in use.",
-            ));
+            return Err(ConnectError::already_exists("user.loginId.duplicate"));
+        }
+        if repository
+            .user_email_exists(&email_address)
+            .await
+            .map_err(internal_error)?
+        {
+            return Err(ConnectError::already_exists("user.email.duplicate"));
         }
 
         let password_hash = hash(&request.password, DEFAULT_COST).map_err(internal_error)?;
@@ -36818,28 +37225,26 @@ impl PilotServiceImpl {
             ));
         };
         if request.name.trim().is_empty() {
-            return Err(workspace_invalid_argument("Name is required."));
+            return Err(workspace_invalid_argument("validation.required"));
         }
         if !request.avatar_attachment_id.trim().is_empty() {
             let attachment_id = request
                 .avatar_attachment_id
                 .trim()
                 .parse::<i64>()
-                .map_err(|_| workspace_invalid_argument("Avatar attachment id is invalid."))?;
+                .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?;
             let Some(attachment) = repository
                 .promote_avatar_attachment_for_user(user_id, attachment_id)
                 .await
-                .map_err(|error| workspace_invalid_argument(error.to_string()))?
+                .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?
             else {
-                return Err(workspace_invalid_argument("Avatar attachment is invalid."));
+                return Err(workspace_invalid_argument("user.avatar.uploadError"));
             };
             if !attachment.mime_type.starts_with("image/") {
-                return Err(workspace_invalid_argument("Only image files are allowed."));
+                return Err(workspace_invalid_argument("user.avatar.onlyImage"));
             }
             if attachment.size > 1024 * 1000 {
-                return Err(workspace_invalid_argument(
-                    "Images should be less than 1MB in size.",
-                ));
+                return Err(workspace_invalid_argument("user.avatar.fileSizeAlert"));
             }
         }
         repository
@@ -36875,20 +37280,16 @@ impl PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::unauthenticated("missing authenticated session"))?;
         if normalize_identifier(&request.login_id) != user.login_id {
-            return Err(workspace_invalid_argument(
-                "Login ID does not match current session.",
-            ));
+            return Err(workspace_invalid_argument("user.wrongloginId.alert"));
         }
         if !verify(&request.old_password, &user.password_hash).map_err(internal_error)? {
-            return Err(workspace_invalid_argument("Current password is incorrect."));
+            return Err(workspace_invalid_argument("user.wrongPassword.alert"));
         }
-        if request.password.len() < 8 {
-            return Err(workspace_invalid_argument(
-                "Password must be at least 8 characters.",
-            ));
+        if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
+            return Err(workspace_invalid_argument("validation.tooShortPassword"));
         }
         if request.password != request.retyped_password {
-            return Err(workspace_invalid_argument("Passwords do not match."));
+            return Err(workspace_invalid_argument("validation.passwordMismatch"));
         }
         let password_hash = hash(&request.password, DEFAULT_COST).map_err(internal_error)?;
         repository
@@ -37176,9 +37577,7 @@ impl PilotServiceImpl {
                 .await
                 .map_err(internal_error)?
         {
-            return Err(ConnectError::already_exists(
-                "Organization name is already in use.",
-            ));
+            return Err(ConnectError::already_exists("organization.name.duplicate"));
         }
 
         let organization = repository
@@ -37485,9 +37884,7 @@ impl PilotServiceImpl {
                     .await
                     .map_err(internal_error)?)
         {
-            return Err(ConnectError::already_exists(
-                "Organization name is already in use.",
-            ));
+            return Err(ConnectError::already_exists("organization.name.duplicate"));
         }
 
         let updated = repository
@@ -38038,9 +38435,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
         {
-            return Err(ConnectError::already_exists(
-                "Project name is already in use for this owner.",
-            ));
+            return Err(ConnectError::already_exists("project.name.duplicate"));
         }
         let actor = repository
             .find_user_by_id(user_id)
@@ -38481,9 +38876,7 @@ impl PilotServiceImpl {
                 .await
                 .map_err(internal_error)?
         {
-            return Err(ConnectError::already_exists(
-                "Project name is already in use for this owner.",
-            ));
+            return Err(ConnectError::already_exists("project.name.duplicate"));
         }
 
         repository

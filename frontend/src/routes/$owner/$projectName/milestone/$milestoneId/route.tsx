@@ -15,6 +15,7 @@ import {
 import { buildProjectHref } from "../../../../-project-views";
 import { ProjectMilestoneDetailPage } from "../../../../-milestone-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -27,18 +28,20 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 
 function ProjectMilestoneDetailRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [milestone, setMilestone] =
     React.useState<ReturnType<typeof toProjectMilestoneDetailView>>(null);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const isEditFormRoute = window.location.pathname.endsWith("/editform");
   const issueState = new URLSearchParams(window.location.search).get("state") || "open";
 
-  useDocumentTitle(milestone?.title ?? "Milestone");
+  useDocumentTitle(milestone?.title ?? "milestone");
 
   const reload = React.useCallback(() => {
     let cancelled = false;
@@ -62,20 +65,20 @@ function ProjectMilestoneDetailRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read milestone failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [milestoneId, owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [milestoneId, owner, projectName, runtimeConfig]);
 
   React.useEffect(() => reload(), [reload]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -84,6 +87,9 @@ function ProjectMilestoneDetailRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
   if (isEditFormRoute) {
     return <Outlet />;

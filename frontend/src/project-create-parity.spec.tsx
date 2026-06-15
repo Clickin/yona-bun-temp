@@ -67,4 +67,14 @@ describe("project create parity", () => {
     expect(routeSource).toContain("encodeURIComponent(owner)");
     expect(routeSource).toContain("to={`/projectform${query}`}");
   });
+
+  it("keeps project creation mutation fallback on a legacy message key", () => {
+    const routeSource = readFileSync(
+      join(process.cwd(), "src/routes/projectform/route.tsx"),
+      "utf8",
+    );
+
+    expect(routeSource).not.toContain("Create project failed.");
+    expect(routeSource).toContain('"error.badrequest"');
+  });
 });

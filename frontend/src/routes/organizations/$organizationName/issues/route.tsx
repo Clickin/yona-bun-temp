@@ -14,6 +14,7 @@ import {
   type OrganizationIssueListQuery,
 } from "../../../-organization-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/organizations/$organizationName/issues")(
 
 function OrganizationIssuesRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
@@ -45,9 +46,11 @@ function OrganizationIssuesRouteComponent() {
     projectNames: [],
     state: "open",
   });
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Organization Issues");
+  useDocumentTitle("title.issueList");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -88,20 +91,18 @@ function OrganizationIssuesRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(
-          error instanceof Error ? error.message : "Read organization issues failed.",
-        );
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [organizationName, runtimeConfig, setErrorMessage]);
+  }, [organizationName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -110,6 +111,9 @@ function OrganizationIssuesRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

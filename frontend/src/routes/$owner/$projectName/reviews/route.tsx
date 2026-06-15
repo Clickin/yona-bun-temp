@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -10,6 +9,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectReviewsPage } from "../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -22,7 +22,8 @@ export const Route = createFileRoute("/$owner/$projectName/reviews")({
 
 function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const routeHref = `/${owner}/${projectName}/reviews`;
   const searchParams = new URLSearchParams(window.location.search);
   const query: ReviewThreadListQuery = {
     authorId: Number(searchParams.get("authorId") || "0"),
@@ -47,25 +48,23 @@ function ProjectReviewsRouteComponent() {
   const error = containerQuery.error ?? reviewsQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle("Reviews");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read reviews failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle(`${projectName} - menu.review`);
 
   if (bootstrapping || containerQuery.isLoading || reviewsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={`/${owner}/${projectName}/reviews`} />;
+    return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href={`/${owner}/${projectName}/reviews`} />;
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (error) {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

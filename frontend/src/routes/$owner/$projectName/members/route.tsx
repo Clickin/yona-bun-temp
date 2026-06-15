@@ -11,6 +11,7 @@ import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { ProjectMembersPage } from "../../../-project-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -27,7 +28,9 @@ function ProjectMembersRouteComponent() {
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/members`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const membersQueryKey = apiQueryKeys.project.members(owner, projectName);
   const membersQuery = useQuery({
     ...readProjectMembersQueryOptions(runtimeConfig, {
@@ -39,6 +42,7 @@ function ProjectMembersRouteComponent() {
 
   React.useEffect(() => {
     if (!membersQuery.error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(membersQuery.error);
@@ -46,12 +50,8 @@ function ProjectMembersRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      membersQuery.error instanceof Error
-        ? membersQuery.error.message
-        : "Read project members failed.",
-    );
-  }, [membersQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [membersQuery.error]);
 
   const addMutation = useMutation({
     mutationFn: (loginId: string) =>
@@ -61,7 +61,7 @@ function ProjectMembersRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Add project member failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(membersQueryKey, detail);
@@ -81,7 +81,7 @@ function ProjectMembersRouteComponent() {
       }),
     onError: (error) => {
       setErrorMessage(
-        error instanceof Error ? error.message : "Update project member role failed.",
+        error instanceof Error ? error.message : "project.member.ownerMustBeAManager",
       );
     },
     onSuccess: (detail) => {
@@ -100,7 +100,7 @@ function ProjectMembersRouteComponent() {
         userId,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Delete project member failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(membersQueryKey, detail);
@@ -117,7 +117,7 @@ function ProjectMembersRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -126,6 +126,9 @@ function ProjectMembersRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

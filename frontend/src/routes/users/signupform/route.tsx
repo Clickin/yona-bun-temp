@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { RestApiError } from "../../../api/rest-client";
 import { registerWithPassword } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { RegisterPage } from "../../-auth-views";
@@ -8,6 +9,28 @@ import { navigateToAppHref, useDocumentTitle } from "../../-shared";
 export const Route = createFileRoute("/users/signupform")({
   component: RegisterRouteComponent,
 });
+
+function legacySignupFailureMessage(error: unknown): string {
+  if (error instanceof TypeError) {
+    return "user.enroll.failed.network";
+  }
+  if (error instanceof RestApiError) {
+    if (error.code !== "http_error" && error.message) {
+      return error.message;
+    }
+    if (error.status >= 400 && error.status < 500) {
+      return "user.enroll.failed.client";
+    }
+    if (error.status >= 500 && error.status < 600) {
+      return "user.enroll.failed.server";
+    }
+    return "user.enroll.failed";
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "user.enroll.failed";
+}
 
 function RegisterRouteComponent() {
   const {
@@ -20,12 +43,12 @@ function RegisterRouteComponent() {
     setErrorMessage,
   } = useAppRuntime();
   const [pending, setPending] = React.useState(false);
-  useDocumentTitle("Sign Up");
+  useDocumentTitle("title.signup");
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -56,7 +79,7 @@ function RegisterRouteComponent() {
             return;
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Register failed.");
+          setErrorMessage(legacySignupFailureMessage(error));
         } finally {
           setPending(false);
         }

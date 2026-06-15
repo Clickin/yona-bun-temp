@@ -185,6 +185,7 @@ describe("wave 1 auth and workspace parity", () => {
         displayName: "Door",
         englishName: "Door English",
         isBlocked: false,
+        isGuest: true,
         isSiteAdmin: true,
         loginId: "door",
         primaryEmailAddress: "door@example.com",
@@ -216,17 +217,31 @@ describe("wave 1 auth and workspace parity", () => {
     });
 
     expect(html).toContain("whoami-wrap");
+    expect(html).toContain('class="guest-user"');
+    expect(html).toContain('<span class="left-mark">OUR GUEST</span>');
     expect(html).toContain("Door English");
     expect(html).toContain("@door");
     expect(html).toContain("SITE ADMIN");
-    expect(html).toContain("Connected Social Login");
+    expect(html).toContain("userinfo.editProfile");
+    expect(html).toContain("userinfo.since");
+    expect(html).toContain("user.connected.social.login");
+    expect(html).toContain("userinfo.daysAgo.prefix");
+    expect(html).toContain("userinfo.daysAgo.suffix");
+    expect(html).not.toContain("Edit Profile");
+    expect(html).not.toContain(">Since</strong>");
+    expect(html).not.toContain("Connected Social Login");
     expect(html).not.toContain("Connected social login");
     expect(html).toContain('class="github"');
     expect(html).toContain('class="google"');
+    expect(html).toContain('src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
+    expect(html).not.toContain('viewBox="0 0 24 24"');
     expect(html).toContain("Apr 11, 2026");
-    expect(html).toContain("Issues <span");
-    expect(html).toContain("Pull Requests <span");
-    expect(html).toContain("Projects <span");
+    expect(html).toContain("menu.issue <span");
+    expect(html).toContain("menu.pullRequest <span");
+    expect(html).toContain("project.projects <span");
+    expect(html).not.toContain("Issues <span");
+    expect(html).not.toContain("Pull Requests <span");
+    expect(html).not.toContain("Projects <span");
     expect(html).toContain('data-toggle="tab"');
     expect(html).toContain("Fix login redirect");
     expect(html).toContain("issue.state.closed <span");
@@ -244,12 +259,31 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain('href="/yona/admin/projectYobi/issue/7"');
     expect(html).toContain('href="/yona/admin/projectYobi/pullRequest/4"');
     expect(html).toContain('href="/yona/admin/projectYobi"');
-    expect(html).toContain("Contributor: Door");
-    expect(html).toContain("Reviewer: Admin");
-    expect(html).toContain("Comments: 2");
-    expect(html).toContain("State: public");
-    expect(html).toContain("Members: 4");
-    expect(html).toContain("Watchers: 2");
+    expect(html).toContain('<span class="post-id">4</span>');
+    expect(html).toContain('<span class="infos-item">Door</span>');
+    expect(html).toContain('href="/yona/admin/projectYobi/pullRequest/4#comments"');
+    expect(html).toContain('<i class="yobicon-comments"></i>');
+    expect(html).toContain('<span class="size">2</span>');
+    expect(html).toContain('class="avatar-wrap assinee"');
+    expect(html).toContain('title="Admin"');
+    expect(html).toContain('<div class="state open pull-right">pullRequest.state.open</div>');
+    expect(html).not.toContain("Contributor: Door");
+    expect(html).not.toContain("Reviewer: Admin");
+    expect(html).not.toContain("Comments: 2");
+    expect(html).not.toContain("State: open");
+    expect(html).toContain('class="yobicon-friends yobicon-middle"');
+    expect(html).toContain("<strong>4</strong>");
+    expect(html).not.toContain("project.onmember 4");
+    expect(html).toContain('class="owner-name-small"');
+    expect(html).toContain(">admin</a>");
+    expect(html).toContain("project.codeUpdate");
+    expect(html).toContain('<span class="num-badge">2</span>');
+    expect(html).not.toContain("Owner: admin");
+    expect(html).not.toContain("Created 2026-04-01");
+    expect(html).not.toContain("Updated 2026-04-10");
+    expect(html).not.toContain("State: public");
+    expect(html).not.toContain("Members: 4");
+    expect(html).not.toContain("Watchers: 2");
   });
 
   it("hides profile email addresses when legacy application.show.user.email is disabled", () => {
@@ -333,9 +367,21 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain('id="recentlyVisited"');
     expect(html).toContain('class="no-result tab-pane user-ul active"');
     expect(html).toContain("title.no.results");
+    expect(html).toContain("button.setDefaultLoginPage");
+    expect(html).toContain("button.setDefaultLoginPage.desc");
+    expect(html).toContain("title.favorite");
+    expect(html).toContain("title.recently.visited");
+    expect(html).toContain("title.logout");
+    expect(html).not.toContain("Default landing");
+    expect(html).not.toContain("Save default landing");
+    expect(html).not.toContain("Favorite projects");
+    expect(html).not.toContain("Recent projects");
+    expect(html).not.toContain("Sign out");
     expect(html).toContain('class="auth-provider-logo"');
-    expect(html).toContain("Pull Requests <span");
-    expect(html).toContain("Projects <span");
+    expect(html).toContain("menu.pullRequest <span");
+    expect(html).toContain("project.projects <span");
+    expect(html).not.toContain("Pull Requests <span");
+    expect(html).not.toContain("Projects <span");
     expect(html).not.toContain("No pull requests found in the last 14 days.");
     expect(html).not.toContain("No projects found.");
     expect(html).not.toContain("No favorite projects yet.");

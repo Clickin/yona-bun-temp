@@ -6,6 +6,7 @@ import { readProjectContainer } from "../../../../auth-workspace-client";
 import type { RuntimeConfig } from "../../../../runtime-config";
 import { CodeHistoryPage, type CodeHistoryViewModel } from "../../../-code-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -108,15 +109,17 @@ export function CodeHistoryRouteView(props: {
   const projectName = props.projectName;
   const branch = props.branch ?? "";
   const path = props.path ?? "";
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/commits`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [history, setHistory] = React.useState<CodeHistoryViewModel | null>(null);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Commit History");
+  useDocumentTitle("title.commitHistory");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -142,18 +145,18 @@ export function CodeHistoryRouteView(props: {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read code history failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [branch, owner, path, projectName, runtimeConfig, setErrorMessage]);
+  }, [branch, owner, path, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -162,6 +165,9 @@ export function CodeHistoryRouteView(props: {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return <CodeHistoryPage detail={detail} history={history} runtimeConfig={runtimeConfig} />;

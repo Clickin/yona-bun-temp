@@ -14,7 +14,7 @@ function VerifyUserRouteComponent() {
   const { runtimeConfig, setErrorMessage } = useAppRuntime();
   const [invalid, setInvalid] = React.useState(false);
   const [resolvedLoginId, setResolvedLoginId] = React.useState(loginId);
-  useDocumentTitle("Verify User");
+  useDocumentTitle("user.verification");
 
   React.useEffect(() => {
     let cancelled = false;

@@ -66,7 +66,13 @@ export function resolveWorkspaceAvatarUrl(
   return workspaceAvatarDataUrl(fallbackLabel);
 }
 
-function WorkspaceProviderBadge({ provider }: { provider: string }) {
+function WorkspaceProviderBadge({
+  provider,
+  runtimeConfig,
+}: {
+  provider: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const normalized = provider.trim().toLowerCase();
   switch (normalized) {
     case "github":
@@ -80,24 +86,12 @@ function WorkspaceProviderBadge({ provider }: { provider: string }) {
     case "google":
       return (
         <span className="google">
-          <svg aria-hidden="true" height="20" viewBox="0 0 24 24" width="20">
-            <path
-              d="M21.8 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5.5c-.2 1.2-.9 2.3-1.9 3v2.5h3.1c1.8-1.6 3.1-4.1 3.1-7.2Z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 22c2.7 0 5-.9 6.7-2.5l-3.1-2.5c-.9.6-2 .9-3.6.9-2.7 0-5-1.8-5.8-4.3H3v2.6A10 10 0 0 0 12 22Z"
-              fill="#34A853"
-            />
-            <path
-              d="M6.2 13.6A6 6 0 0 1 5.9 12c0-.6.1-1.1.3-1.6V7.8H3A10 10 0 0 0 2 12c0 1.6.4 3.2 1 4.2l3.2-2.6Z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.8C17 3.3 14.7 2.4 12 2.4A10 10 0 0 0 3 7.8l3.2 2.6C7 7.9 9.3 6.1 12 6.1Z"
-              fill="#EA4335"
-            />
-          </svg>
+          <img
+            src={appHref(
+              runtimeConfig,
+              "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
+            )}
+          />
         </span>
       );
     default:
@@ -134,6 +128,7 @@ export function PublicUserProfilePage(props: {
     displayName: "",
     englishName: "",
     isBlocked: false,
+    isGuest: false,
     isSiteAdmin: false,
     loginId: "",
     primaryEmailAddress: "",
@@ -143,7 +138,7 @@ export function PublicUserProfilePage(props: {
     profile.englishName.trim() ||
     profile.displayName.trim() ||
     profile.loginId.trim() ||
-    "Unknown user";
+    "User.anonymous.name";
   const [activeIssueTab, setActiveIssueTab] = React.useState<"closed" | "open">("open");
   const [activeTab, setActiveTab] = React.useState<"issues" | "projects" | "pullRequests">(() =>
     publicProfileSelectedTab(props.routeHref),
@@ -167,7 +162,13 @@ export function PublicUserProfilePage(props: {
               <div
                 className="whoami-wrap"
                 style={{ backgroundImage: `url('${resolvedAvatarUrl}')` }}
-              />
+              >
+                {profile.isGuest ? (
+                  <div className="guest-user">
+                    <span className="left-mark">OUR GUEST</span>
+                  </div>
+                ) : null}
+              </div>
               <div className="whoami usf-group">
                 <span className="name">{headlineName}</span>
                 <span className="loginid">{profile.loginId ? `@${profile.loginId}` : ""}</span>
@@ -180,7 +181,7 @@ export function PublicUserProfilePage(props: {
                       className="ybtn ybtn-default ybtn-mini"
                       href={appHref(props.runtimeConfig, "/user/editform")}
                     >
-                      Edit Profile
+                      <i className="yobicon-edit"></i> userinfo.editProfile
                     </a>
                   </div>
                 ) : null}
@@ -193,17 +194,21 @@ export function PublicUserProfilePage(props: {
               </div>
               {profile.sinceLabel ? (
                 <div className="user-since">
-                  <strong>Since</strong>
+                  <strong>userinfo.since</strong>
                   <span className="since">{profile.sinceLabel}</span>
                 </div>
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>Connected Social Login</strong>
+                  <strong>user.connected.social.login</strong>
                 </div>
                 <div className="auth-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
-                    <WorkspaceProviderBadge key={provider} provider={provider} />
+                    <WorkspaceProviderBadge
+                      key={provider}
+                      provider={provider}
+                      runtimeConfig={props.runtimeConfig}
+                    />
                   ))}
                 </div>
               </div>
@@ -211,7 +216,7 @@ export function PublicUserProfilePage(props: {
 
             <div className="user-stream-box">
               <div className="pull-right">
-                <span>Last </span>
+                <span>userinfo.daysAgo.prefix</span>
                 <input
                   className="input-mini-min"
                   id="daysAgoBtn"
@@ -222,7 +227,7 @@ export function PublicUserProfilePage(props: {
                   type="number"
                   value={daysAgo}
                 />
-                <span> days</span>
+                <span>userinfo.daysAgo.suffix</span>
               </div>
               <ul className="nav nav-tabs">
                 <li className={activeTab === "issues" ? "active" : undefined}>
@@ -234,7 +239,7 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("issues");
                     }}
                   >
-                    Issues <span className="num-badge">{issueItems.length}</span>
+                    menu.issue <span className="num-badge">{issueItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "pullRequests" ? "active" : undefined}>
@@ -246,7 +251,7 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("pullRequests");
                     }}
                   >
-                    Pull Requests <span className="num-badge">{pullRequestItems.length}</span>
+                    menu.pullRequest <span className="num-badge">{pullRequestItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "projects" ? "active" : undefined}>
@@ -258,7 +263,7 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("projects");
                     }}
                   >
-                    Projects <span className="num-badge">{memberProjects.length}</span>
+                    project.projects <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
                 <li>
@@ -381,6 +386,18 @@ export function PublicUserProfilePage(props: {
                           key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
                         >
                           <div className="span10">
+                            <a
+                              className="avatar-wrap mlarge"
+                              href={appHref(
+                                props.runtimeConfig,
+                                projectHref(pullRequest.ownerName, pullRequest.projectName),
+                              )}
+                            >
+                              <img
+                                alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
+                                src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
+                              />
+                            </a>
                             <div className="title-wrap">
                               <a
                                 className="title project"
@@ -391,7 +408,7 @@ export function PublicUserProfilePage(props: {
                               >
                                 {pullRequest.projectName}
                               </a>
-                              <span className="post-id">#{pullRequest.pullRequestNumber}</span>
+                              <span className="post-id">{pullRequest.pullRequestNumber}</span>
                               <a
                                 className="title"
                                 href={appHref(
@@ -407,13 +424,63 @@ export function PublicUserProfilePage(props: {
                               </a>
                             </div>
                             <div className="infos">
-                              <span className="infos-item">
-                                {pullRequest.contributorLabel || "Unknown"}
+                              {pullRequest.contributorLabel ? (
+                                <span
+                                  className="infos-item infos-link-item"
+                                  data-placement="top"
+                                  data-toggle="tooltip"
+                                  title={pullRequest.contributorLabel}
+                                >
+                                  {pullRequest.contributorLabel}
+                                </span>
+                              ) : (
+                                <span className="infos-item">issue.noAuthor</span>
+                              )}
+                              <span className="infos-item" title={pullRequest.updatedLabel}>
+                                {pullRequest.updatedLabel}
                               </span>
-                              <span className="infos-item">{pullRequest.updatedLabel}</span>
-                              <span className={`state ${pullRequest.state}`}>
-                                {pullRequest.state}
-                              </span>
+                              {pullRequest.commentCount > 0 ? (
+                                <a
+                                  className="infos-item infos-icon-link"
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    `${pullRequestHref(
+                                      pullRequest.ownerName,
+                                      pullRequest.projectName,
+                                      pullRequest.pullRequestNumber,
+                                    )}#comments`,
+                                  )}
+                                >
+                                  <i className="yobicon-comments"></i>
+                                  <span className="size">{pullRequest.commentCount}</span>
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="span2">
+                            <div className="mt5 pull-right">
+                              {pullRequest.receiverLabel ? (
+                                <a
+                                  className="avatar-wrap assinee"
+                                  data-placement="top"
+                                  data-original-title={pullRequest.receiverLabel}
+                                  data-toggle="tooltip"
+                                  href="#"
+                                  title=""
+                                >
+                                  <img
+                                    alt={pullRequest.receiverLabel}
+                                    height={32}
+                                    src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
+                                    width={32}
+                                  />
+                                </a>
+                              ) : (
+                                <div className="empty-avatar-wrap">&nbsp;</div>
+                              )}
+                            </div>
+                            <div className={`state ${pullRequest.state} pull-right`}>
+                              {`pullRequest.state.${pullRequest.state}`}
                             </div>
                           </div>
                         </li>
@@ -464,16 +531,22 @@ export function PublicUserProfilePage(props: {
                               </div>
                               <div className="desc">{project.overview}</div>
                               <div className="name-tag">
-                                <span>{`${project.memberCount} members`}</span>{" "}
+                                <i className="yobicon-friends yobicon-middle" />
+                                <strong>{project.memberCount}</strong>{" "}
                                 <a
                                   className="owner-name-small"
                                   href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
                                 >
                                   {project.ownerName}
                                 </a>{" "}
-                                <span>{project.createdLabel}</span>{" "}
+                                <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
                                 {project.lastPushedLabel ? (
-                                  <span>{`Updated ${project.lastPushedLabel}`}</span>
+                                  <>
+                                    <span>, project.codeUpdate </span>
+                                    <span title={project.lastPushedLabel}>
+                                      {project.lastPushedLabel}
+                                    </span>
+                                  </>
                                 ) : null}
                               </div>
                             </div>
@@ -550,24 +623,10 @@ function PublicProfileIssueItems(props: {
                 </span>
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-                <span
-                  className="infos-item infos-link-item author-cell"
-                  data-placement="bottom"
-                  data-toggle="tooltip"
-                  title={issue.authorLabel || "issue.noAuthor"}
-                >
-                  {issue.authorLabel || "issue.noAuthor"}
-                </span>
+                <PublicProfileIssuePersonCell emptyLabel="issue.noAuthor" label={issue.authorLabel} />
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-                <span
-                  className="infos-item infos-link-item author-cell"
-                  data-placement="bottom"
-                  data-toggle="tooltip"
-                  title={issue.assigneeLabel || ""}
-                >
-                  {issue.assigneeLabel || ""}
-                </span>
+                <PublicProfileIssuePersonCell label={issue.assigneeLabel} />
               </div>
               <div className="infos span3 meta">
                 <span className="meta-cell">
@@ -589,6 +648,28 @@ function PublicProfileIssueItems(props: {
         );
       })}
     </ul>
+  );
+}
+
+function PublicProfileIssuePersonCell({
+  emptyLabel = "",
+  label,
+}: {
+  emptyLabel?: string;
+  label: string;
+}) {
+  if (!label) {
+    return <span className="infos-item">{emptyLabel}</span>;
+  }
+  return (
+    <span
+      className="infos-item infos-link-item author-cell"
+      data-placement="bottom"
+      data-toggle="tooltip"
+      title={label}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -619,6 +700,7 @@ export function WorkspacePage(props: {
     displayName: session.userLabel,
     englishName: "",
     isBlocked: false,
+    isGuest: false,
     isSiteAdmin: session.isSiteAdmin,
     loginId: session.loginId,
     primaryEmailAddress: session.emailAddress,
@@ -658,7 +740,13 @@ export function WorkspacePage(props: {
               <div
                 className="whoami-wrap"
                 style={{ backgroundImage: `url('${resolvedAvatarUrl}')` }}
-              />
+              >
+                {profile.isGuest ? (
+                  <div className="guest-user">
+                    <span className="left-mark">OUR GUEST</span>
+                  </div>
+                ) : null}
+              </div>
               <div className="whoami">
                 <span className="name">{headlineName}</span>
                 {showDisplayName ? <span className="lede">{profile.displayName}</span> : null}
@@ -672,7 +760,7 @@ export function WorkspacePage(props: {
                   className="ybtn ybtn-default ybtn-mini"
                   href={appHref(props.runtimeConfig, "/user/editform")}
                 >
-                  Edit Profile
+                  <i className="yobicon-edit"></i> userinfo.editProfile
                 </a>
               </div>
               <div className="user-status">
@@ -683,17 +771,21 @@ export function WorkspacePage(props: {
               </div>
               {profile.sinceLabel ? (
                 <div className="user-since">
-                  <strong>Since</strong>
+                  <strong>userinfo.since</strong>
                   <span className="since">{profile.sinceLabel}</span>
                 </div>
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>Connected Social Login</strong>
+                  <strong>user.connected.social.login</strong>
                 </div>
                 <div className="auth-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
-                    <WorkspaceProviderBadge key={provider} provider={provider} />
+                    <WorkspaceProviderBadge
+                      key={provider}
+                      provider={provider}
+                      runtimeConfig={props.runtimeConfig}
+                    />
                   ))}
                 </div>
               </div>
@@ -701,7 +793,18 @@ export function WorkspacePage(props: {
 
             <div className="user-stream-box">
               <div className="pull-right">
-                <strong>Last {daysAgo} days</strong>
+                <span>userinfo.daysAgo.prefix</span>
+                <input
+                  className="input-mini-min"
+                  id="daysAgoBtn"
+                  max={99}
+                  min={1}
+                  name="daysAgo"
+                  readOnly
+                  type="number"
+                  value={daysAgo}
+                />
+                <span>userinfo.daysAgo.suffix</span>
               </div>
               <ul className="nav nav-tabs">
                 <li className={activeTab === "issues" ? "active" : undefined}>
@@ -713,7 +816,7 @@ export function WorkspacePage(props: {
                       setActiveTab("issues");
                     }}
                   >
-                    Issues <span className="num-badge">{issueItems.length}</span>
+                    menu.issue <span className="num-badge">{issueItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "pullRequests" ? "active" : undefined}>
@@ -725,7 +828,7 @@ export function WorkspacePage(props: {
                       setActiveTab("pullRequests");
                     }}
                   >
-                    Pull Requests <span className="num-badge">{pullRequestItems.length}</span>
+                    menu.pullRequest <span className="num-badge">{pullRequestItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "projects" ? "active" : undefined}>
@@ -737,7 +840,7 @@ export function WorkspacePage(props: {
                       setActiveTab("projects");
                     }}
                   >
-                    Projects <span className="num-badge">{memberProjects.length}</span>
+                    project.projects <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
               </ul>
@@ -828,6 +931,18 @@ export function WorkspacePage(props: {
                           key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
                         >
                           <div className="span10">
+                            <a
+                              className="avatar-wrap mlarge"
+                              href={appHref(
+                                props.runtimeConfig,
+                                projectHref(pullRequest.ownerName, pullRequest.projectName),
+                              )}
+                            >
+                              <img
+                                alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
+                                src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
+                              />
+                            </a>
                             <div className="title-wrap">
                               <a
                                 className="title project"
@@ -838,7 +953,7 @@ export function WorkspacePage(props: {
                               >
                                 {pullRequest.projectName}
                               </a>
-                              <span className="post-id">#{pullRequest.pullRequestNumber}</span>
+                              <span className="post-id">{pullRequest.pullRequestNumber}</span>
                               <a
                                 className="title"
                                 href={appHref(
@@ -854,11 +969,63 @@ export function WorkspacePage(props: {
                               </a>
                             </div>
                             <div className="infos">
-                              <span className="infos-item">{`Contributor: ${pullRequest.contributorLabel || "Unknown"}`}</span>
-                              <span className="infos-item">{`Reviewer: ${pullRequest.receiverLabel || "none"}`}</span>
-                              <span className="infos-item">{`Comments: ${pullRequest.commentCount}`}</span>
-                              <span className="infos-item">{`Updated ${pullRequest.updatedLabel || "unknown"}`}</span>
-                              <span className="infos-item">{`State: ${pullRequest.state}`}</span>
+                              {pullRequest.contributorLabel ? (
+                                <span
+                                  className="infos-item infos-link-item"
+                                  data-placement="top"
+                                  data-toggle="tooltip"
+                                  title={pullRequest.contributorLabel}
+                                >
+                                  {pullRequest.contributorLabel}
+                                </span>
+                              ) : (
+                                <span className="infos-item">issue.noAuthor</span>
+                              )}
+                              <span className="infos-item" title={pullRequest.updatedLabel}>
+                                {pullRequest.updatedLabel}
+                              </span>
+                              {pullRequest.commentCount > 0 ? (
+                                <a
+                                  className="infos-item infos-icon-link"
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    `${pullRequestHref(
+                                      pullRequest.ownerName,
+                                      pullRequest.projectName,
+                                      pullRequest.pullRequestNumber,
+                                    )}#comments`,
+                                  )}
+                                >
+                                  <i className="yobicon-comments"></i>
+                                  <span className="size">{pullRequest.commentCount}</span>
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="span2">
+                            <div className="mt5 pull-right">
+                              {pullRequest.receiverLabel ? (
+                                <a
+                                  className="avatar-wrap assinee"
+                                  data-placement="top"
+                                  data-original-title={pullRequest.receiverLabel}
+                                  data-toggle="tooltip"
+                                  href="#"
+                                  title=""
+                                >
+                                  <img
+                                    alt={pullRequest.receiverLabel}
+                                    height={32}
+                                    src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
+                                    width={32}
+                                  />
+                                </a>
+                              ) : (
+                                <div className="empty-avatar-wrap">&nbsp;</div>
+                              )}
+                            </div>
+                            <div className={`state ${pullRequest.state} pull-right`}>
+                              {`pullRequest.state.${pullRequest.state}`}
                             </div>
                           </div>
                         </li>
@@ -894,14 +1061,28 @@ export function WorkspacePage(props: {
                             </div>
                             <div className="desc">{project.overview}</div>
                             <div className="name-tag">
-                              <span>{`Owner: ${project.ownerName}`}</span>{" "}
-                              <span>{`Created ${project.createdLabel || "unknown"}`}</span>{" "}
-                              <span>{`Updated ${project.lastPushedLabel || "unknown"}`}</span>
+                              <i className="yobicon-friends yobicon-middle" />
+                              <strong>{project.memberCount}</strong>{" "}
+                              <a
+                                className="owner-name-small"
+                                href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
+                              >
+                                {project.ownerName}
+                              </a>{" "}
+                              <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
+                              {project.lastPushedLabel ? (
+                                <>
+                                  <span>, project.codeUpdate </span>
+                                  <span title={project.lastPushedLabel}>
+                                    {project.lastPushedLabel}
+                                  </span>
+                                </>
+                              ) : null}
                             </div>
-                            <div className="stats-wrap">
-                              <span className="infos-item">{`State: ${project.projectScope}`}</span>
-                              <span className="infos-item">{`Members: ${project.memberCount}`}</span>
-                              <span className="infos-item">{`Watchers: ${project.watchCount}`}</span>
+                            <div className="stats-wrap pull-right">
+                              <div className="stats">
+                                <span className="num-badge">{project.watchCount}</span>
+                              </div>
                             </div>
                           </div>
                         </li>
@@ -933,7 +1114,7 @@ export function WorkspacePage(props: {
           </dl>
         </div>
       </div>
-      <Section title="Default landing">
+      <Section title="button.setDefaultLoginPage">
         <form
           className="runtime-grid"
           onSubmit={(event) => {
@@ -942,7 +1123,7 @@ export function WorkspacePage(props: {
           }}
         >
           <label>
-            <span>Path</span>
+            <span>button.setDefaultLoginPage.desc</span>
             <input
               name="defaultLandingPath"
               onChange={(event) => setNextDefaultLandingPath(event.target.value)}
@@ -950,10 +1131,10 @@ export function WorkspacePage(props: {
               value={nextDefaultLandingPath}
             />
           </label>
-          <button type="submit">{props.pending ? "Saving…" : "Save default landing"}</button>
+          <button type="submit">button.setDefaultLoginPage</button>
         </form>
       </Section>
-      <Section title="Favorite projects">
+      <Section title="title.favorite">
         {favoriteProjects.length === 0 ? (
           <UserProjectListEmpty id="watching" />
         ) : (
@@ -966,7 +1147,7 @@ export function WorkspacePage(props: {
           </ul>
         )}
       </Section>
-      <Section title="Recent projects">
+      <Section title="title.recently.visited">
         {recentProjects.length === 0 ? (
           <UserProjectListEmpty active id="recentlyVisited" />
         ) : (
@@ -980,7 +1161,7 @@ export function WorkspacePage(props: {
         )}
       </Section>
       <button onClick={() => props.onSignOut?.()} type="button">
-        Sign out
+        title.logout
       </button>
     </main>
   );

@@ -29,7 +29,7 @@ import type {
   ProjectIssueDetailViewModel,
   ProjectDetailViewModel,
 } from "./routes/-view-models";
-import { ProjectIssueFormPage, UserIssueListPage } from "./routes/-issue-views";
+import { ProjectIssueDetailPage, ProjectIssueFormPage, UserIssueListPage } from "./routes/-issue-views";
 import {
   ProjectMilestoneDetailPage,
   ProjectMilestoneFormPage,
@@ -43,8 +43,23 @@ import {
   ProjectReviewsPage,
   PullRequestChangesPage,
 } from "./routes/-pull-request-views";
-import { ProjectWebhooksPage } from "./routes/-project-views";
-import { SearchPagination } from "./routes/-search-views";
+import {
+  ProjectChangeVcsPage,
+  ProjectStatisticsPage,
+  ProjectTransferPage,
+  ProjectWebhooksPage,
+} from "./routes/-project-views";
+import { SearchPagination, SearchResults } from "./routes/-search-views";
+import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
+import { NotificationWelcomeGuide } from "./routes/notification/route";
+
+function collectFiles(rootPath: string): string[] {
+  const entries = fs.readdirSync(rootPath, { withFileTypes: true });
+  return entries.flatMap((entry) => {
+    const entryPath = path.join(rootPath, entry.name);
+    return entry.isDirectory() ? collectFiles(entryPath) : [entryPath];
+  });
+}
 
 function expectOrderedText(html: string, orderedSnippets: string[]) {
   let previousIndex = -1;
@@ -70,6 +85,7 @@ const baseIssueDetail: ProjectIssueDetailViewModel = {
   childIssues: [],
   childOpenCount: 0,
   commentCount: 0,
+  createdLabel: "now",
   comments: [],
   dueDateLabel: "",
   hasVoted: false,
@@ -112,6 +128,8 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/lostPassword'");
     expect(routeTreeSource).toContain("fullPath: '/resetPassword'");
     expect(routeTreeSource).toContain("fullPath: '/projects'");
+    expect(routeTreeSource).toContain("fullPath: '/projectform'");
+    expect(routeTreeSource).toContain("fullPath: '/_import'");
     expect(routeTreeSource).toContain("fullPath: '/orgs'");
     expect(routeTreeSource).toContain("fullPath: '/notification'");
     expect(routeTreeSource).toContain("fullPath: '/notifications'");
@@ -132,6 +150,34 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/search'");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/search'");
+
+    const projectFormRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/projectform/route.tsx"),
+      "utf8",
+    );
+    expect(projectFormRouteSource).not.toContain("PlaceholderPage");
+    expect(projectFormRouteSource).not.toContain("Read project form options failed.");
+    expect(projectFormRouteSource).toContain("BadRequestPage");
+    expect(projectFormRouteSource).toContain("readProjectCreateFormOptionsRest");
+
+    const projectHomeRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    expect(projectHomeRouteSource).not.toContain("Read project failed.");
+    expect(projectHomeRouteSource).toContain("BadRequestPage");
+    expect(projectHomeRouteSource).toContain("classifyConnectFailure");
+    expect(projectHomeRouteSource).toContain("error.badrequest");
+    expect(projectHomeRouteSource).toContain("user.enroll.failed.network");
+    expect(projectHomeRouteSource).toContain("user.enroll.failed.client");
+    expect(projectHomeRouteSource).toContain("user.enroll.failed.server");
+    expect(projectHomeRouteSource).not.toContain("Cancel enrollment failed.");
+    expect(projectHomeRouteSource).not.toContain("Enroll failed.");
+    expect(projectHomeRouteSource).toContain("Server Error");
+    expect(projectHomeRouteSource).toContain("Update failed: ");
+    expect(projectHomeRouteSource).not.toContain("Toggle favorite failed.");
+    expect(projectHomeRouteSource).not.toContain("Toggle watch failed.");
+    expect(projectHomeRouteSource).not.toContain("Update overview failed.");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
@@ -143,12 +189,280 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/route.tsx"),
       "utf8",
     );
+    const milestoneDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/milestone/$milestoneId/route.tsx"),
+      "utf8",
+    );
 
     expect(issueListRouteSource).not.toContain("PlaceholderPage");
+    expect(issueListRouteSource).not.toContain("Read project issues failed.");
+    expect(issueListRouteSource).toContain("BadRequestPage");
+    expect(issueListRouteSource).toContain('"bad-request"');
     expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
+    expect(issueDetailRouteSource).not.toContain("Read issue detail failed.");
+    expect(issueDetailRouteSource).toContain("BadRequestPage");
+    expect(issueDetailRouteSource).toContain('"bad-request"');
     expect(issueDetailRouteSource).toContain("voteIssueComment");
     expect(issueDetailRouteSource).toContain("unvoteIssueComment");
     expect(issueDetailRouteSource).toContain("onCommentVoteToggle");
+
+    const directIssueFormRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/issues/new/route.tsx"),
+      "utf8",
+    );
+    expect(directIssueFormRouteSource).not.toContain("Read direct issue form failed.");
+    expect(directIssueFormRouteSource).toContain("BadRequestPage");
+    expect(directIssueFormRouteSource).toContain('"bad-request"');
+
+    const issueCreateRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issueform/route.tsx"),
+      "utf8",
+    );
+    const issueEditRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx"),
+      "utf8",
+    );
+    expect(issueCreateRouteSource).not.toContain("Read project failed.");
+    expect(issueCreateRouteSource).toContain("BadRequestPage");
+    expect(issueCreateRouteSource).toContain('"bad-request"');
+    expect(issueEditRouteSource).not.toContain("Read issue failed.");
+    expect(issueEditRouteSource).toContain("BadRequestPage");
+    expect(issueEditRouteSource).toContain('"bad-request"');
+  });
+
+  it("uses legacy message keys for form route document titles", () => {
+    const routeSources = [
+      ["routes/$owner/$projectName/issueform/route.tsx", "title.newIssue", "New Issue"],
+      ["routes/user/issues/new/route.tsx", "title.newIssue", "New Issue"],
+      [
+        "routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx",
+        "title.editIssue",
+        "Edit Issue",
+      ],
+      ["routes/$owner/$projectName/postform/route.tsx", "post.write", "New post"],
+      [
+        "routes/$owner/$projectName/post/$postNumber/editform/route.tsx",
+        "post.modify",
+        "Edit post",
+      ],
+      [
+        "routes/$owner/$projectName/newMilestoneForm/route.tsx",
+        "title.newMilestone",
+        "New Milestone",
+      ],
+      [
+        "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
+        "title.editMilestone",
+        "Edit Milestone",
+      ],
+      [
+        "routes/$owner/$projectName/newPullRequestForm/route.tsx",
+        "title.newPullRequest",
+        "New Pull Request",
+      ],
+      [
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
+        "title.editPullRequest",
+        "Edit Pull Request",
+      ],
+      ["routes/projects/route.tsx", "title.projectList", "Project List"],
+      ["routes/orgs/route.tsx", "title.projectList", "Organization List"],
+      ["routes/users/loginform/route.tsx", "title.login", "Login"],
+      ["routes/users/signupform/route.tsx", "title.signup", "Sign Up"],
+      ["routes/-search-views.tsx", "title.search", "Search"],
+      ["routes/$owner/$projectName/issues/route.tsx", "menu.issue", "Issues"],
+      [
+        "routes/organizations/$organizationName/issues/route.tsx",
+        "title.issueList",
+        "Organization Issues",
+      ],
+      ["routes/$owner/$projectName/posts/route.tsx", "menu.board", "Boards"],
+      [
+        "routes/organizations/$organizationName/boards/route.tsx",
+        "menu.board",
+        "Organization Boards",
+      ],
+      ["routes/$owner/$projectName/pullRequests/route.tsx", "menu.pullRequest", "Pull Requests"],
+      [
+        "routes/$owner/$projectName/closedPullRequests/route.tsx",
+        "menu.pullRequest",
+        "Closed Pull Requests",
+      ],
+      [
+        "routes/$owner/$projectName/sentPullRequests/route.tsx",
+        "menu.pullRequest",
+        "Sent Pull Requests",
+      ],
+      [
+        "routes/organizations/$organizationName/pullrequests/route.tsx",
+        "title.pullrequest",
+        "Organization Pull Requests",
+      ],
+      [
+        "routes/organizations/$organizationName/closedPullrequests/route.tsx",
+        "title.pullrequest",
+        "Organization Closed Pull Requests",
+      ],
+      ["routes/$owner/$projectName/milestones/route.tsx", "title.milestoneList", "Milestones"],
+      ["routes/$owner/$projectName/branches/route.tsx", "title.branches", "Branches"],
+      [
+        "routes/$owner/$projectName/commits/-code-history-route.tsx",
+        "title.commitHistory",
+        "Commit History",
+      ],
+      ["routes/$owner/$projectName/code/-code-route.tsx", "menu.code", "Code"],
+      ["routes/user/issues/route.tsx", "issue.myIssue", "User Issues"],
+      ["routes/user/editform/password/route.tsx", "userinfo.accountSetting", "Account Settings"],
+      ["routes/sites/$pageName/route.tsx", "title.siteSetting", "Site Admin"],
+      ["routes/verify/$loginId/$verificationCode/route.tsx", "user.verification", "Verify User"],
+      ["routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx", "menu.pullRequest", "Pull Request Changes"],
+      ["routes/$owner/$projectName/issue/labelsform/route.tsx", "label", "Issue Labels"],
+    ] as const;
+
+    for (const [routePath, legacyTitle, rawTitle] of routeSources) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).toContain(`useDocumentTitle("${legacyTitle}")`);
+      expect(source).not.toContain(`useDocumentTitle("${rawTitle}")`);
+    }
+
+    const loginRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/users/loginform/route.tsx"),
+      "utf8",
+    );
+    const signupRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/users/signupform/route.tsx"),
+      "utf8",
+    );
+    expect(loginRouteSource).toContain("user.login.failed");
+    expect(loginRouteSource).toContain("user.login.failed.network");
+    expect(loginRouteSource).toContain("user.login.failed.client");
+    expect(loginRouteSource).toContain("user.login.failed.server");
+    expect(loginRouteSource).not.toContain("Sign in failed.");
+    expect(signupRouteSource).toContain("user.enroll.failed");
+    expect(signupRouteSource).toContain("user.enroll.failed.network");
+    expect(signupRouteSource).toContain("user.enroll.failed.client");
+    expect(signupRouteSource).toContain("user.enroll.failed.server");
+    expect(signupRouteSource).not.toContain("Register failed.");
+
+    const milestoneRouteSources = [
+      [
+        "routes/$owner/$projectName/milestones/route.tsx",
+        "Read project milestones failed.",
+      ],
+      ["routes/$owner/$projectName/newMilestoneForm/route.tsx", "Read project failed."],
+      [
+        "routes/$owner/$projectName/milestone/$milestoneId/route.tsx",
+        "Read milestone failed.",
+      ],
+      [
+        "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
+        "Read milestone failed.",
+      ],
+    ] as const;
+    for (const [routePath, fallback] of milestoneRouteSources) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).not.toContain(fallback);
+      expect(source).toContain("BadRequestPage");
+      expect(source).toContain('"bad-request"');
+    }
+  });
+
+  it("uses legacy message keys for modal close button labels", () => {
+    const routePaths = [
+      "routes/-auth-views.tsx",
+      "routes/-board-views.tsx",
+      "routes/-issue-views.tsx",
+      "routes/-milestone-views.tsx",
+      "routes/-organization-views.tsx",
+      "routes/-project-views.tsx",
+      "routes/sites/$pageName/route.tsx",
+    ];
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      const closeButtons =
+        source.match(/<button(?=[^>]*className="close(?: [^"]*)?")[^>]*>[\s\S]*?<\/button>/g) ??
+        [];
+
+      expect(source).not.toContain('aria-label="Close"');
+      for (const closeButton of closeButtons) {
+        expect(closeButton).toContain('aria-label="button.close"');
+        expect(closeButton).not.toMatch(/>\s*x\s*<\/button>/);
+      }
+    }
+  });
+
+  it("uses legacy loading scalar for route bootstrap shells", () => {
+    const routeRoot = path.resolve(__dirname, "routes");
+    const routeFiles = collectFiles(routeRoot).filter((filePath) => filePath.endsWith(".tsx"));
+
+    expect(routeFiles.length).toBeGreaterThan(0);
+    for (const routeFile of routeFiles) {
+      const source = fs.readFileSync(routeFile, "utf8");
+      expect(source).not.toContain("Loading…");
+      expect(source).not.toContain("Loading...");
+      expect(source).not.toContain("Loading&hellip;");
+      expect(source).not.toContain("Redirecting…");
+    }
+  });
+
+  it("wires legacy checklist insertion for direct markdown editor shells", () => {
+    const routePaths = ["routes/-issue-views.tsx", "routes/-pull-request-views.tsx"] as const;
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).toContain("addLegacyTasklistTemplateFromButton");
+      expect(source).toContain("addLegacyTasklistTemplateFromButton(event.currentTarget)");
+    }
+  });
+
+  it("uses legacy dynamic document title expressions for review and code routes", () => {
+    const reviewRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/reviews/route.tsx"),
+      "utf8",
+    );
+    const commitRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commit/$commitId/route.tsx"),
+      "utf8",
+    );
+    const compareRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/compare/$revisionRange/route.tsx"),
+      "utf8",
+    );
+    const pullRequestDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx"),
+      "utf8",
+    );
+    const issueDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/route.tsx"),
+      "utf8",
+    );
+    const milestoneDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/milestone/$milestoneId/route.tsx"),
+      "utf8",
+    );
+
+    expect(reviewRouteSource).toContain("useDocumentTitle(`${projectName} - menu.review`)");
+    expect(reviewRouteSource).not.toContain('useDocumentTitle("Reviews")');
+    expect(commitRouteSource).toContain("useDocumentTitle(`code.commits @${commitId}`)");
+    expect(commitRouteSource).not.toContain('useDocumentTitle("Commit")');
+    expect(pullRequestDetailRouteSource).toContain(
+      'useDocumentTitle(pullRequestQuery.data?.title ?? "menu.pullRequest")',
+    );
+    expect(pullRequestDetailRouteSource).not.toContain('"Pull Request"');
+    expect(issueDetailRouteSource).toContain(
+      'useDocumentTitle(issue?.title ?? "title.issueDetail")',
+    );
+    expect(issueDetailRouteSource).not.toContain('"Issue"');
+    expect(milestoneDetailRouteSource).toContain(
+      'useDocumentTitle(milestone?.title ?? "milestone")',
+    );
+    expect(milestoneDetailRouteSource).not.toContain('"Milestone"');
+    expect(compareRouteSource).not.toContain("Read compare diff failed.");
+    expect(compareRouteSource).toContain("BadRequestPage");
+    expect(compareRouteSource).toContain('"bad-request"');
+    expect(compareRouteSource).toContain("useDocumentTitle(revisionRange)");
+    expect(compareRouteSource).not.toContain('useDocumentTitle("Compare")');
   });
 
   it("preserves legacy issue create and edit form shells", () => {
@@ -209,7 +523,14 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(createHtml).toContain('class="app-shell issue-form-page page-wrap-outer"');
+    expect(createHtml).toContain('class="app-shell issue-form-page"');
+    expect(createHtml).toContain('class="project-header-outer"');
+    expect(createHtml).toContain('class="project-header-inner"');
+    expect(createHtml).toContain('class="project-header-wrap"');
+    expect(createHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(createHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(createHtml).toContain('class="project-menu-outer"');
+    expect(createHtml).toContain('class="page-wrap-outer"');
     expect(createHtml).toContain('class="project-page-wrap"');
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
     expect(createHtml).toContain('id="issue-form"');
@@ -259,6 +580,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('id="labelIds"');
     expect(createHtml).toContain('name="labelIds"');
     expect(createHtml).toContain('data-format="issuelabel"');
+    expect(createHtml).toContain('aria-label="label.select"');
+    expect(createHtml).toContain('data-placeholder="label.select"');
     expect(createHtml).toContain('class="label issue-label list-label active"');
     expect(createHtml).toContain('name="referCommentId"');
     expect(createHtml).toContain('value="55"');
@@ -341,6 +664,44 @@ describe("file-route parity harness", () => {
     expect(draftEditHtml).not.toContain('id="notificationMail"');
   });
 
+  it("preserves the legacy issue detail created-date header scalar", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const detail: ProjectDetailViewModel = {
+      enrollmentRequested: false,
+      isFavorited: false,
+      organizationName: "",
+      overview: "",
+      ownerName: "owner",
+      projectName: "projectYobi",
+      projectScope: "public",
+      viewerCanEnroll: false,
+      viewerCanUpdate: true,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={detail}
+        issue={{
+          ...baseIssueDetail,
+          createdLabel: "May 20, 2026",
+          issueNumber: 17,
+          state: "open",
+          title: "Created date issue",
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('<header class="board-header issue">');
+    expect(html).toContain(
+      '<div class="date" title="May 20, 2026">May 20, 2026</div>',
+    );
+    expect(html).toContain(
+      '<span class="date" title="May 20, 2026">May 20, 2026</span>',
+    );
+    expect(html).toContain('<span class="badge badge-issue-open">open</span>');
+    expect(html).toContain('<span class="badge badge-small badge-issue-open">open</span>');
+  });
+
   it("requires a real project code browser route instead of a placeholder page", () => {
     const codeRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/code/route.tsx"),
@@ -354,11 +715,27 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/code/-code-route.tsx"),
       "utf8",
     );
+    const commitDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commit/$commitId/route.tsx"),
+      "utf8",
+    );
 
     expect(codeRouteSource).not.toContain("PlaceholderPage");
     expect(codeRouteSource).toContain("Outlet");
     expect(codeIndexRouteSource).toContain("CodeBrowserRouteView");
+    expect(codeRouteHelperSource).not.toContain("Read code browser failed.");
+    expect(codeRouteHelperSource).toContain("BadRequestPage");
+    expect(codeRouteHelperSource).toContain('"bad-request"');
     expect(codeRouteHelperSource).toContain("readCodeBrowser");
+    expect(commitDetailRouteSource).not.toContain("Read commit detail failed.");
+    expect(commitDetailRouteSource).toContain("BadRequestPage");
+    expect(commitDetailRouteSource).toContain("codeCommitDetailQueryOptions");
+    expect(commitDetailRouteSource).toContain("error.badrequest");
+    expect(commitDetailRouteSource).not.toContain("Create commit comment failed.");
+    expect(commitDetailRouteSource).not.toContain("Delete commit comment failed.");
+    expect(commitDetailRouteSource).not.toContain("Update commit comment failed.");
+    expect(commitDetailRouteSource).not.toContain("Close commit thread failed.");
+    expect(commitDetailRouteSource).not.toContain("Open commit thread failed.");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch'");
@@ -387,6 +764,9 @@ describe("file-route parity harness", () => {
     expect(commitsRouteSource).not.toContain("PlaceholderPage");
     expect(commitsRouteSource).toContain("Outlet");
     expect(commitsIndexRouteSource).toContain("CodeHistoryRouteView");
+    expect(commitsRouteHelperSource).not.toContain("Read code history failed.");
+    expect(commitsRouteHelperSource).toContain("BadRequestPage");
+    expect(commitsRouteHelperSource).toContain('"bad-request"');
     expect(commitsRouteHelperSource).toContain("readCodeHistory");
     expect(codeViewsSource).toContain("data-via-email");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
@@ -397,6 +777,17 @@ describe("file-route parity harness", () => {
   });
 
   it("renders code browser surfaces without temporary Yona Rust headings", () => {
+    const branchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/branches/route.tsx"),
+      "utf8",
+    );
+    expect(branchRouteSource).not.toContain("Read branches failed.");
+    expect(branchRouteSource).toContain("BadRequestPage");
+    expect(branchRouteSource).toContain('"bad-request"');
+    expect(branchRouteSource).toContain("error.badrequest");
+    expect(branchRouteSource).not.toContain("Set default branch failed.");
+    expect(branchRouteSource).not.toContain("Delete branch failed.");
+
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const detail: ProjectDetailViewModel = {
       cloneUrl: "http://localhost/owner/projectYobi.git",
@@ -451,7 +842,33 @@ describe("file-route parity harness", () => {
             permissions: { canComment: false, canUpdateThreadState: false },
             projectName: "projectYobi",
             selectedBranch: "main",
-            threads: [],
+            threads: [
+              {
+                authorId: 2,
+                authorLabel: "Reviewer",
+                authorLoginId: "reviewer",
+                comments: [
+                  {
+                    authorId: 2,
+                    authorLabel: "Reviewer",
+                    authorLoginId: "reviewer",
+                    canDelete: false,
+                    contentsHtml: "",
+                    contentsMarkdown: "Review comment",
+                    createdLabel: "2026-06-03",
+                    id: 9,
+                    threadId: 8,
+                    viaEmail: false,
+                  },
+                ],
+                commitId: "abcdef1234567890",
+                createdLabel: "2026-06-03",
+                id: 8,
+                path: "",
+                prevCommitId: "",
+                state: "open",
+              },
+            ],
           }}
           detail={detail}
           runtimeConfig={runtimeConfig}
@@ -494,7 +911,12 @@ describe("file-route parity harness", () => {
                 commitShortId: "1234567",
                 isDefault: false,
                 name: "refs/heads/topic",
-                pullRequest: null,
+                pullRequest: {
+                  ownerName: "owner",
+                  projectName: "projectYobi",
+                  pullRequestNumber: 12,
+                  state: "OPEN",
+                },
                 shortName: "topic",
               },
             ],
@@ -533,7 +955,19 @@ describe("file-route parity harness", () => {
 
     for (const html of pages) {
       expect(html).toContain('class="code-browse-wrap');
+      expect(html).toContain('class="project-header-outer"');
+      expect(html).toContain('class="project-header-inner"');
+      expect(html).toContain('class="project-header-wrap"');
+      expect(html).toContain('class="project-menu-outer"');
+      expect(html).toContain('class="page-wrap-outer"');
+      expect(html).toContain('class="project-page-wrap"');
+      expect(html).toContain('href="/yona/owner">owner</a>');
+      expect(html).toContain('href="/yona/owner/projectYobi">projectYobi</a>');
       expect(html).not.toContain("Yona Rust Project");
+      expect(html).not.toContain("<h1>menu.code</h1>");
+      expect(html).not.toContain("<h1>code.commits</h1>");
+      expect(html).not.toContain("<h1>title.branches</h1>");
+      expect(html).not.toContain("<p>owner/projectYobi</p>");
     }
     for (const html of [pages[0], pages[1], pages[3], pages[4]]) {
       expect(html).toContain(">code.files</a>");
@@ -544,7 +978,6 @@ describe("file-route parity harness", () => {
       expect(html).not.toContain(">Commits</a>");
       expect(html).not.toContain(">Branches</a>");
     }
-    expect(pages[0]).toContain("<h1>menu.code</h1>");
     expect(pages[0]).toContain(
       '<select class="pull-left" data-dropdown-css-class="branches" data-format="branch" data-toggle="select2" id="branches"',
     );
@@ -554,13 +987,19 @@ describe("file-route parity harness", () => {
     expect(pages[0]).toContain('href="/yona/owner/projectYobi/postform?path=&amp;branch=main"');
     expect(pages[0]).not.toContain(">Download</a>");
     expect(pages[0]).not.toContain('<label for="branches">Branch</label>');
-    expect(pages[2]).toContain("<h1>abcdef1234567890..abcdef1234567890</h1>");
     expect(pages[2]).toContain('<p class="commitInfo">');
     expect(pages[2]).toContain('<strong class="commitId">@abcdef1234567890..abcdef1234567890</strong>');
     expect(pages[2]).not.toContain("<h1>Compare</h1>");
-    expect(pages[3]).toContain("<h1>title.branches</h1>");
+    expect(pages[1]).toContain(
+      'class="avatar-wrap" data-placement="top" data-toggle="tooltip" href="/yona/reviewer" title="Reviewer"',
+    );
+    expect(pages[1]).toContain(
+      'data-placement="top" data-toggle="tooltip" href="/yona/reviewer" title="Reviewer"><strong>reviewer </strong></a>',
+    );
+    expect(pages[1]).toContain(
+      '<span class="ago"><a href="#comment-9" title="2026-06-03">2026-06-03</a></span>',
+    );
     expect(pages[3]).not.toContain("<h1>Branches</h1>");
-    expect(pages[4]).toContain("<h1>code.commits</h1>");
     expect(pages[4]).toContain(
       '<select class="pull-right" data-dropdown-css-class="branches" data-format="branch" data-toggle="select2" id="branches"',
     );
@@ -573,6 +1012,12 @@ describe("file-route parity harness", () => {
     expect(branchListHtml).toContain("<th>code.branches.pullRequest</th>");
     expect(branchListHtml).toContain("code.branches.defaultBranch");
     expect(branchListHtml).toContain("code.branches.noPullRequest");
+    expect(branchListHtml).toContain(
+      '<span class="date" data-placement="top" data-toggle="tooltip" title="2026-06-01T00:00:00Z">2026-06-01T00:00:00Z</span>',
+    );
+    expect(branchListHtml).toContain(
+      'class="blue-txt pullrequest-state open" data-placement="top" data-toggle="tooltip" href="/yona/owner/projectYobi/pullRequest/12" title="pullRequest.state.open"',
+    );
     expect(branchListHtml).toContain(">code.branches.setAsDefault</button>");
     expect(branchListHtml).toContain(">button.delete</a>");
     expect(branchListHtml).not.toContain(">Branches</th>");
@@ -639,10 +1084,12 @@ describe("file-route parity harness", () => {
     expect(folderHtml).toContain('<a class="avatar-wrap smaller" href="/yona/author"><img src="/yona/files/77"/></a>');
     expect(folderHtml).toContain('class="span1 commitDate"');
     expect(folderHtml).toContain('class="dynatree-icon vmiddle"');
-    expect(folderHtml).toContain('data-listPath="docs"');
+    expect(folderHtml).toContain('data-list-path="docs"');
+    expect(folderHtml).not.toContain('data-listPath="docs"');
     expect(folderHtml).toContain('id="cb-docs/guides"');
     expect(folderHtml).toContain('data-path="docs/guides"');
-    expect(folderHtml).toContain('data-targetPath="docs/guides"');
+    expect(folderHtml).toContain('data-target-path="docs/guides"');
+    expect(folderHtml).not.toContain('data-targetPath="docs/guides"');
     expect(folderHtml).toContain('data-type="folder"');
     expect(folderHtml).toContain('href="/yona/owner/projectYobi/code/main/docs/guides#cb-docs/guides"');
     expect(folderHtml).toContain('title="guides"');
@@ -686,8 +1133,8 @@ describe("file-route parity harness", () => {
     );
     expect(historyHtml).not.toContain("<span>/</span>");
     expect(historyHtml).toContain('title="code.copyCommitId"');
-    expect(historyHtml).toContain('data-commitId="abcdef1234567890"');
-    expect(historyHtml).not.toContain('data-commit-id="abcdef1234567890"');
+    expect(historyHtml).toContain('data-commit-id="abcdef1234567890"');
+    expect(historyHtml).not.toContain('data-commitId="abcdef1234567890"');
     expect(historyHtml).toContain('class="yobicon-copy"');
     expect(historyHtml).toContain('title="code.showCommit"');
     expect(historyHtml).toContain('<span class="number-of-comments"><i class="yobicon-comments"></i> 2</span>');
@@ -701,6 +1148,9 @@ describe("file-route parity harness", () => {
     expect(historyHtml).not.toContain('class="number-of-comments ml5"');
     expect(historyHtml).toContain('title="code.showCodeAtThisCommit"');
     expect(historyHtml).toContain(">code.showCode</a>");
+    expect(historyHtml).toContain(
+      '<td class="date" title="2026-06-01T00:00:00Z">2026-06-01T00:00:00Z</td>',
+    );
     expect(historyHtml).toContain(
       '<a class="avatar-wrap" data-placement="top" data-toggle="tooltip" href="/yona/dev" title="dev"><img alt="Dev" height="32" src="/yona/files/88" width="32"/></a>',
     );
@@ -730,9 +1180,11 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(compareHtml).toContain("<h1>abcdef1234567890..1234567890abcdef</h1>");
+    expect(compareHtml).toContain('<p class="commitInfo">');
+    expect(compareHtml).toContain('<strong class="commitId">@abcdef1234567890..1234567890abcdef</strong>');
     expect(compareHtml).toContain('<div class="diff-body discommentable">');
     expect(compareHtml).toContain('<article class="diff-file" id="README-md">');
+    expect(compareHtml).not.toContain("<h1>abcdef1234567890..1234567890abcdef</h1>");
     expect(compareHtml).not.toContain("<h1>Compare</h1>");
   });
 
@@ -781,8 +1233,54 @@ describe("file-route parity harness", () => {
     expect(searchViewsSource).toContain('props.scope.type === "project"');
     expect(searchViewsSource).toContain('category.type === "project"');
     expect(searchViewsSource).toContain("readProjectSearch");
+    expect(searchViewsSource).toContain("ProjectHeader");
+    expect(searchViewsSource).toContain("ProjectMenu");
+    expect(searchViewsSource).toContain("projectSearchDetail");
+    expect(searchViewsSource).toContain('scope.type !== "project"');
+    expect(searchViewsSource).toContain("<ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />");
+    expect(searchViewsSource).toContain("<ProjectMenu detail={projectDetail} runtimeConfig={runtimeConfig} />");
+    expect(searchViewsSource).toContain("OrganizationHeader");
+    expect(searchViewsSource).toContain("OrganizationMenu");
+    expect(searchViewsSource).toContain("organizationSearchDetail");
+    expect(searchViewsSource).toContain('scope.type !== "organization"');
+    expect(searchViewsSource).toContain(
+      "<OrganizationHeader detail={organizationDetail} runtimeConfig={runtimeConfig} />",
+    );
+    expect(searchViewsSource).toContain(
+      "<OrganizationMenu detail={organizationDetail} runtimeConfig={runtimeConfig} />",
+    );
     expect(searchViewsSource).toContain("readOrganizationSearch");
     expect(searchViewsSource).toContain("apiQueryKeys.search.project");
+    for (const key of [
+      "title.search",
+      "search.result.title",
+      "search.menu.issues",
+      "search.menu.users",
+      "search.menu.projects",
+      "search.menu.boards",
+      "search.menu.milestones",
+      "search.menu.issue.comments",
+      "search.menu.board.comments",
+      "search.menu.reviews",
+    ]) {
+      expect(searchViewsSource).toContain(key);
+    }
+    for (const rawLabel of [
+      'label: "Issues"',
+      'label: "Users"',
+      'label: "Projects"',
+      'label: "Posts"',
+      'label: "Milestones"',
+      'label: "Issue Comments"',
+      'label: "Post Comments"',
+      'label: "Code Reviews"',
+      "<h3>Search</h3>",
+      ">Search</button>",
+      "Found <strong>",
+      '<div className="empty-result">Loading&hellip;</div>',
+    ]) {
+      expect(searchViewsSource).not.toContain(rawLabel);
+    }
 
     const paginationHtml = renderToStaticMarkup(
       <SearchPagination
@@ -826,6 +1324,77 @@ describe("file-route parity harness", () => {
     );
     expect(paginationHtml).not.toContain("Previous");
     expect(paginationHtml).not.toContain("Page 2 of 3");
+
+    const resultsHtml = renderToStaticMarkup(
+      <SearchResults
+        activeType="issue"
+        input={{ keyword: "Needle", pageNum: 1, searchType: "issue" }}
+        isLoading={false}
+        response={{
+          context: { organizationName: "", ownerName: "", projectName: "" },
+          counts: {
+            issueComments: 0,
+            issues: 2,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "Door",
+              authorLoginId: "door",
+              createdLabel: "May 18, 2026",
+              href: "/owner/projectYobi/issue/7",
+              id: "issue-7",
+              number: "7",
+              ownerName: "owner",
+              projectName: "projectYobi",
+              snippets: [{ highlights: [], text: "Needle body" }],
+              state: "",
+              title: "Search issue",
+              type: "issue",
+              updatedLabel: "",
+            },
+            {
+              authorLabel: "",
+              authorLoginId: "ghost",
+              createdLabel: "May 19, 2026",
+              href: "/owner/projectYobi/issue/8",
+              id: "issue-8",
+              number: "8",
+              ownerName: "owner",
+              projectName: "projectYobi",
+              snippets: [{ highlights: [], text: "No author body", truncated: true }],
+              state: "",
+              title: "No author search issue",
+              type: "issue",
+              updatedLabel: "",
+            },
+          ],
+          keyword: "Needle",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "issue",
+          scope: "global",
+          searchType: "issue",
+          totalCount: 2,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        scope={{ type: "global" }}
+      />,
+    );
+    expect(resultsHtml).toContain('href="/yona/door"');
+    expect(resultsHtml).toContain('class="meta-item" data-placement="top" data-toggle="tooltip" href="/yona/door" title="door"');
+    expect(resultsHtml).toContain('<span class="meta-item" title="May 18, 2026">May 18, 2026</span>');
+    expect(resultsHtml).toContain(">No author search issue</a>");
+    expect(resultsHtml).toContain(">issue.noAuthor</span>");
+    expect(resultsHtml).not.toContain('href="/yona/users/door"');
+    expect(resultsHtml).not.toContain('title="issue.noAuthor"');
+    expect(resultsHtml).not.toContain('href="/yona/issue.noAuthor"');
+    expect(resultsHtml).toContain(" .....");
   });
 
   it("requires a real organization issue route instead of a placeholder page", () => {
@@ -835,6 +1404,9 @@ describe("file-route parity harness", () => {
     );
 
     expect(organizationIssueRouteSource).not.toContain("PlaceholderPage");
+    expect(organizationIssueRouteSource).not.toContain("Read organization issues failed.");
+    expect(organizationIssueRouteSource).toContain("BadRequestPage");
+    expect(organizationIssueRouteSource).toContain('"bad-request"');
     expect(organizationIssueRouteSource).toContain("listOrganizationIssues");
   });
 
@@ -905,6 +1477,10 @@ describe("file-route parity harness", () => {
     );
 
     expect(listHtml).toContain("page-wrap-outer");
+    expect(listHtml).toContain('class="project-header-outer"');
+    expect(listHtml).toContain('class="project-header-inner"');
+    expect(listHtml).toContain('class="group-title-head">group</span>');
+    expect(listHtml).toContain('<a href="/yona/organizations/acme">acme</a>');
     expect(listHtml).toContain("row-fluid issue-list-wrap");
     expect(listHtml).toContain("left-menu span2 span-hard-wrap");
     expect(listHtml).toContain('id="search"');
@@ -922,6 +1498,11 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('class="nav nav-tabs nm"');
     expect(listHtml).toContain("issue.state.open");
     expect(listHtml).toContain('class="num-badge">2');
+    expect(listHtml).toContain('class="two-column-icon mr10 hide-in-mobile"');
+    expect(listHtml).toContain('title="common.two.column.mode"');
+    expect(listHtml).toContain('data-content="common.two.column.mode.desc"');
+    expect(listHtml).toContain('id="two-column-mode"');
+    expect(listHtml).toContain('class="two-column-mode-text">common.two.column.view</span>');
     expect(listHtml).toContain("filter-wrap small-heights");
     expect(listHtml).toContain('data-order-by="updatedDate"');
     expect(listHtml).toContain("common.order.updatedDate");
@@ -986,6 +1567,10 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(userIssueRoutePath)).toBe(true);
     const userIssueRouteSource = fs.readFileSync(userIssueRoutePath, "utf8");
     expect(userIssueRouteSource).not.toContain("PlaceholderPage");
+    expect(userIssueRouteSource).not.toContain("Read user issues failed.");
+    expect(userIssueRouteSource).toContain("set Default page failed: ");
+    expect(userIssueRouteSource).not.toContain("set Default page failed.");
+    expect(userIssueRouteSource).toContain("BadRequestPage");
     expect(userIssueRouteSource).toContain("listUserIssues");
   });
 
@@ -1001,6 +1586,7 @@ describe("file-route parity harness", () => {
             {
               assigneeLabel: "Mona",
               authorLabel: "Door",
+              authorLoginId: "door",
               commentCount: 4,
               issueNumber: 9,
               labels: [{ color: "#51aacc", id: 23, name: "bug" }],
@@ -1049,8 +1635,9 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(html).toContain("app-shell user-issue-list-page page-wrap-outer");
-    expect(html).toContain("page-wrap");
+    expect(html).toContain('class="app-shell user-issue-list-page"');
+    expect(html).not.toContain("app-shell user-issue-list-page page-wrap-outer");
+    expect(html).toContain('<div class="page-wrap-outer"><div class="page-wrap">');
     expect(html).toContain('class="nav nav-tabs"');
     expect(html).toContain('href="/yona/notifications"');
     expect(html).toContain('href="/yona/user/issues"');
@@ -1084,6 +1671,16 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="nav nav-tabs nm"');
     expect(html).toContain("issue.state.open");
     expect(html).toContain("show-subtasks-li");
+    expect(html).toContain('class="two-column-icon mr10 hide-in-mobile"');
+    expect(html).toContain('title="common.two.column.mode"');
+    expect(html).toContain('data-content="common.two.column.mode.desc"');
+    expect(html).toContain('id="two-column-mode"');
+    expect(html).toContain('class="two-column-mode-text">common.two.column.view</span>');
+    expect(html).toContain('class="show-subtasks mr10"');
+    expect(html).toContain('data-toggle="popover"');
+    expect(html).toContain('title="common.show.subtasks"');
+    expect(html).toContain('data-content="common.show.subtasks.desc"');
+    expect(html).toContain('id="toggle-show-subtasks"');
     expect(html).toContain("filter-wrap small-heights");
     expect(html).toContain('data-order-by="updatedDate"');
     expect(html).toContain("common.order.updatedDate");
@@ -1097,6 +1694,11 @@ describe("file-route parity harness", () => {
     expect(html).toContain("twoColumeModeTarget");
     expect(html).toContain('data-label-id="23"');
     expect(html).toContain("author-cell");
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('title="door"');
+    expect(html).toContain(">issue.noAuthor</span>");
+    expect(html).not.toContain('title="issue.noAuthor"');
+    expect(html).not.toContain('href="/yona/issue.noAuthor"');
     expect(html).toContain("meta-cell");
     expect(html).toContain('title="issue.assignee: Mona"');
     expect(html).toContain('id="pagination"');
@@ -1182,6 +1784,10 @@ describe("file-route parity harness", () => {
     const notificationsAliasRouteSource = fs.readFileSync(notificationsAliasRoutePath, "utf8");
     expect(notificationRouteSource).not.toContain("PlaceholderPage");
     expect(notificationRouteSource).not.toContain("Yona Rust Notifications");
+    expect(notificationRouteSource).not.toContain("Read notifications failed.");
+    expect(notificationRouteSource).toContain("BadRequestPage");
+    expect(notificationRouteSource).toContain('useDocumentTitle("Yona")');
+    expect(notificationRouteSource).not.toContain('useDocumentTitle("Notifications")');
     expect(notificationsAliasRouteSource).not.toContain("PlaceholderPage");
     expect(notificationsAliasRouteSource).toContain("NotificationRouteComponent");
     expect(notificationsAliasRouteSource).toContain('routePath="/notifications"');
@@ -1189,8 +1795,19 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).not.toContain('routePath = "/notification"');
     expect(notificationRouteSource).toContain("useQuery");
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
+    expect(notificationRouteSource).toContain('className="app-shell notification-page"');
+    expect(notificationRouteSource).not.toContain('className="app-shell notification-page page-wrap-outer"');
     expect(notificationRouteSource).toContain("page-wrap-outer");
     expect(notificationRouteSource).toContain("page-wrap");
+    expect(notificationRouteSource).toContain("NotificationWelcomeGuide");
+    expect(notificationRouteSource).toContain('className={`site-guide-outer${visible ? "" : " hide"}`}');
+    expect(notificationRouteSource).toContain("app.welcome Yona - app.description");
+    expect(notificationRouteSource).toContain("welcome-table table borderless");
+    expect(notificationRouteSource).toContain("button.newProject");
+    expect(notificationRouteSource).toContain("title.newOrganization");
+    expect(notificationRouteSource).toContain("app.welcome.searchProject.desc");
+    expect(notificationRouteSource).toContain('className="guide-toggle"');
+    expect(notificationRouteSource).toContain('id="toggleIntro"');
     expect(notificationRouteSource).toContain("content-container");
     expect(notificationRouteSource).toContain("main-stream");
     expect(notificationRouteSource).toContain("MySeriesMenuTabs");
@@ -1201,19 +1818,58 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain('id="setDefaultLoginPage"');
     expect(notificationRouteSource).toContain("button.setDefaultLoginPage");
     expect(notificationRouteSource).toContain("setDefaultLandingPathRest");
+    expect(notificationRouteSource).toContain("set Default page failed: ");
+    expect(notificationRouteSource).not.toContain("set Default page failed.");
     expect(notificationRouteSource).toContain("notification-wrap");
     expect(notificationRouteSource).toContain("warning-none");
     expect(notificationRouteSource).toContain("yobicon-danger");
     expect(notificationRouteSource).toContain("notification.none");
     expect(notificationRouteSource).not.toContain("No notification has been received.");
-    expect(notificationRouteSource).not.toContain('<li className="warning-none">notification.none</li>');
+    expect(notificationRouteSource).not.toContain('<li className="warning-none">Loading…</li>');
+    expect(notificationRouteSource).toContain('<li className="warning-none">');
+    expect(notificationRouteSource).not.toContain('<div className="warning-none">\n                    <i className="yobicon-danger"></i> notification.none');
     expect(notificationRouteSource).toContain('data-toggle="learnmore"');
+    expect(notificationRouteSource).toContain("NotificationMessage");
+    expect(notificationRouteSource).toContain("handleLearnMoreClick");
+    expect(notificationRouteSource).toContain('target.closest("a, img")');
+    expect(notificationRouteSource).toContain('onClick={(event) => handleLearnMoreClick(item.id, event)}');
+    expect(notificationRouteSource).toContain("event.stopPropagation()");
+    expect(notificationRouteSource).toContain("ResizeObserver");
+    expect(notificationRouteSource).toContain('className="more"');
+    expect(notificationRouteSource).toContain("/assets/images/default-avatar-64.png");
+    expect(notificationRouteSource).toContain('className="smaller"');
+    expect(notificationRouteSource).toContain("height={42}");
+    expect(notificationRouteSource).toContain("width={42}");
     expect(notificationRouteSource).toContain('href="javascript:void(0);"');
     expect(notificationRouteSource).toContain('id="notification-more"');
     expect(notificationRouteSource).not.toContain("`/users/${encodeURIComponent(loginId)}`");
     expect(notificationRouteSource).toContain("`/${encodeURIComponent(loginId)}`");
     const appCssSource = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
     expect(appCssSource).toContain(".notification-stream .message-wrap.nowrap");
+    expect(appCssSource).toContain(".notification-stream .more");
+    expect(appCssSource).toContain(".site-guide-outer");
+    expect(appCssSource).toContain(".welcome-table");
+    expect(appCssSource).toContain(".guide-toggle");
+  });
+
+  it("renders the legacy notification welcome guide shell", () => {
+    const html = renderToStaticMarkup(<NotificationWelcomeGuide basePath="/yona" />);
+
+    expect(html).toContain('class="site-guide-outer"');
+    expect(html).toContain("app.welcome Yona - app.description");
+    expect(html).toContain('class="welcome-table table borderless"');
+    expect(html).toContain('href="/yona/projects/new"');
+    expect(html).toContain(">button.newProject</a>");
+    expect(html).toContain("app.welcome.project.desc");
+    expect(html).toContain('href="/yona/organizations/new"');
+    expect(html).toContain(">title.newOrganization</a>");
+    expect(html).toContain("app.welcome.group.desc");
+    expect(html).toContain('href="/yona/projects"');
+    expect(html).toContain(">title.projectList</a>");
+    expect(html).toContain("app.welcome.searchProject.desc");
+    expect(html).toContain('class="guide-toggle"');
+    expect(html).toContain('id="toggleIntro"');
+    expect(html).toContain('class="yobicon-resizev"');
   });
 
   it("requires real board routes and board API wiring instead of placeholders", () => {
@@ -1250,13 +1906,46 @@ describe("file-route parity harness", () => {
       expect(fs.readFileSync(routePath, "utf8")).not.toContain("PlaceholderPage");
     }
 
-    expect(fs.readFileSync(boardListRoutePath, "utf8")).toContain("listProjectPostsQueryOptions");
-    expect(fs.readFileSync(boardDetailRoutePath, "utf8")).toContain("readProjectPostQueryOptions");
-    expect(fs.readFileSync(boardCreateRoutePath, "utf8")).toContain("createProjectPostRest");
-    expect(fs.readFileSync(boardEditRoutePath, "utf8")).toContain("updateProjectPostRest");
-    expect(fs.readFileSync(organizationBoardRoutePath, "utf8")).toContain(
-      "listOrganizationBoardsQueryOptions",
+    const boardListRouteSource = fs.readFileSync(boardListRoutePath, "utf8");
+    expect(boardListRouteSource).not.toContain("Read project board failed.");
+    expect(boardListRouteSource).toContain("BadRequestPage");
+    expect(boardListRouteSource).toContain('"bad-request"');
+    expect(boardListRouteSource).toContain("listProjectPostsQueryOptions");
+    const boardDetailRouteSource = fs.readFileSync(boardDetailRoutePath, "utf8");
+    const boardCreateRouteSource = fs.readFileSync(boardCreateRoutePath, "utf8");
+    const boardEditRouteSource = fs.readFileSync(boardEditRoutePath, "utf8");
+    expect(boardDetailRouteSource).not.toContain("Read post failed.");
+    expect(boardDetailRouteSource).toContain("BadRequestPage");
+    expect(boardDetailRouteSource).toContain('"bad-request"');
+    expect(boardDetailRouteSource).toContain("readProjectPostQueryOptions");
+    expect(boardDetailRouteSource).toContain(
+      'useDocumentTitle(postQuery.data?.title ?? "menu.board")',
     );
+    expect(boardDetailRouteSource).toContain("error.badrequest");
+    expect(boardDetailRouteSource).not.toContain('"Board"');
+    expect(boardDetailRouteSource).not.toContain("Delete board comment failed.");
+    expect(boardDetailRouteSource).not.toContain("Create board comment failed.");
+    expect(boardDetailRouteSource).not.toContain("Update board comment failed.");
+    expect(boardDetailRouteSource).not.toContain("Delete board post failed.");
+    expect(boardDetailRouteSource).not.toContain("Update board watch failed.");
+    expect(boardCreateRouteSource).not.toContain("Read post form options failed.");
+    expect(boardCreateRouteSource).toContain("BadRequestPage");
+    expect(boardCreateRouteSource).toContain('"bad-request"');
+    expect(boardCreateRouteSource).toContain("createProjectPostRest");
+    expect(boardCreateRouteSource).toContain("error.badrequest");
+    expect(boardCreateRouteSource).not.toContain("Create post failed.");
+    expect(boardEditRouteSource).not.toContain("Read post form options failed.");
+    expect(boardEditRouteSource).not.toContain("Read post failed.");
+    expect(boardEditRouteSource).toContain("BadRequestPage");
+    expect(boardEditRouteSource).toContain('"bad-request"');
+    expect(boardEditRouteSource).toContain("updateProjectPostRest");
+    expect(boardEditRouteSource).toContain("post.update.error");
+    expect(boardEditRouteSource).not.toContain("Update post failed.");
+    const organizationBoardRouteSource = fs.readFileSync(organizationBoardRoutePath, "utf8");
+    expect(organizationBoardRouteSource).not.toContain("Read organization boards failed.");
+    expect(organizationBoardRouteSource).toContain("BadRequestPage");
+    expect(organizationBoardRouteSource).toContain('"bad-request"');
+    expect(organizationBoardRouteSource).toContain("listOrganizationBoardsQueryOptions");
     expect(fs.readFileSync(boardApiPath, "utf8")).toContain("/posts");
 
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
@@ -1282,7 +1971,7 @@ describe("file-route parity harness", () => {
       projectName: "projectYobi",
       readme: false,
       title: "Second page post",
-      updatedLabel: "now",
+      updatedLabel: "later",
     };
     const listHtml = renderToStaticMarkup(
       <ProjectBoardListPage
@@ -1294,7 +1983,17 @@ describe("file-route parity harness", () => {
         orderBy="updatedDate"
         orderDir="desc"
         posts={{
-          items: [boardItem],
+          items: [
+            boardItem,
+            {
+              ...boardItem,
+              authorAvatarUrl: "",
+              authorLabel: "",
+              authorLoginId: "",
+              postNumber: "17",
+              title: "No author board post",
+            },
+          ],
           notices: [],
           ownerName: "owner",
           pageNum: 2,
@@ -1308,7 +2007,14 @@ describe("file-route parity harness", () => {
     );
 
     expect(listHtml).not.toContain("postform");
-    expect(listHtml).toContain('class="app-shell board-page page-wrap-outer"');
+    expect(listHtml).toContain('class="app-shell board-page"');
+    expect(listHtml).toContain('class="project-header-outer"');
+    expect(listHtml).toContain('class="project-header-inner"');
+    expect(listHtml).toContain('class="project-header-wrap"');
+    expect(listHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(listHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(listHtml).toContain('class="project-menu-outer"');
+    expect(listHtml).toContain('class="page-wrap-outer"');
     expect(listHtml).toContain('<div class="post-list project-page-wrap">');
     expect(listHtml).toContain('<div class="search-wrap underline board-toolbar">');
     expect(listHtml).toContain('id="option_form"');
@@ -1321,7 +2027,11 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
     expect(listHtml).toContain('name="orderBy"');
     expect(listHtml).toContain('name="orderDir"');
-    expect(listHtml).toContain('<div class="two-column-mode-checkbox-area"></div>');
+    expect(listHtml).toContain('class="two-column-icon mr10 hide-in-mobile"');
+    expect(listHtml).toContain('title="common.two.column.mode"');
+    expect(listHtml).toContain('data-content="common.two.column.mode.desc"');
+    expect(listHtml).toContain('id="two-column-mode"');
+    expect(listHtml).toContain('class="two-column-mode-text">common.two.column.view</span>');
     expect(listHtml).toContain('<div class="filter-wrap board">');
     expect(listHtml).toContain('<div class="filters">');
     expect(listHtml).toContain('<ul class="post-list-wrap">');
@@ -1335,6 +2045,12 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('class="title post-title"');
     expect(listHtml).toContain('class="infos post-row-meta"');
     expect(listHtml).toContain('class="infos-item infos-link-item"');
+    expect(listHtml).toContain(">No author board post</a>");
+    expect(listHtml).toContain(">issue.noAuthor</span>");
+    expect(listHtml).not.toContain('title="issue.noAuthor"');
+    expect(listHtml).not.toContain('href="/yona/issue.noAuthor"');
+    expect(listHtml).toContain('<span class="infos-item" data-placement="bottom" data-toggle="tooltip" title="now">now</span>');
+    expect(listHtml).not.toContain(">later</span>");
     expect(listHtml).toContain('<div class="write-btn-wrap"></div>');
     expect(listHtml).toContain('class="page-navigation-wrap" id="pagination"');
     expect(listHtml).toContain('<ul class="page-nums">');
@@ -1384,6 +2100,8 @@ describe("file-route parity harness", () => {
     expect(creatableListHtml).toContain("post.write");
     expect(creatableListHtml).toContain('<div class="board-labels"><select');
     expect(creatableListHtml).toContain('name="labelIds[]"');
+    expect(creatableListHtml).toContain('aria-label="label.select"');
+    expect(creatableListHtml).toContain('data-placeholder="label.select"');
     expect(creatableListHtml).toContain('<ul class="post-list-wrap notice-wrap">');
     expect(creatableListHtml).toContain('class="label label-notice"');
     expect(creatableListHtml).toContain('class="label label-important"');
@@ -1488,7 +2206,10 @@ describe("file-route parity harness", () => {
     );
     expect(detailHtml).not.toContain(">Watch<");
     expect(detailHtml).not.toContain("Leave a comment");
-    expect(detailHtml).toContain('class="app-shell board-page page-wrap-outer"');
+    expect(detailHtml).toContain('class="app-shell board-page"');
+    expect(detailHtml).toContain('class="project-header-outer"');
+    expect(detailHtml).toContain('class="project-menu-outer"');
+    expect(detailHtml).toContain('class="page-wrap-outer"');
     expect(detailHtml).toContain('<div class="project-page-wrap board-view">');
     expect(detailHtml).toContain('<div class="board-header issue">');
     expect(detailHtml).toContain('<strong class="board-id">#16</strong>');
@@ -1581,6 +2302,9 @@ describe("file-route parity harness", () => {
     expect(writableDetailHtml).toContain('id="watch-button"');
     expect(writableDetailHtml).toContain('data-watching="true"');
     expect(writableDetailHtml).toContain(">post.unwatch</button>");
+    expect(writableDetailHtml).toContain('aria-label="button.edit"');
+    expect(writableDetailHtml).toContain('<span class="sr-only">button.edit</span>');
+    expect(writableDetailHtml).toContain('<span class="sr-only">button.delete</span>');
     expect(writableDetailHtml).not.toContain(">Unwatch</button>");
     expect(writableDetailHtml).not.toContain("Watchers 2");
     expect(writableDetailHtml).toContain('href="/yona/owner/projectYobi/postform"');
@@ -1660,6 +2384,11 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain("child reply");
     expect(childCommentHtml).toContain('class="subcomment-author hide"');
     expect(childCommentHtml).toContain('href="/yona/reply"');
+    expect(childCommentHtml).toContain('aria-label="common.comment.edit"');
+    expect(childCommentHtml).toContain('<span class="sr-only">common.comment.edit</span>');
+    expect(childCommentHtml).toContain('aria-label="common.comment.delete"');
+    expect(childCommentHtml).not.toContain('aria-label="Edit comment"');
+    expect(childCommentHtml).toContain('<span class="sr-only">common.comment.delete</span>');
     expect(childCommentHtml).toContain('class="btn-transparent deleteButtonX"');
     expect(childCommentHtml).toContain('class="child-comment-input-form"');
     expect(childCommentHtml).toContain('class="parentCommentId"');
@@ -1699,8 +2428,18 @@ describe("file-route parity harness", () => {
     expect(orgHtml).not.toContain("<h1>Boards</h1>");
     expect(orgHtml).toContain("projectNames%5B%5D=alpha");
     expect(orgHtml).toContain("pageNum=2");
-    expect(orgHtml).toContain('class="app-shell board-page page-wrap-outer"');
-    expect(orgHtml).toContain('<div class="project-page-wrap">');
+    expect(orgHtml).toContain('class="app-shell board-page"');
+    expect(orgHtml).not.toContain('class="app-shell board-page page-wrap-outer"');
+    expect(orgHtml).toContain('class="project-header-outer"');
+    expect(orgHtml).toContain('class="project-header-inner"');
+    expect(orgHtml).toContain('class="group-title-head">group</span>');
+    expect(orgHtml).toContain('<a href="/yona/organizations/weblabs">weblabs</a>');
+    expect(orgHtml).toContain('class="project-menu-nav project-menu-gruop"');
+    expect(orgHtml).toContain(">title.organizationHome</a>");
+    expect(orgHtml).toContain(">menu.issue</a>");
+    expect(orgHtml).toContain('<li class="active"><a href="/yona/organizations/weblabs/boards">menu.board</a>');
+    expect(orgHtml).toContain(">menu.pullRequest</a>");
+    expect(orgHtml).toContain('<div class="page-wrap-outer"><div class="project-page-wrap">');
     expect(orgHtml).toContain('<div class="search-wrap underline board-toolbar">');
     expect(orgHtml).toContain('id="option_form"');
     expect(orgHtml).toContain('method="get"');
@@ -1708,16 +2447,22 @@ describe("file-route parity harness", () => {
     expect(orgHtml).toContain('<div class="project-selects span7">');
     expect(orgHtml).toContain('id="projects"');
     expect(orgHtml).toContain('name="projectNames[]"');
+    expect(orgHtml).toContain('aria-label="organization.choose.projects"');
     expect(orgHtml).toContain('data-format="projects"');
     expect(orgHtml).toContain('data-placeholder="organization.choose.projects"');
     expect(orgHtml).toContain('data-toggle="select2"');
     expect(orgHtml).toContain('data-container-css-class="fullsize"');
+    expect(orgHtml).not.toContain('aria-label="Projects"');
     expect(orgHtml).toContain('<div class="search-bar span4">');
     expect(orgHtml).toContain('class="textbox group-board"');
     expect(orgHtml).toContain('name="filter"');
     expect(orgHtml).toContain('placeholder="title.searchByKeyword"');
     expect(orgHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
-    expect(orgHtml).toContain('<div class="two-column-mode-checkbox-area"></div>');
+    expect(orgHtml).toContain('class="two-column-icon mr10 hide-in-mobile"');
+    expect(orgHtml).toContain('title="common.two.column.mode"');
+    expect(orgHtml).toContain('data-content="common.two.column.mode.desc"');
+    expect(orgHtml).toContain('id="two-column-mode"');
+    expect(orgHtml).toContain('class="two-column-mode-text">common.two.column.view</span>');
     expect(orgHtml).toContain('<div class="filter-wrap board">');
     expect(orgHtml).toContain('<ul class="post-list-wrap">');
     expect(orgHtml).toContain('class="post-item title post-row"');
@@ -1765,7 +2510,16 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(createHtml).toContain('class="app-shell board-page page-wrap-outer"');
+    expect(createHtml).toContain('class="app-shell board-page"');
+    expect(createHtml).toContain('class="project-header-outer"');
+    expect(createHtml).toContain('class="project-header-inner"');
+    expect(createHtml).toContain('class="project-header-wrap"');
+    expect(createHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(createHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(createHtml).toContain('class="project-menu-outer"');
+    expect(createHtml).toContain('class="page-wrap-outer"');
+    expect(createHtml).toContain('<h1 class="sr-only">post.write</h1>');
+    expect(createHtml).not.toContain("New post");
     expect(createHtml).toContain('<div class="project-page-wrap">');
     expect(createHtml).toContain(
       'action="/yona/owner/projectYobi/post"',
@@ -1808,6 +2562,30 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain(">button.cancel</a>");
     expect(createHtml).not.toContain(">Save</button>");
     expect(createHtml).not.toContain(">Cancel</a>");
+
+    const labeledCreateHtml = renderToStaticMarkup(
+      <ProjectPostFormPage
+        canMarkNotice
+        canMarkReadme
+        labels={[
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "kind",
+            color: "#abc",
+            id: "7",
+            name: "guide",
+          },
+        ]}
+        mode="create"
+        ownerName="owner"
+        projectName="projectYobi"
+        runtimeConfig={runtimeConfig}
+        onSubmit={noopSubmit}
+      />,
+    );
+    expect(labeledCreateHtml).toContain("<legend>label</legend>");
+    expect(labeledCreateHtml).not.toContain("<legend>Labels</legend>");
 
     const editHtml = renderToStaticMarkup(
       <ProjectPostFormPage
@@ -1855,6 +2633,8 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(editHtml).toContain('action="/yona/owner/projectYobi/post/16"');
+    expect(editHtml).toContain('<h1 class="sr-only">post.modify</h1>');
+    expect(editHtml).not.toContain("Edit post");
     expect(editHtml).toContain('<label for="title">title</label>');
     expect(editHtml).toContain('value="Existing post"');
     expect(editHtml).toContain('class="ybtn ybtn-info"');
@@ -2025,6 +2805,12 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(listHtml).toContain('class="page-wrap-outer"');
+    expect(listHtml).toContain('class="project-header-outer"');
+    expect(listHtml).toContain('class="project-header-inner"');
+    expect(listHtml).toContain('class="project-header-wrap"');
+    expect(listHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(listHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(listHtml).toContain('class="project-menu-outer"');
     expect(listHtml).toContain('class="project-page-wrap"');
     expect(listHtml).toContain('class="tab-wrap"');
     expect(listHtml).toContain("milestone.menu.new");
@@ -2032,6 +2818,8 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain("milestone.state.closed");
     expect(listHtml).toContain("milestone.state.all");
     expect(listHtml).toContain('class="filter-wrap milestone"');
+    expect(listHtml).toContain('href="/yona/owner/projectYobi/issue/labels.css"');
+    expect(listHtml).toContain('rel="stylesheet"');
     expect(listHtml).toContain("common.order.dueDate");
     expect(listHtml).toContain("common.order.completionRate");
     expect(listHtml).toContain('placeholder="search.title"');
@@ -2069,6 +2857,10 @@ describe("file-route parity harness", () => {
         onDelete={async () => undefined}
       />,
     );
+    expect(detailHtml).toContain('class="project-header-outer"');
+    expect(detailHtml).toContain('class="project-menu-outer"');
+    expect(detailHtml).toContain('href="/yona/owner/projectYobi/issue/labels.css"');
+    expect(detailHtml).toContain('rel="stylesheet"');
     expect(detailHtml).toContain('class="milesion-wrap"');
     expect(detailHtml).toContain('class="title"');
     expect(detailHtml).toContain("label.dueDate");
@@ -2131,7 +2923,16 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(createHtml).toContain('class="app-shell milestone-form-page page-wrap-outer"');
+    expect(createHtml).toContain('class="app-shell milestone-form-page"');
+    expect(createHtml).toContain('class="project-header-outer"');
+    expect(createHtml).toContain('class="project-header-inner"');
+    expect(createHtml).toContain('class="project-header-wrap"');
+    expect(createHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(createHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(createHtml).toContain('class="project-menu-outer"');
+    expect(createHtml).toContain('<h1 class="sr-only">title.newMilestone</h1>');
+    expect(createHtml).not.toContain("New Milestone");
+    expect(createHtml).toContain('class="page-wrap-outer"');
     expect(createHtml).toContain('class="project-page-wrap"');
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
     expect(createHtml).toContain('id="milestone-form"');
@@ -2153,6 +2954,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('data-editor-mode="content-body"');
     expect(createHtml).toContain('id="editor-contents-content-body"');
     expect(createHtml).toContain('name="contents"');
+    expect(createHtml).toContain('aria-label="milestone.form.content"');
+    expect(createHtml).not.toContain('aria-label="Contents"');
     expect(createHtml).toContain('class="actrow right-txt"');
     expect(createHtml).toContain('class="ybtn ybtn-info"');
     expect(createHtml).toContain('class="span3 span-hard-wrap"');
@@ -2183,6 +2986,8 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(editHtml).toContain('action="/yona/owner/projectYobi/milestone/7/edit"');
+    expect(editHtml).toContain('<h1 class="sr-only">title.editMilestone</h1>');
+    expect(editHtml).not.toContain("Edit Milestone");
     expect(editHtml).toContain('value="v1.0"');
     expect(editHtml).toContain("Existing body");
     expect(editHtml).toContain('value="2026-07-01"');
@@ -2253,6 +3058,15 @@ describe("file-route parity harness", () => {
               newValue: "merged",
               oldValue: "open",
               senderLoginId: "owner",
+            },
+            {
+              commits: [],
+              createdLabel: "now",
+              eventType: "PULL_REQUEST_STATE_CHANGED",
+              id: 14,
+              newValue: "OPEN",
+              oldValue: "CLOSED",
+              senderLoginId: "",
             },
           ],
           fromBranch: "topic/pr",
@@ -2342,7 +3156,14 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(html).toContain('class="app-shell pull-request-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell pull-request-page"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/owner">owner</a>');
+    expect(html).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('<div class="project-page-wrap">');
     expect(html).toContain('<div class="board-header issue">');
     expect(html).toContain('<strong class="board-id">#1</strong>');
@@ -2385,7 +3206,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<span class="num-badge">1</span>');
     expect(html).toContain('<ul class="comments" id="comments">');
     expect(html).toContain('<li class="event" id="comment-11">');
-    expect(html).toContain('<span class="state CLOSED">pullRequest.event.CLOSED</span>');
+    expect(html).toContain('<span class="state closed">pullRequest.event.closed</span>');
     expect(html).toContain(
       'class="usf-group" data-placement="top" data-toggle="tooltip" href="/yona/owner" title="owner"',
     );
@@ -2396,6 +3217,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain(
       `<a class="link" href="/yona/owner/projectYobi/commit/${commitSha}" title="code.showCommit">be6a8cc</a>`,
     );
+    expect(html).toContain('<li class="event" id="comment-14">');
+    expect(html).toContain("<strong>User.anonymous.name</strong>");
+    expect(html).not.toContain("<strong>Anonymous</strong>");
     expect(html).toContain('href="#event-11" title="now"');
     expect(html).toContain('<ul class="commit-list">');
     expect(html).toContain('<li class="comment-body commit-info outdated">');
@@ -2676,7 +3500,10 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(html).toContain('class="app-shell pull-request-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell pull-request-page"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('<div class="project-page-wrap">');
     expect(html).toContain('<div class="code-browse-wrap">');
     expect(html).toContain('<div class="board-body mb20">');
@@ -3084,7 +3911,16 @@ describe("file-route parity harness", () => {
               userLabel: "Reviewer",
             },
           ],
-          items: [item],
+          items: [
+            item,
+            {
+              ...item,
+              contributorLabel: "",
+              id: 2,
+              pullRequestNumber: 2,
+              title: "No contributor display name",
+            },
+          ],
           openCount: 31,
           pageNum: 2,
           pageSize: 15,
@@ -3107,7 +3943,14 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(projectHtml).toContain('<main class="app-shell pull-request-page page-wrap-outer">');
+    expect(projectHtml).toContain('<main class="app-shell pull-request-page">');
+    expect(projectHtml).toContain('class="project-header-outer"');
+    expect(projectHtml).toContain('class="project-header-inner"');
+    expect(projectHtml).toContain('class="project-header-wrap"');
+    expect(projectHtml).toContain('<a href="/yona/owner">owner</a>');
+    expect(projectHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(projectHtml).toContain('class="project-menu-outer"');
+    expect(projectHtml).toContain('class="page-wrap-outer"');
     expect(projectHtml).toContain('<div class="project-page-wrap">');
     expect(projectHtml).toContain('<div class="row-fluid cb" pjax-container="">');
     expect(projectHtml).toContain('<div class="left-menu span2 search-wrap hide-in-mobile"');
@@ -3141,6 +3984,10 @@ describe("file-route parity harness", () => {
     expect(projectHtml).toContain('<ul class="post-list-wrap">');
     expect(projectHtml).toContain('<li class="post-item title" href="/yona/owner/projectYobi/pullRequest/1">');
     expect(projectHtml).toContain('<span class="post-id">1</span>');
+    expect(projectHtml).toContain(">No contributor display name</a>");
+    expect(projectHtml).toContain(">issue.noAuthor</span>");
+    expect(projectHtml).not.toContain('title="issue.noAuthor"');
+    expect(projectHtml).not.toContain('href="/yona/issue.noAuthor"');
     expect(projectHtml).toContain('<span class="size total">2</span>');
     expect(projectHtml).toContain('class="page-navigation-wrap" id="pagination"');
     expect(projectHtml).toContain('<ul class="page-nums">');
@@ -3182,8 +4029,13 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(organizationHtml).toContain('<main class="app-shell pull-request-page page-wrap-outer">');
-    expect(organizationHtml).toContain('<div class="project-page-wrap">');
+    expect(organizationHtml).toContain('<main class="app-shell pull-request-page">');
+    expect(organizationHtml).not.toContain('<main class="app-shell pull-request-page page-wrap-outer">');
+    expect(organizationHtml).toContain('class="project-header-outer"');
+    expect(organizationHtml).toContain('class="project-header-inner"');
+    expect(organizationHtml).toContain('class="group-title-head">group</span>');
+    expect(organizationHtml).toContain('<a href="/yona/organizations/acme">acme</a>');
+    expect(organizationHtml).toContain('<div class="page-wrap-outer"><div class="project-page-wrap">');
     expect(organizationHtml).toContain('<div class="row-fluid cb" pjax-container="">');
     expect(organizationHtml).toContain('<form id="search" name="search" action="/yona/organizations/acme/pullrequests" method="get">');
     expect(organizationHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
@@ -3305,6 +4157,35 @@ describe("file-route parity harness", () => {
               startLine: 2,
               state: "open",
             },
+            {
+              authorId: 3,
+              authorAvatarUrl: "/yona/avatar/ghost.png",
+              authorLabel: "",
+              authorLoginId: "ghost",
+              comments: [
+                {
+                  authorId: 3,
+                  authorLabel: "",
+                  authorLoginId: "ghost",
+                  canDelete: false,
+                  contentsHtml: "",
+                  contentsMarkdown: "No author review body",
+                  createdLabel: "old",
+                  id: 13,
+                  threadId: 12,
+                  viaEmail: false,
+                },
+              ],
+              commitId: "1234567890ab",
+              createdLabel: "old",
+              endLine: 3,
+              id: 12,
+              path: "src/ghost.rs",
+              prevCommitId: "",
+              pullRequestNumber: undefined,
+              startLine: 3,
+              state: "open",
+            },
           ],
           openCount: 1,
           pageNum: 2,
@@ -3318,7 +4199,10 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(html).toContain('class="app-shell pull-request-page page-wrap-outer"');
+    expect(html).toContain('class="app-shell pull-request-page"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('<div class="project-page-wrap">');
     expect(html).toContain('<div class="row-fluid issue-list-wrap">');
     expect(html).toContain('<div class="span2 search-wrap span-hard-wrap">');
@@ -3343,6 +4227,10 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain("Review list comment");
     expect(html).toContain("Commit discussion body");
+    expect(html).toContain("No author review body");
+    expect(html).toContain(">issue.noAuthor</span>");
+    expect(html).not.toContain('title="issue.noAuthor"');
+    expect(html).not.toContain('href="/yona/issue.noAuthor"');
     expect(html).toContain('class="infos-item item-count-groups"');
     expect(html).toContain('class="page-navigation-wrap" id="pagination"');
     expect(html).toContain('<ul class="page-nums">');
@@ -3400,6 +4288,25 @@ describe("file-route parity harness", () => {
       expect(source).not.toContain("PlaceholderPage");
       expect(source).toContain("useQuery");
     }
+    const organizationPullRequestRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/pullrequests/route.tsx"),
+      "utf8",
+    );
+    const organizationClosedPullRequestRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/organizations/$organizationName/closedPullrequests/route.tsx",
+      ),
+      "utf8",
+    );
+    expect(organizationPullRequestRouteSource).not.toContain("Read organization PRs failed.");
+    expect(organizationPullRequestRouteSource).toContain("BadRequestPage");
+    expect(organizationPullRequestRouteSource).toContain('"bad-request"');
+    expect(organizationClosedPullRequestRouteSource).not.toContain(
+      "Read organization PRs failed.",
+    );
+    expect(organizationClosedPullRequestRouteSource).toContain("BadRequestPage");
+    expect(organizationClosedPullRequestRouteSource).toContain('"bad-request"');
 
     const pullRequestListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/pullRequests/route.tsx"),
@@ -3413,13 +4320,99 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/sentPullRequests/route.tsx"),
       "utf8",
     );
+    const newPullRequestFormRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/newPullRequestForm/route.tsx"),
+      "utf8",
+    );
+    const pullRequestDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx"),
+      "utf8",
+    );
+    const pullRequestChangesRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      ),
+      "utf8",
+    );
+    const pullRequestEditFormRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
+      ),
+      "utf8",
+    );
     const pullRequestViewsSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-pull-request-views.tsx"),
       "utf8",
     );
     expect(pullRequestListRouteSource).toContain('searchParams.get("contributorId")');
+    expect(pullRequestListRouteSource).not.toContain("Read pull requests failed.");
+    expect(pullRequestListRouteSource).toContain("BadRequestPage");
+    expect(pullRequestListRouteSource).toContain('"bad-request"');
     expect(closedPullRequestListRouteSource).toContain('searchParams.get("contributorId")');
+    expect(closedPullRequestListRouteSource).not.toContain("Read pull requests failed.");
+    expect(closedPullRequestListRouteSource).toContain("BadRequestPage");
+    expect(closedPullRequestListRouteSource).toContain('"bad-request"');
     expect(sentPullRequestListRouteSource).not.toContain("currentSession");
+    expect(sentPullRequestListRouteSource).not.toContain("Read pull requests failed.");
+    expect(sentPullRequestListRouteSource).toContain("BadRequestPage");
+    expect(sentPullRequestListRouteSource).toContain('"bad-request"');
+    expect(newPullRequestFormRouteSource).not.toContain("Read pull request form options failed.");
+    expect(newPullRequestFormRouteSource).toContain("BadRequestPage");
+    expect(newPullRequestFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
+    expect(newPullRequestFormRouteSource).not.toContain("Create pull request failed.");
+    expect(pullRequestEditFormRouteSource).not.toContain(
+      "Read pull request form options failed.",
+    );
+    expect(pullRequestEditFormRouteSource).toContain("BadRequestPage");
+    expect(pullRequestEditFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
+    expect(pullRequestEditFormRouteSource).not.toContain("Update pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Read pull request failed.");
+    expect(pullRequestDetailRouteSource).toContain("BadRequestPage");
+    expect(pullRequestDetailRouteSource).toContain("error.badrequest");
+    expect(pullRequestDetailRouteSource).not.toContain(
+      "Delete pull request review comment failed.",
+    );
+    expect(pullRequestDetailRouteSource).not.toContain(
+      "Update pull request review comment failed.",
+    );
+    expect(pullRequestDetailRouteSource).not.toContain("Close pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Reopen pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Merge pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain(
+      "Delete pull request source branch failed.",
+    );
+    expect(pullRequestDetailRouteSource).not.toContain(
+      "Restore pull request source branch failed.",
+    );
+    expect(pullRequestDetailRouteSource).not.toContain("Review pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Unreview pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Watch pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Unwatch pull request failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Close review thread failed.");
+    expect(pullRequestDetailRouteSource).not.toContain("Open review thread failed.");
+    expect(pullRequestChangesRouteSource).not.toContain("Read pull request changes failed.");
+    expect(pullRequestChangesRouteSource).toContain("BadRequestPage");
+    expect(pullRequestChangesRouteSource).toContain("error.badrequest");
+    expect(pullRequestChangesRouteSource).not.toContain(
+      "Create pull request inline review comment failed.",
+    );
+    expect(pullRequestChangesRouteSource).not.toContain("Create pull request comment failed.");
+    expect(pullRequestChangesRouteSource).not.toContain(
+      "Delete pull request review comment failed.",
+    );
+    expect(pullRequestChangesRouteSource).not.toContain(
+      "Update pull request review comment failed.",
+    );
+    expect(pullRequestChangesRouteSource).not.toContain("Close review thread failed.");
+    expect(pullRequestChangesRouteSource).not.toContain("Open review thread failed.");
+    const projectReviewsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/reviews/route.tsx"),
+      "utf8",
+    );
+    expect(projectReviewsRouteSource).not.toContain("Read reviews failed.");
+    expect(projectReviewsRouteSource).toContain("BadRequestPage");
     expect(pullRequestViewsSource).toContain("props.detail.isForked");
     expect(pullRequestViewsSource).toContain("pullRequestQueryString");
     expect(pullRequestViewsSource).toContain('category !== "sent"');
@@ -3487,6 +4480,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("page-wrap-outer");
     expect(pullRequestViewsSource).toContain("project-page-wrap");
     expect(pullRequestViewsSource).toContain("code-browse-wrap");
+    expect(pullRequestViewsSource).not.toContain("Loading&hellip;");
     expect(pullRequestViewsSource).toContain("author-info left-txt");
     expect(pullRequestViewsSource).toContain("author-info right-txt");
     expect(pullRequestViewsSource).toContain("avatar-wrap smaller");
@@ -3582,15 +4576,23 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project members failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("useQuery");
     expect(routeSource).toContain("useMutation");
     expect(routeSource).toContain("apiQueryKeys.project.members");
+    expect(routeSource).not.toContain("Add project member failed.");
+    expect(routeSource).not.toContain("Update project member role failed.");
+    expect(routeSource).not.toContain("Delete project member failed.");
+    expect(routeSource).toContain("project.member.ownerMustBeAManager");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
       "utf8",
     );
     expect(viewSource).toContain("ProjectMembersPage");
+    expect(viewSource).toContain("<ProjectHeader");
     expect(viewSource).toContain('id="addNewMember"');
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
@@ -3608,10 +4610,17 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read issue labels failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("copyProjectLabels");
     expect(routeSource).toContain("createProjectLabel");
     expect(routeSource).toContain("updateProjectLabel");
     expect(routeSource).toContain("deleteProjectLabel");
+    expect(routeSource).toContain("ProjectHeader");
+    expect(routeSource).toContain('<ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />');
+    expect(routeSource).toContain('<ProjectMenu activeMenu="settings"');
+    expect(routeSource).toContain('className="page-wrap-outer"');
     expect(routeSource).toContain('className="project-page-wrap label-editor-wrap"');
     expect(routeSource).toContain("ProjectSettingsSubMenu");
     expect(routeSource).toContain('id="copyLabel"');
@@ -3637,10 +4646,18 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read organization admin failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readOrganizationAdmin");
     expect(routeSource).toContain("addOrganizationMember");
     expect(routeSource).toContain("deleteOrganizationMember");
     expect(routeSource).toContain("updateOrganizationMemberRole");
+    expect(routeSource).toContain("error.badrequest");
+    expect(routeSource).not.toContain("Accept enrollment failed.");
+    expect(routeSource).not.toContain("Add member failed.");
+    expect(routeSource).not.toContain("Delete member failed.");
+    expect(routeSource).not.toContain("Update member failed.");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-organization-views.tsx"),
@@ -3655,6 +4672,32 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("enrollAcceptBtn");
   });
 
+  it("requires organization create/settings routes to use legacy common fallback shells", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/organizations/new'");
+    expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/settingform'");
+
+    const newRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/new/route.tsx"),
+      "utf8",
+    );
+    expect(newRouteSource).toContain("createOrganization");
+    expect(newRouteSource).toContain("error.badrequest");
+    expect(newRouteSource).not.toContain("Create organization failed.");
+
+    const settingsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/settingform/route.tsx"),
+      "utf8",
+    );
+    expect(settingsRouteSource).not.toContain("PlaceholderPage");
+    expect(settingsRouteSource).toContain("BadRequestPage");
+    expect(settingsRouteSource).toContain('"bad-request"');
+    expect(settingsRouteSource).toContain("readOrganizationContainer");
+    expect(settingsRouteSource).toContain("updateOrganization");
+    expect(settingsRouteSource).toContain("error.badrequest");
+    expect(settingsRouteSource).not.toContain("Update organization failed.");
+  });
+
   it("requires organization delete route to preserve legacy anchors and mutation wiring", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/deleteForm'");
@@ -3666,9 +4709,14 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read organization admin failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readOrganizationAdmin");
     expect(routeSource).toContain("deleteOrganization");
     expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("organization.delete.error");
+    expect(routeSource).not.toContain("Delete organization failed.");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-organization-views.tsx"),
@@ -3683,6 +4731,22 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("organization.delete.reaccept");
   });
 
+  it("requires project settings route to use legacy common fallback shells", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/settingform'");
+
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/settingform/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
+    expect(routeSource).toContain("readProjectSettings");
+    expect(routeSource).toContain("updateProject");
+    expect(routeSource).toContain("error.badrequest");
+    expect(routeSource).not.toContain("Update project failed.");
+  });
+
   it("requires project delete confirmation route to preserve legacy anchors and mutation wiring", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
@@ -3691,14 +4755,20 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project delete form failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("deleteProjectRest");
     expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("project.delete.error");
+    expect(routeSource).not.toContain("Delete project failed.");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
       "utf8",
     );
     expect(viewSource).toContain("ProjectDeletePage");
+    expect(viewSource).toContain("<ProjectHeader");
     expect(viewSource).toContain('id="subMenuProjectDelete"');
     expect(viewSource).toContain('id="accept"');
     expect(viewSource).toContain('id="btnDelete"');
@@ -3714,9 +4784,15 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project webhooks failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectWebhooksQueryOptions");
     expect(routeSource).toContain("createProjectWebhookRest");
     expect(routeSource).toContain("deleteProjectWebhookRest");
+    expect(routeSource).not.toContain("Create project webhook failed.");
+    expect(routeSource).not.toContain("Delete project webhook failed.");
+    expect(routeSource).toContain('"error.badrequest"');
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
@@ -3733,6 +4809,13 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="webhookDeliveryHistory"');
     expect(viewSource).toContain("data-webhook-delivery-id");
     expect(viewSource).toContain('data-request-method="delete"');
+
+    const serverSource = fs.readFileSync(
+      path.resolve(__dirname, "../..", "crates/server/src/lib.rs"),
+      "utf8",
+    );
+    expect(serverSource).toContain("project.webhook.payloadUrl.empty");
+    expect(serverSource).not.toContain("project.webhook.payloadUrl.required");
   });
 
   it("renders the legacy project webhook form and list shell", () => {
@@ -3785,6 +4868,12 @@ describe("file-route parity harness", () => {
     );
 
     expect(html).toContain('class="project-page-wrap webhook-editor-wrap"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/yona">yona</a>');
+    expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('class="new-webhook-wrap"');
     expect(html).toContain('id="formNewWebhook"');
     expect(html).toContain('action="/yona/yona/projectYobi/webhooks"');
@@ -3810,6 +4899,115 @@ describe("file-route parity harness", () => {
     expect(html).not.toContain("project.webhook.gitPush");
   });
 
+  it("hides the project webhook create form without update permission", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const projectDetail: ProjectDetailViewModel = {
+      enrollmentRequested: false,
+      isFavorited: false,
+      organizationName: "",
+      overview: "",
+      ownerName: "yona",
+      projectName: "projectYobi",
+      projectScope: "public",
+      showCode: true,
+      viewerCanEnroll: false,
+      viewerCanUpdate: false,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectWebhooksPage
+        detail={{
+          deliveries: [],
+          ownerName: "yona",
+          projectName: "projectYobi",
+          viewerCanUpdate: false,
+          webhookTypes: ["SIMPLE", "JSON"],
+          webhooks: [
+            {
+              gitPush: false,
+              id: 7,
+              payloadUrl: "https://hooks.example.test/yona",
+              secret: "token",
+              webhookType: "SIMPLE",
+            },
+          ],
+        }}
+        projectDetail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).not.toContain('id="formNewWebhook"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).not.toContain("project.webhook.add");
+    expect(html).toContain('id="webhooksList"');
+    expect(html).toContain('data-webhook-id="7"');
+    expect(html).toContain('<h6 class="mr20 truncate">https://hooks.example.test/yona</h6>');
+  });
+
+  it("renders the legacy project change VCS anchor and modal shell", () => {
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/changeVCS/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project change VCS failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
+    expect(routeSource).toContain("readProjectChangeVcsQueryOptions");
+    expect(routeSource).toContain("changeProjectVcsRest");
+    expect(routeSource).toContain("project.changeVCS.error");
+    expect(routeSource).not.toContain("Change project VCS failed.");
+
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const projectDetail: ProjectDetailViewModel = {
+      enrollmentRequested: false,
+      isFavorited: false,
+      organizationName: "",
+      overview: "",
+      ownerName: "yona",
+      projectName: "projectYobi",
+      projectScope: "public",
+      showCode: true,
+      viewerCanEnroll: false,
+      viewerCanUpdate: true,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectChangeVcsPage
+        changeVcs={{
+          currentVcs: "GIT",
+          nextVcs: "Subversion",
+          ownerName: "yona",
+          projectName: "projectYobi",
+          viewerCanChange: true,
+        }}
+        detail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/yona">yona</a>');
+    expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('id="acceptChangeVCS"');
+    expect(html).toContain('class="bg-checkbox label-agreement"');
+    expect(html).toContain('class="ybtn ybtn-danger"');
+    expect(html).toContain('data-toggle="modal"');
+    expect(html).toContain('href="#alertChangeVCS"');
+    expect(html).toContain('id="btnChangeVCS"');
+    expect(html).toContain("project.changeVCS.this");
+    expect(html).toContain('id="alertChangeVCS"');
+    expect(html).toContain("modal hide");
+    expect(html).toContain("project.changeVCS.requestion Subversion");
+    expect(html).toContain("project.changeVCS.description2");
+    expect(html).toContain("project.changeVCS.reaccept");
+    expect(html).toContain('id="btnChangeVCSExec"');
+    expect(html).toContain("button.yes");
+    expect(html).toContain("button.no");
+  });
+
   it("requires project transfer route to preserve legacy anchors and mutation wiring", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/transfer'");
@@ -3818,8 +5016,13 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project transfer failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectTransferQueryOptions");
     expect(routeSource).toContain("requestProjectTransferRest");
+    expect(routeSource).toContain("project.transfer.error");
+    expect(routeSource).not.toContain("Request project transfer failed.");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
@@ -3832,6 +5035,63 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="btnTransfer"');
     expect(viewSource).toContain('id="alertTransfer"');
     expect(viewSource).toContain('id="btnTransferExec"');
+
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const projectDetail: ProjectDetailViewModel = {
+      enrollmentRequested: false,
+      isFavorited: false,
+      organizationName: "",
+      overview: "",
+      ownerName: "yona",
+      projectName: "projectYobi",
+      projectScope: "public",
+      showCode: true,
+      viewerCanEnroll: false,
+      viewerCanUpdate: true,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectTransferPage
+        detail={projectDetail}
+        runtimeConfig={runtimeConfig}
+        transfer={{
+          acceptPath: "/project/transfer/7/key",
+          destination: "",
+          ownerName: "yona",
+          projectName: "projectYobi",
+          viewerCanTransfer: true,
+        }}
+      />,
+    );
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/yona">yona</a>');
+    expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('id="subMenuProjectTransfer"');
+    expect(html).toContain('class="bubble-wrap gray wp"');
+    expect(html).toContain('<div class="cu-label">project.transfer.new.owner</div>');
+    expect(html).toContain('id="owner"');
+    expect(html).toContain('<div class="cu-label">project.transfer</div>');
+    expect(html).toContain("project.transfer.description1");
+    expect(html).toContain("project.transfer.description5");
+    expect(html).toContain('id="accept"');
+    expect(html).toContain('class="bg-checkbox label-agreement"');
+    expect(html).toContain('class="box-wrap bottom"');
+    expect(html).toContain('href="#alertTransfer"');
+    expect(html).toContain('data-toggle="modal"');
+    expect(html).toContain('id="btnTransfer"');
+    expect(html).toContain("project.transfer.this");
+    expect(html).toContain('id="alertTransfer"');
+    expect(html).toContain("modal hide");
+    expect(html).toContain("project.transfer.requestion");
+    expect(html).toContain("project.transfer.description</p>");
+    expect(html).toContain("project.transfer.reaccept");
+    expect(html).toContain('id="btnTransferExec"');
+    expect(html).toContain("button.yes");
+    expect(html).toContain("button.no");
+    expect(html).not.toContain("<h1>project.transfer</h1>");
+    expect(html).not.toContain("button.confirm");
   });
 
   it("requires project fork route to preserve legacy anchors and mutation wiring", () => {
@@ -3842,8 +5102,13 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project fork failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectForkOptionsQueryOptions");
     expect(routeSource).toContain("forkProjectRest");
+    expect(routeSource).toContain("fork.failed");
+    expect(routeSource).not.toContain("Fork project failed.");
 
     const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");
     expect(apiSource).toContain("ProjectForkOptionsResponse");
@@ -3875,6 +5140,9 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read project statistics failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectContainerQueryOptions");
     expect(routeSource).toContain("ProjectStatisticsPage");
 
@@ -3884,8 +5152,38 @@ describe("file-route parity harness", () => {
     );
     expect(viewSource).toContain("ProjectStatisticsPage");
     expect(viewSource).toContain("Under Construction");
+    expect(viewSource).toContain("<ProjectHeader");
     expect(viewSource).toContain('className="page-wrap-outer"');
     expect(viewSource).toContain('className="project-page-wrap"');
+
+    const html = renderToStaticMarkup(
+      <ProjectStatisticsPage
+        detail={{
+          backgroundUrl: "/backgrounds/projectYobi.png",
+          enrollmentRequested: false,
+          isFavorited: true,
+          logoUrl: "/logos/projectYobi.png",
+          organizationName: "weblabs",
+          overview: "",
+          ownerName: "weblabs",
+          projectName: "projectYobi",
+          projectScope: "protected",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('class="project-header-avatar"');
+    expect(html).toContain('<img alt="" src="/logos/projectYobi.png"/>');
+    expect(html).toContain('<a href="/yona/weblabs">weblabs</a>');
+    expect(html).toContain('<a href="/yona/weblabs/projectYobi">projectYobi</a>');
+    expect(html).toContain('<span class="project-title-text">weblabs / projectYobi</span>');
+    expect(html).toContain('<span class="project-protected" title="Group Project">G</span>');
+    expect(html).toContain("<h1>Under Construction</h1>");
   });
 
   it("requires the public user profile route to preserve the legacy single-segment shell", () => {
@@ -3896,6 +5194,9 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(routePath)).toBe(true);
     const routeSource = fs.readFileSync(routePath, "utf8");
     expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).not.toContain("Read public user profile failed.");
+    expect(routeSource).toContain("BadRequestPage");
+    expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readPublicUserProfile");
     expect(routeSource).toContain("PublicUserProfilePage");
 
@@ -3921,12 +5222,36 @@ describe("file-route parity harness", () => {
         displayName: "Door",
         englishName: "Door English",
         isBlocked: false,
+        isGuest: true,
         isSiteAdmin: false,
         loginId: "door",
         primaryEmailAddress: "",
         sinceLabel: "May 16, 2026",
       },
-      pullRequestItems: [],
+      pullRequestItems: [
+        {
+          commentCount: 2,
+          contributorLabel: "Door",
+          ownerName: "owner",
+          projectName: "publicYobi",
+          pullRequestNumber: 12,
+          receiverLabel: "Mona",
+          state: "open",
+          title: "Public profile PR",
+          updatedLabel: "May 18, 2026",
+        },
+        {
+          commentCount: 0,
+          contributorLabel: "",
+          ownerName: "owner",
+          projectName: "publicYobi",
+          pullRequestNumber: 13,
+          receiverLabel: "",
+          state: "closed",
+          title: "Public profile no author PR",
+          updatedLabel: "May 19, 2026",
+        },
+      ],
       recentProjects: [],
       session: {
         defaultLandingPath: "/me",
@@ -3942,18 +5267,35 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="site-breadcrumb-outer"');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="user-box"');
+    expect(html).toContain('class="guest-user"');
+    expect(html).toContain('<span class="left-mark">OUR GUEST</span>');
     expect(html).toContain('id="daysAgoBtn"');
     expect(html).toContain('id="two-column-mode-checkbox"');
     expect(html).toContain('id="two-column-mode"');
     expect(html).toContain('class="show-subtasks-li"');
     expect(html).toContain('id="toggle-show-subtasks"');
+    expect(html).toContain("menu.issue");
+    expect(html).toContain("menu.pullRequest");
+    expect(html).toContain("project.projects");
+    expect(html).not.toContain("Issues <span");
+    expect(html).not.toContain("Pull Requests <span");
+    expect(html).not.toContain("Projects <span");
     expect(html).toContain("issue.state.open");
     expect(html).toContain("issue.state.closed");
     expect(html).toContain("userinfo.daysAgo.prefix issue.is.empty");
-    expect(html).toContain("userinfo.daysAgo.prefix pullRequest.is.empty");
+    expect(html).toContain("Public profile PR");
+    expect(html).toContain('class="avatar-wrap mlarge"');
+    expect(html).toContain('alt="owner / publicYobi"');
+    expect(html).toContain('class="infos-item infos-link-item" data-placement="top" data-toggle="tooltip" title="Door"');
+    expect(html).toContain('<span class="infos-item" title="May 18, 2026">May 18, 2026</span>');
+    expect(html).toContain('data-original-title="Mona"');
+    expect(html).toContain("Public profile no author PR");
+    expect(html).toContain(">issue.noAuthor</span>");
+    expect(html).not.toContain('title="issue.noAuthor"');
     expect(html).not.toContain("No pull requests found");
     expect(html).toContain('href="/yona/owner/publicYobi"');
     expect(html).toContain("Visible member project");
+    expect(html).toContain('<span title="May 16, 2026">May 16, 2026</span>');
     expect(html).not.toContain("Default landing");
     expect(html).not.toContain("Sign out");
     expect(html).not.toContain("Edit Profile");
@@ -3990,6 +5332,39 @@ describe("file-route parity harness", () => {
     expect(emptyProjectsHtml).toContain(">project.is.empty<");
     expect(emptyProjectsHtml).not.toContain("No projects found.");
 
+    const anonymousFallbackHtml = renderPublicUserProfile({
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      issueItems: [],
+      memberProjects: [],
+      profile: {
+        avatarUrl: "",
+        connectedSocialProviders: [],
+        displayName: "",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "",
+        primaryEmailAddress: "",
+        sinceLabel: "",
+      },
+      pullRequestItems: [],
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "",
+        isAnonymous: true,
+        isConfirmed: false,
+        isSiteAdmin: false,
+        loginId: "anonymous",
+        userLabel: "Anonymous",
+      },
+    });
+
+    expect(anonymousFallbackHtml).toContain("<h3>User.anonymous.name</h3>");
+    expect(anonymousFallbackHtml).toContain('<span class="name">User.anonymous.name</span>');
+    expect(anonymousFallbackHtml).not.toContain("Unknown user");
+
     const issueHtml = renderPublicUserProfile({
       defaultLandingPath: "/me",
       favoriteProjects: [],
@@ -4004,6 +5379,17 @@ describe("file-route parity harness", () => {
           state: "open",
           title: "Public issue",
           updatedLabel: "May 17, 2026",
+        },
+        {
+          assigneeLabel: "",
+          authorLabel: "",
+          commentCount: 0,
+          issueNumber: 6,
+          ownerName: "owner",
+          projectName: "publicYobi",
+          state: "open",
+          title: "Public no author",
+          updatedLabel: "May 18, 2026",
         },
       ],
       memberProjects: [],
@@ -4041,6 +5427,9 @@ describe("file-route parity harness", () => {
     expect(issueHtml).toContain("child-issue-list hide");
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5"');
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5#comments"');
+    expect(issueHtml).toContain(">Public no author<");
+    expect(issueHtml).toContain(">issue.noAuthor</span>");
+    expect(issueHtml).not.toContain('title="issue.noAuthor"');
     expect(issueHtml).not.toContain("Open Issues");
     expect(issueHtml).not.toContain("Closed Issues");
   });
@@ -4087,19 +5476,59 @@ describe("file-route parity harness", () => {
 
   it("keeps the legacy project directory pageNum slice with pagination placeholder", () => {
     const items = Array.from({ length: 11 }, (_, index) => ({
+      createdLabel: `2026-06-${String(index + 1).padStart(2, "0")}`,
+      lastPushedLabel: index === 10 ? "2026-06-30" : "",
       logoUrl: "",
+      memberCount: index + 1,
       ownerName: "owner",
       overview: `Project ${index + 1} overview`,
       projectName: `project-${index + 1}`,
       projectScope: "public",
+      watchCount: index + 2,
     }));
     const html = renderProjectDirectory({ items }, "/projects?pageNum=2");
 
     expect(html).not.toContain('href="/yona/owner/project-1"');
     expect(html).toContain('href="/yona/owner/project-11"');
+    expect(html).toContain('class="owner-avatar-wrap"');
+    expect(html).toContain('class="owner-name-small" href="/yona/owner"');
+    expect(html).toContain('title="2026-06-11">2026-06-11</strong>');
+    expect(html).toContain("project.codeUpdate");
+    expect(html).toContain('class="yobicon-friends yobicon-middle"');
+    expect(html).toContain("<strong>11</strong>");
+    expect(html).toContain('class="yobicon-eye yobicon-middle"');
+    expect(html).toContain("<strong>12</strong>");
+    expect(html).not.toContain('<p class="name-tag">by owner</p>');
+    expect(html).not.toContain('class="project-avatar"');
     expect(html).toContain('id="pagination"');
     expect(html).not.toContain('class="nav-pill active"');
     expect(html).not.toContain("Next</span>");
+  });
+
+  it("keeps private project directory rows on the legacy lock scalar", () => {
+    const html = renderProjectDirectory(
+      {
+        items: [
+          {
+            createdLabel: "2026-06-01",
+            lastPushedLabel: "",
+            logoUrl: "/yona/files/secret.png",
+            memberCount: 1,
+            ownerName: "owner",
+            overview: "Secret project",
+            projectName: "secret",
+            projectScope: "private",
+            watchCount: 0,
+          },
+        ],
+      },
+      "/projects?pageNum=1",
+    );
+
+    expect(html).toContain('href="/yona/owner/secret"');
+    expect(html).toContain('class="yobicon-lock yobicon-small"');
+    expect(html).not.toContain('class="project-protected" title="Group Project">G</span>');
+    expect(html).not.toContain('class="stats-wrap pull-right"');
   });
 
   it("pins organization directory empty state and search CTA", () => {
@@ -4114,6 +5543,28 @@ describe("file-route parity harness", () => {
     expect(html).toContain(">organization.is.empty<");
     expect(html).not.toContain(">Search<");
     expect(html).not.toContain("No organizations found.");
+  });
+
+  it("keeps organization directory rows on the legacy list.scala.html avatar shell", () => {
+    const html = renderOrganizationDirectory(
+      {
+        items: [
+          {
+            description: "Web labs",
+            logoUrl: "/yona/files/2",
+            organizationName: "weblabs",
+          },
+        ],
+      },
+      "/orgs?pageNum=1",
+    );
+
+    expect(html).toContain('class="owner-avatar-wrap"');
+    expect(html).toContain('<a href="/yona/organizations/weblabs"><img alt="weblabs" src="/yona/files/2"/></a>');
+    expect(html).toContain('class="black" href="/yona/organizations/weblabs"');
+    expect(html).toContain(">Web labs<");
+    expect(html).not.toContain('class="project-avatar"');
+    expect(html).not.toContain('<img alt="" src="/yona/files/2"/>');
   });
 
   it("keeps legacy guest-prohibited directory routes on the forbidden shell", () => {
@@ -4181,9 +5632,15 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="origin-title" href="/yona/upstream/origin"');
     expect(html).toContain('class="project-protected" title="Group Project"');
     expect(html).toContain('class="name-tag"');
+    expect(html).toContain('<strong title="2026-06-05">2026-06-05</strong>');
+    expect(html).toContain('<strong title="2026-06-06">2026-06-06</strong>');
     expect(html).toContain('class="stats-wrap pull-right"');
-    expect(html).toContain("project.onmember 3");
-    expect(html).toContain("project.onwatching 7");
+    expect(html).toContain('class="yobicon-friends yobicon-middle"');
+    expect(html).toContain("<strong>3</strong>");
+    expect(html).toContain('class="yobicon-eye"');
+    expect(html).toContain("<strong>7</strong>");
+    expect(html).not.toContain("project.onmember 3");
+    expect(html).not.toContain("project.onwatching 7");
     expect(html).toContain('class="yobicon-lightbulb ramp-on"');
     expect(html).toContain('class="bubble-wrap gray project-home organization-home"');
     expect(html).toContain("user.role.org_admin");
@@ -4221,5 +5678,41 @@ describe("file-route parity harness", () => {
     expect(html).toContain('name="password"');
     expect(html).toContain('name="retypedPassword"');
     expect(html).toContain('href="/yona/lostPassword"');
+  });
+
+  it("renders common error pages with legacy message keys and home buttons", () => {
+    const sharedSource = fs.readFileSync(path.resolve(__dirname, "routes/-shared.tsx"), "utf8");
+    const rootRouteSource = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+    const appRuntimeSource = fs.readFileSync(path.resolve(__dirname, "app-runtime-context.tsx"), "utf8");
+    const badRequestHtml = renderToStaticMarkup(<BadRequestPage href="/yona/" />);
+    const forbiddenHtml = renderToStaticMarkup(<ForbiddenPage href="/yona/" />);
+    const notFoundHtml = renderToStaticMarkup(<NotFoundPage href="/yona/missing" />);
+
+    expect(sharedSource).not.toContain("export function PlaceholderPage");
+    expect(sharedSource).not.toContain("Redirecting…");
+    expect(rootRouteSource).toContain("button.close");
+    expect(rootRouteSource).not.toContain("Dismiss");
+    expect(appRuntimeSource).toContain("error.internalServerError");
+    expect(appRuntimeSource).not.toContain("Auth bootstrap failed.");
+    expect(badRequestHtml).toContain('class="error-wrap"');
+    expect(badRequestHtml).toContain('class="ico-404"');
+    expect(badRequestHtml).toContain(">error.badrequest</p>");
+    expect(badRequestHtml).toContain('class="ybtn ybtn-info" href="/yona/"');
+    expect(badRequestHtml).toContain(">menu.home</a>");
+    expect(badRequestHtml).not.toContain("The request cannot be fulfilled due to bad syntax");
+    expect(badRequestHtml).not.toContain(">Home</a>");
+
+    expect(forbiddenHtml).toContain('class="ico ico-err2"');
+    expect(forbiddenHtml).toContain(">error.forbidden</p>");
+    expect(forbiddenHtml).toContain('class="ybtn ybtn-primary" href="/yona/"');
+    expect(forbiddenHtml).toContain(">menu.home</a>");
+    expect(forbiddenHtml).not.toContain("You do not have permission to view this page.");
+
+    expect(notFoundHtml).toContain('class="ico ico-err2"');
+    expect(notFoundHtml).toContain(">error.notfound</p>");
+    expect(notFoundHtml).toContain('class="ybtn ybtn-info" href="/yona/missing"');
+    expect(notFoundHtml).toContain(">menu.home</a>");
+    expect(notFoundHtml).not.toContain("The requested page could not be found.");
+    expect(notFoundHtml).not.toContain('class="lede"');
   });
 });

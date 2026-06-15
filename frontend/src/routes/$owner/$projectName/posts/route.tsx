@@ -10,6 +10,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectBoardListPage } from "../../../-board-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -29,8 +30,10 @@ function readSearchParams() {
 
 function ProjectBoardsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const searchParams = readSearchParams();
   const filter = searchParams.get("filter") ?? "";
   const labelIds = searchParams.getAll("labelIds").concat(searchParams.getAll("labelIds[]"));
@@ -64,11 +67,12 @@ function ProjectBoardsRouteComponent() {
     enabled: !bootstrapping,
   });
 
-  useDocumentTitle("Boards");
+  useDocumentTitle("menu.board");
 
   React.useEffect(() => {
     const error = detailQuery.error ?? formOptionsQuery.error;
     if (!error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(error);
@@ -76,8 +80,8 @@ function ProjectBoardsRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(error instanceof Error ? error.message : "Read project board failed.");
-  }, [detailQuery.error, formOptionsQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [detailQuery.error, formOptionsQuery.error]);
 
   React.useEffect(() => {
     if (!postsQuery.error) {
@@ -88,15 +92,13 @@ function ProjectBoardsRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      postsQuery.error instanceof Error ? postsQuery.error.message : "Read project board failed.",
-    );
-  }, [postsQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [postsQuery.error]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -105,6 +107,9 @@ function ProjectBoardsRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/posts`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/${owner}/${projectName}/posts`} />;
   }
 
   return (

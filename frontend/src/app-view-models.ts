@@ -41,6 +41,13 @@ import {
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./api/issue-meta";
 import { normalizeIssueReferences, normalizeMentionReferences } from "./api/issue-meta";
 
+type ProjectDirectoryRestItem = Awaited<ReturnType<typeof listProjects>>["items"][number] & {
+  createdLabel?: string;
+  lastPushedLabel?: string;
+  memberCount?: number;
+  watchCount?: number;
+};
+
 function issueReferencesFrom(value: unknown): IssueReferenceMetadata[] {
   return normalizeIssueReferences(
     (value as { issueReferences?: Partial<IssueReferenceMetadata>[] } | null | undefined)
@@ -59,6 +66,9 @@ export function toWorkspaceOverview(
   session: Awaited<ReturnType<typeof readCurrentSession>>,
   overview: Awaited<ReturnType<typeof readWorkspaceOverview>>,
 ): WorkspaceOverviewViewModel {
+  const profile = overview.profile as
+    | (typeof overview.profile & { isGuest?: boolean })
+    | undefined;
   return {
     apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
@@ -93,17 +103,18 @@ export function toWorkspaceOverview(
       projectScope: project.projectScope,
       watchCount: project.watchCount,
     })),
-    profile: overview.profile
+    profile: profile
       ? {
-          avatarUrl: overview.profile.avatarUrl,
-          connectedSocialProviders: [...overview.profile.connectedSocialProviders],
-          displayName: overview.profile.displayName,
-          englishName: overview.profile.englishName,
-          isBlocked: overview.profile.isBlocked,
-          isSiteAdmin: overview.profile.isSiteAdmin,
-          loginId: overview.profile.loginId,
-          primaryEmailAddress: overview.profile.primaryEmailAddress,
-          sinceLabel: overview.profile.sinceLabel,
+          avatarUrl: profile.avatarUrl,
+          connectedSocialProviders: [...profile.connectedSocialProviders],
+          displayName: profile.displayName,
+          englishName: profile.englishName,
+          isBlocked: profile.isBlocked,
+          isGuest: profile.isGuest,
+          isSiteAdmin: profile.isSiteAdmin,
+          loginId: profile.loginId,
+          primaryEmailAddress: profile.primaryEmailAddress,
+          sinceLabel: profile.sinceLabel,
         }
       : undefined,
     pullRequestItems: overview.pullRequestItems.map((item) => ({
@@ -700,6 +711,7 @@ type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>
     title: string;
   }>;
   childOpenCount?: number;
+  createdLabel?: string;
   commentParentLinks?: Array<{
     id: bigint | number;
     parentCommentId?: bigint | number | null;
@@ -746,6 +758,7 @@ export function toProjectIssueDetailView(
     bodyHtml: response.bodyHtml,
     bodyMarkdown: response.bodyMarkdown,
     commentCount: response.commentCount,
+    createdLabel: response.createdLabel ?? "",
     dueDateLabel: response.dueDateLabel ?? "",
     comments: response.comments.map((comment) => ({
       authorAvatarUrl: comment.authorAvatarUrl,
@@ -937,12 +950,19 @@ export function toProjectDirectoryView(
   response: Awaited<ReturnType<typeof listProjects>>,
 ): ProjectDirectoryViewModel {
   return {
-    items: response.items.map((item) => ({
-      logoUrl: item.logoUrl,
-      overview: item.overview,
-      ownerName: item.ownerName,
-      projectName: item.projectName,
-      projectScope: item.projectScope,
-    })),
+    items: response.items.map((rawItem) => {
+      const item = rawItem as ProjectDirectoryRestItem;
+      return {
+        createdLabel: item.createdLabel ?? "",
+        lastPushedLabel: item.lastPushedLabel ?? "",
+        logoUrl: item.logoUrl,
+        memberCount: item.memberCount ?? 0,
+        overview: item.overview,
+        ownerName: item.ownerName,
+        projectName: item.projectName,
+        projectScope: item.projectScope,
+        watchCount: item.watchCount ?? 0,
+      };
+    }),
   };
 }

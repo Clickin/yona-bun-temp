@@ -480,6 +480,27 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .unwrap();
     assert_eq!(create_org.status(), StatusCode::OK);
 
+    let duplicate_org = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/CreateOrganization")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"organizationName\":\"weblabs\",\"description\":\"duplicate\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(duplicate_org.status(), StatusCode::CONFLICT);
+    assert!(response_json(duplicate_org)
+        .await
+        .contains("organization.name.duplicate"));
+
     let guest_create_org = app
         .clone()
         .oneshot(
@@ -559,6 +580,25 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .await
         .unwrap();
     assert_eq!(create_project.status(), StatusCode::OK);
+
+    let duplicate_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/CreateProject")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from("{\"ownerName\":\"admin\",\"projectName\":\"projectYobi\",\"overview\":\"Duplicate\",\"projectScope\":\"public\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(duplicate_project.status(), StatusCode::CONFLICT);
+    assert!(response_json(duplicate_project)
+        .await
+        .contains("project.name.duplicate"));
 
     let guest_settings = app
         .oneshot(
@@ -782,6 +822,12 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         projects_json["items"][0]["logoUrl"],
         format!("/yona/files/{}", project_logo.id)
     );
+    assert!(projects_json["items"][0]["createdLabel"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert_eq!(projects_json["items"][0]["lastPushedLabel"], "");
+    assert_eq!(projects_json["items"][0]["memberCount"], 1);
+    assert_eq!(projects_json["items"][0]["watchCount"], 0);
 
     let guest_projects = app
         .clone()

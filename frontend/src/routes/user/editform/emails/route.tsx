@@ -27,7 +27,7 @@ function EditEmailsRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -44,7 +44,7 @@ function EditEmailsRouteComponent() {
           const overview = await addWorkspaceEmail(runtimeConfig, csrfToken, email);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Add email failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onDeleteWorkspaceEmail={async (id) => {
@@ -52,7 +52,7 @@ function EditEmailsRouteComponent() {
           const overview = await deleteWorkspaceEmail(runtimeConfig, csrfToken, id);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Delete email failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onSetMainWorkspaceEmail={async (id) => {
@@ -60,7 +60,7 @@ function EditEmailsRouteComponent() {
           const overview = await setMainWorkspaceEmail(runtimeConfig, csrfToken, id);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Set main email failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

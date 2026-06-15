@@ -12,6 +12,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { CodeBranchListPage } from "../../../-code-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -39,8 +40,8 @@ function CodeBranchesRouteComponent() {
     enabled: !bootstrapping,
   });
   const mutationError = React.useCallback(
-    (fallback: string) => (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : fallback);
+    (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     [setErrorMessage],
   );
@@ -50,7 +51,7 @@ function CodeBranchesRouteComponent() {
         ...scope,
         branchName,
       }),
-    onError: mutationError("Set default branch failed."),
+    onError: mutationError,
     onSettled: () => {
       setPendingBranchName("");
     },
@@ -67,7 +68,7 @@ function CodeBranchesRouteComponent() {
         ...scope,
         branchName,
       }),
-    onError: mutationError("Delete branch failed."),
+    onError: mutationError,
     onSettled: () => {
       setPendingBranchName("");
     },
@@ -79,19 +80,14 @@ function CodeBranchesRouteComponent() {
     },
   });
   const error = containerQuery.error ?? branchQuery.error;
-  const failureKind = classifyConnectFailure(error);
+  const failureKind = error ? (classifyConnectFailure(error) ?? "bad-request") : null;
 
-  useDocumentTitle("Branches");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read branches failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle("title.branches");
 
   if (bootstrapping || containerQuery.isLoading || branchQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -100,6 +96,9 @@ function CodeBranchesRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

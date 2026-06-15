@@ -18,11 +18,11 @@ function readEnabledSocialProviders(
   return providers.map((provider) => provider.trim()).filter(Boolean);
 }
 
-function renderProviderLogo(provider: string): React.ReactNode {
+function renderProviderLogo(provider: string, runtimeConfig: RuntimeConfig): React.ReactNode {
   if (provider === "github") {
     return (
       <span className="auth-provider-logo">
-        <span className="github"></span> <span className="provider-name">Sign in with GitHub</span>
+        <span className="github"></span> <span className="provider-name">Sign in with github</span>
       </span>
     );
   }
@@ -30,7 +30,11 @@ function renderProviderLogo(provider: string): React.ReactNode {
   if (provider === "google") {
     return (
       <span className="auth-provider-logo">
-        <span className="google"></span> Sign in with Google
+        <img
+          alt="login with Google"
+          src={appHref(runtimeConfig, "/assets/images/provider-logo/btn_google_light_normal_ios.svg")}
+        />{" "}
+        Sign in with Google
       </span>
     );
   }
@@ -61,7 +65,7 @@ function SocialProviderButtons({
           href={appHref(runtimeConfig, `/authenticate/${encodeURIComponent(provider)}`)}
           key={provider}
         >
-          {renderProviderLogo(provider)}
+          {renderProviderLogo(provider, runtimeConfig)}
         </a>
       ))}
     </div>
@@ -266,7 +270,12 @@ export function LegacyLoginDialog({
     <div className="modal hide loginDialog" id="loginDialog" role="dialog" tabIndex={-1}>
       <div className="modal-body">
         <div className="pull-right">
-          <button className="close mr10" data-dismiss="modal" type="button">
+          <button
+            aria-label="button.close"
+            className="close mr10"
+            data-dismiss="modal"
+            type="button"
+          >
             &times;
           </button>
         </div>
@@ -550,7 +559,12 @@ export function LostPasswordPage({
         <div className="login-form-wrap frm-wrap">
           {feedback ? (
             <div className={`alert alert-${feedback.kind === "success" ? "success" : "error"}`}>
-              <button className="close" data-dismiss="alert" type="button">
+              <button
+                aria-label="button.close"
+                className="close"
+                data-dismiss="alert"
+                type="button"
+              >
                 &times;
               </button>
               <h4>{feedback.heading}</h4>

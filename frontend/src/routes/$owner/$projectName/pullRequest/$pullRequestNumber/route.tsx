@@ -23,6 +23,7 @@ import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
 import { ProjectPullRequestDetailPage } from "../../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -72,9 +73,15 @@ function PullRequestDetailLeafRouteComponent() {
     },
     [setErrorMessage],
   );
+  const commonMutationError = React.useCallback(
+    (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+    },
+    [setErrorMessage],
+  );
   const closeMutation = useMutation({
     mutationFn: () => closePullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Close pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -93,7 +100,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const openMutation = useMutation({
     mutationFn: () => openPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Reopen pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -112,7 +119,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const acceptMutation = useMutation({
     mutationFn: () => acceptPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Merge pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -131,7 +138,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const deleteSourceBranchMutation = useMutation({
     mutationFn: () => deletePullRequestSourceBranchRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Delete pull request source branch failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -150,7 +157,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const restoreSourceBranchMutation = useMutation({
     mutationFn: () => restorePullRequestSourceBranchRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Restore pull request source branch failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -169,7 +176,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const reviewMutation = useMutation({
     mutationFn: () => reviewPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Review pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -188,7 +195,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const unreviewMutation = useMutation({
     mutationFn: () => unreviewPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Unreview pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -207,7 +214,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const watchMutation = useMutation({
     mutationFn: () => watchPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Watch pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -226,7 +233,7 @@ function PullRequestDetailLeafRouteComponent() {
   });
   const unwatchMutation = useMutation({
     mutationFn: () => unwatchPullRequestRest(runtimeConfig, csrfToken, scope),
-    onError: mutationError("Unwatch pull request failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -249,7 +256,7 @@ function PullRequestDetailLeafRouteComponent() {
         ...scope,
         commentId,
       }),
-    onError: mutationError("Delete pull request review comment failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -276,7 +283,7 @@ function PullRequestDetailLeafRouteComponent() {
         ...scope,
         ...input,
       }),
-    onError: mutationError("Update pull request review comment failed."),
+    onError: commonMutationError,
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -299,7 +306,7 @@ function PullRequestDetailLeafRouteComponent() {
         ...scope,
         threadId,
       }),
-    onError: mutationError("Close review thread failed."),
+    onError: commonMutationError,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -318,7 +325,7 @@ function PullRequestDetailLeafRouteComponent() {
         ...scope,
         threadId,
       }),
-    onError: mutationError("Open review thread failed."),
+    onError: commonMutationError,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -332,17 +339,12 @@ function PullRequestDetailLeafRouteComponent() {
     },
   });
 
-  useDocumentTitle(pullRequestQuery.data?.title ?? "Pull Request");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read pull request failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle(pullRequestQuery.data?.title ?? "menu.pullRequest");
 
   if (bootstrapping || containerQuery.isLoading || pullRequestQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -351,6 +353,9 @@ function PullRequestDetailLeafRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}`} />;
+  }
+  if (error) {
+    return <BadRequestPage href={`/${owner}/${projectName}/pullRequest/${pullRequestNumber}`} />;
   }
 
   return (

@@ -322,6 +322,7 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
     title: string;
   }>;
   childOpenCount?: number;
+  createdLabel?: string;
   dueDateLabel?: string;
   historyHtml?: string;
   historyMarkdown?: string;

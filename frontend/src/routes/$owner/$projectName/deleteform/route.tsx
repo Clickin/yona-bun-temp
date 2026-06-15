@@ -7,6 +7,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectDeletePage } from "../../../-project-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   navigateToAppHref,
@@ -24,7 +25,9 @@ function ProjectDeleteFormRouteComponent() {
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/deleteform`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const projectQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -35,6 +38,7 @@ function ProjectDeleteFormRouteComponent() {
 
   React.useEffect(() => {
     if (!projectQuery.error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(projectQuery.error);
@@ -42,21 +46,17 @@ function ProjectDeleteFormRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      projectQuery.error instanceof Error
-        ? projectQuery.error.message
-        : "Read project delete form failed.",
-    );
-  }, [projectQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [projectQuery.error]);
 
   const deleteMutation = useMutation({
     mutationFn: () =>
       deleteProjectRest(runtimeConfig, csrfToken, {
         ownerName: owner,
         projectName,
-      }),
+    }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Delete project failed.");
+      setErrorMessage(error instanceof Error ? error.message : "project.delete.error");
     },
     onSuccess: (result) => {
       queryClient.removeQueries({ queryKey: apiQueryKeys.project.base(owner, projectName) });
@@ -67,7 +67,7 @@ function ProjectDeleteFormRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -76,6 +76,9 @@ function ProjectDeleteFormRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
   if (projectQuery.data && !projectQuery.data.viewerCanUpdate) {
     return <ForbiddenPage href={routeHref} />;

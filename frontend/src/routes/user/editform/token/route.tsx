@@ -23,7 +23,7 @@ function EditTokenRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -40,7 +40,7 @@ function EditTokenRouteComponent() {
           const overview = await resetApiToken(runtimeConfig, csrfToken);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Reset token failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

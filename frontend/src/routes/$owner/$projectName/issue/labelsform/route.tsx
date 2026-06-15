@@ -13,9 +13,15 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
-import { buildProjectHref, ProjectMenu, ProjectSettingsSubMenu } from "../../../../-project-views";
+import {
+  buildProjectHref,
+  ProjectHeader,
+  ProjectMenu,
+  ProjectSettingsSubMenu,
+} from "../../../../-project-views";
 import type { ProjectDetailViewModel } from "../../../../-view-models";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -79,16 +85,18 @@ const EDIT_LABEL_PRESET_COLORS = [
 
 function IssueLabelsFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/labelsform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [labels, setLabels] = React.useState<LabelView[]>([]);
   const [categories, setCategories] = React.useState<CategoryView[]>([]);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Issue Labels");
+  useDocumentTitle("label");
 
   const reload = React.useCallback(async () => {
     const [nextDetail, nextLabels, nextCategories] = await Promise.all([
@@ -116,18 +124,18 @@ function IssueLabelsFormRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read issue labels failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [reload, setErrorMessage]);
+  }, [reload]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -136,6 +144,9 @@ function IssueLabelsFormRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (
@@ -199,7 +210,8 @@ function IssueLabelsFormPage(props: {
   const grouped = groupLabels(props.labels);
   return (
     <main className="app-shell">
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap label-editor-wrap">
           <ProjectSettingsSubMenu

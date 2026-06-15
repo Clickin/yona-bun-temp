@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { readProjectWatchersQueryOptions } from "../../../../api/org-project";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { ProjectWatchersPage } from "../../../-project-views";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage } from "../../../-shared";
+import { BadRequestPage, classifyConnectFailure, ForbiddenPage, NotFoundPage } from "../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/watchers")({
   component: ProjectWatchersRouteComponent,
@@ -12,9 +12,9 @@ export const Route = createFileRoute("/$owner/$projectName/watchers")({
 
 function ProjectWatchersRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/watchers`;
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<null | "bad-request" | "forbidden" | "not-found">(null);
   const watchersQuery = useQuery({
     ...readProjectWatchersQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -33,18 +33,17 @@ function ProjectWatchersRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      watchersQuery.error instanceof Error
-        ? watchersQuery.error.message
-        : "Read project watchers failed.",
-    );
-  }, [setErrorMessage, watchersQuery.error]);
+    setFailureKind("bad-request");
+  }, [watchersQuery.error]);
 
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return <ProjectWatchersPage detail={watchersQuery.data ?? null} runtimeConfig={runtimeConfig} />;

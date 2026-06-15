@@ -4,6 +4,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toCodeBrowserView, toProjectContainerView } from "../../../../app-view-models";
 import { CodeBrowserPage } from "../../../-code-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -20,15 +21,17 @@ export function CodeBrowserRouteView(props: {
   const projectName = props.projectName;
   const branch = props.branch ?? "";
   const path = props.path ?? "";
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/code`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
   const [code, setCode] = React.useState<ReturnType<typeof toCodeBrowserView> | null>(null);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Code");
+  useDocumentTitle("menu.code");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -52,18 +55,18 @@ export function CodeBrowserRouteView(props: {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read code browser failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [branch, owner, path, projectName, runtimeConfig, setErrorMessage]);
+  }, [branch, owner, path, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -72,6 +75,9 @@ export function CodeBrowserRouteView(props: {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return <CodeBrowserPage code={code} detail={detail} runtimeConfig={runtimeConfig} />;

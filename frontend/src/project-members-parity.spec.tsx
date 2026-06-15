@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { ProjectMembersPage } from "./routes/-project-views";
@@ -55,6 +57,12 @@ describe("project members parity", () => {
     );
 
     expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('<a href="/yona/owner">owner</a>');
+    expect(html).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="addNewMember"');
     expect(html).toContain('id="loginId"');
@@ -69,5 +77,18 @@ describe("project members parity", () => {
     expect(html).toContain('data-href="/owner/projectYobi/member/2/delete"');
     expect(html).toContain("project.member.enrollment.request");
     expect(html).toContain('class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"');
+  });
+
+  it("keeps project member mutation fallbacks on legacy message keys", () => {
+    const routeSource = readFileSync(
+      resolve(process.cwd(), "src/routes/$owner/$projectName/members/route.tsx"),
+      "utf8",
+    );
+
+    expect(routeSource).not.toContain("Add project member failed.");
+    expect(routeSource).not.toContain("Update project member role failed.");
+    expect(routeSource).not.toContain("Delete project member failed.");
+    expect(routeSource).toContain('"error.badrequest"');
+    expect(routeSource).toContain('"project.member.ownerMustBeAManager"');
   });
 });

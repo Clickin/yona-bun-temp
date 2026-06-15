@@ -22,7 +22,6 @@ import {
   OrganizationSettingsPage,
 } from "./routes/-organization-views";
 import { ProjectDetailPage, ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
-import { PlaceholderPage } from "./routes/-shared";
 import type {
   AuthUiCapabilitiesViewModel,
   OrganizationDirectoryViewModel,
@@ -192,8 +191,4 @@ export function renderProjectSettings(detail: ProjectDetailViewModel | null): st
 
 export function renderProjectNew(): string {
   return renderToString(<ProjectNewPage />);
-}
-
-export function renderPlaceholder(href: string, title: string): string {
-  return renderToString(<PlaceholderPage href={href} title={title} />);
 }

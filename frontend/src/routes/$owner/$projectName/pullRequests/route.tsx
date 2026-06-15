@@ -7,6 +7,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectPullRequestListPage } from "../../../-pull-request-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequests")({
 
 function ProjectPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -39,19 +40,14 @@ function ProjectPullRequestsRouteComponent() {
     }),
   );
   const error = containerQuery.error ?? listQuery.error;
-  const failureKind = classifyConnectFailure(error);
+  const failureKind = error ? (classifyConnectFailure(error) ?? "bad-request") : null;
 
-  useDocumentTitle("Pull Requests");
-  React.useEffect(() => {
-    if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read pull requests failed.");
-    }
-  }, [error, setErrorMessage]);
+  useDocumentTitle("menu.pullRequest");
 
   if (bootstrapping || containerQuery.isLoading || listQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -60,6 +56,9 @@ function ProjectPullRequestsRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/pullRequests`} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={`/${owner}/${projectName}/pullRequests`} />;
   }
 
   return (

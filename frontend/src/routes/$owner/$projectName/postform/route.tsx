@@ -8,7 +8,14 @@ import {
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { ProjectPostFormPage } from "../../../-board-views";
-import { ForbiddenPage, navigateToAppHref, useDocumentTitle } from "../../../-shared";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  ForbiddenPage,
+  navigateToAppHref,
+  NotFoundPage,
+  useDocumentTitle,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/postform")({
   component: PostCreateRouteComponent,
@@ -17,7 +24,11 @@ export const Route = createFileRoute("/$owner/$projectName/postform")({
 function PostCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const routeHref = `/${owner}/${projectName}/postform`;
   const queryClient = useQueryClient();
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const searchParams =
     typeof window === "undefined"
       ? new URLSearchParams()
@@ -37,28 +48,35 @@ function PostCreateRouteComponent() {
     enabled: !bootstrapping,
   });
 
-  useDocumentTitle("New post");
+  useDocumentTitle("post.write");
 
   React.useEffect(() => {
-    if (formOptionsQuery.error) {
-      setErrorMessage(
-        formOptionsQuery.error instanceof Error
-          ? formOptionsQuery.error.message
-          : "Read post form options failed.",
-      );
+    if (!formOptionsQuery.error) {
+      return;
     }
-  }, [formOptionsQuery.error, setErrorMessage]);
+    const nextFailureKind = classifyConnectFailure(formOptionsQuery.error);
+    setFailureKind(nextFailureKind ?? "bad-request");
+  }, [formOptionsQuery.error]);
 
   if (bootstrapping || formOptionsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
 
   if (formOptionsQuery.data && !formOptionsQuery.data.defaultPermissions.canCreate) {
     return <ForbiddenPage href={`/${owner}/${projectName}/posts`} />;
+  }
+  if (failureKind === "forbidden") {
+    return <ForbiddenPage href={routeHref} />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (
@@ -99,7 +117,7 @@ function PostCreateRouteComponent() {
             );
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Create post failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

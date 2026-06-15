@@ -2,7 +2,7 @@ import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
-import { buildProjectHref, ProjectMenu } from "./-project-views";
+import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
   ProjectMilestoneIssueViewModel,
@@ -150,6 +150,7 @@ export function ProjectMilestoneListPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <link
         href={buildProjectHref(
@@ -348,7 +349,18 @@ export function ProjectMilestoneDetailPage(props: {
 
   return (
     <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <link
+        href={buildProjectHref(
+          props.runtimeConfig,
+          detail.ownerName,
+          detail.projectName,
+          "issue/labels.css",
+        )}
+        rel="stylesheet"
+        type="text/css"
+      />
       {milestone ? (
         <>
           <div className="page-wrap-outer">
@@ -526,8 +538,13 @@ export function ProjectMilestoneDetailPage(props: {
           {milestone.viewerCanDelete && props.onDelete ? (
             <div className="modal hide fade" id="deleteConfirm">
               <div className="modal-header">
-                <button className="close" data-dismiss="modal" type="button">
-                  x
+                <button
+                  aria-label="button.close"
+                  className="close"
+                  data-dismiss="modal"
+                  type="button"
+                >
+                  ×
                 </button>
                 <h3>milestone.delete</h3>
               </div>
@@ -595,161 +612,164 @@ export function ProjectMilestoneFormPage(props: {
   }, [initial]);
 
   return (
-    <main className="app-shell milestone-form-page page-wrap-outer">
+    <main className="app-shell milestone-form-page">
       <h1 className="sr-only">
-        {props.mode === "create" ? "New Milestone" : "Edit Milestone"}
+        {props.mode === "create" ? "title.newMilestone" : "title.editMilestone"}
       </h1>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
-          <form
-            action={
-              props.mode === "edit" && initial?.id
-                ? buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    `milestone/${initial.id}/edit`,
-                  )
-                : buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "milestones",
-                  )
-            }
-            id="milestone-form"
-            method="post"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setPending(true);
-              void props
-                .onSubmit?.({
-                  attachmentIds,
-                  contentsMarkdown,
-                  dueDate,
-                  state,
-                  title,
-                })
-                .finally(() => setPending(false));
-            }}
-          >
-            <div className="row-fluid">
-              <div className="span12">
-                <dl>
-                  <dd>
-                    <input
-                      className="zen-mode text title"
-                      id="title"
-                      maxLength={250}
-                      name="title"
-                      onChange={(event) => setTitle(event.currentTarget.value)}
-                      placeholder="title.text"
-                      tabIndex={1}
-                      type="text"
-                      value={title}
-                    />
-                  </dd>
-                </dl>
-              </div>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="content-wrap frm-wrap">
+            <form
+              action={
+                props.mode === "edit" && initial?.id
+                  ? buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `milestone/${initial.id}/edit`,
+                    )
+                  : buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "milestones",
+                    )
+              }
+              id="milestone-form"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setPending(true);
+                void props
+                  .onSubmit?.({
+                    attachmentIds,
+                    contentsMarkdown,
+                    dueDate,
+                    state,
+                    title,
+                  })
+                  .finally(() => setPending(false));
+              }}
+            >
               <div className="row-fluid">
-                <div className="span9 span-left-pane">
+                <div className="span12">
                   <dl>
-                    <dd style={{ position: "relative" }}>
-                      <LegacyMarkdownEditorShell
-                        editId="edit-content-body"
-                        editorMode="content-body"
-                        previewId="preview-content-body"
-                      >
-                        <MarkdownAttachmentTextarea
-                          ariaLabel="Contents"
-                          className="editorSeries content comment nm"
-                          csrfToken={props.csrfToken}
-                          editorMode="content-body"
-                          id="editor-contents-content-body"
-                          name="contents"
-                          onAttachmentUpload={(attachment) =>
-                            setAttachmentIds((current) => [...current, attachment.id])
-                          }
-                          onChange={setContentsMarkdown}
-                          runtimeConfig={props.runtimeConfig}
-                          value={contentsMarkdown}
-                        />
-                      </LegacyMarkdownEditorShell>
+                    <dd>
+                      <input
+                        className="zen-mode text title"
+                        id="title"
+                        maxLength={250}
+                        name="title"
+                        onChange={(event) => setTitle(event.currentTarget.value)}
+                        placeholder="title.text"
+                        tabIndex={1}
+                        type="text"
+                        value={title}
+                      />
                     </dd>
                   </dl>
-                  <div className="actrow right-txt">
-                    <button className="ybtn ybtn-info" disabled={pending} type="submit">
-                      button.save
-                    </button>
-                    <a
-                      className="ybtn"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        "milestones",
-                      )}
-                    >
-                      button.cancel
-                    </a>
+                </div>
+                <div className="row-fluid">
+                  <div className="span9 span-left-pane">
+                    <dl>
+                      <dd style={{ position: "relative" }}>
+                        <LegacyMarkdownEditorShell
+                          editId="edit-content-body"
+                          editorMode="content-body"
+                          previewId="preview-content-body"
+                        >
+                          <MarkdownAttachmentTextarea
+                            ariaLabel="milestone.form.content"
+                            className="editorSeries content comment nm"
+                            csrfToken={props.csrfToken}
+                            editorMode="content-body"
+                            id="editor-contents-content-body"
+                            name="contents"
+                            onAttachmentUpload={(attachment) =>
+                              setAttachmentIds((current) => [...current, attachment.id])
+                            }
+                            onChange={setContentsMarkdown}
+                            runtimeConfig={props.runtimeConfig}
+                            value={contentsMarkdown}
+                          />
+                        </LegacyMarkdownEditorShell>
+                      </dd>
+                    </dl>
+                    <div className="actrow right-txt">
+                      <button className="ybtn ybtn-info" disabled={pending} type="submit">
+                        button.save
+                      </button>
+                      <a
+                        className="ybtn"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          "milestones",
+                        )}
+                      >
+                        button.cancel
+                      </a>
+                    </div>
+                  </div>
+                  <div className="span3 span-hard-wrap">
+                    <dl className="issue-option">
+                      <dt>milestone.form.state</dt>
+                      <dd>
+                        <div>
+                          <input
+                            checked={state === "open"}
+                            className="radio-btn"
+                            id="milestone-open"
+                            name="state"
+                            onChange={() => setState("open")}
+                            type="radio"
+                            value="open"
+                          />
+                          <label className="bold" htmlFor="milestone-open">
+                            milestone.state.open
+                          </label>{" "}
+                          <input
+                            checked={state === "closed"}
+                            className="radio-btn"
+                            id="milestone-close"
+                            name="state"
+                            onChange={() => setState("closed")}
+                            type="radio"
+                            value="closed"
+                          />
+                          <label className="bold" htmlFor="milestone-close">
+                            milestone.state.closed
+                          </label>
+                        </div>
+                      </dd>
+                    </dl>
+                    <dl className="issue-option">
+                      <dt>milestone.form.dueDate</dt>
+                      <dd>
+                        <div>
+                          <label htmlFor="dueDate">
+                            <input
+                              autoComplete="off"
+                              className="validate due-date"
+                              id="dueDate"
+                              name="dueDate"
+                              onChange={(event) => setDueDate(event.currentTarget.value)}
+                              type="text"
+                              value={dueDate}
+                            />
+                          </label>
+                          <div className="date-picker" id="datepicker" />
+                        </div>
+                      </dd>
+                    </dl>
                   </div>
                 </div>
-                <div className="span3 span-hard-wrap">
-                  <dl className="issue-option">
-                    <dt>milestone.form.state</dt>
-                    <dd>
-                      <div>
-                        <input
-                          checked={state === "open"}
-                          className="radio-btn"
-                          id="milestone-open"
-                          name="state"
-                          onChange={() => setState("open")}
-                          type="radio"
-                          value="open"
-                        />
-                        <label className="bold" htmlFor="milestone-open">
-                          milestone.state.open
-                        </label>{" "}
-                        <input
-                          checked={state === "closed"}
-                          className="radio-btn"
-                          id="milestone-close"
-                          name="state"
-                          onChange={() => setState("closed")}
-                          type="radio"
-                          value="closed"
-                        />
-                        <label className="bold" htmlFor="milestone-close">
-                          milestone.state.closed
-                        </label>
-                      </div>
-                    </dd>
-                  </dl>
-                  <dl className="issue-option">
-                    <dt>milestone.form.dueDate</dt>
-                    <dd>
-                      <div>
-                        <label htmlFor="dueDate">
-                          <input
-                            autoComplete="off"
-                            className="validate due-date"
-                            id="dueDate"
-                            name="dueDate"
-                            onChange={(event) => setDueDate(event.currentTarget.value)}
-                            type="text"
-                            value={dueDate}
-                          />
-                        </label>
-                        <div className="date-picker" id="datepicker" />
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </main>

@@ -319,6 +319,7 @@ fn site_user_record_from_model(user: n4user::Model, is_site_admin: bool) -> Site
         id: user.id,
         is_guest: user.is_guest.unwrap_or_default() != 0,
         is_site_admin,
+        last_state_modified_at: user.last_state_modified_date,
         login_id: user.login_id.unwrap_or_default(),
         state,
     }
@@ -750,6 +751,12 @@ fn days_ago_datetime(days: u64) -> DateTime {
 fn format_workspace_date_label(value: Option<DateTime>) -> String {
     value
         .map(|value| value.format("%Y-%m-%d").to_string())
+        .unwrap_or_default()
+}
+
+fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
+    value
+        .map(|value| value.format("%Y-%m-%d %-I:%M:%S %p").to_string())
         .unwrap_or_default()
 }
 
@@ -8090,6 +8097,7 @@ impl AppRepository {
             display_name: user.name.unwrap_or_default(),
             english_name: user.english_name.unwrap_or_default(),
             is_blocked: normalize_optional(user.state.as_deref()).as_deref() == Some("locked"),
+            is_guest: user.is_guest.unwrap_or_default() != 0,
             is_site_admin,
             login_id: user.login_id.unwrap_or_default(),
             primary_email_address: user.email.unwrap_or_default(),
@@ -13196,6 +13204,7 @@ impl AppRepository {
             author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
+            created_title: format_legacy_datetime_title(model.created_date),
             due_date_label: format_workspace_date_label(due_date),
             due_date_overdue: due_date
                 .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
@@ -13980,6 +13989,7 @@ impl AppRepository {
             author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
+            created_title: format_legacy_datetime_title(model.created_date),
             labels: self.list_posting_labels(model.id).await?,
             notice: model.notice.unwrap_or_default() != 0,
             owner_name: project.owner_name.clone(),
@@ -14137,6 +14147,7 @@ impl AppRepository {
             author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             created_label: format_workspace_date_label(model.created_date),
+            created_title: format_legacy_datetime_title(model.created_date),
             due_date_label: format_workspace_date_label(due_date),
             due_date_overdue: due_date
                 .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),

@@ -10,6 +10,7 @@ import { apiQueryKeys } from "../../../../../../api/query-keys";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
 import { ProjectPostFormPage } from "../../../../../-board-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   navigateToAppHref,
@@ -25,7 +26,10 @@ function PostEditRouteComponent() {
   const { owner, projectName, postNumber } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const routeHref = `/${owner}/${projectName}/post/${postNumber}/editform`;
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const formOptionsQuery = useQuery({
     ...readProjectPostFormOptionsQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -43,17 +47,15 @@ function PostEditRouteComponent() {
     enabled: !bootstrapping,
   });
 
-  useDocumentTitle(postQuery.data?.title ? `Edit ${postQuery.data.title}` : "Edit post");
+  useDocumentTitle("post.modify");
 
   React.useEffect(() => {
-    if (formOptionsQuery.error) {
-      setErrorMessage(
-        formOptionsQuery.error instanceof Error
-          ? formOptionsQuery.error.message
-          : "Read post form options failed.",
-      );
+    if (!formOptionsQuery.error) {
+      return;
     }
-  }, [formOptionsQuery.error, setErrorMessage]);
+    const nextFailureKind = classifyConnectFailure(formOptionsQuery.error);
+    setFailureKind(nextFailureKind ?? "bad-request");
+  }, [formOptionsQuery.error]);
 
   React.useEffect(() => {
     if (!postQuery.error) {
@@ -64,23 +66,24 @@ function PostEditRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(
-      postQuery.error instanceof Error ? postQuery.error.message : "Read post failed.",
-    );
-  }, [postQuery.error, setErrorMessage]);
+    setFailureKind("bad-request");
+  }, [postQuery.error]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={`/${owner}/${projectName}/post/${postNumber}/editform`} />;
+    return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href={`/${owner}/${projectName}/post/${postNumber}/editform`} />;
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (
@@ -115,7 +118,7 @@ function PostEditRouteComponent() {
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
           navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/post/${postNumber}`);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Update post failed.");
+          setErrorMessage(error instanceof Error ? error.message : "post.update.error");
         }
       }}
     />

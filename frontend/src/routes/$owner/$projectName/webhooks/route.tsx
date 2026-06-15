@@ -13,6 +13,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectWebhooksPage } from "../../../-project-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -29,7 +30,9 @@ function ProjectWebhooksRouteComponent() {
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/webhooks`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const containerQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -49,6 +52,7 @@ function ProjectWebhooksRouteComponent() {
   React.useEffect(() => {
     const error = containerQuery.error ?? webhooksQuery.error;
     if (!error) {
+      setFailureKind(null);
       return;
     }
     const nextFailureKind = classifyConnectFailure(error);
@@ -56,8 +60,8 @@ function ProjectWebhooksRouteComponent() {
       setFailureKind(nextFailureKind);
       return;
     }
-    setErrorMessage(error instanceof Error ? error.message : "Read project webhooks failed.");
-  }, [containerQuery.error, setErrorMessage, webhooksQuery.error]);
+    setFailureKind("bad-request");
+  }, [containerQuery.error, webhooksQuery.error]);
 
   const createMutation = useMutation({
     mutationFn: (input: ProjectWebhookInput) =>
@@ -67,7 +71,7 @@ function ProjectWebhooksRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Create project webhook failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(webhooksQueryKey, detail);
@@ -85,7 +89,7 @@ function ProjectWebhooksRouteComponent() {
         webhookId,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "Delete project webhook failed.");
+      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(webhooksQueryKey, detail);
@@ -99,7 +103,7 @@ function ProjectWebhooksRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading&hellip;</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -108,6 +112,9 @@ function ProjectWebhooksRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
   if (containerQuery.data && !containerQuery.data.viewerCanUpdate) {
     return <ForbiddenPage href={routeHref} />;

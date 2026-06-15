@@ -5,7 +5,7 @@ import { listUserIssues } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toUserIssueListView } from "../../../app-view-models";
 import { UserIssueListPage, type UserIssueListQuery } from "../../-issue-views";
-import { useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
+import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
 
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRouteComponent,
@@ -32,6 +32,7 @@ function UserIssuesLeafRouteComponent() {
   const [issueList, setIssueList] = React.useState<ReturnType<typeof toUserIssueListView> | null>(
     null,
   );
+  const [readFailed, setReadFailed] = React.useState(false);
   const [query, setQuery] = React.useState<UserIssueListQuery>({
     filter: "assigned",
     orderBy: "updatedDate",
@@ -41,13 +42,14 @@ function UserIssuesLeafRouteComponent() {
     state: "open",
   });
 
-  useDocumentTitle("User Issues");
+  useDocumentTitle("issue.myIssue");
 
   React.useEffect(() => {
     if (!canRender) {
       return;
     }
     let cancelled = false;
+    setReadFailed(false);
     void (async () => {
       try {
         const searchParams = new URLSearchParams(window.location.search);
@@ -64,9 +66,9 @@ function UserIssuesLeafRouteComponent() {
           setIssueList(toUserIssueListView(nextIssueList));
           setQuery(nextQuery);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          setErrorMessage(error instanceof Error ? error.message : "Read user issues failed.");
+          setReadFailed(true);
         }
       }
     })();
@@ -78,9 +80,12 @@ function UserIssuesLeafRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
+  }
+  if (readFailed) {
+    return <BadRequestPage href="/user/issues" />;
   }
 
   const routePath: string = "/user/issues";
@@ -96,7 +101,7 @@ function UserIssuesLeafRouteComponent() {
       const overview = await setDefaultLandingPathRest(runtimeConfig, csrfToken, routePath);
       await syncWorkspaceFromOverview(overview);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "set Default page failed.");
+      setErrorMessage(error instanceof Error ? error.message : "set Default page failed: ");
     }
   };
 

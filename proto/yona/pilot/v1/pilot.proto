@@ -304,6 +304,7 @@ message WorkspaceProfile {
   string since_label = 7;
   repeated string connected_social_providers = 8;
   string avatar_url = 9;
+  bool is_guest = 10;
 }
 
 message WorkspaceIssueItem {

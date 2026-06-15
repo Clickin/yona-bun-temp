@@ -55,7 +55,7 @@ export function OrganizationDetailRouteComponent() {
           );
           setDetail(toOrganizationContainerView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Cancel enrollment failed.");
+          setErrorMessage(error instanceof Error ? error.message : "Server Error");
         }
       }}
       onEnrollOrganization={async (nextOrganizationName) => {
@@ -63,7 +63,7 @@ export function OrganizationDetailRouteComponent() {
           const nextDetail = await enrollOrganization(runtimeConfig, csrfToken, nextOrganizationName);
           setDetail(toOrganizationContainerView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Enroll failed.");
+          setErrorMessage(error instanceof Error ? error.message : "Server Error");
         }
       }}
       onLeaveOrganization={async (nextOrganizationName) => {
@@ -75,7 +75,9 @@ export function OrganizationDetailRouteComponent() {
           }
           await refreshContainer();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Leave organization failed.");
+          setErrorMessage(
+            error instanceof Error ? error.message : "organization.member.leave.unknownerror",
+          );
         }
       }}
     />

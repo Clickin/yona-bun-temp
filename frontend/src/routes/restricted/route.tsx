@@ -15,7 +15,7 @@ function RestrictedRouteComponent() {
   if (bootstrapping || !canRender || !currentSession || currentSession.isAnonymous) {
     return (
       <main className="app-shell">
-        <h1>Loading...</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }

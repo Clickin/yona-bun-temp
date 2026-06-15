@@ -5,6 +5,7 @@ import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
 import { ProjectMilestoneListPage } from "../../../-milestone-views";
 import {
+  BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestones")({
 
 function ProjectMilestonesRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/milestones`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -25,9 +26,11 @@ function ProjectMilestonesRouteComponent() {
   const [list, setList] = React.useState<ReturnType<typeof toProjectMilestoneListView> | null>(
     null,
   );
-  const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
 
-  useDocumentTitle("Milestones");
+  useDocumentTitle("title.milestoneList");
 
   React.useEffect(() => {
     let cancelled = false;
@@ -59,18 +62,18 @@ function ProjectMilestonesRouteComponent() {
           setFailureKind(nextFailureKind);
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Read project milestones failed.");
+        setFailureKind("bad-request");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig, setErrorMessage]);
+  }, [owner, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -79,6 +82,9 @@ function ProjectMilestonesRouteComponent() {
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;
+  }
+  if (failureKind === "bad-request") {
+    return <BadRequestPage href={routeHref} />;
   }
 
   return (

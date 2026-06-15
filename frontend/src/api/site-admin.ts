@@ -20,6 +20,7 @@ export interface SiteUser {
   id: number;
   isGuest: boolean;
   isSiteAdmin: boolean;
+  lastStateModifiedAt?: string;
   loginId: string;
   state: SiteUserState;
 }
@@ -84,6 +85,7 @@ export interface SitePost {
   authorLoginId: string;
   commentCount: number;
   createdLabel: string;
+  createdTitle?: string;
   labels: Array<{ id: string; name: string }>;
   notice: boolean;
   ownerName: string;
@@ -115,6 +117,7 @@ export interface SiteIssue {
   authorLoginId: string;
   commentCount: number;
   createdLabel: string;
+  createdTitle?: string;
   issueNumber: string;
   labels: Array<{ id: string; name: string }>;
   milestoneTitle: string;

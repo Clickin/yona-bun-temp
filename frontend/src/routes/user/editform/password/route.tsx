@@ -25,12 +25,12 @@ function EditPasswordRouteComponent() {
   } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform/password");
   const currentHref = useCurrentHref();
-  useDocumentTitle("Account Settings");
+  useDocumentTitle("userinfo.accountSetting");
 
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading…</h1>
+        <h1>common.loading</h1>
       </main>
     );
   }
@@ -49,7 +49,7 @@ function EditPasswordRouteComponent() {
           setWorkspaceOverview(null);
           navigateToAppHref(runtimeConfig.basePath, "/users/loginform");
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Change password failed.");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
     />

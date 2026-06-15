@@ -50,6 +50,8 @@ describe("project import parity", () => {
     const routeSource = readFileSync(join(process.cwd(), "src/routes/[_]import/route.tsx"), "utf8");
 
     expect(routeSource).toContain('createFileRoute("/_import")');
+    expect(routeSource).not.toContain("Read project import options failed.");
+    expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain("readProjectCreateFormOptionsRest");
     expect(routeSource).toContain("ProjectImportPage");
     expect(routeSource).toContain("csrfToken={csrfToken}");
