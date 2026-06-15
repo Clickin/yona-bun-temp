@@ -82,6 +82,22 @@ type MarkdownLineRecord = {
   text: string;
 };
 
+function containsBacktick(value: string): boolean {
+  return /`/.test(value);
+}
+
+function containsInlineLinkClose(value: string): boolean {
+  return /\]\(/.test(value);
+}
+
+function containsLt(value: string): boolean {
+  return /</.test(value);
+}
+
+function rawHtmlClosingPattern(tag: string): RegExp {
+  return new RegExp(String.raw`<\/${tag}\s*>`, "i");
+}
+
 type MarkdownTableCell = {
   align?: "center" | "left" | "right";
   key: string;
@@ -183,6 +199,27 @@ const legacyDirectTabListItemPlaceholder = "yona-direct-tab-list-item-placeholde
 const legacyExtraListContinuationPaddingPlaceholder = "yona-extra-list-continuation-padding";
 const legacyListLeadingCodePaddingPlaceholder = "yona-list-leading-code-padding";
 const legacySpaceTabListItemPaddingPlaceholder = "yona-space-tab-list-item-padding";
+const legacyExtraListContinuationPaddingRegex = new RegExp(
+  `${legacyExtraListContinuationPaddingPlaceholder}:(\\d):`,
+  "g",
+);
+const legacyListLeadingCodePaddingRegex = new RegExp(
+  `${legacyListLeadingCodePaddingPlaceholder}:(\\d):`,
+  "g",
+);
+const legacySpaceTabListItemPaddingRegex = new RegExp(
+  `${legacySpaceTabListItemPaddingPlaceholder}:(\\d):`,
+  "g",
+);
+const rawHtmlVideoBooleanAttributes = new Set(["autoplay", "controls"]);
+const rawHtmlVideoLegacyAttributes = new Set([
+  "data-setup",
+  "fluid",
+  "liveui",
+  "preload",
+  "responsive",
+  "type",
+]);
 const legacyTasklistTemplate = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 
 export function insertLegacyTasklistTemplate(value: string, cursorIndex: number) {
@@ -235,7 +272,6 @@ function isSafeUrl(value: string) {
 }
 
 function isSafeRawHtmlUrl(value: string) {
-  const normalized = value.toLowerCase();
   return isSafeMarkdownTarget(value);
 }
 
@@ -264,7 +300,7 @@ function unescapeMarkdownPunctuation(value: string) {
 }
 
 function unescapeMarkdownImageAltBrackets(value: string) {
-  return value.replace(/\\([\[\]])/g, "$1");
+  return value.replace(/\\(\[|\])/g, "$1");
 }
 
 function markdownEntityCodePoint(codePoint: number, fallback: string) {
@@ -387,7 +423,18 @@ const legacyProjectIssueRegex = new RegExp(
 );
 const legacyOwnerIssueRegex = new RegExp(`^(${legacyPathSegmentPattern})#([0-9]+)$`);
 const rawHtmlAttributePattern = String.raw`(?:\s+(?:"[^"]*"|'[^']*'|[^'"<>])*)?`;
-const rawInlineHtmlPairedTagPattern = ["a", "b", "code", "del", "em", "i", "s", "span", "strong", "u"]
+const rawInlineHtmlPairedTagPattern = [
+  "a",
+  "b",
+  "code",
+  "del",
+  "em",
+  "i",
+  "s",
+  "span",
+  "strong",
+  "u",
+]
   .map((tag) => String.raw`${tag}${rawHtmlAttributePattern}>[\s\S]*?<\/${tag}\s*>`)
   .join("|");
 const rawInlineHtmlElementPattern = String.raw`(?:<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<![A-Za-z][^<>]*>|<(?:(?:${rawInlineHtmlPairedTagPattern})|(?<rawHtmlGenericTag>[A-Za-z][A-Za-z0-9-]*)${rawHtmlAttributePattern}>[\s\S]*?<\/\k<rawHtmlGenericTag>\s*>|[A-Za-z][A-Za-z0-9-]*${rawHtmlAttributePattern}\/>|(?:br|hr|img|input|source)${rawHtmlAttributePattern}\/?>))`;
@@ -447,7 +494,9 @@ function extractReferenceDefinitions(markdown: string) {
     const titleAfterSplitTargetLine = lines[index + 2] ?? "";
     const splitTargetLine = candidateLine !== line;
     const consumesTitleLine =
-      splitTargetLine && index < lines.length - 2 && referenceTitleOnlyPattern.test(titleAfterSplitTargetLine);
+      splitTargetLine &&
+      index < lines.length - 2 &&
+      referenceTitleOnlyPattern.test(titleAfterSplitTargetLine);
     const candidateWithTitle =
       index < lines.length - 1 &&
       candidateLine === line &&
@@ -633,7 +682,7 @@ function markdownLineTextBeforeBreak(
   if (index >= lines.length - 1) {
     return line.text;
   }
-  if (/\\$/.test(line.text)) {
+  if (line.text.endsWith("\\")) {
     return line.text.slice(0, -1);
   }
   if (markdownLineHasTrailingWhitespaceHardBreak(line.text) || breaks) {
@@ -644,7 +693,7 @@ function markdownLineTextBeforeBreak(
 
 function markdownLineHasTrailingWhitespaceHardBreak(line: string) {
   const trailingWhitespace = /[ \t]+$/.exec(line)?.[0] ?? "";
-  return trailingWhitespace.includes("\t") || trailingWhitespace.length >= 2;
+  return trailingWhitespace.match("\t") !== null || trailingWhitespace.length >= 2;
 }
 
 function markdownLineBreakBefore(
@@ -656,9 +705,13 @@ function markdownLineBreakBefore(
     return null;
   }
   const previousLine = lines[index - 1]?.text ?? "";
-  return breaks || /\\$/.test(previousLine) || markdownLineHasTrailingWhitespaceHardBreak(previousLine)
-    ? <br />
-    : "\n";
+  return breaks ||
+    previousLine.endsWith("\\") ||
+    markdownLineHasTrailingWhitespaceHardBreak(previousLine) ? (
+    <br />
+  ) : (
+    "\n"
+  );
 }
 
 function parseTextWithAutolinks(
@@ -744,7 +797,9 @@ function parseTextWithAutolinks(
       if (isWrappedByTrailingWordCharacter(text, tokenStart + token.length)) {
         parts.push({ kind: "text", key, value: token });
       } else {
-        parts.push(commitAutolinkPart(token, key, basePath, ownerName, projectName, token, context));
+        parts.push(
+          commitAutolinkPart(token, key, basePath, ownerName, projectName, token, context),
+        );
       }
     } else if (legacyProjectMentionRegex.test(token)) {
       const projectPath = token.slice(1);
@@ -847,7 +902,7 @@ function parseTextWithAutolinks(
         index = tokenStart + token.length;
         continue;
       }
-      const target = /^www\./.test(label)
+      const target = label.startsWith("www.")
         ? `http://${label}`
         : bareEmailRegex.test(label)
           ? `mailto:${label}`
@@ -1043,7 +1098,9 @@ function MarkdownLinkLabel(props: { context?: MarkdownContext; label: string; ta
 }
 
 function markdownImageAltLabel(label: string) {
-  return normalizeInlineText(decodeMarkdownHtmlEntities(unescapeMarkdownImageAltBrackets(label))).replace(
+  return normalizeInlineText(
+    decodeMarkdownHtmlEntities(unescapeMarkdownImageAltBrackets(label)),
+  ).replace(
     /(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)/g,
     (...args: unknown[]) => {
       const match = args.at(-1) as { codeFence?: string; codeText?: string } | undefined;
@@ -1112,7 +1169,7 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
       return <React.Fragment key={part.key}>{part.value}</React.Fragment>;
     }
     if (part.kind === "rawHtml") {
-      return <React.Fragment key={part.key}>{renderSanitizedRawHtml(part.value, part.key)}</React.Fragment>;
+      return <MarkdownSanitizedRawHtml key={part.key} keyPrefix={part.key} source={part.value} />;
     }
     if (part.kind === "rawHtmlInlineSpan") {
       const childContext =
@@ -1200,7 +1257,11 @@ function normalizeLooseListContinuationLines(markdown: string): string {
         activeListLine &&
         (markdownListLinesShareList(activeListLine, nextListLine, activeListIndent) ||
           (nextListLine
-            ? !markdownListLineIsAtListLevel(activeListIndent, activeListLine.markerWidth, nextListLine)
+            ? !markdownListLineIsAtListLevel(
+                activeListIndent,
+                activeListLine.markerWidth,
+                nextListLine,
+              )
             : nextIndent !== null && nextIndent > activeListIndent))
       ) {
         normalized.push(`${" ".repeat(activeListLine.indent + 1)}${looseListBreakMarker}`);
@@ -1371,8 +1432,14 @@ function legacyGfmTableSeparatorCell(cell: string): string | undefined {
   return "---";
 }
 
-function normalizeLegacyGfmTableSeparatorLine(previousLine: string, line: string): string | undefined {
-  if (!markdownTableLineHasUnescapedPipe(previousLine) && !markdownTableLineHasUnescapedPipe(line)) {
+function normalizeLegacyGfmTableSeparatorLine(
+  previousLine: string,
+  line: string,
+): string | undefined {
+  if (
+    !markdownTableLineHasUnescapedPipe(previousLine) &&
+    !markdownTableLineHasUnescapedPipe(line)
+  ) {
     return undefined;
   }
   const separator = splitTableRow(line);
@@ -1390,7 +1457,10 @@ function normalizeLegacyGfmTableSeparatorLine(previousLine: string, line: string
   return `${indent}${hasLeadingPipe ? "| " : ""}${body}${hasTrailingPipe ? " |" : ""}`;
 }
 
-function normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine: string, line: string): string | undefined {
+function normalizeLegacyBlockquoteGfmTableSeparatorLine(
+  previousLine: string,
+  line: string,
+): string | undefined {
   const previousMatch = /^ {0,3}>(.*)$/.exec(previousLine);
   const lineMatch = /^( {0,3})>(.*)$/.exec(line);
   if (!previousMatch || !lineMatch) {
@@ -1403,7 +1473,9 @@ function normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine: string, li
   return normalized === undefined ? undefined : `${lineMatch[1] ?? ""}> ${normalized}`;
 }
 
-function markdownLineStartsOrderedList(line: string): { orderedStartsWithOne: boolean } | undefined {
+function markdownLineStartsOrderedList(
+  line: string,
+): { orderedStartsWithOne: boolean } | undefined {
   const match = /^ {0,3}(\d{1,9})[.)][ \t]+/.exec(line);
   if (!match) {
     return undefined;
@@ -1529,12 +1601,15 @@ function splitYonaRawHtmlOpaqueBlocks(lines: string[]) {
 
     const rawLines = [line];
     if (boundaryTag) {
-      const closingPattern = new RegExp(String.raw`<\/${boundaryTag}\s*>`, "i");
+      const closingPattern = rawHtmlClosingPattern(boundaryTag);
       while (index < lines.length - 1 && !closingPattern.test(rawLines.at(-1) ?? "")) {
         index += 1;
         rawLines.push(lines[index] ?? "");
       }
-    } else if (markdownLineStartsRawHtmlBlock(line) || markdownLineIsStandaloneRawHtmlVoidBlock(line)) {
+    } else if (
+      markdownLineStartsRawHtmlBlock(line) ||
+      markdownLineIsStandaloneRawHtmlVoidBlock(line)
+    ) {
       while (index < lines.length - 1 && (lines[index + 1] ?? "").trim() !== "") {
         index += 1;
         rawLines.push(lines[index] ?? "");
@@ -1569,8 +1644,8 @@ function preprocessLegacyMarkedBlockGrammar(markdown: string): LegacyMarkedPrepr
     const previousLine = output.at(-1) ?? "";
     const normalizedSeparator =
       index > 0 && !/^ {4}/.test(line)
-        ? normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine, line) ??
-          normalizeLegacyGfmTableSeparatorLine(previousLine, line)
+        ? (normalizeLegacyBlockquoteGfmTableSeparatorLine(previousLine, line) ??
+          normalizeLegacyGfmTableSeparatorLine(previousLine, line))
         : undefined;
     const candidateLine = normalizedSeparator ?? line;
     const orderedList = markdownLineStartsOrderedList(candidateLine);
@@ -1590,7 +1665,9 @@ function preprocessLegacyMarkedBlockGrammar(markdown: string): LegacyMarkedPrepr
 
     output.push(
       normalizeLegacySpaceTabContinuationListItemLine(
-        normalizeLegacyDirectTabListItemLine(normalizeLegacyTaskItemLine(normalizedLineStartTildeText)),
+        normalizeLegacyDirectTabListItemLine(
+          normalizeLegacyTaskItemLine(normalizedLineStartTildeText),
+        ),
       ),
     );
     const nextOpenFence = openingFenceFromLine(protectedLine);
@@ -1794,7 +1871,11 @@ function parseMarkdownListAt(
         index += 1;
         continue;
       }
-      const continuationText = markdownListContinuationText(line, firstLine.indent, parent.markerWidth);
+      const continuationText = markdownListContinuationText(
+        line,
+        firstLine.indent,
+        parent.markerWidth,
+      );
       parent.text = `${parent.text}\n${continuationText}`;
       if (parent.continuedText !== undefined) {
         parent.continuedText = `${parent.continuedText}\n${continuationText}`;
@@ -1967,7 +2048,11 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
     </li>
   ));
   return props.list.ordered ? (
-    <ol start={props.list.start !== undefined && props.list.start !== 1 ? props.list.start : undefined}>
+    <ol
+      start={
+        props.list.start !== undefined && props.list.start !== 1 ? props.list.start : undefined
+      }
+    >
       {children}
     </ol>
   ) : (
@@ -1975,7 +2060,10 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
   );
 }
 
-function MarkdownTightListItemContent(props: { context?: MarkdownContext; item: MarkdownListItem }) {
+function MarkdownTightListItemContent(props: {
+  context?: MarkdownContext;
+  item: MarkdownListItem;
+}) {
   if (props.item.leadingIndentedCode && !props.item.text.includes("\n")) {
     return (
       <pre>
@@ -2112,7 +2200,9 @@ function MarkdownLooseListItem(props: { context?: MarkdownContext; item: Markdow
 }
 
 function MarkdownInlineLines(props: { context?: MarkdownContext; text: string }) {
-  const lines = markdownLines(normalizeInlineLinkTitleNewlines(normalizeCodeSpanNewlines(props.text)));
+  const lines = markdownLines(
+    normalizeInlineLinkTitleNewlines(normalizeCodeSpanNewlines(props.text)),
+  );
   const breaks = props.context?.breaks ?? true;
   return (
     <>
@@ -2264,13 +2354,18 @@ function markdownLineIsStandaloneRawHtmlDirectiveBlock(line: string) {
   );
 }
 
-function rawBlockTagWithClosingBoundaryFromLine(line: string): "code" | "pre" | "script" | "style" | undefined {
+function rawBlockTagWithClosingBoundaryFromLine(
+  line: string,
+): "code" | "pre" | "script" | "style" | undefined {
   const match = new RegExp(
     String.raw`^ {0,3}<([A-Za-z][A-Za-z0-9-]*)${rawHtmlAttributePattern}>`,
     "i",
   ).exec(line);
   const tag = (match?.[1] ?? "").toLowerCase();
-  if (tag === "code" && !new RegExp(String.raw`^ {0,3}<code${rawHtmlAttributePattern}>\s*$`, "i").test(line)) {
+  if (
+    tag === "code" &&
+    !new RegExp(String.raw`^ {0,3}<code${rawHtmlAttributePattern}>\s*$`, "i").test(line)
+  ) {
     return undefined;
   }
   return tag === "code" || tag === "pre" || tag === "script" || tag === "style" ? tag : undefined;
@@ -2452,7 +2547,7 @@ function MarkdownBlockSequence(props: {
       index += 1;
       while (
         index < lineCount &&
-        !new RegExp(String.raw`<\/${rawTagWithClosingBoundary}\s*>`, "i").test(
+        !rawHtmlClosingPattern(rawTagWithClosingBoundary).test(
           rawLines[rawLines.length - 1]?.text ?? "",
         )
       ) {
@@ -2551,8 +2646,10 @@ function collectMarkdownListLines(
         : null;
       const followingLineStartsNestedList =
         followingListLine !== null &&
-        parseMarkdownListLine({ key: `${followingListLine.key}-nested-probe`, text: followingListLine.text }) !==
-          null;
+        parseMarkdownListLine({
+          key: `${followingListLine.key}-nested-probe`,
+          text: followingListLine.text,
+        }) !== null;
       if (followingLineStartsNestedList) {
         break;
       }
@@ -2758,7 +2855,11 @@ function remarkYonaAutolinks(context: MarkdownContext) {
     if (!node.children || !Array.isArray(node.children)) {
       return;
     }
-    if (["code", "definition", "html", "image", "inlineCode", "link", "linkReference"].includes(node.type ?? "")) {
+    if (
+      ["code", "definition", "html", "image", "inlineCode", "link", "linkReference"].includes(
+        node.type ?? "",
+      )
+    ) {
       return;
     }
 
@@ -2863,13 +2964,7 @@ const yonaMarkdownSanitizeSchema = {
     ...defaultSchema.required,
     input: {},
   },
-  tagNames: [
-    ...(defaultSchema.tagNames ?? []),
-    "iframe",
-    "input",
-    "source",
-    "video",
-  ],
+  tagNames: [...(defaultSchema.tagNames ?? []), "iframe", "input", "source", "video"],
 };
 
 function reactMarkdownUrlTransform(url: string) {
@@ -2961,9 +3056,7 @@ function normalizeRawHtmlElementProperties(node: HastNode) {
   if (tagName === "a" && typeof href === "string") {
     const compact = href.replace(/[^\w:]/g, "").toLowerCase();
     node.properties.href =
-      compact.startsWith("javascript:") || sanitizedMarkdownTarget(href) === undefined
-        ? "#"
-        : href;
+      compact.startsWith("javascript:") || sanitizedMarkdownTarget(href) === undefined ? "#" : href;
   }
 
   const src = node.properties.src;
@@ -3033,16 +3126,28 @@ function rehypeYonaRawHtmlCompatibility(opaqueRawHtmlBlocks: Map<string, string>
 
 function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisOrder?: boolean }) {
   return function transformYonaRenderedDomCompatibility(tree: unknown) {
-    transformRenderedDomNode(tree as { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string; value?: string });
+    transformRenderedDomNode(
+      tree as {
+        children?: unknown[];
+        properties?: Record<string, unknown>;
+        tagName?: string;
+        type?: string;
+        value?: string;
+      },
+    );
   };
 
-  function transformRenderedDomNode(node: {
-    children?: unknown[];
-    properties?: Record<string, unknown>;
-    tagName?: string;
-    type?: string;
-    value?: string;
-  }, parentHasTaskListClass = false, parentTagName = "") {
+  function transformRenderedDomNode(
+    node: {
+      children?: unknown[];
+      properties?: Record<string, unknown>;
+      tagName?: string;
+      type?: string;
+      value?: string;
+    },
+    parentHasTaskListClass = false,
+    parentTagName = "",
+  ) {
     normalizeRawHtmlElementProperties(node as HastNode);
     const nodeClassName = node.properties?.className;
     const nodeClasses = Array.isArray(nodeClassName)
@@ -3094,28 +3199,37 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
           const childNode = child as { type?: string; value?: string };
           if (childNode.type === "text") {
             childNode.value = childNode.value
-              ?.replace(
-                new RegExp(`${legacyExtraListContinuationPaddingPlaceholder}:(\\d):`, "g"),
-                (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+              ?.replace(legacyExtraListContinuationPaddingRegex, (_, count) =>
+                " ".repeat(Number.parseInt(String(count), 10)),
               )
               ?.replace(legacyDirectTabListItemPlaceholder, "   ")
-              .replace(
-                new RegExp(`${legacySpaceTabListItemPaddingPlaceholder}:(\\d):`, "g"),
-                (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+              .replace(legacySpaceTabListItemPaddingRegex, (_, count) =>
+                " ".repeat(Number.parseInt(String(count), 10)),
               );
           }
         }
       }
       for (const child of node.children) {
         transformRenderedDomNode(
-          child as { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string; value?: string },
+          child as {
+            children?: unknown[];
+            properties?: Record<string, unknown>;
+            tagName?: string;
+            type?: string;
+            value?: string;
+          },
           parentHasTaskListClass || nodeHasTaskListClass,
           node.tagName ?? "",
         );
       }
     }
 
-    if (node.tagName === "code" && parentTagName !== "pre" && node.children && Array.isArray(node.children)) {
+    if (
+      node.tagName === "code" &&
+      parentTagName !== "pre" &&
+      node.children &&
+      Array.isArray(node.children)
+    ) {
       const lastChild = node.children.at(-1) as { type?: string; value?: string } | undefined;
       if (lastChild?.type === "text") {
         lastChild.value = lastChild.value?.replace(/\n$/, "");
@@ -3131,7 +3245,11 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
       }
     }
 
-    if (node.tagName === "input" && node.properties?.type === "checkbox" && parentHasTaskListClass) {
+    if (
+      node.tagName === "input" &&
+      node.properties?.type === "checkbox" &&
+      parentHasTaskListClass
+    ) {
       node.properties.className = ["task-list-item-checkbox"];
     }
   }
@@ -3146,24 +3264,21 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
     if (textNode?.type !== "text" || typeof textNode.value !== "string") {
       return;
     }
-    const hasContinuationText = (node.children ?? [])
-      .slice(1)
-      .some((child) => {
-        const childNode = child as { type?: string; value?: string };
-        return childNode.type !== "text" || !/^\s*$/.test(childNode.value ?? "");
-      });
+    const hasContinuationText = (node.children ?? []).slice(1).some((child) => {
+      const childNode = child as { type?: string; value?: string };
+      return childNode.type !== "text" || !/^\s*$/.test(childNode.value ?? "");
+    });
     if (!hasContinuationText) {
       return;
     }
     firstChild.properties = {
-      ...(firstChild.properties ?? {}),
+      ...firstChild.properties,
       dataLegacyListLeadingCode: "true",
     };
     textNode.value = `${textNode.value
       .replace(/^ {1,2}/, "")
-      .replace(
-        new RegExp(`${legacyListLeadingCodePaddingPlaceholder}:(\\d):`, "g"),
-        (_, count) => " ".repeat(Number.parseInt(String(count), 10)),
+      .replace(legacyListLeadingCodePaddingRegex, (_, count) =>
+        " ".repeat(Number.parseInt(String(count), 10)),
       )
       .replace(/\n?$/, "")}\n`;
   }
@@ -3207,15 +3322,19 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
 
   function normalizeLooseTaskListItems(children: unknown[]) {
     const listItems = children.filter(
-      (child): child is { children?: unknown[]; properties?: Record<string, unknown>; tagName?: string; type?: string } =>
-        (child as { tagName?: string }).tagName === "li",
+      (
+        child,
+      ): child is {
+        children?: unknown[];
+        properties?: Record<string, unknown>;
+        tagName?: string;
+        type?: string;
+      } => (child as { tagName?: string }).tagName === "li",
     );
     const hasLooseTaskItem = listItems.some(
       (item) =>
         hastNodeHasClass(item, "task-list-item") &&
-        (item.children ?? []).some((child) =>
-          hastNodeIsBlockChild(child as { tagName?: string }),
-        ),
+        (item.children ?? []).some((child) => hastNodeIsBlockChild(child as { tagName?: string })),
     );
     if (!hasLooseTaskItem) {
       return;
@@ -3224,10 +3343,17 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
       if (!hastNodeHasClass(item, "task-list-item") || !item.children) {
         continue;
       }
-      const firstBlockIndex = item.children.findIndex((child) =>
-        hastNodeIsBlockChild(child as { tagName?: string }),
-      );
-      if (firstBlockIndex > 0 && hastNodesHaveRenderableContent(item.children.slice(0, firstBlockIndex))) {
+      let firstBlockIndex = -1;
+      for (const [childIndex, child] of item.children.entries()) {
+        if (hastNodeIsBlockChild(child as { tagName?: string })) {
+          firstBlockIndex = childIndex;
+          break;
+        }
+      }
+      if (
+        firstBlockIndex > 0 &&
+        hastNodesHaveRenderableContent(item.children.slice(0, firstBlockIndex))
+      ) {
         wrapLeadingTaskListItemChildren(item, firstBlockIndex);
       } else if (firstBlockIndex === -1 && hastNodesHaveRenderableContent(item.children)) {
         wrapLeadingTaskListItemChildren(item, item.children.length);
@@ -3264,7 +3390,9 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
 
 function reactMarkdownComponents(context: MarkdownContext): Components {
   const headingComponent = (level: 1 | 2 | 3 | 4 | 5 | 6) =>
-    function HeadingComponent(props: React.HTMLAttributes<HTMLHeadingElement> & { node?: unknown }) {
+    function HeadingComponent(
+      props: React.HTMLAttributes<HTMLHeadingElement> & { node?: unknown },
+    ) {
       const { children: propChildren, node: _node, ...rest } = props;
       if (typeof rest.className === "string" && rest.className.split(/\s+/).includes("sr-only")) {
         return React.createElement(`h${level}`, rest, propChildren);
@@ -3300,7 +3428,12 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
       const transformedHref = href === undefined ? undefined : reactMarkdownUrlTransform(href);
       return (
         <a
-          className={reactMarkdownLinkClassName({ ...rest, children, className, href: transformedHref })}
+          className={reactMarkdownLinkClassName({
+            ...rest,
+            children,
+            className,
+            href: transformedHref,
+          })}
           href={transformedHref}
           {...rest}
         >
@@ -3447,7 +3580,7 @@ function ReactMarkdownCompatibleBlock(props: {
 function reactMarkdownReferenceDefinitions(referenceMap: Map<string, MarkdownReferenceDefinition>) {
   return Array.from(referenceMap.entries())
     .map(([label, definition]) => {
-      const escapedLabel = label.replace(/\\/g, "\\\\").replace(/([\[\]])/g, "\\$1");
+      const escapedLabel = label.replace(/\\/g, "\\\\").replace(/(\[|\])/g, "\\$1");
       const target = definition.target === "<" ? "%3C" : (definition.target ?? "");
       const title =
         definition.title === undefined
@@ -3480,7 +3613,9 @@ function headingTextCanUseReactMarkdown(headingText: string, context?: MarkdownC
 function headingTextCanUseReactMarkdownRawFormatting(headingText: string) {
   if (
     markdownLineStartsRawHtmlBlock(headingText) ||
-    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(headingText)
+    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(
+      headingText,
+    )
   ) {
     return false;
   }
@@ -3510,8 +3645,7 @@ function markdownBlockCanUseReactMarkdownSetextHeading(
   const headingText = lines[0]?.text.trim() ?? "";
   const underline = lines[1]?.text ?? "";
   return (
-    /^ {0,3}(?:=+|-+)\s*$/.test(underline) &&
-    headingTextCanUseReactMarkdown(headingText, context)
+    /^ {0,3}(?:=+|-+)\s*$/.test(underline) && headingTextCanUseReactMarkdown(headingText, context)
   );
 }
 
@@ -3544,14 +3678,15 @@ function markdownBlockCanUseReactMarkdownSimpleBlockquote(
     }
     const text = blockquoteTextAfterMarker(match[1] ?? "");
     const textLine = [{ key: `${line.key}-blockquote-text`, text }];
-    return text.length > 0 && (
-      markdownListItemTextCanUseReactMarkdown(text, context) ||
-      markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(textLine) ||
-      markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(textLine) ||
-      markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(textLine) ||
-      markdownBlockCanUseReactMarkdownMixedReferenceParagraph(textLine, context) ||
-      markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(textLine, context) ||
-      markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(textLine, context)
+    return (
+      text.length > 0 &&
+      (markdownListItemTextCanUseReactMarkdown(text, context) ||
+        markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(textLine) ||
+        markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(textLine) ||
+        markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(textLine) ||
+        markdownBlockCanUseReactMarkdownMixedReferenceParagraph(textLine, context) ||
+        markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(textLine, context) ||
+        markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(textLine, context))
     );
   });
 }
@@ -3575,7 +3710,9 @@ function markdownBlockCanUseReactMarkdownLazyBlockquote(
       }
       const text = blockquoteTextAfterMarker(match[1] ?? "");
       const textLine = [{ key: `${line.key}-blockquote-text`, text }];
-      return text.length > 0 && markdownLineCanUseReactMarkdownInlineParagraphText(textLine[0], context);
+      return (
+        text.length > 0 && markdownLineCanUseReactMarkdownInlineParagraphText(textLine[0], context)
+      );
     }
     if (
       /^ {0,3}>/.test(line.text) ||
@@ -3603,8 +3740,10 @@ function markdownBlockCanUseReactMarkdownLazyBlockquoteList(
     return false;
   }
   const contentLines = quoteLines.map((line) => ({ key: line.key, text: line.text }));
-  if (!markdownBlockCanUseReactMarkdownNestedList(contentLines, context) &&
-    !markdownBlockCanUseReactMarkdownSimpleList(contentLines, context)) {
+  if (
+    !markdownBlockCanUseReactMarkdownNestedList(contentLines, context) &&
+    !markdownBlockCanUseReactMarkdownSimpleList(contentLines, context)
+  ) {
     return false;
   }
   return lines.some((line) => !/^ {0,3}>/.test(line.text));
@@ -3630,7 +3769,11 @@ function markdownBlockCanUseReactMarkdownBlockquoteParagraphBlocks(
   context?: MarkdownContext,
 ) {
   const contentLines = reactMarkdownBlockquoteContentLines(lines);
-  if (!contentLines || contentLines.length === 0 || !contentLines.some((line) => line.text.trim() === "")) {
+  if (
+    !contentLines ||
+    contentLines.length === 0 ||
+    !contentLines.some((line) => line.text.trim() === "")
+  ) {
     return false;
   }
   const paragraphs: MarkdownLineRecord[][] = [];
@@ -3651,11 +3794,14 @@ function markdownBlockCanUseReactMarkdownBlockquoteParagraphBlocks(
   if (current.length > 0) {
     paragraphs.push(current);
   }
-  return paragraphs.length > 1 &&
-    paragraphs.every((paragraph) =>
-      markdownBlockCanUseReactMarkdownMultilineInlineParagraph(paragraph, context) ||
-      markdownBlockCanUseReactMarkdownPlainParagraph(paragraph),
-    );
+  return (
+    paragraphs.length > 1 &&
+    paragraphs.every(
+      (paragraph) =>
+        markdownBlockCanUseReactMarkdownMultilineInlineParagraph(paragraph, context) ||
+        markdownBlockCanUseReactMarkdownPlainParagraph(paragraph),
+    )
+  );
 }
 
 function markdownBlockCanUseReactMarkdownBlockquoteBlocks(
@@ -3731,7 +3877,9 @@ function markdownBlockCanUseReactMarkdownPlainParagraph(lines: MarkdownLineRecor
       ) {
         return true;
       }
-      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+      return index === 0
+        ? markdownLineStartsBlock(line.text)
+        : markdownLineStartsParagraphInterrupt(line.text);
     })
   ) {
     return false;
@@ -3741,7 +3889,8 @@ function markdownBlockCanUseReactMarkdownPlainParagraph(lines: MarkdownLineRecor
 }
 
 function markdownBlockCanUseReactMarkdownParagraphShape(lines: MarkdownLineRecord[]) {
-  return lines.length > 0 &&
+  return (
+    lines.length > 0 &&
     !lines.some((line, index) => {
       if (
         line.text.trim() === "" ||
@@ -3750,12 +3899,16 @@ function markdownBlockCanUseReactMarkdownParagraphShape(lines: MarkdownLineRecor
       ) {
         return true;
       }
-      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
-    });
+      return index === 0
+        ? markdownLineStartsBlock(line.text)
+        : markdownLineStartsParagraphInterrupt(line.text);
+    })
+  );
 }
 
 function markdownBlockCanUseReactMarkdownRawInlineParagraphShape(lines: MarkdownLineRecord[]) {
-  return lines.length > 0 &&
+  return (
+    lines.length > 0 &&
     !lines.some((line, index) => {
       if (
         line.text.trim() === "" ||
@@ -3764,8 +3917,11 @@ function markdownBlockCanUseReactMarkdownRawInlineParagraphShape(lines: Markdown
       ) {
         return true;
       }
-      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
-    });
+      return index === 0
+        ? markdownLineStartsBlock(line.text)
+        : markdownLineStartsParagraphInterrupt(line.text);
+    })
+  );
 }
 
 function markdownBlockCanUseReactMarkdownSimpleInlineParagraph(lines: MarkdownLineRecord[]) {
@@ -3803,7 +3959,7 @@ function markdownLineCanUseReactMarkdownMixedInline(text: string) {
     if (/[*_~`]/.test(text.slice(cursor, start))) {
       return false;
     }
-    if ((match[0] ?? "").startsWith("`") && (match[0] ?? "").includes("\t")) {
+    if ((match[0] ?? "").startsWith("`") && (match[0] ?? "").match("\t") !== null) {
       return false;
     }
     cursor = start + (match[0]?.length ?? 0);
@@ -3815,7 +3971,7 @@ function markdownLineCanUseReactMarkdownMixedInline(text: string) {
 function markdownLineCanUseReactMarkdownEscapedInline(text: string) {
   if (
     text.trim() === "" ||
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     !/\\[!"$%&'()*+,./:;=?@[\\\]^_`{|}~-]/.test(text) ||
     /\\[@#]/.test(text) ||
     /[<>#!|&@]/.test(text) ||
@@ -3824,7 +3980,10 @@ function markdownLineCanUseReactMarkdownEscapedInline(text: string) {
     return false;
   }
   const escapedAsPlain = text.replace(/\\[!"$%&'()*+,./:;=?@[\\\]^_`{|}~-]/g, "x");
-  return reactMarkdownSafePlainText(escapedAsPlain) || markdownLineCanUseReactMarkdownMixedInline(escapedAsPlain);
+  return (
+    reactMarkdownSafePlainText(escapedAsPlain) ||
+    markdownLineCanUseReactMarkdownMixedInline(escapedAsPlain)
+  );
 }
 
 function markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines: MarkdownLineRecord[]) {
@@ -3840,20 +3999,26 @@ function markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines: MarkdownLin
       ) {
         return true;
       }
-      return index === 0 ? markdownLineStartsBlock(line.text) : markdownLineStartsParagraphInterrupt(line.text);
+      return index === 0
+        ? markdownLineStartsBlock(line.text)
+        : markdownLineStartsParagraphInterrupt(line.text);
     })
   ) {
     return false;
   }
-  return lines.some((line) =>
-    markdownLineCanUseReactMarkdownMixedInline(line.text) ||
-    markdownLineCanUseReactMarkdownEscapedInline(line.text)
-  ) &&
-    lines.every((line) =>
-      reactMarkdownSafePlainText(line.text) ||
-      markdownLineCanUseReactMarkdownMixedInline(line.text) ||
-      markdownLineCanUseReactMarkdownEscapedInline(line.text),
-    );
+  return (
+    lines.some(
+      (line) =>
+        markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+        markdownLineCanUseReactMarkdownEscapedInline(line.text),
+    ) &&
+    lines.every(
+      (line) =>
+        reactMarkdownSafePlainText(line.text) ||
+        markdownLineCanUseReactMarkdownMixedInline(line.text) ||
+        markdownLineCanUseReactMarkdownEscapedInline(line.text),
+    )
+  );
 }
 
 function markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines: MarkdownLineRecord[]) {
@@ -3864,7 +4029,7 @@ function markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines: MarkdownLi
     const text = line.text;
     if (
       text.trim() === "" ||
-      text.includes("\t") ||
+      text.match("\t") !== null ||
       /^ {0,3}~~~/.test(text) ||
       /^\s/.test(text) ||
       /[\\`*_[\]<>#!|&@]/.test(text) ||
@@ -3891,7 +4056,7 @@ function markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines: Markdow
     const text = line.text;
     if (
       text.trim() === "" ||
-      text.includes("\t") ||
+      text.match("\t") !== null ||
       /^\s{4,}/.test(text) ||
       /[\\`*_[\]<>#!|&@]/.test(text) ||
       /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
@@ -3899,14 +4064,20 @@ function markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines: Markdow
     ) {
       return false;
     }
-    if (index === 0 ? markdownLineStartsBlock(text) && !/^ {0,3}~~~\S/.test(text) : markdownLineStartsParagraphInterrupt(text)) {
+    if (
+      index === 0
+        ? markdownLineStartsBlock(text) && !/^ {0,3}~~~\S/.test(text)
+        : markdownLineStartsParagraphInterrupt(text)
+    ) {
       return false;
     }
     return /^ {0,3}~~~\S.*~~~\s*$/.test(text);
   });
 }
 
-function markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines: MarkdownLineRecord[]) {
+function markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(
+  lines: MarkdownLineRecord[],
+) {
   if (lines.length === 0) {
     return false;
   }
@@ -3914,7 +4085,7 @@ function markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines: M
     const text = line.text;
     if (
       text.trim() === "" ||
-      text.includes("\t") ||
+      text.match("\t") !== null ||
       /^\s/.test(text) ||
       /[\\`~[\]<>#!|&@]/.test(text) ||
       /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
@@ -3925,15 +4096,19 @@ function markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines: M
     if (index === 0 ? markdownLineStartsBlock(text) : markdownLineStartsParagraphInterrupt(text)) {
       return false;
     }
-    return /(?:\*\s[^*]*?\s\*|_\s[^_]*?\s_|(?:\*\*)\s[^*]*?\s(?:\*\*)|__\s[^_]*?\s__)/.test(text) &&
-      !/(?:\*{3}|_{3})/.test(text);
+    return (
+      /(?:\*\s[^*]*?\s\*|_\s[^_]*?\s_|(?:\*\*)\s[^*]*?\s(?:\*\*)|__\s[^_]*?\s__)/.test(text) &&
+      !/(?:\*{3}|_{3})/.test(text)
+    );
   });
 }
 
 function reactMarkdownSafePlainOrMixedInlineText(text: string) {
-  return reactMarkdownSafePlainText(text) ||
+  return (
+    reactMarkdownSafePlainText(text) ||
     markdownLineCanUseReactMarkdownMixedInline(text) ||
-    markdownLineCanUseReactMarkdownEscapedInline(text);
+    markdownLineCanUseReactMarkdownEscapedInline(text)
+  );
 }
 
 function markdownLineCanUseReactMarkdownInlineParagraphText(
@@ -4069,12 +4244,15 @@ function markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines: Markdo
   return matched && text.slice(cursor).trim() === "";
 }
 
-function markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines: MarkdownLineRecord[]) {
+function markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(
+  lines: MarkdownLineRecord[],
+) {
   if (lines.length !== 1) {
     return false;
   }
   const text = lines[0]?.text ?? "";
-  const escapedPunctuation = String.raw`\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` + "`" + String.raw`{|}~]`;
+  const escapedPunctuation =
+    String.raw`\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` + "`" + String.raw`{|}~]`;
   const targetPattern = String.raw`(?:<[^<>\n]*>|(?:${escapedPunctuation}|[^()\s\\]|\([^()\s\\]*\))*)`;
   const tokenPattern = new RegExp(
     String.raw`!?\[([^\][\\` +
@@ -4099,7 +4277,10 @@ function markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines: Ma
   return matched && text.slice(cursor).trim() === "";
 }
 
-const reactMarkdownInlineMediaTargetPattern = String.raw`(?:<[^<>\n]*>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` + "`" + String.raw`{|}~]|[^()\s\\]|\([^()\s\\]*\))*)`;
+const reactMarkdownInlineMediaTargetPattern =
+  String.raw`(?:<[^<>\n]*>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_` +
+  "`" +
+  String.raw`{|}~]|[^()\s\\]|\([^()\s\\]*\))*)`;
 
 function markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines: MarkdownLineRecord[]) {
   if (lines.length !== 1) {
@@ -4108,7 +4289,7 @@ function markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines: Markdo
   const text = lines[0]?.text ?? "";
   if (
     text.trim() === "" ||
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     markdownLineStartsBlock(text) ||
     markdownBlockContainsRawHtmlTag(lines)
   ) {
@@ -4127,7 +4308,7 @@ function markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines: Markdo
     if (!reactMarkdownSafePlainText(text.slice(cursor, start))) {
       return false;
     }
-    if ((match[1] ?? "").includes("\t")) {
+    if ((match[1] ?? "").match("\t") !== null) {
       return false;
     }
     const target = match[2] ?? "";
@@ -4143,14 +4324,16 @@ function markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines: Markdo
   return matched && reactMarkdownSafePlainText(text.slice(cursor));
 }
 
-function markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines: MarkdownLineRecord[]) {
+function markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(
+  lines: MarkdownLineRecord[],
+) {
   if (lines.length !== 1) {
     return false;
   }
   const text = lines[0]?.text ?? "";
   if (
     text.trim() === "" ||
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     markdownLineStartsBlock(text) ||
     markdownBlockContainsRawHtmlTag(lines)
   ) {
@@ -4169,7 +4352,7 @@ function markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines: Ma
     if (!reactMarkdownSafePlainOrMixedInlineText(text.slice(cursor, start))) {
       return false;
     }
-    if ((match[1] ?? "").includes("\t")) {
+    if ((match[1] ?? "").match("\t") !== null) {
       return false;
     }
     const target = match[2] ?? "";
@@ -4185,15 +4368,14 @@ function markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines: Ma
   return matched && reactMarkdownSafePlainOrMixedInlineText(text.slice(cursor));
 }
 
-function markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines: MarkdownLineRecord[]) {
+function markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(
+  lines: MarkdownLineRecord[],
+) {
   if (lines.length !== 1) {
     return false;
   }
   const text = lines[0]?.text ?? "";
-  const tokenPattern = new RegExp(
-    String.raw`!?\[(${inlineLabelPattern})\]\(([^()\s]+)\)`,
-    "g",
-  );
+  const tokenPattern = new RegExp(String.raw`!?\[(${inlineLabelPattern})\]\(([^()\s]+)\)`, "g");
   let cursor = 0;
   let matched = false;
   for (const match of text.matchAll(tokenPattern)) {
@@ -4205,9 +4387,9 @@ function markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(line
     const label = match[1] ?? "";
     const target = match[2] ?? "";
     if (
-      label.includes("<") ||
-      label.includes("](") ||
-      (token.startsWith("!") && label.includes("`")) ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (token.startsWith("!") && containsBacktick(label)) ||
       sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined
     ) {
       return false;
@@ -4218,7 +4400,9 @@ function markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(line
   return matched && text.slice(cursor).trim() === "";
 }
 
-function markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines: MarkdownLineRecord[]) {
+function markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(
+  lines: MarkdownLineRecord[],
+) {
   if (lines.length === 0) {
     return false;
   }
@@ -4256,7 +4440,7 @@ function markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(
   if (/[\\`*_~<>#!|&@()]/.test(text)) {
     return false;
   }
-  const tokenPattern = /!?\[([^\[\]]+)\](?:\[([^\[\]]*)\])?/g;
+  const tokenPattern = /!?\[([^\][]+)\](?:\[([^\][]*)\])?/g;
   let cursor = 0;
   let matched = false;
   for (const match of text.matchAll(tokenPattern)) {
@@ -4296,15 +4480,16 @@ function markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(
     const marker = match[1] ?? "";
     const label = match[2] ?? "";
     const explicitLabel = match[3];
-    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const referenceLabel =
+      explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
     const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
     const reference = context.referenceMap.get(normalizedReferenceLabel);
     if (
-      label.includes("<") ||
-      label.includes("](") ||
-      (marker === "!" && label.includes("`")) ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (marker === "!" && containsBacktick(label)) ||
       !reference ||
-      (reference.target !== "<" && reference.target?.includes("<"))
+      (reference.target !== "<" && reference.target ? containsLt(reference.target) : false)
     ) {
       return false;
     }
@@ -4345,7 +4530,7 @@ function markdownBlockCanUseReactMarkdownMixedReferenceParagraph(
     return false;
   }
   const text = lines[0]?.text ?? "";
-  if (text.includes("\t") || markdownBlockContainsRawHtmlTag(lines)) {
+  if (text.match("\t") !== null || markdownBlockContainsRawHtmlTag(lines)) {
     return false;
   }
   const tokenPattern = new RegExp(
@@ -4359,28 +4544,38 @@ function markdownBlockCanUseReactMarkdownMixedReferenceParagraph(
     if (text[start + (match[0]?.length ?? 0)] === "(") {
       continue;
     }
-    if (!reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor, start), false, context)) {
+    if (
+      !reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(
+        text.slice(cursor, start),
+        false,
+        context,
+      )
+    ) {
       return false;
     }
     const marker = match[1] ?? "";
     const label = match[2] ?? "";
     const explicitLabel = match[3];
-    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const referenceLabel =
+      explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
     const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
     const reference = context.referenceMap.get(normalizedReferenceLabel);
     if (
-      label.includes("<") ||
-      label.includes("](") ||
-      (marker === "!" && label.includes("`")) ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (marker === "!" && containsBacktick(label)) ||
       !reference ||
-      (reference.target !== "<" && reference.target?.includes("<"))
+      (reference.target !== "<" && reference.target ? containsLt(reference.target) : false)
     ) {
       return false;
     }
     cursor = start + (match[0]?.length ?? 0);
     matched = true;
   }
-  return matched && reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), false, context);
+  return (
+    matched &&
+    reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), false, context)
+  );
 }
 
 function markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(
@@ -4391,7 +4586,7 @@ function markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(
     return false;
   }
   const text = lines[0]?.text ?? "";
-  if (text.includes("\t") || markdownBlockContainsRawHtmlTag(lines)) {
+  if (text.match("\t") !== null || markdownBlockContainsRawHtmlTag(lines)) {
     return false;
   }
   const tokenPattern = new RegExp(
@@ -4405,28 +4600,38 @@ function markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(
     if (text[start + (match[0]?.length ?? 0)] === "(") {
       continue;
     }
-    if (!reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor, start), true, context)) {
+    if (
+      !reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(
+        text.slice(cursor, start),
+        true,
+        context,
+      )
+    ) {
       return false;
     }
     const marker = match[1] ?? "";
     const label = match[2] ?? "";
     const explicitLabel = match[3];
-    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const referenceLabel =
+      explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
     const normalizedReferenceLabel = normalizeReferenceLabel(referenceLabel);
     const reference = context.referenceMap.get(normalizedReferenceLabel);
     if (
-      label.includes("<") ||
-      label.includes("](") ||
-      (marker === "!" && label.includes("`")) ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (marker === "!" && containsBacktick(label)) ||
       !reference ||
-      (reference.target !== "<" && reference.target?.includes("<"))
+      (reference.target !== "<" && reference.target ? containsLt(reference.target) : false)
     ) {
       return false;
     }
     cursor = start + (match[0]?.length ?? 0);
     matched = true;
   }
-  return matched && reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), true, context);
+  return (
+    matched &&
+    reactMarkdownReferenceSurroundingTextCanUseReactMarkdown(text.slice(cursor), true, context)
+  );
 }
 
 function markdownInlineMediaTokensCanUseReactMarkdown(text: string) {
@@ -4440,10 +4645,11 @@ function markdownInlineMediaTokensCanUseReactMarkdown(text: string) {
     const label = match[1] ?? "";
     const target = match[2] ?? "";
     if (
-      label.includes("\t") ||
-      label.includes("<") ||
-      label.includes("](") ||
-      (token.startsWith("!") && (label.includes("`") || normalizeInlineTarget(target) === "")) ||
+      label.match("\t") !== null ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (token.startsWith("!") &&
+        (containsBacktick(label) || normalizeInlineTarget(target) === "")) ||
       sanitizedMarkdownTarget(normalizeInlineTarget(target)) === undefined
     ) {
       return false;
@@ -4478,7 +4684,9 @@ function markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(
   const text = lines[0]?.text ?? "";
   if (
     markdownLineStartsRawHtmlBlock(text) ||
-    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(text)
+    /<\/?(?:a|code|div|hr|iframe|img|input|li|ol|p|pre|source|sup|table|tbody|td|th|thead|tr|ul|video)\b/i.test(
+      text,
+    )
   ) {
     return false;
   }
@@ -4504,14 +4712,15 @@ function markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(
     const marker = match[1] ?? "";
     const label = match[2] ?? "";
     const explicitLabel = match[3];
-    const referenceLabel = explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
+    const referenceLabel =
+      explicitLabel === undefined || explicitLabel === "" ? label : explicitLabel;
     const reference = context?.referenceMap?.get(normalizeReferenceLabel(referenceLabel));
     if (
-      label.includes("<") ||
-      label.includes("](") ||
-      (marker === "!" && label.includes("`")) ||
+      containsLt(label) ||
+      containsInlineLinkClose(label) ||
+      (marker === "!" && containsBacktick(label)) ||
       !reference ||
-      (reference.target !== "<" && reference.target?.includes("<"))
+      (reference.target !== "<" && reference.target ? containsLt(reference.target) : false)
     ) {
       return false;
     }
@@ -4642,7 +4851,10 @@ function markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines: Mar
     return false;
   }
   const target = match[1] ?? "";
-  return sanitizedMarkdownTarget(angleEmailRegex.test(target) ? `mailto:${target}` : target) !== undefined;
+  return (
+    sanitizedMarkdownTarget(angleEmailRegex.test(target) ? `mailto:${target}` : target) !==
+    undefined
+  );
 }
 
 function markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines: MarkdownLineRecord[]) {
@@ -4662,21 +4874,27 @@ function markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines: MarkdownLi
   }
   const text = lines[0]?.text ?? "";
   if (
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     /[\\`[\]<>#!|&"']/.test(text) ||
     markdownBlockContainsRawHtmlTag(lines)
   ) {
     return false;
   }
   const parts = parseTextWithAutolinks(text, "react-markdown-probe");
-  return parts.some((part) => part.kind === "link") &&
+  return (
+    parts.some((part) => part.kind === "link") &&
     parts.every((part) => {
       if (part.kind !== "link") {
         return "value" in part ? reactMarkdownSafePlainOrMixedInlineText(part.value) : true;
       }
       const target = part.target ?? "";
-      return /^(?:https?|ftp):\/\//i.test(target) || /^http:\/\/www\./.test(target) || /^mailto:/i.test(target);
-    });
+      return (
+        /^(?:https?|ftp):\/\//i.test(target) ||
+        target.startsWith("http://www.") ||
+        /^mailto:/i.test(target)
+      );
+    })
+  );
 }
 
 function markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines: MarkdownLineRecord[]) {
@@ -4685,7 +4903,7 @@ function markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines: Mark
   }
   const text = lines[0]?.text ?? "";
   if (
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     /[\\`[\]&"]/.test(text) ||
     markdownBlockContainsRawHtmlTag(lines)
   ) {
@@ -4722,20 +4940,22 @@ function markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(
   }
   const text = lines[0]?.text ?? "";
   if (
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     /[\\`[\]<>!|&]/.test(text) ||
     markdownBlockContainsRawHtmlTag(lines)
   ) {
     return false;
   }
   const parts = parseTextWithAutolinks(text, "react-markdown-probe", context);
-  return parts.some((part) => part.kind === "link" && Boolean(part.className || part.issueState)) &&
+  return (
+    parts.some((part) => part.kind === "link" && Boolean(part.className || part.issueState)) &&
     parts.every((part) => {
       if (part.kind !== "link") {
         return "value" in part ? reactMarkdownSafePlainOrMixedInlineText(part.value) : true;
       }
       return Boolean(part.className || part.issueState);
-    });
+    })
+  );
 }
 
 function markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(
@@ -4748,7 +4968,7 @@ function markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(
   const text = lines[0]?.text ?? "";
   if (
     text.trim() === "" ||
-    text.includes("\t") ||
+    text.match("\t") !== null ||
     markdownLineStartsBlock(text) ||
     /[\\`*_~[\]<>!|&]/.test(text) ||
     /\b(?:https?|ftp):\/\/|www\./i.test(text) ||
@@ -4756,13 +4976,18 @@ function markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(
   ) {
     return false;
   }
-  if (!/(?:^|[\s(])(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/.test(text)) {
+  if (
+    !/(?:^|[\s(])(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/.test(text)
+  ) {
     return false;
   }
   const parts = parseTextWithAutolinks(text, "react-markdown-probe", context);
-  return parts.every((part) => part.kind !== "link") &&
-    text.split(/(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/)
-      .every((part) => reactMarkdownSafePlainText(part.replace(/[()]/g, "")));
+  return (
+    parts.every((part) => part.kind !== "link") &&
+    text
+      .split(/(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?#\d+|@[^\s@/]+(?:\/[^\s@/]+)?)/)
+      .every((part) => reactMarkdownSafePlainText(part.replace(/[()]/g, "")))
+  );
 }
 
 function markdownListItemTextCanUseReactMarkdown(text: string, context?: MarkdownContext) {
@@ -4770,12 +4995,14 @@ function markdownListItemTextCanUseReactMarkdown(text: string, context?: Markdow
   if (reactMarkdownSafePlainText(text)) {
     return true;
   }
-  if (text.includes("\t") || text.includes("\n")) {
+  if (text.match("\t") !== null || text.includes("\n")) {
     return false;
   }
   if (markdownBlockContainsRawHtmlTag(lines)) {
-    return markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
-      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines);
+    return (
+      markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines)
+    );
   }
   if (/[\\[\]<>#!|&@]/.test(text) || /\b(?:https?|ftp):\/\/|www\./i.test(text)) {
     return (
@@ -4829,7 +5056,7 @@ function markdownBlockCanUseReactMarkdownSimpleList(
   }
   for (const [index, line] of lines.entries()) {
     if (
-      line.text.includes("\t") &&
+      line.text.match("\t") !== null &&
       !/^ {0,3}(?:[-+*]|\d{1,9}[.)])\t(?![-+*][ \t]|\d{1,9}[.)][ \t])[^\t]*$/.test(line.text)
     ) {
       return false;
@@ -4943,7 +5170,12 @@ function markdownBlockCanUseReactMarkdownNestedList(
   }
   const parsedLines = lines.map(parseMarkdownListLine);
   const firstLine = parsedLines[0];
-  if (!firstLine || parsedLines.some((line) => line === null) || firstLine.indent > 3 || firstLine.ordered) {
+  if (
+    !firstLine ||
+    parsedLines.some((line) => line === null) ||
+    firstLine.indent > 3 ||
+    firstLine.ordered
+  ) {
     return false;
   }
   let hasNestedLine = false;
@@ -5006,27 +5238,29 @@ function markdownBlockCanUseReactMarkdownTightContinuationList(
     }
     itemIndex += 1;
   }
-  return list.items.every((item) => markdownListItemCanUseReactMarkdownTightContinuation(item, context));
+  return list.items.every((item) =>
+    markdownListItemCanUseReactMarkdownTightContinuation(item, context),
+  );
 }
 
 function markdownListItemCanUseReactMarkdownTightContinuation(
   item: MarkdownListItem,
   context?: MarkdownContext,
 ): boolean {
-  if (
-    item.children ||
-    item.task ||
-    !item.text.includes("\n")
-  ) {
+  if (item.children || item.task || !item.text.includes("\n")) {
     return false;
   }
   if (item.continuedLeadingIndentedCode && item.continuedText?.includes("\n")) {
     const lines = item.continuedText.split("\n");
     const firstLine = lines[0] ?? "";
     const firstText = firstLine.trimStart();
-    return firstLine.length - firstText.length >= 4 &&
+    return (
+      firstLine.length - firstText.length >= 4 &&
       markdownListItemTextCanUseReactMarkdown(firstText, context) &&
-      lines.slice(1).every((line) => line.length > 0 && markdownListItemTextCanUseReactMarkdown(line, context));
+      lines
+        .slice(1)
+        .every((line) => line.length > 0 && markdownListItemTextCanUseReactMarkdown(line, context))
+    );
   }
   if (item.leadingIndentedCode && item.continuedText === undefined) {
     return false;
@@ -5038,7 +5272,9 @@ function markdownListItemCanUseReactMarkdownTightContinuation(
     }
     if (index === 0 && item.leadingIndentedCode) {
       const text = line.trimStart();
-      return line.length - text.length < 4 && markdownListItemTextCanUseReactMarkdown(text, context);
+      return (
+        line.length - text.length < 4 && markdownListItemTextCanUseReactMarkdown(text, context)
+      );
     }
     if (/^ {1,3}\S/.test(line)) {
       return markdownListItemTextCanUseReactMarkdown(line.trimStart(), context);
@@ -5057,19 +5293,19 @@ function markdownBlockCanUseReactMarkdownLooseSimpleList(
     return false;
   }
   return list.items.every((item) => {
-    if (
-      item.children ||
-      item.leadingIndentedCode ||
-      item.continuedLeadingIndentedCode
-    ) {
+    if (item.children || item.leadingIndentedCode || item.continuedLeadingIndentedCode) {
       return false;
     }
     const paragraphs = markdownListItemRenderText(item)
       .split(`\n${looseListBreakMarker}\n`)
-      .map((paragraph) => paragraph.replaceAll(looseListBreakMarker, "").trim())
-      .filter(Boolean);
-    return paragraphs.length > 0 &&
-      paragraphs.every((paragraph) => markdownListItemTextCanUseReactMarkdown(paragraph, context));
+      .flatMap((paragraph) => {
+        const trimmed = paragraph.replaceAll(looseListBreakMarker, "").trim();
+        return trimmed ? [trimmed] : [];
+      });
+    return (
+      paragraphs.length > 0 &&
+      paragraphs.every((paragraph) => markdownListItemTextCanUseReactMarkdown(paragraph, context))
+    );
   });
 }
 
@@ -5079,7 +5315,9 @@ function markdownBlockCanUseReactMarkdownLooseNestedTaskList(
   terminalNewline?: boolean,
 ) {
   const list = parseMarkdownList(lines, terminalNewline);
-  return Boolean(list?.loose && markdownListRecordCanUseReactMarkdownLooseNestedTaskList(list, context));
+  return Boolean(
+    list?.loose && markdownListRecordCanUseReactMarkdownLooseNestedTaskList(list, context),
+  );
 }
 
 function markdownListRecordCanUseReactMarkdownLooseNestedTaskList(
@@ -5108,12 +5346,17 @@ function markdownListRecordReactMarkdownLooseNestedTaskListStatus(
       if (!childStatus.valid) {
         return { hasNestedTask: false, valid: false };
       }
-      hasNestedTask = hasNestedTask || childStatus.hasNestedTask || child.items.some((childItem) => childItem.task);
+      hasNestedTask =
+        hasNestedTask ||
+        childStatus.hasNestedTask ||
+        child.items.some((childItem) => childItem.task);
     }
     const paragraphs = markdownListItemRenderText(item)
       .split(`\n${looseListBreakMarker}\n`)
-      .map((paragraph) => paragraph.replaceAll(looseListBreakMarker, "").trim())
-      .filter(Boolean);
+      .flatMap((paragraph) => {
+        const trimmed = paragraph.replaceAll(looseListBreakMarker, "").trim();
+        return trimmed ? [trimmed] : [];
+      });
     if (
       paragraphs.length === 0 ||
       !paragraphs.every((paragraph) => markdownListItemTextCanUseReactMarkdown(paragraph, context))
@@ -5199,8 +5442,7 @@ function markdownListItemReactMarkdownTextLines(item: MarkdownListItem): Markdow
   const ownLines = itemText
     .replaceAll(looseListBreakMarker, "")
     .split("\n")
-    .filter(Boolean)
-    .map((text, index) => ({ key: `${item.key}-item-${index}`, text }));
+    .flatMap((text, index) => (text ? [{ key: `${item.key}-item-${index}`, text }] : []));
   const childLines = (item.children ?? []).flatMap((child) =>
     child.items.flatMap(markdownListItemReactMarkdownTextLines),
   );
@@ -5211,13 +5453,15 @@ function markdownTableCellCanUseReactMarkdown(cell: string, context?: MarkdownCo
   const line = { key: "table-cell", text: cell };
   const lines = [line];
   if (markdownBlockContainsRawHtmlTag(lines)) {
-    return markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
-      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines);
+    return (
+      markdownBlockCanUseReactMarkdownInlineRawMarkdownParagraph(lines, context) ||
+      markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines)
+    );
   }
-  if (!/[<>\[\]&@]/.test(cell)) {
+  if (!/[<>\]&@]|\[/.test(cell)) {
     return true;
   }
-  if (cell.includes("\t") || cell.includes("\n")) {
+  if (cell.match("\t") !== null || cell.match("\n") !== null) {
     return false;
   }
   return (
@@ -5301,7 +5545,9 @@ function markdownBlockCanUseReactMarkdownSimpleFencedCode(lines: MarkdownLineRec
     return false;
   }
   const legacyCloseFence = closingFenceFromLine(lastLine);
-  const closesWithLegacyFence = Boolean(legacyCloseFence && closesMarkdownFence(fence, legacyCloseFence));
+  const closesWithLegacyFence = Boolean(
+    legacyCloseFence && closesMarkdownFence(fence, legacyCloseFence),
+  );
   if (fence.startsWith("~") && !closesWithLegacyFence) {
     return false;
   }
@@ -5331,7 +5577,9 @@ function markdownBlockCanUseReactMarkdownCompatibleBlock(
       markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) ||
     (Boolean(parseIndentedCodeBlock(lines)) &&
       markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines)) ||
-    Boolean(parseMarkdownTableSpan(lines) && markdownBlockCanUseReactMarkdownSimpleTable(lines, context)) ||
+    Boolean(
+      parseMarkdownTableSpan(lines) && markdownBlockCanUseReactMarkdownSimpleTable(lines, context),
+    ) ||
     markdownBlockCanUseReactMarkdownSimpleTaskList(lines, context) ||
     markdownBlockCanUseReactMarkdownSimpleList(lines, context, block.terminalNewline) ||
     markdownBlockCanUseReactMarkdownSmartList(lines, context) ||
@@ -5392,10 +5640,15 @@ function markdownBlockCanUseReactMarkdownCompatibleBlock(
 }
 
 function markdownBlockCanUseReactMarkdownFootnoteLine(lines: MarkdownLineRecord[]) {
-  return lines.some((line) => /\[\^[^\]\n]+\]/.test(line.text) || /^ {0,3}\[\^[^\]\n]+\]:/.test(line.text));
+  return lines.some(
+    (line) => /\[\^[^\]\n]+\]/.test(line.text) || /^ {0,3}\[\^[^\]\n]+\]:/.test(line.text),
+  );
 }
 
-function markdownBlockIsReactMarkdownListBlock(block: MarkdownBlockRecord, context?: MarkdownContext) {
+function markdownBlockIsReactMarkdownListBlock(
+  block: MarkdownBlockRecord,
+  context?: MarkdownContext,
+) {
   const lines = markdownLines(block.text);
   return (
     markdownBlockCanUseReactMarkdownSimpleTaskList(lines, context) ||
@@ -5409,12 +5662,17 @@ function markdownBlockIsReactMarkdownListBlock(block: MarkdownBlockRecord, conte
   );
 }
 
-function markdownBlockReactMarkdownListMarker(block: MarkdownBlockRecord, context?: MarkdownContext) {
+function markdownBlockReactMarkdownListMarker(
+  block: MarkdownBlockRecord,
+  context?: MarkdownContext,
+) {
   if (!markdownBlockIsReactMarkdownListBlock(block, context)) {
     return undefined;
   }
   const firstLine = parseMarkdownListLine(markdownLines(block.text)[0] as MarkdownLineRecord);
-  return firstLine ? `${firstLine.ordered ? "ordered" : "unordered"}:${firstLine.markerKind}` : undefined;
+  return firstLine
+    ? `${firstLine.ordered ? "ordered" : "unordered"}:${firstLine.markerKind}`
+    : undefined;
 }
 
 function markdownDocumentHasAdjacentReactMarkdownListBlocks(
@@ -5467,17 +5725,16 @@ function markdownDocumentCanUseReactMarkdown(
 }
 
 function markdownBlockContainsRawHtmlTag(lines: MarkdownLineRecord[]) {
-  const tagPattern = new RegExp(
-    String.raw`<\/?[A-Za-z][A-Za-z0-9-]*${rawHtmlAttributePattern}>`,
-  );
+  const tagPattern = new RegExp(String.raw`<\/?[A-Za-z][A-Za-z0-9-]*${rawHtmlAttributePattern}>`);
   return lines.some((line) => tagPattern.test(line.text));
 }
 
 function markdownBlockContainsRawHtmlBlockTag(lines: MarkdownLineRecord[]) {
-  return lines.some((line, index) =>
-    (index === 0 && (/^ {0,3}<!--/.test(line.text) || /^ {0,3}<!\[CDATA\[/.test(line.text))) ||
-    (index === 0 && markdownLineIsStandaloneRawHtmlVoidBlock(line.text)) ||
-    markdownLineStartsRawHtmlBlock(line.text),
+  return lines.some(
+    (line, index) =>
+      (index === 0 && (/^ {0,3}<!--/.test(line.text) || /^ {0,3}<!\[CDATA\[/.test(line.text))) ||
+      (index === 0 && markdownLineIsStandaloneRawHtmlVoidBlock(line.text)) ||
+      markdownLineStartsRawHtmlBlock(line.text),
   );
 }
 
@@ -5629,12 +5886,12 @@ function rawHtmlStyleCssPropertyName(name: string) {
 function parseRawHtmlStyle(value: string): React.CSSProperties | undefined {
   const style: Record<string, string> = {};
   for (const declaration of value.split(";")) {
-    const separator = declaration.indexOf(":");
-    if (separator <= 0) {
+    const [rawProperty, ...rawValueParts] = declaration.split(":");
+    if (!rawProperty || rawValueParts.length === 0) {
       continue;
     }
-    const property = declaration.slice(0, separator).trim().toLowerCase();
-    const propertyValue = declaration.slice(separator + 1).trim();
+    const property = rawProperty.trim().toLowerCase();
+    const propertyValue = rawValueParts.join(":").trim();
     if (!/^[a-z][a-z0-9-]*$/.test(property) || !propertyValue) {
       continue;
     }
@@ -5730,14 +5987,11 @@ function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
       props[propName] = value || true;
       continue;
     }
-    if (
-      tag === "video" &&
-      ["data-setup", "preload", "type", "responsive", "fluid", "liveui"].includes(name)
-    ) {
+    if (tag === "video" && rawHtmlVideoLegacyAttributes.has(name)) {
       props[name] = value;
       continue;
     }
-    if (tag === "video" && ["controls", "autoplay"].includes(name)) {
+    if (tag === "video" && rawHtmlVideoBooleanAttributes.has(name)) {
       props[name === "autoplay" ? "autoPlay" : name] = true;
       continue;
     }
@@ -5837,31 +6091,23 @@ function renderSanitizedRawHtml(source: string, keyPrefix: string) {
   );
 }
 
+function MarkdownSanitizedRawHtml(props: { keyPrefix: string; source: string }) {
+  return renderSanitizedRawHtml(props.source, props.keyPrefix);
+}
+
 function MarkdownRawHtmlBlock(props: { lines: MarkdownLineRecord[] }) {
   const source = props.lines.map((line) => line.text).join("\n");
   const keyPrefix = props.lines[0]?.key ?? "raw";
-  const hasBlockTag = Array.from(
-    source.matchAll(
-      new RegExp(String.raw`<\/?([A-Za-z][A-Za-z0-9-]*)${rawHtmlAttributePattern}\/?>`, "g"),
-    ),
-  ).some((match) => rawHtmlBlockTags.has((match[1] ?? "").toLowerCase())) ||
+  const hasBlockTag =
+    Array.from(
+      source.matchAll(
+        new RegExp(String.raw`<\/?([A-Za-z][A-Za-z0-9-]*)${rawHtmlAttributePattern}\/?>`, "g"),
+      ),
+    ).some((match) => rawHtmlBlockTags.has((match[1] ?? "").toLowerCase())) ||
     markdownLineStartsRawLineStartVoidBlock(props.lines[0]?.text ?? "") ||
     markdownLineIsStandaloneRawHtmlVoidBlock(props.lines[0]?.text ?? "");
-  const children = renderSanitizedRawHtml(source, keyPrefix);
+  const children = <MarkdownSanitizedRawHtml keyPrefix={keyPrefix} source={source} />;
   return hasBlockTag ? children : <p>{children}</p>;
-}
-
-function MarkdownPlainParagraph(props: { breaks: boolean; lines: MarkdownLineRecord[] }) {
-  return (
-    <p>
-      {props.lines.map((line, index) => (
-        <React.Fragment key={line.key}>
-          {index === 0 ? null : props.breaks ? <br /> : "\n"}
-          {line.text}
-        </React.Fragment>
-      ))}
-    </p>
-  );
 }
 
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
@@ -5872,7 +6118,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     lines.length === 1 &&
     /^ {0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$/.test(firstLine)
   ) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSetextHeading(lines, props.context)) {
     return (
@@ -5892,7 +6140,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   const codeBlock = parseFencedCodeBlock(lines, props.block.terminalNewline ?? false);
   if (codeBlock) {
     if (markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) {
-      return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+      return (
+        <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+      );
     }
     return (
       <pre>
@@ -5905,7 +6155,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   const indentedCodeBlock = parseIndentedCodeBlock(lines);
   if (indentedCodeBlock) {
     if (markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines)) {
-      return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+      return (
+        <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+      );
     }
     return (
       <pre>
@@ -5944,16 +6196,26 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (markdownBlockCanUseReactMarkdownSimpleTaskList(lines, props.context)) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
     );
   }
-  if (markdownBlockCanUseReactMarkdownSimpleList(lines, props.context, props.block.terminalNewline)) {
+  if (
+    markdownBlockCanUseReactMarkdownSimpleList(lines, props.context, props.block.terminalNewline)
+  ) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
@@ -5962,7 +6224,11 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (markdownBlockCanUseReactMarkdownSmartList(lines, props.context)) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
@@ -5971,7 +6237,11 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (markdownBlockCanUseReactMarkdownRootIndentedList(lines, props.context)) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
@@ -5980,25 +6250,49 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (markdownBlockCanUseReactMarkdownNestedList(lines, props.context)) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
     );
   }
-  if (markdownBlockCanUseReactMarkdownTightContinuationList(lines, props.context, props.block.terminalNewline)) {
+  if (
+    markdownBlockCanUseReactMarkdownTightContinuationList(
+      lines,
+      props.context,
+      props.block.terminalNewline,
+    )
+  ) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
     );
   }
-  if (markdownBlockCanUseReactMarkdownLooseSimpleList(lines, props.context, props.block.terminalNewline)) {
+  if (
+    markdownBlockCanUseReactMarkdownLooseSimpleList(
+      lines,
+      props.context,
+      props.block.terminalNewline,
+    )
+  ) {
     return (
       <ReactMarkdownCompatibleBlock
-        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(lines, props.context, props.block.terminalNewline)}
+        allowRawHtml={markdownBlockReactMarkdownListNeedsRawHtml(
+          lines,
+          props.context,
+          props.block.terminalNewline,
+        )}
         context={props.context ?? {}}
         markdown={props.block.text}
       />
@@ -6214,58 +6508,94 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     );
   }
   if (markdownBlockCanUseReactMarkdownMultilineInlineParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleInlineParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedInlineParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownLiteralTildeParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownLineStartTripleTildeText(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownLiteralSpacedEmphasisParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleInlineLinkParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleInlineImageParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleInlineMediaSequence(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownWhitespaceInlineMediaSequence(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedInlineMediaParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownFormattedInlineMediaParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownStructuredLabelInlineMediaSequence(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleTitledInlineMediaSequence(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleReferenceParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownStructuredReferenceParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedReferenceParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownFormattedReferenceParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownInlineRawFormattingParagraph(lines)) {
     return (
@@ -6340,25 +6670,39 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     );
   }
   if (markdownBlockCanUseReactMarkdownSimpleBareAutolinkParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownSimpleAngleAutolinkParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownYonaAutolinkParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedBareUrlParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedAngleAutolinkParagraph(lines)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownMixedYonaAutolinkParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownUnresolvedYonaAutolinkParagraph(lines, props.context)) {
-    return <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />;
+    return (
+      <ReactMarkdownCompatibleBlock context={props.context ?? {}} markdown={props.block.text} />
+    );
   }
   if (markdownBlockCanUseReactMarkdownPlainParagraph(lines)) {
     return (
@@ -6410,7 +6754,8 @@ export function MarkdownRenderer(props: {
   const parsedMarkdown = extractReferenceDefinitions(props.markdown);
   const blocks = paragraphBlocks(parsedMarkdown.markdown);
   const taskStats = props.showTasklistBar ? markdownTaskStats(parsedMarkdown.markdown) : null;
-  const breaks = props.breaks ?? !props.className?.split(/\s+/).includes("readme-body");
+  const breaks =
+    props.breaks ?? !props.className?.split(/\s+/).some((className) => className === "readme-body");
   const issueReferenceMap = new Map(
     (props.issueReferences ?? []).map((reference) => [
       `${reference.ownerName}/${reference.projectName}#${reference.issueNumber}`,
@@ -6445,7 +6790,9 @@ export function MarkdownRenderer(props: {
     mentionReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,
-    reactMarkdownReferenceDefinitions: reactMarkdownReferenceDefinitions(parsedMarkdown.referenceMap),
+    reactMarkdownReferenceDefinitions: reactMarkdownReferenceDefinitions(
+      parsedMarkdown.referenceMap,
+    ),
     referenceMap: parsedMarkdown.referenceMap,
   };
   const Container = props.containerElement ?? "div";
@@ -6520,7 +6867,8 @@ export function LegacyMarkdownHelp() {
       target: "markdownImages",
     },
     {
-      input: "> Lorem ipsum dolor sit amet, consectetuer adipiscing elit.\n>\n> Aenean commodo ligula eget dolor.",
+      input:
+        "> Lorem ipsum dolor sit amet, consectetuer adipiscing elit.\n>\n> Aenean commodo ligula eget dolor.",
       label: "Blockquote",
       target: "markdownBlockquotes",
     },
@@ -6646,7 +6994,11 @@ export function LegacyMarkdownEditorShell(props: {
         <li>
           <div className="editor-clear-temporary">
             <div className="editor-clear-temporary-button">
-              <button className="ybtn ybtn-small ybtn-warning" id="button-clear-temporary" type="button">
+              <button
+                className="ybtn ybtn-small ybtn-warning"
+                id="button-clear-temporary"
+                type="button"
+              >
                 button.clear.temporary
               </button>
             </div>

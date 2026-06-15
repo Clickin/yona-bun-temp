@@ -663,13 +663,15 @@ function IssueLabelEditModal(props: { categories: CategoryView[] }) {
       <div className="message edit-label-form">
         <div className="center-txt">
           <select data-toggle="select2" name="category.id">
-            {props.categories
-              .filter((category) => category.name.length > 0)
-              .map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
+            {props.categories.flatMap((category) =>
+              category.name.length > 0
+                ? [
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>,
+                  ]
+                : [],
+            )}
           </select>
           <input
             className="text input-label-name"

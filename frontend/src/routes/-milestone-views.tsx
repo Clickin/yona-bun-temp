@@ -65,17 +65,14 @@ function MilestoneIssueLink(props: {
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, issue, runtimeConfig } = props;
+  const issueHref = buildProjectHref(
+    runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    `issue/${issue.issueNumber}`,
+  );
   return (
-    <a
-      className="issue-link"
-      href={buildProjectHref(
-        runtimeConfig,
-        detail.ownerName,
-        detail.projectName,
-        `issue/${issue.issueNumber}`,
-      )}
-      target="_blank"
-    >
+    <a className="issue-link" href={issueHref} target="_blank">
       <div className="issue-item">
         <span className={`state-label ${issue.state}`}>
           {issue.state === "closed" ? <i className="yobicon-checkmark" /> : null}
@@ -89,7 +86,7 @@ function MilestoneIssueLink(props: {
               className="label issue-label list-label active"
               data-category-id=""
               data-label-id={label.id}
-              href="#"
+              href={issueHref}
               key={label.id}
               style={{ backgroundColor: label.color }}
             >
@@ -213,9 +210,7 @@ export function ProjectMilestoneListPage(props: {
                         common.order.dueDate
                       </a>
                       <a
-                        className={
-                          list.orderBy === "completionRate" ? "filter active" : "filter"
-                        }
+                        className={list.orderBy === "completionRate" ? "filter active" : "filter"}
                         href={sortHref(props.runtimeConfig, detail, list, "completionRate")}
                       >
                         <i
@@ -412,7 +407,10 @@ export function ProjectMilestoneDetailPage(props: {
                 ) : (
                   <div className="content empty-content" />
                 )}
-                <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
+                <div
+                  className="actrow right-txt row-fluid"
+                  style={{ clear: "both", padding: "15px 0" }}
+                >
                   <a
                     className="ybtn pull-left"
                     href={buildProjectHref(
@@ -664,7 +662,7 @@ export function ProjectMilestoneFormPage(props: {
                         name="title"
                         onChange={(event) => setTitle(event.currentTarget.value)}
                         placeholder="title.text"
-                        tabIndex={1}
+                        data-legacy-tabindex="1"
                         type="text"
                         value={title}
                       />
@@ -750,7 +748,7 @@ export function ProjectMilestoneFormPage(props: {
                       <dt>milestone.form.dueDate</dt>
                       <dd>
                         <div>
-                          <label htmlFor="dueDate">
+                          <label aria-label="milestone.dueDate" htmlFor="dueDate">
                             <input
                               autoComplete="off"
                               className="validate due-date"

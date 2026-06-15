@@ -27,25 +27,25 @@ export function UIKitPage() {
             <div>
               <pre>.ybtn</pre>
               <p>
-                <a href="#" className="ybtn">
+                <a href="/ui-kit" className="ybtn">
                   Default
                 </a>
                 <button type="button" className="ybtn ybtn-primary">
                   Primary
                 </button>
-                <a href="#" className="ybtn ybtn-inverse">
+                <a href="/ui-kit" className="ybtn ybtn-inverse">
                   Inverse
                 </a>
                 <button type="button" className="ybtn ybtn-info">
                   Info
                 </button>
-                <a href="#" className="ybtn ybtn-watching">
+                <a href="/ui-kit" className="ybtn ybtn-watching">
                   Watching
                 </a>
                 <button type="button" className="ybtn ybtn-warning">
                   Warning
                 </button>
-                <a href="#" className="ybtn ybtn-danger">
+                <a href="/ui-kit" className="ybtn ybtn-danger">
                   Danger
                 </a>
                 <button type="button" className="ybtn ybtn-disabled">
@@ -78,7 +78,12 @@ export function UIKitPage() {
             <div>
               <pre>.form-search</pre>
               <form className="form-search">
-                <input type="text" className="text" name="filter" placeholder="현재 프로젝트에서 검색" />
+                <input
+                  type="text"
+                  className="text"
+                  name="filter"
+                  placeholder="현재 프로젝트에서 검색"
+                />
                 <button type="button" className="btn">
                   검색
                 </button>
@@ -147,8 +152,8 @@ export function UIKitPage() {
                     <span className="css">{label}</span>
                   </dt>
                   <dd>
-                    <a href="#" className={`avatar-wrap ${size}`}>
-                      <img src="/assets/images/default-avatar-128.png" />
+                    <a href="/ui-kit" className={`avatar-wrap ${size}`}>
+                      <img alt="" src="/assets/images/default-avatar-128.png" />
                     </a>
                   </dd>
                 </dl>
@@ -161,10 +166,10 @@ export function UIKitPage() {
             <div>
               <ul className="nav nav-tabs">
                 <li className="active">
-                  <a href="#">파일</a>
+                  <a href="/ui-kit?tab=files">파일</a>
                 </li>
                 <li>
-                  <a href="#">커밋</a>
+                  <a href="/ui-kit?tab=commits">커밋</a>
                 </li>
               </ul>
             </div>
@@ -217,10 +222,10 @@ function DropdownSample({ size }: { size: "small" | "medium" | "large" }) {
           </button>
           <ul className="dropdown-menu">
             <li data-value="" data-selected="true" className="active">
-              <a href="javascript:void(0)">전체</a>
+              <a href="/ui-kit?assignee=all">전체</a>
             </li>
             <li data-value="0">
-              <a href="javascript:void(0)">담당자 없음</a>
+              <a href="/ui-kit?assignee=none">담당자 없음</a>
             </li>
           </ul>
         </div>

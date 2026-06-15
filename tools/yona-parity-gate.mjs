@@ -10,6 +10,7 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const GLOBAL_PROVENANCE_FILES = new Set([
   "docs/provenance/core-parity-audit.md",
+  "docs/provenance/legacy-porting-progress.md",
   "docs/provenance/phase-0b/legacy-test-inventory.md",
   "docs/agents/10-legacy-provenance-baseline.md",
 ]);
@@ -251,6 +252,7 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
+      /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
       /^frontend\/.*auth/i,
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
@@ -259,6 +261,7 @@ const DOMAIN_BUCKETS = [
     testKeywords: ["auth", "login", "register", "password", "session"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/legacy-porting-progress.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",
     ],
   },

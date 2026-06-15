@@ -158,7 +158,9 @@ function codeCloneUrl(detail: ProjectDetailViewModel) {
 }
 
 function isSvnProject(detail: ProjectDetailViewModel) {
-  return detail.vcs?.toLowerCase().includes("svn") || detail.vcs?.toLowerCase().includes("subversion");
+  return (
+    detail.vcs?.toLowerCase().includes("svn") || detail.vcs?.toLowerCase().includes("subversion")
+  );
 }
 
 function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel }) {
@@ -815,7 +817,6 @@ export function CodeCommitDetailPage(props: {
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const commitDetail = props.commitDetail;
-  const commit = commitDetail?.commit ?? null;
   const selectedBranch = commitDetail?.selectedBranch ?? "";
   const selectedPath = commitDetail?.path ?? "";
   const listHref = codeHistoryHref(
@@ -1104,12 +1105,7 @@ function CodeBranchRow(props: {
         >
           {branch.commitShortId}
         </a>
-        <span
-          className="date"
-          data-placement="top"
-          data-toggle="tooltip"
-          title={branch.commitDate}
-        >
+        <span className="date" data-placement="top" data-toggle="tooltip" title={branch.commitDate}>
           {branch.commitDate}
         </span>
         {branch.commitMessage ? (
@@ -1460,11 +1456,11 @@ function CodeCommitDiffView(props: {
               </article>
             );
           })}
-            <div className="btnPop">
-              <button className="ybtn ybtn-info ybtn-small" type="button">
-                <i className="yobicon-post2"></i>
-              </button>
-            </div>
+          <div className="btnPop">
+            <button className="ybtn ybtn-info ybtn-small" type="button">
+              <i className="yobicon-post2"></i>
+            </button>
+          </div>
         </div>
 
         <div className="board-comment-wrap">
@@ -1873,12 +1869,7 @@ export function CodeHistoryPage(props: {
   const selectedBranch = history?.selectedBranch ?? "";
   const selectedPath = history?.path ?? "";
   const selectedHistoryBranchHref = selectedBranch
-    ? codeHistoryHref(
-        props.runtimeConfig,
-        detail.ownerName,
-        detail.projectName,
-        selectedBranch,
-      )
+    ? codeHistoryHref(props.runtimeConfig, detail.ownerName, detail.projectName, selectedBranch)
     : "";
 
   return (
@@ -2230,7 +2221,10 @@ function CodeFolderView(props: {
                   className="avatar-wrap smaller"
                   href={codeAuthorHref(props.runtimeConfig, entry.authorLoginId)}
                 >
-                  <img src={entry.authorAvatarUrl} />
+                  <img
+                    alt={entry.authorLabel || entry.authorLoginId || ""}
+                    src={entry.authorAvatarUrl}
+                  />
                 </a>
               ) : null}
               <span className="ml5">
@@ -2465,9 +2459,7 @@ function codeLanguageFromFile(path: string, mimeType: string) {
   if (extension === "svg") {
     return "svg";
   }
-  if (
-    ["atom", "plist", "rss", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(extension)
-  ) {
+  if (["atom", "plist", "rss", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(extension)) {
     return "xml";
   }
   if (extension === "less") {
@@ -2532,7 +2524,11 @@ function CodeFileHeader(props: {
         )
       : "";
   const revisionHref =
-    props.runtimeConfig && props.ownerName && props.projectName && props.selectedBranch && props.file.commitId
+    props.runtimeConfig &&
+    props.ownerName &&
+    props.projectName &&
+    props.selectedBranch &&
+    props.file.commitId
       ? commitDetailHref(
           props.runtimeConfig,
           props.ownerName,
@@ -2565,7 +2561,10 @@ function CodeFileHeader(props: {
               className="avatar-wrap smaller"
               href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}
             >
-              <img src={props.file.authorAvatarUrl} />
+              <img
+                alt={props.file.authorLabel || props.file.authorLoginId || ""}
+                src={props.file.authorAvatarUrl}
+              />
             </a>
           ) : null}
           <a className="ml5" href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}>
@@ -2675,7 +2674,7 @@ function CodeHistoryAuthorCell(props: {
         data-toggle="tooltip"
         title={commit.authorEmail}
       >
-        <img src={commit.authorAvatarUrl} />
+        <img alt={commit.authorName || commit.authorEmail || ""} src={commit.authorAvatarUrl} />
       </span>
     );
   }
@@ -2688,5 +2687,5 @@ function CodeHistoryAuthorCell(props: {
 function codeAuthorHref(runtimeConfig: RuntimeConfig | undefined, loginId: string | undefined) {
   return loginId && runtimeConfig
     ? prefixBasePath(runtimeConfig.basePath, `/${encodeURIComponent(loginId)}`)
-    : "javascript:void(); return false;";
+    : prefixBasePath(runtimeConfig?.basePath ?? "", "/");
 }

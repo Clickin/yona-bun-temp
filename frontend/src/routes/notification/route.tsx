@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/prefer-tag-over-role */
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -68,6 +69,7 @@ export function NotificationRouteComponent({
     runtimeConfig.basePath,
     "/assets/images/default-avatar-64.png",
   );
+  const notificationStreamRole = "link";
   const actorHref = (loginId: string) =>
     prefixBasePath(runtimeConfig.basePath, `/${encodeURIComponent(loginId)}`);
   const toggleMessage = (id: string) => {
@@ -81,7 +83,10 @@ export function NotificationRouteComponent({
       return next;
     });
   };
-  const handleLearnMoreClick = (id: string, event: React.MouseEvent<HTMLElement>) => {
+  const handleLearnMoreClick = (
+    id: string,
+    event: React.KeyboardEvent<HTMLElement> | React.MouseEvent<HTMLElement>,
+  ) => {
     if (event.target instanceof Element && event.target.closest("a, img")) {
       return;
     }
@@ -95,6 +100,7 @@ export function NotificationRouteComponent({
       : "";
   const canSetDefaultLoginPage =
     normalizedRoutePath !== "/" && normalizedDefaultLandingPath !== normalizedRoutePath;
+  const locationHref = prefixBasePath(runtimeConfig.basePath, normalizedRoutePath);
   const setDefaultLoginPage = async () => {
     try {
       const overview = await setDefaultLandingPathRest(
@@ -141,14 +147,19 @@ export function NotificationRouteComponent({
                             className="stream-desc"
                             data-target={messageId}
                             data-toggle="learnmore"
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                handleLearnMoreClick(item.id, event);
+                              }
+                            }}
                             onClick={(event) => handleLearnMoreClick(item.id, event)}
+                            role={notificationStreamRole}
+                            tabIndex={0}
                           >
                             <div className="stream-info">
                               <div className="title">
                                 {item.targetHref ? (
-                                  <a href={item.targetHref}>
-                                    {item.targetTitle || item.eventType}
-                                  </a>
+                                  <a href={item.targetHref}>{item.targetTitle || item.eventType}</a>
                                 ) : (
                                   <span>{item.targetTitle || item.eventType}</span>
                                 )}
@@ -172,12 +183,7 @@ export function NotificationRouteComponent({
                                   </a>
                                 ) : (
                                   <div className="smaller">
-                                    <img
-                                      alt=""
-                                      height={42}
-                                      src={defaultAvatarUrl}
-                                      width={42}
-                                    />
+                                    <img alt="" height={42} src={defaultAvatarUrl} width={42} />
                                   </div>
                                 )}
                                 {item.actor.loginId ? (
@@ -202,7 +208,7 @@ export function NotificationRouteComponent({
                     <li>
                       <a
                         className="ybtn"
-                        href="javascript:void(0);"
+                        href={locationHref}
                         id="notification-more"
                         onClick={() => setSize((current) => current + NOTIFICATION_PAGE_SIZE)}
                       >
@@ -241,7 +247,9 @@ function NotificationMessage({
       return undefined;
     }
     const updateOverflow = () => {
-      setIsOverflowing(wrap.clientWidth < wrap.scrollWidth || wrap.clientHeight < wrap.scrollHeight);
+      setIsOverflowing(
+        wrap.clientWidth < wrap.scrollWidth || wrap.clientHeight < wrap.scrollHeight,
+      );
     };
     updateOverflow();
 

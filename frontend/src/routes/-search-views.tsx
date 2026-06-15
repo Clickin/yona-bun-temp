@@ -120,7 +120,9 @@ function emptyCounts(): SearchCounts {
 }
 
 function categoryLabel(type: SearchType) {
-  return SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "search.menu.issues";
+  return (
+    SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "search.menu.issues"
+  );
 }
 
 function HighlightedSnippet({ snippet }: { snippet: SearchSnippet }) {
@@ -329,7 +331,10 @@ export function SearchPagination(props: {
       <ul className="page-nums">
         <li className="page-num ikon">
           {pageNum > 1 ? (
-            <a href={prevHref} pjax-page="">
+            <a
+              href={prevHref}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>button.prevPage</span>
             </a>
@@ -355,7 +360,10 @@ export function SearchPagination(props: {
         <li className="page-num">{pageCount}</li>
         <li className="page-num ikon">
           {pageNum < pageCount ? (
-            <a href={nextHref} pjax-page="">
+            <a
+              href={nextHref}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-next"></i>
               <span>button.nextPage</span>
             </a>
@@ -411,8 +419,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   >(null);
   const routeQuery = readSearchRouteQuery();
   const routeInvalid =
-    routeQuery.invalid ||
-    (scope.type === "project" && routeQuery.input?.searchType === "project");
+    routeQuery.invalid || (scope.type === "project" && routeQuery.input?.searchType === "project");
   const input = routeQuery.input;
   const keyInput = {
     keyword: input?.keyword ?? "",

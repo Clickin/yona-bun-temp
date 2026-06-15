@@ -127,7 +127,9 @@ function IssueSubtaskList(props: {
           <span className={progressDone ? "txt-green" : undefined}>
             {percentage === 100 ? totalCount : `${childClosedCount}/${totalCount}`}{" "}
           </span>
-          <span className={`parent-issue-state ${issue.state}`}>{`issue.state.${issue.state}`}</span>
+          <span
+            className={`parent-issue-state ${issue.state}`}
+          >{`issue.state.${issue.state}`}</span>
         </div>
         <hr className="parent-issue-delimeter" />
         <div className="child-issues">
@@ -159,7 +161,10 @@ function IssueSubtaskItem(props: {
     runtimeConfig.basePath,
     `/${ownerName}/${projectName}/issue/${child.issueNumber}`,
   );
-  const listHref = prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/issues?state=open`);
+  const listHref = prefixBasePath(
+    runtimeConfig.basePath,
+    `/${ownerName}/${projectName}/issues?state=open`,
+  );
   return (
     <div className={`issue-item${selected ? " selected-child" : ""} child-issue`}>
       <span className={`state-label ${child.state}`}>
@@ -168,7 +173,11 @@ function IssueSubtaskItem(props: {
       <a className="twoColumeModeTarget" href={childHref}>
         <span className="item-name">
           <span className="subtask-number">
-            {child.isDraft ? <span className="draft-number">#issue.state.draft</span> : `#${child.issueNumber}`}
+            {child.isDraft ? (
+              <span className="draft-number">#issue.state.draft</span>
+            ) : (
+              `#${child.issueNumber}`
+            )}
           </span>{" "}
           <span>{child.title}</span>
           {child.assigneeLabel ? <span>{` - ${child.assigneeLabel}`}</span> : null}
@@ -277,12 +286,7 @@ function IssueDetailVoters(props: {
       </div>
       <div className="modal hide voters-dialog" id="voters">
         <div className="modal-header">
-          <button
-            aria-label="button.close"
-            className="close"
-            data-dismiss="modal"
-            type="button"
-          >
+          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
             ×
           </button>
           <h5 className="nm">issue.voters</h5>
@@ -298,7 +302,12 @@ function IssueDetailVoters(props: {
                 >
                   <span className="avatar-wrap mlarge">
                     {voter.avatarUrl ? (
-                      <img height={40} src={voter.avatarUrl} width={40} />
+                      <img
+                        alt={voter.userLabel || voter.loginId}
+                        height={40}
+                        src={voter.avatarUrl}
+                        width={40}
+                      />
                     ) : null}
                   </span>
                   <strong className="name">{voter.userLabel || voter.loginId}</strong>
@@ -313,7 +322,7 @@ function IssueDetailVoters(props: {
           </ul>
         </div>
         <div className="modal-footer">
-          <button aria-hidden="true" className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
             button.close
           </button>
         </div>
@@ -377,10 +386,7 @@ function IssueListSubtaskSummary(props: {
   );
 }
 
-function IssueListChildRows(props: {
-  item: IssueListItemViewModel;
-  runtimeConfig: RuntimeConfig;
-}) {
+function IssueListChildRows(props: { item: IssueListItemViewModel; runtimeConfig: RuntimeConfig }) {
   const childIssues = props.item.childIssues ?? [];
   return (
     <div className="child-issue-list hide">
@@ -431,12 +437,7 @@ function PostingHistoryModal(props: {
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button
-            aria-label="button.close"
-            className="close"
-            data-dismiss="modal"
-            type="button"
-          >
+          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
             ×
           </button>
           <h5 className="nm">change.history</h5>
@@ -520,7 +521,10 @@ export function ProjectIssueListPage(props: {
   );
   const issueRows = issueList?.items ?? [];
   const totalPageCount = issueList
-    ? Math.max(1, Math.ceil(Math.max(0, issueList.totalCount) / Math.max(1, issueList.pageSize || 15)))
+    ? Math.max(
+        1,
+        Math.ceil(Math.max(0, issueList.totalCount) / Math.max(1, issueList.pageSize || 15)),
+      )
     : 1;
   const openStateAttr = { state: "open" } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     state: string;
@@ -528,6 +532,36 @@ export function ProjectIssueListPage(props: {
   const closedStateAttr = { state: "closed" } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     state: string;
   };
+  const pjaxContainerAttr = { "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>;
+  const pjaxFilterAttr = { "pjax-filter": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>;
+  const allIssuesHref = projectIssueListPageHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    { ...query, assigneeLoginId: "", assigneeId: undefined, authorLoginId: "", pageNum: 1 },
+    1,
+  );
+  const assignedIssuesHref = projectIssueListPageHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    { ...query, assigneeLoginId: query.assigneeLoginId || "-", pageNum: 1 },
+    1,
+  );
+  const authoredIssuesHref = projectIssueListPageHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    { ...query, authorLoginId: query.authorLoginId || "-", pageNum: 1 },
+    1,
+  );
+  const commentedIssuesHref = projectIssueListPageHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    { ...query, pageNum: 1 },
+    1,
+  );
 
   return (
     <main className="app-shell issue-list-page">
@@ -535,311 +569,361 @@ export function ProjectIssueListPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="row-fluid issue-list-wrap" pjax-container="">
-          <div className=" left-menu span2 span-hard-wrap">
-            <ul className="lst-stacked unstyled">
-              <li className={!query.assigneeLoginId && !query.authorLoginId ? "active" : undefined}>
-                <a
-                  data-assignee-id=""
-                  data-author-id=""
-                  data-commenter-id=""
-                  data-milestone-id={query.milestoneId || ""}
-                  href="#"
-                  pjax-filter=""
+          <div className="row-fluid issue-list-wrap" {...pjaxContainerAttr}>
+            <div className=" left-menu span2 span-hard-wrap">
+              <ul className="lst-stacked unstyled">
+                <li
+                  className={!query.assigneeLoginId && !query.authorLoginId ? "active" : undefined}
                 >
-                  {query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open"}
-                  <span className="num-badge pull-right">{issueList?.totalCount ?? 0}</span>
-                </a>
-              </li>
-              <li className={query.assigneeLoginId ? "active" : undefined}>
-                <a
-                  data-assignee-id={query.assigneeLoginId}
-                  data-author-id=""
-                  data-commenter-id=""
-                  data-milestone-id={query.milestoneId || ""}
-                  href="#"
-                  pjax-filter=""
-                >
-                  issue.list.assignedToMe
-                  <span className="num-badge pull-right">{query.assigneeLoginId ? issueList?.totalCount ?? 0 : 0}</span>
-                </a>
-              </li>
-              <li className={query.authorLoginId ? "active" : undefined}>
-                <a
-                  data-assignee-id=""
-                  data-author-id={query.authorLoginId}
-                  data-commenter-id=""
-                  data-milestone-id={query.milestoneId || ""}
-                  href="#"
-                  pjax-filter=""
-                >
-                  issue.list.authoredByMe
-                  <span className="num-badge pull-right">{query.authorLoginId ? issueList?.totalCount ?? 0 : 0}</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  data-assignee-id=""
-                  data-author-id=""
-                  data-commenter-id=""
-                  data-milestone-id={query.milestoneId || ""}
-                  href="#"
-                  pjax-filter=""
-                >
-                  issue.list.commentedByMe
-                  <span className="num-badge pull-right">0</span>
-                </a>
-              </li>
-            </ul>
-            <form
-              action={buildProjectHref(
-                props.runtimeConfig,
-                detail.ownerName,
-                detail.projectName,
-                "issues",
-              )}
-              id="search"
-              method="get"
-              name="search"
-            >
-              <input name="pageNum" type="hidden" value="1" />
-              <input name="orderBy" type="hidden" value="updatedDate" />
-              <input name="orderDir" type="hidden" value="desc" />
-              <input name="state" type="hidden" value={query.state} />
-              {query.assigneeId !== undefined ? (
-                <input data-search="assigneeId" name="assigneeId" type="hidden" value={query.assigneeId} />
-              ) : null}
-              <input data-search="authorLoginId" name="authorLoginId" type="hidden" value={query.authorLoginId} />
-              <input data-search="assigneeLoginId" name="assigneeLoginId" type="hidden" value={query.assigneeLoginId} />
-              <hr className="hide-in-mobile" />
-              <div className="search">
-                <div className="search-bar">
-                  <input className="textbox full" data-search="filter" name="filter" type="text" defaultValue="" />
-                  <button className="search-btn" data-submit="submit" type="button">
-                    <i className="yobicon-search"></i>
-                  </button>
-                </div>
-              </div>
-              <div className="srch-advanced hide-in-mobile" id="advanced-search-form">
-                <dl className="issue-option">
-                  <dt>issue.author</dt>
-                  <dd>
-                    <select
-                      data-container-css-class="fullsize"
-                      data-format="user"
-                      data-search="authorId"
-                      data-toggle="select2"
-                      id="authorId"
-                      name="authorLoginId"
-                      defaultValue={query.authorLoginId}
-                    >
-                      <option value="">common.order.all</option>
-                      {query.authorLoginId ? (
-                        <option value={query.authorLoginId}>{query.authorLoginId}</option>
-                      ) : null}
-                    </select>
-                  </dd>
-                </dl>
-                <dl className="issue-option">
-                  <dt>issue.assignee</dt>
-                  <dd>
-                    <select
-                      data-container-css-class="fullsize"
-                      data-format="user"
-                      data-search="assigneeId"
-                      data-toggle="select2"
-                      id="assigneeId"
-                      name="assigneeLoginId"
-                      defaultValue={query.assigneeLoginId}
-                    >
-                      <option value="">common.order.all</option>
-                      <option value="anonymous">issue.noAssignee</option>
-                      {query.assigneeLoginId ? (
-                        <option value={query.assigneeLoginId}>{query.assigneeLoginId}</option>
-                      ) : null}
-                    </select>
-                  </dd>
-                </dl>
-                <dl className="issue-option">
-                  <dt>milestone</dt>
-                  <dd>
-                    <select
-                      data-container-css-class="fullsize"
-                      data-format="milestone"
-                      data-search="milestoneId"
-                      data-toggle="select2"
-                      id="milestoneId"
-                      name="milestoneId"
-                      defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
-                    >
-                      <option value="">milestone.state.all</option>
-                      <option value="0">issue.noMilestone</option>
-                      {(props.milestones ?? []).map((milestone) => (
-                        <option data-state={milestone.state} key={milestone.id} value={milestone.id}>
-                          {milestone.title}
-                        </option>
-                      ))}
-                    </select>
-                  </dd>
-                </dl>
-                <dl className="issue-option">
-                  <dt>issue.dueDate</dt>
-                  <dd className="search search-bar">
+                  <a
+                    data-assignee-id=""
+                    data-author-id=""
+                    data-commenter-id=""
+                    data-milestone-id={query.milestoneId || ""}
+                    href={allIssuesHref}
+                    {...pjaxFilterAttr}
+                  >
+                    {query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open"}
+                    <span className="num-badge pull-right">{issueList?.totalCount ?? 0}</span>
+                  </a>
+                </li>
+                <li className={query.assigneeLoginId ? "active" : undefined}>
+                  <a
+                    data-assignee-id={query.assigneeLoginId}
+                    data-author-id=""
+                    data-commenter-id=""
+                    data-milestone-id={query.milestoneId || ""}
+                    href={assignedIssuesHref}
+                    {...pjaxFilterAttr}
+                  >
+                    issue.list.assignedToMe
+                    <span className="num-badge pull-right">
+                      {query.assigneeLoginId ? (issueList?.totalCount ?? 0) : 0}
+                    </span>
+                  </a>
+                </li>
+                <li className={query.authorLoginId ? "active" : undefined}>
+                  <a
+                    data-assignee-id=""
+                    data-author-id={query.authorLoginId}
+                    data-commenter-id=""
+                    data-milestone-id={query.milestoneId || ""}
+                    href={authoredIssuesHref}
+                    {...pjaxFilterAttr}
+                  >
+                    issue.list.authoredByMe
+                    <span className="num-badge pull-right">
+                      {query.authorLoginId ? (issueList?.totalCount ?? 0) : 0}
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    data-assignee-id=""
+                    data-author-id=""
+                    data-commenter-id=""
+                    data-milestone-id={query.milestoneId || ""}
+                    href={commentedIssuesHref}
+                    {...pjaxFilterAttr}
+                  >
+                    issue.list.commentedByMe
+                    <span className="num-badge pull-right">0</span>
+                  </a>
+                </li>
+              </ul>
+              <form
+                action={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  "issues",
+                )}
+                id="search"
+                method="get"
+                name="search"
+              >
+                <input name="pageNum" type="hidden" value="1" />
+                <input name="orderBy" type="hidden" value="updatedDate" />
+                <input name="orderDir" type="hidden" value="desc" />
+                <input name="state" type="hidden" value={query.state} />
+                {query.assigneeId !== undefined ? (
+                  <input
+                    data-search="assigneeId"
+                    name="assigneeId"
+                    type="hidden"
+                    value={query.assigneeId}
+                  />
+                ) : null}
+                <input
+                  data-search="authorLoginId"
+                  name="authorLoginId"
+                  type="hidden"
+                  value={query.authorLoginId}
+                />
+                <input
+                  data-search="assigneeLoginId"
+                  name="assigneeLoginId"
+                  type="hidden"
+                  value={query.assigneeLoginId}
+                />
+                <hr className="hide-in-mobile" />
+                <div className="search">
+                  <div className="search-bar">
                     <input
                       className="textbox full"
-                      data-toggle="calendar"
-                      id="issueDueDate"
-                      name="dueDate"
+                      data-search="filter"
+                      name="filter"
                       type="text"
                       defaultValue=""
                     />
-                    <button className="search-btn btn-calendar" type="button">
-                      <i className="yobicon-calendar2"></i>
+                    <button className="search-btn" data-submit="submit" type="button">
+                      <i className="yobicon-search"></i>
                     </button>
-                  </dd>
-                </dl>
-                <div className="labels-wrap">
-                  <a
-                    className="ybtn ybtn-default ybtn-mini pull-right"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "issue/labelsform",
-                    )}
-                  >
-                    <i className="yobicon-cog vmiddle"></i>
-                    {(props.labels ?? []).length === 0 ? <span className="vmiddle">label.manage</span> : null}
-                  </a>
+                  </div>
+                </div>
+                <div className="srch-advanced hide-in-mobile" id="advanced-search-form">
                   <dl className="issue-option">
-                    <dt>label</dt>
+                    <dt>issue.author</dt>
                     <dd>
                       <select
-                        aria-label="label.select"
-                        className="issue-label-filter"
-                        data-search="labelIds"
-                        data-placeholder="label.select"
-                        defaultValue={selectedLabelIds}
-                        multiple
-                        name="labelIds"
+                        data-container-css-class="fullsize"
+                        data-format="user"
+                        data-search="authorId"
+                        data-toggle="select2"
+                        id="authorId"
+                        name="authorLoginId"
+                        defaultValue={query.authorLoginId}
                       >
-                        {(props.labels ?? []).map((label) => (
-                          <option key={label.id} value={label.id}>
-                            {label.categoryName ? `${label.categoryName}: ${label.name}` : label.name}
+                        <option value="">common.order.all</option>
+                        {query.authorLoginId ? (
+                          <option value={query.authorLoginId}>{query.authorLoginId}</option>
+                        ) : null}
+                      </select>
+                    </dd>
+                  </dl>
+                  <dl className="issue-option">
+                    <dt>issue.assignee</dt>
+                    <dd>
+                      <select
+                        data-container-css-class="fullsize"
+                        data-format="user"
+                        data-search="assigneeId"
+                        data-toggle="select2"
+                        id="assigneeId"
+                        name="assigneeLoginId"
+                        defaultValue={query.assigneeLoginId}
+                      >
+                        <option value="">common.order.all</option>
+                        <option value="anonymous">issue.noAssignee</option>
+                        {query.assigneeLoginId ? (
+                          <option value={query.assigneeLoginId}>{query.assigneeLoginId}</option>
+                        ) : null}
+                      </select>
+                    </dd>
+                  </dl>
+                  <dl className="issue-option">
+                    <dt>milestone</dt>
+                    <dd>
+                      <select
+                        data-container-css-class="fullsize"
+                        data-format="milestone"
+                        data-search="milestoneId"
+                        data-toggle="select2"
+                        id="milestoneId"
+                        name="milestoneId"
+                        defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
+                      >
+                        <option value="">milestone.state.all</option>
+                        <option value="0">issue.noMilestone</option>
+                        {(props.milestones ?? []).map((milestone) => (
+                          <option
+                            data-state={milestone.state}
+                            key={milestone.id}
+                            value={milestone.id}
+                          >
+                            {milestone.title}
                           </option>
                         ))}
                       </select>
                     </dd>
                   </dl>
-                </div>
-              </div>
-            </form>
-          </div>
-          <div className="span10 span-hard-wrap" id="span10">
-            <div className="pull-right">
-              <a
-                className="ybtn ybtn-success"
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "issueform",
-                )}
-              >
-                issue.menu.new
-              </a>
-            </div>
-            <ul className="nav nav-tabs nm">
-              <li className={query.state !== "closed" ? "active" : undefined} data-pjax="">
-                <a href={openHref} {...openStateAttr}>
-                  issue.state.open
-                  <span className="num-badge">{query.state !== "closed" ? issueList?.totalCount ?? 0 : 0}</span>
-                </a>
-              </li>
-              <li className={query.state === "closed" ? "active" : undefined} data-pjax="">
-                <a href={closedHref} {...closedStateAttr}>
-                  issue.state.closed
-                  <span className="num-badge">{query.state === "closed" ? issueList?.totalCount ?? 0 : 0}</span>
-                </a>
-              </li>
-              <li>
-                <LegacyTwoColumnModeCheckboxArea />
-              </li>
-              <li className="show-subtasks-li">
-                <LegacyShowSubtasksCheckbox />
-              </li>
-            </ul>
-            {issueRows.length === 0 ? (
-              <div className="error-wrap">
-                <i className="ico ico-err1"></i>
-                <p>issue.is.empty</p>
-              </div>
-            ) : (
-              <>
-                <div className="filter-wrap board">
-                  <div className="filters pull-right">
-                    {[
-                      ["dueDate", "common.order.dueDate"],
-                      ["updatedDate", "common.order.updatedDate"],
-                      ["createdDate", "common.order.date"],
-                      ["numOfComments", "common.order.comments"],
-                    ].map(([orderBy, label]) => (
-                      <a
-                        className="filter"
-                        href="#"
-                        key={orderBy}
-                        {...({
-                          orderby: orderBy,
-                          orderdir: "desc",
-                        } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-                          orderby: string;
-                          orderdir: string;
-                        })}
-                      >
-                        <i className="ico btn-gray-arrow down"></i>
-                        {label}
-                      </a>
-                    ))}
+                  <dl className="issue-option">
+                    <dt>issue.dueDate</dt>
+                    <dd className="search search-bar">
+                      <input
+                        className="textbox full"
+                        data-toggle="calendar"
+                        id="issueDueDate"
+                        name="dueDate"
+                        type="text"
+                        defaultValue=""
+                      />
+                      <button className="search-btn btn-calendar" type="button">
+                        <i className="yobicon-calendar2"></i>
+                      </button>
+                    </dd>
+                  </dl>
+                  <div className="labels-wrap">
+                    <a
+                      className="ybtn ybtn-default ybtn-mini pull-right"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "issue/labelsform",
+                      )}
+                    >
+                      <i className="yobicon-cog vmiddle"></i>
+                      {(props.labels ?? []).length === 0 ? (
+                        <span className="vmiddle">label.manage</span>
+                      ) : null}
+                    </a>
+                    <dl className="issue-option">
+                      <dt>label</dt>
+                      <dd>
+                        <select
+                          aria-label="label.select"
+                          className="issue-label-filter"
+                          data-search="labelIds"
+                          data-placeholder="label.select"
+                          defaultValue={selectedLabelIds}
+                          multiple
+                          name="labelIds"
+                        >
+                          {(props.labels ?? []).map((label) => (
+                            <option key={label.id} value={label.id}>
+                              {label.categoryName
+                                ? `${label.categoryName}: ${label.name}`
+                                : label.name}
+                            </option>
+                          ))}
+                        </select>
+                      </dd>
+                    </dl>
                   </div>
                 </div>
-                {issueList && issueList.draftItems.length > 0 ? (
+              </form>
+            </div>
+            <div className="span10 span-hard-wrap" id="span10">
+              <div className="pull-right">
+                <a
+                  className="ybtn ybtn-success"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "issueform",
+                  )}
+                >
+                  issue.menu.new
+                </a>
+              </div>
+              <ul className="nav nav-tabs nm">
+                <li className={query.state !== "closed" ? "active" : undefined} data-pjax="">
+                  <a href={openHref} {...openStateAttr}>
+                    issue.state.open
+                    <span className="num-badge">
+                      {query.state !== "closed" ? (issueList?.totalCount ?? 0) : 0}
+                    </span>
+                  </a>
+                </li>
+                <li className={query.state === "closed" ? "active" : undefined} data-pjax="">
+                  <a href={closedHref} {...closedStateAttr}>
+                    issue.state.closed
+                    <span className="num-badge">
+                      {query.state === "closed" ? (issueList?.totalCount ?? 0) : 0}
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <LegacyTwoColumnModeCheckboxArea />
+                </li>
+                <li className="show-subtasks-li">
+                  <LegacyShowSubtasksCheckbox />
+                </li>
+              </ul>
+              {issueRows.length === 0 ? (
+                <div className="error-wrap">
+                  <i className="ico ico-err1"></i>
+                  <p>issue.is.empty</p>
+                </div>
+              ) : (
+                <>
+                  <div className="filter-wrap board">
+                    <div className="filters pull-right">
+                      {[
+                        ["dueDate", "common.order.dueDate"],
+                        ["updatedDate", "common.order.updatedDate"],
+                        ["createdDate", "common.order.date"],
+                        ["numOfComments", "common.order.comments"],
+                      ].map(([orderBy, label]) => (
+                        <a
+                          className="filter"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            `issues?orderBy=${encodeURIComponent(orderBy)}&orderDir=desc`,
+                          )}
+                          key={orderBy}
+                          {...({
+                            orderby: orderBy,
+                            orderdir: "desc",
+                          } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+                            orderby: string;
+                            orderdir: string;
+                          })}
+                        >
+                          <i className="ico btn-gray-arrow down"></i>
+                          {label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                  {issueList && issueList.draftItems.length > 0 ? (
+                    <ProjectIssueRows
+                      items={issueList.draftItems}
+                      listKind="draft"
+                      query={query}
+                      runtimeConfig={props.runtimeConfig}
+                    />
+                  ) : null}
                   <ProjectIssueRows
-                    items={issueList.draftItems}
-                    listKind="draft"
+                    items={issueRows}
+                    listKind="normal"
+                    query={query}
                     runtimeConfig={props.runtimeConfig}
                   />
-                ) : null}
-                <ProjectIssueRows items={issueRows} listKind="normal" runtimeConfig={props.runtimeConfig} />
-                <div className="pull-left" style={{ padding: "10px" }}>
-                  <a
-                    className="ybtn small"
-                    href={projectIssueExcelExportHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      query,
-                    )}
-                  >
-                    <i className="yobicon-file-excel"></i> issue.downloadAsExcel
-                  </a>
-                </div>
-                <IssueListPagination
-                  currentPage={issueList?.pageNum ?? query.pageNum}
-                  hrefForPage={(pageNum) =>
-                    projectIssueListPageHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      query,
-                      pageNum,
-                    )
-                  }
-                  pageCount={totalPageCount}
-                />
-              </>
-            )}
+                  <div className="pull-left" style={{ padding: "10px" }}>
+                    <a
+                      className="ybtn small"
+                      href={projectIssueExcelExportHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        query,
+                      )}
+                    >
+                      <i className="yobicon-file-excel"></i> issue.downloadAsExcel
+                    </a>
+                  </div>
+                  <IssueListPagination
+                    currentPage={issueList?.pageNum ?? query.pageNum}
+                    hrefForPage={(pageNum) =>
+                      projectIssueListPageHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        query,
+                        pageNum,
+                      )
+                    }
+                    pageCount={totalPageCount}
+                  />
+                </>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </main>
@@ -872,10 +956,14 @@ export interface IssueListFilterMilestone {
 function ProjectIssueRows(props: {
   items: ProjectIssueListViewModel["items"];
   listKind: "draft" | "normal";
+  query: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
   return (
-    <ul className="post-list-wrap row-fluid" data-list={props.listKind === "draft" ? "draft-issues" : undefined}>
+    <ul
+      className="post-list-wrap row-fluid"
+      data-list={props.listKind === "draft" ? "draft-issues" : undefined}
+    >
       {props.items.map((item) => {
         const issueHref = buildProjectHref(
           props.runtimeConfig,
@@ -899,7 +987,11 @@ function ProjectIssueRows(props: {
             {...issueItemHrefAttr}
           >
             <div className="span9 span-hard-wrap">
-              <label className="mass-update-check hide-in-mobile" htmlFor={`issue-${legacyIssueId}`}>
+              <label
+                aria-label={`issue ${legacyIssueId}`}
+                className="mass-update-check hide-in-mobile"
+                htmlFor={`issue-${legacyIssueId}`}
+              >
                 <input
                   data-issue-id={legacyIssueId}
                   data-issue-labels={item.labels
@@ -952,7 +1044,11 @@ function ProjectIssueRows(props: {
                       className="infos-item infos-link-item"
                       data-placement="bottom"
                       data-toggle="tooltip"
-                      href="#"
+                      href={
+                        item.authorLoginId
+                          ? prefixBasePath(props.runtimeConfig.basePath, `/${item.authorLoginId}`)
+                          : issueHref
+                      }
                       title={item.authorLabel}
                     >
                       {item.authorLabel}
@@ -973,7 +1069,12 @@ function ProjectIssueRows(props: {
                   </span>
                   {item.milestoneTitle ? (
                     <span className="mileston-tag">
-                      <a data-placement="bottom" data-toggle="tooltip" href="#" title="milestone">
+                      <a
+                        data-placement="bottom"
+                        data-toggle="tooltip"
+                        href={issueHref}
+                        title="milestone"
+                      >
                         {item.milestoneTitle}
                       </a>
                     </span>
@@ -999,7 +1100,17 @@ function ProjectIssueRows(props: {
                     <a
                       className="label issue-label list-label active"
                       data-label-id={label.id}
-                      href="#"
+                      href={projectIssueListPageHref(
+                        props.runtimeConfig,
+                        item.ownerName,
+                        item.projectName,
+                        {
+                          ...props.query,
+                          labelIds: [label.id],
+                          pageNum: 1,
+                        },
+                        1,
+                      )}
                       key={label.id}
                       style={{ backgroundColor: label.color || "#ddd" }}
                     >
@@ -1017,7 +1128,7 @@ function ProjectIssueRows(props: {
                     className="avatar-wrap assinee"
                     data-placement="top"
                     data-toggle="tooltip"
-                    href="#"
+                    href={issueHref}
                     title={`issue.assignee: ${item.assigneeLabel}`}
                   >
                     {item.assigneeAvatarUrl ? (
@@ -1076,7 +1187,10 @@ function IssueListPagination(props: {
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <a href={props.hrefForPage(currentPage - 1)} pjax-page="">
+            <a
+              href={props.hrefForPage(currentPage - 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>button.prevPage</span>
             </a>
@@ -1101,7 +1215,10 @@ function IssueListPagination(props: {
         <li className="page-num">{props.pageCount}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <a href={props.hrefForPage(currentPage + 1)} pjax-page="">
+            <a
+              href={props.hrefForPage(currentPage + 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-next"></i>
               <span>button.nextPage</span>
             </a>
@@ -1337,811 +1454,834 @@ export function ProjectIssueDetailPage(props: {
               {issueState ? (
                 <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
               ) : null}
-          </div>
-          <div className="title">
-            {issueNumberLabel ? (
-              <strong className="board-id">
-                {issue?.isDraft ? <span className="draft-number">#issue.state.draft</span> : issueNumberLabel}
-              </strong>
-            ) : null}
-            <h1>
-              {issueTitle}
-              {issue && props.onFavoriteToggle ? (
-                <button
-                  aria-label="title.favorite"
-                  className="favorite-issue"
-                  onClick={() => void props.onFavoriteToggle?.()}
-                  type="button"
-                >
-                  <span
-                    className={`${
-                      issue.isFavorited ? "starred " : ""
-                    }star material-icons va-text-top`}
-                  >
-                    star
-                  </span>
-                </button>
-              ) : null}
-            </h1>
-            {issueState ? (
-              <div className="pull-right hide show-in-mobile">
-                {issue?.createdLabel ? (
-                  <span className="date" title={issue.createdLabel}>
-                    {issue.createdLabel}
-                  </span>
-                ) : null}
-                <span className={`badge badge-small badge-issue-${issueStateClass}`}>
-                  {issueState}
-                </span>
-              </div>
-            ) : null}
-            {issue?.isDraft ? <div className="draft">issue.draft.description</div> : null}
-          </div>
-          {issue ? (
-            <PostingHistoryModal
-              basePath={props.runtimeConfig?.basePath}
-              historyMarkdown={issue.historyMarkdown}
-              issueReferences={issue.issueReferences}
-              linkLabel="change.edited"
-              mentionReferences={issue.mentionReferences}
-              ownerName={issue.ownerName}
-              projectName={issue.projectName}
-            />
-          ) : null}
-        </header>
-        <div className="board-body row-fluid">
-          <div className="span9 span-left-pane">
-            <div className="author-info">
-              <a className="usf-group" href={issueAuthorHref}>
-                <span className="avatar-wrap smaller">
-                  {issue?.authorAvatarUrl ? (
-                    <img
-                      alt={issueAuthorLabel}
-                      height={20}
-                      src={issue.authorAvatarUrl}
-                      width={20}
-                    />
-                  ) : null}
-                </span>
-                <strong className="name">{issueAuthorLabel}</strong>
-                {issueAuthorLoginId ? (
-                  <span className="loginid">
-                    {" "}
-                    <strong>@</strong>
-                    {issueAuthorLoginId}
-                  </span>
-                ) : null}
-              </a>
             </div>
-            <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
-              <MarkdownRenderer
-                className="content markdown-wrap"
-                basePath={props.runtimeConfig.basePath}
-                data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
-                issueReferences={issue?.issueReferences}
-                markdown={translatedIssueMarkdown ?? issue?.bodyMarkdown ?? ""}
-                mentionReferences={issue?.mentionReferences}
-                ownerName={detail.ownerName}
-                projectName={detail.projectName}
-                showTasklistBar
-              />
-            </div>
-            <div className="attachments" id="attachments">
-              {(issue?.attachments ?? []).map((attachment) => (
-                <a href={attachment.url} key={attachment.id}>
-                  {attachment.name}
-                </a>
-              ))}
-            </div>
-            <div className="board-actrow right-txt">
-              <div className="pull-left">
-                <div>
-                  {issue && props.onWatchToggle ? (
-                    <button
-                      className={`ybtn${issue.isWatching ? " ybtn-watching" : ""}`}
-                      data-placement="top"
-                      data-toggle="tooltip"
-                      data-watching={String(issue.isWatching)}
-                      id="watch-button"
-                      onClick={() => void props.onWatchToggle?.()}
-                      title="issue.watch.description"
-                      type="button"
-                    >
-                      {issue.isWatching ? "issue.unwatch" : "issue.watch"}
-                    </button>
-                  ) : null}
-                  {issue?.viewerCanUpdate ? (
-                    <button
-                      className="ybtn"
-                      data-content="issue.sharer.description"
-                      data-placement="top"
-                      data-toggle="popover"
-                      data-trigger="hover"
-                      id="issue-share-button"
-                      type="button"
-                    >
-                      button.share.issue
-                    </button>
-                  ) : null}
-                  {issue ? (
-                    <span className="project-btn-item hide show-in-mobile-inline ml4">
-                      <a
-                        className="ybtn ybtn-success"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          issue.ownerName,
-                          issue.projectName,
-                          `issueform?parentIssueId=${
-                            issue.parentIssueId || issue.issueId || issue.issueNumber
-                          }`,
-                        )}
-                      >
-                        button.newSubtask
-                      </a>
-                    </span>
-                  ) : null}
-                  {issue ? (
-                    <span className="issue-weight">
-                      <span className="divider">|</span>
-                      <button
-                        className="ybtn ybtn-small"
-                        data-toggle="tooltip"
-                        id="upvote-issue-weight"
-                        onClick={() => {
-                          void props.onIssueWeightChange?.(1);
-                        }}
-                        title="issue.weight: Upvote"
-                        type="button"
-                      >
-                        <i className="yobicon-arrow-up-alt"></i>
-                      </button>
-                      <button
-                        className="ybtn ybtn-small"
-                        data-toggle="tooltip"
-                        id="down-vote-issue-weight"
-                        onClick={() => {
-                          void props.onIssueWeightChange?.(-1);
-                        }}
-                        title="issue.weight: Down vote"
-                        type="button"
-                      >
-                        <i className="yobicon-arrow-down-alt"></i>
-                      </button>
-                      <span
-                        className="weight-number"
-                        data-content="issue.weight.description"
-                        data-placement="top"
-                        data-toggle="popover"
-                        data-trigger="hover"
-                      >
-                        {issue.weight ?? 0}
-                      </span>
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              {issue ? (
-                <div className={voteWrapClass} id="vote">
-                  {props.onVoteToggle ? (
-                    <button
-                      className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
-                      data-request-method="post"
-                      data-toggle="tooltip"
-                      onClick={() => void props.onVoteToggle?.()}
-                      title={issue.hasVoted ? "issue.unvote.description" : "issue.vote.description"}
-                      type="button"
-                    >
-                      <span className="heart">
-                        <i className="yobicon-hearts"></i>
-                      </span>
-                    </button>
-                  ) : null}
-                  <IssueDetailVoters issue={issue} runtimeConfig={props.runtimeConfig} />
-                </div>
-              ) : null}
-              <span className="act-row">
-                {issue ? (
-                  <button
-                    className="icon btn-transparent-with-fontsize-lineheight ml10"
-                    data-toggle="tooltip"
-                    disabled={translatingIssue || translatedIssueMarkdown !== null}
-                    id="translate"
-                    onClick={() => void translateIssue()}
-                    title="button.translation"
-                    type="button"
-                  >
-                    <i className="yobicon-lang"></i>
-                  </button>
-                ) : null}
-                {issue?.viewerCanUpdate ? (
-                  <a
-                    className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      `issue/${issue.issueNumber}/editform`,
-                    )}
-                    title="button.edit"
-                  >
-                    <i className="yobicon-edit-2"></i>
-                  </a>
-                ) : null}
-                {issue?.viewerCanUpdate && onStateChange ? (
-                  <button
-                    className="ybtn"
-                    onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
-                    type="button"
-                  >
-                    {issue.state === "open" ? "button.nextState.closed" : "button.nextState.open"}
-                  </button>
-                ) : null}
-                {issue?.viewerCanDelete && onDeleteIssue ? (
-                  <a
-                    data-toggle="modal"
-                    href="#deleteConfirm"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setDeleteConfirmOpen(true);
-                    }}
-                  >
-                    <button
-                      className="icon btn-transparent-with-fontsize-lineheight ml6"
-                      title="button.delete"
-                      type="button"
-                    >
-                      <i className="yobicon-trash"></i>
-                    </button>
-                  </a>
-                ) : null}
-              </span>
-            </div>
-            <section className="board-comment-wrap" id="comments">
-              <div id="timeline">
-                <div className="timeline-list">
-                  <div className="comment-header">
-                    <i></i>
-                    <strong>common.comment</strong>{" "}
-                    <strong className="num">{issue?.commentCount ?? 0}</strong>
-                  </div>
-                  <hr className="nm" />
-                  <ul className="comments">
-                    {(issue?.timeline ?? []).map((item) => {
-                      if (item.kind !== "comment" || !item.comment) {
-                        return (
-                          <IssueTimelineEvent
-                            basePath={props.runtimeConfig.basePath}
-                            item={item}
-                            key={`${item.kind}-${item.id}`}
-                          />
-                        );
-                      }
-
-                      const comment = item.comment;
-                      if (comment.parentCommentId) {
-                        return null;
-                      }
-                      const authorLoginId = comment.authorLoginId || comment.authorLabel;
-                      const commentEditAction = buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `issue/${issueNumber}/comments/${comment.id}`,
-                      );
-                      const commentIsEditing = editingCommentIds.has(comment.id);
-                      const commentDeleteUri = buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `issue/${issueNumber}/comment/${comment.id}/delete`,
-                      );
-                      const commentVoteUri = buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `issue/${issueNumber}/comment/${comment.id}/${
-                          comment.viewerHasVoted ? "unvote" : "vote"
-                        }`,
-                      );
-                      const newIssueByCommentHref = `${prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        "/user/issues/new",
-                      )}?commentId=${comment.id}`;
-
-                      return (
-                        <li
-                          className="comment"
-                          id={`comment-${comment.id}`}
-                          key={`${item.kind}-${item.id}`}
-                        >
-                          <div className="comment-avatar">
-                            <IssueCommentAvatar
-                              basePath={props.runtimeConfig.basePath}
-                              comment={comment}
-                            />
-                          </div>
-                          <div className="media-body">
-                            <div className="meta-info">
-                              <span className="comment_author">
-                                <span className="resp-comment-avatar">
-                                  <IssueCommentAvatar
-                                    basePath={props.runtimeConfig.basePath}
-                                    comment={comment}
-                                  />
-                                </span>
-                                <a
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  href={
-                                    authorLoginId
-                                      ? prefixBasePath(
-                                          props.runtimeConfig.basePath,
-                                          `/${authorLoginId}`,
-                                        )
-                                      : "#"
-                                  }
-                                  title={comment.authorLoginId || comment.authorLabel}
-                                >
-                                  <strong>{comment.authorLabel || comment.authorLoginId}</strong>
-                                </a>
-                              </span>
-                              <span className="ago-date">
-                                <a
-                                  className="ago"
-                                  href={`#comment-${comment.id}`}
-                                  title={comment.createdLabel}
-                                >
-                                  {comment.createdLabel}
-                                </a>
-                                <a
-                                  className="share-link"
-                                  href={`#comment-${comment.id}`}
-                                  style={{ display: "none" }}
-                                >
-                                  [Link]
-                                </a>
-                              </span>
-                              <span className="act-row pull-right">
-                                <span className="new-issue-by">
-                                  <a href={newIssueByCommentHref}>issue.menu.new.by</a>
-                                </span>
-                                <span className="comment-vote-row">
-                                  {comment.voterCount > 0 ? (
-                                    <span className="comment-vote-count">
-                                      {commentAgreementLabel(comment.voterCount)}
-                                    </span>
-                                  ) : null}
-                                  {comment.voters.map((voter) => (
-                                    <span
-                                      className="comment-voter"
-                                      key={voter.userId}
-                                      title={voter.userLabel}
-                                    >
-                                      {voter.avatarUrl ? (
-                                        <img
-                                          alt={`${voter.userLabel} avatar`}
-                                          src={voter.avatarUrl}
-                                        />
-                                      ) : null}
-                                      <span>{voter.userLabel || voter.loginId}</span>
-                                    </span>
-                                  ))}
-                                  {issue?.viewerCanComment && props.onCommentVoteToggle ? (
-                                    <button
-                                      aria-label={
-                                        comment.viewerHasVoted
-                                          ? "common.comment.unvote"
-                                          : "common.comment.vote"
-                                      }
-                                      className="comment-vote btn-transparent-with-fontsize-lineheight"
-                                      data-request-type="comment-vote"
-                                      data-request-uri={commentVoteUri}
-                                      onClick={() =>
-                                        void props.onCommentVoteToggle?.(
-                                          comment.id,
-                                          comment.viewerHasVoted,
-                                        )
-                                      }
-                                      title={
-                                        comment.viewerHasVoted
-                                          ? "common.comment.unvote"
-                                          : "common.comment.vote"
-                                      }
-                                      type="button"
-                                    >
-                                      <span
-                                        className={`yobicon-hearts ${
-                                          comment.viewerHasVoted
-                                            ? "vote-heart-on"
-                                            : "vote-heart-off"
-                                        }`}
-                                      />
-                                    </button>
-                                  ) : null}
-                                </span>
-                                <button
-                                  className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
-                                  data-comment-id={comment.id}
-                                  data-toggle="tooltip"
-                                  disabled={
-                                    translatingCommentIds.has(comment.id) ||
-                                    Boolean(translatedCommentMarkdownById[comment.id])
-                                  }
-                                  onClick={() => void translateIssueComment(comment)}
-                                  title="button.translation"
-                                  type="button"
-                                >
-                                  <i className="yobicon-lang"></i>
-                                </button>
-                                {comment.viewerCanUpdate && props.onCommentUpdate ? (
-                                  <button
-                                    className="btn-transparent-with-fontsize-lineheight ml10"
-                                    data-comment-id={comment.id}
-                                    data-toggle="comment-edit"
-                                    onClick={() =>
-                                      setEditingCommentIds((current) => {
-                                        const next = new Set(current);
-                                        next.add(comment.id);
-                                        return next;
-                                      })
-                                    }
-                                    title="common.comment.edit"
-                                    type="button"
-                                  >
-                                    <i className="yobicon-edit-2"></i>
-                                  </button>
-                                ) : null}
-                                {comment.viewerCanDelete && props.onCommentDelete ? (
-                                  <button
-                                    className="btn-transparent-with-fontsize-lineheight ml6"
-                                    data-request-uri={commentDeleteUri}
-                                    data-toggle="comment-delete"
-                                    onClick={() => setCommentDeleteTargetId(comment.id)}
-                                    title="common.comment.delete"
-                                    type="button"
-                                  >
-                                    <i className="yobicon-trash"></i>
-                                  </button>
-                                ) : null}
-                              </span>
-                            </div>
-                            {comment.viewerCanUpdate && props.onCommentUpdate ? (
-                              <div hidden={!commentIsEditing}>
-                                <IssueCommentEditForm
-                                  action={commentEditAction}
-                                  commentId={comment.id}
-                                  csrfToken={props.csrfToken}
-                                  getIssueReferencesQueryOptions={
-                                    props.getIssueReferencesQueryOptions
-                                  }
-                                  initialContents={comment.contentsMarkdown}
-                                  onCancel={() =>
-                                    setEditingCommentIds((current) => {
-                                      const next = new Set(current);
-                                      next.delete(comment.id);
-                                      return next;
-                                    })
-                                  }
-                                  onSearchMentionUsers={props.onSearchMentionUsers}
-                                  onSubmit={props.onCommentUpdate}
-                                  runtimeConfig={props.runtimeConfig}
-                                />
-                              </div>
-                            ) : null}
-                            <div
-                              id={`comment-body-${comment.id}`}
-                              style={commentIsEditing ? { display: "none" } : undefined}
-                            >
-                              <MarkdownRenderer
-                                className="comment-body markdown-wrap"
-                                basePath={props.runtimeConfig.basePath}
-                                data-allowed-update={String(comment.viewerCanUpdate)}
-                                data-via-email={comment.viaEmail ? "true" : undefined}
-                                issueReferences={comment.issueReferences}
-                                markdown={
-                                  translatedCommentMarkdownById[comment.id] ??
-                                  comment.contentsMarkdown
-                                }
-                                mentionReferences={comment.mentionReferences}
-                                ownerName={detail.ownerName}
-                                projectName={detail.projectName}
-                                showTasklistBar
-                              />
-                            </div>
-                          </div>
-                          <div className="add-a-comment pull-right">
-                            comment.oneline.comment.placeholder
-                          </div>
-                          <div className="subcomment-media-body">
-                            <div className="child-comments">
-                              {(childCommentsByParent.get(comment.id) ?? []).map((childComment) => {
-                                const childAuthorLoginId =
-                                  childComment.authorLoginId || childComment.authorLabel;
-                                return (
-                                  <div className="one-line-comment" key={childComment.id}>
-                                    <div className="contents">
-                                      <MarkdownRenderer
-                                        basePath={props.runtimeConfig.basePath}
-                                        markdown={childComment.contentsMarkdown}
-                                        ownerName={detail.ownerName}
-                                        projectName={detail.projectName}
-                                      />
-                                      <span className="subcomment-author hide">
-                                        {" - "}
-                                        <a
-                                          className="usf-group"
-                                          data-placement="top"
-                                          data-toggle="tooltip"
-                                          href={
-                                            childAuthorLoginId
-                                              ? prefixBasePath(
-                                                  props.runtimeConfig.basePath,
-                                                  `/${childAuthorLoginId}`,
-                                                )
-                                              : "#"
-                                          }
-                                          title={childComment.authorLoginId || childComment.authorLabel}
-                                        >
-                                          <strong>
-                                            {childComment.authorLabel || childComment.authorLoginId}
-                                          </strong>
-                                        </a>{" "}
-                                        <a
-                                          className="ago"
-                                          href={`#comment-${childComment.id}`}
-                                          title={childComment.createdLabel}
-                                        >
-                                          {childComment.createdLabel}
-                                        </a>
-                                        {childComment.viewerCanDelete && props.onCommentDelete ? (
-                                          <button
-                                            className="btn-transparent deleteButtonX"
-                                            data-request-uri={buildProjectHref(
-                                              props.runtimeConfig,
-                                              detail.ownerName,
-                                              detail.projectName,
-                                              `issue/${issueNumber}/comment/${childComment.id}/delete`,
-                                            )}
-                                            data-toggle="comment-delete"
-                                            onClick={() => setCommentDeleteTargetId(childComment.id)}
-                                            title="common.comment.delete"
-                                            type="button"
-                                          >
-                                            x
-                                          </button>
-                                        ) : null}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {issue?.viewerCanComment && props.onCommentSubmit ? (
-                              <div className="child-comment-input-form">
-                                <form
-                                  action={buildProjectHref(
-                                    props.runtimeConfig,
-                                    detail.ownerName,
-                                    detail.projectName,
-                                    `issue/${issueNumber}/comments`,
-                                  )}
-                                  encType="multipart/form-data"
-                                  method="post"
-                                  onSubmit={(event) => {
-                                    event.preventDefault();
-                                    const contents = (childCommentDrafts[comment.id] ?? "").trim();
-                                    if (!contents) {
-                                      return;
-                                    }
-                                    void props
-                                      .onCommentSubmit?.(contents, [], comment.id)
-                                      .then(() =>
-                                        setChildCommentDrafts((current) => ({
-                                          ...current,
-                                          [comment.id]: "",
-                                        })),
-                                      );
-                                  }}
-                                >
-                                  <input
-                                    className="parentCommentId"
-                                    name="parentCommentId"
-                                    type="hidden"
-                                    value={comment.id}
-                                  />
-                                  <div className="oneline-comment-box">
-                                    <textarea
-                                      className="editorSeries"
-                                      name="contents"
-                                      onChange={(event) =>
-                                        setChildCommentDrafts((current) => ({
-                                          ...current,
-                                          [comment.id]: event.target.value,
-                                        }))
-                                      }
-                                      placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
-                                      rows={1}
-                                      value={childCommentDrafts[comment.id] ?? ""}
-                                      {...({
-                                        markdown: "true",
-                                      } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-                                    />
-                                    <button className="ybtn ybtn-success" type="submit">
-                                      OK
-                                    </button>
-                                  </div>
-                                  <div className="notification-receiver">
-                                    <span className="notification-receiver-title">
-                                      notification.receiver.list.title
-                                    </span>
-                                    <span className="notification-receiver-list"></span>
-                                  </div>
-                                </form>
-                              </div>
-                            ) : null}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-              {issue?.viewerCanComment && props.onCommentSubmit ? (
-                <IssueCommentForm
-                  action={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    `issue/${issue.issueNumber}/comments`,
+            <div className="title">
+              {issueNumberLabel ? (
+                <strong className="board-id">
+                  {issue?.isDraft ? (
+                    <span className="draft-number">#issue.state.draft</span>
+                  ) : (
+                    issueNumberLabel
                   )}
-                  csrfToken={props.csrfToken}
-                  getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                  onSearchMentionUsers={props.onSearchMentionUsers}
-                  onSubmit={props.onCommentSubmit}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : issue ? (
-                <DisabledIssueCommentBox />
+                </strong>
               ) : null}
-            </section>
-          </div>
-          <aside className="span3 right-menu">
-            <div className="assignee-info">
-              {issueAssigneeLoginId ? (
-                <a className="usf-group" href={issueAssigneeHref}>
+              <h1>
+                {issueTitle}
+                {issue && props.onFavoriteToggle ? (
+                  <button
+                    aria-label="title.favorite"
+                    className="favorite-issue"
+                    onClick={() => void props.onFavoriteToggle?.()}
+                    type="button"
+                  >
+                    <span
+                      className={`${
+                        issue.isFavorited ? "starred " : ""
+                      }star material-icons va-text-top`}
+                    >
+                      star
+                    </span>
+                  </button>
+                ) : null}
+              </h1>
+              {issueState ? (
+                <div className="pull-right hide show-in-mobile">
+                  {issue?.createdLabel ? (
+                    <span className="date" title={issue.createdLabel}>
+                      {issue.createdLabel}
+                    </span>
+                  ) : null}
+                  <span className={`badge badge-small badge-issue-${issueStateClass}`}>
+                    {issueState}
+                  </span>
+                </div>
+              ) : null}
+              {issue?.isDraft ? <div className="draft">issue.draft.description</div> : null}
+            </div>
+            {issue ? (
+              <PostingHistoryModal
+                basePath={props.runtimeConfig?.basePath}
+                historyMarkdown={issue.historyMarkdown}
+                issueReferences={issue.issueReferences}
+                linkLabel="change.edited"
+                mentionReferences={issue.mentionReferences}
+                ownerName={issue.ownerName}
+                projectName={issue.projectName}
+              />
+            ) : null}
+          </header>
+          <div className="board-body row-fluid">
+            <div className="span9 span-left-pane">
+              <div className="author-info">
+                <a className="usf-group" href={issueAuthorHref}>
                   <span className="avatar-wrap smaller">
-                    {issue?.assigneeAvatarUrl ? (
+                    {issue?.authorAvatarUrl ? (
                       <img
-                        alt={issueAssigneeLabel}
+                        alt={issueAuthorLabel}
                         height={20}
-                        src={issue.assigneeAvatarUrl}
+                        src={issue.authorAvatarUrl}
                         width={20}
                       />
                     ) : null}
                   </span>
-                  <strong className="name">{issueAssigneeLabel}</strong>
-                  <span className="loginid">
-                    {" "}
-                    <strong>@</strong>
-                    {issueAssigneeLoginId}
-                  </span>
+                  <strong className="name">{issueAuthorLabel}</strong>
+                  {issueAuthorLoginId ? (
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {issueAuthorLoginId}
+                    </span>
+                  ) : null}
                 </a>
-              ) : (
-                <div>{issueAssigneeLabel}</div>
-              )}
+              </div>
+              <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
+                <MarkdownRenderer
+                  className="content markdown-wrap"
+                  basePath={props.runtimeConfig.basePath}
+                  data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
+                  issueReferences={issue?.issueReferences}
+                  markdown={translatedIssueMarkdown ?? issue?.bodyMarkdown ?? ""}
+                  mentionReferences={issue?.mentionReferences}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  showTasklistBar
+                />
+              </div>
+              <div className="attachments" id="attachments">
+                {(issue?.attachments ?? []).map((attachment) => (
+                  <a href={attachment.url} key={attachment.id}>
+                    {attachment.name}
+                  </a>
+                ))}
+              </div>
+              <div className="board-actrow right-txt">
+                <div className="pull-left">
+                  <div>
+                    {issue && props.onWatchToggle ? (
+                      <button
+                        className={`ybtn${issue.isWatching ? " ybtn-watching" : ""}`}
+                        data-placement="top"
+                        data-toggle="tooltip"
+                        data-watching={String(issue.isWatching)}
+                        id="watch-button"
+                        onClick={() => void props.onWatchToggle?.()}
+                        title="issue.watch.description"
+                        type="button"
+                      >
+                        {issue.isWatching ? "issue.unwatch" : "issue.watch"}
+                      </button>
+                    ) : null}
+                    {issue?.viewerCanUpdate ? (
+                      <button
+                        className="ybtn"
+                        data-content="issue.sharer.description"
+                        data-placement="top"
+                        data-toggle="popover"
+                        data-trigger="hover"
+                        id="issue-share-button"
+                        type="button"
+                      >
+                        button.share.issue
+                      </button>
+                    ) : null}
+                    {issue ? (
+                      <span className="project-btn-item hide show-in-mobile-inline ml4">
+                        <a
+                          className="ybtn ybtn-success"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            issue.ownerName,
+                            issue.projectName,
+                            `issueform?parentIssueId=${
+                              issue.parentIssueId || issue.issueId || issue.issueNumber
+                            }`,
+                          )}
+                        >
+                          button.newSubtask
+                        </a>
+                      </span>
+                    ) : null}
+                    {issue ? (
+                      <span className="issue-weight">
+                        <span className="divider">|</span>
+                        <button
+                          className="ybtn ybtn-small"
+                          data-toggle="tooltip"
+                          id="upvote-issue-weight"
+                          onClick={() => {
+                            void props.onIssueWeightChange?.(1);
+                          }}
+                          title="issue.weight: Upvote"
+                          type="button"
+                        >
+                          <i className="yobicon-arrow-up-alt"></i>
+                        </button>
+                        <button
+                          className="ybtn ybtn-small"
+                          data-toggle="tooltip"
+                          id="down-vote-issue-weight"
+                          onClick={() => {
+                            void props.onIssueWeightChange?.(-1);
+                          }}
+                          title="issue.weight: Down vote"
+                          type="button"
+                        >
+                          <i className="yobicon-arrow-down-alt"></i>
+                        </button>
+                        <span
+                          className="weight-number"
+                          data-content="issue.weight.description"
+                          data-placement="top"
+                          data-toggle="popover"
+                          data-trigger="hover"
+                        >
+                          {issue.weight ?? 0}
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                {issue ? (
+                  <div className={voteWrapClass} id="vote">
+                    {props.onVoteToggle ? (
+                      <button
+                        className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
+                        data-request-method="post"
+                        data-toggle="tooltip"
+                        onClick={() => void props.onVoteToggle?.()}
+                        title={
+                          issue.hasVoted ? "issue.unvote.description" : "issue.vote.description"
+                        }
+                        type="button"
+                      >
+                        <span className="heart">
+                          <i className="yobicon-hearts"></i>
+                        </span>
+                      </button>
+                    ) : null}
+                    <IssueDetailVoters issue={issue} runtimeConfig={props.runtimeConfig} />
+                  </div>
+                ) : null}
+                <span className="act-row">
+                  {issue ? (
+                    <button
+                      className="icon btn-transparent-with-fontsize-lineheight ml10"
+                      data-toggle="tooltip"
+                      disabled={translatingIssue || translatedIssueMarkdown !== null}
+                      id="translate"
+                      onClick={() => void translateIssue()}
+                      title="button.translation"
+                      type="button"
+                    >
+                      <i className="yobicon-lang"></i>
+                    </button>
+                  ) : null}
+                  {issue?.viewerCanUpdate ? (
+                    <a
+                      className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `issue/${issue.issueNumber}/editform`,
+                      )}
+                      title="button.edit"
+                    >
+                      <i className="yobicon-edit-2"></i>
+                    </a>
+                  ) : null}
+                  {issue?.viewerCanUpdate && onStateChange ? (
+                    <button
+                      className="ybtn"
+                      onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
+                      type="button"
+                    >
+                      {issue.state === "open" ? "button.nextState.closed" : "button.nextState.open"}
+                    </button>
+                  ) : null}
+                  {issue?.viewerCanDelete && onDeleteIssue ? (
+                    <a
+                      data-toggle="modal"
+                      href="#deleteConfirm"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
+                      <button
+                        className="icon btn-transparent-with-fontsize-lineheight ml6"
+                        title="button.delete"
+                        type="button"
+                      >
+                        <i className="yobicon-trash"></i>
+                      </button>
+                    </a>
+                  ) : null}
+                </span>
+              </div>
+              <section className="board-comment-wrap" id="comments">
+                <div id="timeline">
+                  <div className="timeline-list">
+                    <div className="comment-header">
+                      <i></i>
+                      <strong>common.comment</strong>{" "}
+                      <strong className="num">{issue?.commentCount ?? 0}</strong>
+                    </div>
+                    <hr className="nm" />
+                    <ul className="comments">
+                      {(issue?.timeline ?? []).map((item) => {
+                        if (item.kind !== "comment" || !item.comment) {
+                          return (
+                            <IssueTimelineEvent
+                              basePath={props.runtimeConfig.basePath}
+                              item={item}
+                              key={`${item.kind}-${item.id}`}
+                            />
+                          );
+                        }
+
+                        const comment = item.comment;
+                        if (comment.parentCommentId) {
+                          return null;
+                        }
+                        const authorLoginId = comment.authorLoginId || comment.authorLabel;
+                        const commentEditAction = buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `issue/${issueNumber}/comments/${comment.id}`,
+                        );
+                        const commentIsEditing = editingCommentIds.has(comment.id);
+                        const commentDeleteUri = buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `issue/${issueNumber}/comment/${comment.id}/delete`,
+                        );
+                        const commentVoteUri = buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `issue/${issueNumber}/comment/${comment.id}/${
+                            comment.viewerHasVoted ? "unvote" : "vote"
+                          }`,
+                        );
+                        const newIssueByCommentHref = `${prefixBasePath(
+                          props.runtimeConfig.basePath,
+                          "/user/issues/new",
+                        )}?commentId=${comment.id}`;
+
+                        return (
+                          <li
+                            className="comment"
+                            id={`comment-${comment.id}`}
+                            key={`${item.kind}-${item.id}`}
+                          >
+                            <div className="comment-avatar">
+                              <IssueCommentAvatar
+                                basePath={props.runtimeConfig.basePath}
+                                comment={comment}
+                              />
+                            </div>
+                            <div className="media-body">
+                              <div className="meta-info">
+                                <span className="comment_author">
+                                  <span className="resp-comment-avatar">
+                                    <IssueCommentAvatar
+                                      basePath={props.runtimeConfig.basePath}
+                                      comment={comment}
+                                    />
+                                  </span>
+                                  <a
+                                    data-placement="top"
+                                    data-toggle="tooltip"
+                                    href={
+                                      authorLoginId
+                                        ? prefixBasePath(
+                                            props.runtimeConfig.basePath,
+                                            `/${authorLoginId}`,
+                                          )
+                                        : "#"
+                                    }
+                                    title={comment.authorLoginId || comment.authorLabel}
+                                  >
+                                    <strong>{comment.authorLabel || comment.authorLoginId}</strong>
+                                  </a>
+                                </span>
+                                <span className="ago-date">
+                                  <a
+                                    className="ago"
+                                    href={`#comment-${comment.id}`}
+                                    title={comment.createdLabel}
+                                  >
+                                    {comment.createdLabel}
+                                  </a>
+                                  <a
+                                    className="share-link"
+                                    href={`#comment-${comment.id}`}
+                                    style={{ display: "none" }}
+                                  >
+                                    [Link]
+                                  </a>
+                                </span>
+                                <span className="act-row pull-right">
+                                  <span className="new-issue-by">
+                                    <a href={newIssueByCommentHref}>issue.menu.new.by</a>
+                                  </span>
+                                  <span className="comment-vote-row">
+                                    {comment.voterCount > 0 ? (
+                                      <span className="comment-vote-count">
+                                        {commentAgreementLabel(comment.voterCount)}
+                                      </span>
+                                    ) : null}
+                                    {comment.voters.map((voter) => (
+                                      <span
+                                        className="comment-voter"
+                                        key={voter.userId}
+                                        title={voter.userLabel}
+                                      >
+                                        {voter.avatarUrl ? (
+                                          <img
+                                            alt={`${voter.userLabel} avatar`}
+                                            src={voter.avatarUrl}
+                                          />
+                                        ) : null}
+                                        <span>{voter.userLabel || voter.loginId}</span>
+                                      </span>
+                                    ))}
+                                    {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                                      <button
+                                        aria-label={
+                                          comment.viewerHasVoted
+                                            ? "common.comment.unvote"
+                                            : "common.comment.vote"
+                                        }
+                                        className="comment-vote btn-transparent-with-fontsize-lineheight"
+                                        data-request-type="comment-vote"
+                                        data-request-uri={commentVoteUri}
+                                        onClick={() =>
+                                          void props.onCommentVoteToggle?.(
+                                            comment.id,
+                                            comment.viewerHasVoted,
+                                          )
+                                        }
+                                        title={
+                                          comment.viewerHasVoted
+                                            ? "common.comment.unvote"
+                                            : "common.comment.vote"
+                                        }
+                                        type="button"
+                                      >
+                                        <span
+                                          className={`yobicon-hearts ${
+                                            comment.viewerHasVoted
+                                              ? "vote-heart-on"
+                                              : "vote-heart-off"
+                                          }`}
+                                        />
+                                      </button>
+                                    ) : null}
+                                  </span>
+                                  <button
+                                    className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
+                                    data-comment-id={comment.id}
+                                    data-toggle="tooltip"
+                                    disabled={
+                                      translatingCommentIds.has(comment.id) ||
+                                      Boolean(translatedCommentMarkdownById[comment.id])
+                                    }
+                                    onClick={() => void translateIssueComment(comment)}
+                                    title="button.translation"
+                                    type="button"
+                                  >
+                                    <i className="yobicon-lang"></i>
+                                  </button>
+                                  {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                                    <button
+                                      className="btn-transparent-with-fontsize-lineheight ml10"
+                                      data-comment-id={comment.id}
+                                      data-toggle="comment-edit"
+                                      onClick={() =>
+                                        setEditingCommentIds((current) => {
+                                          const next = new Set(current);
+                                          next.add(comment.id);
+                                          return next;
+                                        })
+                                      }
+                                      title="common.comment.edit"
+                                      type="button"
+                                    >
+                                      <i className="yobicon-edit-2"></i>
+                                    </button>
+                                  ) : null}
+                                  {comment.viewerCanDelete && props.onCommentDelete ? (
+                                    <button
+                                      className="btn-transparent-with-fontsize-lineheight ml6"
+                                      data-request-uri={commentDeleteUri}
+                                      data-toggle="comment-delete"
+                                      onClick={() => setCommentDeleteTargetId(comment.id)}
+                                      title="common.comment.delete"
+                                      type="button"
+                                    >
+                                      <i className="yobicon-trash"></i>
+                                    </button>
+                                  ) : null}
+                                </span>
+                              </div>
+                              {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                                <div hidden={!commentIsEditing}>
+                                  <IssueCommentEditForm
+                                    action={commentEditAction}
+                                    commentId={comment.id}
+                                    csrfToken={props.csrfToken}
+                                    getIssueReferencesQueryOptions={
+                                      props.getIssueReferencesQueryOptions
+                                    }
+                                    initialContents={comment.contentsMarkdown}
+                                    onCancel={() =>
+                                      setEditingCommentIds((current) => {
+                                        const next = new Set(current);
+                                        next.delete(comment.id);
+                                        return next;
+                                      })
+                                    }
+                                    onSearchMentionUsers={props.onSearchMentionUsers}
+                                    onSubmit={props.onCommentUpdate}
+                                    runtimeConfig={props.runtimeConfig}
+                                  />
+                                </div>
+                              ) : null}
+                              <div
+                                id={`comment-body-${comment.id}`}
+                                style={commentIsEditing ? { display: "none" } : undefined}
+                              >
+                                <MarkdownRenderer
+                                  className="comment-body markdown-wrap"
+                                  basePath={props.runtimeConfig.basePath}
+                                  data-allowed-update={String(comment.viewerCanUpdate)}
+                                  data-via-email={comment.viaEmail ? "true" : undefined}
+                                  issueReferences={comment.issueReferences}
+                                  markdown={
+                                    translatedCommentMarkdownById[comment.id] ??
+                                    comment.contentsMarkdown
+                                  }
+                                  mentionReferences={comment.mentionReferences}
+                                  ownerName={detail.ownerName}
+                                  projectName={detail.projectName}
+                                  showTasklistBar
+                                />
+                              </div>
+                            </div>
+                            <div className="add-a-comment pull-right">
+                              comment.oneline.comment.placeholder
+                            </div>
+                            <div className="subcomment-media-body">
+                              <div className="child-comments">
+                                {(childCommentsByParent.get(comment.id) ?? []).map(
+                                  (childComment) => {
+                                    const childAuthorLoginId =
+                                      childComment.authorLoginId || childComment.authorLabel;
+                                    return (
+                                      <div className="one-line-comment" key={childComment.id}>
+                                        <div className="contents">
+                                          <MarkdownRenderer
+                                            basePath={props.runtimeConfig.basePath}
+                                            markdown={childComment.contentsMarkdown}
+                                            ownerName={detail.ownerName}
+                                            projectName={detail.projectName}
+                                          />
+                                          <span className="subcomment-author hide">
+                                            {" - "}
+                                            <a
+                                              className="usf-group"
+                                              data-placement="top"
+                                              data-toggle="tooltip"
+                                              href={
+                                                childAuthorLoginId
+                                                  ? prefixBasePath(
+                                                      props.runtimeConfig.basePath,
+                                                      `/${childAuthorLoginId}`,
+                                                    )
+                                                  : "#"
+                                              }
+                                              title={
+                                                childComment.authorLoginId ||
+                                                childComment.authorLabel
+                                              }
+                                            >
+                                              <strong>
+                                                {childComment.authorLabel ||
+                                                  childComment.authorLoginId}
+                                              </strong>
+                                            </a>{" "}
+                                            <a
+                                              className="ago"
+                                              href={`#comment-${childComment.id}`}
+                                              title={childComment.createdLabel}
+                                            >
+                                              {childComment.createdLabel}
+                                            </a>
+                                            {childComment.viewerCanDelete &&
+                                            props.onCommentDelete ? (
+                                              <button
+                                                className="btn-transparent deleteButtonX"
+                                                data-request-uri={buildProjectHref(
+                                                  props.runtimeConfig,
+                                                  detail.ownerName,
+                                                  detail.projectName,
+                                                  `issue/${issueNumber}/comment/${childComment.id}/delete`,
+                                                )}
+                                                data-toggle="comment-delete"
+                                                onClick={() =>
+                                                  setCommentDeleteTargetId(childComment.id)
+                                                }
+                                                title="common.comment.delete"
+                                                type="button"
+                                              >
+                                                x
+                                              </button>
+                                            ) : null}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                              {issue?.viewerCanComment && props.onCommentSubmit ? (
+                                <div className="child-comment-input-form">
+                                  <form
+                                    action={buildProjectHref(
+                                      props.runtimeConfig,
+                                      detail.ownerName,
+                                      detail.projectName,
+                                      `issue/${issueNumber}/comments`,
+                                    )}
+                                    encType="multipart/form-data"
+                                    method="post"
+                                    onSubmit={(event) => {
+                                      event.preventDefault();
+                                      const contents = (
+                                        childCommentDrafts[comment.id] ?? ""
+                                      ).trim();
+                                      if (!contents) {
+                                        return;
+                                      }
+                                      void props
+                                        .onCommentSubmit?.(contents, [], comment.id)
+                                        .then(() =>
+                                          setChildCommentDrafts((current) => ({
+                                            ...current,
+                                            [comment.id]: "",
+                                          })),
+                                        );
+                                    }}
+                                  >
+                                    <input
+                                      className="parentCommentId"
+                                      name="parentCommentId"
+                                      type="hidden"
+                                      value={comment.id}
+                                    />
+                                    <div className="oneline-comment-box">
+                                      <textarea
+                                        className="editorSeries"
+                                        name="contents"
+                                        onChange={(event) =>
+                                          setChildCommentDrafts((current) => ({
+                                            ...current,
+                                            [comment.id]: event.target.value,
+                                          }))
+                                        }
+                                        placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
+                                        rows={1}
+                                        value={childCommentDrafts[comment.id] ?? ""}
+                                        {...({
+                                          markdown: "true",
+                                        } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+                                      />
+                                      <button
+                                        className="ybtn ybtn-success"
+                                        data-legacy-label="OK"
+                                        type="submit"
+                                      >
+                                        comment.save
+                                      </button>
+                                    </div>
+                                    <div className="notification-receiver">
+                                      <span className="notification-receiver-title">
+                                        notification.receiver.list.title
+                                      </span>
+                                      <span className="notification-receiver-list"></span>
+                                    </div>
+                                  </form>
+                                </div>
+                              ) : null}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+                {issue?.viewerCanComment && props.onCommentSubmit ? (
+                  <IssueCommentForm
+                    action={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `issue/${issue.issueNumber}/comments`,
+                    )}
+                    csrfToken={props.csrfToken}
+                    getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                    onSearchMentionUsers={props.onSearchMentionUsers}
+                    onSubmit={props.onCommentSubmit}
+                    runtimeConfig={props.runtimeConfig}
+                  />
+                ) : issue ? (
+                  <DisabledIssueCommentBox />
+                ) : null}
+              </section>
             </div>
-            <dl className="issue-info">
-              <dt>issue.milestone</dt>
-              <dd>{issue?.milestoneTitle || "issue.noMilestone"}</dd>
-            </dl>
-            <div className="watcher-list"></div>
-            {issue ? <IssueSubtaskList issue={issue} runtimeConfig={props.runtimeConfig} /> : null}
-            <IssueDetailSelectedLabels issue={issue} runtimeConfig={props.runtimeConfig} />
-            {issue?.viewerCanUpdate && props.onAssign ? (
-              <IssueAssignForm
-                initialAssignee={issue.assigneeLoginId}
-                onSearchAssignableUsers={props.onSearchAssignableUsers}
-                onSubmit={props.onAssign}
-              />
-            ) : null}
-            {issue ? (
-              <IssueSharerPanel
-                issue={issue}
-                onSearchSharableUsers={props.onSearchSharableUsers}
-                onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
-                onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : null}
-          </aside>
-        </div>
-        {issue?.viewerCanDelete && onDeleteIssue ? (
-          <div
-            aria-hidden={deleteConfirmOpen ? "false" : "true"}
-            className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
-            id="deleteConfirm"
-            style={deleteConfirmOpen ? { display: "block" } : undefined}
-          >
-            <div className="modal-header">
-              <button
-                aria-label="button.close"
-                className="close"
-                onClick={() => setDeleteConfirmOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>issue.delete</h3>
-            </div>
-            <div className="modal-body">
-              <p>post.delete.confirm</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-danger"
-                data-request-method="delete"
-                onClick={() => void onDeleteIssue()}
-                type="button"
-              >
-                button.yes
-              </button>
-              <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
-                button.no
-              </button>
-            </div>
+            <aside className="span3 right-menu">
+              <div className="assignee-info">
+                {issueAssigneeLoginId ? (
+                  <a className="usf-group" href={issueAssigneeHref}>
+                    <span className="avatar-wrap smaller">
+                      {issue?.assigneeAvatarUrl ? (
+                        <img
+                          alt={issueAssigneeLabel}
+                          height={20}
+                          src={issue.assigneeAvatarUrl}
+                          width={20}
+                        />
+                      ) : null}
+                    </span>
+                    <strong className="name">{issueAssigneeLabel}</strong>
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {issueAssigneeLoginId}
+                    </span>
+                  </a>
+                ) : (
+                  <div>{issueAssigneeLabel}</div>
+                )}
+              </div>
+              <dl className="issue-info">
+                <dt>issue.milestone</dt>
+                <dd>{issue?.milestoneTitle || "issue.noMilestone"}</dd>
+              </dl>
+              <div className="watcher-list"></div>
+              {issue ? (
+                <IssueSubtaskList issue={issue} runtimeConfig={props.runtimeConfig} />
+              ) : null}
+              <IssueDetailSelectedLabels issue={issue} runtimeConfig={props.runtimeConfig} />
+              {issue?.viewerCanUpdate && props.onAssign ? (
+                <IssueAssignForm
+                  initialAssignee={issue.assigneeLoginId}
+                  onSearchAssignableUsers={props.onSearchAssignableUsers}
+                  onSubmit={props.onAssign}
+                />
+              ) : null}
+              {issue ? (
+                <IssueSharerPanel
+                  issue={issue}
+                  onSearchSharableUsers={props.onSearchSharableUsers}
+                  onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
+                  onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+            </aside>
           </div>
-        ) : null}
-        {issue ? (
-          <div
-            aria-hidden={commentDeleteTargetId === null ? "true" : "false"}
-            className={`modal hide fade${commentDeleteTargetId !== null ? " in" : ""}`}
-            id="comment-delete-modal"
-            style={commentDeleteTargetId !== null ? { display: "block" } : undefined}
-          >
-            <div className="modal-header">
-              <button
-                aria-label="button.close"
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setCommentDeleteTargetId(null)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>common.comment.delete</h3>
+          {issue?.viewerCanDelete && onDeleteIssue ? (
+            <div
+              aria-hidden={deleteConfirmOpen ? "false" : "true"}
+              className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+              id="deleteConfirm"
+              style={deleteConfirmOpen ? { display: "block" } : undefined}
+            >
+              <div className="modal-header">
+                <button
+                  aria-label="button.close"
+                  className="close"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  type="button"
+                >
+                  ×
+                </button>
+                <h3>issue.delete</h3>
+              </div>
+              <div className="modal-body">
+                <p>post.delete.confirm</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="ybtn ybtn-danger"
+                  data-request-method="delete"
+                  onClick={() => void onDeleteIssue()}
+                  type="button"
+                >
+                  button.yes
+                </button>
+                <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
+                  button.no
+                </button>
+              </div>
             </div>
-            <div className="modal-body">
-              <p>common.comment.delete.confirm</p>
+          ) : null}
+          {issue ? (
+            <div
+              aria-hidden={commentDeleteTargetId === null ? "true" : "false"}
+              className={`modal hide fade${commentDeleteTargetId !== null ? " in" : ""}`}
+              id="comment-delete-modal"
+              style={commentDeleteTargetId !== null ? { display: "block" } : undefined}
+            >
+              <div className="modal-header">
+                <button
+                  aria-label="button.close"
+                  className="close"
+                  data-dismiss="modal"
+                  onClick={() => setCommentDeleteTargetId(null)}
+                  type="button"
+                >
+                  ×
+                </button>
+                <h3>common.comment.delete</h3>
+              </div>
+              <div className="modal-body">
+                <p>common.comment.delete.confirm</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="ybtn ybtn-danger"
+                  data-request-method="delete"
+                  data-request-uri={commentDeleteRequestUri}
+                  id="comment-delete-confirm"
+                  onClick={() => {
+                    if (commentDeleteTargetId === null || !props.onCommentDelete) {
+                      return;
+                    }
+                    const targetId = commentDeleteTargetId;
+                    setCommentDeleteTargetId(null);
+                    void props.onCommentDelete(targetId);
+                  }}
+                  type="button"
+                >
+                  button.yes
+                </button>
+                <button
+                  className="ybtn"
+                  data-dismiss="modal"
+                  onClick={() => setCommentDeleteTargetId(null)}
+                  type="button"
+                >
+                  button.no
+                </button>
+              </div>
             </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-danger"
-                data-request-method="delete"
-                data-request-uri={commentDeleteRequestUri}
-                id="comment-delete-confirm"
-                onClick={() => {
-                  if (commentDeleteTargetId === null || !props.onCommentDelete) {
-                    return;
-                  }
-                  const targetId = commentDeleteTargetId;
-                  setCommentDeleteTargetId(null);
-                  void props.onCommentDelete(targetId);
-                }}
-                type="button"
-              >
-                button.yes
-              </button>
-              <button
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={() => setCommentDeleteTargetId(null)}
-                type="button"
-              >
-                button.no
-              </button>
-            </div>
-          </div>
-        ) : null}
+          ) : null}
         </div>
       </div>
     </main>
@@ -2283,15 +2423,44 @@ export function UserIssueListPage(props: {
   const totalPageCount = Math.ceil((issueList?.totalCount ?? 0) / (issueList?.pageSize || 1));
   const viewerUserId = issueList?.viewerUserId ? String(issueList.viewerUserId) : "";
   const filters = [
-    { className: "assigned-to-me", icon: "yobicon-user", label: "issue.list.assignedToMe", value: "assigned" },
-    { className: "authored-by-me", icon: "yobicon-pencil", label: "issue.list.authoredByMe", value: "authored" },
-    { className: "commented-by-me", icon: "yobicon-comments", label: "issue.list.commentedByMe", value: "commented" },
-    { className: "mentioned-of-me", icon: "yobicon-at", label: "issue.list.mentionedOfMe", value: "mentioned" },
-    { className: "shared-with-me", icon: "yobicon-share", label: "issue.list.sharedWithMe", value: "shared" },
-    { className: "favorite-issue", icon: "yobicon-favorite", label: "issue.list.favorite", value: "favorite" },
+    {
+      className: "assigned-to-me",
+      icon: "yobicon-user",
+      label: "issue.list.assignedToMe",
+      value: "assigned",
+    },
+    {
+      className: "authored-by-me",
+      icon: "yobicon-pencil",
+      label: "issue.list.authoredByMe",
+      value: "authored",
+    },
+    {
+      className: "commented-by-me",
+      icon: "yobicon-comments",
+      label: "issue.list.commentedByMe",
+      value: "commented",
+    },
+    {
+      className: "mentioned-of-me",
+      icon: "yobicon-at",
+      label: "issue.list.mentionedOfMe",
+      value: "mentioned",
+    },
+    {
+      className: "shared-with-me",
+      icon: "yobicon-share",
+      label: "issue.list.sharedWithMe",
+      value: "shared",
+    },
+    {
+      className: "favorite-issue",
+      icon: "yobicon-favorite",
+      label: "issue.list.favorite",
+      value: "favorite",
+    },
   ];
-  const filterHref = (filter: string) =>
-    `${action}?filter=${filter}&state=${state}&pageNum=1`;
+  const filterHref = (filter: string) => `${action}?filter=${filter}&state=${state}&pageNum=1`;
   const sideFilterCountFor = (filter: string) => {
     if (!issueList || query.query.trim()) {
       return null;
@@ -2321,265 +2490,254 @@ export function UserIssueListPage(props: {
     <main className="app-shell user-issue-list-page">
       <div className="page-wrap-outer">
         <div className="page-wrap">
-        <UserIssueMySeriesMenuTabs
-          basePath={props.runtimeConfig.basePath}
-          canSetDefaultLoginPage={props.canSetDefaultLoginPage ?? false}
-          onSetDefaultLoginPage={props.onSetDefaultLoginPage}
-        />
-        <div className="row-fluid issue-list-wrap" data-pjax-container="">
-        <aside className="left-menu span2 span-hard-wrap">
-          <div className="inner advanced">
-            <ul className="lst-stacked unstyled">
-              {filters.map((filter) => (
-                <li
-                  className={query.filter === filter.value ? "active" : undefined}
-                  key={filter.value}
-                >
-                  <a
-                    data-assignee-id={filter.value === "assigned" ? viewerUserId : ""}
-                    data-author-id={filter.value === "authored" ? viewerUserId : ""}
-                    data-commenter-id={filter.value === "commented" ? viewerUserId : ""}
-                    data-favorite-id={filter.value === "favorite" ? viewerUserId : ""}
-                    data-mention-id={filter.value === "mentioned" ? viewerUserId : ""}
-                    data-milestone-id=""
-                    data-pjax-filter=""
-                    data-sharer-id={filter.value === "shared" ? viewerUserId : ""}
-                    href={filterHref(filter.value)}
-                  >
-                    <span className={filter.className}>
-                      <i className={filter.icon} /> {filter.label}
-                    </span>
-                    {sideFilterCountFor(filter.value) !== null ? (
-                      <span>{` (${sideFilterCountFor(filter.value)})`}</span>
-                    ) : null}
+          <UserIssueMySeriesMenuTabs
+            basePath={props.runtimeConfig.basePath}
+            canSetDefaultLoginPage={props.canSetDefaultLoginPage ?? false}
+            onSetDefaultLoginPage={props.onSetDefaultLoginPage}
+          />
+          <div className="row-fluid issue-list-wrap" data-pjax-container="">
+            <aside className="left-menu span2 span-hard-wrap">
+              <div className="inner advanced">
+                <ul className="lst-stacked unstyled">
+                  {filters.map((filter) => (
+                    <li
+                      className={query.filter === filter.value ? "active" : undefined}
+                      key={filter.value}
+                    >
+                      <a
+                        data-assignee-id={filter.value === "assigned" ? viewerUserId : ""}
+                        data-author-id={filter.value === "authored" ? viewerUserId : ""}
+                        data-commenter-id={filter.value === "commented" ? viewerUserId : ""}
+                        data-favorite-id={filter.value === "favorite" ? viewerUserId : ""}
+                        data-mention-id={filter.value === "mentioned" ? viewerUserId : ""}
+                        data-milestone-id=""
+                        data-pjax-filter=""
+                        data-sharer-id={filter.value === "shared" ? viewerUserId : ""}
+                        href={filterHref(filter.value)}
+                      >
+                        <span className={filter.className}>
+                          <i className={filter.icon} /> {filter.label}
+                        </span>
+                        {sideFilterCountFor(filter.value) !== null ? (
+                          <span>{` (${sideFilterCountFor(filter.value)})`}</span>
+                        ) : null}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <form action={action} id="search" method="get" name="search">
+                  <input name="filter" type="hidden" value={query.filter} />
+                  <input name="orderBy" type="hidden" value={query.orderBy} />
+                  <input name="orderDir" type="hidden" value={query.orderDir} />
+                  <input name="state" type="hidden" value={state} />
+                  <input
+                    data-search="authorId"
+                    name="authorId"
+                    type="hidden"
+                    value={legacyFilterUserId("authored")}
+                  />
+                  <input
+                    data-search="commenterId"
+                    name="commenterId"
+                    type="hidden"
+                    value={legacyFilterUserId("commented")}
+                  />
+                  <input
+                    data-search="assigneeId"
+                    name="assigneeId"
+                    type="hidden"
+                    value={legacyFilterUserId("assigned")}
+                  />
+                  <input
+                    data-search="mentionId"
+                    name="mentionId"
+                    type="hidden"
+                    value={legacyFilterUserId("mentioned")}
+                  />
+                  <input
+                    data-search="sharerId"
+                    name="sharerId"
+                    type="hidden"
+                    value={legacyFilterUserId("shared")}
+                  />
+                  <input
+                    data-search="favoriteId"
+                    name="favoriteId"
+                    type="hidden"
+                    value={legacyFilterUserId("favorite")}
+                  />
+                  <div className="search myissues-search-input">
+                    <div className="search-bar">
+                      <input
+                        className="textbox full"
+                        defaultValue={query.query}
+                        name="query"
+                        placeholder="issue.search"
+                        type="text"
+                      />
+                      <button className="search-btn" type="submit">
+                        <i className="yobicon-search" />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </aside>
+            <section className="span10 span-hard-wrap" id="span10">
+              <ul className="nav nav-tabs nm">
+                <li className={state === "open" ? "active" : undefined} data-pjax="">
+                  <a data-state="open" href={stateHref("open")}>
+                    issue.state.open{" "}
+                    <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
                   </a>
                 </li>
-              ))}
-            </ul>
-            <form action={action} id="search" method="get" name="search">
-              <input name="filter" type="hidden" value={query.filter} />
-              <input name="orderBy" type="hidden" value={query.orderBy} />
-              <input name="orderDir" type="hidden" value={query.orderDir} />
-              <input name="state" type="hidden" value={state} />
-              <input
-                data-search="authorId"
-                name="authorId"
-                type="hidden"
-                value={legacyFilterUserId("authored")}
-              />
-              <input
-                data-search="commenterId"
-                name="commenterId"
-                type="hidden"
-                value={legacyFilterUserId("commented")}
-              />
-              <input
-                data-search="assigneeId"
-                name="assigneeId"
-                type="hidden"
-                value={legacyFilterUserId("assigned")}
-              />
-              <input
-                data-search="mentionId"
-                name="mentionId"
-                type="hidden"
-                value={legacyFilterUserId("mentioned")}
-              />
-              <input
-                data-search="sharerId"
-                name="sharerId"
-                type="hidden"
-                value={legacyFilterUserId("shared")}
-              />
-              <input
-                data-search="favoriteId"
-                name="favoriteId"
-                type="hidden"
-                value={legacyFilterUserId("favorite")}
-              />
-              <div className="search myissues-search-input">
-                <div className="search-bar">
-                  <input
-                    className="textbox full"
-                    defaultValue={query.query}
-                    name="query"
-                    placeholder="issue.search"
-                    type="text"
-                  />
-                  <button className="search-btn" type="submit">
-                    <i className="yobicon-search" />
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </aside>
-        <section className="span10 span-hard-wrap" id="span10">
-          <ul className="nav nav-tabs nm">
-            <li className={state === "open" ? "active" : undefined} data-pjax="">
-              <a data-state="open" href={stateHref("open")}>
-                issue.state.open <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
-              </a>
-            </li>
-            <li className={state === "closed" ? "active" : undefined} data-pjax="">
-              <a data-state="closed" href={stateHref("closed")}>
-                issue.state.closed{" "}
-                <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
-              </a>
-            </li>
-            <li>
-              <LegacyTwoColumnModeCheckboxArea />
-            </li>
-            <li className="show-subtasks-li">
-              <LegacyShowSubtasksCheckbox />
-            </li>
-          </ul>
-          {issueItems.length > 0 ? (
-            <>
-              <div className="filter-wrap small-heights">
-                {issueItems.length > 1 ? (
-                  <div className="filters pull-right">
-                    {[
-                      ["dueDate", "common.order.dueDate"],
-                      ["updatedDate", "common.order.updatedDate"],
-                      ["createdDate", "common.order.date"],
-                      ["numOfComments", "common.order.comments"],
-                    ].map(([orderBy, label]) => (
-                      <a
-                        className={query.orderBy === orderBy ? "filter active" : "filter"}
-                        data-order-by={orderBy}
-                        data-order-dir={orderDirFor(orderBy)}
-                        href={orderHref(orderBy)}
-                        key={orderBy}
-                      >
-                        <i
-                          className={`ico btn-gray-arrow ${
-                            query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
-                          }`}
-                        />
-                        {label}
-                      </a>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              <ul className="post-list-wrap my-issues">
-                {issueItems.map((item) => {
-                  const issueHref = buildProjectHref(
-                    props.runtimeConfig,
-                    item.ownerName,
-                    item.projectName,
-                    `issue/${item.issueNumber}`,
-                  );
-                  const projectHref = buildProjectHref(
-                    props.runtimeConfig,
-                    item.ownerName,
-                    item.projectName,
-                  );
-                  const legacyIssueId = item.id && item.id > 0 ? item.id : item.issueNumber;
-                  const weight = item.weight ?? 0;
-                  return (
-                    <li
-                      className="post-item title"
-                      data-href={issueHref}
-                      id={`issue-item-${legacyIssueId}`}
-                      key={`${item.ownerName}/${item.projectName}/${item.issueNumber}`}
-                    >
-                      <div className="span12 span-hard-wrap">
-                        <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-                          <span className="infos-item project-name">
-                            <a
-                              className="title project"
-                              data-placement="bottom"
-                              data-toggle="tooltip"
-                              href={projectHref}
-                              title="project.name"
-                            >
-                              {item.projectName}
-                            </a>
-                          </span>
-                          <span className="infos-item post-id">#{item.issueNumber}</span>
-                        </div>
-                        <div className="title-wrap span6">
-                          <span className="title-cell">
-                            {weight > 0 ? (
-                              <span
-                                className="weight-up-arrow"
-                                data-placement="right"
-                                data-toggle="tooltip"
-                                title={`issue.weight ${weight}`}
-                              >
-                                <i className="yobicon-angle-circled-up" />
-                              </span>
-                            ) : null}
-                            {weight < 0 ? (
-                              <span
-                                className="weight-down-arrow"
-                                data-placement="right"
-                                data-toggle="tooltip"
-                                title={`issue.weight ${weight}`}
-                              >
-                                <i className="yobicon-angle-circled-down" />
-                              </span>
-                            ) : null}
-                            <a className="title" href={issueHref}>
-                              {item.title}
-                            </a>
-                            {item.commentCount > 0 || item.voterCount > 0 ? (
-                              <span className="item-count-groups">
-                                {item.commentCount > 0 ? (
-                                  <a className="num-comments" href={`${issueHref}#comments`}>
-                                    {item.commentCount}
-                                  </a>
-                                ) : null}
-                                {item.voterCount > 0 ? (
-                                  <a className="num-hearts" href={`${issueHref}#vote`}>
-                                    {item.voterCount}
-                                  </a>
-                                ) : null}
-                              </span>
-                            ) : null}
-                            <span className="for-subtask-progressbar">
-                              <IssueListSubtaskSummary
-                                item={item}
-                                runtimeConfig={props.runtimeConfig}
-                              />
-                            </span>
-                            {item.labels.map((label) => (
-                              <a
-                                className="label issue-label list-label twoColumeModeTarget"
-                                data-label-id={label.id}
-                                href={`${buildProjectHref(
-                                  props.runtimeConfig,
-                                  item.ownerName,
-                                  item.projectName,
-                                  "issues?state=open",
-                                )}&labelIds=${label.id}`}
-                                key={label.id}
-                                style={{ background: label.color || "#ddd" }}
-                              >
-                                {label.name}
-                              </a>
-                            ))}
-                            <IssueListChildRows item={item} runtimeConfig={props.runtimeConfig} />
-                          </span>
-                        </div>
-                        <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-                          {query.filter === "authored" ? null : (
-                            <UserIssueAuthorCell
-                              authorLabel={item.authorLabel}
-                              authorLoginId={item.authorLoginId}
-                              runtimeConfig={props.runtimeConfig}
+                <li className={state === "closed" ? "active" : undefined} data-pjax="">
+                  <a data-state="closed" href={stateHref("closed")}>
+                    issue.state.closed{" "}
+                    <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
+                  </a>
+                </li>
+                <li>
+                  <LegacyTwoColumnModeCheckboxArea />
+                </li>
+                <li className="show-subtasks-li">
+                  <LegacyShowSubtasksCheckbox />
+                </li>
+              </ul>
+              {issueItems.length > 0 ? (
+                <>
+                  <div className="filter-wrap small-heights">
+                    {issueItems.length > 1 ? (
+                      <div className="filters pull-right">
+                        {[
+                          ["dueDate", "common.order.dueDate"],
+                          ["updatedDate", "common.order.updatedDate"],
+                          ["createdDate", "common.order.date"],
+                          ["numOfComments", "common.order.comments"],
+                        ].map(([orderBy, label]) => (
+                          <a
+                            className={query.orderBy === orderBy ? "filter active" : "filter"}
+                            data-order-by={orderBy}
+                            data-order-dir={orderDirFor(orderBy)}
+                            href={orderHref(orderBy)}
+                            key={orderBy}
+                          >
+                            <i
+                              className={`ico btn-gray-arrow ${
+                                query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
+                              }`}
                             />
-                          )}
-                        </div>
-                        <div
-                          className={`infos ${
-                            query.filter !== "assigned" && item.assigneeLabel ? "span2" : "span3"
-                          } meta`}
+                            {label}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <ul className="post-list-wrap my-issues">
+                    {issueItems.map((item) => {
+                      const issueHref = buildProjectHref(
+                        props.runtimeConfig,
+                        item.ownerName,
+                        item.projectName,
+                        `issue/${item.issueNumber}`,
+                      );
+                      const projectHref = buildProjectHref(
+                        props.runtimeConfig,
+                        item.ownerName,
+                        item.projectName,
+                      );
+                      const legacyIssueId = item.id && item.id > 0 ? item.id : item.issueNumber;
+                      const weight = item.weight ?? 0;
+                      return (
+                        <li
+                          className="post-item title"
+                          data-href={issueHref}
+                          id={`issue-item-${legacyIssueId}`}
+                          key={`${item.ownerName}/${item.projectName}/${item.issueNumber}`}
                         >
-                          <span className="meta-cell">
-                            <span className="hide show-in-mobile">
+                          <div className="span12 span-hard-wrap">
+                            <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
+                              <span className="infos-item project-name">
+                                <a
+                                  className="title project"
+                                  data-placement="bottom"
+                                  data-toggle="tooltip"
+                                  href={projectHref}
+                                  title="project.name"
+                                >
+                                  {item.projectName}
+                                </a>
+                              </span>
+                              <span className="infos-item post-id">#{item.issueNumber}</span>
+                            </div>
+                            <div className="title-wrap span6">
+                              <span className="title-cell">
+                                {weight > 0 ? (
+                                  <span
+                                    className="weight-up-arrow"
+                                    data-placement="right"
+                                    data-toggle="tooltip"
+                                    title={`issue.weight ${weight}`}
+                                  >
+                                    <i className="yobicon-angle-circled-up" />
+                                  </span>
+                                ) : null}
+                                {weight < 0 ? (
+                                  <span
+                                    className="weight-down-arrow"
+                                    data-placement="right"
+                                    data-toggle="tooltip"
+                                    title={`issue.weight ${weight}`}
+                                  >
+                                    <i className="yobicon-angle-circled-down" />
+                                  </span>
+                                ) : null}
+                                <a className="title" href={issueHref}>
+                                  {item.title}
+                                </a>
+                                {item.commentCount > 0 || item.voterCount > 0 ? (
+                                  <span className="item-count-groups">
+                                    {item.commentCount > 0 ? (
+                                      <a className="num-comments" href={`${issueHref}#comments`}>
+                                        {item.commentCount}
+                                      </a>
+                                    ) : null}
+                                    {item.voterCount > 0 ? (
+                                      <a className="num-hearts" href={`${issueHref}#vote`}>
+                                        {item.voterCount}
+                                      </a>
+                                    ) : null}
+                                  </span>
+                                ) : null}
+                                <span className="for-subtask-progressbar">
+                                  <IssueListSubtaskSummary
+                                    item={item}
+                                    runtimeConfig={props.runtimeConfig}
+                                  />
+                                </span>
+                                {item.labels.map((label) => (
+                                  <a
+                                    className="label issue-label list-label twoColumeModeTarget"
+                                    data-label-id={label.id}
+                                    href={`${buildProjectHref(
+                                      props.runtimeConfig,
+                                      item.ownerName,
+                                      item.projectName,
+                                      "issues?state=open",
+                                    )}&labelIds=${label.id}`}
+                                    key={label.id}
+                                    style={{ background: label.color || "#ddd" }}
+                                  >
+                                    {label.name}
+                                  </a>
+                                ))}
+                                <IssueListChildRows
+                                  item={item}
+                                  runtimeConfig={props.runtimeConfig}
+                                />
+                              </span>
+                            </div>
+                            <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
                               {query.filter === "authored" ? null : (
                                 <UserIssueAuthorCell
                                   authorLabel={item.authorLabel}
@@ -2587,71 +2745,91 @@ export function UserIssueListPage(props: {
                                   runtimeConfig={props.runtimeConfig}
                                 />
                               )}
-                            </span>
-                            <span className="infos-item">{item.updatedLabel}</span>
-                            {item.milestoneTitle ? (
-                              <span className="mileston-tag">{item.milestoneTitle}</span>
-                            ) : null}
-                            {item.dueDateLabel ? (
-                              <span
-                                className={`pull-right${
-                                  (item.dueDateOverdue ?? false) ? " overdue" : ""
-                                }`}
-                                data-placement="top"
-                                data-toggle="tooltip"
-                                title={`Due date: ${item.dueDateLabel}`}
-                              >
-                                <i className="yobicon-clock2" />
-                                {item.state === "open" && (item.dueDateOverdue ?? false)
-                                  ? "issue.dueDate.overdue"
-                                  : item.dueDateLabel}
-                              </span>
-                            ) : null}
-                          </span>
-                        </div>
-                        {query.filter !== "assigned" && item.assigneeLabel ? (
-                          <div className="span1 hide-in-mobile">
-                            <div className="mt5 pull-right hide-in-mobile">
-                              <a
-                                className="avatar-wrap assinee"
-                                data-placement="bottom"
-                                data-toggle="tooltip"
-                                href="#"
-                                title={`issue.assignee: ${item.assigneeLabel}`}
-                              >
-                                {item.assigneeAvatarUrl ? (
-                                  <img
-                                    alt={item.assigneeLabel}
-                                    height={32}
-                                    src={item.assigneeAvatarUrl}
-                                    width={32}
-                                  />
-                                ) : (
-                                  <span>{item.assigneeLabel.slice(0, 1).toUpperCase()}</span>
-                                )}
-                              </a>
                             </div>
+                            <div
+                              className={`infos ${
+                                query.filter !== "assigned" && item.assigneeLabel
+                                  ? "span2"
+                                  : "span3"
+                              } meta`}
+                            >
+                              <span className="meta-cell">
+                                <span className="hide show-in-mobile">
+                                  {query.filter === "authored" ? null : (
+                                    <UserIssueAuthorCell
+                                      authorLabel={item.authorLabel}
+                                      authorLoginId={item.authorLoginId}
+                                      runtimeConfig={props.runtimeConfig}
+                                    />
+                                  )}
+                                </span>
+                                <span className="infos-item">{item.updatedLabel}</span>
+                                {item.milestoneTitle ? (
+                                  <span className="mileston-tag">{item.milestoneTitle}</span>
+                                ) : null}
+                                {item.dueDateLabel ? (
+                                  <span
+                                    className={`pull-right${
+                                      (item.dueDateOverdue ?? false) ? " overdue" : ""
+                                    }`}
+                                    data-placement="top"
+                                    data-toggle="tooltip"
+                                    title={`Due date: ${item.dueDateLabel}`}
+                                  >
+                                    <i className="yobicon-clock2" />
+                                    {item.state === "open" && (item.dueDateOverdue ?? false)
+                                      ? "issue.dueDate.overdue"
+                                      : item.dueDateLabel}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </div>
+                            {query.filter !== "assigned" && item.assigneeLabel ? (
+                              <div className="span1 hide-in-mobile">
+                                <div className="mt5 pull-right hide-in-mobile">
+                                  <a
+                                    className="avatar-wrap assinee"
+                                    data-placement="bottom"
+                                    data-toggle="tooltip"
+                                    href={issueHref}
+                                    title={`issue.assignee: ${item.assigneeLabel}`}
+                                  >
+                                    {item.assigneeAvatarUrl ? (
+                                      <img
+                                        alt={item.assigneeLabel}
+                                        height={32}
+                                        src={item.assigneeAvatarUrl}
+                                        width={32}
+                                      />
+                                    ) : (
+                                      <span>{item.assigneeLabel.slice(0, 1).toUpperCase()}</span>
+                                    )}
+                                  </a>
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div id="pagination" data-total={totalPageCount}>
-                <a className="pageNum active" href={`${action}?pageNum=${issueList?.pageNum ?? 1}`}>
-                  {issueList?.pageNum ?? 1}
-                </a>
-              </div>
-            </>
-          ) : (
-            <div className="error-wrap">
-              <i className="ico ico-err1" />
-              <p>issue.is.empty</p>
-            </div>
-          )}
-        </section>
-        </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div id="pagination" data-total={totalPageCount}>
+                    <a
+                      className="pageNum active"
+                      href={`${action}?pageNum=${issueList?.pageNum ?? 1}`}
+                    >
+                      {issueList?.pageNum ?? 1}
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <div className="error-wrap">
+                  <i className="ico ico-err1" />
+                  <p>issue.is.empty</p>
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
     </main>
@@ -2881,7 +3059,7 @@ export function IssueAssignableUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="assignee-autocomplete-status">Searching...</p>;
+    return <p className="assignee-autocomplete-status">Searching…</p>;
   }
   if (props.state.status === "error") {
     return null;
@@ -2908,7 +3086,7 @@ export function IssueAssignableUserSuggestions(props: {
         ))}
       </ul>
       {props.state.truncated ? (
-        <p className="assignee-autocomplete-status">Loading more results...</p>
+        <p className="assignee-autocomplete-status">Loading more results…</p>
       ) : null}
     </div>
   );
@@ -3535,7 +3713,11 @@ function IssueCommentForm(props: {
             <li>
               <div className="editor-clear-temporary">
                 <div className="editor-clear-temporary-button">
-                  <button className="ybtn ybtn-small ybtn-warning" id="button-clear-temporary" type="button">
+                  <button
+                    className="ybtn ybtn-small ybtn-warning"
+                    id="button-clear-temporary"
+                    type="button"
+                  >
                     button.clear.temporary
                   </button>
                 </div>
@@ -3601,7 +3783,11 @@ function IssueCommentForm(props: {
 
 function DisabledIssueCommentBox() {
   return (
-    <div className="write-comment-box mt20" title="error.auth.unauthorized.comment" data-login="required">
+    <div
+      className="write-comment-box mt20"
+      title="error.auth.unauthorized.comment"
+      data-login="required"
+    >
       <div className="write-comment-wrap">
         <div className="textarea-box">
           <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
@@ -3745,7 +3931,7 @@ export function ProjectIssueFormPage(props: {
     props.initialIssue?.assigneeLoginId ?? "",
   );
   const [dueDate, setDueDate] = React.useState(props.initialIssue?.dueDateLabel ?? "");
-  const [labelIds, setLabelIds] = React.useState<number[]>(
+  const [labelIds, setLabelIds] = React.useState<number[]>(() =>
     (props.initialIssue?.labels ?? []).map((label) => label.id),
   );
   const [milestoneId, setMilestoneId] = React.useState(props.initialIssue?.milestoneId ?? 0);
@@ -3798,7 +3984,12 @@ export function ProjectIssueFormPage(props: {
           detail.projectName,
           `issue/${props.initialIssue.issueNumber}/edit`,
         )
-      : buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, "issues/latest");
+      : buildProjectHref(
+          props.runtimeConfig,
+          detail.ownerName,
+          detail.projectName,
+          "issues/latest",
+        );
 
   const submitIssueForm = (intent: "save" | "draft" | "publish") => {
     const input = buildProjectIssueFormSubmitInput({
@@ -3827,166 +4018,192 @@ export function ProjectIssueFormPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
-          <form
-            action={action}
-            encType="multipart/form-data"
-            id="issue-form"
-            method="post"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitIssueForm("save");
-            }}
-          >
-            {props.csrfToken ? (
-              <input name="csrfToken" type="hidden" value={props.csrfToken} />
-            ) : null}
-            {props.mode === "edit" && props.initialIssue ? (
-              <>
-                <input name="authorId" type="hidden" value={props.initialIssue.authorId || ""} />
-                <input id="isPublish" name="isPublish" type="hidden" value="false" />
-              </>
-            ) : null}
-            <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
-            <input id="isDraft" name="isDraft" type="hidden" value="false" />
-            <div className="row-fluid">
-              <div className="span12">
-                <dl>
-                  {props.mode === "edit" && props.initialIssue ? (
-                    <dt>
-                      {props.initialIssue.isDraft ? (
-                        <span className="draft">issue.state.draft</span>
-                      ) : (
-                        <label htmlFor="title">
-                          <strong className="secondary-txt">#{props.initialIssue.issueNumber}</strong>
-                        </label>
-                      )}
-                    </dt>
-                  ) : null}
-                  <dd>
-                    <div className="span12">
-                      <div className="span11">
-                        <input
-                          autoComplete="off"
-                          className="text title"
-                          id="title"
-                          maxLength={250}
-                          name="title"
-                          onChange={(event) => setTitle(event.currentTarget.value)}
-                          placeholder="title"
-                          tabIndex={1}
-                          title={props.mode === "create" ? "title.help.key" : undefined}
-                          type="text"
-                          value={title}
-                        />
-                      </div>
-                      <div className="span1 subtask-message">issue.option</div>
-                    </div>
-                    <div className={`subtask-wrap${parentIssueOptions.length > 0 || parentIssueId > 0 ? " show" : ""}`}>
-                      <div className="span3">
-                        <select
-                          data-container-css-class="fullsize"
-                          data-format="projects"
-                          data-placeholder="organization.choose.projects"
-                          data-toggle="select2"
-                          disabled={parentIssueOptions.length === 0}
-                          id="targetProjectId"
-                          name="targetProjectId"
-                        >
-                          <option value="">{detail.projectName}</option>
-                        </select>
-                      </div>
-                      <div className="span6">
-                        <select
-                          data-container-css-class="fullsize"
-                          data-format="issues"
-                          data-placeholder="organization.choose.projects"
-                          data-toggle="select2"
-                          id="parentId"
-                          name="parentIssueId"
-                          onChange={(event) => setParentIssueId(Number(event.currentTarget.value))}
-                          value={parentIssueId}
-                        >
-                          <option value="">issue.subtask.select</option>
-                          {parentIssueOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              #{option.issueNumber}. {option.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </dd>
-                </dl>
-              </div>
+          <div className="content-wrap frm-wrap">
+            <form
+              action={action}
+              encType="multipart/form-data"
+              id="issue-form"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitIssueForm("save");
+              }}
+            >
+              {props.csrfToken ? (
+                <input name="csrfToken" type="hidden" value={props.csrfToken} />
+              ) : null}
+              {props.mode === "edit" && props.initialIssue ? (
+                <>
+                  <input name="authorId" type="hidden" value={props.initialIssue.authorId || ""} />
+                  <input id="isPublish" name="isPublish" type="hidden" value="false" />
+                </>
+              ) : null}
+              <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
+              <input id="isDraft" name="isDraft" type="hidden" value="false" />
               <div className="row-fluid">
-                <div className="span9 span-left-pane">
+                <div className="span12">
                   <dl>
-                    <dd style={{ position: "relative" }}>
-                      <LegacyMarkdownEditorShell
-                        editId="edit-content-body"
-                        editorMode="content-body"
-                        previewId="preview-content-body"
+                    {props.mode === "edit" && props.initialIssue ? (
+                      <dt>
+                        {props.initialIssue.isDraft ? (
+                          <span className="draft">issue.state.draft</span>
+                        ) : (
+                          <label htmlFor="title">
+                            <strong className="secondary-txt">
+                              #{props.initialIssue.issueNumber}
+                            </strong>
+                          </label>
+                        )}
+                      </dt>
+                    ) : null}
+                    <dd>
+                      <div className="span12">
+                        <div className="span11">
+                          <input
+                            autoComplete="off"
+                            className="text title"
+                            id="title"
+                            maxLength={250}
+                            name="title"
+                            onChange={(event) => setTitle(event.currentTarget.value)}
+                            placeholder="title"
+                            data-legacy-tabindex="1"
+                            title={props.mode === "create" ? "title.help.key" : undefined}
+                            type="text"
+                            value={title}
+                          />
+                        </div>
+                        <div className="span1 subtask-message">issue.option</div>
+                      </div>
+                      <div
+                        className={`subtask-wrap${parentIssueOptions.length > 0 || parentIssueId > 0 ? " show" : ""}`}
                       >
-                        <IssueMentionTextarea
-                          className="editorSeries content comment nm"
-                          context="issue-body"
-                          csrfToken={props.csrfToken}
-                          editorMode="content-body"
-                          getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                          id="editor-body-content-body"
-                          name="body"
-                          onAttachmentUpload={(attachment) =>
-                            setAttachmentIds((current) => [...current, attachment.id])
-                          }
-                          onChange={setBodyMarkdown}
-                          onSearchMentionUsers={props.onSearchMentionUsers}
-                          placeholder=""
-                          runtimeConfig={props.runtimeConfig}
-                          tabIndex={2}
-                          value={bodyMarkdown}
-                        />
-                      </LegacyMarkdownEditorShell>
+                        <div className="span3">
+                          <select
+                            data-container-css-class="fullsize"
+                            data-format="projects"
+                            data-placeholder="organization.choose.projects"
+                            data-toggle="select2"
+                            disabled={parentIssueOptions.length === 0}
+                            id="targetProjectId"
+                            name="targetProjectId"
+                          >
+                            <option value="">{detail.projectName}</option>
+                          </select>
+                        </div>
+                        <div className="span6">
+                          <select
+                            data-container-css-class="fullsize"
+                            data-format="issues"
+                            data-placeholder="organization.choose.projects"
+                            data-toggle="select2"
+                            id="parentId"
+                            name="parentIssueId"
+                            onChange={(event) =>
+                              setParentIssueId(Number(event.currentTarget.value))
+                            }
+                            value={parentIssueId}
+                          >
+                            <option value="">issue.subtask.select</option>
+                            {parentIssueOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                #{option.issueNumber}. {option.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                     </dd>
                   </dl>
-                  <div data-resourceid={props.initialIssue?.issueNumber ?? ""} data-resourcetype="ISSUE_POST" id="upload"></div>
-                  <div className="actrow right-txt">
-                    {props.mode === "edit" && props.initialIssue && !props.initialIssue.isDraft ? (
-                      <span className="send-notification-check">
-                        <label className="checkbox inline">
-                          <input
-                            defaultChecked
-                            id="notificationMail"
-                            name="notificationMail"
-                            type="checkbox"
-                            value="yes"
-                          />
-                          <strong>notification.send.mail</strong>
-                        </label>
-                      </span>
-                    ) : null}
-                    {props.mode !== "edit" || !props.initialIssue?.isDraft ? (
-                      <button
-                        className={props.mode === "create" ? "ybtn ybtn-success" : "ybtn ybtn-info"}
-                        disabled={submitting}
-                        id="button-save"
-                        type="submit"
-                      >
-                        button.save
-                      </button>
-                    ) : null}
-                    {props.mode === "edit" && props.initialIssue?.isDraft ? (
-                      <>
-                        <button
-                          className="ybtn ybtn-info"
-                          disabled={submitting}
-                          id="button-draft-publish"
-                          onClick={() => submitIssueForm("publish")}
-                          title="button.draft.publish.description"
-                          type="button"
+                </div>
+                <div className="row-fluid">
+                  <div className="span9 span-left-pane">
+                    <dl>
+                      <dd style={{ position: "relative" }}>
+                        <LegacyMarkdownEditorShell
+                          editId="edit-content-body"
+                          editorMode="content-body"
+                          previewId="preview-content-body"
                         >
-                          button.draft.publish
+                          <IssueMentionTextarea
+                            className="editorSeries content comment nm"
+                            context="issue-body"
+                            csrfToken={props.csrfToken}
+                            editorMode="content-body"
+                            getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                            id="editor-body-content-body"
+                            name="body"
+                            onAttachmentUpload={(attachment) =>
+                              setAttachmentIds((current) => [...current, attachment.id])
+                            }
+                            onChange={setBodyMarkdown}
+                            onSearchMentionUsers={props.onSearchMentionUsers}
+                            placeholder=""
+                            runtimeConfig={props.runtimeConfig}
+                            data-legacy-tabindex="2"
+                            value={bodyMarkdown}
+                          />
+                        </LegacyMarkdownEditorShell>
+                      </dd>
+                    </dl>
+                    <div
+                      data-resourceid={props.initialIssue?.issueNumber ?? ""}
+                      data-resourcetype="ISSUE_POST"
+                      id="upload"
+                    ></div>
+                    <div className="actrow right-txt">
+                      {props.mode === "edit" &&
+                      props.initialIssue &&
+                      !props.initialIssue.isDraft ? (
+                        <span className="send-notification-check">
+                          <label className="checkbox inline">
+                            <input
+                              defaultChecked
+                              id="notificationMail"
+                              name="notificationMail"
+                              type="checkbox"
+                              value="yes"
+                            />
+                            <strong>notification.send.mail</strong>
+                          </label>
+                        </span>
+                      ) : null}
+                      {props.mode !== "edit" || !props.initialIssue?.isDraft ? (
+                        <button
+                          className={
+                            props.mode === "create" ? "ybtn ybtn-success" : "ybtn ybtn-info"
+                          }
+                          disabled={submitting}
+                          id="button-save"
+                          type="submit"
+                        >
+                          button.save
                         </button>
+                      ) : null}
+                      {props.mode === "edit" && props.initialIssue?.isDraft ? (
+                        <>
+                          <button
+                            className="ybtn ybtn-info"
+                            disabled={submitting}
+                            id="button-draft-publish"
+                            onClick={() => submitIssueForm("publish")}
+                            title="button.draft.publish.description"
+                            type="button"
+                          >
+                            button.draft.publish
+                          </button>
+                          <button
+                            className="ybtn ybtn-watching draft-save-btn"
+                            disabled={submitting}
+                            id="draft-save-btn"
+                            onClick={() => submitIssueForm("draft")}
+                            title="button.draft.save.description"
+                            type="button"
+                          >
+                            button.draft.save
+                          </button>
+                        </>
+                      ) : props.mode === "create" ? (
                         <button
                           className="ybtn ybtn-watching draft-save-btn"
                           disabled={submitting}
@@ -3997,219 +4214,241 @@ export function ProjectIssueFormPage(props: {
                         >
                           button.draft.save
                         </button>
-                      </>
-                    ) : props.mode === "create" ? (
-                      <button
-                        className="ybtn ybtn-watching draft-save-btn"
-                        disabled={submitting}
-                        id="draft-save-btn"
-                        onClick={() => submitIssueForm("draft")}
-                        title="button.draft.save.description"
-                        type="button"
+                      ) : null}
+                      <a
+                        className="ybtn"
+                        data-legacy-href="history.back"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          "issues",
+                        )}
                       >
-                        button.draft.save
-                      </button>
-                    ) : null}
-                    <a
-                      className="ybtn"
-                      data-legacy-href="javascript:history.back();"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        "issues",
-                      )}
-                    >
-                      button.cancel
-                    </a>
+                        button.cancel
+                      </a>
+                    </div>
                   </div>
-                </div>
-                <div className="span3 span-hard-wrap right-menu">
-                  {props.mode === "edit" && props.initialIssue ? (
+                  <div className="span3 span-hard-wrap right-menu">
+                    {props.mode === "edit" && props.initialIssue ? (
+                      <dl className="issue-option">
+                        <dt>issue.state</dt>
+                        <dd>
+                          <div className="btn-group auto" data-name="state" id="state">
+                            <button
+                              className="btn dropdown-toggle auto"
+                              data-toggle="dropdown"
+                              type="button"
+                            >
+                              <span className="d-label">issue.state</span>
+                              <span className="d-caret">
+                                <span className="caret"></span>
+                              </span>
+                            </button>
+                            <ul className="dropdown-menu">
+                              <li
+                                className={
+                                  props.initialIssue.state === "open" ? "active" : undefined
+                                }
+                                data-selected={
+                                  props.initialIssue.state === "open" ? "true" : undefined
+                                }
+                                data-value="OPEN"
+                              >
+                                <a
+                                  href={buildProjectHref(
+                                    props.runtimeConfig,
+                                    detail.ownerName,
+                                    detail.projectName,
+                                    "issues?state=open",
+                                  )}
+                                >
+                                  issue.state.open
+                                </a>
+                              </li>
+                              <li
+                                className={
+                                  props.initialIssue.state === "closed" ? "active" : undefined
+                                }
+                                data-selected={
+                                  props.initialIssue.state === "closed" ? "true" : undefined
+                                }
+                                data-value="CLOSED"
+                              >
+                                <a
+                                  href={buildProjectHref(
+                                    props.runtimeConfig,
+                                    detail.ownerName,
+                                    detail.projectName,
+                                    "issues?state=closed",
+                                  )}
+                                >
+                                  issue.state.closed
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
+                        </dd>
+                      </dl>
+                    ) : null}
                     <dl className="issue-option">
-                      <dt>issue.state</dt>
+                      <dt>issue.assignee</dt>
                       <dd>
-                        <div className="btn-group auto" data-name="state" id="state">
-                          <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
-                            <span className="d-label">issue.state</span>
-                            <span className="d-caret">
-                              <span className="caret"></span>
-                            </span>
+                        <IssueAssigneeAutocompleteField
+                          className="bigdrop"
+                          id="assignee"
+                          name="assigneeLoginId"
+                          onChange={setAssigneeLoginId}
+                          onSearchAssignableUsers={props.onSearchAssignableUsers}
+                          onSelect={selectAssigneeSuggestion}
+                          placeholder="issue.noAssignee"
+                          style={{ width: "100%" }}
+                          title=""
+                          value={assigneeLoginId}
+                        />
+                      </dd>
+                    </dl>
+                    <dl className="issue-option" id="milestoneOption">
+                      <dt>milestone</dt>
+                      <dd>
+                        {milestoneOptions.length === 0 ? (
+                          <a
+                            className="ybtn ybtn-small ybtn-fullsize"
+                            href={buildProjectHref(
+                              props.runtimeConfig,
+                              detail.ownerName,
+                              detail.projectName,
+                              "newMilestoneForm",
+                            )}
+                            target="_blank"
+                          >
+                            milestone.menu.new
+                          </a>
+                        ) : (
+                          <select
+                            data-container-css-class="fullsize"
+                            data-format="milestone"
+                            data-toggle="select2"
+                            id="milestoneId"
+                            name="milestoneId"
+                            onChange={(event) => setMilestoneId(Number(event.currentTarget.value))}
+                            value={milestoneId}
+                          >
+                            <option value={0}>issue.noMilestone</option>
+                            {milestoneOptions.map((milestone) => (
+                              <option
+                                data-state={milestone.state}
+                                key={milestone.id}
+                                value={milestone.id}
+                              >
+                                {milestone.title}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </dd>
+                    </dl>
+                    <dl className="issue-option">
+                      <dt>issue.dueDate</dt>
+                      <dd>
+                        <div className="search search-bar">
+                          <input
+                            className="textbox full"
+                            data-toggle="calendar"
+                            id="issueDueDate"
+                            name="dueDate"
+                            onChange={(event) => setDueDate(event.currentTarget.value)}
+                            type="text"
+                            value={dueDate}
+                          />
+                          <button className="search-btn btn-calendar" type="button">
+                            <i className="yobicon-calendar2"></i>
                           </button>
-                          <ul className="dropdown-menu">
-                            <li
-                              className={props.initialIssue.state === "open" ? "active" : undefined}
-                              data-selected={props.initialIssue.state === "open" ? "true" : undefined}
-                              data-value="OPEN"
-                            >
-                              <a>issue.state.open</a>
-                            </li>
-                            <li
-                              className={props.initialIssue.state === "closed" ? "active" : undefined}
-                              data-selected={props.initialIssue.state === "closed" ? "true" : undefined}
-                              data-value="CLOSED"
-                            >
-                              <a>issue.state.closed</a>
-                            </li>
-                          </ul>
                         </div>
                       </dd>
                     </dl>
-                  ) : null}
-                  <dl className="issue-option">
-                    <dt>issue.assignee</dt>
-                    <dd>
-                      <IssueAssigneeAutocompleteField
-                        className="bigdrop"
-                        id="assignee"
-                        name="assigneeLoginId"
-                        onChange={setAssigneeLoginId}
-                        onSearchAssignableUsers={props.onSearchAssignableUsers}
-                        onSelect={selectAssigneeSuggestion}
-                        placeholder="issue.noAssignee"
-                        style={{ width: "100%" }}
-                        title=""
-                        value={assigneeLoginId}
-                      />
-                    </dd>
-                  </dl>
-                  <dl className="issue-option" id="milestoneOption">
-                    <dt>milestone</dt>
-                    <dd>
-                      {milestoneOptions.length === 0 ? (
-                        <a
-                          className="ybtn ybtn-small ybtn-fullsize"
-                          href={buildProjectHref(
-                            props.runtimeConfig,
-                            detail.ownerName,
-                            detail.projectName,
-                            "newMilestoneForm",
-                          )}
-                          target="_blank"
-                        >
-                          milestone.menu.new
-                        </a>
-                      ) : (
-                        <select
-                          data-container-css-class="fullsize"
-                          data-format="milestone"
-                          data-toggle="select2"
-                          id="milestoneId"
-                          name="milestoneId"
-                          onChange={(event) => setMilestoneId(Number(event.currentTarget.value))}
-                          value={milestoneId}
-                        >
-                          <option value={0}>issue.noMilestone</option>
-                          {milestoneOptions.map((milestone) => (
-                            <option
-                              data-state={milestone.state}
-                              key={milestone.id}
-                              value={milestone.id}
-                            >
-                              {milestone.title}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </dd>
-                  </dl>
-                  <dl className="issue-option">
-                    <dt>issue.dueDate</dt>
-                    <dd>
-                      <div className="search search-bar">
-                        <input
-                          className="textbox full"
-                          data-toggle="calendar"
-                          id="issueDueDate"
-                          name="dueDate"
-                          onChange={(event) => setDueDate(event.currentTarget.value)}
-                          type="text"
-                          value={dueDate}
-                        />
-                        <button className="search-btn btn-calendar" type="button">
-                          <i className="yobicon-calendar2"></i>
-                        </button>
-                      </div>
-                    </dd>
-                  </dl>
-                  {availableLabels.length > 0 ? (
-                    <dl className="issue-option">
-                      <dt>
-                        label{" "}
-                        <a
-                          className="label-edit"
-                          href={buildProjectHref(
-                            props.runtimeConfig,
-                            detail.ownerName,
-                            detail.projectName,
-                            "issue/labelsform",
-                          )}
-                          target="_blank"
-                        >
-                          [button.edit]
-                        </a>
-                      </dt>
-                      <dd>
-                        <select
-                          aria-label="label.select"
-                          className="hide"
-                          data-allow-clear="true"
-                          data-container-css-class="issue-labels bordered fullsize"
-                          data-dropdown-css-class="issue-labels"
-                          data-format="issuelabel"
-                          data-placeholder="label.select"
-                          data-search="labelIds"
-                          data-toggle="select2"
-                          id="labelIds"
-                          multiple
-                          name="labelIds"
-                          onChange={(event) => {
-                            const selected = Array.from(event.currentTarget.selectedOptions).map(
-                              (option) => Number(option.value),
-                            );
-                            setLabelIds(selected);
-                          }}
-                          value={labelIds.map(String)}
-                        >
-                          <option></option>
-                          {availableLabels.map((label) => (
-                            <option
-                              data-category-id={label.categoryId ?? ""}
-                              data-category-is-exclusive={label.categoryIsExclusive ? "true" : "false"}
-                              key={label.id}
-                              value={label.id}
-                            >
-                              {label.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="issue-labels-fallback">
-                          {availableLabels.map((label) => (
-                            <label className="checkbox inline" key={label.id}>
-                              <input
-                                checked={labelIds.includes(label.id)}
-                                name="labelIds"
-                                onChange={(event) => toggleLabel(label.id, event.currentTarget.checked)}
-                                type="checkbox"
+                    {availableLabels.length > 0 ? (
+                      <dl className="issue-option">
+                        <dt>
+                          label{" "}
+                          <a
+                            className="label-edit"
+                            href={buildProjectHref(
+                              props.runtimeConfig,
+                              detail.ownerName,
+                              detail.projectName,
+                              "issue/labelsform",
+                            )}
+                            target="_blank"
+                          >
+                            [button.edit]
+                          </a>
+                        </dt>
+                        <dd>
+                          <select
+                            aria-label="label.select"
+                            className="hide"
+                            data-allow-clear="true"
+                            data-container-css-class="issue-labels bordered fullsize"
+                            data-dropdown-css-class="issue-labels"
+                            data-format="issuelabel"
+                            data-placeholder="label.select"
+                            data-search="labelIds"
+                            data-toggle="select2"
+                            id="labelIds"
+                            multiple
+                            name="labelIds"
+                            onChange={(event) => {
+                              const selected = Array.from(event.currentTarget.selectedOptions).map(
+                                (option) => Number(option.value),
+                              );
+                              setLabelIds(selected);
+                            }}
+                            value={labelIds.map(String)}
+                          >
+                            <option></option>
+                            {availableLabels.map((label) => (
+                              <option
+                                data-category-id={label.categoryId ?? ""}
+                                data-category-is-exclusive={
+                                  label.categoryIsExclusive ? "true" : "false"
+                                }
+                                key={label.id}
                                 value={label.id}
-                              />
-                              <span
-                                className="label issue-label list-label active"
-                                style={{ backgroundColor: label.color }}
                               >
                                 {label.name}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </dd>
-                    </dl>
-                  ) : null}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="issue-labels-fallback">
+                            {availableLabels.map((label) => (
+                              <label className="checkbox inline" key={label.id}>
+                                <input
+                                  checked={labelIds.includes(label.id)}
+                                  name="labelIds"
+                                  onChange={(event) =>
+                                    toggleLabel(label.id, event.currentTarget.checked)
+                                  }
+                                  type="checkbox"
+                                  value={label.id}
+                                />
+                                <span
+                                  className="label issue-label list-label active"
+                                  style={{ backgroundColor: label.color }}
+                                >
+                                  {label.name}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </dd>
+                      </dl>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
         </div>
       </div>
     </main>

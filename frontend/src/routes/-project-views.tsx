@@ -1510,7 +1510,9 @@ export function ProjectDetailPage(props: {
                         props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
                       }
                     >
-                      <i className={`${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`}>
+                      <i
+                        className={`${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`}
+                      >
                         star
                       </i>
                     </button>
@@ -1648,6 +1650,7 @@ export function ProjectWatchersPage(props: {
                 >
                   {watcher.avatarUrl ? (
                     <img
+                      alt={watcher.userLabel || watcher.loginId}
                       height={64}
                       src={watcher.avatarUrl}
                       width={64}
@@ -1924,102 +1927,102 @@ export function ProjectWebhooksPage(props: {
           />
           <div className="content-wrap frm-wrap">
             {detail.viewerCanUpdate ? (
-            <form
-              action={prefixBasePath(props.runtimeConfig.basePath, webhooksPath)}
-              className="new-webhook-wrap"
-              id="formNewWebhook"
-              method="post"
-              onSubmit={(event) => {
-                event.preventDefault();
-                props.onCreateWebhook?.(formState);
-                setFormState({
-                  gitPush: false,
-                  payloadUrl: "",
-                  secret: "",
-                  webhookType: "SIMPLE",
-                });
-              }}
-            >
-              <strong className="form-legend">project.webhook.new</strong>
-              <div className="form-wrap form-actions">
-                <div>
-                  <input
-                    autoComplete="off"
-                    className="input-webhook-payload"
-                    id="payloadUrl"
-                    maxLength={2000}
-                    name="payloadUrl"
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        payloadUrl: event.target.value,
-                      }))
-                    }
-                    placeholder="project.webhook.payloadUrl"
-                    required
-                    type="url"
-                    value={formState.payloadUrl}
-                  />
-                  <input
-                    autoComplete="off"
-                    className="input-webhook-secret"
-                    id="secret"
-                    maxLength={250}
-                    name="secret"
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        secret: event.target.value,
-                      }))
-                    }
-                    placeholder="project.webhook.secret"
-                    type="text"
-                    value={formState.secret}
-                  />
-                  <button
-                    className="ybtn ybtn-primary btn-submit"
-                    disabled={props.pending}
-                    type="submit"
-                  >
-                    project.webhook.add
-                  </button>
-                </div>
-                <div>
-                  {detail.webhookTypes.map((webhookType) => (
-                    <label className="radio inline" key={webhookType}>
-                      <input
-                        checked={formState.webhookType === webhookType}
-                        name="webhookType"
-                        onChange={() => updateWebhookType(webhookType)}
-                        type="radio"
-                        value={webhookType}
-                      />
-                      {` ${webhookTypeLabels[webhookType]}`}
-                    </label>
-                  ))}
-                  <label className="radio inline"> | </label>
-                  <label className="radio inline"></label>
-                  <label className="checkbox inline" htmlFor="gitPush">
+              <form
+                action={prefixBasePath(props.runtimeConfig.basePath, webhooksPath)}
+                className="new-webhook-wrap"
+                id="formNewWebhook"
+                method="post"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  props.onCreateWebhook?.(formState);
+                  setFormState({
+                    gitPush: false,
+                    payloadUrl: "",
+                    secret: "",
+                    webhookType: "SIMPLE",
+                  });
+                }}
+              >
+                <strong className="form-legend">project.webhook.new</strong>
+                <div className="form-wrap form-actions">
+                  <div>
                     <input
-                      checked={formState.gitPush}
-                      className="form-check-input"
-                      disabled={formState.webhookType === "JSON"}
-                      id="gitPush"
-                      name="gitPush"
+                      autoComplete="off"
+                      className="input-webhook-payload"
+                      id="payloadUrl"
+                      maxLength={2000}
+                      name="payloadUrl"
                       onChange={(event) =>
                         setFormState((current) => ({
                           ...current,
-                          gitPush: event.target.checked,
+                          payloadUrl: event.target.value,
                         }))
                       }
-                      type="checkbox"
+                      placeholder="project.webhook.payloadUrl"
+                      required
+                      type="url"
+                      value={formState.payloadUrl}
                     />
-                    {" project.webhook.includeGitPush"}
-                  </label>
+                    <input
+                      autoComplete="off"
+                      className="input-webhook-secret"
+                      id="secret"
+                      maxLength={250}
+                      name="secret"
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          secret: event.target.value,
+                        }))
+                      }
+                      placeholder="project.webhook.secret"
+                      type="text"
+                      value={formState.secret}
+                    />
+                    <button
+                      className="ybtn ybtn-primary btn-submit"
+                      disabled={props.pending}
+                      type="submit"
+                    >
+                      project.webhook.add
+                    </button>
+                  </div>
+                  <div>
+                    {detail.webhookTypes.map((webhookType) => (
+                      <label className="radio inline" key={webhookType}>
+                        <input
+                          checked={formState.webhookType === webhookType}
+                          name="webhookType"
+                          onChange={() => updateWebhookType(webhookType)}
+                          type="radio"
+                          value={webhookType}
+                        />
+                        {` ${webhookTypeLabels[webhookType]}`}
+                      </label>
+                    ))}
+                    <span className="radio inline"> | </span>
+                    <span className="radio inline"></span>
+                    <label className="checkbox inline" htmlFor="gitPush">
+                      <input
+                        checked={formState.gitPush}
+                        className="form-check-input"
+                        disabled={formState.webhookType === "JSON"}
+                        id="gitPush"
+                        name="gitPush"
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            gitPush: event.target.checked,
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                      {" project.webhook.includeGitPush"}
+                    </label>
+                  </div>
                 </div>
-              </div>
-              <div>project.webhook.help</div>
-            </form>
+                <div>project.webhook.help</div>
+              </form>
             ) : null}
 
             <div className="webhook-list-wrap" id="webhooksList">

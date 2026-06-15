@@ -1307,7 +1307,11 @@ export function SiteAdminMailPage({
                 onSubmit={handleSubmit}
               >
                 <div className="control-group">
-                  <label className="control-label span3" htmlFor="mail-from" {...legacyLabelName("from")}>
+                  <label
+                    className="control-label span3"
+                    htmlFor="mail-from"
+                    {...legacyLabelName("from")}
+                  >
                     site.mail.from
                   </label>
                   <div className="controls">
@@ -1338,7 +1342,11 @@ export function SiteAdminMailPage({
                   </div>
                 </div>
                 <div className="control-group mr10">
-                  <label className="control-label" htmlFor="mail-subject" {...legacyLabelName("subject")}>
+                  <label
+                    className="control-label"
+                    htmlFor="mail-subject"
+                    {...legacyLabelName("subject")}
+                  >
                     site.mail.subject
                   </label>
                   <div className="controls">
@@ -1350,7 +1358,12 @@ export function SiteAdminMailPage({
                     site.mail.body
                   </label>
                   <div className="controls">
-                    <textarea className="span12 input-xlarge textbody" id="body" name="body" rows={16} />
+                    <textarea
+                      className="span12 input-xlarge textbody"
+                      id="body"
+                      name="body"
+                      rows={16}
+                    />
                   </div>
                 </div>
                 <div className="span12 mail-btn-wrap">
@@ -1446,7 +1459,10 @@ export function SiteAdminMassMailPage({
                   />
                   site.massMail.toProjects
                 </label>
-                <div className={mode === "projects" ? "control-group" : "control-group hide"} id="project-list-wrap">
+                <div
+                  className={mode === "projects" ? "control-group" : "control-group hide"}
+                  id="project-list-wrap"
+                >
                   <div className="controls">
                     <input
                       autoComplete="off"
@@ -2038,11 +2054,11 @@ function SiteUserListHeader({ state }: { state: SiteUserState }) {
 }
 
 function SiteUserRow({
-  pendingAccountLock,
+  pendingAccountLock: _pendingAccountLock,
   pendingDelete,
-  pendingGuest,
-  pendingResetPassword,
-  pendingSiteAdmin,
+  pendingGuest: _pendingGuest,
+  pendingResetPassword: _pendingResetPassword,
+  pendingSiteAdmin: _pendingSiteAdmin,
   resetPassword,
   runtimeConfig,
   selectedState,
@@ -2344,7 +2360,10 @@ function SiteAdminPagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <a href={hrefForPage(currentPage - 1)} pjax-page="">
+            <a
+              href={hrefForPage(currentPage - 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>button.prevPage</span>
             </a>
@@ -2371,7 +2390,10 @@ function SiteAdminPagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <a href={hrefForPage(currentPage + 1)} pjax-page="">
+            <a
+              href={hrefForPage(currentPage + 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <span>button.nextPage</span>
               <i className="ico btn-pg-next"></i>
             </a>

@@ -132,6 +132,11 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Rust implements the same issue body/comment editor behavior with `frontend/src/api/attachments.ts` and `IssueMentionTextarea`: pasted or dropped image files post to `/files` with the active CSRF token, insert the legacy image Markdown token at the cursor, and carry the uploaded ids into issue create/update and comment create/update `attachmentIds`.
 - This rule is issue-scoped, but the same `/files` upload path is now reused by board, pull-request, milestone, non-ranged Git code comment/reply editors, and inline ranged Git code-comment reply editors. Single-line inline code-comment creation/readback and inline ranged reply upload belong to the code-browser provenance.
 
+## Oxlint/React Doctor Parity Cleanup
+
+- The lint/doctor blocker cleanup keeps the existing legacy issue list/detail/create/edit/comment shell and Markdown behavior while replacing React 19-invalid `javascript:`/empty-link scaffolding, missing avatar alt attributes, positive `tabIndex` props, and internal raw-HTML/Markdown loop patterns with equivalent safe React markup. Legacy-visible labels that needed clearer action names retain their former scalar through `data-legacy-label` where the rendered control text changed.
+- Legacy basis remains `yona-original/app/views/issue/list.scala.html`, `yona-original/app/views/issue/view.scala.html`, `yona-original/app/views/issue/partial_comment.scala.html`, and `yona-original/public/javascripts/service/yobi.issue.View.js`; no issue mutation policy, route contract, or Markdown compatibility scope is intentionally changed by this cleanup.
+
 ## Phase 2A Evidence
 
 | Evidence                                    | Rust target                                                                                                                                                                               |

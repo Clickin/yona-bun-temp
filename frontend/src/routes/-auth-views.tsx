@@ -14,11 +14,22 @@ function readEnabledSocialProviders(
   authUiCapabilities: AuthUiCapabilitiesViewModel | null | undefined,
 ): string[] {
   const providers =
-    authUiCapabilities?.enabledSocialProviders ?? authUiCapabilities?.enabled_social_providers ?? [];
-  return providers.map((provider) => provider.trim()).filter(Boolean);
+    authUiCapabilities?.enabledSocialProviders ??
+    authUiCapabilities?.enabled_social_providers ??
+    [];
+  return providers.flatMap((provider) => {
+    const trimmed = provider.trim();
+    return trimmed ? [trimmed] : [];
+  });
 }
 
-function renderProviderLogo(provider: string, runtimeConfig: RuntimeConfig): React.ReactNode {
+function ProviderLogo({
+  provider,
+  runtimeConfig,
+}: {
+  provider: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   if (provider === "github") {
     return (
       <span className="auth-provider-logo">
@@ -32,7 +43,10 @@ function renderProviderLogo(provider: string, runtimeConfig: RuntimeConfig): Rea
       <span className="auth-provider-logo">
         <img
           alt="login with Google"
-          src={appHref(runtimeConfig, "/assets/images/provider-logo/btn_google_light_normal_ios.svg")}
+          src={appHref(
+            runtimeConfig,
+            "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
+          )}
         />{" "}
         Sign in with Google
       </span>
@@ -65,7 +79,7 @@ function SocialProviderButtons({
           href={appHref(runtimeConfig, `/authenticate/${encodeURIComponent(provider)}`)}
           key={provider}
         >
-          {renderProviderLogo(provider, runtimeConfig)}
+          <ProviderLogo provider={provider} runtimeConfig={runtimeConfig} />
         </a>
       ))}
     </div>
@@ -153,7 +167,9 @@ export function LoginPage({
         </div>
         <div className="login-form-wrap frm-wrap">
           {authErrorMessage ? <div className="alert alert-error">{authErrorMessage}</div> : null}
-          {postSubmitMessage ? <div className="alert alert-success">{postSubmitMessage}</div> : null}
+          {postSubmitMessage ? (
+            <div className="alert alert-success">{postSubmitMessage}</div>
+          ) : null}
           {authUiCapabilities?.emailVerificationEnabled ? (
             <div className="email-verification-help">notification.confirm.mail.will.be.sent</div>
           ) : null}
@@ -627,7 +643,11 @@ export function ResetPasswordPage({
         </div>
         <div className="login-form-wrap frm-wrap">
           {message ? <div className="alert alert-error">{message}</div> : null}
-          <form action={appHref(runtimeConfig, "/resetPassword")} method="post" name="passwordReset">
+          <form
+            action={appHref(runtimeConfig, "/resetPassword")}
+            method="post"
+            name="passwordReset"
+          >
             <input name="hashString" type="hidden" value={hashString} />
             <dl>
               <dd>

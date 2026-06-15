@@ -160,7 +160,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          '<script>#1 http://example.com</script> [script](https://example.com/script)\n\n<style>#1 http://example.com</style> [style](https://example.com/style)\n\nbefore\n<script>#1 http://example.com</script>\n[after](https://example.com/after)'
+          "<script>#1 http://example.com</script> [script](https://example.com/script)\n\n<style>#1 http://example.com</style> [style](https://example.com/style)\n\nbefore\n<script>#1 http://example.com</script>\n[after](https://example.com/after)"
         }
         ownerName="owner"
         projectName="project"
@@ -197,7 +197,7 @@ describe("MarkdownRenderer", () => {
       '<input type="checkbox"/>\n[input-line](https://example.com/input-line)',
     );
     expect(html).toContain('<img src="/a.png"/>\n[image-line](https://example.com/image-line)');
-    expect(html).toContain('<hr/> [hr-line](https://example.com/hr-line)');
+    expect(html).toContain("<hr/> [hr-line](https://example.com/hr-line)");
     expect(html).toContain(
       '<p>hello <hr/> <a href="https://example.com/hr-inline">hr-inline</a></p>',
     );
@@ -234,11 +234,12 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          '<iframe src="javascript:alert(1)"></iframe>\n\n<video><source src="javascript:alert(2)" type="video/mp4"></video>'
+          '<a href="javascript:alert(0)">unsafe</a>\n\n<iframe src="javascript:alert(1)"></iframe>\n\n<video><source src="javascript:alert(2)" type="video/mp4"></video>'
         }
       />,
     );
 
+    expect(html).toContain("unsafe");
     expect(html).toContain("<iframe></iframe>");
     expect(html).toContain('<video><source type="video/mp4"/></video>');
     expect(html).not.toContain("javascript:");
@@ -263,7 +264,9 @@ describe("MarkdownRenderer", () => {
 
   it("preserves unsafe raw iframe elements through the ReactMarkdown path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'before\n\n<iframe src="javascript:alert(1)"></iframe>\n\nafter'} />,
+      <MarkdownRenderer
+        markdown={'before\n\n<iframe src="javascript:alert(1)"></iframe>\n\nafter'}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -283,9 +286,7 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<p>before</p>");
-    expect(html).toContain(
-      '<input type="checkbox" disabled="" readOnly="" checked=""/>',
-    );
+    expect(html).toContain('<input type="checkbox" disabled="" readOnly="" checked=""/>');
     expect(html).not.toContain("onclick");
     expect(html).toContain('<img alt="A" src="/a.png"/>');
     expect(html).toContain("<hr/>");
@@ -309,7 +310,9 @@ describe("MarkdownRenderer", () => {
 
   it("preserves legacy raw HTML ordered-list start attributes", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'<ol start="5"><li>fifth</li></ol><ol start="bad"><li>plain</li></ol>'} />,
+      <MarkdownRenderer
+        markdown={'<ol start="5"><li>fifth</li></ol><ol start="bad"><li>plain</li></ol>'}
+      />,
     );
 
     expect(html).toContain('<ol start="5"><li>fifth</li></ol>');
@@ -337,9 +340,7 @@ describe("MarkdownRenderer", () => {
       />,
     );
 
-    expect(html).toContain(
-      '<p>hello <em>world</em> <a href="https://example.com">link</a></p>',
-    );
+    expect(html).toContain('<p>hello <em>world</em> <a href="https://example.com">link</a></p>');
     expect(html).toContain(
       '<p>hello <em>world <a href="https://example.com">link</a></em> outside</p>',
     );
@@ -355,9 +356,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<p>hello <span class="x">world</span> <a href="http://example.com">http://example.com</a></p>',
     );
-    expect(html).toContain(
-      '<p>hello <br/> <a href="https://example.com/break">break</a></p>',
-    );
+    expect(html).toContain('<p>hello <br/> <a href="https://example.com/break">break</a></p>');
     expect(html).toContain(
       '<p>hello <img src="/a.png" alt="A &gt; B"/> <a href="https://example.com/image">image</a></p>',
     );
@@ -398,15 +397,11 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<p>hello <strong><a href="https://example.com/docs" title="Docs">guide</a></strong></p>',
     );
-    expect(html).toContain(
-      '<p>hello <br/> <a href="https://example.com/break">break</a></p>',
-    );
+    expect(html).toContain('<p>hello <br/> <a href="https://example.com/break">break</a></p>');
     expect(html).toContain(
       '<p>hello <em><a href="https://example.com/titled" title="Title">titled</a> and <img alt="logo" src="/logo.png" title="Logo"/></em></p>',
     );
-    expect(html).toContain(
-      "<p>hello <em>*literal* and <strong>strong</strong></em></p>",
-    );
+    expect(html).toContain("<p>hello <em>*literal* and <strong>strong</strong></em></p>");
     expect(html).toContain(
       '<p>hello <em>See <a href="https://example.com/angle">https://example.com/angle</a></em></p>',
     );
@@ -439,13 +434,9 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<h1 id="summary-guide"><strong>Summary</strong> <a href="https://example.com/docs" title="Docs">guide</a><a class="head-anchor" href="#summary-guide">#</a></h1>',
     );
-    expect(html).toContain(
-      '<p><span class="state">open</span> <a class="issueLink"',
-    );
+    expect(html).toContain('<p><span class="state">open</span> <a class="issueLink"');
     expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
-    expect(html).toContain(
-      'Next <a href="https://example.com/docs" title="Docs">guide</a></p>',
-    );
+    expect(html).toContain('Next <a href="https://example.com/docs" title="Docs">guide</a></p>');
     expect(html).toContain(
       '<ul><li>First <a href="https://example.com/docs" title="Docs">guide</a></li></ul><ul><li><em>Second <a href="http://example.com">http://example.com</a></em></li></ul>',
     );
@@ -464,8 +455,8 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          'before\n<div>#1</div>\n[interrupted](https://example.com/interrupted)\n\nbefore\n<span>#1</span> [inline](https://example.com/inline)\n\n<div>#1</div> [outside](https://example.com/outside)\n\n<div title="A > B">#1</div> [quoted](https://example.com/quoted)\n\n<p title="A < B">[inside](https://example.com/inside)</p> [paragraph](https://example.com/paragraph)'
-            + '\n\n<div>#1</div>\n[multiline](https://example.com/multiline)\n\n<tr><td>#1</td></tr>\n[row](https://example.com/row)'
+          'before\n<div>#1</div>\n[interrupted](https://example.com/interrupted)\n\nbefore\n<span>#1</span> [inline](https://example.com/inline)\n\n<div>#1</div> [outside](https://example.com/outside)\n\n<div title="A > B">#1</div> [quoted](https://example.com/quoted)\n\n<p title="A < B">[inside](https://example.com/inside)</p> [paragraph](https://example.com/paragraph)' +
+          "\n\n<div>#1</div>\n[multiline](https://example.com/multiline)\n\n<tr><td>#1</td></tr>\n[row](https://example.com/row)"
         }
       />,
     );
@@ -474,20 +465,18 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain(
-      '<p>before</p><div>#1</div>\n[interrupted](https://example.com/interrupted)',
+      "<p>before</p><div>#1</div>\n[interrupted](https://example.com/interrupted)",
     );
     expect(html).toContain(
       '<p>before<br/><span>#1</span> <a href="https://example.com/inline">inline</a></p>',
     );
-    expect(html).toContain('<div>#1</div> [outside](https://example.com/outside)');
-    expect(html).toContain(
-      '<div title="A &gt; B">#1</div> [quoted](https://example.com/quoted)',
-    );
+    expect(html).toContain("<div>#1</div> [outside](https://example.com/outside)");
+    expect(html).toContain('<div title="A &gt; B">#1</div> [quoted](https://example.com/quoted)');
     expect(html).toContain(
       '<p title="A &lt; B">[inside](https://example.com/inside)</p> [paragraph](https://example.com/paragraph)',
     );
-    expect(html).toContain('<div>#1</div>\n[multiline](https://example.com/multiline)');
-    expect(html).toContain('<tr><td>#1</td></tr>\n[row](https://example.com/row)');
+    expect(html).toContain("<div>#1</div>\n[multiline](https://example.com/multiline)");
+    expect(html).toContain("<tr><td>#1</td></tr>\n[row](https://example.com/row)");
     expect(inlineHtml).toContain(
       '<p>hello <td>#1</td> <a href="https://example.com/cell-inline">cell-inline</a></p>',
     );
@@ -512,7 +501,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          '<section>#1</section>\n[section](https://example.com/section)\n\n<form>#1</form>\n[form](https://example.com/form)\n\n<dl><dt>#1</dt></dl>\n[definition](https://example.com/definition)\n\n<caption>#1</caption>\n[caption](https://example.com/caption)'
+          "<section>#1</section>\n[section](https://example.com/section)\n\n<form>#1</form>\n[form](https://example.com/form)\n\n<dl><dt>#1</dt></dl>\n[definition](https://example.com/definition)\n\n<caption>#1</caption>\n[caption](https://example.com/caption)"
         }
         ownerName="owner"
         projectName="project"
@@ -532,9 +521,7 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="https://example.com/form"');
     expect(html).not.toContain('href="https://example.com/definition"');
     expect(html).not.toContain('href="https://example.com/caption"');
-    expect(inlineHtml).toContain(
-      '<p>hello #1 <a href="https://example.com/inline">inline</a></p>',
-    );
+    expect(inlineHtml).toContain('<p>hello #1 <a href="https://example.com/inline">inline</a></p>');
   });
 
   it("stops table bodies at legacy raw HTML block lines", () => {
@@ -569,9 +556,7 @@ describe("MarkdownRenderer", () => {
     expect(tableHtml).toContain("<td>1</td>");
     expect(tableHtml).not.toContain("<td>3</td>");
     expect(tableHtml).toContain("3 | 4");
-    expect(inlineHtml).toContain(
-      '<p>text  <a href="https://example.com">next</a></p>',
-    );
+    expect(inlineHtml).toContain('<p>text  <a href="https://example.com">next</a></p>');
   });
 
   it("keeps inline block-tag HTML in paragraphs parsing surrounding Markdown", () => {
@@ -608,7 +593,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          '<pre>\n#1 http://example.com [inside](https://example.com/inside)\n</pre>\n[outside](https://example.com/outside)\n\nbefore\n<pre>#1 http://example.com</pre>\n[after](https://example.com/after)'
+          "<pre>\n#1 http://example.com [inside](https://example.com/inside)\n</pre>\n[outside](https://example.com/outside)\n\nbefore\n<pre>#1 http://example.com</pre>\n[after](https://example.com/after)"
         }
         ownerName="owner"
         projectName="project"
@@ -638,7 +623,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          'before\n\n<pre>\n#1 http://example.com [inside](https://example.com/inside)\n</pre>\n\nmiddle\n\n<code>\n#1 [code](https://example.com/code)\n</code>\n\nafter'
+          "before\n\n<pre>\n#1 http://example.com [inside](https://example.com/inside)\n</pre>\n\nmiddle\n\n<code>\n#1 [code](https://example.com/code)\n</code>\n\nafter"
         }
         ownerName="owner"
         projectName="project"
@@ -646,7 +631,9 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<p>before</p>");
-    expect(html).toContain("<pre>\n\n#1 http://example.com [inside](https://example.com/inside)\n</pre>");
+    expect(html).toContain(
+      "<pre>\n\n#1 http://example.com [inside](https://example.com/inside)\n</pre>",
+    );
     expect(html).toContain("<p>middle</p>");
     expect(html).toContain("<code>\n#1 [code](https://example.com/code)</code>");
     expect(html).toContain("<p>after</p>");
@@ -667,20 +654,18 @@ describe("MarkdownRenderer", () => {
             title: "Comment issue",
           },
         ]}
-        markdown={
-          "hello <!-- #1 http://example.com --> [outside](https://example.com/outside)"
-        }
+        markdown={"hello <!-- #1 http://example.com --> [outside](https://example.com/outside)"}
         ownerName="owner"
         projectName="project"
       />,
     );
     const blockHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"<!-- http://example.com --> [outside](https://example.com/outside)"} />,
+      <MarkdownRenderer
+        markdown={"<!-- http://example.com --> [outside](https://example.com/outside)"}
+      />,
     );
 
-    expect(inlineHtml).toContain(
-      '<p>hello  <a href="https://example.com/outside">outside</a></p>',
-    );
+    expect(inlineHtml).toContain('<p>hello  <a href="https://example.com/outside">outside</a></p>');
     expect(inlineHtml).not.toContain("issueLink");
     expect(inlineHtml).not.toContain('href="/owner/project/issue/1"');
     expect(inlineHtml).not.toContain('href="http://example.com"');
@@ -698,15 +683,11 @@ describe("MarkdownRenderer", () => {
       />,
     );
 
-    expect(html).toContain('<p>before</p><p> [comment](https://example.com/comment)</p>');
+    expect(html).toContain("<p>before</p><p> [comment](https://example.com/comment)</p>");
     expect(html).not.toContain('href="https://example.com/comment"');
-    expect(html).toContain(
-      '<p>before<br/> <a href="https://example.com/cdata">cdata</a></p>',
-    );
+    expect(html).toContain('<p>before<br/> <a href="https://example.com/cdata">cdata</a></p>');
     expect(html).toContain('<p>before<br/> <a href="https://example.com/php">php</a></p>');
-    expect(html).toContain(
-      '<p>before<br/> <a href="https://example.com/doctype">doctype</a></p>',
-    );
+    expect(html).toContain('<p>before<br/> <a href="https://example.com/doctype">doctype</a></p>');
     expect(html).not.toContain("#1");
     expect(html).not.toContain("CDATA");
     expect(html).not.toContain("&lt;?php");
@@ -770,20 +751,18 @@ describe("MarkdownRenderer", () => {
             title: "CDATA issue",
           },
         ]}
-        markdown={
-          "hello <![CDATA[http://example.com #1]]> [outside](https://example.com/outside)"
-        }
+        markdown={"hello <![CDATA[http://example.com #1]]> [outside](https://example.com/outside)"}
         ownerName="owner"
         projectName="project"
       />,
     );
     const blockHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"<![CDATA[http://example.com #1]]> [outside](https://example.com/outside)"} />,
+      <MarkdownRenderer
+        markdown={"<![CDATA[http://example.com #1]]> [outside](https://example.com/outside)"}
+      />,
     );
 
-    expect(inlineHtml).toContain(
-      '<p>hello  <a href="https://example.com/outside">outside</a></p>',
-    );
+    expect(inlineHtml).toContain('<p>hello  <a href="https://example.com/outside">outside</a></p>');
     expect(inlineHtml).not.toContain("CDATA");
     expect(inlineHtml).not.toContain("issueLink");
     expect(inlineHtml).not.toContain('href="http://example.com"');
@@ -796,7 +775,7 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          "AT&amp;T &#169; &#xA9; &#0; &#xD800; &#x110000; &copy; &colon; &trade; &unknown;\n\n[Tom &amp; Jerry &copy; &#0;](https://example.com \"A &amp; B &trade; &#xD800;\")\n\n![A &amp; B &reg; &#x110000;](/files/a.png \"Image &amp; title &colon; &#0;\")\n\n`&amp; &copy; &colon; &#0;`"
+          'AT&amp;T &#169; &#xA9; &#0; &#xD800; &#x110000; &copy; &colon; &trade; &unknown;\n\n[Tom &amp; Jerry &copy; &#0;](https://example.com "A &amp; B &trade; &#xD800;")\n\n![A &amp; B &reg; &#x110000;](/files/a.png "Image &amp; title &colon; &#0;")\n\n`&amp; &copy; &colon; &#0;`'
         }
       />,
     );
@@ -961,7 +940,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "# **See** [guide][docs]\n\n_Issue_ owner#7\n-----\n\n[docs]: https://example.com/docs \"Docs\""
+          '# **See** [guide][docs]\n\n_Issue_ owner#7\n-----\n\n[docs]: https://example.com/docs "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -971,9 +950,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<h1 id="see-guide"><strong>See</strong> <a href="https://example.com/docs" title="Docs">guide</a><a class="head-anchor" href="#see-guide">#</a></h1>',
     );
-    expect(html).toContain(
-      '<h2 id="issue-owner7"><em>Issue</em> <a class="issueLink"',
-    );
+    expect(html).toContain('<h2 id="issue-owner7"><em>Issue</em> <a class="issueLink"');
     expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
     expect(html).toContain('title="Heading issue"');
     expect(html).toContain('data-issue-state="closed"');
@@ -1004,9 +981,7 @@ describe("MarkdownRenderer", () => {
   it("renders raw formatting headings through ReactMarkdown", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={
-          '# <em>Title</em>\n\n<span class="x">Secondary</span> &amp; More\n-----\n\nafter'
-        }
+        markdown={'# <em>Title</em>\n\n<span class="x">Secondary</span> &amp; More\n-----\n\nafter'}
       />,
     );
 
@@ -1231,14 +1206,10 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<code class="javascript">');
-    expect(html).toContain(
-      'class="syntax-token syntax-keyword">&quot;use strict&quot;</span>',
-    );
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;use strict&quot;</span>');
     expect(html).toContain('class="syntax-token syntax-title">renderIssue</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">title</span>');
-    expect(html).toContain(
-      'class="syntax-token syntax-string">`Issue ${issue.id}`</span>',
-    );
+    expect(html).toContain('class="syntax-token syntax-string">`Issue ${issue.id}`</span>');
     expect(html).toContain('class="syntax-token syntax-title">IssueCard</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">Array</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">console</span>');
@@ -1302,14 +1273,9 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js Go function titles in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={[
-          "```go",
-          "func main() {",
-          "}",
-          "func (s *Server) Serve() {",
-          "}",
-          "```",
-        ].join("\n")}
+        markdown={["```go", "func main() {", "}", "func (s *Server) Serve() {", "}", "```"].join(
+          "\n",
+        )}
       />,
     );
 
@@ -1416,9 +1382,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       'class="syntax-token syntax-string">@&quot;C:\\projects\\yona&quot;</span>',
     );
-    expect(html).toContain(
-      'class="syntax-token syntax-string">$&quot;Issue {number}&quot;</span>',
-    );
+    expect(html).toContain('class="syntax-token syntax-string">$&quot;Issue {number}&quot;</span>');
     expect(html).toContain(
       'class="syntax-token syntax-string">$@&quot;SELECT &quot;&quot;title&quot;&quot; FROM issues&quot;</span>',
     );
@@ -1427,9 +1391,7 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js C# preprocessor meta lines in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```cs", "#region issue-list", "var ready = true;", "#endif", "```"].join(
-          "\n",
-        )}
+        markdown={["```cs", "#region issue-list", "var ready = true;", "#endif", "```"].join("\n")}
       />,
     );
 
@@ -1661,10 +1623,16 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="lua">');
     expect(html).toContain('class="syntax-token syntax-comment">-- render count</span>');
-    expect(html).toContain('class="syntax-token syntax-comment">--[[ legacy long comment ]]</span>');
-    expect(html).toContain('class="syntax-token syntax-comment">--[=[ legacy equal long comment ]=]</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">--[[ legacy long comment ]]</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">--[=[ legacy equal long comment ]=]</span>',
+    );
     expect(html).toContain('class="syntax-token syntax-string">[[legacy long string]]</span>');
-    expect(html).toContain('class="syntax-token syntax-string">[=[legacy equal long string]=]</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">[=[legacy equal long string]=]</span>',
+    );
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
   });
@@ -2109,9 +2077,14 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js AsciiDoc quote blocks in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```adoc", "____", "Keep the legacy quote tone", "____", "NOTE: Back out", "```"].join(
-          "\n",
-        )}
+        markdown={[
+          "```adoc",
+          "____",
+          "Keep the legacy quote tone",
+          "____",
+          "NOTE: Back out",
+          "```",
+        ].join("\n")}
       />,
     );
 
@@ -2462,9 +2435,7 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="sql">');
     expect(html).toContain('class="syntax-token syntax-comment">-- legacy comment</span>');
-    expect(html).toContain(
-      'class="syntax-token syntax-comment">/* legacy block comment */</span>',
-    );
+    expect(html).toContain('class="syntax-token syntax-comment">/* legacy block comment */</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">select</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1_000.25e+3</span>');
@@ -3134,7 +3105,7 @@ describe("MarkdownRenderer", () => {
           "[server]",
           "enabled = true",
           "backup = no",
-          "database.url = \"sqlite:///yona.db\"",
+          'database.url = "sqlite:///yona.db"',
           "home = ${APP_HOME}",
           "path = $APP_HOME",
           "workers = +1_000",
@@ -3157,7 +3128,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">+1_000</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xCAFE_F00D</span>');
     expect(html).toContain('class="syntax-token syntax-number">-1_000.25e+3</span>');
-  expect(html).toContain(
+    expect(html).toContain(
       'class="syntax-token syntax-string">&quot;&quot;&quot;legacy&quot;&quot;&quot;</span>',
     );
   });
@@ -3165,9 +3136,7 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Yona config extension alias as INI in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```config", "[site]", "enabled = true", "home = ${APP_HOME}", "```"].join(
-          "\n",
-        )}
+        markdown={["```config", "[site]", "enabled = true", "home = ${APP_HOME}", "```"].join("\n")}
       />,
     );
 
@@ -3440,7 +3409,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">final</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
     expect(html).toContain('class="syntax-token syntax-title">IssueState</span>');
-    expect(html).toContain("class=\"syntax-token syntax-string\">r&#x27;raw&#x27;</span>");
+    expect(html).toContain('class="syntax-token syntax-string">r&#x27;raw&#x27;</span>');
     expect(html).toContain(
       'class="syntax-token syntax-string">&quot;&quot;&quot;Hello ${user.name}&quot;&quot;&quot;</span>',
     );
@@ -3641,11 +3610,7 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js R numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={[
-          "```r",
-          "values <- c(0x10L, 12L, 3., 4i, .5i, 6e-2)",
-          "```",
-        ].join("\n")}
+        markdown={["```r", "values <- c(0x10L, 12L, 3., 4i, .5i, 6e-2)", "```"].join("\n")}
       />,
     );
 
@@ -3741,7 +3706,7 @@ describe("MarkdownRenderer", () => {
           "```awk",
           "BEGIN { count = 0 }",
           '{ if ($1 == "open") { count++; next } else { delete seen[$1] } }',
-          '{ owner = ${owner}; total += $NF; fields += $# }',
+          "{ owner = ${owner}; total += $NF; fields += $# }",
           "{ ratio = -1.5e+2; offset = .25e-2 }",
           "END { while (count > 0) { exit } }",
           "function render(value) {",
@@ -4645,8 +4610,12 @@ describe("MarkdownRenderer", () => {
       />,
     );
 
-    expect(html).toContain('<code class="js"><span class="syntax-token syntax-identifier">backtick</span></code>');
-    expect(html).toContain('<code class="js"><span class="syntax-token syntax-identifier">tilde</span></code>');
+    expect(html).toContain(
+      '<code class="js"><span class="syntax-token syntax-identifier">backtick</span></code>',
+    );
+    expect(html).toContain(
+      '<code class="js"><span class="syntax-token syntax-identifier">tilde</span></code>',
+    );
     expect(html).toContain("<p><code>js wrong ~~</code></p>");
     expect(html).toContain("<p>~~~js<br/>short<br/>~~</p>");
   });
@@ -4736,7 +4705,9 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<p>Before</p>");
-    expect(html).toContain("<pre><code>let value = &#x27;#1&#x27;;\n[guide]: https://example.com</code></pre>");
+    expect(html).toContain(
+      "<pre><code>let value = &#x27;#1&#x27;;\n[guide]: https://example.com</code></pre>",
+    );
     expect(html).toContain("<p>After</p>");
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain('<a href="https://example.com">');
@@ -4744,7 +4715,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders plain fenced code blocks through the ReactMarkdown path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Before\n\n```\n#1 stays text\n[guide]: https://example.com\n```\n\nAfter"} />,
+      <MarkdownRenderer
+        markdown={"Before\n\n```\n#1 stays text\n[guide]: https://example.com\n```\n\nAfter"}
+      />,
     );
 
     expect(html).toContain("<p>Before</p>");
@@ -5218,16 +5191,12 @@ describe("MarkdownRenderer", () => {
   it("renders literal tilde delimiters through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={
-          "before\n\nKeep ~~ deleted ~~ and ~~ also literal ~~ as text\n\nafter"
-        }
+        markdown={"before\n\nKeep ~~ deleted ~~ and ~~ also literal ~~ as text\n\nafter"}
       />,
     );
 
     expect(html).toContain("<p>before</p>");
-    expect(html).toContain(
-      "<p>Keep ~~ deleted ~~ and ~~ also literal ~~ as text</p>",
-    );
+    expect(html).toContain("<p>Keep ~~ deleted ~~ and ~~ also literal ~~ as text</p>");
     expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<del> deleted </del>");
     expect(html).not.toContain("<del> also literal </del>");
@@ -5358,7 +5327,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders inline Markdown inside emphasis tokens through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n**https://example.com** *`code`* ~~www.example.com~~\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n**https://example.com** *`code`* ~~www.example.com~~\n\nafter"}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -5399,7 +5370,9 @@ describe("MarkdownRenderer", () => {
   it("renders safe escaped punctuation paragraphs through ReactMarkdown", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={"before\n\nKeep \\*literal\\* and \\_plain\\_ beside **strong** and `code`\n\nafter"}
+        markdown={
+          "before\n\nKeep \\*literal\\* and \\_plain\\_ beside **strong** and `code`\n\nafter"
+        }
       />,
     );
 
@@ -5434,9 +5407,7 @@ describe("MarkdownRenderer", () => {
   });
 
   it("preserves legacy inline code span delimiter edge cases", () => {
-    const isolatedHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"``\n\n````\n\n` `"} />,
-    );
+    const isolatedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"``\n\n````\n\n` `"} />);
     const crossingHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"Keep `` and ```` but render ` `, `` ` ``, and `a``b`"} />,
     );
@@ -5492,7 +5463,9 @@ describe("MarkdownRenderer", () => {
 
   it("consumes legacy hard-break markers before line breaks", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Backslash\\\nnext\nTwo spaces  \nafter\nTab\t\nend\nSingle space \ntrimmed"} />,
+      <MarkdownRenderer
+        markdown={"Backslash\\\nnext\nTwo spaces  \nafter\nTab\t\nend\nSingle space \ntrimmed"}
+      />,
     );
 
     expect(html).toContain(
@@ -5508,11 +5481,15 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         className="readme-body markdown-wrap"
-        markdown={"first line\nsecond line\nsoft space \nnext\nhard tab\t\nnext\nhard break\\\nnext"}
+        markdown={
+          "first line\nsecond line\nsoft space \nnext\nhard tab\t\nnext\nhard break\\\nnext"
+        }
       />,
     );
 
-    expect(html).toContain("first line\nsecond line\nsoft space \nnext\nhard tab<br/>next\nhard break<br/>next");
+    expect(html).toContain(
+      "first line\nsecond line\nsoft space \nnext\nhard tab<br/>next\nhard break<br/>next",
+    );
     expect(html).not.toContain("first line<br/>second line");
     expect(html).not.toContain("hard break\\");
     expect(html).not.toContain("hard tab    <br/>");
@@ -5529,7 +5506,9 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<div class="readme-body markdown-wrap">');
-    expect(html).toContain('<h1 id="readme">README<a class="head-anchor" href="#readme">#</a></h1>');
+    expect(html).toContain(
+      '<h1 id="readme">README<a class="head-anchor" href="#readme">#</a></h1>',
+    );
     expect(html).toContain("<p>first line\nsecond line\nhard break<br/>next</p>");
     expect(html).toContain("<ul><li>item\ncontinuation</li></ul>");
     expect(html).toContain("<p>final line\nsoft next</p>");
@@ -5561,7 +5540,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "**Read** [docs](https://example.com/docs)\nThen [guide][docs]\nTitled [title]( <https://example.com/title> \"Title\" )\nFinally owner#7\n\n[docs]: https://example.com/ref \"Docs\""
+          '**Read** [docs](https://example.com/docs)\nThen [guide][docs]\nTitled [title]( <https://example.com/title> "Title" )\nFinally owner#7\n\n[docs]: https://example.com/ref "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -5625,7 +5604,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders simple inline links and images inside plain paragraphs like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"See [docs](https://example.com/docs) and ![logo](/files/logo.png) now"} />,
+      <MarkdownRenderer
+        markdown={"See [docs](https://example.com/docs) and ![logo](/files/logo.png) now"}
+      />,
     );
 
     expect(html).toContain(
@@ -5657,9 +5638,7 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<a href="https://example.com/docs">docs</a>');
-    expect(html).toContain(
-      '<a href="https://example.com/guide" title="Read guide">guide</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/guide" title="Read guide">guide</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
     expect(html).toContain('<a href="#">bad</a>');
     expect(html).not.toContain('href="javascript:alert(1)"');
@@ -5710,12 +5689,8 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
-    expect(html).toContain(
-      '<a href="https://example.com/single" title="Single title">single</a>',
-    );
-    expect(html).toContain(
-      '<a href="https://example.com/paren" title="Read paren">paren</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/single" title="Single title">single</a>');
+    expect(html).toContain('<a href="https://example.com/paren" title="Read paren">paren</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
     expect(html).not.toContain("<br/>");
   });
@@ -5730,9 +5705,7 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<a href="https://example.com/docs" title="Tab title">docs</a>');
-    expect(html).toContain(
-      '<a href="https://example.com/split" title="Split tab title">split</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/split" title="Split tab title">split</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo tab title"/>');
   });
 
@@ -5741,8 +5714,10 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={'[docs](https://example.com/docs\n\n"Read docs")'} />,
     );
 
-    expect(html).toContain('[docs](<a href="https://example.com/docs">https://example.com/docs</a>');
-    expect(html).toContain('<p>&quot;Read docs&quot;)</p>');
+    expect(html).toContain(
+      '[docs](<a href="https://example.com/docs">https://example.com/docs</a>',
+    );
+    expect(html).toContain("<p>&quot;Read docs&quot;)</p>");
     expect(html).not.toContain('title="Read docs"');
   });
 
@@ -5864,9 +5839,7 @@ describe("MarkdownRenderer", () => {
       />,
     );
 
-    expect(html).toContain(
-      '<a href="https://example.com/%ED%95%9C%EA%B8%80%20path">docs</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/%ED%95%9C%EA%B8%80%20path">docs</a>');
     expect(html).toContain('<img alt="logo" src="/files/%ED%95%9C%EA%B8%80.png"/>');
     expect(html).toContain(
       '<a href="https://example.com/%ED%95%9C%EA%B8%80" title="Title">ref</a>',
@@ -5880,19 +5853,17 @@ describe("MarkdownRenderer", () => {
 
   it("accepts angle-wrapped inline targets with spaces like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'[docs](<https://example.com/a b> "title") ![logo](</files/logo 1.png>) [mail](<mailto:user name@example.com>) [leading](< https://example.com/a b >) ![spaced](< /files/a b.png >) [blank](< >) [bad](<javascript:alert(1)>)'} />,
+      <MarkdownRenderer
+        markdown={
+          '[docs](<https://example.com/a b> "title") ![logo](</files/logo 1.png>) [mail](<mailto:user name@example.com>) [leading](< https://example.com/a b >) ![spaced](< /files/a b.png >) [blank](< >) [bad](<javascript:alert(1)>)'
+        }
+      />,
     );
 
-    expect(html).toContain(
-      '<a href="https://example.com/a%20b" title="title">docs</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/a%20b" title="title">docs</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo%201.png"/>');
-    expect(html).toContain(
-      '<a href="mailto:user%20name@example.com">mail</a>',
-    );
-    expect(html).toContain(
-      '<a href="%20https://example.com/a%20b%20">leading</a>',
-    );
+    expect(html).toContain('<a href="mailto:user%20name@example.com">mail</a>');
+    expect(html).toContain('<a href="%20https://example.com/a%20b%20">leading</a>');
     expect(html).toContain('<img alt="spaced" src="%20/files/a%20b.png%20"/>');
     expect(html).toContain('<a href="%20">blank</a>');
     expect(html).toContain('<a href="#">bad</a>');
@@ -5911,7 +5882,11 @@ describe("MarkdownRenderer", () => {
 
   it("unescapes link and image label punctuation like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'[a\\]b](https://example.com) [a\\[b][ref] ![a\\*b a\\[c\\] a\\!d a\\`e](/files/logo.png)\n\n[ref]: https://example.com/ref'} />,
+      <MarkdownRenderer
+        markdown={
+          "[a\\]b](https://example.com) [a\\[b][ref] ![a\\*b a\\[c\\] a\\!d a\\`e](/files/logo.png)\n\n[ref]: https://example.com/ref"
+        }
+      />,
     );
 
     expect(html).toContain('<a href="https://example.com">a]b</a>');
@@ -5923,13 +5898,15 @@ describe("MarkdownRenderer", () => {
 
   it("renders code spans inside link labels like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'[`code`](https://example.com) [a `co]de` b](https://example.com/bracket) [`ref`][ref] ![`code`](/files/logo.png)\n\n[ref]: https://example.com/ref'} />,
+      <MarkdownRenderer
+        markdown={
+          "[`code`](https://example.com) [a `co]de` b](https://example.com/bracket) [`ref`][ref] ![`code`](/files/logo.png)\n\n[ref]: https://example.com/ref"
+        }
+      />,
     );
 
     expect(html).toContain('<a href="https://example.com"><code>code</code></a>');
-    expect(html).toContain(
-      '<a href="https://example.com/bracket">a <code>co]de</code> b</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/bracket">a <code>co]de</code> b</a>');
     expect(html).toContain('<a href="https://example.com/ref"><code>ref</code></a>');
     expect(html).toContain('<img alt="`code`" src="/files/logo.png"/>');
   });
@@ -5961,25 +5938,19 @@ describe("MarkdownRenderer", () => {
   it("renders inline markdown inside link labels like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={'[**bold** *em* ~~del~~](https://example.com) [plain <em>html</em> tail](https://example.com/html) [<span data-x="1">label</span>](https://example.com/span) [a [b](https://inner.com) c](https://outer.com) [![alt](img.png)](https://image-link.com) [http://example.com user@example.com @user #1](https://outer.com/literal) [<user@example.com>](https://outer.com/email) [<http://example.com>](https://outer.com/angle) ![<em>alt</em>](img.png)'}
+        markdown={
+          '[**bold** *em* ~~del~~](https://example.com) [plain <em>html</em> tail](https://example.com/html) [<span data-x="1">label</span>](https://example.com/span) [a [b](https://inner.com) c](https://outer.com) [![alt](img.png)](https://image-link.com) [http://example.com user@example.com @user #1](https://outer.com/literal) [<user@example.com>](https://outer.com/email) [<http://example.com>](https://outer.com/angle) ![<em>alt</em>](img.png)'
+        }
       />,
     );
 
     expect(html).toContain(
       '<a href="https://example.com"><strong>bold</strong> <em>em</em> <del>del</del></a>',
     );
-    expect(html).toContain(
-      '<a href="https://example.com/html">plain <em>html</em> tail</a>',
-    );
-    expect(html).toContain(
-      '<a href="https://example.com/span"><span data-x="1">label</span></a>',
-    );
-    expect(html).toContain(
-      '<a href="https://outer.com">a <a href="https://inner.com">b</a> c</a>',
-    );
-    expect(html).toContain(
-      '<a href="https://image-link.com"><img alt="alt" src="img.png"/></a>',
-    );
+    expect(html).toContain('<a href="https://example.com/html">plain <em>html</em> tail</a>');
+    expect(html).toContain('<a href="https://example.com/span"><span data-x="1">label</span></a>');
+    expect(html).toContain('<a href="https://outer.com">a <a href="https://inner.com">b</a> c</a>');
+    expect(html).toContain('<a href="https://image-link.com"><img alt="alt" src="img.png"/></a>');
     expect(html).toContain(
       '<a href="https://outer.com/literal">http://example.com user@example.com @user #1</a>',
     );
@@ -5990,9 +5961,7 @@ describe("MarkdownRenderer", () => {
       '<a href="https://outer.com/angle"><a href="http://example.com">http://example.com</a></a>',
     );
     expect(html).toContain('<img alt="&lt;em&gt;alt&lt;/em&gt;" src="img.png"/>');
-    expect(html).not.toContain(
-      '<a href="https://outer.com/literal"><a href="http://example.com">',
-    );
+    expect(html).not.toContain('<a href="https://outer.com/literal"><a href="http://example.com">');
     expect(html).not.toContain(
       '<a href="https://outer.com/literal"><a href="mailto:user@example.com">',
     );
@@ -6002,16 +5971,18 @@ describe("MarkdownRenderer", () => {
 
   it("renders multi-backtick code spans inside link labels like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"[``code``](https://example.com/double) [a ``code`` b](https://example.com/mixed) [```co]de```](https://example.com/bracket) ![``code``](/files/logo.png)"} />,
+      <MarkdownRenderer
+        markdown={
+          "[``code``](https://example.com/double) [a ``code`` b](https://example.com/mixed) [```co]de```](https://example.com/bracket) ![``code``](/files/logo.png)"
+        }
+      />,
     );
     const referenceHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"[``ref``][ref]\n\n[ref]: https://example.com/ref"} />,
     );
 
     expect(html).toContain('<a href="https://example.com/double"><code>code</code></a>');
-    expect(html).toContain(
-      '<a href="https://example.com/mixed">a <code>code</code> b</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/mixed">a <code>code</code> b</a>');
     expect(html).toContain('<a href="https://example.com/bracket"><code>co]de</code></a>');
     expect(referenceHtml).toContain('<a href="https://example.com/ref"><code>ref</code></a>');
     expect(html).toContain('<img alt="``code``" src="/files/logo.png"/>');
@@ -6019,7 +5990,11 @@ describe("MarkdownRenderer", () => {
 
   it("tokenizes adjacent reference links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'[ref][r] ![img](/files/logo.png) [``code``][r][next](https://example.com/next) [ref][r]![tight](/files/tight.png)\n\n[r]: https://example.com/ref'} />,
+      <MarkdownRenderer
+        markdown={
+          "[ref][r] ![img](/files/logo.png) [``code``][r][next](https://example.com/next) [ref][r]![tight](/files/tight.png)\n\n[r]: https://example.com/ref"
+        }
+      />,
     );
 
     expect(html).toContain('<a href="https://example.com/ref">ref</a> <img alt="img"');
@@ -6035,7 +6010,7 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown="[``co`de``](https://example.com/double)" />,
     );
 
-    expect(html).toContain('[<code>co`de</code>](');
+    expect(html).toContain("[<code>co`de</code>](");
     expect(html).toContain('<a href="https://example.com/double">https://example.com/double</a>');
     expect(html).not.toContain('href="https://example.com/double"><code>co`de</code></a>');
   });
@@ -6083,7 +6058,7 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          "[rel](docs/guide.md) ![logo](images/logo.png) [hash](section#part) [query](?page=2) [ref][guide] [bad](tel:123) [data](data:text/plain,hi)\n\n[guide]: docs/reference.md \"Guide\""
+          '[rel](docs/guide.md) ![logo](images/logo.png) [hash](section#part) [query](?page=2) [ref][guide] [bad](tel:123) [data](data:text/plain,hi)\n\n[guide]: docs/reference.md "Guide"'
         }
       />,
     );
@@ -6248,9 +6223,7 @@ describe("MarkdownRenderer", () => {
       />,
     );
 
-    expect(html).toContain(
-      '<a href="https://example.com?a=1&amp;b=2" title="T &amp; C">docs</a>',
-    );
+    expect(html).toContain('<a href="https://example.com?a=1&amp;b=2" title="T &amp; C">docs</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo&amp;1.png"/>');
     expect(html).toContain('<a href="#">bad</a>');
     expect(html).not.toContain("[bad]:");
@@ -6269,9 +6242,7 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
     expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
-    expect(html).toContain(
-      '<a href="https://example.com/split" title="Split docs">split</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/split" title="Split docs">split</a>');
     expect(html).toContain(
       '<img alt="split-logo" src="/files/split-logo.png" title="Split logo"/>',
     );
@@ -6298,7 +6269,11 @@ describe("MarkdownRenderer", () => {
 
   it("resolves empty angle reference targets like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={'See [guide][ref] and ![logo][img] before [split][next]\n\n[ref]: <> "Read docs"\n[img]: <>\n[next]: <>\n  "Split title"'} />,
+      <MarkdownRenderer
+        markdown={
+          'See [guide][ref] and ![logo][img] before [split][next]\n\n[ref]: <> "Read docs"\n[img]: <>\n[next]: <>\n  "Split title"'
+        }
+      />,
     );
 
     expect(html).toContain("<p>See ");
@@ -6336,12 +6311,8 @@ describe("MarkdownRenderer", () => {
       'See <a href="https://example.com/docs">https://example.com/docs</a> and ',
     );
     expect(html).toContain('<a href="mailto:help@example.com">help@example.com</a>');
-    expect(html).toContain(
-      '<a href="mailto:help@example.com">mailto:help@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="MAILTO:ADMIN@EXAMPLE.COM">MAILTO:ADMIN@EXAMPLE.COM</a>',
-    );
+    expect(html).toContain('<a href="mailto:help@example.com">mailto:help@example.com</a>');
+    expect(html).toContain('<a href="MAILTO:ADMIN@EXAMPLE.COM">MAILTO:ADMIN@EXAMPLE.COM</a>');
     expect(html).not.toContain("https://example.com/docs&gt;");
     expect(html).not.toContain("&lt;help@example.com&gt;");
     expect(html).not.toContain("&lt;mailto:help@example.com&gt;");
@@ -6349,49 +6320,35 @@ describe("MarkdownRenderer", () => {
 
   it("renders extended angle-bracket email local parts like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Mail <foo!bar@example.com> <foo#bar@example.com> <foo'bar@example.com> <foo/bar@example.com> <foo=bar@example.com> <foo`bar@example.com> <foo{bar@example.com> <foo|bar@example.com> <foo}bar@example.com> <foo~bar@example.com> but not <foo^bar@example.com>"} />,
+      <MarkdownRenderer
+        markdown={
+          "Mail <foo!bar@example.com> <foo#bar@example.com> <foo'bar@example.com> <foo/bar@example.com> <foo=bar@example.com> <foo`bar@example.com> <foo{bar@example.com> <foo|bar@example.com> <foo}bar@example.com> <foo~bar@example.com> but not <foo^bar@example.com>"
+        }
+      />,
     );
 
-    expect(html).toContain(
-      '<a href="mailto:foo!bar@example.com">foo!bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo#bar@example.com">foo#bar@example.com</a>',
-    );
+    expect(html).toContain('<a href="mailto:foo!bar@example.com">foo!bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo#bar@example.com">foo#bar@example.com</a>');
     expect(html).toContain(
       '<a href="mailto:foo&#x27;bar@example.com">foo&#x27;bar@example.com</a>',
     );
-    expect(html).toContain(
-      '<a href="mailto:foo/bar@example.com">foo/bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo=bar@example.com">foo=bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo%60bar@example.com">foo`bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo%7Bbar@example.com">foo{bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo%7Cbar@example.com">foo|bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo%7Dbar@example.com">foo}bar@example.com</a>',
-    );
-    expect(html).toContain(
-      '<a href="mailto:foo~bar@example.com">foo~bar@example.com</a>',
-    );
+    expect(html).toContain('<a href="mailto:foo/bar@example.com">foo/bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo=bar@example.com">foo=bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo%60bar@example.com">foo`bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo%7Bbar@example.com">foo{bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo%7Cbar@example.com">foo|bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo%7Dbar@example.com">foo}bar@example.com</a>');
+    expect(html).toContain('<a href="mailto:foo~bar@example.com">foo~bar@example.com</a>');
     expect(html).toContain("&lt;foo^");
-    expect(html).toContain(
-      '<a href="mailto:bar@example.com">bar@example.com</a>&gt;',
-    );
+    expect(html).toContain('<a href="mailto:bar@example.com">bar@example.com</a>&gt;');
     expect(html).not.toContain('href="mailto:foo^bar@example.com"');
   });
 
   it("renders mixed extended angle email autolinks through ReactMarkdown", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Mail <foo#bar@example.com> and <foo'bar@example.com> plus <foo|bar@example.com>"} />,
+      <MarkdownRenderer
+        markdown={"Mail <foo#bar@example.com> and <foo'bar@example.com> plus <foo|bar@example.com>"}
+      />,
     );
 
     expect(html).toContain(
@@ -6401,14 +6358,16 @@ describe("MarkdownRenderer", () => {
 
   it("uses legacy angle-bracket email domain validation", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Mail <foo@example.c> <foo@example.12> <foo@example-domain.com> but keep <foo@example_domain.com> <foo@example.com-> <foo@-example.com> <foo@example..com>"} />,
+      <MarkdownRenderer
+        markdown={
+          "Mail <foo@example.c> <foo@example.12> <foo@example-domain.com> but keep <foo@example_domain.com> <foo@example.com-> <foo@-example.com> <foo@example..com>"
+        }
+      />,
     );
 
     expect(html).toContain('<a href="mailto:foo@example.c">foo@example.c</a>');
     expect(html).toContain('<a href="mailto:foo@example.12">foo@example.12</a>');
-    expect(html).toContain(
-      '<a href="mailto:foo@example-domain.com">foo@example-domain.com</a>',
-    );
+    expect(html).toContain('<a href="mailto:foo@example-domain.com">foo@example-domain.com</a>');
     expect(html).toContain("&lt;foo@example_domain.com&gt;");
     expect(html).toContain("&lt;foo@example.com-&gt;");
     expect(html).toContain("&lt;foo@-example.com&gt;");
@@ -6441,9 +6400,7 @@ describe("MarkdownRenderer", () => {
       '<li>File <a href="file:///tmp/report.txt">file:///tmp/report.txt</a></li>',
     );
     expect(html).toContain('<li>ZPL <a href="zpl:movie">zpl:movie</a></li>');
-    expect(html).toContain(
-      '<td><a href="file:///tmp/report.txt">file:///tmp/report.txt</a></td>',
-    );
+    expect(html).toContain('<td><a href="file:///tmp/report.txt">file:///tmp/report.txt</a></td>');
     expect(html).toContain('<td><a href="zpl:movie">zpl:movie</a></td>');
     expect(html).toContain(
       '<blockquote><p>File <a href="file:///tmp/report.txt">file:///tmp/report.txt</a><br/>ZPL <a href="zpl:movie">zpl:movie</a></p></blockquote>',
@@ -6505,12 +6462,8 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown="See www.example.com/end. and (www.example.com/docs)," />,
     );
 
-    expect(html).toContain(
-      '<a href="http://www.example.com/end">www.example.com/end</a>.',
-    );
-    expect(html).toContain(
-      '(<a href="http://www.example.com/docs">www.example.com/docs</a>),',
-    );
+    expect(html).toContain('<a href="http://www.example.com/end">www.example.com/end</a>.');
+    expect(html).toContain('(<a href="http://www.example.com/docs">www.example.com/docs</a>),');
     expect(html).not.toContain('href="www.example.com/end"');
     expect(html).not.toContain('href="http://www.example.com/end."');
   });
@@ -6521,9 +6474,7 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain('<a href="WWW.EXAMPLE.COM/path">WWW.EXAMPLE.COM/path</a>');
-    expect(html).toContain(
-      '<a href="http://www.example_domain.com">www.example_domain.com</a>',
-    );
+    expect(html).toContain('<a href="http://www.example_domain.com">www.example_domain.com</a>');
     expect(html).not.toContain('href="http://WWW.EXAMPLE.COM/path"');
   });
 
@@ -6542,13 +6493,9 @@ describe("MarkdownRenderer", () => {
   it("handles quoted bare email autolinks like legacy marked GFM", () => {
     const markdown =
       "Mail \"user@example.com\" but keep 'user@example.com' while linking 'https://example.com/a'";
-    const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={markdown} />,
-    );
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={markdown} />);
 
-    expect(html).toContain(
-      '&quot;<a href="mailto:user@example.com">user@example.com</a>&quot;',
-    );
+    expect(html).toContain('&quot;<a href="mailto:user@example.com">user@example.com</a>&quot;');
     expect(html).toContain("&#x27;user@example.com&#x27;");
     expect(html).toContain(
       '&#x27;<a href="https://example.com/a&#x27;">https://example.com/a&#x27;</a>',
@@ -6579,12 +6526,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<a href="https://example.com/docs">https://example.com/docs</a>]');
     expect(html).toContain("</a>]");
     expect(html).toContain('{<a href="https://example.com/a(b)">https://example.com/a(b)</a>}');
-    expect(html).toContain(
-      '<a href="https://example.com/a%5Bb%5D">https://example.com/a[b]</a>',
-    );
-    expect(html).toContain(
-      '<a href="https://example.com/a%7Bb%7D">https://example.com/a{b}</a>',
-    );
+    expect(html).toContain('<a href="https://example.com/a%5Bb%5D">https://example.com/a[b]</a>');
+    expect(html).toContain('<a href="https://example.com/a%7Bb%7D">https://example.com/a{b}</a>');
     expect(html).not.toContain('href="https://example.com/docs]"');
     expect(html).not.toContain('href="https://example.com/a(b)}"');
   });
@@ -6617,9 +6560,7 @@ describe("MarkdownRenderer", () => {
   });
 
   it("accepts up-to-three-space indented GFM tables like legacy marked", () => {
-    const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"   A | B\n  - | -\n  1 | 2"} />,
-    );
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"   A | B\n  - | -\n  1 | 2"} />);
     const indentedCodeHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"    A | B\n    - | -\n    1 | 2"} />,
     );
@@ -6646,9 +6587,7 @@ describe("MarkdownRenderer", () => {
   });
 
   it("splits even-backslash table pipes like legacy marked", () => {
-    const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"A \\\\| B\n- | -\n1 | 2"} />,
-    );
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"A \\\\| B\n- | -\n1 | 2"} />);
 
     expect(html).toContain("<table>");
     expect(html).toContain("<th>A \\</th>");
@@ -6684,9 +6623,7 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<table>");
     expect(html).toContain("<td>Docs</td>");
-    expect(html).toContain(
-      '<td><a href="https://example.com/guide">Guide</a></td>',
-    );
+    expect(html).toContain('<td><a href="https://example.com/guide">Guide</a></td>');
     expect(html).toContain('<td><img alt="Logo" src="/files/logo.png"/></td>');
   });
 
@@ -6704,7 +6641,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "Kind | Value\n- | -\nRef | See [guide][docs]\nIssue | owner#7\n\n[docs]: https://example.com/docs \"Docs\""
+          'Kind | Value\n- | -\nRef | See [guide][docs]\nIssue | owner#7\n\n[docs]: https://example.com/docs "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -6833,18 +6770,14 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<p>before</p>");
     expect(html).toContain("<table>");
     expect(html).toContain('<td><span class="state">open</span></td>');
-    expect(html).toContain(
-      '<td><em><a href="https://example.com/docs">docs</a></em></td>',
-    );
+    expect(html).toContain('<td><em><a href="https://example.com/docs">docs</a></em></td>');
     expect(html).toContain(
       '<td><strong><a href="https://example.com/ref" title="Docs">guide</a></strong></td>',
     );
     expect(html).toContain(
       '<td><em><a href="https://example.com/titled" title="Title">titled</a></em></td>',
     );
-    expect(html).toContain(
-      "<td>Keep *literal* beside <strong>strong</strong></td>",
-    );
+    expect(html).toContain("<td>Keep *literal* beside <strong>strong</strong></td>");
     expect(html).toContain(
       '<td>See <a href="https://example.com/docs">https://example.com/docs</a></td>',
     );
@@ -6952,8 +6885,12 @@ describe("MarkdownRenderer", () => {
   });
 
   it("keeps blank-line separated same-marker list items together like legacy marked", () => {
-    const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n\n- second"} />);
-    const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"1. first\n\n2. second"} />);
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n\n- second"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"1. first\n\n2. second"} />,
+    );
 
     expect(unorderedHtml).toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
     expect(unorderedHtml).not.toContain("</ul><ul>");
@@ -6988,17 +6925,19 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(followingListHtml).toContain("<ul><li>first</li></ul><ul><li>second</li></ul>");
-    expect(followingListHtml).not.toContain(
-      "<ul><li><p>first</p></li><li><p>second</p></li></ul>",
-    );
+    expect(followingListHtml).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
     expect(followingContinuationHtml).toContain("<ul><li>first</li></ul>");
     expect(followingContinuationHtml).toContain("<p>  continuation</p>");
     expect(followingContinuationHtml).not.toContain("<p>continuation</p></li>");
   });
 
   it("splits blank-line separated marker changes like legacy marked smartLists", () => {
-    const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n\n+ second"} />);
-    const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"1. first\n\n2) second"} />);
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n\n+ second"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"1. first\n\n2) second"} />,
+    );
 
     expect(unorderedHtml).toContain("<ul><li>first</li></ul><ul><li>second</li></ul>");
     expect(unorderedHtml).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
@@ -7029,7 +6968,9 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"- first\n\nmiddle paragraph\n\n- second"} />,
     );
 
-    expect(html).toContain("<ul><li>first</li></ul><p>middle paragraph</p><ul><li>second</li></ul>");
+    expect(html).toContain(
+      "<ul><li>first</li></ul><p>middle paragraph</p><ul><li>second</li></ul>",
+    );
     expect(html).not.toContain("<ul><li><p>first</p></li><li><p>second</p></li></ul>");
   });
 
@@ -7047,7 +6988,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "- See [guide](https://example.com/guide)\n- Logo ![logo](/files/logo.png)\n- Ref [docs][guide]\n- Angle <https://example.com/docs>\n- Issue owner#7\n\n[guide]: https://example.com/docs \"Docs\""
+          '- See [guide](https://example.com/guide)\n- Logo ![logo](/files/logo.png)\n- Ref [docs][guide]\n- Angle <https://example.com/docs>\n- Issue owner#7\n\n[guide]: https://example.com/docs "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -7117,7 +7058,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "- [ ] Read [docs][guide]\n- [x] Close owner#7\n\n[guide]: https://example.com/docs \"Docs\""
+          '- [ ] Read [docs][guide]\n- [x] Close owner#7\n\n[guide]: https://example.com/docs "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -7265,7 +7206,7 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          "before\n\n- \t**item**\n  continuation\n-  \tsecond\n  [guide][docs]\n\nmiddle\n\n1. \tordered\n   continuation\n\nafter\n\n[docs]: https://example.com/docs \"Docs\""
+          'before\n\n- \t**item**\n  continuation\n-  \tsecond\n  [guide][docs]\n\nmiddle\n\n1. \tordered\n   continuation\n\nafter\n\n[docs]: https://example.com/docs "Docs"'
         }
       />,
     );
@@ -7292,20 +7233,20 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"1.    \titem\n   continuation"} />,
     );
 
-    expect(unorderedHtml).toContain(
-      "<ul><li><pre><code>item\n</code></pre>continuation</li></ul>",
-    );
+    expect(unorderedHtml).toContain("<ul><li><pre><code>item\n</code></pre>continuation</li></ul>");
     expect(paddedUnorderedHtml).toContain(
       "<ul><li><pre><code> item\n</code></pre>continuation</li></ul>",
     );
-    expect(orderedHtml).toContain(
-      "<ol><li><pre><code>item\n</code></pre>continuation</li></ol>",
-    );
+    expect(orderedHtml).toContain("<ol><li><pre><code>item\n</code></pre>continuation</li></ol>");
   });
 
   it("renders large space-tab continuations through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n-   \titem\n  continuation\n\n1.    \tordered\n   continuation\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={
+          "before\n\n-   \titem\n  continuation\n\n1.    \tordered\n   continuation\n\nafter"
+        }
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -7322,9 +7263,7 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"-   \titem\n\n  continuation"} />,
     );
 
-    expect(looseTextHtml).toContain(
-      "<ul><li><p>  item</p><p>continuation</p></li></ul>",
-    );
+    expect(looseTextHtml).toContain("<ul><li><p>  item</p><p>continuation</p></li></ul>");
     expect(looseCodeHtml).toContain(
       "<ul><li><pre><code>item\n</code></pre><p>continuation</p></li></ul>",
     );
@@ -7345,7 +7284,9 @@ describe("MarkdownRenderer", () => {
   it("splits same-indent smart lists when unordered markers change like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n+ second\n- third"} />);
 
-    expect(html).toContain("<ul><li>first</li></ul><ul><li>second</li></ul><ul><li>third</li></ul>");
+    expect(html).toContain(
+      "<ul><li>first</li></ul><ul><li>second</li></ul><ul><li>third</li></ul>",
+    );
     expect(html).not.toContain("<ul><li>first</li><li>second</li><li>third</li></ul>");
   });
 
@@ -7361,7 +7302,9 @@ describe("MarkdownRenderer", () => {
   });
 
   it("splits same-indent ordered lists when delimiters change like legacy marked", () => {
-    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"1. first\n2) second\n3. third"} />);
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"1. first\n2) second\n3. third"} />,
+    );
 
     expect(html).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
     expect(html).toContain('<ol start="3"><li>third</li></ol>');
@@ -7407,9 +7350,7 @@ describe("MarkdownRenderer", () => {
     const tightHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- parent\n - child\n- next"} />,
     );
-    const looseHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"- parent\n\n - child"} />,
-    );
+    const looseHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"- parent\n\n - child"} />);
 
     expect(tightHtml).toContain("<ul><li>parent</li><li>child</li><li>next</li></ul>");
     expect(tightHtml).not.toContain("<li>parent<ul><li>child</li></ul>");
@@ -7455,13 +7396,17 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).not.toContain("<li>first<ol");
     expect(markerChangeHtml).toContain("<ul><li>first</li></ul><ul><li>second</li></ul>");
     expect(markerChangeHtml).not.toContain("<ul><li>first</li><li>second</li></ul>");
-    expect(delimiterChangeHtml).toContain('<ol><li>first</li></ol><ol start="2"><li>second</li></ol>');
+    expect(delimiterChangeHtml).toContain(
+      '<ol><li>first</li></ol><ol start="2"><li>second</li></ol>',
+    );
     expect(delimiterChangeHtml).not.toContain("<ol><li>first</li><li>second</li></ol>");
   });
 
   it("renders root-indented marker changes through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n   - first\n  + second\n\n   1. first\n  2) second\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n   - first\n  + second\n\n   1. first\n  2) second\n\nafter"}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -7473,8 +7418,12 @@ describe("MarkdownRenderer", () => {
   });
 
   it("keeps four-space list-looking lines as indented code before root lists like legacy marked", () => {
-    const unorderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"    - code\n- list"} />);
-    const orderedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"    1. code\n1. list"} />);
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"    - code\n- list"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"    1. code\n1. list"} />,
+    );
 
     expect(unorderedHtml).toContain("<pre><code>- code</code></pre><ul><li>list</li></ul>");
     expect(unorderedHtml).not.toContain("<ul><li>code</li><li>list</li></ul>");
@@ -7498,7 +7447,9 @@ describe("MarkdownRenderer", () => {
 
     expect(sameLevelHtml).toContain("<ol><li>parent</li><li>child</li><li>next</li></ol>");
     expect(sameLevelHtml).not.toContain("<li>parent<ol");
-    expect(nestedHtml).toContain('<ol><li>parent<ol start="2"><li>child</li></ol></li><li>next</li></ol>');
+    expect(nestedHtml).toContain(
+      '<ol><li>parent<ol start="2"><li>child</li></ol></li><li>next</li></ol>',
+    );
     expect(wideSameLevelHtml).toContain(
       '<ol start="12"><li>parent</li><li>child</li><li>next</li></ol>',
     );
@@ -7547,10 +7498,14 @@ describe("MarkdownRenderer", () => {
 
   it("renders tight list continuation lines through the ReactMarkdown document path", () => {
     const unorderedHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n- first\n  continuation with **style**\n- second\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n- first\n  continuation with **style**\n- second\n\nafter"}
+      />,
     );
     const orderedHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n12. first\n    continuation with **style**\n13. second\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n12. first\n    continuation with **style**\n13. second\n\nafter"}
+      />,
     );
 
     expect(unorderedHtml).toContain("<p>before</p>");
@@ -7567,7 +7522,9 @@ describe("MarkdownRenderer", () => {
   });
 
   it("preserves extra continuation indentation inside list items like legacy marked", () => {
-    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"- first\n    code\n- second"} />);
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n    code\n- second"} />,
+    );
 
     expect(html).toContain("<ul><li>first<br/>  code</li><li>second</li></ul>");
     expect(html).not.toContain("<li>first<br/>code</li>");
@@ -7601,7 +7558,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders lazy list continuation lines through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n- first\ncontinued with **style**\nmore\n- second\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n- first\ncontinued with **style**\nmore\n- second\n\nafter"}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -7739,9 +7698,7 @@ describe("MarkdownRenderer", () => {
   it("renders nested loose task-list paragraphs through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={
-          "before\n\n- [x] parent\n  - [ ] child\n\n    child detail\n- [ ] next\n\nafter"
-        }
+        markdown={"before\n\n- [x] parent\n  - [ ] child\n\n    child detail\n- [ ] next\n\nafter"}
       />,
     );
 
@@ -7807,7 +7764,10 @@ describe("MarkdownRenderer", () => {
 
   it("renders trailing-space empty task items through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n- [ ] \n- [x] \n- [X] done\n\nafter"} showTasklistBar />,
+      <MarkdownRenderer
+        markdown={"before\n\n- [ ] \n- [x] \n- [X] done\n\nafter"}
+        showTasklistBar
+      />,
     );
 
     expect(html).toContain('Tasks<span class="done-counter">(2/3)</span>');
@@ -7827,9 +7787,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="tasklist task-show"');
     expect(html).toContain("Tasks<span");
     expect(html).toContain("(2/3)");
-    expect(html).toContain(
-      'class="bar red" style="width:66.66666666666666%" title="Tasklist"',
-    );
+    expect(html).toContain('class="bar red" style="width:66.66666666666666%" title="Tasklist"');
     expect(html).toContain(
       '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open</li>',
     );
@@ -7883,7 +7841,10 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"01. [x] block start"} showTasklistBar />,
     );
     const mixedHtml = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"   - [ ] three spaces\ntext\n1. [x] interrupts"} showTasklistBar />,
+      <MarkdownRenderer
+        markdown={"   - [ ] three spaces\ntext\n1. [x] interrupts"}
+        showTasklistBar
+      />,
     );
 
     expect(nonInterruptingHtml).toContain("<p>text<br/>2. [x] not a list</p>");
@@ -7955,7 +7916,11 @@ describe("MarkdownRenderer", () => {
 
   it("renders blockquote links and bare URLs through the ReactMarkdown path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"> See [docs](https://example.com/docs)\n> and <https://example.com/angle>\n> and www.example.com/end."} />,
+      <MarkdownRenderer
+        markdown={
+          "> See [docs](https://example.com/docs)\n> and <https://example.com/angle>\n> and www.example.com/end."
+        }
+      />,
     );
 
     expect(html).toContain("<blockquote>");
@@ -8009,7 +7974,7 @@ describe("MarkdownRenderer", () => {
           },
         ]}
         markdown={
-          "> **See** [docs](https://example.com/docs)\n> ~~Ref~~ [guide][docs]\n> _Issue_ owner#7\n\n[docs]: https://example.com/ref \"Docs\""
+          '> **See** [docs](https://example.com/docs)\n> ~~Ref~~ [guide][docs]\n> _Issue_ owner#7\n\n[docs]: https://example.com/ref "Docs"'
         }
         ownerName="owner"
         projectName="projectYobi"
@@ -8065,9 +8030,7 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(
       '<h1 id="quoted-heading">Quoted <strong>Heading</strong><a class="head-anchor" href="#quoted-heading">#</a></h1>',
     );
-    expect(html).toContain(
-      '<h2 id="child">Child<a class="head-anchor" href="#child">#</a></h2>',
-    );
+    expect(html).toContain('<h2 id="child">Child<a class="head-anchor" href="#child">#</a></h2>');
     expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<p>&gt;");
   });
@@ -8096,7 +8059,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders lazy blockquote continuations through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n> quoted\ncontinued with **style**\nmore `code`\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n> quoted\ncontinued with **style**\nmore `code`\n\nafter"}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -8120,7 +8085,9 @@ describe("MarkdownRenderer", () => {
 
   it("matches legacy blockquote indentation and tab marker handling", () => {
     const indentedHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"   > three"} />);
-    const codeHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"    > code\n\t> tab-code"} />);
+    const codeHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"    > code\n\t> tab-code"} />,
+    );
     const tabMarkerHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={">\tone\n> \tcode\n>\t- item"} />,
     );
@@ -8138,12 +8105,16 @@ describe("MarkdownRenderer", () => {
     const nonInterruptingHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> text\n2. second"} />,
     );
-    const interruptingHtml = renderToStaticMarkup(<MarkdownRenderer markdown={"> text\n1. first"} />);
+    const interruptingHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> text\n1. first"} />,
+    );
 
     expect(nonInterruptingHtml).toContain("<blockquote>");
     expect(nonInterruptingHtml).toContain("<p>text<br/>2. second</p>");
     expect(nonInterruptingHtml).not.toContain("</blockquote><ol");
-    expect(interruptingHtml).toContain("<blockquote><p>text</p></blockquote><ol><li>first</li></ol>");
+    expect(interruptingHtml).toContain(
+      "<blockquote><p>text</p></blockquote><ol><li>first</li></ol>",
+    );
     expect(interruptingHtml).not.toContain("<p>text<br/>1. first</p>");
   });
 
@@ -8161,7 +8132,9 @@ describe("MarkdownRenderer", () => {
 
   it("renders lazy blockquote list continuations through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"before\n\n> - first\ncontinued with **style**\n> - second\n\nafter"} />,
+      <MarkdownRenderer
+        markdown={"before\n\n> - first\ncontinued with **style**\n> - second\n\nafter"}
+      />,
     );
 
     expect(html).toContain("<p>before</p>");
@@ -8247,9 +8220,7 @@ describe("MarkdownRenderer", () => {
   it("renders blockquote loose-list continuations through the ReactMarkdown document path", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={
-          "before\n\n> - first\n>\n>   continuation with **style**\n> - second\n\nafter"
-        }
+        markdown={"before\n\n> - first\n>\n>   continuation with **style**\n> - second\n\nafter"}
       />,
     );
 

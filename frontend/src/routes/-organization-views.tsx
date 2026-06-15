@@ -127,7 +127,11 @@ export function OrganizationMenu(props: {
             {detail.viewerCanUpdate ? (
               <li className={props.active === "settings" ? "active" : undefined}>
                 <a
-                  href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}
+                  href={buildOrganizationHref(
+                    runtimeConfig,
+                    detail.organizationName,
+                    "settingform",
+                  )}
                 >
                   <i className="yobicon-cog" />
                   <span className="blind">menu.admin</span>
@@ -150,7 +154,8 @@ export function OrganizationHeader(props: {
   const { detail, runtimeConfig } = props;
   const organizationHref = buildOrganizationHref(runtimeConfig, detail.organizationName);
   const logoUrl =
-    detail.logoUrl ?? prefixBasePath(runtimeConfig.basePath, "/assets/images/organization_default_logo.png");
+    detail.logoUrl ??
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/organization_default_logo.png");
   const enrollmentHref = buildOrganizationHref(
     runtimeConfig,
     detail.organizationName,
@@ -558,7 +563,8 @@ export function OrganizationDetailPage(props: {
                                 <a className="owner-name-small" href={ownerHref}>
                                   {project.ownerName}
                                 </a>{" "}
-                                at <strong title={project.createdLabel}>{project.createdLabel}</strong>
+                                at{" "}
+                                <strong title={project.createdLabel}>{project.createdLabel}</strong>
                                 {project.lastPushedLabel ? (
                                   <span className="small-font">
                                     , project.codeUpdate{" "}
@@ -575,8 +581,7 @@ export function OrganizationDetailPage(props: {
                               <ul className="unstyled" />
                               <p>
                                 <i className="yobicon-friends yobicon-middle" />
-                                <strong>{project.memberCount}</strong>{" "}
-                                <i className="yobicon-eye" />{" "}
+                                <strong>{project.memberCount}</strong> <i className="yobicon-eye" />{" "}
                                 <strong>{project.watchCount}</strong>{" "}
                                 {project.isWatching ? (
                                   <i
@@ -718,7 +723,9 @@ export function OrganizationIssueListPage(props: {
                   </li>
                   {props.currentUserId > 0 ? (
                     <>
-                      <li className={query.assigneeId === props.currentUserId ? "active" : undefined}>
+                      <li
+                        className={query.assigneeId === props.currentUserId ? "active" : undefined}
+                      >
                         <a
                           data-assignee-id={props.currentUserId}
                           data-author-id=""
@@ -744,7 +751,9 @@ export function OrganizationIssueListPage(props: {
                           issue.list.authoredByMe
                         </a>
                       </li>
-                      <li className={query.mentionId === props.currentUserId ? "active" : undefined}>
+                      <li
+                        className={query.mentionId === props.currentUserId ? "active" : undefined}
+                      >
                         <a
                           data-assignee-id=""
                           data-author-id=""
@@ -1025,9 +1034,14 @@ export function OrganizationIssueListPage(props: {
                   <div id="pagination" data-total={totalPageCount}>
                     <a
                       className="pageNum active"
-                      href={buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
-                        pageNum: issueList?.pageNum ?? 1,
-                      })}
+                      href={buildOrganizationIssueHref(
+                        props.runtimeConfig,
+                        organizationName,
+                        query,
+                        {
+                          pageNum: issueList?.pageNum ?? 1,
+                        },
+                      )}
                     >
                       {issueList?.pageNum ?? 1}
                     </a>
@@ -1300,7 +1314,11 @@ export function OrganizationMembersPage(props: {
                 <div className="member-id">{`@${member.loginId}`}</div>
                 <div className="member-setting">
                   <div className="btn-group" data-name={`roleof-${member.loginId}`}>
-                    <button className="btn dropdown-toggle large" data-toggle="dropdown" type="button">
+                    <button
+                      className="btn dropdown-toggle large"
+                      data-toggle="dropdown"
+                      type="button"
+                    >
                       <span className="d-label">{`user.role.${member.role}`}</span>
                       <span className="d-caret">
                         <span className="caret" />
@@ -1321,7 +1339,11 @@ export function OrganizationMembersPage(props: {
                               detail.organizationName,
                               `member/${member.userId}/edit`,
                             )}
-                            href="javascript:void(0)"
+                            href={buildOrganizationHref(
+                              props.runtimeConfig,
+                              detail.organizationName,
+                              `member/${member.userId}/edit`,
+                            )}
                             onClick={(event) => {
                               event.preventDefault();
                               props.onUpdateMemberRole?.(
@@ -1346,7 +1368,11 @@ export function OrganizationMembersPage(props: {
                       detail.organizationName,
                       `member/${member.userId}/delete`,
                     )}
-                    href="javascript:void(0)"
+                    href={buildOrganizationHref(
+                      props.runtimeConfig,
+                      detail.organizationName,
+                      `member/${member.userId}/delete`,
+                    )}
                     onClick={(event) => {
                       event.preventDefault();
                       setDeleteTarget(member.userId);

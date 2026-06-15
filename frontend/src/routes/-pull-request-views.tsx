@@ -168,7 +168,11 @@ function reviewThreadStateClass(thread: ReviewThread) {
   return thread.state.trim().toLowerCase() || "open";
 }
 
-function reviewThreadStateHref(runtimeConfig: RuntimeConfig | undefined, threadId: number, state: "close" | "open") {
+function reviewThreadStateHref(
+  runtimeConfig: RuntimeConfig | undefined,
+  threadId: number,
+  state: "close" | "open",
+) {
   const basePath = runtimeConfig?.basePath ?? "";
   return `${basePath}/threads/${threadId}/${state}`;
 }
@@ -403,8 +407,9 @@ function pullRequestQueryString(
   if (category !== "sent" && contributorId) {
     search.set("contributorId", String(contributorId));
   }
-  const pageNum =
-    Object.prototype.hasOwnProperty.call(overrides, "pageNum") ? overrides.pageNum : undefined;
+  const pageNum = Object.prototype.hasOwnProperty.call(overrides, "pageNum")
+    ? overrides.pageNum
+    : undefined;
   if (pageNum && pageNum > 1) {
     search.set("pageNum", String(pageNum));
   }
@@ -432,8 +437,9 @@ function organizationPullRequestQueryString(
   if (filter) {
     search.set("filter", filter);
   }
-  const pageNum =
-    Object.prototype.hasOwnProperty.call(overrides, "pageNum") ? overrides.pageNum : undefined;
+  const pageNum = Object.prototype.hasOwnProperty.call(overrides, "pageNum")
+    ? overrides.pageNum
+    : undefined;
   if (pageNum && pageNum > 1) {
     search.set("pageNum", String(pageNum));
   }
@@ -797,7 +803,10 @@ function LegacyPageNavigation(props: {
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <a href={props.hrefForPage(currentPage - 1)} pjax-page="">
+            <a
+              href={props.hrefForPage(currentPage - 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>button.prevPage</span>
             </a>
@@ -824,7 +833,10 @@ function LegacyPageNavigation(props: {
         <li className="page-num">{props.pageCount}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <a href={props.hrefForPage(currentPage + 1)} pjax-page="">
+            <a
+              href={props.hrefForPage(currentPage + 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <span>button.nextPage</span>
               <i className="ico btn-pg-next"></i>
             </a>
@@ -874,7 +886,6 @@ function ProjectRecentlyPushedBranches(props: {
                 pullRequest
               </a>
               <a
-                aria-hidden="true"
                 className="close"
                 data-dismiss="alert"
                 data-request-method="delete"
@@ -884,7 +895,12 @@ function ProjectRecentlyPushedBranches(props: {
                   branch.projectName,
                   `pushedBranch/${branch.id}/delete`,
                 )}
-                href="#"
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  branch.ownerName,
+                  branch.projectName,
+                  `pushedBranch/${branch.id}/delete`,
+                )}
               >
                 ×
               </a>
@@ -912,59 +928,65 @@ export function ProjectPullRequestListPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="row-fluid cb" pjax-container="">
-          <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-            <ProjectPullRequestSearchForm
-              category={props.category}
-              detail={detail}
-              list={list}
-              query={props.query}
-              runtimeConfig={props.runtimeConfig}
-            />
-          </div>
-          <div className="span10 span-hard-wrap" id="span10">
-            <ProjectRecentlyPushedBranches
-              branches={list?.recentlyPushedBranches ?? []}
-              runtimeConfig={props.runtimeConfig}
-            />
-            <div className="pull-right">
-              <a
-                className="ybtn ybtn-success"
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "newPullRequestForm",
-                )}
-              >
-                pullRequest.new
-              </a>
+          <div
+            className="row-fluid cb"
+            {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
+          >
+            <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+              <ProjectPullRequestSearchForm
+                category={props.category}
+                detail={detail}
+                list={list}
+                query={props.query}
+                runtimeConfig={props.runtimeConfig}
+              />
             </div>
-            <PullRequestTabs
-              active={props.category}
-              detail={detail}
-              list={list}
-              query={props.query}
-              runtimeConfig={props.runtimeConfig}
-            />
-            <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
-              <div className="row-fluid tab-pane active" id="list">
-                <PullRequestListRows items={list?.items ?? []} runtimeConfig={props.runtimeConfig} />
-                <PullRequestListPagination
-                  hrefForPage={(pageNum) =>
-                    [
-                      projectCategoryHref(props.runtimeConfig, detail, props.category),
-                      pullRequestQueryString(props.query, props.category, { pageNum }),
-                    ]
-                      .filter(Boolean)
-                      .join("?")
-                  }
-                  list={list}
-                />
+            <div className="span10 span-hard-wrap" id="span10">
+              <ProjectRecentlyPushedBranches
+                branches={list?.recentlyPushedBranches ?? []}
+                runtimeConfig={props.runtimeConfig}
+              />
+              <div className="pull-right">
+                <a
+                  className="ybtn ybtn-success"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "newPullRequestForm",
+                  )}
+                >
+                  pullRequest.new
+                </a>
+              </div>
+              <PullRequestTabs
+                active={props.category}
+                detail={detail}
+                list={list}
+                query={props.query}
+                runtimeConfig={props.runtimeConfig}
+              />
+              <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+                <div className="row-fluid tab-pane active" id="list">
+                  <PullRequestListRows
+                    items={list?.items ?? []}
+                    runtimeConfig={props.runtimeConfig}
+                  />
+                  <PullRequestListPagination
+                    hrefForPage={(pageNum) =>
+                      [
+                        projectCategoryHref(props.runtimeConfig, detail, props.category),
+                        pullRequestQueryString(props.query, props.category, { pageNum }),
+                      ]
+                        .filter(Boolean)
+                        .join("?")
+                    }
+                    list={list}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </main>
@@ -1019,8 +1041,9 @@ function reviewListFilterQueryString(
   if (orderDir) {
     search.set("orderDir", orderDir);
   }
-  const pageNum =
-    Object.prototype.hasOwnProperty.call(filter, "pageNum") ? filter.pageNum : undefined;
+  const pageNum = Object.prototype.hasOwnProperty.call(filter, "pageNum")
+    ? filter.pageNum
+    : undefined;
   if (pageNum && pageNum > 1) {
     search.set("pageNum", String(pageNum));
   }
@@ -1047,80 +1070,83 @@ export function OrganizationPullRequestListPage(props: {
       <OrganizationMenu active="pullrequests" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="row-fluid cb" pjax-container="">
-          <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-            <OrganizationPullRequestSearchForm
-              category={props.category}
-              detail={detail}
-              query={props.query}
-              runtimeConfig={props.runtimeConfig}
-            />
-          </div>
-          <div className="span10 span-hard-wrap" id="span10">
-            <ul className="nav nav-tabs nm pullrequeset-tab-menu">
-              {tabs.map((tab) => (
-                <li
-                  className={props.category === tab.category ? "active" : undefined}
-                  key={tab.category}
-                >
-                  <a
-                    data-type="state"
-                    data-url={[
-                      organizationCategoryHref(
-                        props.runtimeConfig,
-                        detail.organizationName,
-                        tab.category,
-                      ),
-                      organizationPullRequestQueryString(props.query),
-                    ]
-                      .filter(Boolean)
-                      .join("?")}
-                    href={[
-                      organizationCategoryHref(
-                        props.runtimeConfig,
-                        detail.organizationName,
-                        tab.category,
-                      ),
-                      organizationPullRequestQueryString(props.query),
-                    ]
-                      .filter(Boolean)
-                      .join("?")}
+          <div
+            className="row-fluid cb"
+            {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
+          >
+            <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+              <OrganizationPullRequestSearchForm
+                category={props.category}
+                detail={detail}
+                query={props.query}
+                runtimeConfig={props.runtimeConfig}
+              />
+            </div>
+            <div className="span10 span-hard-wrap" id="span10">
+              <ul className="nav nav-tabs nm pullrequeset-tab-menu">
+                {tabs.map((tab) => (
+                  <li
+                    className={props.category === tab.category ? "active" : undefined}
+                    key={tab.category}
                   >
-                    {tab.label}
-                    <span className="num-badge">
-                      {tab.category === "closed"
-                        ? props.list?.closedCount ?? 0
-                        : props.list?.openCount ?? 0}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
-              <div className="row-fluid tab-pane active" id="list">
-                <PullRequestListRows
-                  items={props.list?.items ?? []}
-                  runtimeConfig={props.runtimeConfig}
-                  showProjectName={true}
-                />
-                <PullRequestListPagination
-                  hrefForPage={(pageNum) =>
-                    [
-                      organizationCategoryHref(
-                        props.runtimeConfig,
-                        detail.organizationName,
-                        props.category,
-                      ),
-                      organizationPullRequestQueryString(props.query, { pageNum }),
-                    ]
-                      .filter(Boolean)
-                      .join("?")
-                  }
-                  list={props.list}
-                />
+                    <a
+                      data-type="state"
+                      data-url={[
+                        organizationCategoryHref(
+                          props.runtimeConfig,
+                          detail.organizationName,
+                          tab.category,
+                        ),
+                        organizationPullRequestQueryString(props.query),
+                      ]
+                        .filter(Boolean)
+                        .join("?")}
+                      href={[
+                        organizationCategoryHref(
+                          props.runtimeConfig,
+                          detail.organizationName,
+                          tab.category,
+                        ),
+                        organizationPullRequestQueryString(props.query),
+                      ]
+                        .filter(Boolean)
+                        .join("?")}
+                    >
+                      {tab.label}
+                      <span className="num-badge">
+                        {tab.category === "closed"
+                          ? (props.list?.closedCount ?? 0)
+                          : (props.list?.openCount ?? 0)}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+                <div className="row-fluid tab-pane active" id="list">
+                  <PullRequestListRows
+                    items={props.list?.items ?? []}
+                    runtimeConfig={props.runtimeConfig}
+                    showProjectName={true}
+                  />
+                  <PullRequestListPagination
+                    hrefForPage={(pageNum) =>
+                      [
+                        organizationCategoryHref(
+                          props.runtimeConfig,
+                          detail.organizationName,
+                          props.category,
+                        ),
+                        organizationPullRequestQueryString(props.query, { pageNum }),
+                      ]
+                        .filter(Boolean)
+                        .join("?")
+                    }
+                    list={props.list}
+                  />
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -1196,231 +1222,231 @@ export function ProjectPullRequestFormPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
-          <section className="pull-request-wrap">
-            <header className="board-header issue">
-              <h1>{formTitle}</h1>
-              <div className="pullRequest-branchInfo">
-                <span>{`${detail.ownerName}/${detail.projectName}`}</span>
-                {initialPullRequest ? (
-                  <span className={`pullRequest-stateInfo state ${initialPullRequest.state}`}>
-                    {initialPullRequest.state}
-                  </span>
-                ) : null}
-              </div>
-            </header>
-            <form
-              className="board-form pull-request-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (submitting) {
-                  return;
-                }
-                setSubmitting(true);
-                void props
-                  .onSubmit({
-                    attachmentIds,
-                    bodyMarkdown,
-                    fromBranch,
-                    fromProjectId,
-                    title,
-                    toBranch,
-                    toProjectId,
-                  })
-                  .finally(() => setSubmitting(false));
-              }}
-            >
-              <div className="pull-request-branches">
-                <label htmlFor="fromProjectId">
-                  pullRequest.from
-                  <select
-                    disabled={editMode}
-                    id="fromProjectId"
-                    name="fromProjectId"
-                    onChange={(event) => setFromProjectId(Number(event.currentTarget.value))}
-                    value={fromProjectId}
-                  >
-                    {(options?.fromProjects ?? []).map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {`${project.ownerName}/${project.projectName}`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label htmlFor="fromBranch">
-                  pullRequest.select.branch
-                  <select
-                    disabled={editMode}
-                    id="fromBranch"
-                    name="fromBranch"
-                    onChange={(event) => setFromBranch(event.currentTarget.value)}
-                    value={fromBranch}
-                  >
-                    {(options?.fromBranches ?? []).map((branch) => (
-                      <option key={branch.name} value={branch.name}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label htmlFor="toProjectId">
-                  pullRequest.to
-                  <select
-                    disabled={editMode}
-                    id="toProjectId"
-                    name="toProjectId"
-                    onChange={(event) => setToProjectId(Number(event.currentTarget.value))}
-                    value={toProjectId}
-                  >
-                    {(options?.toProjects ?? []).map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {`${project.ownerName}/${project.projectName}`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label htmlFor="toBranch">
-                  pullRequest.select.branch
-                  <select
-                    disabled={editMode}
-                    id="toBranch"
-                    name="toBranch"
-                    onChange={(event) => setToBranch(event.currentTarget.value)}
-                    value={toBranch}
-                  >
-                    {(options?.toBranches ?? []).map((branch) => (
-                      <option key={branch.name} value={branch.name}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <label htmlFor="pullRequestState">
-                title
-                <input
-                  id="pullRequestState"
-                  name="title"
-                  onChange={(event) => setTitle(event.currentTarget.value)}
-                  required
-                  value={title}
-                />
-              </label>
-              <label htmlFor="status">
-                body
-                <LegacyMarkdownEditorShell
-                  editId="edit-content-body"
-                  editorMode="content-body"
-                  previewId="preview-content-body"
-                >
-                  <MarkdownAttachmentTextarea
-                    className="editorSeries content comment nm"
-                    csrfToken={props.csrfToken}
-                    editorMode="content-body"
-                    id="status"
-                    name="body"
-                    onAttachmentUpload={(attachment) =>
-                      setAttachmentIds((current) => [...current, attachment.id])
-                    }
-                    onChange={setBodyMarkdown}
-                    required
-                    runtimeConfig={props.runtimeConfig}
-                    value={bodyMarkdown}
-                  />
-                </LegacyMarkdownEditorShell>
-              </label>
-              <div
-                className="code-browse-wrap tab-pane active"
-                data-merge-result-url={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "newPullRequest/mergeResult",
-                )}
-                id="__commits"
+          <div className="content-wrap frm-wrap">
+            <section className="pull-request-wrap">
+              <header className="board-header issue">
+                <h1>{formTitle}</h1>
+                <div className="pullRequest-branchInfo">
+                  <span>{`${detail.ownerName}/${detail.projectName}`}</span>
+                  {initialPullRequest ? (
+                    <span className={`pullRequest-stateInfo state ${initialPullRequest.state}`}>
+                      {initialPullRequest.state}
+                    </span>
+                  ) : null}
+                </div>
+              </header>
+              <form
+                className="board-form pull-request-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (submitting) {
+                    return;
+                  }
+                  setSubmitting(true);
+                  void props
+                    .onSubmit({
+                      attachmentIds,
+                      bodyMarkdown,
+                      fromBranch,
+                      fromProjectId,
+                      title,
+                      toBranch,
+                      toProjectId,
+                    })
+                    .finally(() => setSubmitting(false));
+                }}
               >
-                <span className="num-badge vmiddle-inline" id="numOfCommits">
-                  {formCommitCount}
-                </span>
-                <span> pullRequest.menu.commit</span>
+                <div className="pull-request-branches">
+                  <label htmlFor="fromProjectId">
+                    pullRequest.from
+                    <select
+                      disabled={editMode}
+                      id="fromProjectId"
+                      name="fromProjectId"
+                      onChange={(event) => setFromProjectId(Number(event.currentTarget.value))}
+                      value={fromProjectId}
+                    >
+                      {(options?.fromProjects ?? []).map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {`${project.ownerName}/${project.projectName}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label htmlFor="fromBranch">
+                    pullRequest.select.branch
+                    <select
+                      disabled={editMode}
+                      id="fromBranch"
+                      name="fromBranch"
+                      onChange={(event) => setFromBranch(event.currentTarget.value)}
+                      value={fromBranch}
+                    >
+                      {(options?.fromBranches ?? []).map((branch) => (
+                        <option key={branch.name} value={branch.name}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label htmlFor="toProjectId">
+                    pullRequest.to
+                    <select
+                      disabled={editMode}
+                      id="toProjectId"
+                      name="toProjectId"
+                      onChange={(event) => setToProjectId(Number(event.currentTarget.value))}
+                      value={toProjectId}
+                    >
+                      {(options?.toProjects ?? []).map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {`${project.ownerName}/${project.projectName}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label htmlFor="toBranch">
+                    pullRequest.select.branch
+                    <select
+                      disabled={editMode}
+                      id="toBranch"
+                      name="toBranch"
+                      onChange={(event) => setToBranch(event.currentTarget.value)}
+                      value={toBranch}
+                    >
+                      {(options?.toBranches ?? []).map((branch) => (
+                        <option key={branch.name} value={branch.name}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label htmlFor="pullRequestState">
+                  title
+                  <input
+                    id="pullRequestState"
+                    name="title"
+                    onChange={(event) => setTitle(event.currentTarget.value)}
+                    required
+                    value={title}
+                  />
+                </label>
+                <label htmlFor="status">
+                  body
+                  <LegacyMarkdownEditorShell
+                    editId="edit-content-body"
+                    editorMode="content-body"
+                    previewId="preview-content-body"
+                  >
+                    <MarkdownAttachmentTextarea
+                      className="editorSeries content comment nm"
+                      csrfToken={props.csrfToken}
+                      editorMode="content-body"
+                      id="status"
+                      name="body"
+                      onAttachmentUpload={(attachment) =>
+                        setAttachmentIds((current) => [...current, attachment.id])
+                      }
+                      onChange={setBodyMarkdown}
+                      required
+                      runtimeConfig={props.runtimeConfig}
+                      value={bodyMarkdown}
+                    />
+                  </LegacyMarkdownEditorShell>
+                </label>
                 <div
-                  className="code-browser-wrap"
-                  data-commits={formCommitCount}
-                  data-conflict={mergeResult ? String(mergeResult.conflict) : "false"}
-                  data-pullrequest-body={bodyMarkdown}
-                  data-pullrequest-title={title}
-                  id="mergeResult"
+                  className="code-browse-wrap tab-pane active"
+                  data-merge-result-url={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "newPullRequest/mergeResult",
+                  )}
+                  id="__commits"
                 >
-                  {mergeResultQuery.isError ? (
-                    <div>
-                      <h5>pullRequest.diff.noChanges</h5>
-                    </div>
-                  ) : mergeResult?.commits.length ? (
-                    <div className="commit-wrap">
-                      <table className="code-table commits">
-                        <thead className="thead">
-                          <tr>
-                            <td className="commit-id">
-                              <strong>@</strong>
-                            </td>
-                            <td className="messages">
-                              <strong>code.commitMsg</strong>
-                            </td>
-                            <td className="date">
-                              <strong>code.commitDate</strong>
-                            </td>
-                            <td className="author">
-                              <strong>code.author</strong>
-                            </td>
-                          </tr>
-                        </thead>
-                        <tbody className="tbody">
-                          {mergeResult.commits.map((commit) => (
-                            <tr key={commit.commitId}>
+                  <span className="num-badge vmiddle-inline" id="numOfCommits">
+                    {formCommitCount}
+                  </span>
+                  <span> pullRequest.menu.commit</span>
+                  <div
+                    className="code-browser-wrap"
+                    data-commits={formCommitCount}
+                    data-conflict={mergeResult ? String(mergeResult.conflict) : "false"}
+                    data-pullrequest-body={bodyMarkdown}
+                    data-pullrequest-title={title}
+                    id="mergeResult"
+                  >
+                    {mergeResultQuery.isError ? (
+                      <div>
+                        <h5>pullRequest.diff.noChanges</h5>
+                      </div>
+                    ) : mergeResult?.commits.length ? (
+                      <div className="commit-wrap">
+                        <table className="code-table commits">
+                          <thead className="thead">
+                            <tr>
                               <td className="commit-id">
-                                <a
-                                  href={buildProjectHref(
-                                    props.runtimeConfig,
-                                    detail.ownerName,
-                                    detail.projectName,
-                                    `code/${commit.commitId}`,
-                                  )}
-                                >
-                                  {commit.commitShortId}
-                                </a>
+                                <strong>@</strong>
                               </td>
-                              <td className="messages">{commit.commitMessage}</td>
-                              <td className="date" title={commit.authorDateLabel}>
-                                {commit.authorDateLabel}
+                              <td className="messages">
+                                <strong>code.commitMsg</strong>
                               </td>
-                              <td className={`author ${commit.authorEmail}`}>
-                                <div className="avatar-wrap">
-                                  <span>{commit.authorEmail}</span>
-                                </div>
+                              <td className="date">
+                                <strong>code.commitDate</strong>
+                              </td>
+                              <td className="author">
+                                <strong>code.author</strong>
                               </td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div>
-                      <h5>pullRequest.diff.noChanges</h5>
-                    </div>
-                  )}
+                          </thead>
+                          <tbody className="tbody">
+                            {mergeResult.commits.map((commit) => (
+                              <tr key={commit.commitId}>
+                                <td className="commit-id">
+                                  <a
+                                    href={buildProjectHref(
+                                      props.runtimeConfig,
+                                      detail.ownerName,
+                                      detail.projectName,
+                                      `code/${commit.commitId}`,
+                                    )}
+                                  >
+                                    {commit.commitShortId}
+                                  </a>
+                                </td>
+                                <td className="messages">{commit.commitMessage}</td>
+                                <td className="date" title={commit.authorDateLabel}>
+                                  {commit.authorDateLabel}
+                                </td>
+                                <td className={`author ${commit.authorEmail}`}>
+                                  <div className="avatar-wrap">
+                                    <span>{commit.authorEmail}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div>
+                        <h5>pullRequest.diff.noChanges</h5>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="actions">
-                <button className="ybtn ybtn-success" disabled={submitting} type="submit">
-                  {editMode ? "button.save" : "pullRequest.send"}
-                </button>
-                <a className="ybtn" href={backHref}>
-                  button.cancel
-                </a>
-              </div>
-            </form>
-          </section>
-        </div>
+                <div className="actions">
+                  <button className="ybtn ybtn-success" disabled={submitting} type="submit">
+                    {editMode ? "button.save" : "pullRequest.send"}
+                  </button>
+                  <a className="ybtn" href={backHref}>
+                    button.cancel
+                  </a>
+                </div>
+              </form>
+            </section>
+          </div>
         </div>
       </div>
     </main>
@@ -1904,9 +1930,7 @@ function pullRequestEventStateLabel(event: PullRequestEvent) {
   const eventType = event.eventType ?? "";
   const newValue = event.newValue ?? "";
   if (eventType === "PULL_REQUEST_REVIEW_STATE_CHANGED") {
-    return newValue.trim().toUpperCase() === "DONE"
-      ? "pullRequest.review"
-      : "pullRequest.unreview";
+    return newValue.trim().toUpperCase() === "DONE" ? "pullRequest.review" : "pullRequest.unreview";
   }
   if (eventType === "PULL_REQUEST_COMMIT_CHANGED") {
     return "pullRequest.event.commit";
@@ -1954,7 +1978,9 @@ function PullRequestEventTimeline(props: {
           const mergedCommitId = props.pullRequest.mergedCommitIdTo.trim();
           return (
             <li className="event" id={`comment-${event.id}`} key={event.id}>
-              <span className={`state ${eventStateClass}`}>{pullRequestEventStateLabel(event)}</span>
+              <span className={`state ${eventStateClass}`}>
+                {pullRequestEventStateLabel(event)}
+              </span>
               {event.senderLoginId ? (
                 <a
                   className="usf-group"
@@ -1963,7 +1989,9 @@ function PullRequestEventTimeline(props: {
                   href={`${props.runtimeConfig.basePath}/${encodeURIComponent(event.senderLoginId)}`}
                   title={event.senderLoginId}
                 >
-                  <span className="avatar-wrap small">{event.senderLoginId.slice(0, 1).toUpperCase()}</span>
+                  <span className="avatar-wrap small">
+                    {event.senderLoginId.slice(0, 1).toUpperCase()}
+                  </span>
                 </a>
               ) : null}
               <a
@@ -2087,131 +2115,131 @@ export function ProjectPullRequestDetailPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        {pr ? (
-          <>
-            <div className="board-header issue">
-              <div className="pull-right mr10 mt10">
-                <div className="date" title={pr.createdLabel}>
-                  {pr.createdLabel}
+          {pr ? (
+            <>
+              <div className="board-header issue">
+                <div className="pull-right mr10 mt10">
+                  <div className="date" title={pr.createdLabel}>
+                    {pr.createdLabel}
+                  </div>
+                  <span
+                    className={`pullRequest-stateInfo ${pr.conflict ? "conflict" : pr.state} badge nm ${
+                      pr.conflict ? "badge-issue-conflict" : `badge-issue-${pr.state}`
+                    }`}
+                  >
+                    {pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`}
+                  </span>
                 </div>
-                <span
-                  className={`pullRequest-stateInfo ${pr.conflict ? "conflict" : pr.state} badge nm ${
-                    pr.conflict ? "badge-issue-conflict" : `badge-issue-${pr.state}`
-                  }`}
-                >
-                  {pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`}
-                </span>
+                <div className="title">
+                  <strong className="board-id">{`#${pr.pullRequestNumber}`}</strong> {pr.title}
+                </div>
               </div>
-              <div className="title">
-                <strong className="board-id">{`#${pr.pullRequestNumber}`}</strong> {pr.title}
+              <div className="pull-right">
+                <PullRequestReviewMergeControls
+                  pullRequest={pr}
+                  runtimeConfig={props.runtimeConfig}
+                  viewerId={props.viewerId}
+                  onAccept={props.onAccept}
+                  onReview={props.onReview}
+                  onUnreview={props.onUnreview}
+                />
               </div>
-            </div>
-            <div className="pull-right">
-              <PullRequestReviewMergeControls
+              <PullRequestOverviewTabs
+                active="overview"
                 pullRequest={pr}
                 runtimeConfig={props.runtimeConfig}
-                viewerId={props.viewerId}
-                onAccept={props.onAccept}
-                onReview={props.onReview}
-                onUnreview={props.onUnreview}
               />
-            </div>
-            <PullRequestOverviewTabs
-              active="overview"
-              pullRequest={pr}
-              runtimeConfig={props.runtimeConfig}
-            />
-            <div className="board-body">
-              <div className="author-info left-txt">
-                <a
-                  className="usf-group pull-left"
-                  href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
-                    pr.contributor.loginId,
-                  )}`}
-                >
-                  <span className="avatar-wrap smaller">
-                    <img
-                      alt={pr.contributor.userLabel || pr.contributor.loginId}
-                      height={32}
-                      src={pr.contributor.avatarUrl}
-                      width={32}
-                    />
-                  </span>
-                  <strong className="name">
-                    {pr.contributor.userLabel || pr.contributor.loginId}
-                  </strong>
-                  <span className="loginid">
-                    {" "}
-                    <strong>@</strong>
-                    {pr.contributor.loginId}
-                  </span>
+              <div className="board-body">
+                <div className="author-info left-txt">
+                  <a
+                    className="usf-group pull-left"
+                    href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
+                      pr.contributor.loginId,
+                    )}`}
+                  >
+                    <span className="avatar-wrap smaller">
+                      <img
+                        alt={pr.contributor.userLabel || pr.contributor.loginId}
+                        height={32}
+                        src={pr.contributor.avatarUrl}
+                        width={32}
+                      />
+                    </span>
+                    <strong className="name">
+                      {pr.contributor.userLabel || pr.contributor.loginId}
+                    </strong>
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {pr.contributor.loginId}
+                    </span>
+                  </a>
+                  <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
+                </div>
+                <MarkdownRenderer
+                  className="content markdown-wrap"
+                  basePath={props.runtimeConfig.basePath}
+                  commitReferences={pullRequestMarkdownCommitReferences(pr)}
+                  issueReferences={pr.issueReferences}
+                  markdown={pr.bodyMarkdown}
+                  mentionReferences={pr.mentionReferences}
+                  ownerName={pr.ownerName}
+                  projectName={pr.projectName}
+                />
+                <div className="attachments" data-attachments="[]"></div>
+              </div>
+              <div id="state" className="pullRequest-stateInfo">
+                <PullRequestStateNotice
+                  pullRequest={pr}
+                  runtimeConfig={props.runtimeConfig}
+                  onDeleteSourceBranch={props.onDeleteSourceBranch}
+                  onRestoreSourceBranch={props.onRestoreSourceBranch}
+                  viewerId={props.viewerId}
+                />
+              </div>
+              <div className="board-footer board-actrow">
+                <PullRequestActionBar
+                  pullRequest={pr}
+                  runtimeConfig={props.runtimeConfig}
+                  onClose={props.onClose}
+                  onOpen={props.onOpen}
+                  onWatchToggle={props.onWatchToggle}
+                />
+              </div>
+              <hr className="nm" />
+              <PullRequestEventTimeline
+                events={pr.events}
+                pullRequest={pr}
+                runtimeConfig={props.runtimeConfig}
+              />
+              <div className="right-txt">
+                <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpMessage">
+                  title.help
                 </a>
-                <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
               </div>
-              <MarkdownRenderer
-                className="content markdown-wrap"
-                basePath={props.runtimeConfig.basePath}
-                commitReferences={pullRequestMarkdownCommitReferences(pr)}
-                issueReferences={pr.issueReferences}
-                markdown={pr.bodyMarkdown}
-                mentionReferences={pr.mentionReferences}
-                ownerName={pr.ownerName}
-                projectName={pr.projectName}
-              />
-              <div className="attachments" data-attachments="[]"></div>
-            </div>
-            <div id="state" className="pullRequest-stateInfo">
-              <PullRequestStateNotice
-                pullRequest={pr}
-                runtimeConfig={props.runtimeConfig}
-                onDeleteSourceBranch={props.onDeleteSourceBranch}
-                onRestoreSourceBranch={props.onRestoreSourceBranch}
-                viewerId={props.viewerId}
-              />
-            </div>
-            <div className="board-footer board-actrow">
-              <PullRequestActionBar
-                pullRequest={pr}
-                runtimeConfig={props.runtimeConfig}
-                onClose={props.onClose}
-                onOpen={props.onOpen}
-                onWatchToggle={props.onWatchToggle}
-              />
-            </div>
-            <hr className="nm" />
-            <PullRequestEventTimeline
-              events={pr.events}
-              pullRequest={pr}
-              runtimeConfig={props.runtimeConfig}
-            />
-            <div className="right-txt">
-              <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpMessage">
-                title.help
-              </a>
-            </div>
-            <div id="helpMessage" className="modal hide fade pullreq-info">
-              <div className="modal-header">
-                <h5>pullRequest.merge.help.1</h5>
-              </div>
-              <div className="modal-body">
-                <div className="row-fluid">
-                  <div className="pull-left help-messages mt10">
-                    <p>pullRequest.merge.help.2</p>
-                    <p>pullRequest.merge.help.3</p>
-                    <p>pullRequest.merge.help.4</p>
+              <div id="helpMessage" className="modal hide fade pullreq-info">
+                <div className="modal-header">
+                  <h5>pullRequest.merge.help.1</h5>
+                </div>
+                <div className="modal-body">
+                  <div className="row-fluid">
+                    <div className="pull-left help-messages mt10">
+                      <p>pullRequest.merge.help.2</p>
+                      <p>pullRequest.merge.help.3</p>
+                      <p>pullRequest.merge.help.4</p>
+                    </div>
                   </div>
                 </div>
+                <div className="modal-footer">
+                  <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
+                    button.confirm
+                  </button>
+                </div>
               </div>
-              <div className="modal-footer">
-                <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
-                  button.confirm
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="warning-none"></div>
-        )}
+            </>
+          ) : (
+            <div className="warning-none"></div>
+          )}
         </div>
       </div>
     </main>
@@ -2320,7 +2348,11 @@ function ReviewThreadItem(props: {
             <button
               className="ybtn ybtn-default ybtn-small"
               data-request-method="post"
-              data-request-uri={reviewThreadStateHref(props.runtimeConfig, props.thread.id, "close")}
+              data-request-uri={reviewThreadStateHref(
+                props.runtimeConfig,
+                props.thread.id,
+                "close",
+              )}
               onClick={() => void props.onThreadClose?.(props.thread.id)}
               type="button"
             >
@@ -2485,7 +2517,9 @@ function ReviewThreadItem(props: {
                     className="comment-body markdown-wrap"
                     basePath={props.runtimeConfig?.basePath}
                     commitReferences={
-                      props.pullRequest ? pullRequestMarkdownCommitReferences(props.pullRequest) : []
+                      props.pullRequest
+                        ? pullRequestMarkdownCommitReferences(props.pullRequest)
+                        : []
                     }
                     data-via-email={comment.viaEmail ? "true" : undefined}
                     issueReferences={comment.issueReferences}
@@ -2539,7 +2573,11 @@ function ReviewThreadItem(props: {
                 <div data-toggle="markdown-editor" className="mt10">
                   <ul className="nav nav-tabs nm small">
                     <li className="active">
-                      <a data-mode="edit" data-toggle="tab" href={`#edit-thread-${props.thread.id}`}>
+                      <a
+                        data-mode="edit"
+                        data-toggle="tab"
+                        href={`#edit-thread-${props.thread.id}`}
+                      >
                         common.editor.edit
                       </a>
                     </li>
@@ -2556,7 +2594,9 @@ function ReviewThreadItem(props: {
                       <div className="task-list-button">
                         <button
                           className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-                          onClick={(event) => addLegacyTasklistTemplateFromButton(event.currentTarget)}
+                          onClick={(event) =>
+                            addLegacyTasklistTemplateFromButton(event.currentTarget)
+                          }
                           type="button"
                         >
                           <i className="yobicon-list task-list-icon"></i> button.add.checklist
@@ -2580,7 +2620,10 @@ function ReviewThreadItem(props: {
                       <div className="editor-notice-label"></div>
                     </li>
                   </ul>
-                  <div className="tab-content" style={{ overflow: "visible", position: "relative" }}>
+                  <div
+                    className="tab-content"
+                    style={{ overflow: "visible", position: "relative" }}
+                  >
                     <LegacyMarkdownHelp />
                     <div className="tab-pane active" id={`edit-thread-${props.thread.id}`}>
                       <div className="textarea-box">
@@ -2627,8 +2670,7 @@ function ReviewThreadItem(props: {
                   </div>
                   <ul className="attached-files unstyled"></ul>
                   <p className="right-txt help">
-                    <i className="yobicon-supportrequest"></i>{" "}
-                    common.attach.attachIfYouSave
+                    <i className="yobicon-supportrequest"></i> common.attach.attachIfYouSave
                   </p>
                 </div>
                 <div className="upload-drop-here">
@@ -2641,7 +2683,11 @@ function ReviewThreadItem(props: {
                     <button
                       className="ybtn ybtn-default ybtn-small"
                       data-request-method="post"
-                      data-request-uri={reviewThreadStateHref(props.runtimeConfig, props.thread.id, "open")}
+                      data-request-uri={reviewThreadStateHref(
+                        props.runtimeConfig,
+                        props.thread.id,
+                        "open",
+                      )}
                       onClick={() => void props.onThreadOpen?.(props.thread.id)}
                       type="button"
                     >
@@ -2651,7 +2697,11 @@ function ReviewThreadItem(props: {
                     <button
                       className="ybtn ybtn-default ybtn-small"
                       data-request-method="post"
-                      data-request-uri={reviewThreadStateHref(props.runtimeConfig, props.thread.id, "close")}
+                      data-request-uri={reviewThreadStateHref(
+                        props.runtimeConfig,
+                        props.thread.id,
+                        "close",
+                      )}
                       onClick={() => void props.onThreadClose?.(props.thread.id)}
                       type="button"
                     >
@@ -2909,7 +2959,9 @@ export function PullRequestChangesPage(props: {
     : undefined;
   const selectableCommits = commits.filter(isSelectablePullRequestCommit);
   const [inlineDraft, setInlineDraft] = React.useState<InlineReviewDraft | null>(null);
-  const [pendingInlineDraft, setPendingInlineDraft] = React.useState<InlineReviewDraft | null>(null);
+  const [pendingInlineDraft, setPendingInlineDraft] = React.useState<InlineReviewDraft | null>(
+    null,
+  );
   const [inlineCommentText, setInlineCommentText] = React.useState("");
   const [inlineAttachmentIds, setInlineAttachmentIds] = React.useState<number[]>([]);
   const [commentDraft, setCommentDraft] = React.useState("");
@@ -3060,7 +3112,7 @@ export function PullRequestChangesPage(props: {
                             openInlineDraft(file.path, line.commentLine ?? 0, lineSide)
                           }
                           type="button"
-                          >
+                        >
                           button.comment.new
                         </button>
                       ) : null}
@@ -3141,216 +3193,229 @@ export function PullRequestChangesPage(props: {
   }
 
   const unrangedThreads =
-    props.changes?.nonRangedThreads ??
-    threads.filter((thread) => !thread.path);
+    props.changes?.nonRangedThreads ?? threads.filter((thread) => !thread.path);
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="code-browse-wrap">
-          {pr ? (
-            <>
-              <PullRequestOverviewTabs
-                active="changes"
-                pullRequest={pr}
-                runtimeConfig={props.runtimeConfig}
-              />
-              <div className="board-body mb20">
-                <div className="author-info right-txt" style={{ marginTop: 20 }}>
-                  <a
-                    className="usf-group pull-left"
-                    href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
-                      pr.contributor.loginId,
-                    )}`}
-                  >
-                    <span className="avatar-wrap smaller">
-                      <span className="avatar-img">
-                        {pr.contributor.userLabel || pr.contributor.loginId}
-                      </span>
-                    </span>
-                    <strong className="name">
-                      {pr.contributor.userLabel || pr.contributor.loginId}
-                    </strong>
-                    <span className="loginid">
-                      {" "}
-                      <strong>@</strong>
-                      {pr.contributor.loginId}
-                    </span>
-                  </a>
-                  <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
-                </div>
-              </div>
-            </>
-          ) : null}
-          <section className={`codediff-wrap mt10${cardThreads.length === 0 ? " diffs-only" : ""}`}>
-            {cardThreads.length > 0 ? (
-              <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
-                <i className="yobicon-restore"></i>
-              </button>
-            ) : null}
-            <div className="diffs-wrap" id="changes">
-              <div className="btn-group auto mb10" id="commits">
-                <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
-                  <span className="d-label">
-                    {selectedCommit ? (
-                      <>
-                        <strong className="blue-txt mr10 commit-hash">
-                          {selectedCommit.commitShortId ||
-                            pullRequestCommitShortId(selectedCommit.commitId)}
-                        </strong>
-                        <span>
-                          {pullRequestCommitTitle(selectedCommit)}
-                          {isOutdatedPullRequestCommit(selectedCommit) ? (
-                            <>
-                              {" "}
-                              <span className="outdated-label">review.outdated</span>
-                            </>
-                          ) : null}
+          <div className="code-browse-wrap">
+            {pr ? (
+              <>
+                <PullRequestOverviewTabs
+                  active="changes"
+                  pullRequest={pr}
+                  runtimeConfig={props.runtimeConfig}
+                />
+                <div className="board-body mb20">
+                  <div className="author-info right-txt" style={{ marginTop: 20 }}>
+                    <a
+                      className="usf-group pull-left"
+                      href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
+                        pr.contributor.loginId,
+                      )}`}
+                    >
+                      <span className="avatar-wrap smaller">
+                        <span className="avatar-img">
+                          {pr.contributor.userLabel || pr.contributor.loginId}
                         </span>
-                      </>
-                    ) : props.selectedCommitId ? (
-                      <>
-                        pullRequest.changes.all{" "}
-                        <span className="outdated-label">review.outdated</span>
-                        {" - "}
-                        <strong className="blue-txt mr10 commit-hash">
-                          {pullRequestCommitShortId(props.selectedCommitId)}
-                        </strong>
-                      </>
-                    ) : (
-                      "pullRequest.changes.all"
-                    )}
-                  </span>
-                  <span className="d-caret">
-                    <span className="caret"></span>
-                  </span>
-                </button>
-                <ul className="dropdown-menu">
-                  <li data-value="All">
-                    <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
-                      pullRequest.changes.all
+                      </span>
+                      <strong className="name">
+                        {pr.contributor.userLabel || pr.contributor.loginId}
+                      </strong>
+                      <span className="loginid">
+                        {" "}
+                        <strong>@</strong>
+                        {pr.contributor.loginId}
+                      </span>
                     </a>
-                  </li>
-                  <li className="divider"></li>
-                  {selectableCommits.map((commit) => {
-                    const outdated = isOutdatedPullRequestCommit(commit);
-                    return (
-                      <li
-                        className={outdated ? "outdated" : undefined}
-                        data-value={commit.commitId}
-                        key={commit.commitId}
-                      >
-                        <a
-                          href={
-                            pr
-                              ? pullRequestChangesCommitHref(props.runtimeConfig, pr, commit.commitId)
-                              : "#"
-                          }
-                        >
+                    <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
+                  </div>
+                </div>
+              </>
+            ) : null}
+            <section
+              className={`codediff-wrap mt10${cardThreads.length === 0 ? " diffs-only" : ""}`}
+            >
+              {cardThreads.length > 0 ? (
+                <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
+                  <i className="yobicon-restore"></i>
+                </button>
+              ) : null}
+              <div className="diffs-wrap" id="changes">
+                <div className="btn-group auto mb10" id="commits">
+                  <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
+                    <span className="d-label">
+                      {selectedCommit ? (
+                        <>
                           <strong className="blue-txt mr10 commit-hash">
-                            {commit.commitShortId || commit.commitId}
+                            {selectedCommit.commitShortId ||
+                              pullRequestCommitShortId(selectedCommit.commitId)}
                           </strong>
                           <span>
-                            {pullRequestCommitTitle(commit)}
-                            {outdated ? (
+                            {pullRequestCommitTitle(selectedCommit)}
+                            {isOutdatedPullRequestCommit(selectedCommit) ? (
                               <>
                                 {" "}
                                 <span className="outdated-label">review.outdated</span>
                               </>
                             ) : null}
                           </span>
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-              {selectedCommit ? <SelectedPullRequestCommitInfo commit={selectedCommit} /> : null}
-              <div className="diff-body diffs-wrap-scroll">
-                {pr ? (
-                  <>
-                    <div
-                      className={`pullRequest-stateInfo state ${
-                        pr.conflict ? "conflict" : pr.state
-                      }`}
-                    >
-                      {pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`}
-                    </div>
-                    <PullRequestConflictGuide
-                      pullRequest={pr}
-                      runtimeConfig={props.runtimeConfig}
-                      viewerId={props.viewerId}
-                    />
-                  </>
-                ) : null}
-                {files.map(renderChangedFile)}
-                <div className="btnPop">
-                  <button
-                    className="ybtn ybtn-info ybtn-small"
-                    data-block-ready={pendingInlineDraft ? "true" : "false"}
-                    disabled={!pendingInlineDraft}
-                    onClick={openPendingInlineDraft}
-                    type="button"
-                  >
-                    <i className="yobicon-post2"></i>
+                        </>
+                      ) : props.selectedCommitId ? (
+                        <>
+                          pullRequest.changes.all{" "}
+                          <span className="outdated-label">review.outdated</span>
+                          {" - "}
+                          <strong className="blue-txt mr10 commit-hash">
+                            {pullRequestCommitShortId(props.selectedCommitId)}
+                          </strong>
+                        </>
+                      ) : (
+                        "pullRequest.changes.all"
+                      )}
+                    </span>
+                    <span className="d-caret">
+                      <span className="caret"></span>
+                    </span>
                   </button>
+                  <ul className="dropdown-menu">
+                    <li data-value="All">
+                      <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
+                        pullRequest.changes.all
+                      </a>
+                    </li>
+                    <li className="divider"></li>
+                    {selectableCommits.map((commit) => {
+                      const outdated = isOutdatedPullRequestCommit(commit);
+                      return (
+                        <li
+                          className={outdated ? "outdated" : undefined}
+                          data-value={commit.commitId}
+                          key={commit.commitId}
+                        >
+                          <a
+                            href={
+                              pr
+                                ? pullRequestChangesCommitHref(
+                                    props.runtimeConfig,
+                                    pr,
+                                    commit.commitId,
+                                  )
+                                : "#"
+                            }
+                          >
+                            <strong className="blue-txt mr10 commit-hash">
+                              {commit.commitShortId || commit.commitId}
+                            </strong>
+                            <span>
+                              {pullRequestCommitTitle(commit)}
+                              {outdated ? (
+                                <>
+                                  {" "}
+                                  <span className="outdated-label">review.outdated</span>
+                                </>
+                              ) : null}
+                            </span>
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
-              </div>
-              <div className="board-comment-wrap">
-                <div className="non-ranged-threads-wrap">
-                  {unrangedThreads.map(renderReviewThread)}
-                </div>
-                {canComment ? (
-                  <form
-                    action={pr ? pullRequestApiHref(props.runtimeConfig, pr, "/comments") : undefined}
-                    className="board-comment-form"
-                    encType="multipart/form-data"
-                    id="comment-form"
-                    method="post"
-                    onSubmit={(event) => void submitNonRangedComment(event)}
-                  >
-                    <div className="write-comment-box">
-                      <MarkdownAttachmentTextarea
-                        className="editorSeries content comment nm"
-                        csrfToken={props.csrfToken}
-                        name="contents"
-                        onAttachmentUpload={(attachment) =>
-                          setCommentAttachmentIds((current) => [...current, attachment.id])
-                        }
-                        onChange={setCommentDraft}
+                {selectedCommit ? <SelectedPullRequestCommitInfo commit={selectedCommit} /> : null}
+                <div className="diff-body diffs-wrap-scroll">
+                  {pr ? (
+                    <>
+                      <div
+                        className={`pullRequest-stateInfo state ${
+                          pr.conflict ? "conflict" : pr.state
+                        }`}
+                      >
+                        {pr.conflict
+                          ? "pullRequest.state.conflict"
+                          : `pullRequest.state.${pr.state}`}
+                      </div>
+                      <PullRequestConflictGuide
+                        pullRequest={pr}
                         runtimeConfig={props.runtimeConfig}
-                        value={commentDraft}
+                        viewerId={props.viewerId}
                       />
-                      <div className="write-comment-wrap">
-                        <div className="right-txt">
-                          <button className="ybtn hidden" id="dynamic-comment-btn" type="button"></button>
-                          <button className="ybtn ybtn-success" type="submit">
-                            button.comment.new
-                          </button>
+                    </>
+                  ) : null}
+                  {files.map(renderChangedFile)}
+                  <div className="btnPop">
+                    <button
+                      className="ybtn ybtn-info ybtn-small"
+                      data-block-ready={pendingInlineDraft ? "true" : "false"}
+                      disabled={!pendingInlineDraft}
+                      onClick={openPendingInlineDraft}
+                      type="button"
+                    >
+                      <i className="yobicon-post2"></i>
+                    </button>
+                  </div>
+                </div>
+                <div className="board-comment-wrap">
+                  <div className="non-ranged-threads-wrap">
+                    {unrangedThreads.map(renderReviewThread)}
+                  </div>
+                  {canComment ? (
+                    <form
+                      action={
+                        pr ? pullRequestApiHref(props.runtimeConfig, pr, "/comments") : undefined
+                      }
+                      className="board-comment-form"
+                      encType="multipart/form-data"
+                      id="comment-form"
+                      method="post"
+                      onSubmit={(event) => void submitNonRangedComment(event)}
+                    >
+                      <div className="write-comment-box">
+                        <MarkdownAttachmentTextarea
+                          className="editorSeries content comment nm"
+                          csrfToken={props.csrfToken}
+                          name="contents"
+                          onAttachmentUpload={(attachment) =>
+                            setCommentAttachmentIds((current) => [...current, attachment.id])
+                          }
+                          onChange={setCommentDraft}
+                          runtimeConfig={props.runtimeConfig}
+                          value={commentDraft}
+                        />
+                        <div className="write-comment-wrap">
+                          <div className="right-txt">
+                            <button
+                              className="ybtn hidden"
+                              id="dynamic-comment-btn"
+                              type="button"
+                            ></button>
+                            <button className="ybtn ybtn-success" type="submit">
+                              button.comment.new
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </form>
+                    </form>
+                  ) : null}
+                </div>
+                {canComment && pr ? (
+                  <PullRequestBlockReviewForm
+                    csrfToken={props.csrfToken}
+                    draft={inlineDraft}
+                    pullRequest={pr}
+                    runtimeConfig={props.runtimeConfig}
+                  />
                 ) : null}
               </div>
-              {canComment && pr ? (
-                <PullRequestBlockReviewForm
-                  csrfToken={props.csrfToken}
-                  draft={inlineDraft}
-                  pullRequest={pr}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-            </div>
-            <ReviewThreadCards
-              pullRequest={pr}
-              runtimeConfig={props.runtimeConfig}
-              threads={cardThreads}
-            />
-          </section>
-        </div>
+              <ReviewThreadCards
+                pullRequest={pr}
+                runtimeConfig={props.runtimeConfig}
+                threads={cardThreads}
+              />
+            </section>
+          </div>
         </div>
       </div>
     </main>
@@ -3498,161 +3563,179 @@ export function ProjectReviewsPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <div className="row-fluid issue-list-wrap">
-          <div className="span2 search-wrap span-hard-wrap">
-            <div className="inner advanced">
-              <ul className="lst-stacked unstyled">
-                <li className={queryAuthorId === 0 && queryParticipantId === 0 ? "active" : undefined}>
+          <div className="row-fluid issue-list-wrap">
+            <div className="span2 search-wrap span-hard-wrap">
+              <div className="inner advanced">
+                <ul className="lst-stacked unstyled">
+                  <li
+                    className={
+                      queryAuthorId === 0 && queryParticipantId === 0 ? "active" : undefined
+                    }
+                  >
+                    <a
+                      data-toggle="filter"
+                      href={reviewsHref(
+                        reviewListFilterQueryString(props.query, {
+                          authorId: 0,
+                          participantId: 0,
+                        }),
+                      )}
+                    >
+                      review.allReview
+                      <span className="num-badge pull-right">{props.reviews?.allCount ?? 0}</span>
+                    </a>
+                  </li>
+                  <li
+                    className={
+                      viewerId !== 0 && queryParticipantId === viewerId ? "active" : undefined
+                    }
+                  >
+                    <a
+                      data-toggle="filter"
+                      data-type="participantId"
+                      data-value={viewerId || ""}
+                      href={reviewsHref(
+                        reviewListFilterQueryString(props.query, {
+                          authorId: 0,
+                          participantId: viewerId || undefined,
+                        }),
+                      )}
+                    >
+                      review.involvingYou
+                      <span className="num-badge pull-right">
+                        {props.reviews?.participantCount ?? 0}
+                      </span>
+                    </a>
+                  </li>
+                  <li
+                    className={viewerId !== 0 && queryAuthorId === viewerId ? "active" : undefined}
+                  >
+                    <a
+                      data-toggle="filter"
+                      data-type="authorId"
+                      data-value={viewerId || ""}
+                      href={reviewsHref(
+                        reviewListFilterQueryString(props.query, {
+                          authorId: viewerId || undefined,
+                          participantId: 0,
+                        }),
+                      )}
+                    >
+                      review.createdByYou
+                      <span className="num-badge pull-right">
+                        {props.reviews?.authorCount ?? 0}
+                      </span>
+                    </a>
+                  </li>
+                </ul>
+                <form
+                  action={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "reviews",
+                  )}
+                  id="search"
+                  method="get"
+                  name="search"
+                >
+                  <input name="authorId" type="hidden" value={props.query.authorId ?? ""} />
+                  <input
+                    name="participantId"
+                    type="hidden"
+                    value={props.query.participantId ?? ""}
+                  />
+                  <input name="orderDir" type="hidden" value={props.query.orderDir ?? ""} />
+                  <input name="orderBy" type="hidden" value={props.query.orderBy ?? ""} />
+                  <input name="state" type="hidden" value={state} />
+                  <hr className="hide-in-mobile" />
+                  <div className="search-bar span-hard-wrap">
+                    <input
+                      className="textbox full"
+                      defaultValue={props.query.filter ?? ""}
+                      name="filter"
+                      type="text"
+                    />
+                    <button className="search-btn" type="submit">
+                      <i className="yobicon-search"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div className="span10 span-hard-wrap">
+              <div className="pull-right filters">
+                <a
+                  className="filter"
+                  data-field="createdDate"
+                  data-toggle="order"
+                  data-value={nextOrderDir}
+                  href={reviewsHref(
+                    reviewListFilterQueryString(props.query, {
+                      orderBy: "createdDate",
+                      orderDir: nextOrderDir,
+                    }),
+                  )}
+                >
+                  <i
+                    className={`ico btn-gray-arrow ${currentOrderDir === "desc" ? "down" : ""}`}
+                  ></i>
+                  common.order.date
+                </a>
+              </div>
+              <ul className="nav nav-tabs nm">
+                <li className={state === "open" ? "active" : undefined}>
                   <a
                     data-toggle="filter"
-                    href={reviewsHref(
-                      reviewListFilterQueryString(props.query, {
-                        authorId: 0,
-                        participantId: 0,
-                      }),
-                    )}
+                    data-type="state"
+                    data-value="open"
+                    href={reviewsHref(reviewQueryString(props.query, "open"))}
                   >
-                    review.allReview
-                    <span className="num-badge pull-right">{props.reviews?.allCount ?? 0}</span>
+                    issue.state.open
+                    <span className="num-badge">{props.reviews?.openCount ?? 0}</span>
                   </a>
                 </li>
-                <li className={viewerId !== 0 && queryParticipantId === viewerId ? "active" : undefined}>
+                <li className={state === "closed" ? "active" : undefined}>
                   <a
                     data-toggle="filter"
-                    data-type="participantId"
-                    data-value={viewerId || ""}
-                    href={reviewsHref(
-                      reviewListFilterQueryString(props.query, {
-                        authorId: 0,
-                        participantId: viewerId || undefined,
-                      }),
-                    )}
+                    data-type="state"
+                    data-value="closed"
+                    href={reviewsHref(reviewQueryString(props.query, "closed"))}
                   >
-                    review.involvingYou
-                    <span className="num-badge pull-right">
-                      {props.reviews?.participantCount ?? 0}
-                    </span>
-                  </a>
-                </li>
-                <li className={viewerId !== 0 && queryAuthorId === viewerId ? "active" : undefined}>
-                  <a
-                    data-toggle="filter"
-                    data-type="authorId"
-                    data-value={viewerId || ""}
-                    href={reviewsHref(
-                      reviewListFilterQueryString(props.query, {
-                        authorId: viewerId || undefined,
-                        participantId: 0,
-                      }),
-                    )}
-                  >
-                    review.createdByYou
-                    <span className="num-badge pull-right">{props.reviews?.authorCount ?? 0}</span>
+                    issue.state.closed
+                    <span className="num-badge">{props.reviews?.closedCount ?? 0}</span>
                   </a>
                 </li>
               </ul>
-              <form
-                action={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "reviews",
-                )}
-                id="search"
-                method="get"
-                name="search"
-              >
-                <input name="authorId" type="hidden" value={props.query.authorId ?? ""} />
-                <input name="participantId" type="hidden" value={props.query.participantId ?? ""} />
-                <input name="orderDir" type="hidden" value={props.query.orderDir ?? ""} />
-                <input name="orderBy" type="hidden" value={props.query.orderBy ?? ""} />
-                <input name="state" type="hidden" value={state} />
-                <hr className="hide-in-mobile" />
-                <div className="search-bar span-hard-wrap">
-                  <input
-                    className="textbox full"
-                    defaultValue={props.query.filter ?? ""}
-                    name="filter"
-                    type="text"
-                  />
-                  <button className="search-btn" type="submit">
-                    <i className="yobicon-search"></i>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div className="span10 span-hard-wrap">
-            <div className="pull-right filters">
-              <a
-                className="filter"
-                data-field="createdDate"
-                data-toggle="order"
-                data-value={nextOrderDir}
-                href={reviewsHref(
-                  reviewListFilterQueryString(props.query, {
-                    orderBy: "createdDate",
-                    orderDir: nextOrderDir,
-                  }),
-                )}
-              >
-                <i className={`ico btn-gray-arrow ${currentOrderDir === "desc" ? "down" : ""}`}></i>
-                common.order.date
-              </a>
-            </div>
-            <ul className="nav nav-tabs nm">
-              <li className={state === "open" ? "active" : undefined}>
+              <div className="review-list-wrap">
+                <ProjectReviewListRows
+                  detail={detail}
+                  runtimeConfig={props.runtimeConfig}
+                  threads={props.reviews?.items ?? []}
+                />
+              </div>
+              <div className="pull-left" style={{ padding: 10 }}>
                 <a
-                  data-toggle="filter"
-                  data-type="state"
-                  data-value="open"
-                  href={reviewsHref(reviewQueryString(props.query, "open"))}
+                  className="ybtn small"
+                  href={projectReviewExcelExportHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    props.query,
+                    state,
+                  )}
                 >
-                  issue.state.open
-                  <span className="num-badge">{props.reviews?.openCount ?? 0}</span>
+                  <i className="yobicon-file-excel"></i> issue.downloadAsExcel
                 </a>
-              </li>
-              <li className={state === "closed" ? "active" : undefined}>
-                <a
-                  data-toggle="filter"
-                  data-type="state"
-                  data-value="closed"
-                  href={reviewsHref(reviewQueryString(props.query, "closed"))}
-                >
-                  issue.state.closed
-                  <span className="num-badge">{props.reviews?.closedCount ?? 0}</span>
-                </a>
-              </li>
-            </ul>
-            <div className="review-list-wrap">
-              <ProjectReviewListRows
+              </div>
+              <ProjectReviewPagination
                 detail={detail}
+                query={props.query}
+                reviews={props.reviews}
                 runtimeConfig={props.runtimeConfig}
-                threads={props.reviews?.items ?? []}
               />
             </div>
-            <div className="pull-left" style={{ padding: 10 }}>
-              <a
-                className="ybtn small"
-                href={projectReviewExcelExportHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  props.query,
-                  state,
-                )}
-              >
-                <i className="yobicon-file-excel"></i> issue.downloadAsExcel
-              </a>
-            </div>
-            <ProjectReviewPagination
-              detail={detail}
-              query={props.query}
-              reviews={props.reviews}
-              runtimeConfig={props.runtimeConfig}
-            />
           </div>
-        </div>
         </div>
       </div>
     </main>

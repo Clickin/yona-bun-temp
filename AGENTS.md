@@ -74,6 +74,9 @@
   - 계획 문서: follow-up item
 - 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
 - 변환 완료 전에는 기능 구현에 필요한 최소 구조만 사용하고, 추가 구조 제안은 하지 않는다.
+- 매 turn 종료 전 변경이 있으면 반드시 turn commit hook을 실행한다: `pnpm agent:turn-commit -- -m "<concise summary>"`.
+- turn commit hook은 `git add -A`, `tools/precommit-verify.mjs`, `git commit`을 같은 경로로 수행한다. hook이 실패하면 최종 응답 전에 blocker를 수정하거나 실패 사유를 보고한다.
+- 변경이 없을 때는 hook이 no-op으로 종료될 수 있으며, 이 경우 최종 응답에 clean 상태를 명시한다.
 
 ## Document Index
 
@@ -89,4 +92,3 @@
 - `docs/agents/08-rust-deployment-strategy.md`
 - `docs/agents/09-llm-onboarding-checklist.md`
 - `docs/agents/10-legacy-provenance-baseline.md`
-

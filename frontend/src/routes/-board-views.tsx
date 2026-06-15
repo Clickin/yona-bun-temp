@@ -125,12 +125,7 @@ function PostingHistoryModal(props: {
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button
-            aria-label="button.close"
-            className="close"
-            data-dismiss="modal"
-            type="button"
-          >
+          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
             ×
           </button>
           <h5 className="nm">change.history</h5>
@@ -227,7 +222,10 @@ function BoardPagination(props: {
       <ul className="page-nums">
         <li className="page-num ikon">
           {currentPage > 1 ? (
-            <a href={pageHref(currentPage - 1)} pjax-page="">
+            <a
+              href={pageHref(currentPage - 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>button.prevPage</span>
             </a>
@@ -253,7 +251,10 @@ function BoardPagination(props: {
         <li className="page-num">{pageCount}</li>
         <li className="page-num ikon">
           {currentPage < pageCount ? (
-            <a href={pageHref(currentPage + 1)} pjax-page="">
+            <a
+              href={pageHref(currentPage + 1)}
+              {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
               <i className="ico btn-pg-next"></i>
               <span>button.nextPage</span>
             </a>
@@ -442,123 +443,132 @@ function PostRows(props: {
             className="post-item title post-row"
             key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
           >
-          <a
-            className={`avatar-wrap mlarge hide-in-mobile${
-              post.authorAvatarUrl ? "" : " empty-avatar-wrap"
-            }`}
-            data-placement="bottom"
-            data-toggle="tooltip"
-            href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
-            title={post.authorLoginId}
-          >
-            {post.authorAvatarUrl ? (
-              <img
-                alt={post.authorLabel}
-                height={32}
-                src={post.authorAvatarUrl}
-                width={32}
-              />
-            ) : (
-              "\u00a0"
-            )}
-          </a>
-          <div className="title-wrap post-row-main">
-            {post.notice ? (
-              <>
-                <span className="label label-notice">post.notice</span>{" "}
-              </>
-            ) : null}
-            {post.readme ? (
-              <>
-                <span className="label label-important">README</span>{" "}
-              </>
-            ) : props.showProject ? null : (
-              <span className="post-id">{post.postNumber}</span>
-            )}
-            {splitTitle.prefixes.map((prefix, index) => (
-              <a className="title-prefix" href="#!" key={`${prefix}-${index}`}>
-                {prefix}
-              </a>
-            ))}
             <a
-              className="title post-title"
-              href={projectPostHref(
-                props.runtimeConfig,
-                post.ownerName,
-                post.projectName,
-                post.postNumber,
-              )}
-            >
-              {splitTitle.title || "(no title)"}
-            </a>
-          </div>
-          <div className="infos post-row-meta">
-            {props.showProject ? (
-              <a
-                className="infos-item infos-link-item group-project-name"
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  post.ownerName,
-                  post.projectName,
-                  "posts",
-                )}
-              >
-                {post.projectName}
-              </a>
-            ) : null}
-            {props.showProject ? <span className="post-id">#{post.postNumber}</span> : null}
-            {post.authorLoginId && post.authorLabel ? (
-              <a
-                className="infos-item infos-link-item"
-                data-placement="bottom"
-                data-toggle="tooltip"
-                href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
-                title={post.authorLoginId}
-              >
-                {post.authorLabel}
-              </a>
-            ) : (
-              <span className="infos-item">issue.noAuthor</span>
-            )}
-            <span
-              className="infos-item"
+              className={`avatar-wrap mlarge hide-in-mobile${
+                post.authorAvatarUrl ? "" : " empty-avatar-wrap"
+              }`}
               data-placement="bottom"
               data-toggle="tooltip"
-              title={post.createdLabel}
+              href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
+              title={post.authorLoginId}
             >
-              {post.createdLabel}
-            </span>
-            {post.commentCount > 0 ? (
-              <span className="infos-item item-count-groups">
+              {post.authorAvatarUrl ? (
+                <img alt={post.authorLabel} height={32} src={post.authorAvatarUrl} width={32} />
+              ) : (
+                "\u00a0"
+              )}
+            </a>
+            <div className="title-wrap post-row-main">
+              {post.notice ? (
+                <>
+                  <span className="label label-notice">post.notice</span>{" "}
+                </>
+              ) : null}
+              {post.readme ? (
+                <>
+                  <span className="label label-important">README</span>{" "}
+                </>
+              ) : props.showProject ? null : (
+                <span className="post-id">{post.postNumber}</span>
+              )}
+              {splitTitle.prefixes.map((prefix) => (
                 <a
-                  className="comments-count comments-count-color"
-                  href={`${projectPostHref(
+                  className="title-prefix"
+                  href={projectPostHref(
                     props.runtimeConfig,
                     post.ownerName,
                     post.projectName,
                     post.postNumber,
-                  )}#comments`}
+                  )}
+                  key={prefix}
                 >
-                  <span className="count-groups item-icon">
-                    <i className="yobicon-comment2" />
-                  </span>
-                  <span className="count-groups item-count">{post.commentCount}</span>
+                  {prefix}
                 </a>
-              </span>
-            ) : null}
-            {post.labels.map((label) => (
+              ))}
               <a
-                className="label issue-label list-label active board-label"
-                data-category-id={label.categoryId}
-                data-label-id={label.id}
-                href="#"
-                key={label.id}
-                style={{ borderColor: label.color || undefined }}
+                className="title post-title"
+                href={projectPostHref(
+                  props.runtimeConfig,
+                  post.ownerName,
+                  post.projectName,
+                  post.postNumber,
+                )}
               >
-                {label.name}
+                {splitTitle.title || "(no title)"}
               </a>
-            ))}
-          </div>
+            </div>
+            <div className="infos post-row-meta">
+              {props.showProject ? (
+                <a
+                  className="infos-item infos-link-item group-project-name"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    post.ownerName,
+                    post.projectName,
+                    "posts",
+                  )}
+                >
+                  {post.projectName}
+                </a>
+              ) : null}
+              {props.showProject ? <span className="post-id">#{post.postNumber}</span> : null}
+              {post.authorLoginId && post.authorLabel ? (
+                <a
+                  className="infos-item infos-link-item"
+                  data-placement="bottom"
+                  data-toggle="tooltip"
+                  href={userInfoHref(props.runtimeConfig, post.authorLoginId)}
+                  title={post.authorLoginId}
+                >
+                  {post.authorLabel}
+                </a>
+              ) : (
+                <span className="infos-item">issue.noAuthor</span>
+              )}
+              <span
+                className="infos-item"
+                data-placement="bottom"
+                data-toggle="tooltip"
+                title={post.createdLabel}
+              >
+                {post.createdLabel}
+              </span>
+              {post.commentCount > 0 ? (
+                <span className="infos-item item-count-groups">
+                  <a
+                    className="comments-count comments-count-color"
+                    href={`${projectPostHref(
+                      props.runtimeConfig,
+                      post.ownerName,
+                      post.projectName,
+                      post.postNumber,
+                    )}#comments`}
+                  >
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-comment2" />
+                    </span>
+                    <span className="count-groups item-count">{post.commentCount}</span>
+                  </a>
+                </span>
+              ) : null}
+              {post.labels.map((label) => (
+                <a
+                  className="label issue-label list-label active board-label"
+                  data-category-id={label.categoryId}
+                  data-label-id={label.id}
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    post.ownerName,
+                    post.projectName,
+                    `posts?labelId=${encodeURIComponent(String(label.id))}`,
+                  )}
+                  key={label.id}
+                  style={{ borderColor: label.color || undefined }}
+                >
+                  {label.name}
+                </a>
+              ))}
+            </div>
           </li>
         );
       })}
@@ -590,8 +600,12 @@ export function ProjectBoardListPage(props: {
 
   return (
     <main className="app-shell board-page">
-      {shellDetail ? <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} /> : null}
-      {shellDetail ? <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} /> : null}
+      {shellDetail ? (
+        <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      ) : null}
+      {shellDetail ? (
+        <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      ) : null}
       <div className="page-wrap-outer">
         <div className="post-list project-page-wrap">
           <div className="search-wrap underline board-toolbar">
@@ -746,7 +760,9 @@ export function ProjectBoardDetailPage(props: {
   }
 
   const authorName = post.authorLabel || post.authorLoginId || "common.noAuthor";
-  const authorHref = post.authorLoginId ? userInfoHref(props.runtimeConfig, post.authorLoginId) : "#";
+  const authorHref = post.authorLoginId
+    ? userInfoHref(props.runtimeConfig, post.authorLoginId)
+    : "#";
   const topLevelComments = post.comments.filter((comment) => !comment.parentCommentId);
   const childCommentsByParent = post.comments.reduce<
     Map<string, BoardPostDetail["comments"][number][]>
@@ -828,642 +844,656 @@ export function ProjectBoardDetailPage(props: {
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap board-view">
-        <div className="board-header issue">
-          <div className="pull-right mr10 mt10 hide-in-mobile">
-            <div className="date" title={post.createdLabel}>
-              {post.createdLabel}
-            </div>
-          </div>
-          <div className="title">
-            <strong className="board-id">{`#${post.postNumber}`}</strong> {post.title}
-            <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
-              <span className="date" title={post.createdLabel}>
+          <div className="board-header issue">
+            <div className="pull-right mr10 mt10 hide-in-mobile">
+              <div className="date" title={post.createdLabel}>
                 {post.createdLabel}
-              </span>
+              </div>
+            </div>
+            <div className="title">
+              <strong className="board-id">{`#${post.postNumber}`}</strong> {post.title}
+              <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
+                <span className="date" title={post.createdLabel}>
+                  {post.createdLabel}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="board-body row-fluid">
-          <div className="span9 span-left-pane">
-            <div className="author-info">
-              <a className="usf-group" href={authorHref}>
-                <span className="avatar-wrap smaller">
-                  <span aria-hidden="true" className="avatar-placeholder" />
-                </span>
-                <strong className="name">{authorName}</strong>
-                {post.authorLoginId ? (
-                  <span className="loginid">
-                    {" "}
-                    <strong>@</strong>
-                    {post.authorLoginId}
+          <div className="board-body row-fluid">
+            <div className="span9 span-left-pane">
+              <div className="author-info">
+                <a className="usf-group" href={authorHref}>
+                  <span className="avatar-wrap smaller">
+                    <span aria-hidden="true" className="avatar-placeholder" />
                   </span>
-                ) : null}
-              </a>
-              <PostingHistoryModal
-                historyMarkdown={post.historyMarkdown}
-                basePath={props.runtimeConfig.basePath}
-                issueReferences={post.issueReferences}
-                linkLabel="change.history"
-                mentionReferences={post.mentionReferences}
-                ownerName={post.ownerName}
-                projectName={post.projectName}
-              />
-            </div>
-            {post.bodyMarkdown.trim() ? (
-              <>
-                <div className="hide" id={`post-${post.postNumber}`}>
-                  <form
-                    action={prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/api/v1/projects/${post.ownerName}/${post.projectName}/posts/${post.postNumber}/content`,
-                    )}
-                  >
-                    <textarea defaultValue={post.bodyMarkdown} />
-                  </form>
-                </div>
-                <div id={`post-body-${post.postNumber}`}>
-                  <MarkdownRenderer
-                    className="content markdown-wrap"
-                    basePath={props.runtimeConfig.basePath}
-                    data-allowed-update={post.permissions.canUpdate ? "true" : "false"}
-                    issueReferences={post.issueReferences}
-                    markdown={translatedPostMarkdown ?? post.bodyMarkdown}
-                    mentionReferences={post.mentionReferences}
-                    ownerName={post.ownerName}
-                    projectName={post.projectName}
-                    showTasklistBar
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="content empty-content" />
-            )}
-            <div className="attachments" id="attachments" />
-            <div className="board-actrow right-txt board-actions">
-              <div className="pull-left">
-                <div>
-                  {post.permissions.canWatch ? (
-                    <button
-                      id="watch-button"
-                      className={post.isWatching ? "ybtn ybtn-watching" : "ybtn"}
-                      data-placement="top"
-                      data-toggle="tooltip"
-                      data-watching={post.isWatching ? "true" : "false"}
-                      onClick={props.onWatchToggle}
-                      title="issue.watch.description"
-                      type="button"
-                    >
-                      {post.isWatching ? "post.unwatch" : "post.watch"}
-                    </button>
+                  <strong className="name">{authorName}</strong>
+                  {post.authorLoginId ? (
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {post.authorLoginId}
+                    </span>
                   ) : null}
-                </div>
+                </a>
+                <PostingHistoryModal
+                  historyMarkdown={post.historyMarkdown}
+                  basePath={props.runtimeConfig.basePath}
+                  issueReferences={post.issueReferences}
+                  linkLabel="change.history"
+                  mentionReferences={post.mentionReferences}
+                  ownerName={post.ownerName}
+                  projectName={post.projectName}
+                />
               </div>
-              <span>
-                <button
-                  className="icon btn-transparent-with-fontsize-lineheight ml10"
-                  data-toggle="tooltip"
-                  disabled={translatingPost || translatedPostMarkdown !== null}
-                  id="translate"
-                  onClick={() => void translatePost()}
-                  title="button.translation"
-                  type="button"
-                >
-                  <i className="yobicon-lang" />
-                </button>
-                {post.permissions.canUpdate ? (
-                  <a
-                    aria-label="button.edit"
-                    className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+              {post.bodyMarkdown.trim() ? (
+                <>
+                  <div className="hide" id={`post-${post.postNumber}`}>
+                    <form
+                      action={prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/api/v1/projects/${post.ownerName}/${post.projectName}/posts/${post.postNumber}/content`,
+                      )}
+                    >
+                      <textarea defaultValue={post.bodyMarkdown} />
+                    </form>
+                  </div>
+                  <div id={`post-body-${post.postNumber}`}>
+                    <MarkdownRenderer
+                      className="content markdown-wrap"
+                      basePath={props.runtimeConfig.basePath}
+                      data-allowed-update={post.permissions.canUpdate ? "true" : "false"}
+                      issueReferences={post.issueReferences}
+                      markdown={translatedPostMarkdown ?? post.bodyMarkdown}
+                      mentionReferences={post.mentionReferences}
+                      ownerName={post.ownerName}
+                      projectName={post.projectName}
+                      showTasklistBar
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="content empty-content" />
+              )}
+              <div className="attachments" id="attachments" />
+              <div className="board-actrow right-txt board-actions">
+                <div className="pull-left">
+                  <div>
+                    {post.permissions.canWatch ? (
+                      <button
+                        id="watch-button"
+                        className={post.isWatching ? "ybtn ybtn-watching" : "ybtn"}
+                        data-placement="top"
+                        data-toggle="tooltip"
+                        data-watching={post.isWatching ? "true" : "false"}
+                        onClick={props.onWatchToggle}
+                        title="issue.watch.description"
+                        type="button"
+                      >
+                        {post.isWatching ? "post.unwatch" : "post.watch"}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <span>
+                  <button
+                    className="icon btn-transparent-with-fontsize-lineheight ml10"
                     data-toggle="tooltip"
-                    href={editPostHref}
-                    title="button.edit"
+                    disabled={translatingPost || translatedPostMarkdown !== null}
+                    id="translate"
+                    onClick={() => void translatePost()}
+                    title="button.translation"
+                    type="button"
                   >
-                    <i className="yobicon-edit-2" />
-                    <span className="sr-only">button.edit</span>
-                  </a>
+                    <i className="yobicon-lang" />
+                  </button>
+                  {post.permissions.canUpdate ? (
+                    <a
+                      aria-label="button.edit"
+                      className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                      data-toggle="tooltip"
+                      href={editPostHref}
+                      title="button.edit"
+                    >
+                      <i className="yobicon-edit-2" />
+                      <span className="sr-only">button.edit</span>
+                    </a>
+                  ) : (
+                    <a href={editPostHref}>
+                      <button
+                        className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                        data-toggle="tooltip"
+                        title="button.show.original"
+                        type="button"
+                      >
+                        <i className="yobicon-edit-2" />
+                        <span className="sr-only">button.show.original</span>
+                      </button>
+                    </a>
+                  )}
+                  {post.permissions.canDelete ? (
+                    <a href="#deleteConfirm" data-toggle="modal">
+                      <button
+                        className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
+                        data-toggle="tooltip"
+                        onClick={props.onDeletePost}
+                        title="button.delete"
+                        type="button"
+                      >
+                        <i className="yobicon-trash" />
+                        <span className="sr-only">button.delete</span>
+                      </button>
+                    </a>
+                  ) : null}
+                </span>
+              </div>
+              <div className="watcher-list" />
+              <div className="board-comment-wrap" id="comments">
+                <div id="timeline">
+                  <div className="timeline-list">
+                    <div className="comment-header">
+                      <i className="yobicon-comments" /> <strong>common.comment</strong>{" "}
+                      <strong className="num">{post.comments.length}</strong>
+                    </div>
+                    <hr className="nm" />
+                    <ul className="comments board-comments">
+                      {topLevelComments.map((comment) => {
+                        const canEdit =
+                          post.permissions.canUpdate || props.viewerId === comment.authorId;
+                        const canDelete =
+                          post.permissions.canDelete || props.viewerId === comment.authorId;
+                        const childComments = childCommentsByParent.get(comment.id) ?? [];
+                        const commentAuthorName =
+                          comment.authorLabel || comment.authorLoginId || "common.noAuthor";
+                        const commentAuthorHref = comment.authorLoginId
+                          ? userInfoHref(props.runtimeConfig, comment.authorLoginId)
+                          : "#";
+                        const commentAction = boardPostCommentAction(
+                          props.runtimeConfig,
+                          post.ownerName,
+                          post.projectName,
+                          post.postNumber,
+                          comment.id,
+                        );
+                        return (
+                          <li
+                            className={`comment board-comment${
+                              comment.authorLoginId === post.authorLoginId ? " author" : ""
+                            }`}
+                            id={`comment-${comment.id}`}
+                            key={comment.id}
+                          >
+                            <div className="comment-avatar">
+                              <a
+                                className="avatar-wrap"
+                                data-placement="top"
+                                data-toggle="tooltip"
+                                href={commentAuthorHref}
+                                title={commentAuthorName}
+                              >
+                                <span aria-hidden="true" className="avatar-placeholder" />
+                              </a>
+                            </div>
+                            <div className="media-body">
+                              <div className="meta-info">
+                                <span className="comment_author">
+                                  <span className="resp-comment-avatar">
+                                    <a
+                                      className="avatar-wrap"
+                                      data-placement="top"
+                                      data-toggle="tooltip"
+                                      href={commentAuthorHref}
+                                      title={commentAuthorName}
+                                    >
+                                      <span aria-hidden="true" className="avatar-placeholder" />
+                                    </a>
+                                  </span>
+                                  <a
+                                    data-placement="top"
+                                    data-toggle="tooltip"
+                                    href={commentAuthorHref}
+                                    title={comment.authorLoginId}
+                                  >
+                                    <strong>{commentAuthorName}</strong>
+                                  </a>
+                                </span>
+                                <span className="ago-date">
+                                  <a
+                                    className="ago"
+                                    href={`#comment-${comment.id}`}
+                                    title={comment.createdLabel}
+                                  >
+                                    {comment.createdLabel}
+                                  </a>
+                                  <a
+                                    className="share-link"
+                                    href={`#comment-${comment.id}`}
+                                    style={{ display: "none" }}
+                                  >
+                                    [Link]
+                                  </a>
+                                </span>
+                                <span className="act-row pull-right">
+                                  <button
+                                    className="icon btn-transparent ml10 comment-translate"
+                                    data-comment-id={comment.id}
+                                    data-toggle="tooltip"
+                                    disabled={
+                                      translatingCommentIds.has(comment.id) ||
+                                      Boolean(translatedCommentMarkdownById[comment.id])
+                                    }
+                                    onClick={() => void translatePostComment(comment)}
+                                    title="button.translation"
+                                    type="button"
+                                  >
+                                    <i className="yobicon-lang" />
+                                  </button>
+                                  {canEdit ? (
+                                    <button
+                                      aria-label="common.comment.edit"
+                                      className="btn-transparent ml10"
+                                      data-comment-id={comment.id}
+                                      data-toggle="comment-edit"
+                                      onClick={() => {
+                                        setEditingCommentId(comment.id);
+                                        setEditingCommentDraft(comment.contentsMarkdown);
+                                        setEditingCommentAttachmentIds([]);
+                                      }}
+                                      title="common.comment.edit"
+                                      type="button"
+                                    >
+                                      <i className="yobicon-edit-2" />
+                                      <span className="sr-only">common.comment.edit</span>
+                                    </button>
+                                  ) : null}
+                                  {canDelete ? (
+                                    <button
+                                      aria-label="common.comment.delete"
+                                      className="btn-transparent ml6 danger"
+                                      data-request-uri={commentAction}
+                                      data-toggle="comment-delete"
+                                      onClick={() => void props.onCommentDelete?.(comment.id)}
+                                      title="common.comment.delete"
+                                      type="button"
+                                    >
+                                      <i className="yobicon-trash" />
+                                      <span className="sr-only">common.comment.delete</span>
+                                    </button>
+                                  ) : null}
+                                </span>
+                              </div>
+                              <div
+                                className="comment-update-form"
+                                hidden={editingCommentId !== comment.id}
+                                id={`comment-editform-${comment.id}`}
+                              >
+                                <form
+                                  action={commentAction}
+                                  encType="multipart/form-data"
+                                  method="post"
+                                  onSubmit={(event) => {
+                                    event.preventDefault();
+                                    const contents = editingCommentDraft.trim();
+                                    if (!contents) {
+                                      return;
+                                    }
+                                    void props
+                                      .onCommentUpdate?.(
+                                        comment.id,
+                                        contents,
+                                        editingCommentAttachmentIds,
+                                      )
+                                      .then(() => {
+                                        setEditingCommentAttachmentIds([]);
+                                        setEditingCommentId(null);
+                                      });
+                                  }}
+                                >
+                                  <input name="id" type="hidden" value={comment.id} />
+                                  <div className="write-comment-box">
+                                    <div className="write-comment-wrap">
+                                      <LegacyMarkdownEditorShell
+                                        editId={`edit-${comment.id}`}
+                                        editorMode="update-comment-body"
+                                        previewId={`preview-${comment.id}`}
+                                      >
+                                        <BoardMarkdownTextarea
+                                          ariaLabel="common.comment.edit"
+                                          className="editorSeries content comment nm"
+                                          csrfToken={props.csrfToken}
+                                          dataEditorMode="update-comment-body"
+                                          id={`editor-contents-${comment.id}`}
+                                          name={`contents-${comment.id}`}
+                                          onAttachmentUpload={(attachment) =>
+                                            setEditingCommentAttachmentIds((current) => [
+                                              ...current,
+                                              attachment.id,
+                                            ])
+                                          }
+                                          onChange={setEditingCommentDraft}
+                                          runtimeConfig={props.runtimeConfig}
+                                          value={editingCommentDraft}
+                                        />
+                                      </LegacyMarkdownEditorShell>
+                                      <div className="upload-drop-here">
+                                        <div className="msg-wrap">
+                                          <div className="msg">common.attach.dropFilesHere</div>
+                                        </div>
+                                      </div>
+                                      <div className="right-txt comment-update-button upload-button-line">
+                                        <button
+                                          className="ybtn ybtn-cancel"
+                                          data-comment-id={comment.id}
+                                          onClick={() => setEditingCommentId(null)}
+                                          type="button"
+                                        >
+                                          button.cancel
+                                        </button>
+                                        <button className="ybtn ybtn-info" type="submit">
+                                          button.save
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className={`preview-${comment.id}`} />
+                                  <div
+                                    data-resource-id={comment.id}
+                                    data-resource-type="NONISSUE_COMMENT"
+                                    id={`upload-${comment.id}`}
+                                  />
+                                </form>
+                              </div>
+                              {editingCommentId === comment.id ? null : (
+                                <div id={`comment-body-${comment.id}`}>
+                                  <MarkdownRenderer
+                                    className="comment-body markdown-wrap"
+                                    basePath={props.runtimeConfig.basePath}
+                                    data-allowed-update={canEdit ? "true" : "false"}
+                                    data-via-email={comment.viaEmail ? "true" : undefined}
+                                    issueReferences={comment.issueReferences}
+                                    markdown={
+                                      translatedCommentMarkdownById[comment.id] ??
+                                      comment.contentsMarkdown
+                                    }
+                                    mentionReferences={comment.mentionReferences}
+                                    ownerName={post.ownerName}
+                                    projectName={post.projectName}
+                                    showTasklistBar
+                                  />
+                                  <div className="attachments" />
+                                </div>
+                              )}
+                              <div className="add-a-comment pull-right">
+                                comment.oneline.comment.placeholder
+                              </div>
+                              <div className="subcomment-media-body">
+                                <div className="child-comments">
+                                  {childComments.map((childComment) => {
+                                    const childAuthorName =
+                                      childComment.authorLabel ||
+                                      childComment.authorLoginId ||
+                                      "common.noAuthor";
+                                    const childAuthorHref = childComment.authorLoginId
+                                      ? userInfoHref(
+                                          props.runtimeConfig,
+                                          childComment.authorLoginId,
+                                        )
+                                      : "#";
+                                    const childCanDelete =
+                                      post.permissions.canDelete ||
+                                      props.viewerId === childComment.authorId;
+                                    return (
+                                      <div className="one-line-comment" key={childComment.id}>
+                                        <div className="contents">
+                                          <MarkdownRenderer
+                                            basePath={props.runtimeConfig.basePath}
+                                            issueReferences={childComment.issueReferences}
+                                            markdown={
+                                              translatedCommentMarkdownById[childComment.id] ??
+                                              childComment.contentsMarkdown
+                                            }
+                                            mentionReferences={childComment.mentionReferences}
+                                            ownerName={post.ownerName}
+                                            projectName={post.projectName}
+                                          />
+                                          <span className="subcomment-author hide">
+                                            {" - "}
+                                            <a
+                                              className="usf-group"
+                                              data-placement="top"
+                                              data-toggle="tooltip"
+                                              href={childAuthorHref}
+                                              title={childComment.authorLoginId}
+                                            >
+                                              <strong>{childAuthorName}</strong>
+                                            </a>{" "}
+                                            <a
+                                              className="ago"
+                                              href={`#comment-${childComment.id}`}
+                                              title={childComment.createdLabel}
+                                            >
+                                              {childComment.createdLabel}
+                                            </a>
+                                            {childCanDelete && props.onCommentDelete ? (
+                                              <button
+                                                className="btn-transparent deleteButtonX"
+                                                data-request-uri={boardPostCommentAction(
+                                                  props.runtimeConfig,
+                                                  post.ownerName,
+                                                  post.projectName,
+                                                  post.postNumber,
+                                                  childComment.id,
+                                                )}
+                                                data-toggle="comment-delete"
+                                                onClick={() =>
+                                                  void props.onCommentDelete?.(childComment.id)
+                                                }
+                                                title="common.comment.delete"
+                                                type="button"
+                                              >
+                                                x
+                                              </button>
+                                            ) : null}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                {post.permissions.canComment ? (
+                                  <div className="child-comment-input-form">
+                                    <form
+                                      action={boardPostCommentAction(
+                                        props.runtimeConfig,
+                                        post.ownerName,
+                                        post.projectName,
+                                        post.postNumber,
+                                      )}
+                                      encType="multipart/form-data"
+                                      method="post"
+                                      onSubmit={(event) => {
+                                        event.preventDefault();
+                                        const contents = (
+                                          childCommentDrafts[comment.id] ?? ""
+                                        ).trim();
+                                        if (!contents) {
+                                          return;
+                                        }
+                                        void props
+                                          .onCommentSubmit?.(contents, [], comment.id)
+                                          .then(() =>
+                                            setChildCommentDrafts((current) => ({
+                                              ...current,
+                                              [comment.id]: "",
+                                            })),
+                                          );
+                                      }}
+                                    >
+                                      <input
+                                        className="parentCommentId"
+                                        name="parentCommentId"
+                                        type="hidden"
+                                        value={comment.id}
+                                      />
+                                      <div className="oneline-comment-box">
+                                        <textarea
+                                          className="editorSeries"
+                                          name="contents"
+                                          onChange={(event) =>
+                                            setChildCommentDrafts((current) => ({
+                                              ...current,
+                                              [comment.id]: event.target.value,
+                                            }))
+                                          }
+                                          placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
+                                          rows={1}
+                                          value={childCommentDrafts[comment.id] ?? ""}
+                                          {...({
+                                            markdown: "true",
+                                          } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+                                        />
+                                        <button
+                                          className="ybtn ybtn-success"
+                                          data-legacy-label="OK"
+                                          type="submit"
+                                        >
+                                          comment.save
+                                        </button>
+                                      </div>
+                                      <div className="notification-receiver">
+                                        <span className="notification-receiver-title">
+                                          notification.receiver.list.title
+                                        </span>
+                                        <span className="notification-receiver-list"></span>
+                                      </div>
+                                    </form>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+                {post.permissions.canComment ? (
+                  <form
+                    action={boardPostCommentAction(
+                      props.runtimeConfig,
+                      post.ownerName,
+                      post.projectName,
+                      post.postNumber,
+                    )}
+                    className="board-comment-form"
+                    encType="multipart/form-data"
+                    id="comment-form"
+                    method="post"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const contents = commentDraft.trim();
+                      if (!contents) {
+                        return;
+                      }
+                      void props.onCommentSubmit?.(contents, commentAttachmentIds).then(() => {
+                        setCommentAttachmentIds([]);
+                        setCommentDraft("");
+                      });
+                    }}
+                  >
+                    <div className="write-comment-box">
+                      <BoardMarkdownTextarea
+                        csrfToken={props.csrfToken}
+                        id="editor-contents-comment-body"
+                        name="contents"
+                        onAttachmentUpload={(attachment) =>
+                          setCommentAttachmentIds((current) => [...current, attachment.id])
+                        }
+                        onChange={setCommentDraft}
+                        runtimeConfig={props.runtimeConfig}
+                        value={commentDraft}
+                      />
+                      <div className="write-comment-wrap">
+                        <div className="right-txt">
+                          <button className="ybtn hidden" id="dynamic-comment-btn" type="button" />
+                          <button className="ybtn ybtn-success" type="submit">
+                            button.comment.new
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
                 ) : (
+                  <div
+                    className="write-comment-box mt20"
+                    data-login="required"
+                    title="error.auth.unauthorized.comment"
+                  >
+                    <div className="write-comment-wrap">
+                      <div className="textarea-box">
+                        <textarea
+                          className="comment disabled"
+                          disabled
+                          style={{ cursor: "text" }}
+                        />
+                      </div>
+                      <div className="right-txt mt10">
+                        <span className="ybtn ybtn-disabled">button.comment.new</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="span3 span-right-pane mb20">
+              <div className="issue-info board-labels">
+                <dl>
+                  {post.permissions.canCreate ? (
+                    <dd className="project-btn-item">
+                      <a
+                        className="ybtn ybtn-success"
+                        href={prefixBasePath(
+                          props.runtimeConfig.basePath,
+                          `/${post.ownerName}/${post.projectName}/postform`,
+                        )}
+                      >
+                        post.write
+                      </a>
+                    </dd>
+                  ) : null}
+                </dl>
+                {boardLabels(post.labels)}
+                <div className="right-menu-icons">
                   <a href={editPostHref}>
                     <button
                       className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
                       data-toggle="tooltip"
-                      title="button.show.original"
+                      title={post.permissions.canUpdate ? "button.edit" : "button.show.original"}
                       type="button"
                     >
                       <i className="yobicon-edit-2" />
-                      <span className="sr-only">button.show.original</span>
+                      <span className="sr-only">
+                        {post.permissions.canUpdate ? "button.edit" : "button.show.original"}
+                      </span>
                     </button>
                   </a>
-                )}
-                {post.permissions.canDelete ? (
-                  <a href="#deleteConfirm" data-toggle="modal">
-                    <button
-                      className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
-                      data-toggle="tooltip"
-                      onClick={props.onDeletePost}
-                      title="button.delete"
-                      type="button"
-                    >
-                      <i className="yobicon-trash" />
-                      <span className="sr-only">button.delete</span>
-                    </button>
-                  </a>
-                ) : null}
-              </span>
-            </div>
-            <div className="watcher-list" />
-            <div className="board-comment-wrap" id="comments">
-              <div id="timeline">
-                <div className="timeline-list">
-                  <div className="comment-header">
-                    <i className="yobicon-comments" /> <strong>common.comment</strong>{" "}
-                    <strong className="num">{post.comments.length}</strong>
-                  </div>
-                  <hr className="nm" />
-                  <ul className="comments board-comments">
-                    {topLevelComments.map((comment) => {
-                      const canEdit = post.permissions.canUpdate || props.viewerId === comment.authorId;
-                      const canDelete =
-                        post.permissions.canDelete || props.viewerId === comment.authorId;
-                      const childComments = childCommentsByParent.get(comment.id) ?? [];
-                      const commentAuthorName =
-                        comment.authorLabel || comment.authorLoginId || "common.noAuthor";
-                      const commentAuthorHref = comment.authorLoginId
-                        ? userInfoHref(props.runtimeConfig, comment.authorLoginId)
-                        : "#";
-                      const commentAction = boardPostCommentAction(
-                        props.runtimeConfig,
-                        post.ownerName,
-                        post.projectName,
-                        post.postNumber,
-                        comment.id,
-                      );
-                      return (
-                        <li
-                          className={`comment board-comment${
-                            comment.authorLoginId === post.authorLoginId ? " author" : ""
-                          }`}
-                          id={`comment-${comment.id}`}
-                          key={comment.id}
-                        >
-                          <div className="comment-avatar">
-                            <a
-                              className="avatar-wrap"
-                              data-placement="top"
-                              data-toggle="tooltip"
-                              href={commentAuthorHref}
-                              title={commentAuthorName}
-                            >
-                              <span aria-hidden="true" className="avatar-placeholder" />
-                            </a>
-                          </div>
-                          <div className="media-body">
-                            <div className="meta-info">
-                              <span className="comment_author">
-                                <span className="resp-comment-avatar">
-                                  <a
-                                    className="avatar-wrap"
-                                    data-placement="top"
-                                    data-toggle="tooltip"
-                                    href={commentAuthorHref}
-                                    title={commentAuthorName}
-                                  >
-                                    <span aria-hidden="true" className="avatar-placeholder" />
-                                  </a>
-                                </span>
-                                <a
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  href={commentAuthorHref}
-                                  title={comment.authorLoginId}
-                                >
-                                  <strong>{commentAuthorName}</strong>
-                                </a>
-                              </span>
-                              <span className="ago-date">
-                                <a
-                                  className="ago"
-                                  href={`#comment-${comment.id}`}
-                                  title={comment.createdLabel}
-                                >
-                                  {comment.createdLabel}
-                                </a>
-                                <a
-                                  className="share-link"
-                                  href={`#comment-${comment.id}`}
-                                  style={{ display: "none" }}
-                                >
-                                  [Link]
-                                </a>
-                              </span>
-                              <span className="act-row pull-right">
-                                <button
-                                  className="icon btn-transparent ml10 comment-translate"
-                                  data-comment-id={comment.id}
-                                  data-toggle="tooltip"
-                                  disabled={
-                                    translatingCommentIds.has(comment.id) ||
-                                    Boolean(translatedCommentMarkdownById[comment.id])
-                                  }
-                                  onClick={() => void translatePostComment(comment)}
-                                  title="button.translation"
-                                  type="button"
-                                >
-                                  <i className="yobicon-lang" />
-                                </button>
-                                {canEdit ? (
-                                  <button
-                                    aria-label="common.comment.edit"
-                                    className="btn-transparent ml10"
-                                    data-comment-id={comment.id}
-                                    data-toggle="comment-edit"
-                                    onClick={() => {
-                                      setEditingCommentId(comment.id);
-                                      setEditingCommentDraft(comment.contentsMarkdown);
-                                      setEditingCommentAttachmentIds([]);
-                                    }}
-                                    title="common.comment.edit"
-                                    type="button"
-                                  >
-                                    <i className="yobicon-edit-2" />
-                                    <span className="sr-only">common.comment.edit</span>
-                                  </button>
-                                ) : null}
-                                {canDelete ? (
-                                  <button
-                                    aria-label="common.comment.delete"
-                                    className="btn-transparent ml6 danger"
-                                    data-request-uri={commentAction}
-                                    data-toggle="comment-delete"
-                                    onClick={() => void props.onCommentDelete?.(comment.id)}
-                                    title="common.comment.delete"
-                                    type="button"
-                                  >
-                                    <i className="yobicon-trash" />
-                                    <span className="sr-only">common.comment.delete</span>
-                                  </button>
-                                ) : null}
-                              </span>
-                            </div>
-                            <div
-                              className="comment-update-form"
-                              hidden={editingCommentId !== comment.id}
-                              id={`comment-editform-${comment.id}`}
-                            >
-                              <form
-                                action={commentAction}
-                                encType="multipart/form-data"
-                                method="post"
-                                onSubmit={(event) => {
-                                  event.preventDefault();
-                                  const contents = editingCommentDraft.trim();
-                                  if (!contents) {
-                                    return;
-                                  }
-                                  void props
-                                    .onCommentUpdate?.(
-                                      comment.id,
-                                      contents,
-                                      editingCommentAttachmentIds,
-                                    )
-                                    .then(() => {
-                                      setEditingCommentAttachmentIds([]);
-                                      setEditingCommentId(null);
-                                    });
-                                }}
-                              >
-                                <input name="id" type="hidden" value={comment.id} />
-                                <div className="write-comment-box">
-                                  <div className="write-comment-wrap">
-                                    <LegacyMarkdownEditorShell
-                                      editId={`edit-${comment.id}`}
-                                      editorMode="update-comment-body"
-                                      previewId={`preview-${comment.id}`}
-                                    >
-                                      <BoardMarkdownTextarea
-                                        ariaLabel="common.comment.edit"
-                                        className="editorSeries content comment nm"
-                                        csrfToken={props.csrfToken}
-                                        dataEditorMode="update-comment-body"
-                                        id={`editor-contents-${comment.id}`}
-                                        name={`contents-${comment.id}`}
-                                        onAttachmentUpload={(attachment) =>
-                                          setEditingCommentAttachmentIds((current) => [
-                                            ...current,
-                                            attachment.id,
-                                          ])
-                                        }
-                                        onChange={setEditingCommentDraft}
-                                        runtimeConfig={props.runtimeConfig}
-                                        value={editingCommentDraft}
-                                      />
-                                    </LegacyMarkdownEditorShell>
-                                    <div className="upload-drop-here">
-                                      <div className="msg-wrap">
-                                        <div className="msg">common.attach.dropFilesHere</div>
-                                      </div>
-                                    </div>
-                                    <div className="right-txt comment-update-button upload-button-line">
-                                      <button
-                                        className="ybtn ybtn-cancel"
-                                        data-comment-id={comment.id}
-                                        onClick={() => setEditingCommentId(null)}
-                                        type="button"
-                                      >
-                                        button.cancel
-                                      </button>
-                                      <button className="ybtn ybtn-info" type="submit">
-                                        button.save
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className={`preview-${comment.id}`} />
-                                <div
-                                  data-resource-id={comment.id}
-                                  data-resource-type="NONISSUE_COMMENT"
-                                  id={`upload-${comment.id}`}
-                                />
-                              </form>
-                            </div>
-                            {editingCommentId === comment.id ? null : (
-                              <div id={`comment-body-${comment.id}`}>
-                                <MarkdownRenderer
-                                  className="comment-body markdown-wrap"
-                                  basePath={props.runtimeConfig.basePath}
-                                  data-allowed-update={canEdit ? "true" : "false"}
-                                  data-via-email={comment.viaEmail ? "true" : undefined}
-                                  issueReferences={comment.issueReferences}
-                                  markdown={
-                                    translatedCommentMarkdownById[comment.id] ??
-                                    comment.contentsMarkdown
-                                  }
-                                  mentionReferences={comment.mentionReferences}
-                                  ownerName={post.ownerName}
-                                  projectName={post.projectName}
-                                  showTasklistBar
-                                />
-                                <div className="attachments" />
-                              </div>
-                            )}
-                            <div className="add-a-comment pull-right">
-                              comment.oneline.comment.placeholder
-                            </div>
-                            <div className="subcomment-media-body">
-                              <div className="child-comments">
-                                {childComments.map((childComment) => {
-                                  const childAuthorName =
-                                    childComment.authorLabel ||
-                                    childComment.authorLoginId ||
-                                    "common.noAuthor";
-                                  const childAuthorHref = childComment.authorLoginId
-                                    ? userInfoHref(props.runtimeConfig, childComment.authorLoginId)
-                                    : "#";
-                                  const childCanDelete =
-                                    post.permissions.canDelete ||
-                                    props.viewerId === childComment.authorId;
-                                  return (
-                                    <div className="one-line-comment" key={childComment.id}>
-                                      <div className="contents">
-                                        <MarkdownRenderer
-                                          basePath={props.runtimeConfig.basePath}
-                                          issueReferences={childComment.issueReferences}
-                                          markdown={
-                                            translatedCommentMarkdownById[childComment.id] ??
-                                            childComment.contentsMarkdown
-                                          }
-                                          mentionReferences={childComment.mentionReferences}
-                                          ownerName={post.ownerName}
-                                          projectName={post.projectName}
-                                        />
-                                        <span className="subcomment-author hide">
-                                          {" - "}
-                                          <a
-                                            className="usf-group"
-                                            data-placement="top"
-                                            data-toggle="tooltip"
-                                            href={childAuthorHref}
-                                            title={childComment.authorLoginId}
-                                          >
-                                            <strong>{childAuthorName}</strong>
-                                          </a>{" "}
-                                          <a
-                                            className="ago"
-                                            href={`#comment-${childComment.id}`}
-                                            title={childComment.createdLabel}
-                                          >
-                                            {childComment.createdLabel}
-                                          </a>
-                                          {childCanDelete && props.onCommentDelete ? (
-                                            <button
-                                              className="btn-transparent deleteButtonX"
-                                              data-request-uri={boardPostCommentAction(
-                                                props.runtimeConfig,
-                                                post.ownerName,
-                                                post.projectName,
-                                                post.postNumber,
-                                                childComment.id,
-                                              )}
-                                              data-toggle="comment-delete"
-                                              onClick={() =>
-                                                void props.onCommentDelete?.(childComment.id)
-                                              }
-                                              title="common.comment.delete"
-                                              type="button"
-                                            >
-                                              x
-                                            </button>
-                                          ) : null}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              {post.permissions.canComment ? (
-                                <div className="child-comment-input-form">
-                                  <form
-                                    action={boardPostCommentAction(
-                                      props.runtimeConfig,
-                                      post.ownerName,
-                                      post.projectName,
-                                      post.postNumber,
-                                    )}
-                                    encType="multipart/form-data"
-                                    method="post"
-                                    onSubmit={(event) => {
-                                      event.preventDefault();
-                                      const contents = (childCommentDrafts[comment.id] ?? "").trim();
-                                      if (!contents) {
-                                        return;
-                                      }
-                                      void props
-                                        .onCommentSubmit?.(contents, [], comment.id)
-                                        .then(() =>
-                                          setChildCommentDrafts((current) => ({
-                                            ...current,
-                                            [comment.id]: "",
-                                          })),
-                                        );
-                                    }}
-                                  >
-                                    <input
-                                      className="parentCommentId"
-                                      name="parentCommentId"
-                                      type="hidden"
-                                      value={comment.id}
-                                    />
-                                    <div className="oneline-comment-box">
-                                      <textarea
-                                        className="editorSeries"
-                                        name="contents"
-                                        onChange={(event) =>
-                                          setChildCommentDrafts((current) => ({
-                                            ...current,
-                                            [comment.id]: event.target.value,
-                                          }))
-                                        }
-                                        placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
-                                        rows={1}
-                                        value={childCommentDrafts[comment.id] ?? ""}
-                                        {...({
-                                          markdown: "true",
-                                        } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-                                      />
-                                      <button className="ybtn ybtn-success" type="submit">
-                                        OK
-                                      </button>
-                                    </div>
-                                    <div className="notification-receiver">
-                                      <span className="notification-receiver-title">
-                                        notification.receiver.list.title
-                                      </span>
-                                      <span className="notification-receiver-list"></span>
-                                    </div>
-                                  </form>
-                                </div>
-                              ) : null}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-              {post.permissions.canComment ? (
-                <form
-                  action={boardPostCommentAction(
-                    props.runtimeConfig,
-                    post.ownerName,
-                    post.projectName,
-                    post.postNumber,
-                  )}
-                  className="board-comment-form"
-                  encType="multipart/form-data"
-                  id="comment-form"
-                  method="post"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const contents = commentDraft.trim();
-                    if (!contents) {
-                      return;
-                    }
-                    void props.onCommentSubmit?.(contents, commentAttachmentIds).then(() => {
-                      setCommentAttachmentIds([]);
-                      setCommentDraft("");
-                    });
-                  }}
-                >
-                  <div className="write-comment-box">
-                    <BoardMarkdownTextarea
-                      csrfToken={props.csrfToken}
-                      id="editor-contents-comment-body"
-                      name="contents"
-                      onAttachmentUpload={(attachment) =>
-                        setCommentAttachmentIds((current) => [...current, attachment.id])
-                      }
-                      onChange={setCommentDraft}
-                      runtimeConfig={props.runtimeConfig}
-                      value={commentDraft}
-                    />
-                    <div className="write-comment-wrap">
-                      <div className="right-txt">
-                        <button className="ybtn hidden" id="dynamic-comment-btn" type="button" />
-                        <button className="ybtn ybtn-success" type="submit">
-                          button.comment.new
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              ) : (
-                <div
-                  className="write-comment-box mt20"
-                  data-login="required"
-                  title="error.auth.unauthorized.comment"
-                >
-                  <div className="write-comment-wrap">
-                    <div className="textarea-box">
-                      <textarea className="comment disabled" disabled style={{ cursor: "text" }} />
-                    </div>
-                    <div className="right-txt mt10">
-                      <span className="ybtn ybtn-disabled">button.comment.new</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="span3 span-right-pane mb20">
-            <div className="issue-info board-labels">
-              <dl>
-                {post.permissions.canCreate ? (
-                  <dd className="project-btn-item">
-                    <a
-                      className="ybtn ybtn-success"
-                      href={prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        `/${post.ownerName}/${post.projectName}/postform`,
-                      )}
-                    >
-                      post.write
+                  {post.permissions.canDelete ? (
+                    <a href="#deleteConfirm" data-toggle="modal">
+                      <button
+                        className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
+                        data-toggle="tooltip"
+                        onClick={props.onDeletePost}
+                        title="button.delete"
+                        type="button"
+                      >
+                        <i className="yobicon-trash" />
+                        <span className="sr-only">button.delete</span>
+                      </button>
                     </a>
-                  </dd>
-                ) : null}
-              </dl>
-              {boardLabels(post.labels)}
-              <div className="right-menu-icons">
-                <a href={editPostHref}>
-                  <button
-                    className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-                    data-toggle="tooltip"
-                    title={post.permissions.canUpdate ? "button.edit" : "button.show.original"}
-                    type="button"
-                  >
-                    <i className="yobicon-edit-2" />
-                    <span className="sr-only">
-                      {post.permissions.canUpdate ? "button.edit" : "button.show.original"}
-                    </span>
-                  </button>
-                </a>
-                {post.permissions.canDelete ? (
-                  <a href="#deleteConfirm" data-toggle="modal">
-                    <button
-                      className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
-                      data-toggle="tooltip"
-                      onClick={props.onDeletePost}
-                      title="button.delete"
-                      type="button"
-                    >
-                      <i className="yobicon-trash" />
-                      <span className="sr-only">button.delete</span>
-                    </button>
-                  </a>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
-        </div>
           <div className="board-footer" />
         </div>
       </div>
@@ -1529,14 +1559,16 @@ export function ProjectPostFormPage(props: {
           props.runtimeConfig.basePath,
           `/${props.ownerName}/${props.projectName}/post/${props.initialPost.postNumber}`,
         )
-      : prefixBasePath(props.runtimeConfig.basePath, `/${props.ownerName}/${props.projectName}/post`);
+      : prefixBasePath(
+          props.runtimeConfig.basePath,
+          `/${props.ownerName}/${props.projectName}/post`,
+        );
   const shellDetail = boardProjectShellDetail({
     ownerName: props.ownerName,
     projectName: props.projectName,
     viewerCanUpdate: props.mode === "edit" ? props.initialPost?.permissions.canUpdate : true,
   });
   const titlePlaceholder = isOnlineCommit ? "code.commitMsg" : "title";
-  const textareaTabIndex = props.mode === "create" ? 3 : 2;
 
   return (
     <main className="app-shell board-page">
@@ -1545,206 +1577,206 @@ export function ProjectPostFormPage(props: {
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-        <form
-          action={formAction}
-          className="nm board-form"
-          encType="multipart/form-data"
-          method="post"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void props.onSubmit({
-              attachmentIds,
-              bodyMarkdown,
-              labelIds: [...selectedLabelIds],
-              newFileName,
-              notice,
-              readme,
-              title,
-            });
-          }}
-        >
-          <div className="content-wrap frm-wrap">
-          <dl>
-            {props.mode === "edit" ? (
-              <dt>
-                <label htmlFor="title">title</label>
-              </dt>
-            ) : null}
-            <dd>
-              <input
-                autoComplete="off"
-                className="zen-mode text title"
-                id="title"
-                maxLength={250}
-                name="title"
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder={titlePlaceholder}
-                required
-                tabIndex={1}
-                type="text"
-                value={title}
-              />
-            </dd>
-            <dd>
-              {onlineCommit?.issueTemplate ? (
-                <div className="attach-wrap">
-                  <span className="help help-droppable">
-                    issue.template.no.attachment.allow
+          <form
+            action={formAction}
+            className="nm board-form"
+            encType="multipart/form-data"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void props.onSubmit({
+                attachmentIds,
+                bodyMarkdown,
+                labelIds: [...selectedLabelIds],
+                newFileName,
+                notice,
+                readme,
+                title,
+              });
+            }}
+          >
+            <div className="content-wrap frm-wrap">
+              <dl>
+                {props.mode === "edit" ? (
+                  <dt>
+                    <label htmlFor="title">title</label>
+                  </dt>
+                ) : null}
+                <dd>
+                  <input
+                    autoComplete="off"
+                    className="zen-mode text title"
+                    id="title"
+                    maxLength={250}
+                    name="title"
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder={titlePlaceholder}
+                    required
+                    data-legacy-tabindex="1"
+                    type="text"
+                    value={title}
+                  />
+                </dd>
+                <dd>
+                  {onlineCommit?.issueTemplate ? (
+                    <div className="attach-wrap">
+                      <span className="help help-droppable">
+                        issue.template.no.attachment.allow
+                      </span>
+                    </div>
+                  ) : null}
+                  {isOnlineCommit ? (
+                    <div className="file-path-wrap">
+                      <span className="help file-path">
+                        {onlineCommit?.branch}: /{onlineCommit?.path}{" "}
+                        {!onlineCommit?.edit && !onlineCommit?.issueTemplate ? (
+                          <input
+                            className="new-file-name"
+                            name="new-file-name"
+                            onChange={(event) => setNewFileName(event.target.value)}
+                            placeholder="filename.."
+                            required
+                            data-legacy-tabindex="2"
+                            type="text"
+                            value={newFileName}
+                          />
+                        ) : null}
+                      </span>
+                    </div>
+                  ) : null}
+                </dd>
+                <dd style={{ position: "relative" }}>
+                  <span className="sr-only" id="board-post-body-label">
+                    Body
                   </span>
-                </div>
-              ) : null}
-              {isOnlineCommit ? (
-                <div className="file-path-wrap">
-                  <span className="help file-path">
-                    {onlineCommit?.branch}: /{onlineCommit?.path}{" "}
-                    {!onlineCommit?.edit && !onlineCommit?.issueTemplate ? (
+                  <LegacyMarkdownEditorShell
+                    editId="edit-content-body"
+                    editorMode="content-body"
+                    previewId="preview-content-body"
+                  >
+                    <BoardMarkdownTextarea
+                      ariaLabel="Body"
+                      className="editorSeries content comment nm"
+                      csrfToken={props.csrfToken}
+                      dataEditorMode="content-body"
+                      id="editor-body-content-body"
+                      name="body"
+                      onAttachmentUpload={(attachment) =>
+                        setAttachmentIds((current) => [...current, attachment.id])
+                      }
+                      onChange={setBodyMarkdown}
+                      runtimeConfig={props.runtimeConfig}
+                      value={bodyMarkdown}
+                    />
+                  </LegacyMarkdownEditorShell>
+                </dd>
+              </dl>
+              {props.labels.length && !isOnlineCommit ? (
+                <fieldset className="board-label-picker">
+                  <legend>label</legend>
+                  {props.labels.map((label) => (
+                    <label key={label.id}>
                       <input
-                        className="new-file-name"
-                        name="new-file-name"
-                        onChange={(event) => setNewFileName(event.target.value)}
-                        placeholder="filename.."
-                        required
-                        tabIndex={2}
-                        type="text"
-                        value={newFileName}
+                        checked={selectedLabelIds.has(label.id)}
+                        onChange={(event) => {
+                          setSelectedLabelIds((current) => {
+                            const next = new Set(current);
+                            if (event.target.checked) {
+                              next.add(label.id);
+                            } else {
+                              next.delete(label.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        type="checkbox"
                       />
-                    ) : null}
-                  </span>
-                </div>
+                      <span>{label.name}</span>
+                    </label>
+                  ))}
+                </fieldset>
               ) : null}
-            </dd>
-            <dd style={{ position: "relative" }}>
-              <span className="sr-only" id="board-post-body-label">
-                Body
-              </span>
-              <LegacyMarkdownEditorShell
-                editId="edit-content-body"
-                editorMode="content-body"
-                previewId="preview-content-body"
-              >
-                <BoardMarkdownTextarea
-                  ariaLabel="Body"
-                  className="editorSeries content comment nm"
-                  csrfToken={props.csrfToken}
-                  dataEditorMode="content-body"
-                  id="editor-body-content-body"
-                  name="body"
-                  onAttachmentUpload={(attachment) =>
-                    setAttachmentIds((current) => [...current, attachment.id])
+              <div className="right-txt mt10 mb10">
+                {props.canMarkNotice && !isOnlineCommit ? (
+                  <label className="checkbox">
+                    <input
+                      checked={notice}
+                      id="notice"
+                      name="notice"
+                      onChange={(event) => setNotice(event.target.checked)}
+                      type="checkbox"
+                    />
+                    post.notice.label
+                  </label>
+                ) : null}
+                <input
+                  id="issueTemplate"
+                  name="issueTemplate"
+                  type="hidden"
+                  value={onlineCommit?.issueTemplate ? "true" : ""}
+                />
+                <input id="branch" name="branch" type="hidden" value={onlineCommit?.branch ?? ""} />
+                <input
+                  id="path"
+                  name="path"
+                  type="hidden"
+                  value={
+                    isOnlineCommit && !onlineCommit?.edit && !onlineCommit?.issueTemplate
+                      ? `${onlineCommit?.path ?? ""}${newFileName}`
+                      : (onlineCommit?.path ?? "")
                   }
-                  onChange={setBodyMarkdown}
-                  runtimeConfig={props.runtimeConfig}
-                  value={bodyMarkdown}
                 />
-              </LegacyMarkdownEditorShell>
-            </dd>
-          </dl>
-          {props.labels.length && !isOnlineCommit ? (
-            <fieldset className="board-label-picker">
-              <legend>label</legend>
-              {props.labels.map((label) => (
-                <label key={label.id}>
-                  <input
-                    checked={selectedLabelIds.has(label.id)}
-                    onChange={(event) => {
-                      setSelectedLabelIds((current) => {
-                        const next = new Set(current);
-                        if (event.target.checked) {
-                          next.add(label.id);
-                        } else {
-                          next.delete(label.id);
-                        }
-                        return next;
-                      });
-                    }}
-                    type="checkbox"
-                  />
-                  <span>{label.name}</span>
-                </label>
-              ))}
-            </fieldset>
-          ) : null}
-          <div className="right-txt mt10 mb10">
-            {props.canMarkNotice && !isOnlineCommit ? (
-              <label className="checkbox">
-                <input
-                  checked={notice}
-                  id="notice"
-                  name="notice"
-                  onChange={(event) => setNotice(event.target.checked)}
-                  type="checkbox"
-                />
-                post.notice.label
-              </label>
-            ) : null}
-            <input
-              id="issueTemplate"
-              name="issueTemplate"
-              type="hidden"
-              value={onlineCommit?.issueTemplate ? "true" : ""}
-            />
-            <input id="branch" name="branch" type="hidden" value={onlineCommit?.branch ?? ""} />
-            <input
-              id="path"
-              name="path"
-              type="hidden"
-              value={
-                isOnlineCommit && !onlineCommit?.edit && !onlineCommit?.issueTemplate
-                  ? `${onlineCommit?.path ?? ""}${newFileName}`
-                  : (onlineCommit?.path ?? "")
-              }
-            />
-            <input id="lineEnding" name="lineEnding" type="hidden" value="LF" />
-            {props.canMarkReadme && !isOnlineCommit ? (
-              <label className="checkbox">
-                <input
-                  checked={readme}
-                  id="readme"
-                  name="readme"
-                  onChange={(event) => setReadme(event.target.checked)}
-                  type="checkbox"
-                />
-                post.readmefy
-              </label>
-            ) : null}
-          </div>
-          <div className="actions board-actions">
-            {props.mode === "edit" && !props.initialPost?.readme ? (
-              <span className="send-notification-check">
-                <label className="checkbox inline">
-                  <input
-                    defaultChecked
-                    id="notificationMail"
-                    name="notificationMail"
-                    type="checkbox"
-                    value="yes"
-                  />
-                  <strong>notification.send.mail</strong>
-                </label>
-              </span>
-            ) : null}
-            <button
-              className={props.mode === "edit" ? "ybtn ybtn-info" : "ybtn ybtn-success"}
-              tabIndex={3}
-              type="submit"
-            >
-              button.save
-            </button>
-            <a
-              className="ybtn"
-              href={buildProjectHref(
-                props.runtimeConfig,
-                props.ownerName,
-                props.projectName,
-                "posts",
-              )}
-              tabIndex={4}
-            >
-              button.cancel
-            </a>
-          </div>
-          </div>
-        </form>
+                <input id="lineEnding" name="lineEnding" type="hidden" value="LF" />
+                {props.canMarkReadme && !isOnlineCommit ? (
+                  <label className="checkbox">
+                    <input
+                      checked={readme}
+                      id="readme"
+                      name="readme"
+                      onChange={(event) => setReadme(event.target.checked)}
+                      type="checkbox"
+                    />
+                    post.readmefy
+                  </label>
+                ) : null}
+              </div>
+              <div className="actions board-actions">
+                {props.mode === "edit" && !props.initialPost?.readme ? (
+                  <span className="send-notification-check">
+                    <label className="checkbox inline">
+                      <input
+                        defaultChecked
+                        id="notificationMail"
+                        name="notificationMail"
+                        type="checkbox"
+                        value="yes"
+                      />
+                      <strong>notification.send.mail</strong>
+                    </label>
+                  </span>
+                ) : null}
+                <button
+                  className={props.mode === "edit" ? "ybtn ybtn-info" : "ybtn ybtn-success"}
+                  data-legacy-tabindex="3"
+                  type="submit"
+                >
+                  button.save
+                </button>
+                <a
+                  className="ybtn"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    props.ownerName,
+                    props.projectName,
+                    "posts",
+                  )}
+                  data-legacy-tabindex="4"
+                >
+                  button.cancel
+                </a>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </main>
@@ -1779,47 +1811,47 @@ export function OrganizationBoardListPage(props: {
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="search-wrap underline board-toolbar">
-          <form action={action} className="pull-left" id="option_form" method="get">
-            <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
-            <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
-            <div className="project-selects span7">
-              <select
-                aria-label="organization.choose.projects"
-                data-container-css-class="fullsize"
-                data-format="projects"
-                data-placeholder="organization.choose.projects"
-                data-toggle="select2"
-                defaultValue={props.projectNames}
-                id="projects"
-                key={`${props.projectNames.join(",")}-${props.boards?.visibleProjects.length ?? 0}`}
-                multiple
-                name="projectNames[]"
-              >
-                {(props.boards?.visibleProjects ?? []).map((project) => (
-                  <option
-                    data-avatar-url=""
-                    key={project.projectName}
-                    value={project.projectName}
-                  >
-                    {project.projectName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="search-bar span4">
-              <input
-                className="textbox group-board"
-                defaultValue={props.filter}
-                name="filter"
-                placeholder="title.searchByKeyword"
-                type="text"
-              />
-              <button className="search-btn" type="submit">
-                <i className="yobicon-search" />
-              </button>
-            </div>
-            <LegacyTwoColumnModeCheckboxArea />
-          </form>
+            <form action={action} className="pull-left" id="option_form" method="get">
+              <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
+              <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
+              <div className="project-selects span7">
+                <select
+                  aria-label="organization.choose.projects"
+                  data-container-css-class="fullsize"
+                  data-format="projects"
+                  data-placeholder="organization.choose.projects"
+                  data-toggle="select2"
+                  defaultValue={props.projectNames}
+                  id="projects"
+                  key={`${props.projectNames.join(",")}-${props.boards?.visibleProjects.length ?? 0}`}
+                  multiple
+                  name="projectNames[]"
+                >
+                  {(props.boards?.visibleProjects ?? []).map((project) => (
+                    <option
+                      data-avatar-url=""
+                      key={project.projectName}
+                      value={project.projectName}
+                    >
+                      {project.projectName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="search-bar span4">
+                <input
+                  className="textbox group-board"
+                  defaultValue={props.filter}
+                  name="filter"
+                  placeholder="title.searchByKeyword"
+                  type="text"
+                />
+                <button className="search-btn" type="submit">
+                  <i className="yobicon-search" />
+                </button>
+              </div>
+              <LegacyTwoColumnModeCheckboxArea />
+            </form>
           </div>
           {totalRows === 0 ? (
             <div className="error-wrap">

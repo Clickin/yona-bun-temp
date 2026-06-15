@@ -87,6 +87,7 @@ function WorkspaceProviderBadge({
       return (
         <span className="google">
           <img
+            alt="Google"
             src={appHref(
               runtimeConfig,
               "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
@@ -465,7 +466,7 @@ export function PublicUserProfilePage(props: {
                                   data-placement="top"
                                   data-original-title={pullRequest.receiverLabel}
                                   data-toggle="tooltip"
-                                  href="#"
+                                  href={prefixBasePath(props.runtimeConfig.basePath, "/")}
                                   title=""
                                 >
                                   <img
@@ -623,7 +624,10 @@ function PublicProfileIssueItems(props: {
                 </span>
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-                <PublicProfileIssuePersonCell emptyLabel="issue.noAuthor" label={issue.authorLabel} />
+                <PublicProfileIssuePersonCell
+                  emptyLabel="issue.noAuthor"
+                  label={issue.authorLabel}
+                />
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
                 <PublicProfileIssuePersonCell label={issue.assigneeLabel} />
@@ -892,7 +896,10 @@ export function WorkspacePage(props: {
                           <p>userinfo.daysAgo.prefix issue.is.empty</p>
                         </div>
                       ) : (
-                        <PublicProfileIssueItems items={openIssues} runtimeConfig={props.runtimeConfig} />
+                        <PublicProfileIssueItems
+                          items={openIssues}
+                          runtimeConfig={props.runtimeConfig}
+                        />
                       )}
                     </div>
                     <div
@@ -1010,7 +1017,7 @@ export function WorkspacePage(props: {
                                   data-placement="top"
                                   data-original-title={pullRequest.receiverLabel}
                                   data-toggle="tooltip"
-                                  href="#"
+                                  href={prefixBasePath(props.runtimeConfig.basePath, "/")}
                                   title=""
                                 >
                                   <img
