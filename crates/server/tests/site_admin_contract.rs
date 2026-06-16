@@ -2449,6 +2449,42 @@ async fn site_admin_update_status_discovers_live_metadata_when_configured() {
 }
 
 #[tokio::test]
+async fn site_admin_update_status_decodes_plain_http_chunked_metadata() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    let metadata_url = spawn_chunked_update_asset_server(
+        "/latest.json",
+        "application/json",
+        vec![
+            br#"{"tag_name":"#,
+            br#""v9.9.9","#,
+            br#""html_url":"https://downloads.example.test/yona/v9.9.9"}"#,
+        ],
+    );
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var("YONA_UPDATE_METADATA_URL", metadata_url);
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let payload =
+        response_json(rest_get(app, "/yona/api/v1/site/update", Some(&admin_cookie)).await).await;
+    assert_eq!(payload["currentVersion"], "9.9.8");
+    assert_eq!(payload["message"], "site.update.isAvailable");
+    assert_eq!(payload["versionToUpdate"], "v9.9.9");
+    assert_eq!(
+        payload["releaseUrl"],
+        "https://downloads.example.test/yona/v9.9.9"
+    );
+    assert!(payload["error"].is_null());
+
+    clear_site_update_env();
+}
+
+#[tokio::test]
 async fn site_admin_update_download_redirects_through_app_owned_routes() {
     let _guard = site_update_env_lock()
         .lock()
