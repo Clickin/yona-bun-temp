@@ -731,7 +731,7 @@ Interpretation:
 ## REST API Compatibility
 
 - [x] `GET /-_-api/v1/hello`
-- [ ] User REST APIs
+- [~] User REST APIs: `GET /-_-api/v1/users/:user/statistics` is mounted with the legacy `UserApi.statistics` JSON fields (`issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter`) plus session and `Yona-Token` / `Authorization: token ...` authentication; broader legacy user create/token/search/issue-list/admin APIs remain migrator/external compatibility scope
 - [~] Issue REST API: `POST /-_-api/v1/translation` issue/board helper is mounted with legacy unconfigured `412 Precondition Failed` behavior, legacy unauthenticated `401 {"message":"unauthorized request"}` error JSON, executable translation proxy, issue/board `#translate` and `.comment-translate` controls, and React-side Markdown-source rendering; broader issue REST API remains separate migrator scope
 - [ ] Project REST API
 - [ ] Board REST API

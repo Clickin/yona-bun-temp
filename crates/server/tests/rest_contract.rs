@@ -2945,7 +2945,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
 #[tokio::test]
 async fn rest_user_statistics_counts_legacy_activity_rows() {
     let (app, repository) = build_app_with_repository().await;
-    let (_owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (_other_csrf, _other_cookie) = register_user(app.clone(), "other").await;
     let owner = repository
         .find_user_by_identifier("owner")
@@ -3103,6 +3103,59 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
     assert_eq!(statistics["postingComment"], 1);
     assert_eq!(statistics["issueVoter"], 1);
     assert_eq!(statistics["issueCommentVoter"], 1);
+
+    let legacy_statistics = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users/owner/statistics",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_statistics, statistics);
+
+    let owner_token = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/api-token/reset",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await["apiToken"]
+        .as_str()
+        .expect("owner api token")
+        .to_string();
+    let legacy_token_statistics = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users/owner/statistics",
+            &[("Yona-Token", &owner_token)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_token_statistics, statistics);
+
+    let anonymous_legacy_statistics = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/users/owner/statistics",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_statistics).await;
 
     let missing = ok_json(
         rest(

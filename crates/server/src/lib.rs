@@ -620,6 +620,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_favorite_organizations_list_session_manager = session_manager.clone();
     let legacy_favorite_organization_toggle_backend = route_backend.clone();
     let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
+    let legacy_user_statistics_backend = route_backend.clone();
+    let legacy_user_statistics_session_manager = session_manager.clone();
     let legacy_translation_backend = route_backend.clone();
     let legacy_translation_session_manager = session_manager.clone();
     let transfer_accept_backend = route_backend.clone();
@@ -800,6 +802,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     }
                 },
             ),
+        )
+        .route(
+            "/-_-api/v1/users/{login_id}/statistics",
+            get(move |headers: HeaderMap, Path(login_id): Path<String>| {
+                async move {
+                    legacy_external_user_statistics(
+                        headers,
+                        login_id,
+                        legacy_user_statistics_session_manager.clone(),
+                        legacy_user_statistics_backend.clone(),
+                    )
+                    .await
+                }
+            }),
         )
         .route(
             "/-_-api/v1/translation",
@@ -26007,6 +26023,34 @@ async fn legacy_external_toggle_favorite_organization(
         "favored": favored,
     }))
     .into_response()
+}
+
+async fn legacy_external_user_statistics(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("user statistics require repository backend")
+            .into_response();
+    };
+    if let Err(error) =
+        legacy_external_authenticated_user_id(&headers, &session_manager, repository, false).await
+    {
+        return legacy_external_api_auth_error_response(error);
+    }
+
+    let statistics = match repository.find_user_by_login_id(&login_id).await {
+        Ok(Some(user)) => match repository.read_user_statistics(user.id).await {
+            Ok(statistics) => statistics,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        },
+        Ok(None) => persistence::UserStatisticsRecord::default(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    Json(rest_user_statistics_from_record(&statistics)).into_response()
 }
 
 #[derive(Clone, Debug, Deserialize)]
