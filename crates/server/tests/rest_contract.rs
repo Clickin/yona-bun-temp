@@ -1269,6 +1269,39 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .unwrap()
         .expect("visitor user")
         .id;
+    let legacy_board_post_file = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "legacy-board-post.png",
+            "image/png",
+            11,
+            "legacy-board-post-hash",
+        )
+        .await
+        .expect("legacy board post temp upload");
+    let legacy_board_comment_file = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "legacy-board-comment.png",
+            "image/png",
+            13,
+            "legacy-board-comment-hash",
+        )
+        .await
+        .expect("legacy board comment temp upload");
+    let visitor_owned_file = repository
+        .create_user_attachment_upload(
+            visitor_id,
+            "visitor",
+            "visitor-owned.png",
+            "image/png",
+            17,
+            "visitor-owned-hash",
+        )
+        .await
+        .expect("visitor temp upload");
     repository
         .toggle_site_user_guest_mode("guest")
         .await
@@ -2960,6 +2993,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
                     "body": "legacy board post body",
                     "createdAt": "2020-01-02 AM 03:04:05 +0000",
                     "number": 77,
+                    "temporaryUploadFiles": [
+                        legacy_board_post_file.id.to_string(),
+                        visitor_owned_file.id
+                    ],
                     "title": "legacy board post",
                     "updatedAt": "2020-01-03 AM 04:05:06 +0000"
                 }
@@ -3031,6 +3068,27 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_board_content["owner"], "owner");
     assert_eq!(legacy_board_content["projectName"], "projectYobi");
     assert_eq!(
+        legacy_board_content["attachments"][0]["id"],
+        legacy_board_post_file.id
+    );
+    let legacy_board_post_file_after = repository
+        .read_attachment_by_id(legacy_board_post_file.id)
+        .await
+        .unwrap()
+        .expect("legacy board post attachment");
+    assert_eq!(legacy_board_post_file_after.container_type, "BOARD_POST");
+    assert_eq!(
+        legacy_board_post_file_after.container_id,
+        legacy_board_content["id"].as_i64().unwrap()
+    );
+    let visitor_owned_file_after = repository
+        .read_attachment_by_id(visitor_owned_file.id)
+        .await
+        .unwrap()
+        .expect("visitor owned attachment");
+    assert_eq!(visitor_owned_file_after.container_type, "USER");
+    assert_eq!(visitor_owned_file_after.container_id, visitor_id);
+    assert_eq!(
         legacy_board_content["createdAt"],
         "2020-01-02T03:04:05+0000"
     );
@@ -3070,7 +3128,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
                 "email": "visitor@example.com"
             },
             "body": "legacy board comment body",
-            "createdAt": "2020-02-03 AM 04:05:06 +0000"
+            "createdAt": "2020-02-03 AM 04:05:06 +0000",
+            "temporaryUploadFiles": [
+                legacy_board_comment_file.id
+            ]
         })),
     )
     .await;
@@ -3088,6 +3149,19 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .1
         .parse::<i64>()
         .expect("legacy board comment id");
+    let legacy_board_comment_file_after = repository
+        .read_attachment_by_id(legacy_board_comment_file.id)
+        .await
+        .unwrap()
+        .expect("legacy board comment attachment");
+    assert_eq!(
+        legacy_board_comment_file_after.container_type,
+        "NONISSUE_COMMENT"
+    );
+    assert_eq!(
+        legacy_board_comment_file_after.container_id,
+        legacy_board_comment_id
+    );
     let legacy_board_detail_with_comment = ok_json(
         rest(
             app.clone(),
@@ -4496,6 +4570,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             actor_display_name: "owner".to_string(),
             actor_id: owner.id,
             actor_login_id: "owner".to_string(),
+            attachment_actor_id: None,
             attachment_ids: Vec::new(),
             contents_markdown: "owner posting comment".to_string(),
             created_at: None,

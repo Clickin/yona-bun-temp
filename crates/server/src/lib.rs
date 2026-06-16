@@ -21333,6 +21333,7 @@ async fn rest_site_import_post_comments(
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
                 actor_login_id: actor.login_id.clone(),
+                attachment_actor_id: None,
                 attachment_ids: imported_attachments.ids,
                 contents_markdown,
                 created_at: None,
@@ -26673,6 +26674,7 @@ struct LegacyBoardPostingBody {
     body: String,
     created_at: Option<serde_json::Value>,
     number: Option<i64>,
+    temporary_upload_files: Option<serde_json::Value>,
     #[serde(default)]
     title: String,
     updated_at: Option<serde_json::Value>,
@@ -26702,6 +26704,7 @@ struct LegacyBoardCommentCreateBody {
     #[serde(default)]
     body: String,
     created_at: Option<serde_json::Value>,
+    temporary_upload_files: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -26827,13 +26830,16 @@ async fn legacy_external_create_board_postings(
                 actor_display_name: post_author.display_name.clone(),
                 actor_id: post_author.id,
                 actor_login_id: post_author.login_id.clone(),
+                attachment_actor_id: Some(request_user_id),
                 created_at: legacy_external_parse_datetime(post.created_at.as_ref()),
                 owner_name: owner.clone(),
                 post_number: post.number.filter(|number| *number > 0),
                 project_name: project_name.clone(),
                 updated_at: legacy_external_parse_datetime(post.updated_at.as_ref()),
                 values: persistence::PostingMutationInput {
-                    attachment_ids: Vec::new(),
+                    attachment_ids: legacy_external_temporary_upload_file_ids(
+                        post.temporary_upload_files.as_ref(),
+                    ),
                     body_markdown: post.body,
                     label_ids: Vec::new(),
                     notice: false,
@@ -27010,7 +27016,10 @@ async fn legacy_external_create_board_posting_comment(
             actor_display_name: comment_author.display_name.clone(),
             actor_id: comment_author.id,
             actor_login_id: comment_author.login_id.clone(),
-            attachment_ids: Vec::new(),
+            attachment_actor_id: Some(request_user_id),
+            attachment_ids: legacy_external_temporary_upload_file_ids(
+                body.temporary_upload_files.as_ref(),
+            ),
             contents_markdown: body.body,
             created_at: legacy_external_parse_datetime(body.created_at.as_ref()),
             owner_name: owner.clone(),
@@ -28636,6 +28645,20 @@ fn legacy_external_parse_datetime(value: Option<&serde_json::Value>) -> Option<D
         }
     }
     None
+}
+
+fn legacy_external_temporary_upload_file_ids(value: Option<&serde_json::Value>) -> Vec<i64> {
+    let Some(files) = value.and_then(|value| value.as_array()) else {
+        return Vec::new();
+    };
+    files
+        .iter()
+        .filter_map(|file| {
+            file.as_i64()
+                .or_else(|| file.as_str()?.trim().parse::<i64>().ok())
+        })
+        .filter(|id| *id > 0)
+        .collect()
 }
 
 fn legacy_external_author_identifier(author: Option<&serde_json::Value>) -> Option<&str> {
@@ -34049,6 +34072,7 @@ async fn rest_create_posting_comment(
             actor_display_name: actor.display_name.clone(),
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
+            attachment_actor_id: None,
             attachment_ids: body.attachment_ids,
             contents_markdown: body.contents_markdown,
             created_at: None,

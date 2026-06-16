@@ -1345,7 +1345,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 | User statistics/default-login/admin-user state | user workspace/site-manager helpers | implemented where marked in `legacy-external-api.md` | app helper |
 | Issue API                     | 이슈 CRUD + 댓글   | selected issue/comment helper rows implemented; bulk import/export remains deferred | mixed app helper + migrator |
 | Project API                   | 프로젝트 CRUD      | title-head/label helper rows implemented; project export/create remains migrator/deferred | mixed app helper + migrator |
-| Board API                     | 게시글 CRUD + 댓글 | selected post/comment/label helper rows implemented including legacy created-date restore; remaining import-only payload gaps remain migrator/deferred | mixed app helper + migrator |
+| Board API                     | 게시글 CRUD + 댓글 | selected post/comment/label helper rows implemented including legacy created-date restore and current-user `temporaryUploadFiles` binding; remaining import-only payload gaps remain migrator/deferred | mixed app helper + migrator |
 | Milestone API                 | 마일스톤 CRUD      | milestone batch helper implemented; broader migration/export remains deferred | mixed app helper + migrator |
 | Watcher API                   | 감시자 목록        | issue/post watcher helper implemented | app helper |
 | Favorite API                  | 즐겨찾기 관리      | user-menu favorite helpers implemented with session or legacy API token auth; broader API deferred | migrator/deferred |

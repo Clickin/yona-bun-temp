@@ -841,6 +841,7 @@ pub struct CreatePostingInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateLegacyExternalPostingInput {
+    pub attachment_actor_id: Option<i64>,
     pub actor_display_name: String,
     pub actor_id: i64,
     pub actor_login_id: String,
@@ -867,6 +868,7 @@ pub struct CreatePostingCommentInput {
     pub actor_display_name: String,
     pub actor_id: i64,
     pub actor_login_id: String,
+    pub attachment_actor_id: Option<i64>,
     pub attachment_ids: Vec<i64>,
     pub contents_markdown: String,
     pub created_at: Option<DateTime>,

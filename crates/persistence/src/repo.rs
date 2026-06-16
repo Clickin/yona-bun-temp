@@ -4975,7 +4975,7 @@ impl AppRepository {
             BOARD_POST_ATTACHMENT_CONTAINER,
             created.id,
             &input.values.attachment_ids,
-            Some(input.actor_id),
+            Some(input.attachment_actor_id.unwrap_or(input.actor_id)),
         )
         .await?;
         self.watch_posting(created.id, input.actor_id).await?;
@@ -5235,7 +5235,7 @@ impl AppRepository {
             BOARD_COMMENT_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
-            Some(input.actor_id),
+            Some(input.attachment_actor_id.unwrap_or(input.actor_id)),
         )
         .await?;
         self.recount_posting_comments(posting_model.id).await?;
@@ -5257,6 +5257,7 @@ impl AppRepository {
                 actor_display_name: input.actor_display_name,
                 actor_id: input.actor_id,
                 actor_login_id: input.actor_login_id,
+                attachment_actor_id: None,
                 attachment_ids: Vec::new(),
                 contents_markdown: input.contents_markdown.clone(),
                 created_at: None,

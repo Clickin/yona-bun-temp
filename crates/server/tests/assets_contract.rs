@@ -1376,6 +1376,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             actor_display_name: "owner".to_string(),
             actor_id: owner_id,
             actor_login_id: "owner".to_string(),
+            attachment_actor_id: None,
             attachment_ids: vec![board_comment_file_id],
             contents_markdown: "board comment body".to_string(),
             created_at: None,
