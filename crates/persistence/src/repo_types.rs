@@ -573,6 +573,7 @@ pub struct IssueMilestoneRecord {
     pub closed_issue_count: u32,
     pub completion_percent: u32,
     pub contents_markdown: String,
+    pub due_date: Option<DateTime>,
     pub due_date_label: String,
     pub id: i64,
     pub open_issues: Vec<ProjectIssueListItemRecord>,

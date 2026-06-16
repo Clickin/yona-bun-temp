@@ -14445,6 +14445,7 @@ impl AppRepository {
             contents_markdown: self
                 .read_text_column("milestone", "contents", row.id)
                 .await?,
+            due_date: row.due_date,
             due_date_label: format_workspace_date_label(row.due_date),
             id: row.id,
             open_issue_count,

@@ -2130,6 +2130,76 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "BoardLabel"
     );
 
+    let legacy_milestones_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "milestones": [
+                {
+                    "title": "Legacy Milestone",
+                    "description": "legacy milestone body",
+                    "due_on": "2026-07-15",
+                    "state": "closed"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_eq!(legacy_milestones_response.status(), StatusCode::CREATED);
+    let legacy_milestones = response_json(legacy_milestones_response).await;
+    assert_eq!(legacy_milestones[0]["title"], "Legacy Milestone");
+    assert_eq!(legacy_milestones[0]["description"], "legacy milestone body");
+    assert_eq!(legacy_milestones[0]["due_on"], "2026-07-15");
+    assert_eq!(legacy_milestones[0]["state"], "closed");
+
+    let legacy_duplicate_milestones = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "milestones": [
+                    {
+                        "title": "Legacy Milestone",
+                        "description": "duplicate milestone body"
+                    }
+                ]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_duplicate_milestones[0]["message"],
+        "This milestone title already exists. Please enter a different title."
+    );
+    assert_eq!(
+        legacy_duplicate_milestones[0]["milestone"]["title"],
+        "Legacy Milestone"
+    );
+
+    let anonymous_legacy_milestones = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+        None,
+        None,
+        Some(json!({
+            "milestones": [
+                {
+                    "title": "Anonymous Milestone"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_milestones).await;
+
     let anonymous_legacy_board_create = rest(
         app.clone(),
         Method::POST,

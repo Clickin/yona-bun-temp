@@ -619,6 +619,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_board_comment_session_manager = session_manager.clone();
     let legacy_board_comment_base_path = base_path.clone();
     let legacy_board_label_backend = route_backend.clone();
+    let legacy_milestone_backend = route_backend.clone();
+    let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -811,6 +813,26 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             number,
                             body,
                             legacy_board_label_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name)): Path<(String, String)>,
+                      Json(body): Json<LegacyMilestonesBody>| {
+                    async move {
+                        legacy_external_create_milestones(
+                            headers,
+                            owner,
+                            project_name,
+                            body,
+                            legacy_milestone_session_manager.clone(),
+                            legacy_milestone_backend.clone(),
                         )
                         .await
                     }
@@ -25892,6 +25914,20 @@ struct LegacyBoardCommentUpdateBody {
     original: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyMilestonesBody {
+    milestones: Option<Vec<LegacyMilestoneBody>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct LegacyMilestoneBody {
+    #[serde(default)]
+    description: String,
+    due_on: Option<String>,
+    state: Option<String>,
+    title: Option<String>,
+}
+
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -26175,6 +26211,132 @@ async fn legacy_external_create_board_posting_comment(
         })),
     )
         .into_response()
+}
+
+async fn legacy_external_create_milestones(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    body: LegacyMilestonesBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Some(milestones) = body.milestones else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "No milestones key exists or value wasn't array!",
+            })),
+        )
+            .into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("milestones require repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let authorization =
+        match require_project_read(repository, &owner, &project_name, Some(actor_id)).await {
+            Ok(authorization) => authorization,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let can_create = match project_update_allowed(&authorization) {
+        Ok(can_create) => can_create,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    if !can_create {
+        return RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "milestone create is not allowed",
+        ))
+        .into_response();
+    }
+
+    let mut results = Vec::new();
+    for milestone in milestones {
+        let title = milestone
+            .title
+            .as_deref()
+            .unwrap_or("No title")
+            .trim()
+            .to_string();
+        match repository
+            .project_milestone_title_exists(&owner, &project_name, &title, None)
+            .await
+        {
+            Ok(true) => {
+                results.push(serde_json::json!({
+                    "milestone": milestone,
+                    "message": "This milestone title already exists. Please enter a different title.",
+                }));
+                continue;
+            }
+            Ok(false) => {}
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+        let due_date = match legacy_external_due_on(milestone.due_on.as_deref()) {
+            Ok(due_date) => due_date,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+        let state = if milestone
+            .state
+            .as_deref()
+            .is_some_and(|state| state.eq_ignore_ascii_case("closed"))
+        {
+            "closed"
+        } else {
+            "open"
+        };
+        let created = match repository
+            .create_project_milestone(persistence::MilestoneMutationInput {
+                actor_id: Some(actor_id),
+                attachment_ids: Vec::new(),
+                contents_markdown: milestone.description,
+                due_date,
+                owner_name: owner.clone(),
+                project_name: project_name.clone(),
+                state: state.to_string(),
+                title,
+            })
+            .await
+        {
+            Ok(Some(milestone)) => milestone,
+            Ok(None) => return RestRouteError::not_found("project not found").into_response(),
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        results.push(legacy_external_milestone_result(&created));
+    }
+
+    (StatusCode::CREATED, Json(results)).into_response()
+}
+
+fn legacy_external_due_on(value: Option<&str>) -> Result<Option<DateTime>, ConnectError> {
+    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(None);
+    };
+    DateTime::parse_from_str(&format!("{value} 23:59:59.999"), "%Y-%m-%d %H:%M:%S%.3f")
+        .map(Some)
+        .map_err(|_| ConnectError::invalid_argument("invalid milestone due_on"))
+}
+
+fn legacy_external_milestone_result(
+    milestone: &persistence::IssueMilestoneRecord,
+) -> serde_json::Value {
+    let mut payload = serde_json::json!({
+        "id": milestone.id,
+        "title": milestone.title,
+        "state": milestone.state,
+        "description": milestone.contents_markdown,
+    });
+    if let Some(due_date) = milestone.due_date {
+        payload["due_on"] = serde_json::json!(due_date.format("%Y-%m-%d").to_string());
+    }
+    payload
 }
 
 async fn legacy_external_update_board_posting_labels(
