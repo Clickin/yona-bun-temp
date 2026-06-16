@@ -364,6 +364,38 @@ fn spawn_update_asset_server(path: &str, content_type: &str, body: &'static [u8]
     format!("http://{address}{url_path}")
 }
 
+fn spawn_chunked_update_asset_server(
+    path: &str,
+    content_type: &str,
+    chunks: Vec<&'static [u8]>,
+) -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("update asset listener");
+    let address = listener.local_addr().expect("update asset address");
+    let path = path.to_string();
+    let url_path = path.clone();
+    let content_type = content_type.to_string();
+    std::thread::spawn(move || {
+        let Ok((mut stream, _)) = listener.accept() else {
+            return;
+        };
+        let mut buffer = [0_u8; 1024];
+        let _ = std::io::Read::read(&mut stream, &mut buffer);
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
+        );
+        let _ = std::io::Write::write_all(&mut stream, response.as_bytes());
+        for chunk in chunks {
+            let _ =
+                std::io::Write::write_all(&mut stream, format!("{:x}\r\n", chunk.len()).as_bytes());
+            let _ = std::io::Write::write_all(&mut stream, chunk);
+            let _ = std::io::Write::write_all(&mut stream, b"\r\n");
+        }
+        let _ = std::io::Write::write_all(&mut stream, b"0\r\n\r\n");
+        let _ = path;
+    });
+    format!("http://{address}{url_path}")
+}
+
 fn user<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
     payload["users"]
         .as_array()
@@ -2534,6 +2566,50 @@ async fn site_admin_update_download_file_proxies_configured_plain_http_binary() 
         .to_str()
         .unwrap()
         .contains("yona-9.9.9.zip"));
+    assert_eq!(response_bytes(rest_download).await, b"portable-yona-update");
+
+    clear_site_update_env();
+}
+
+#[tokio::test]
+async fn site_admin_update_download_file_decodes_plain_http_chunked_binary() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    let release_url = spawn_chunked_update_asset_server(
+        "/releases/yona-9.9.9.zip",
+        "application/zip",
+        vec![b"portable-", b"yona-", b"update"],
+    );
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var("YONA_UPDATE_LATEST_VERSION", "v9.9.9");
+    std::env::set_var("YONA_UPDATE_RELEASE_URL", release_url);
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let rest_download = rest_get(
+        app,
+        "/yona/api/v1/site/update/download-file",
+        Some(&admin_cookie),
+    )
+    .await;
+    if rest_download.status() != StatusCode::OK {
+        panic!(
+            "expected chunked HTTP update download to succeed, got {}: {}",
+            rest_download.status(),
+            response_text(rest_download).await
+        );
+    }
+    assert_eq!(
+        rest_download
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .unwrap(),
+        "application/zip"
+    );
     assert_eq!(response_bytes(rest_download).await, b"portable-yona-update");
 
     clear_site_update_env();

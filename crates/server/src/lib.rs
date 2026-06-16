@@ -22211,7 +22211,6 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
         .position(|window| window == b"\r\n\r\n")
         .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
     let (head, body) = response.split_at(header_end);
-    let body = body[4..].to_vec();
     let head = String::from_utf8_lossy(head);
     let status_line = head.lines().next().unwrap_or_default();
     if !status_line.contains(" 2") {
@@ -22220,6 +22219,7 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
             status_line.trim()
         ));
     }
+    let body = site_update_http_body_bytes(&head, &body[4..])?;
     let content_type = head
         .lines()
         .filter_map(|line| line.split_once(':'))
@@ -22363,7 +22363,6 @@ fn site_update_payload_from_http_response_bytes(
         .rposition(|window| window == b"\r\n\r\n")
         .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
     let (head, body) = response.split_at(header_end);
-    let body = body[4..].to_vec();
     let head = String::from_utf8_lossy(head);
     let status_line = head
         .lines()
@@ -22376,6 +22375,7 @@ fn site_update_payload_from_http_response_bytes(
             status_line.trim()
         ));
     }
+    let body = site_update_http_body_bytes(&head, &body[4..])?;
     let content_type = head
         .lines()
         .filter_map(|line| line.split_once(':'))
@@ -22400,6 +22400,55 @@ fn site_update_payload_from_http_response_bytes(
         content_type,
         file_name,
     })
+}
+
+fn site_update_http_body_bytes(head: &str, body: &[u8]) -> Result<Vec<u8>, String> {
+    if head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .any(|(name, value)| {
+            name.eq_ignore_ascii_case("transfer-encoding")
+                && value
+                    .split(',')
+                    .any(|encoding| encoding.trim().eq_ignore_ascii_case("chunked"))
+        })
+    {
+        return site_update_decode_chunked_body(body);
+    }
+    Ok(body.to_vec())
+}
+
+fn site_update_decode_chunked_body(body: &[u8]) -> Result<Vec<u8>, String> {
+    let mut offset = 0;
+    let mut decoded = Vec::new();
+    loop {
+        let size_end = body[offset..]
+            .windows(2)
+            .position(|window| window == b"\r\n")
+            .map(|position| offset + position)
+            .ok_or_else(|| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        let size_line = std::str::from_utf8(&body[offset..size_end])
+            .map_err(|error| format!("site.update.metadata.invalidChunkedResponse: {error}"))?;
+        let size_hex = size_line
+            .split_once(';')
+            .map(|(size, _)| size)
+            .unwrap_or(size_line)
+            .trim();
+        let size = usize::from_str_radix(size_hex, 16)
+            .map_err(|_| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        offset = size_end + 2;
+        if size == 0 {
+            return Ok(decoded);
+        }
+        let chunk_end = offset
+            .checked_add(size)
+            .ok_or_else(|| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        if chunk_end + 2 > body.len() || &body[chunk_end..chunk_end + 2] != b"\r\n" {
+            return Err("site.update.metadata.invalidChunkedResponse".to_string());
+        }
+        decoded.extend_from_slice(&body[offset..chunk_end]);
+        offset = chunk_end + 2;
+    }
 }
 
 fn site_update_parse_plain_http_url(url: &str) -> Result<SiteUpdatePlainHttpUrl, String> {
