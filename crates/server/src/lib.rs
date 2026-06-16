@@ -740,6 +740,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_migration_json_base_path = base_path.clone();
     let legacy_admin_users_session_manager = session_manager.clone();
     let legacy_admin_users_backend = route_backend.clone();
+    let legacy_admin_user_state_session_manager = session_manager.clone();
+    let legacy_admin_user_state_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
@@ -767,6 +769,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/-_-api/v1/admin/users/{login_id}",
+            patch(
+                move |headers: HeaderMap,
+                      Path(login_id): Path<String>,
+                      Json(body): Json<LegacyAdminUserStateBody>| {
+                    async move {
+                        legacy_external_update_admin_user_state(
+                            headers,
+                            login_id,
+                            body,
+                            legacy_admin_user_state_session_manager.clone(),
+                            legacy_admin_user_state_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/-_-api/v1/users",
@@ -26192,6 +26213,12 @@ struct LegacyExternalUsersQuery {
     query: String,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(default)]
+struct LegacyAdminUserStateBody {
+    state: String,
+}
+
 async fn legacy_external_users(
     headers: HeaderMap,
     query: LegacyExternalUsersQuery,
@@ -26312,6 +26339,61 @@ async fn legacy_external_admin_users(
     }
 
     Json(users).into_response()
+}
+
+async fn legacy_external_update_admin_user_state(
+    headers: HeaderMap,
+    login_id: String,
+    body: LegacyAdminUserStateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("admin user state requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(actor_id) => actor_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if !actor.is_site_admin {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+
+    let state = body.state.trim().to_ascii_uppercase();
+    let row_state = match state.as_str() {
+        "ACTIVE" | "LOCKED" | "DELETED" => state,
+        "SITE_ADMIN" => return StatusCode::FORBIDDEN.into_response(),
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    let user = match repository.set_site_user_state(&login_id, &row_state).await {
+        Ok(Some(user)) => user,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ))
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    Json(serde_json::json!({
+        "id": user.id,
+        "login_id": user.login_id,
+        "state": user.state.to_ascii_uppercase(),
+    }))
+    .into_response()
 }
 
 fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String> {

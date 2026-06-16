@@ -1446,6 +1446,34 @@ impl AppRepository {
         Ok(Some(site_user_record_from_model(updated, is_site_admin)))
     }
 
+    /// Sets a user's legacy account state directly.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the user row cannot be read or updated, or
+    /// when `state` is not one of the row-backed legacy states.
+    pub async fn set_site_user_state(
+        &self,
+        login_id: &str,
+        state: &str,
+    ) -> Result<Option<SiteUserRecord>, DbErr> {
+        let normalized = site_user_filter_state(state)?;
+        let state = match normalized.as_str() {
+            "ACTIVE" | "LOCKED" | "DELETED" => normalized.to_ascii_lowercase(),
+            _ => return Err(DbErr::Custom("invalid site user row state".to_string())),
+        };
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        let mut active = n4user::ActiveModel::from(user);
+        active.state = Set(Some(state));
+        active.last_state_modified_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        let is_site_admin = self.user_is_site_admin(updated.id).await?;
+
+        Ok(Some(site_user_record_from_model(updated, is_site_admin)))
+    }
+
     /// Toggles whether a user is treated as a legacy guest-mode account.
     ///
     /// # Errors

@@ -1171,6 +1171,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;
+    let (_statee_csrf, _statee_cookie) = register_user(app.clone(), "statee").await;
 
     let legacy_users_empty = ok_json(
         rest_with_headers(
@@ -1316,6 +1317,46 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(
         legacy_admin_users_by_visitor.status(),
+        StatusCode::FORBIDDEN
+    );
+    let legacy_state_update = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/admin/users/statee",
+            Some(&owner_cookie),
+            None,
+            Some(json!({ "state": "locked" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_state_update["login_id"], "statee");
+    assert_eq!(legacy_state_update["state"], "LOCKED");
+    let legacy_state_update_site_admin = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/admin/users/statee",
+        Some(&owner_cookie),
+        None,
+        Some(json!({ "state": "SITE_ADMIN" })),
+    )
+    .await;
+    assert_eq!(
+        legacy_state_update_site_admin.status(),
+        StatusCode::FORBIDDEN
+    );
+    let legacy_state_update_by_visitor = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/admin/users/statee",
+        Some(&visitor_cookie),
+        None,
+        Some(json!({ "state": "active" })),
+    )
+    .await;
+    assert_eq!(
+        legacy_state_update_by_visitor.status(),
         StatusCode::FORBIDDEN
     );
 
