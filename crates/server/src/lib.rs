@@ -608,6 +608,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let direct_project_unwatch_session_manager = session_manager.clone();
     let legacy_watchers_backend = route_backend.clone();
     let legacy_watchers_base_path = base_path.clone();
+    let legacy_board_posts_backend = route_backend.clone();
+    let legacy_board_posts_session_manager = session_manager.clone();
+    let legacy_board_posts_base_path = base_path.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -718,6 +721,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             query,
                             legacy_watchers_base_path.clone(),
                             legacy_watchers_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name)): Path<(String, String)>,
+                      Json(body): Json<LegacyBoardPostingsBody>| {
+                    async move {
+                        legacy_external_create_board_postings(
+                            headers,
+                            owner,
+                            project_name,
+                            body,
+                            legacy_board_posts_session_manager.clone(),
+                            legacy_board_posts_backend.clone(),
+                            legacy_board_posts_base_path.clone(),
                         )
                         .await
                     }
@@ -25731,6 +25755,155 @@ async fn legacy_external_watchers(
         "watchers": watcher_payload,
     }))
     .into_response()
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyBoardPostingsBody {
+    posts: Option<Vec<LegacyBoardPostingBody>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyBoardPostingBody {
+    author: Option<serde_json::Value>,
+    #[serde(default)]
+    body: String,
+    number: Option<i64>,
+    #[serde(default)]
+    title: String,
+}
+
+async fn legacy_external_create_board_postings(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    body: LegacyBoardPostingsBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(posts) = body.posts else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "No posts key exists or value wasn't array!",
+            })),
+        )
+            .into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("board postings require repository backend")
+            .into_response();
+    };
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let request_actor = match repository.find_user_by_id(request_user_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let authorization = match require_project_resource_create(
+        repository,
+        &owner,
+        &project_name,
+        Some(request_user_id),
+        ProjectCreatableResource::BoardPost,
+    )
+    .await
+    {
+        Ok(authorization) => authorization,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    if !posting_can_create(&authorization) {
+        return RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "posting create is not allowed",
+        ))
+        .into_response();
+    }
+
+    let mut created_posts = Vec::new();
+    for post in posts {
+        let post_author =
+            match legacy_external_post_author(repository, &request_actor, post.author.as_ref())
+                .await
+            {
+                Ok(actor) => actor,
+                Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+            };
+        let created = match repository
+            .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
+                actor_display_name: post_author.display_name.clone(),
+                actor_id: post_author.id,
+                actor_login_id: post_author.login_id.clone(),
+                owner_name: owner.clone(),
+                post_number: post.number.filter(|number| *number > 0),
+                project_name: project_name.clone(),
+                values: persistence::PostingMutationInput {
+                    attachment_ids: Vec::new(),
+                    body_markdown: post.body,
+                    label_ids: Vec::new(),
+                    notice: false,
+                    readme: false,
+                    title: post.title,
+                },
+            })
+            .await
+        {
+            Ok(Some(posting)) => posting,
+            Ok(None) => return RestRouteError::not_found("project not found").into_response(),
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        created_posts.push(serde_json::json!({
+            "status": 201,
+            "location": base_path_href(
+                &base_path,
+                &format!("/{}/{}/post/{}", owner, project_name, created.post_number),
+            ),
+        }));
+    }
+
+    (StatusCode::CREATED, Json(created_posts)).into_response()
+}
+
+fn legacy_external_author_identifier(author: Option<&serde_json::Value>) -> Option<&str> {
+    let author = author?;
+    for field in ["email", "loginId", "login_id", "login"] {
+        if let Some(value) = author
+            .get(field)
+            .and_then(|value| value.as_str())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return Some(value);
+        }
+    }
+    author
+        .as_str()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+async fn legacy_external_post_author(
+    repository: &PilotRepository,
+    fallback: &persistence::AppUserRecord,
+    author: Option<&serde_json::Value>,
+) -> Result<persistence::AppUserRecord, sea_orm::DbErr> {
+    let Some(identifier) = legacy_external_author_identifier(author) else {
+        return Ok(fallback.clone());
+    };
+    match repository.find_user_by_identifier(identifier).await? {
+        Some(author) => Ok(author),
+        None => Ok(fallback.clone()),
+    }
 }
 
 async fn legacy_external_authenticated_user_id(

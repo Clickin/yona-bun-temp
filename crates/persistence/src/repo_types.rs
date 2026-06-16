@@ -832,6 +832,17 @@ pub struct CreatePostingInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateLegacyExternalPostingInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub post_number: Option<i64>,
+    pub project_name: String,
+    pub values: PostingMutationInput,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdatePostingInput {
     pub actor_id: i64,
     pub actor_login_id: String,

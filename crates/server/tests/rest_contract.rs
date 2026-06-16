@@ -1863,6 +1863,70 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_post_watchers["watchers"][1]["name"], "visitor");
     assert_eq!(legacy_post_watchers["watchers"][1]["url"], "/yona/visitor");
 
+    let legacy_board_create_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "posts": [
+                {
+                    "author": {
+                        "email": "visitor@example.com"
+                    },
+                    "body": "legacy board post body",
+                    "number": 77,
+                    "title": "legacy board post"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_eq!(legacy_board_create_response.status(), StatusCode::CREATED);
+    let legacy_board_created = response_json(legacy_board_create_response).await;
+    assert_eq!(legacy_board_created[0]["status"], 201);
+    assert_eq!(
+        legacy_board_created[0]["location"],
+        "/yona/owner/projectYobi/post/77"
+    );
+    let legacy_board_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/77",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_board_detail["title"], "legacy board post");
+    assert_eq!(
+        legacy_board_detail["bodyMarkdown"],
+        "legacy board post body"
+    );
+    assert_eq!(legacy_board_detail["authorLoginId"], "visitor");
+
+    let anonymous_legacy_board_create = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        None,
+        None,
+        Some(json!({
+            "posts": [
+                {
+                    "body": "anonymous",
+                    "title": "anonymous"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_board_create).await;
+
     let legacy_watchers_without_type = rest(
         app.clone(),
         Method::GET,

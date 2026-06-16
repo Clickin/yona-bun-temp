@@ -2,17 +2,18 @@ use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, BranchPullRequestRecord,
     CommitDiscussionThreadStateInput, CopyProjectLabelsResult, CreateCommitDiscussionCommentInput,
     CreateForkProjectInput, CreateIssueCommentInput, CreateIssueCommentViaEmailInput,
-    CreateIssueInput, CreateIssueViaEmailInput, CreateOrganizationInput, CreatePostingCommentInput,
-    CreatePostingCommentViaEmailInput, CreatePostingInput, CreateProjectInput,
-    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
-    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
-    CreateReviewCommentViaEmailInput, CreateUserInput, CreateWebhookDeliveryInput,
-    CreateWebhookThreadInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
-    DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
-    IssueAttachmentRecord, IssueChildRecord, IssueCommentOriginRecord, IssueCommentRecord,
-    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
-    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
-    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
+    CreateIssueInput, CreateIssueViaEmailInput, CreateLegacyExternalPostingInput,
+    CreateOrganizationInput, CreatePostingCommentInput, CreatePostingCommentViaEmailInput,
+    CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
+    CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
+    CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
+    CreateUserInput, CreateWebhookDeliveryInput, CreateWebhookThreadInput, DeleteAttachmentResult,
+    DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueChildRecord,
+    IssueCommentOriginRecord, IssueCommentRecord, IssueCommentVoterRecord,
+    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
+    IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
     LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyProjectTitleHeadRecord,
     LegacyResourceTargetRecord, MailboxActionExecutionInput, MailboxActionExecutionRecord,
     MailboxNormalizedMessageInput, MailboxNormalizedMessageResult, MailboxReplyTargetRecord,
@@ -4817,6 +4818,94 @@ impl AppRepository {
         Err(DbErr::Custom(
             "posting number allocation conflicted after retries".to_string(),
         ))
+    }
+
+    pub async fn create_legacy_external_posting(
+        &self,
+        input: CreateLegacyExternalPostingInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let post_number = match input.post_number {
+            Some(number) if number > 0 => number,
+            _ => self.next_posting_number(project_record.id).await?,
+        };
+        let now = current_datetime();
+        let created = posting::ActiveModel {
+            id: NotSet,
+            title: Set(Some(input.values.title.trim().to_string())),
+            created_date: Set(Some(now)),
+            updated_date: Set(Some(now)),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+            author_name: Set(Some(input.actor_display_name.clone())),
+            project_id: Set(Some(project_record.id)),
+            number: Set(Some(post_number)),
+            num_of_comments: Set(Some(0)),
+            notice: Set(Some(bool_to_i16(input.values.notice))),
+            readme: Set(Some(bool_to_i16(input.values.readme))),
+            parent_id: Set(None),
+            updated_by_author_id: Set(Some(input.actor_id)),
+            ..Default::default()
+        }
+        .insert(&self.db)
+        .await?;
+
+        let Some(project_model) = project::Entity::find_by_id(project_record.id)
+            .one(&self.db)
+            .await?
+        else {
+            return Err(DbErr::Custom(
+                "project missing after posting insert".to_string(),
+            ));
+        };
+        if project_model.last_posting_number.unwrap_or_default() < post_number {
+            let mut project_active = project::ActiveModel {
+                id: Set(project_record.id),
+                ..Default::default()
+            };
+            project_active.last_posting_number = Set(Some(post_number));
+            project_active.update(&self.db).await?;
+        }
+
+        self.write_text_column("posting", "body", created.id, &input.values.body_markdown)
+            .await?;
+        if input.values.readme {
+            self.clear_other_readme_postings(project_record.id, created.id)
+                .await?;
+        }
+        self.sync_posting_mentions_and_notify(
+            input.actor_id,
+            project_record.id,
+            created.id,
+            created.author_id,
+            "posting",
+            created.id,
+            &input.values.body_markdown,
+            "NEW_POSTING",
+            "",
+            &input.values.body_markdown,
+            PostingMentionNotificationMode::All,
+        )
+        .await?;
+
+        self.replace_posting_labels(created.id, project_record.id, &input.values.label_ids)
+            .await?;
+        self.bind_attachments(
+            BOARD_POST_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.values.attachment_ids,
+            Some(input.actor_id),
+        )
+        .await?;
+        self.watch_posting(created.id, input.actor_id).await?;
+        self.posting_record_from_model(created, &project_record, Some(input.actor_id))
+            .await
+            .map(Some)
     }
 
     pub async fn update_posting(
