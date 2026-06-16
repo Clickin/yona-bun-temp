@@ -1841,6 +1841,51 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_assignable_html.status(), StatusCode::NOT_ACCEPTABLE);
+    let legacy_sharable_user = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=visitor",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(legacy_sharable_user
+        .as_array()
+        .expect("legacy sharable users")
+        .iter()
+        .any(|item| item["loginId"] == "visitor"
+            && item["name"] == "visitor"
+            && item["type"] == "user"));
+    let legacy_sharable_project = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=projectYobi",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(legacy_sharable_project
+        .as_array()
+        .expect("legacy sharable projects")
+        .iter()
+        .any(|item| item["name"] == "owner/projectYobi" && item["type"] == "project"));
+    let legacy_sharable_html = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=visitor",
+        &[("Accept", "text/html")],
+        None,
+    )
+    .await;
+    assert_eq!(legacy_sharable_html.status(), StatusCode::NOT_ACCEPTABLE);
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

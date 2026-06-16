@@ -635,6 +635,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_project_assignable_session_manager = session_manager.clone();
     let legacy_issue_assignable_backend = route_backend.clone();
     let legacy_issue_assignable_session_manager = session_manager.clone();
+    let legacy_issue_sharable_backend = route_backend.clone();
+    let legacy_issue_sharable_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -1151,6 +1153,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             query,
                             legacy_issue_assignable_session_manager.clone(),
                             legacy_issue_assignable_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/sharableUsers",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    async move {
+                        legacy_external_issue_sharable_users(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            query,
+                            legacy_issue_sharable_session_manager.clone(),
+                            legacy_issue_sharable_backend.clone(),
                         )
                         .await
                     }
@@ -27707,6 +27730,47 @@ async fn legacy_external_issue_assignable_users(
             &project_name,
             number,
             actor_id,
+            &query.query,
+            &query.search_type,
+            10,
+        )
+        .await
+    {
+        Ok(Some(record)) => record,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(legacy_external_assignable_users_result(record)).into_response()
+}
+
+async fn legacy_external_issue_sharable_users(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue sharable users require repository backend")
+            .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if let Err(error) = read_issue_access(repository, &owner, &project_name, number, actor_id).await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+    let record = match repository
+        .list_issue_sharable_users(
+            &owner,
+            &project_name,
+            number,
             &query.query,
             &query.search_type,
             10,
