@@ -3251,6 +3251,48 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_imported_author.display_name,
         "Legacy Board Author"
     );
+    let nested_legacy_board_create_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "import": {
+                "posts": [
+                    {
+                        "actor": {
+                            "author": {
+                                "email": "visitor@example.com"
+                            }
+                        },
+                        "subject": {
+                            "title": "legacy board nested post"
+                        },
+                        "message": {
+                            "body": "legacy board nested post body"
+                        },
+                        "meta": {
+                            "number": "79",
+                            "createdAt": "2020-01-04 AM 03:04:05 +0000",
+                            "updatedAt": "2020-01-05 AM 04:05:06 +0000"
+                        }
+                    }
+                ]
+            }
+        })),
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_board_create_response.status(),
+        StatusCode::CREATED
+    );
+    let nested_legacy_board_created = response_json(nested_legacy_board_create_response).await;
+    assert_eq!(nested_legacy_board_created[0]["status"], 201);
+    assert_eq!(
+        nested_legacy_board_created[0]["location"],
+        "/yona/owner/projectYobi/post/79"
+    );
     let legacy_board_detail = ok_json(
         rest(
             app.clone(),
@@ -3268,6 +3310,27 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_detail["bodyMarkdown"],
         "legacy board post body"
     );
+    let nested_legacy_board_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/79",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_board_detail["title"],
+        "legacy board nested post"
+    );
+    assert_eq!(
+        nested_legacy_board_detail["bodyMarkdown"],
+        "legacy board nested post body"
+    );
+    assert_eq!(nested_legacy_board_detail["authorLoginId"], "visitor");
     assert_eq!(legacy_board_detail["authorLoginId"], "visitor");
     let legacy_board_imported_author_detail = ok_json(
         rest(

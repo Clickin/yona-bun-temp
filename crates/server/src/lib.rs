@@ -860,7 +860,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
-                      Json(body): Json<LegacyBoardPostingsBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_create_board_postings(
                             headers,
@@ -26678,23 +26678,55 @@ async fn legacy_external_watchers(
     .into_response()
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug)]
 struct LegacyBoardPostingsBody {
     posts: Option<Vec<LegacyBoardPostingBody>>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 struct LegacyBoardPostingBody {
     author: Option<serde_json::Value>,
-    #[serde(default)]
     body: String,
     created_at: Option<serde_json::Value>,
     number: Option<i64>,
     temporary_upload_files: Option<serde_json::Value>,
-    #[serde(default)]
     title: String,
     updated_at: Option<serde_json::Value>,
+}
+
+fn legacy_board_postings_body_from_value(value: &serde_json::Value) -> LegacyBoardPostingsBody {
+    LegacyBoardPostingsBody {
+        posts: legacy_json_find_value(value, "posts")
+            .and_then(|value| value.as_array())
+            .map(|items| {
+                items
+                    .iter()
+                    .map(legacy_board_posting_body_from_value)
+                    .collect()
+            }),
+    }
+}
+
+fn legacy_board_posting_body_from_value(value: &serde_json::Value) -> LegacyBoardPostingBody {
+    LegacyBoardPostingBody {
+        author: legacy_json_find_value(value, "author").cloned(),
+        body: legacy_json_find_value(value, "body")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        created_at: legacy_json_find_value(value, "createdAt").cloned(),
+        number: legacy_json_find_value(value, "number").and_then(|value| {
+            value
+                .as_i64()
+                .or_else(|| value.as_str()?.trim().parse::<i64>().ok())
+        }),
+        temporary_upload_files: legacy_json_find_value(value, "temporaryUploadFiles").cloned(),
+        title: legacy_json_find_value(value, "title")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        updated_at: legacy_json_find_value(value, "updatedAt").cloned(),
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -26798,11 +26830,12 @@ async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
     project_name: String,
-    body: LegacyBoardPostingsBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
 ) -> Response {
+    let body = legacy_board_postings_body_from_value(&body);
     let Some(posts) = body.posts else {
         return (
             StatusCode::BAD_REQUEST,
