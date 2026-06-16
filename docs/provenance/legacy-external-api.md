@@ -5,7 +5,13 @@ Date: 2026-06-11
 
 ## Scope Decision
 
-Legacy Yona exposes external compatibility routes under `/-_-api/v1/**` in `yona-original/conf/routes`. Per `SPEC.md` FG-18, the Rust app server owns only these direct compatibility helpers:
+Legacy Yona exposes external compatibility routes under `/-_-api/v1/**` in
+`yona-original/conf/routes`. Per `SPEC.md` FG-18, the Rust app server owns only
+the implemented rows in the endpoint inventory below. Those rows are direct
+runtime helpers with route tests and provenance. Everything else remains
+migrator/export/import scope.
+
+The first app-owned helpers were:
 
 - `GET /-_-api/v1/hello`
 - `GET /-_-api/v1/favoriteProjects` and `POST /-_-api/v1/favoriteProjects/:projectId`
@@ -13,10 +19,10 @@ Legacy Yona exposes external compatibility routes under `/-_-api/v1/**` in `yona
 - `GET /-_-api/v1/favoriteOrganizations` and `POST /-_-api/v1/favoriteOrganizations/:organizationId`
 - `POST /-_-api/v1/translation`
 
-All other `/-_-api/v1/**` routes are not app-server scope. They belong to the
-separate migration tool as a legacy-source adapter and to `crates/migration`
-descriptor/import-export work. Do not add broader legacy external API routes to
-the Rust frontend/server app.
+Later parity slices added the other endpoint inventory rows marked implemented
+below. Do not add broad or import/export-only legacy external API routes to the
+Rust frontend/server app unless this inventory, SPEC, provenance, and focused
+contract tests are updated together.
 
 The migration-tool direction is fixed in
 `docs/provenance/migration-tool-api-decision.md`: use existing legacy

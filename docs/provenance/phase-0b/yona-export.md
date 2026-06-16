@@ -4,7 +4,12 @@
 
 - Long-term replacement target for `https://github.com/yona-projects/yona-export`.
 - This is not a general internal-view REST contract. It is a migration-facing project export/import tool contract.
-- Future `/-_-api/v1/**` issue, milestone, label, project, post, and file compatibility belongs to a separate migrator/export/import deliverable. The app server only carries the legacy `GET /-_-api/v1/hello` health check bootstrap endpoint; other external endpoints must not be added to the frontend/server app unless that deliverable explicitly owns and tests the compatibility adapter.
+- Future broad `/-_-api/v1/**` issue, milestone, label, project, post, and file
+  import/export compatibility belongs to a separate migrator/export/import
+  deliverable. The app server carries only the direct compatibility rows marked
+  implemented in `docs/provenance/legacy-external-api.md`; other external
+  endpoints must not be added to the frontend/server app unless the inventory,
+  SPEC, provenance, and focused tests explicitly own that adapter.
 
 ## Upstream Tool Sources
 
@@ -54,11 +59,18 @@ The Node tool calls these external surfaces:
 
 - Build as a migration/export CLI or migration tool surface, not as SPA internals.
 - Keep schema validation explicit and versioned.
-- Separate external compatibility adapters from `/api/v1` app-facing REST APIs, and keep those adapters out of the app server until the migrator/export/import deliverable owns them.
+- Separate external compatibility adapters from `/api/v1` app-facing REST APIs,
+  and keep broad import/export adapters out of the app server until the
+  migrator/export/import deliverable owns them. Narrow app-owned direct helpers
+  remain governed by `docs/provenance/legacy-external-api.md`.
 - The Rust migration mapper now supports pure `ProjectApi.exports` JSON to semantic `yobi-data` conversion, project member role preservation, nested child comment preservation, optional downloaded attachment content injection as `contentBase64`, and the `yona-export-to-yobi-data` source adapter that reads a `yona-export` JSON plus `files/:attachmentId/:filename` tree; `/sites/export` preserves project scope/VCS metadata, project members with roles, child comments as nested `childComments`, standalone labels with category metadata, and standalone milestones with body/state/attachment metadata, and `/sites/import` restores project scope/VCS metadata, project member roles, nested child comments, standalone labels, standalone milestones, and Markdown `/files/:oldId` links to restored portable attachment ids when `contentBase64` is present.
 - Remaining 100% production parity blockers are repository content transfer, original created/updated timestamp restoration where persistence supports it, dry-run/resumable import reports, duplicate policy, and attachment checksum validation.
 
 ## Guardrail
 
-- Do not add `/-_-api/v1` issue/milestone/label/post/project REST endpoints just because a React view needs data. `GET /-_-api/v1/hello` is the narrow health-check exception.
-- Those endpoints require explicit migration/export provenance, tests tied to the external tool contract, and a separate migrator/export/import plan.
+- Do not add `/-_-api/v1` issue/milestone/label/post/project REST endpoints just
+  because a React view needs data. Use `/api/v1/**` for app views.
+- New broad import/export external endpoints require explicit migration/export
+  provenance, tests tied to the external tool contract, and a separate
+  migrator/export/import plan. New narrow app-owned helpers require updates to
+  SPEC FG-18, `docs/provenance/legacy-external-api.md`, and focused route tests.

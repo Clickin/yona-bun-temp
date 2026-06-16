@@ -1332,33 +1332,34 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 
 **Legacy API 접두사**: `/-_-api/v1/`
 
-**현재 결정**: Rust frontend/server app의 app-facing canonical REST surface는 `/api/v1/**`다. Legacy external `/-_-api/v1/**` compatibility는 별도 migrator 제품/도구에서 다루되, `GET /-_-api/v1/hello` health check, legacy user-menu helper가 직접 참조하는 `GET/POST /-_-api/v1/favoriteProjects|favoriteIssues|favoriteOrganizations`, and the issue/board translation helper `POST /-_-api/v1/translation`는 app server에서 직접 제공한다.
+**현재 결정**: Rust frontend/server app의 app-facing canonical REST surface는 `/api/v1/**`다. Legacy external `/-_-api/v1/**` compatibility는 기본적으로 별도 migrator 제품/도구에서 다루되, runtime 화면/legacy helper가 직접 참조하거나 이미 app-server contract test로 고정된 좁은 direct compatibility rows는 app server에서 직접 제공한다. 현재 app-owned rows의 상세 목록과 gap/deferred 상태는 `docs/provenance/legacy-external-api.md`가 canonical inventory다.
 
 #### 기능 목록과 상태
 
 | API                           | Legacy 동작        | 현재 상태                         | Phase |
 | ----------------------------- | ------------------ | --------------------------------- | ----- |
 | `GET /-_-api/v1/hello`        | Health check       | direct legacy JSON `{message,ok}` | implemented |
-| `GET /-_-api/v1/users`        | 사용자 목록        | unsupported in app                | migrator/deferred |
+| `GET /-_-api/v1/users`        | members-page 사용자 검색 helper | implemented with legacy JSON Accept/referer gate | app helper |
 | `POST /-_-api/v1/users`       | 사용자 생성        | unsupported in app                | migrator/deferred |
-| `POST /-_-api/v1/users/token` | API 토큰 발급      | unsupported in app                | migrator/deferred |
-| Issue API                     | 이슈 CRUD + 댓글   | issue/board translation helper implemented; broader API unsupported in app | migrator/deferred |
-| Project API                   | 프로젝트 CRUD      | unsupported in app                | migrator/deferred |
-| Board API                     | 게시글 CRUD + 댓글 | unsupported in app                | migrator/deferred |
-| Milestone API                 | 마일스톤 CRUD      | unsupported in app                | migrator/deferred |
-| Watcher API                   | 감시자 목록        | unsupported in app                | migrator/deferred |
+| `POST /-_-api/v1/users/token` | API 토큰 발급      | implemented with legacy password validation/session/token response | app helper |
+| User statistics/default-login/admin-user state | user workspace/site-manager helpers | implemented where marked in `legacy-external-api.md` | app helper |
+| Issue API                     | 이슈 CRUD + 댓글   | selected issue/comment helper rows implemented; bulk import/export remains deferred | mixed app helper + migrator |
+| Project API                   | 프로젝트 CRUD      | title-head/label helper rows implemented; project export/create remains migrator/deferred | mixed app helper + migrator |
+| Board API                     | 게시글 CRUD + 댓글 | selected post/comment/label helper rows implemented; import-only payload gaps remain migrator/deferred | mixed app helper + migrator |
+| Milestone API                 | 마일스톤 CRUD      | milestone batch helper implemented; broader migration/export remains deferred | mixed app helper + migrator |
+| Watcher API                   | 감시자 목록        | issue/post watcher helper implemented | app helper |
 | Favorite API                  | 즐겨찾기 관리      | user-menu favorite helpers implemented with session or legacy API token auth; broader API deferred | migrator/deferred |
 
-**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. `GET /-_-api/v1/hello`, legacy user-menu helper용 `/-_-api/v1/favoriteProjects|favoriteIssues|favoriteOrganizations`, and issue/board translation helper `POST /-_-api/v1/translation`를 제외한 legacy 외부 호환 API(`/-_-api/v1/**`)는 현재 app scope가 아니며, 기존 Yona API를 사용하는 외부 도구와의 호환은 별도 migrator/export/import deliverable에서 다룬다.
+**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. `docs/provenance/legacy-external-api.md`에서 implemented로 표시된 app-owned direct compatibility rows를 제외한 broad legacy 외부 호환 API(`/-_-api/v1/**`)는 현재 app scope가 아니며, 기존 Yona API를 사용하는 외부 도구와의 호환은 별도 migrator/export/import deliverable에서 다룬다.
 
-`GET /-_-api/v1/hello` health check, `GET/POST /-_-api/v1/favoriteProjects|favoriteIssues|favoriteOrganizations` user-menu helpers, and `POST /-_-api/v1/translation` issue/board helper 외의 `/-_-api/v1/**` legacy API를 frontend/server app에 추가하지 않는다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
+`docs/provenance/legacy-external-api.md`의 implemented rows 외의 `/-_-api/v1/**` legacy API를 frontend/server app에 추가하지 않는다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
 
 #### 별도 migrator 검수 기준
 
 - [x] `/-_-api/v1/hello` 가 200 OK를 반환한다
-- [~] API 인증: app-owned direct helpers (`hello`, user-menu favorites, translation) accept cookie session auth, favorites/translation also accept legacy `Yona-Token` or `Authorization: token ...` API token auth without CSRF, and unauthenticated favorite/translation requests return legacy `401 {"message":"unauthorized request"}` instead of the canonical `/api/v1` error envelope; broader legacy external APIs remain migrator/deferred
-- [~] API 응답: app-owned favorite helpers use legacy JSON field names/shapes, including localized default issue favorite toggle `message` copy; translation keeps legacy `translated` plus React-side `translatedMarkdown` source for equivalent rendered UI; broader legacy external APIs remain migrator/deferred
-- [~] 에러 응답: app-owned favorite/translation auth failures use legacy HTTP `401` + `{"message":"unauthorized request"}` and translation keeps legacy unconfigured `412 Precondition Failed`; broader legacy external API error schemas remain migrator/deferred
+- [~] API 인증: app-owned direct helpers in `docs/provenance/legacy-external-api.md` accept their legacy session/token/CSRF rules; token-auth-capable helpers accept legacy `Yona-Token` or `Authorization: token ...` where covered by contract tests, and unauthenticated direct-helper requests use legacy `401 {"message":"unauthorized request"}` where legacy expected it; broader legacy external APIs remain migrator/deferred
+- [~] API 응답: app-owned direct helpers use legacy JSON field names/shapes documented in `docs/provenance/legacy-external-api.md`, including favorite toggle message copy, token `access_token`, legacy receiver payloads, and translation source/response compatibility; broader legacy external APIs remain migrator/deferred
+- [~] 에러 응답: app-owned direct helper auth/conflict/unconfigured failures use the legacy HTTP status and JSON shape covered by focused route tests; broader legacy external API error schemas remain migrator/deferred
 
 ---
 
@@ -1859,7 +1860,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search verification refresh: app search now has `SearchTests`-borrowed user lookup contracts for login ID and display-name matches, returning the legacy `/users/:loginId` href shape.
 - Search verification refresh: app search now has `SearchTests.findProjects`-borrowed project result visibility coverage proving anonymous global `searchType=project` returns matching public projects and excludes matching private projects.
 - Notification: mailbox executable polling now processes NUL-separated raw RFC822 messages from `YONA_MAILBOX_FETCH_COMMAND` through the existing raw mailbox bridge after issue/board/code/review comment `original_email` marker parity, mailbox plus-address/detail-routing parser parity, Message-ID left-part parser parity, header Message-ID token parser parity, sender lookup parity, raw RFC822/MIME mailbox ingestion, parsed mailbox-message normalization, app-level parsed/raw-message processing bridge, normalized mailbox-message orchestration, MIME content selection parity, exact `original_email` reply target lookup, Message-ID-left direct resource-path fallback, recipient detail resource lookup with legacy enum-style resource type canonicalization, mailbox action planning/execution, DB-backed `CreationViaEmailTest` resource creation parity including board comments, legacy `NotificationMail.handleLinks` external-link `noreferrer` parity, and the legacy notification mail HTML shell/view-link/resource-unwatch/settings-footer body
-- Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the direct `hello` health check, user-menu favorite helpers, and issue/board translation helper, including issue API parity, is a separate migration-tool source-adapter deliverable rather than app server scope. Existing legacy Yona instances are read through their existing legacy endpoints; Rust Yona receives migration data through site-admin import or tool-local `yobi-data` formats, not by mounting the broad legacy API in the Rust runtime.
+- Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the app-owned direct rows inventoried in `docs/provenance/legacy-external-api.md` is a separate migration-tool source-adapter deliverable rather than app server scope. Existing legacy Yona instances are read through their existing legacy endpoints; Rust Yona receives migration data through site-admin import or tool-local `yobi-data` formats, not by mounting the broad legacy API in the Rust runtime.
 - Webhook follow-up: optional signature compatibility if external evidence requires it
 - Admin follow-up: site-admin user/project/post/issue/mail/diagnostic/update/data surfaces are implemented; remaining admin gaps are outside the update binary proxy slice
 - Markdown watchlist: add further legacy autolink, GFM extension, or Highlight.js-equivalent language edges only when new evidence requires them; no known app-runtime Markdown renderer blocker remains
