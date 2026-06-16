@@ -1692,6 +1692,48 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_content).await;
+    let legacy_issue_closed = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_closed["result"]["number"], 1);
+    assert_eq!(legacy_issue_closed["result"]["title"], "Favorite issue");
+    assert_eq!(legacy_issue_closed["result"]["state"], "closed");
+    assert_eq!(
+        legacy_issue_closed["result"]["body"],
+        "Favorite issue body updated"
+    );
+    let legacy_issue_opened = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({})),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_opened["result"]["state"], "open");
+    let anonymous_legacy_issue_state = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        None,
+        None,
+        Some(json!({ "state": "closed" })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_state).await;
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),
