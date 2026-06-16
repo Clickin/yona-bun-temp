@@ -37,11 +37,11 @@ contract.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `GET /-_-api/v1/users?query=` | `conf/routes` -> `controllers.UserApp.users` | User search/list helper. | Migrator/deferred; not app-server scope. |
+| `GET /-_-api/v1/users?query=` | `conf/routes` -> `controllers.UserApp.users` | Members-page user mention/search helper. | Implemented in app server with legacy JSON Accept/referer gate and `[{info, loginId}]` shape. |
 | `POST /-_-api/v1/users` | `UserApi.newUser()` | Site-admin JSON user creation from `users` array. | Migrator/deferred; not app-server scope. |
 | `POST /-_-api/v1/users/token` | `UserApi.newToken()` | Validate id/password, set session, return `access_token`. | Migrator/deferred; not app-server scope. |
 | `GET /-_-api/v1/user/issues?filter=&page=&pageNum=` | `UserApi.getIssuesByUser()` | Token-authored user issue export/list JSON. | Migrator/deferred; not app-server scope. |
-| `GET /-_-api/v1/users/:user/statistics` | `UserApi.statistics()` | User activity count JSON. | App has canonical `/api/v1` equivalent; legacy external route remains migrator/deferred. |
+| `GET /-_-api/v1/users/:user/statistics` | `UserApi.statistics()` | User activity count JSON. | Implemented in app server with legacy statistics fields and session/token auth. |
 | `POST /-_-api/v1/user/defultLoginPage` | `controllers.UserApp.setDefaultLoginPage()` | Legacy typo-preserving default login page mutation. | Migrator/deferred; not app-server scope. |
 | `GET /-_-api/v1/admin/users` | `UserApi.users()` | Site-manager active user list JSON. | Migrator/deferred; not app-server scope. |
 | `PATCH /-_-api/v1/admin/users/:user` | `UserApi.updateUserState()` | Site-manager user state mutation. | Migrator/deferred; not app-server scope. |

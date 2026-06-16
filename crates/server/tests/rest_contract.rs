@@ -1172,6 +1172,72 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;
 
+    let legacy_users_empty = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users?query=",
+            &[
+                ("Accept", "application/json"),
+                ("Referer", "http://localhost/yona/owner/projectYobi/members"),
+            ],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_users_empty, json!([]));
+    let legacy_users = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users?query=vis",
+            &[
+                ("Accept", "application/json"),
+                ("Referer", "http://localhost/yona/owner/projectYobi/members"),
+            ],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_users
+            .as_array()
+            .expect("legacy users search results")
+            .len(),
+        1
+    );
+    assert_eq!(legacy_users[0]["loginId"], "visitor");
+    assert!(legacy_users[0]["info"]
+        .as_str()
+        .expect("legacy user info html")
+        .contains("mention_username"));
+    let legacy_users_html = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/users?query=vis",
+        &[
+            ("Accept", "text/html"),
+            ("Referer", "http://localhost/yona/owner/projectYobi/members"),
+        ],
+        None,
+    )
+    .await;
+    assert_eq!(legacy_users_html.status(), StatusCode::NOT_ACCEPTABLE);
+    let legacy_users_without_members_referer = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/users?query=vis",
+        &[("Accept", "application/json")],
+        None,
+    )
+    .await;
+    assert_eq!(
+        legacy_users_without_members_referer.status(),
+        StatusCode::NOT_ACCEPTABLE
+    );
+
     let created = create_project_rest(
         app.clone(),
         &owner_cookie,

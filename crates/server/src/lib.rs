@@ -13,7 +13,7 @@ use axum::{Json, Router};
 use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::{MessageView, OwnedView};
-use http::header::{AUTHORIZATION, SET_COOKIE, WWW_AUTHENTICATE};
+use http::header::{AUTHORIZATION, CONTENT_RANGE, REFERER, SET_COOKIE, WWW_AUTHENTICATE};
 use http::{HeaderName, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 use md5::{Digest, Md5};
@@ -667,6 +667,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_favorite_organizations_list_session_manager = session_manager.clone();
     let legacy_favorite_organization_toggle_backend = route_backend.clone();
     let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
+    let legacy_user_search_backend = route_backend.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
     let legacy_project_labels_backend = route_backend.clone();
@@ -752,6 +753,17 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .nest("/api/v1", rest_router)
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .route(
+            "/-_-api/v1/users",
+            get(
+                move |headers: HeaderMap, Query(query): Query<LegacyExternalUsersQuery>| {
+                    async move {
+                        legacy_external_users(headers, query, legacy_user_search_backend.clone())
+                            .await
+                    }
+                },
+            ),
+        )
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/watchers",
             get(
@@ -26157,6 +26169,71 @@ async fn legacy_external_api_hello() -> Json<serde_json::Value> {
         "message": "I'm alive!",
         "ok": true,
     }))
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyExternalUsersQuery {
+    #[serde(default)]
+    query: String,
+}
+
+async fn legacy_external_users(
+    headers: HeaderMap,
+    query: LegacyExternalUsersQuery,
+    backend: PilotBackend,
+) -> Response {
+    let referer_is_members = headers
+        .get(REFERER)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.ends_with("members"));
+    if !referer_is_members || !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    if query.query.trim().is_empty() {
+        return Json(Vec::<serde_json::Value>::new()).into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("users search requires repository backend")
+            .into_response();
+    };
+    let users = match repository
+        .list_site_users(persistence::SiteUserListFilter {
+            page: 1,
+            query: query.query,
+            state: "active".to_string(),
+        })
+        .await
+    {
+        Ok(users) => users,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let total = users.total;
+    let payload = users
+        .users
+        .into_iter()
+        .take(10)
+        .map(|user| {
+            serde_json::json!({
+                "info": format!(
+                    "<img class='mention_image' src='{}'><b class='mention_name'>{}</b><span class='mention_username'> @{}</span>",
+                    gravatar_url(&user.email_address),
+                    escape_html_text(&user.display_name),
+                    escape_html_text(&user.login_id),
+                ),
+                "loginId": user.login_id,
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut response = Json(payload).into_response();
+    if total > 10 {
+        response.headers_mut().insert(
+            CONTENT_RANGE,
+            format!("items 10/{total}")
+                .parse()
+                .expect("legacy user search content-range"),
+        );
+    }
+    response
 }
 
 fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String> {
