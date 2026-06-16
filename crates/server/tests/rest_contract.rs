@@ -1734,6 +1734,58 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_state).await;
+    let legacy_issue_assignee = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "assignees": ["visitor"] })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_assignee["assignee"]["loginId"], "visitor");
+    assert_eq!(legacy_issue_assignee["assignee"]["name"], "visitor");
+    assert_eq!(legacy_issue_assignee["issue"], "/owner/projectYobi/issue/1");
+    let legacy_issue_assignee_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_assignee_detail["assigneeLoginId"], "visitor");
+    let legacy_issue_no_assignee = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({ "assignees": [] })),
+    )
+    .await;
+    assert_eq!(legacy_issue_no_assignee.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        response_json(legacy_issue_no_assignee).await,
+        json!({ "message": "No assignee" })
+    );
+    let anonymous_legacy_issue_assignee = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+        None,
+        None,
+        Some(json!({ "assignees": ["visitor"] })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_assignee).await;
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

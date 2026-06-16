@@ -629,6 +629,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_content_session_manager = session_manager.clone();
     let legacy_issue_state_backend = route_backend.clone();
     let legacy_issue_state_session_manager = session_manager.clone();
+    let legacy_issue_assignee_backend = route_backend.clone();
+    let legacy_issue_assignee_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -926,6 +928,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_issue_state_session_manager.clone(),
                             legacy_issue_state_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignees",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_update_issue_assignee(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_assignee_session_manager.clone(),
+                            legacy_issue_assignee_backend.clone(),
                         )
                         .await
                     }
@@ -26710,6 +26733,91 @@ async fn legacy_external_update_issue_state(
     };
     Json(serde_json::json!({
         "result": legacy_external_issue_result(&issue),
+    }))
+    .into_response()
+}
+
+async fn legacy_external_update_issue_assignee(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: serde_json::Value,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue assignee requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let Some(actor) = access.actor.as_ref() else {
+        return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+            "unauthorized request",
+        ));
+    };
+    if !issue_can_mutate(&access.authorization, &access.issue, actor) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Permission denied",
+            })),
+        )
+            .into_response();
+    }
+    let Some(assignee_login_id) = body
+        .get("assignees")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|assignees| assignees.first())
+        .and_then(serde_json::Value::as_str)
+    else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "No assignee",
+            })),
+        )
+            .into_response();
+    };
+    let issue = match repository
+        .assign_issue(
+            &owner,
+            &project_name,
+            number,
+            Some(assignee_login_id).filter(|value| !value.trim().is_empty()),
+            &actor.login_id,
+        )
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let assignee = if issue.assignee_login_id.is_empty() {
+        serde_json::json!({
+            "loginId": "",
+            "name": "None",
+        })
+    } else {
+        serde_json::json!({
+            "loginId": issue.assignee_login_id,
+            "name": issue.assignee_label,
+        })
+    };
+    Json(serde_json::json!({
+        "assignee": assignee,
+        "issue": format!("/{}/{}/issue/{}", owner, project_name, number),
     }))
     .into_response()
 }
