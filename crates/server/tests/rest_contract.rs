@@ -2188,6 +2188,33 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_issue_comment_updated["result"]["author"]["loginId"],
         "visitor"
     );
+    let nested_legacy_issue_comment_updated = ok_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!(
+                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+            ),
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "payload": {
+                    "body": {
+                        "content": "legacy issue comment body nested update"
+                    },
+                    "base": {
+                        "original": "legacy issue comment body updated"
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_issue_comment_updated["result"]["contents"],
+        "legacy issue comment body nested update"
+    );
     let legacy_issue_comment_conflict = rest(
         app.clone(),
         Method::PUT,
@@ -2207,7 +2234,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_json(legacy_issue_comment_conflict).await,
         json!({
             "message": "Already modified by someone.",
-            "storedContent": "legacy issue comment body updated"
+            "storedContent": "legacy issue comment body nested update"
         })
     );
     let anonymous_legacy_issue_comment = rest(
@@ -2354,7 +2381,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .expect("legacy issue read comments")
         .iter()
         .any(
-            |comment| comment["body"] == "legacy issue comment body updated"
+            |comment| comment["body"] == "legacy issue comment body nested update"
                 && comment["author"]["loginId"] == "visitor"
         ));
     assert!(legacy_issue_read["result"]["events"]
@@ -3397,6 +3424,32 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "2020-02-03T04:05:06+0000"
     );
 
+    let nested_legacy_board_comment_update = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            &format!("/yona/owner/projectYobi/post/77/comment/{legacy_board_comment_id}"),
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "payload": {
+                    "body": {
+                        "content": "legacy board comment body nested update"
+                    },
+                    "base": {
+                        "original": "legacy board comment body updated"
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_board_comment_update["result"]["body"],
+        "legacy board comment body nested update"
+    );
+
     let legacy_board_comment_conflict = rest(
         app.clone(),
         Method::PATCH,
@@ -3414,7 +3467,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_json(legacy_board_comment_conflict).await,
         json!({
             "message": "Already modified by someone.",
-            "storedContent": "legacy board comment body updated"
+            "storedContent": "legacy board comment body nested update"
         })
     );
 

@@ -951,7 +951,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     i64,
                     i64,
                 )>,
-                      Json(body): Json<LegacyBoardCommentUpdateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_update_issue_comment(
                             headers,
@@ -2975,7 +2975,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     i64,
                     i64,
                 )>,
-                      Json(body): Json<LegacyBoardCommentUpdateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_update_posting_comment(
                             headers,
@@ -26767,14 +26767,6 @@ struct LegacyIssueAssigneeBody {
     login_id: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct LegacyBoardCommentUpdateBody {
-    #[serde(default)]
-    content: String,
-    #[serde(default)]
-    original: String,
-}
-
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -28368,10 +28360,11 @@ async fn legacy_update_posting_comment(
     project_name: String,
     number: i64,
     comment_id: i64,
-    body: LegacyBoardCommentUpdateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_content_update_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented(
             "board posting comment update requires repository backend",
@@ -28492,10 +28485,11 @@ async fn legacy_external_update_issue_comment(
     project_name: String,
     number: i64,
     comment_id: i64,
-    body: LegacyBoardCommentUpdateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_content_update_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("issue comment update requires repository backend")
             .into_response();
