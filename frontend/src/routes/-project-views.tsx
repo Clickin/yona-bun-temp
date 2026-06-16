@@ -2153,11 +2153,8 @@ export function ProjectTransferPage(props: {
   const [accepted, setAccepted] = React.useState(false);
   const [destination, setDestination] = React.useState("");
   const [modalOpen, setModalOpen] = React.useState(false);
-  const canSubmit =
-    accepted &&
-    destination.trim().length > 0 &&
-    !props.pending &&
-    props.transfer?.viewerCanTransfer;
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const canOpenTransferModal = accepted && !props.pending && props.transfer?.viewerCanTransfer;
 
   return (
     <main className="app-shell">
@@ -2179,7 +2176,10 @@ export function ProjectTransferPage(props: {
                     autoComplete="off"
                     id="owner"
                     name="owner"
-                    onChange={(event) => setDestination(event.currentTarget.value)}
+                    onChange={(event) => {
+                      setDestination(event.currentTarget.value);
+                      setValidationMessage(null);
+                    }}
                     type="text"
                     value={destination}
                   />
@@ -2213,7 +2213,10 @@ export function ProjectTransferPage(props: {
                     className="checkbox"
                     id="accept"
                     name="accept"
-                    onChange={(event) => setAccepted(event.currentTarget.checked)}
+                    onChange={(event) => {
+                      setAccepted(event.currentTarget.checked);
+                      setValidationMessage(null);
+                    }}
                     type="checkbox"
                   />
                   <label className="bg-checkbox label-agreement" htmlFor="accept">
@@ -2223,6 +2226,11 @@ export function ProjectTransferPage(props: {
               </div>
             </div>
           </div>
+          {validationMessage ? (
+            <div className="alert alert-error" role="alert">
+              {validationMessage}
+            </div>
+          ) : null}
           <div className="box-wrap bottom">
             <a
               className="ybtn ybtn-danger"
@@ -2231,8 +2239,11 @@ export function ProjectTransferPage(props: {
               id="btnTransfer"
               onClick={(event) => {
                 event.preventDefault();
-                if (canSubmit) {
+                if (canOpenTransferModal) {
+                  setValidationMessage(null);
                   setModalOpen(true);
+                } else if (!accepted) {
+                  setValidationMessage("project.transfer.alert");
                 }
               }}
             >

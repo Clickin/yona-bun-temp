@@ -29,7 +29,11 @@ import type {
   ProjectIssueDetailViewModel,
   ProjectDetailViewModel,
 } from "./routes/-view-models";
-import { ProjectIssueDetailPage, ProjectIssueFormPage, UserIssueListPage } from "./routes/-issue-views";
+import {
+  ProjectIssueDetailPage,
+  ProjectIssueFormPage,
+  UserIssueListPage,
+} from "./routes/-issue-views";
 import {
   ProjectMilestoneDetailPage,
   ProjectMilestoneFormPage,
@@ -189,11 +193,6 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/route.tsx"),
       "utf8",
     );
-    const milestoneDetailRouteSource = fs.readFileSync(
-      path.resolve(__dirname, "routes/$owner/$projectName/milestone/$milestoneId/route.tsx"),
-      "utf8",
-    );
-
     expect(issueListRouteSource).not.toContain("PlaceholderPage");
     expect(issueListRouteSource).not.toContain("Read project issues failed.");
     expect(issueListRouteSource).toContain("BadRequestPage");
@@ -315,7 +314,11 @@ describe("file-route parity harness", () => {
       ["routes/user/editform/password/route.tsx", "userinfo.accountSetting", "Account Settings"],
       ["routes/sites/$pageName/route.tsx", "title.siteSetting", "Site Admin"],
       ["routes/verify/$loginId/$verificationCode/route.tsx", "user.verification", "Verify User"],
-      ["routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx", "menu.pullRequest", "Pull Request Changes"],
+      [
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+        "menu.pullRequest",
+        "Pull Request Changes",
+      ],
       ["routes/$owner/$projectName/issue/labelsform/route.tsx", "label", "Issue Labels"],
     ] as const;
 
@@ -345,15 +348,9 @@ describe("file-route parity harness", () => {
     expect(signupRouteSource).not.toContain("Register failed.");
 
     const milestoneRouteSources = [
-      [
-        "routes/$owner/$projectName/milestones/route.tsx",
-        "Read project milestones failed.",
-      ],
+      ["routes/$owner/$projectName/milestones/route.tsx", "Read project milestones failed."],
       ["routes/$owner/$projectName/newMilestoneForm/route.tsx", "Read project failed."],
-      [
-        "routes/$owner/$projectName/milestone/$milestoneId/route.tsx",
-        "Read milestone failed.",
-      ],
+      ["routes/$owner/$projectName/milestone/$milestoneId/route.tsx", "Read milestone failed."],
       [
         "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
         "Read milestone failed.",
@@ -381,8 +378,7 @@ describe("file-route parity harness", () => {
     for (const routePath of routePaths) {
       const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
       const closeButtons =
-        source.match(/<button(?=[^>]*className="close(?: [^"]*)?")[^>]*>[\s\S]*?<\/button>/g) ??
-        [];
+        source.match(/<button(?=[^>]*className="close(?: [^"]*)?")[^>]*>[\s\S]*?<\/button>/g) ?? [];
 
       expect(source).not.toContain('aria-label="Close"');
       for (const closeButton of closeButtons) {
@@ -430,7 +426,10 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     const pullRequestDetailRouteSource = fs.readFileSync(
-      path.resolve(__dirname, "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx"),
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      ),
       "utf8",
     );
     const issueDetailRouteSource = fs.readFileSync(
@@ -590,24 +589,22 @@ describe("file-route parity harness", () => {
     const editHtml = renderToStaticMarkup(
       <ProjectIssueFormPage
         detail={detail}
-        initialIssue={
-          {
-            ...baseIssueDetail,
-            assigneeLoginId: "guest",
-            authorId: 9,
-            authorLoginId: "owner",
-            bodyMarkdown: "Existing body",
-            dueDateLabel: "2026-08-02",
-            issueNumber: 17,
-            labels: [{ color: "#51aacc", id: 5, name: "bug" }],
-            milestoneId: 7,
-            parentIssueId: 31,
-            parentIssueNumber: 12,
-            parentIssueTitle: "Parent issue",
-            state: "closed",
-            title: "Existing issue",
-          }
-        }
+        initialIssue={{
+          ...baseIssueDetail,
+          assigneeLoginId: "guest",
+          authorId: 9,
+          authorLoginId: "owner",
+          bodyMarkdown: "Existing body",
+          dueDateLabel: "2026-08-02",
+          issueNumber: 17,
+          labels: [{ color: "#51aacc", id: 5, name: "bug" }],
+          milestoneId: 7,
+          parentIssueId: 31,
+          parentIssueNumber: 12,
+          parentIssueTitle: "Parent issue",
+          state: "closed",
+          title: "Existing issue",
+        }}
         milestoneOptions={milestones}
         mode="edit"
         onSubmit={async () => undefined}
@@ -637,20 +634,18 @@ describe("file-route parity harness", () => {
     const draftEditHtml = renderToStaticMarkup(
       <ProjectIssueFormPage
         detail={detail}
-        initialIssue={
-          {
-            ...baseIssueDetail,
-            assigneeLoginId: "",
-            authorLoginId: "owner",
-            bodyMarkdown: "Draft body",
-            isDraft: true,
-            issueNumber: 18,
-            labels: [],
-            milestoneId: 0,
-            state: "draft",
-            title: "Draft issue",
-          }
-        }
+        initialIssue={{
+          ...baseIssueDetail,
+          assigneeLoginId: "",
+          authorLoginId: "owner",
+          bodyMarkdown: "Draft body",
+          isDraft: true,
+          issueNumber: 18,
+          labels: [],
+          milestoneId: 0,
+          state: "draft",
+          title: "Draft issue",
+        }}
         mode="edit"
         onSubmit={async () => undefined}
         runtimeConfig={runtimeConfig}
@@ -692,12 +687,8 @@ describe("file-route parity harness", () => {
     );
 
     expect(html).toContain('<header class="board-header issue">');
-    expect(html).toContain(
-      '<div class="date" title="May 20, 2026">May 20, 2026</div>',
-    );
-    expect(html).toContain(
-      '<span class="date" title="May 20, 2026">May 20, 2026</span>',
-    );
+    expect(html).toContain('<div class="date" title="May 20, 2026">May 20, 2026</div>');
+    expect(html).toContain('<span class="date" title="May 20, 2026">May 20, 2026</span>');
     expect(html).toContain('<span class="badge badge-issue-open">open</span>');
     expect(html).toContain('<span class="badge badge-small badge-issue-open">open</span>');
   });
@@ -988,7 +979,9 @@ describe("file-route parity harness", () => {
     expect(pages[0]).not.toContain(">Download</a>");
     expect(pages[0]).not.toContain('<label for="branches">Branch</label>');
     expect(pages[2]).toContain('<p class="commitInfo">');
-    expect(pages[2]).toContain('<strong class="commitId">@abcdef1234567890..abcdef1234567890</strong>');
+    expect(pages[2]).toContain(
+      '<strong class="commitId">@abcdef1234567890..abcdef1234567890</strong>',
+    );
     expect(pages[2]).not.toContain("<h1>Compare</h1>");
     expect(pages[1]).toContain(
       'class="avatar-wrap" data-placement="top" data-toggle="tooltip" href="/yona/reviewer" title="Reviewer"',
@@ -1003,7 +996,9 @@ describe("file-route parity harness", () => {
     expect(pages[4]).toContain(
       '<select class="pull-right" data-dropdown-css-class="branches" data-format="branch" data-toggle="select2" id="branches"',
     );
-    expect(pages[4]).toContain('<option value="/yona/owner/projectYobi/commits/main" selected="">main</option>');
+    expect(pages[4]).toContain(
+      '<option value="/yona/owner/projectYobi/commits/main" selected="">main</option>',
+    );
     expect(pages[4]).not.toContain("<h1>Commit History</h1>");
     expect(pages[4]).not.toContain('<label for="branches">Branch</label>');
     const branchListHtml = pages[3];
@@ -1043,7 +1038,7 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(emptyBranchListHtml).toContain('<tbody></tbody>');
+    expect(emptyBranchListHtml).toContain("<tbody></tbody>");
     expect(emptyBranchListHtml).not.toContain("No branches");
     expect(emptyBranchListHtml).not.toContain('class="warning-none"');
     expect(pages[0]).toContain("code.nofiles");
@@ -1081,7 +1076,9 @@ describe("file-route parity harness", () => {
     expect(folderHtml).toContain("<strong>code.commitDate</strong>");
     expect(folderHtml).toContain('class="span6 filename"');
     expect(folderHtml).toContain('class="span5 commitMsg"');
-    expect(folderHtml).toContain('<a class="avatar-wrap smaller" href="/yona/author"><img src="/yona/files/77"/></a>');
+    expect(folderHtml).toContain(
+      '<a class="avatar-wrap smaller" href="/yona/author"><img alt="Author" src="/yona/files/77"/></a>',
+    );
     expect(folderHtml).toContain('class="span1 commitDate"');
     expect(folderHtml).toContain('class="dynatree-icon vmiddle"');
     expect(folderHtml).toContain('data-list-path="docs"');
@@ -1091,7 +1088,9 @@ describe("file-route parity harness", () => {
     expect(folderHtml).toContain('data-target-path="docs/guides"');
     expect(folderHtml).not.toContain('data-targetPath="docs/guides"');
     expect(folderHtml).toContain('data-type="folder"');
-    expect(folderHtml).toContain('href="/yona/owner/projectYobi/code/main/docs/guides#cb-docs/guides"');
+    expect(folderHtml).toContain(
+      'href="/yona/owner/projectYobi/code/main/docs/guides#cb-docs/guides"',
+    );
     expect(folderHtml).toContain('title="guides"');
     expect(folderHtml).toContain(
       'href="/yona/owner/projectYobi/commit/abcdef1?branch=main&amp;path=docs%2Fguides#docs-guides"',
@@ -1137,11 +1136,15 @@ describe("file-route parity harness", () => {
     expect(historyHtml).not.toContain('data-commitId="abcdef1234567890"');
     expect(historyHtml).toContain('class="yobicon-copy"');
     expect(historyHtml).toContain('title="code.showCommit"');
-    expect(historyHtml).toContain('<span class="number-of-comments"><i class="yobicon-comments"></i> 2</span>');
+    expect(historyHtml).toContain(
+      '<span class="number-of-comments"><i class="yobicon-comments"></i> 2</span>',
+    );
     expect(historyHtml).toContain('class="yobicon-comments"');
     expect(historyHtml).toContain("</i> 2</span>");
     expect(historyHtml).toContain('class="commitMsg short"');
-    expect(historyHtml).toContain('<button class="commitMsg moreBtn" type="button"><span>…</span></button>');
+    expect(historyHtml).toContain(
+      '<button class="commitMsg moreBtn" type="button"><span>…</span></button>',
+    );
     expect(historyHtml).toContain('<pre class="commitMsg desc hidden">');
     expect(historyHtml).toContain("Detailed body</pre>");
     expect(historyHtml).not.toContain('<pre class="commitMsg desc hidden">Initial commit');
@@ -1181,7 +1184,9 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(compareHtml).toContain('<p class="commitInfo">');
-    expect(compareHtml).toContain('<strong class="commitId">@abcdef1234567890..1234567890abcdef</strong>');
+    expect(compareHtml).toContain(
+      '<strong class="commitId">@abcdef1234567890..1234567890abcdef</strong>',
+    );
     expect(compareHtml).toContain('<div class="diff-body discommentable">');
     expect(compareHtml).toContain('<article class="diff-file" id="README-md">');
     expect(compareHtml).not.toContain("<h1>abcdef1234567890..1234567890abcdef</h1>");
@@ -1237,8 +1242,12 @@ describe("file-route parity harness", () => {
     expect(searchViewsSource).toContain("ProjectMenu");
     expect(searchViewsSource).toContain("projectSearchDetail");
     expect(searchViewsSource).toContain('scope.type !== "project"');
-    expect(searchViewsSource).toContain("<ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />");
-    expect(searchViewsSource).toContain("<ProjectMenu detail={projectDetail} runtimeConfig={runtimeConfig} />");
+    expect(searchViewsSource).toContain(
+      "<ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />",
+    );
+    expect(searchViewsSource).toContain(
+      "<ProjectMenu detail={projectDetail} runtimeConfig={runtimeConfig} />",
+    );
     expect(searchViewsSource).toContain("OrganizationHeader");
     expect(searchViewsSource).toContain("OrganizationMenu");
     expect(searchViewsSource).toContain("organizationSearchDetail");
@@ -1387,8 +1396,12 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(resultsHtml).toContain('href="/yona/door"');
-    expect(resultsHtml).toContain('class="meta-item" data-placement="top" data-toggle="tooltip" href="/yona/door" title="door"');
-    expect(resultsHtml).toContain('<span class="meta-item" title="May 18, 2026">May 18, 2026</span>');
+    expect(resultsHtml).toContain(
+      'class="meta-item" data-placement="top" data-toggle="tooltip" href="/yona/door" title="door"',
+    );
+    expect(resultsHtml).toContain(
+      '<span class="meta-item" title="May 18, 2026">May 18, 2026</span>',
+    );
     expect(resultsHtml).toContain(">No author search issue</a>");
     expect(resultsHtml).toContain(">issue.noAuthor</span>");
     expect(resultsHtml).not.toContain('href="/yona/users/door"');
@@ -1735,9 +1748,7 @@ describe("file-route parity harness", () => {
 
     expect(mentionedHtml).toContain('class="active"><a data-assignee-id=""');
     expect(mentionedHtml).toContain('data-mention-id="42"');
-    expect(mentionedHtml).toMatch(
-      /data-search="mentionId"[^>]*name="mentionId"[^>]*value="42"/,
-    );
+    expect(mentionedHtml).toMatch(/data-search="mentionId"[^>]*name="mentionId"[^>]*value="42"/);
     expect(mentionedHtml).toMatch(/data-search="sharerId"[^>]*name="sharerId"[^>]*value=""/);
     expect(mentionedHtml).toContain("issue.list.mentionedOfMe</span><span> (5)</span>");
     expect(mentionedHtml).toContain("issue.list.sharedWithMe</span><span> (7)</span>");
@@ -1796,11 +1807,15 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain("useQuery");
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
     expect(notificationRouteSource).toContain('className="app-shell notification-page"');
-    expect(notificationRouteSource).not.toContain('className="app-shell notification-page page-wrap-outer"');
+    expect(notificationRouteSource).not.toContain(
+      'className="app-shell notification-page page-wrap-outer"',
+    );
     expect(notificationRouteSource).toContain("page-wrap-outer");
     expect(notificationRouteSource).toContain("page-wrap");
     expect(notificationRouteSource).toContain("NotificationWelcomeGuide");
-    expect(notificationRouteSource).toContain('className={`site-guide-outer${visible ? "" : " hide"}`}');
+    expect(notificationRouteSource).toContain(
+      'className={`site-guide-outer${visible ? "" : " hide"}`}',
+    );
     expect(notificationRouteSource).toContain("app.welcome Yona - app.description");
     expect(notificationRouteSource).toContain("welcome-table table borderless");
     expect(notificationRouteSource).toContain("button.newProject");
@@ -1827,12 +1842,16 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).not.toContain("No notification has been received.");
     expect(notificationRouteSource).not.toContain('<li className="warning-none">Loading…</li>');
     expect(notificationRouteSource).toContain('<li className="warning-none">');
-    expect(notificationRouteSource).not.toContain('<div className="warning-none">\n                    <i className="yobicon-danger"></i> notification.none');
+    expect(notificationRouteSource).not.toContain(
+      '<div className="warning-none">\n                    <i className="yobicon-danger"></i> notification.none',
+    );
     expect(notificationRouteSource).toContain('data-toggle="learnmore"');
     expect(notificationRouteSource).toContain("NotificationMessage");
     expect(notificationRouteSource).toContain("handleLearnMoreClick");
     expect(notificationRouteSource).toContain('target.closest("a, img")');
-    expect(notificationRouteSource).toContain('onClick={(event) => handleLearnMoreClick(item.id, event)}');
+    expect(notificationRouteSource).toContain(
+      "onClick={(event) => handleLearnMoreClick(item.id, event)}",
+    );
     expect(notificationRouteSource).toContain("event.stopPropagation()");
     expect(notificationRouteSource).toContain("ResizeObserver");
     expect(notificationRouteSource).toContain('className="more"');
@@ -1840,7 +1859,8 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain('className="smaller"');
     expect(notificationRouteSource).toContain("height={42}");
     expect(notificationRouteSource).toContain("width={42}");
-    expect(notificationRouteSource).toContain('href="javascript:void(0);"');
+    expect(notificationRouteSource).toContain('type="button"');
+    expect(notificationRouteSource).not.toContain('href="javascript:void(0);"');
     expect(notificationRouteSource).toContain('id="notification-more"');
     expect(notificationRouteSource).not.toContain("`/users/${encodeURIComponent(loginId)}`");
     expect(notificationRouteSource).toContain("`/${encodeURIComponent(loginId)}`");
@@ -2024,7 +2044,9 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('class="textbox"');
     expect(listHtml).toContain('name="filter"');
     expect(listHtml).toContain('placeholder="project.searchPlaceholder"');
-    expect(listHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(listHtml).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(listHtml).toContain('name="orderBy"');
     expect(listHtml).toContain('name="orderDir"');
     expect(listHtml).toContain('class="two-column-icon mr10 hide-in-mobile"');
@@ -2049,7 +2071,9 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain(">issue.noAuthor</span>");
     expect(listHtml).not.toContain('title="issue.noAuthor"');
     expect(listHtml).not.toContain('href="/yona/issue.noAuthor"');
-    expect(listHtml).toContain('<span class="infos-item" data-placement="bottom" data-toggle="tooltip" title="now">now</span>');
+    expect(listHtml).toContain(
+      '<span class="infos-item" data-placement="bottom" data-toggle="tooltip" title="now">now</span>',
+    );
     expect(listHtml).not.toContain(">later</span>");
     expect(listHtml).toContain('<div class="write-btn-wrap"></div>');
     expect(listHtml).toContain('class="page-navigation-wrap" id="pagination"');
@@ -2108,7 +2132,8 @@ describe("file-route parity harness", () => {
     expect(creatableListHtml).not.toContain("board-badge");
     expect(creatableListHtml).not.toContain("board-badges");
     expect(creatableListHtml).toContain('class="title-prefix"');
-    expect(creatableListHtml).toContain('href="#!"');
+    expect(creatableListHtml).toContain('href="/yona/owner/projectYobi/post/16"');
+    expect(creatableListHtml).not.toContain('href="#!"');
     expect(creatableListHtml).toContain("[Guide]");
     expect(creatableListHtml).toContain("[Pinned]");
     expect(creatableListHtml).toContain("> Board post</a>");
@@ -2142,7 +2167,7 @@ describe("file-route parity harness", () => {
       />,
     );
     expect(emptyListHtml).toContain('<div class="error-wrap">');
-    expect(emptyListHtml).toContain('post.is.empty');
+    expect(emptyListHtml).toContain("post.is.empty");
 
     const detailHtml = renderToStaticMarkup(
       <ProjectBoardDetailPage
@@ -2264,7 +2289,7 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('class="write-comment-box mt20"');
     expect(detailHtml).toContain('data-login="required"');
     expect(detailHtml).toContain('class="comment disabled"');
-    expect(detailHtml).toContain('<dt>label</dt>');
+    expect(detailHtml).toContain("<dt>label</dt>");
     expect(detailHtml).toContain('class="label issue-label active static"');
     expect(detailHtml).toContain('data-label-id="7"');
     expect(detailHtml).toContain('href="&amp;labelIds=7"');
@@ -2309,9 +2334,7 @@ describe("file-route parity harness", () => {
     expect(writableDetailHtml).not.toContain("Watchers 2");
     expect(writableDetailHtml).toContain('href="/yona/owner/projectYobi/postform"');
     expect(writableDetailHtml).toContain('id="comment-form"');
-    expect(writableDetailHtml).toContain(
-      'action="/yona/owner/projectYobi/post/16/comment"',
-    );
+    expect(writableDetailHtml).toContain('action="/yona/owner/projectYobi/post/16/comment"');
     expect(writableDetailHtml).toContain('encType="multipart/form-data"');
     expect(writableDetailHtml).toContain('<div class="write-comment-box">');
     expect(writableDetailHtml).toContain('<div class="write-comment-wrap">');
@@ -2396,8 +2419,11 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain('value="9"');
     expect(childCommentHtml).toContain('class="oneline-comment-box"');
     expect(childCommentHtml).toContain('markdown="true"');
-    expect(childCommentHtml).toContain('placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"');
-    expect(childCommentHtml).toContain(">OK</button>");
+    expect(childCommentHtml).toContain(
+      'placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"',
+    );
+    expect(childCommentHtml).toContain('data-legacy-label="OK"');
+    expect(childCommentHtml).toContain(">comment.save</button>");
     expect(childCommentHtml).toContain('class="notification-receiver"');
     expect(childCommentHtml).toContain("notification.receiver.list.title");
 
@@ -2437,7 +2463,9 @@ describe("file-route parity harness", () => {
     expect(orgHtml).toContain('class="project-menu-nav project-menu-gruop"');
     expect(orgHtml).toContain(">title.organizationHome</a>");
     expect(orgHtml).toContain(">menu.issue</a>");
-    expect(orgHtml).toContain('<li class="active"><a href="/yona/organizations/weblabs/boards">menu.board</a>');
+    expect(orgHtml).toContain(
+      '<li class="active"><a href="/yona/organizations/weblabs/boards">menu.board</a>',
+    );
     expect(orgHtml).toContain(">menu.pullRequest</a>");
     expect(orgHtml).toContain('<div class="page-wrap-outer"><div class="project-page-wrap">');
     expect(orgHtml).toContain('<div class="search-wrap underline board-toolbar">');
@@ -2457,7 +2485,9 @@ describe("file-route parity harness", () => {
     expect(orgHtml).toContain('class="textbox group-board"');
     expect(orgHtml).toContain('name="filter"');
     expect(orgHtml).toContain('placeholder="title.searchByKeyword"');
-    expect(orgHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(orgHtml).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(orgHtml).toContain('class="two-column-icon mr10 hide-in-mobile"');
     expect(orgHtml).toContain('title="common.two.column.mode"');
     expect(orgHtml).toContain('data-content="common.two.column.mode.desc"');
@@ -2521,9 +2551,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('<h1 class="sr-only">post.write</h1>');
     expect(createHtml).not.toContain("New post");
     expect(createHtml).toContain('<div class="project-page-wrap">');
-    expect(createHtml).toContain(
-      'action="/yona/owner/projectYobi/post"',
-    );
+    expect(createHtml).toContain('action="/yona/owner/projectYobi/post"');
     expect(createHtml).toContain('method="post"');
     expect(createHtml).toContain('encType="multipart/form-data"');
     expect(createHtml).toContain('class="nm board-form"');
@@ -2642,7 +2670,7 @@ describe("file-route parity harness", () => {
     expect(editHtml).toContain('id="notificationMail"');
     expect(editHtml).toContain('name="notificationMail"');
     expect(editHtml).toContain('value="yes"');
-    expect(editHtml).toContain('notification.send.mail');
+    expect(editHtml).toContain("notification.send.mail");
 
     const onlineCommitHtml = renderToStaticMarkup(
       <ProjectPostFormPage
@@ -2798,7 +2826,12 @@ describe("file-route parity harness", () => {
     const listHtml = renderToStaticMarkup(
       <ProjectMilestoneListPage
         detail={detail}
-        list={{ milestones: [milestone, { ...milestone, id: 8, title: "v2.0" }], orderBy: "dueDate", orderDir: "desc", state: "all" }}
+        list={{
+          milestones: [milestone, { ...milestone, id: 8, title: "v2.0" }],
+          orderBy: "dueDate",
+          orderDir: "desc",
+          state: "all",
+        }}
         owner="owner"
         projectName="projectYobi"
         runtimeConfig={runtimeConfig}
@@ -3167,7 +3200,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<div class="project-page-wrap">');
     expect(html).toContain('<div class="board-header issue">');
     expect(html).toContain('<strong class="board-id">#1</strong>');
-    expect(html).toContain('<div class="pull-right"><div id="reviewers" style="display:inline-block;margin-right:5px">');
+    expect(html).toContain(
+      '<div class="pull-right"><div id="reviewers" style="display:inline-block;margin-right:5px">',
+    );
     expect(html).toContain("pullRequest.review.participants 0");
     expect(html).toContain("pullRequest.review.required 0/1");
     expect(html).toContain("pullRequest.review");
@@ -3180,7 +3215,9 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('<span class="loginid"> <strong>@</strong>owner</span>');
     expect(html).toContain('<div class="pullRequest-branchInfo">');
-    expect(html).toContain('class="from" data-original-title="pullRequest.from" data-toggle="tooltip"');
+    expect(html).toContain(
+      'class="from" data-original-title="pullRequest.from" data-toggle="tooltip"',
+    );
     expect(html).toContain('class="to" data-original-title="pullRequest.to" data-toggle="tooltip"');
     expect(html).toContain('class="branchName"');
     expect(html).toContain('<div class="content markdown-wrap"><p>Ship <strong>PR</strong> with ');
@@ -3223,7 +3260,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('href="#event-11" title="now"');
     expect(html).toContain('<ul class="commit-list">');
     expect(html).toContain('<li class="comment-body commit-info outdated">');
-    expect(html).toContain('<a class="commit-id" href="/yona/owner/projectYobi/pullRequest/1/changes/');
+    expect(html).toContain(
+      '<a class="commit-id" href="/yona/owner/projectYobi/pullRequest/1/changes/',
+    );
     expect(html).toContain('<a class="commitMsg short"');
     expect(html).toContain('<pre class="commitMsg desc hidden">Commit SHA markdown');
     expect(html).not.toContain('<section class="review-list-wrap">');
@@ -3542,7 +3581,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('value="7"');
     expect(html).toContain('href="/yona/currentUser"');
     expect(html).toContain('title="Current User"');
-    expect(html).toContain('<img alt="" height="32" src="/yona/avatar/current-user.png" width="32"/>');
+    expect(html).toContain(
+      '<img alt="" height="32" src="/yona/avatar/current-user.png" width="32"/>',
+    );
     expect(html).not.toContain('href="/yona/owner" title="Owner User"><span class="avatar-img">');
     expect(html).toContain('name="contents"');
     expect(html).toContain('data-toggle="markdown-editor"');
@@ -3721,9 +3762,9 @@ describe("file-route parity harness", () => {
       />,
     );
 
-    expect(html).toContain('<strong>User.anonymous.name</strong>');
+    expect(html).toContain("<strong>User.anonymous.name</strong>");
     expect(html).toContain("Anonymous author commit");
-    expect(html).not.toContain('<strong>Anonymous</strong>');
+    expect(html).not.toContain("<strong>Anonymous</strong>");
   });
 
   it("renders pull request review threads without generic English fallback labels", () => {
@@ -3954,11 +3995,17 @@ describe("file-route parity harness", () => {
     expect(projectHtml).toContain('<div class="project-page-wrap">');
     expect(projectHtml).toContain('<div class="row-fluid cb" pjax-container="">');
     expect(projectHtml).toContain('<div class="left-menu span2 search-wrap hide-in-mobile"');
-    expect(projectHtml).toContain('<form id="search" name="search" action="/yona/owner/projectYobi/pullRequests" method="get">');
+    expect(projectHtml).toContain(
+      '<form id="search" name="search" action="/yona/owner/projectYobi/pullRequests" method="get">',
+    );
     expect(projectHtml).toContain('<div class="srch-advanced" id="advanced-search-form">');
-    expect(projectHtml).toContain('<select data-format="user" id="contributors" name="contributorId">');
-    expect(projectHtml).toContain('pullRequest.sender');
-    expect(projectHtml).toContain('<option data-login-id="owner" value="7" selected="">Owner User</option>');
+    expect(projectHtml).toContain(
+      '<select data-format="user" id="contributors" name="contributorId">',
+    );
+    expect(projectHtml).toContain("pullRequest.sender");
+    expect(projectHtml).toContain(
+      '<option data-login-id="owner" value="7" selected="">Owner User</option>',
+    );
     expect(projectHtml).toContain('<option data-login-id="reviewer" value="8">Reviewer</option>');
     expect(projectHtml).toContain("<h5>pullRequest.pushed.branches.title</h5>");
     expect(projectHtml).toContain('<div class="alert alert-info">');
@@ -3970,19 +4017,21 @@ describe("file-route parity harness", () => {
     expect(projectHtml).toContain(
       'data-request-uri="/yona/owner/projectYobi/pushedBranch/91/delete"',
     );
-    expect(projectHtml).toContain('pullRequest.new');
+    expect(projectHtml).toContain("pullRequest.new");
     expect(projectHtml).toContain('<div class="tab-content" style="clear:both;padding-top:15px">');
     expect(projectHtml).toContain('<div class="row-fluid tab-pane active" id="list">');
-    expect(projectHtml).toContain('pullRequest.state.open');
-    expect(projectHtml).toContain('pullRequest.state.closed');
-    expect(projectHtml).toContain('pullRequest.sent');
+    expect(projectHtml).toContain("pullRequest.state.open");
+    expect(projectHtml).toContain("pullRequest.state.closed");
+    expect(projectHtml).toContain("pullRequest.sent");
     expect(projectHtml).toContain('<span class="num-badge">31</span>');
     expect(projectHtml).toContain('<span class="num-badge">4</span>');
     expect(projectHtml).toContain('<span class="num-badge">1 / 6</span>');
     expect(projectHtml).not.toContain("Yona Rust Project");
     expect(projectHtml).not.toContain("<h1>Pull Requests</h1>");
     expect(projectHtml).toContain('<ul class="post-list-wrap">');
-    expect(projectHtml).toContain('<li class="post-item title" href="/yona/owner/projectYobi/pullRequest/1">');
+    expect(projectHtml).toContain(
+      '<li class="post-item title" href="/yona/owner/projectYobi/pullRequest/1">',
+    );
     expect(projectHtml).toContain('<span class="post-id">1</span>');
     expect(projectHtml).toContain(">No contributor display name</a>");
     expect(projectHtml).toContain(">issue.noAuthor</span>");
@@ -4030,17 +4079,25 @@ describe("file-route parity harness", () => {
     );
 
     expect(organizationHtml).toContain('<main class="app-shell pull-request-page">');
-    expect(organizationHtml).not.toContain('<main class="app-shell pull-request-page page-wrap-outer">');
+    expect(organizationHtml).not.toContain(
+      '<main class="app-shell pull-request-page page-wrap-outer">',
+    );
     expect(organizationHtml).toContain('class="project-header-outer"');
     expect(organizationHtml).toContain('class="project-header-inner"');
     expect(organizationHtml).toContain('class="group-title-head">group</span>');
     expect(organizationHtml).toContain('<a href="/yona/organizations/acme">acme</a>');
-    expect(organizationHtml).toContain('<div class="page-wrap-outer"><div class="project-page-wrap">');
+    expect(organizationHtml).toContain(
+      '<div class="page-wrap-outer"><div class="project-page-wrap">',
+    );
     expect(organizationHtml).toContain('<div class="row-fluid cb" pjax-container="">');
-    expect(organizationHtml).toContain('<form id="search" name="search" action="/yona/organizations/acme/pullrequests" method="get">');
-    expect(organizationHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
-    expect(organizationHtml).toContain('pullRequest.state.open');
-    expect(organizationHtml).toContain('pullRequest.state.closed');
+    expect(organizationHtml).toContain(
+      '<form id="search" name="search" action="/yona/organizations/acme/pullrequests" method="get">',
+    );
+    expect(organizationHtml).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
+    expect(organizationHtml).toContain("pullRequest.state.open");
+    expect(organizationHtml).toContain("pullRequest.state.closed");
     expect(organizationHtml).toContain('<span class="num-badge">31</span>');
     expect(organizationHtml).toContain('<span class="num-badge">4</span>');
     expect(organizationHtml).not.toContain("Yona Rust Organization");
@@ -4052,9 +4109,7 @@ describe("file-route parity harness", () => {
     expect(organizationHtml).toContain('value="2"');
     expect(organizationHtml).toContain("button.prevPage");
     expect(organizationHtml).toContain("button.nextPage");
-    expect(organizationHtml).toContain(
-      'href="/yona/organizations/acme/pullrequests?filter=read"',
-    );
+    expect(organizationHtml).toContain('href="/yona/organizations/acme/pullrequests?filter=read"');
     expect(organizationHtml).toContain(
       'href="/yona/organizations/acme/pullrequests?filter=read&amp;pageNum=3"',
     );
@@ -4209,8 +4264,12 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<ul class="lst-stacked unstyled">');
     expect(html).toContain("review.allReview");
     expect(html).toContain('data-type="participantId" data-value="2"');
-    expect(html).toContain('href="/yona/owner/projectYobi/reviews?state=open&amp;filter=comment&amp;authorId=2&amp;orderBy=createdDate&amp;orderDir=desc"');
-    expect(html).toContain('href="/yona/owner/projectYobi/reviews?state=open&amp;filter=comment&amp;participantId=2&amp;orderBy=createdDate&amp;orderDir=desc"');
+    expect(html).toContain(
+      'href="/yona/owner/projectYobi/reviews?state=open&amp;filter=comment&amp;authorId=2&amp;orderBy=createdDate&amp;orderDir=desc"',
+    );
+    expect(html).toContain(
+      'href="/yona/owner/projectYobi/reviews?state=open&amp;filter=comment&amp;participantId=2&amp;orderBy=createdDate&amp;orderDir=desc"',
+    );
     expect(html).toContain('form id="search"');
     expect(html).toContain('<div class="pull-right filters">');
     expect(html).toContain('<ul class="nav nav-tabs nm">');
@@ -4222,9 +4281,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain(
       'href="/yona/owner/projectYobi/pullRequest/1/changes/abcdef123456#thread-7"',
     );
-    expect(html).toContain(
-      'href="/yona/owner/projectYobi/commit/fedcba654321#thread-10"',
-    );
+    expect(html).toContain('href="/yona/owner/projectYobi/commit/fedcba654321#thread-10"');
     expect(html).toContain("Review list comment");
     expect(html).toContain("Commit discussion body");
     expect(html).toContain("No author review body");
@@ -4302,9 +4359,7 @@ describe("file-route parity harness", () => {
     expect(organizationPullRequestRouteSource).not.toContain("Read organization PRs failed.");
     expect(organizationPullRequestRouteSource).toContain("BadRequestPage");
     expect(organizationPullRequestRouteSource).toContain('"bad-request"');
-    expect(organizationClosedPullRequestRouteSource).not.toContain(
-      "Read organization PRs failed.",
-    );
+    expect(organizationClosedPullRequestRouteSource).not.toContain("Read organization PRs failed.");
     expect(organizationClosedPullRequestRouteSource).toContain("BadRequestPage");
     expect(organizationClosedPullRequestRouteSource).toContain('"bad-request"');
 
@@ -4325,7 +4380,10 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     const pullRequestDetailRouteSource = fs.readFileSync(
-      path.resolve(__dirname, "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx"),
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      ),
       "utf8",
     );
     const pullRequestChangesRouteSource = fs.readFileSync(
@@ -4362,9 +4420,7 @@ describe("file-route parity harness", () => {
     expect(newPullRequestFormRouteSource).toContain("BadRequestPage");
     expect(newPullRequestFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
     expect(newPullRequestFormRouteSource).not.toContain("Create pull request failed.");
-    expect(pullRequestEditFormRouteSource).not.toContain(
-      "Read pull request form options failed.",
-    );
+    expect(pullRequestEditFormRouteSource).not.toContain("Read pull request form options failed.");
     expect(pullRequestEditFormRouteSource).toContain("BadRequestPage");
     expect(pullRequestEditFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
     expect(pullRequestEditFormRouteSource).not.toContain("Update pull request failed.");
@@ -4380,9 +4436,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestDetailRouteSource).not.toContain("Close pull request failed.");
     expect(pullRequestDetailRouteSource).not.toContain("Reopen pull request failed.");
     expect(pullRequestDetailRouteSource).not.toContain("Merge pull request failed.");
-    expect(pullRequestDetailRouteSource).not.toContain(
-      "Delete pull request source branch failed.",
-    );
+    expect(pullRequestDetailRouteSource).not.toContain("Delete pull request source branch failed.");
     expect(pullRequestDetailRouteSource).not.toContain(
       "Restore pull request source branch failed.",
     );
@@ -4452,7 +4506,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('data-toggle="comment-delete"');
     expect(pullRequestViewsSource).toContain("yobicon-trash");
     expect(pullRequestViewsSource).toContain("reviewThreadStateHref");
-    expect(pullRequestViewsSource).toContain('data-request-uri={reviewThreadStateHref');
+    expect(pullRequestViewsSource).toContain("data-request-uri={reviewThreadStateHref");
     expect(pullRequestViewsSource).toContain("review-form");
     expect(pullRequestViewsSource).toContain("board-comment-form");
     expect(pullRequestViewsSource).toContain('id="review-form"');
@@ -4618,7 +4672,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("updateProjectLabel");
     expect(routeSource).toContain("deleteProjectLabel");
     expect(routeSource).toContain("ProjectHeader");
-    expect(routeSource).toContain('<ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />');
+    expect(routeSource).toContain(
+      "<ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />",
+    );
     expect(routeSource).toContain('<ProjectMenu activeMenu="settings"');
     expect(routeSource).toContain('className="page-wrap-outer"');
     expect(routeSource).toContain('className="project-page-wrap label-editor-wrap"');
@@ -4841,7 +4897,7 @@ describe("file-route parity harness", () => {
               eventType: "NEW_ISSUE",
               id: 9,
               payloadUrl: "https://hooks.example.test/yona",
-              requestBody: "{\"text\":\"hello\"}",
+              requestBody: '{"text":"hello"}',
               responseBody: "ok",
               status: "success",
               webhookId: 7,
@@ -5035,6 +5091,9 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="btnTransfer"');
     expect(viewSource).toContain('id="alertTransfer"');
     expect(viewSource).toContain('id="btnTransferExec"');
+    expect(viewSource).toContain('setValidationMessage("project.transfer.alert")');
+    expect(viewSource).toContain("const canOpenTransferModal = accepted");
+    expect(viewSource).not.toContain("destination.trim().length > 0 &&");
 
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const projectDetail: ProjectDetailViewModel = {
@@ -5090,6 +5149,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('id="btnTransferExec"');
     expect(html).toContain("button.yes");
     expect(html).toContain("button.no");
+    expect(html).not.toContain("project.transfer.alert");
     expect(html).not.toContain("<h1>project.transfer</h1>");
     expect(html).not.toContain("button.confirm");
   });
@@ -5286,7 +5346,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain("Public profile PR");
     expect(html).toContain('class="avatar-wrap mlarge"');
     expect(html).toContain('alt="owner / publicYobi"');
-    expect(html).toContain('class="infos-item infos-link-item" data-placement="top" data-toggle="tooltip" title="Door"');
+    expect(html).toContain(
+      'class="infos-item infos-link-item" data-placement="top" data-toggle="tooltip" title="Door"',
+    );
     expect(html).toContain('<span class="infos-item" title="May 18, 2026">May 18, 2026</span>');
     expect(html).toContain('data-original-title="Mona"');
     expect(html).toContain("Public profile no author PR");
@@ -5467,7 +5529,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain(">title.organization.list<");
     expect(html).toContain('action="/yona/projects"');
     expect(html).toContain('placeholder="site.project.filter"');
-    expect(html).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(html).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(html).toContain('class="ico ico-err1"');
     expect(html).toContain(">project.is.empty<");
     expect(html).not.toContain(">Search<");
@@ -5538,7 +5602,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain(">title.organization.list<");
     expect(html).toContain('action="/yona/orgs"');
     expect(html).toContain('placeholder="site.organization.filter"');
-    expect(html).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(html).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(html).toContain('class="ico ico-err1"');
     expect(html).toContain(">organization.is.empty<");
     expect(html).not.toContain(">Search<");
@@ -5560,7 +5626,9 @@ describe("file-route parity harness", () => {
     );
 
     expect(html).toContain('class="owner-avatar-wrap"');
-    expect(html).toContain('<a href="/yona/organizations/weblabs"><img alt="weblabs" src="/yona/files/2"/></a>');
+    expect(html).toContain(
+      '<a href="/yona/organizations/weblabs"><img alt="weblabs" src="/yona/files/2"/></a>',
+    );
     expect(html).toContain('class="black" href="/yona/organizations/weblabs"');
     expect(html).toContain(">Web labs<");
     expect(html).not.toContain('class="project-avatar"');
@@ -5683,7 +5751,10 @@ describe("file-route parity harness", () => {
   it("renders common error pages with legacy message keys and home buttons", () => {
     const sharedSource = fs.readFileSync(path.resolve(__dirname, "routes/-shared.tsx"), "utf8");
     const rootRouteSource = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
-    const appRuntimeSource = fs.readFileSync(path.resolve(__dirname, "app-runtime-context.tsx"), "utf8");
+    const appRuntimeSource = fs.readFileSync(
+      path.resolve(__dirname, "app-runtime-context.tsx"),
+      "utf8",
+    );
     const badRequestHtml = renderToStaticMarkup(<BadRequestPage href="/yona/" />);
     const forbiddenHtml = renderToStaticMarkup(<ForbiddenPage href="/yona/" />);
     const notFoundHtml = renderToStaticMarkup(<NotFoundPage href="/yona/missing" />);
