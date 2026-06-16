@@ -585,6 +585,13 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('name="referCommentId"');
     expect(createHtml).toContain('value="55"');
     expect(createHtml).not.toContain("Yona Rust Project");
+    const issueViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-issue-views.tsx"),
+      "utf8",
+    );
+    expect(issueViewsSource).toContain("legacyIssueValidationMessage");
+    expect(issueViewsSource).toContain("issue.error.emptyTitle");
+    expect(issueViewsSource).toContain("issue.error.invalid.duedate");
 
     const editHtml = renderToStaticMarkup(
       <ProjectIssueFormPage

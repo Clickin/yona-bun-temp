@@ -581,9 +581,9 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 | 기능               | Legacy 동작                                         | 현재 상태             | Phase |
 | ------------------ | --------------------------------------------------- | --------------------- | ----- |
 | 이슈 목록          | 필터(상태/담당자/라벨/마일스톤), 정렬, 페이지네이션 | ✅ Phase 2A 구현; legacy `issue/list.scala.html` / `partial_list_wrap` / `partial_searchform` / `partial_list` shell anchors restored including `common.twoColumnModeCheckboxArea` and `common.showSubtasksCheckbox` controls, assignee avatar/due-date/weight/subtask row payload and shell covered | 2     |
-| 이슈 작성          | 제목, 본문(마크다운), 담당자, 마일스톤, 라벨 선택   | ✅ Phase 2A 구현      | 2     |
+| 이슈 작성          | 제목, 본문(마크다운), 담당자, 마일스톤, 라벨 선택   | ✅ Phase 2A 구현; legacy `yobi.issue.Write.js` title/due-date validation scalars preserved | 2     |
 | 이슈 상세 보기     | 제목/본문, 담당자, 마일스톤, 라벨, 이벤트 타임라인  | ✅ Phase 2A 구현      | 2     |
-| 이슈 수정          | 제목/본문/담당자/마일스톤/라벨 수정                 | ✅ Phase 2A 구현      | 2     |
+| 이슈 수정          | 제목/본문/담당자/마일스톤/라벨 수정                 | ✅ Phase 2A 구현; legacy `yobi.issue.Write.js` title/due-date validation scalars preserved | 2     |
 | 이슈 삭제          | 작성자 또는 관리자만 가능                           | ✅ Phase 2A 구현      | 2     |
 | 이슈 상태 변경     | open ↔ closed                                       | ✅ Phase 2A 구현      | 2     |
 | 댓글 CRUD          | 작성/수정/삭제, 마크다운 지원                       | ✅ Phase 2A 구현      | 2     |

@@ -3902,6 +3902,38 @@ function IssueCommentEditForm(props: {
   );
 }
 
+function isLegacyIssueDueDateValid(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return true;
+  }
+
+  const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(trimmed);
+  if (dateParts) {
+    const year = Number(dateParts[1]);
+    const month = Number(dateParts[2]);
+    const day = Number(dateParts[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return (
+      parsed.getUTCFullYear() === year &&
+      parsed.getUTCMonth() === month - 1 &&
+      parsed.getUTCDate() === day
+    );
+  }
+
+  return !Number.isNaN(Date.parse(trimmed));
+}
+
+function legacyIssueValidationMessage(input: { dueDate: string; title: string }) {
+  if (input.title.trim().length === 0) {
+    return "issue.error.emptyTitle";
+  }
+  if (!isLegacyIssueDueDateValid(input.dueDate)) {
+    return "issue.error.invalid.duedate";
+  }
+  return null;
+}
+
 export function ProjectIssueFormPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
@@ -3939,6 +3971,7 @@ export function ProjectIssueFormPage(props: {
     props.initialIssue?.parentIssueId ?? props.initialParentIssueId ?? 0,
   );
   const [submitting, setSubmitting] = React.useState(false);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const availableLabels = detail.dashboard?.labels ?? [];
   const milestoneOptions = props.milestoneOptions ?? [];
   const parentIssueOptions = props.parentIssueOptions ?? [];
@@ -3952,6 +3985,7 @@ export function ProjectIssueFormPage(props: {
     setLabelIds((props.initialIssue?.labels ?? []).map((label) => label.id));
     setMilestoneId(props.initialIssue?.milestoneId ?? 0);
     setParentIssueId(props.initialIssue?.parentIssueId ?? props.initialParentIssueId ?? 0);
+    setValidationMessage(null);
   }, [
     props.initialIssue?.assigneeLoginId,
     props.initialIssue?.bodyMarkdown,
@@ -3992,6 +4026,12 @@ export function ProjectIssueFormPage(props: {
         );
 
   const submitIssueForm = (intent: "save" | "draft" | "publish") => {
+    const nextValidationMessage = legacyIssueValidationMessage({ dueDate, title });
+    if (nextValidationMessage) {
+      setValidationMessage(nextValidationMessage);
+      return;
+    }
+    setValidationMessage(null);
     const input = buildProjectIssueFormSubmitInput({
       assigneeLoginId,
       attachmentIds,
@@ -4065,7 +4105,10 @@ export function ProjectIssueFormPage(props: {
                             id="title"
                             maxLength={250}
                             name="title"
-                            onChange={(event) => setTitle(event.currentTarget.value)}
+                            onChange={(event) => {
+                              setValidationMessage(null);
+                              setTitle(event.currentTarget.value);
+                            }}
                             placeholder="title"
                             data-legacy-tabindex="1"
                             title={props.mode === "create" ? "title.help.key" : undefined}
@@ -4136,7 +4179,10 @@ export function ProjectIssueFormPage(props: {
                             onAttachmentUpload={(attachment) =>
                               setAttachmentIds((current) => [...current, attachment.id])
                             }
-                            onChange={setBodyMarkdown}
+                            onChange={(nextBodyMarkdown) => {
+                              setValidationMessage(null);
+                              setBodyMarkdown(nextBodyMarkdown);
+                            }}
                             onSearchMentionUsers={props.onSearchMentionUsers}
                             placeholder=""
                             runtimeConfig={props.runtimeConfig}
@@ -4357,7 +4403,10 @@ export function ProjectIssueFormPage(props: {
                             data-toggle="calendar"
                             id="issueDueDate"
                             name="dueDate"
-                            onChange={(event) => setDueDate(event.currentTarget.value)}
+                            onChange={(event) => {
+                              setValidationMessage(null);
+                              setDueDate(event.currentTarget.value);
+                            }}
                             type="text"
                             value={dueDate}
                           />
@@ -4447,6 +4496,11 @@ export function ProjectIssueFormPage(props: {
                   </div>
                 </div>
               </div>
+              {validationMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {validationMessage}
+                </div>
+              ) : null}
             </form>
           </div>
         </div>
