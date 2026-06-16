@@ -1599,6 +1599,42 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_label_update).await;
+    let legacy_issue_weight_up = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_weight_up["weight"], 1);
+    let legacy_issue_weight_down = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/downvoteWeight",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_weight_down["weight"], 0);
+    let anonymous_legacy_issue_weight = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_weight).await;
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

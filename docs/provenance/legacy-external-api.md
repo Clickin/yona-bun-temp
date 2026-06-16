@@ -75,8 +75,8 @@ contract.
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer?query=` | `IssueApi.findSharerByloginIds()` | Resolve existing issue sharers by comma-separated login ids. | Migrator/deferred; app uses canonical `/api/v1`. |
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers?query=` | `IssueApi.findSharableUsers()` | User/project sharer search. | Migrator/deferred; app uses canonical `/api/v1`. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share` | `IssueApi.updateSharer()` | Add/delete issue sharer and send notification. | Migrator/deferred; app uses canonical `/api/v1`. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight` | `IssueApi.upvoteWeight()` | Increment issue weight. | Migrator/deferred; app has canonical behavior. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight` | `IssueApi.downvoteWeight()` | Decrement issue weight. | Migrator/deferred; app has canonical behavior. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight` | `IssueApi.upvoteWeight()` | Increment issue weight. | Implemented in app server with legacy `{weight}` response and permission-denied JSON. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight` | `IssueApi.downvoteWeight()` | Decrement issue weight. | Implemented in app server with legacy `{weight}` response and permission-denied JSON. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange` | `IssueApi.detectChange()` | Poll issue body/comment changes and checksum. | Migrator/deferred; not app-server scope. |
 | `POST /-_-api/v1/translation` | `IssueApi.translate()` | Translate issue/post/comment Markdown source; return 412 when unconfigured. | Implemented in app server as direct helper. |
 
