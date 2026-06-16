@@ -25,6 +25,7 @@ test("lint cleanup surfaces keep explicit legacy parity gate coverage", () => {
       "frontend/src/routes/-ui-kit-views.tsx",
       "frontend/src/routes/-workspace-views.tsx",
       "frontend/src/routes/notification/route.tsx",
+      "frontend/src/routes/user/editform/notifications/route.tsx",
       "frontend/src/routes/sites/$pageName/route.tsx",
       "tests/parity/issue-auth-repository-organization-project-pull-request-search-workspace-notification-site-admin-board-markdown.test.mjs",
     ],

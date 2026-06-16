@@ -358,6 +358,8 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*\/me/i,
       /^frontend\/src\/api\/workspace\.ts$/i,
       /^frontend\/src\/routes\/-workspace-settings-view\.tsx$/i,
+      /^frontend\/src\/routes\/user\/editform\/(?:emails|notifications|password|token)?\/?route\.tsx$/i,
+      /^frontend\/src\/routes\/user\/editform\/index\.tsx$/i,
       /^frontend\/src\/routes\/user\/files\/route\.tsx$/i,
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],

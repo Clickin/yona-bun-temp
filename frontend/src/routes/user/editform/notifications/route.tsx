@@ -45,7 +45,9 @@ function EditNotificationsRouteComponent() {
           );
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error ? error.message : "error.failedTo userinfo.changeNotifications",
+          );
         }
       }}
     />

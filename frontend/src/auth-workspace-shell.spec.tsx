@@ -150,7 +150,9 @@ describe("auth and workspace views", () => {
     expect(html).toContain('class="provider-name"');
     expect(html).toContain("Sign in with github");
     expect(html).not.toContain("Sign in with GitHub");
-    expect(html).toContain('src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
+    expect(html).toContain(
+      'src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"',
+    );
     expect(html).toContain('alt="login with Google"');
     expect(html).toContain("Sign in with Google");
     expect(html).not.toContain('class="google"');
@@ -642,7 +644,9 @@ describe("auth and workspace views", () => {
     expect(projectsHtml).toContain("title.organization.list");
     expect(projectsHtml).toContain('action="/yona/projects"');
     expect(projectsHtml).toContain('class="owner-avatar-wrap"');
-    expect(projectsHtml).toContain('<a href="/yona/yobi/projectYobi"><img alt="projectYobi" src="/yona/files/1"/></a>');
+    expect(projectsHtml).toContain(
+      '<a href="/yona/yobi/projectYobi"><img alt="projectYobi" src="/yona/files/1"/></a>',
+    );
     expect(projectsHtml).not.toContain('class="project-avatar"');
     expect(projectsHtml).not.toContain('<img alt="" src="/yona/files/1"/>');
     expect(projectsHtml).toContain("projectYobi");
@@ -1000,7 +1004,7 @@ describe("auth and workspace views", () => {
     expect(routeSource).not.toContain("Avatar upload failed.");
   });
 
-  it("keeps workspace settings mutation fallbacks on legacy common bad-request keys", () => {
+  it("keeps workspace settings mutation fallbacks on legacy scalar keys", () => {
     const routeSources = [
       "routes/user/editform/index.tsx",
       "routes/user/editform/password/route.tsx",
@@ -1012,6 +1016,7 @@ describe("auth and workspace views", () => {
       .join("\n");
 
     expect(routeSources).toContain("error.badrequest");
+    expect(routeSources).toContain("error.failedTo userinfo.changeNotifications");
     expect(routeSources).not.toContain("Update profile failed.");
     expect(routeSources).not.toContain("Change password failed.");
     expect(routeSources).not.toContain("Reset token failed.");
