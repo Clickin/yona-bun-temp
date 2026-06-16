@@ -10,10 +10,10 @@ use crate::repo_types::{
     CreateUserInput, CreateWebhookDeliveryInput, CreateWebhookThreadInput, DeleteAttachmentResult,
     DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
     IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueChildRecord,
-    IssueCommentOriginRecord, IssueCommentRecord, IssueCommentVoterRecord,
-    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
-    IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
+    IssueCommentNotificationReceiverRecord, IssueCommentOriginRecord, IssueCommentRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
     LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyProjectTitleHeadRecord,
     LegacyResourceTargetRecord, MailboxActionExecutionInput, MailboxActionExecutionRecord,
     MailboxNormalizedMessageInput, MailboxNormalizedMessageResult, MailboxReplyTargetRecord,
@@ -13764,6 +13764,57 @@ impl AppRepository {
         }
 
         Ok(sharers)
+    }
+
+    /// Previews the legacy notification receivers for a new issue comment.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the issue or receiver rows cannot be read.
+    pub async fn list_issue_comment_notification_receivers(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: i64,
+        comment_markdown: &str,
+    ) -> Result<Option<Vec<IssueCommentNotificationReceiverRecord>>, DbErr> {
+        let Some((project, issue)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let mut seen = HashSet::new();
+        let mut receiver_ids = Vec::new();
+        for user_id in self
+            .issue_notification_receiver_ids(&project, &issue, "NEW_COMMENT")
+            .await?
+        {
+            if user_id != actor_id && seen.insert(user_id) {
+                receiver_ids.push(user_id);
+            }
+        }
+        for user_id in self.mentioned_active_user_ids(comment_markdown).await? {
+            if seen.insert(user_id) {
+                receiver_ids.push(user_id);
+            }
+        }
+
+        let mut receivers = Vec::new();
+        for user_id in receiver_ids {
+            let Some(user) = self.find_user_by_id(user_id).await? else {
+                continue;
+            };
+            receivers.push(IssueCommentNotificationReceiverRecord {
+                avatar_url: String::new(),
+                display_name: user.display_name.clone(),
+                email_address: user.email_address,
+                login_id: user.login_id,
+                pure_name_only: user.display_name,
+            });
+        }
+        Ok(Some(receivers))
     }
 
     async fn read_project_issue_model(

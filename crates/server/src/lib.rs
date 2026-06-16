@@ -637,6 +637,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_comment_backend = route_backend.clone();
     let legacy_issue_comment_session_manager = session_manager.clone();
     let legacy_issue_comment_base_path = base_path.clone();
+    let legacy_issue_comment_receivers_backend = route_backend.clone();
+    let legacy_issue_comment_receivers_session_manager = session_manager.clone();
     let legacy_issue_comment_update_backend = route_backend.clone();
     let legacy_issue_comment_update_session_manager = session_manager.clone();
     let legacy_issue_update_backend = route_backend.clone();
@@ -1063,6 +1065,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_issue_detect_change_session_manager.clone(),
                             legacy_issue_detect_change_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/commentNotiReceivers",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_issue_comment_notification_receivers(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_comment_receivers_session_manager.clone(),
+                            legacy_issue_comment_receivers_backend.clone(),
                         )
                         .await
                     }
@@ -27472,6 +27495,71 @@ async fn legacy_external_detect_issue_change(
         }
     }
     Json(payload).into_response()
+}
+
+async fn legacy_external_issue_comment_notification_receivers(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: serde_json::Value,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "issue comment receivers require repository backend",
+        )
+        .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    if let Err(error) =
+        read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+    let comment_markdown = body
+        .get("comment")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default();
+    let receivers = match repository
+        .list_issue_comment_notification_receivers(
+            &owner,
+            &project_name,
+            number,
+            actor_id,
+            comment_markdown,
+        )
+        .await
+    {
+        Ok(Some(receivers)) => receivers,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let receivers = receivers
+        .into_iter()
+        .map(|receiver| {
+            serde_json::json!({
+                "loginId": receiver.login_id,
+                "name": receiver.display_name,
+                "pureNameOnly": receiver.pure_name_only,
+                "avatarUrl": if receiver.avatar_url.is_empty() {
+                    gravatar_url(&receiver.email_address)
+                } else {
+                    receiver.avatar_url
+                },
+                "type": "user",
+            })
+        })
+        .collect::<Vec<_>>();
+
+    Json(serde_json::json!({ "receivers": receivers })).into_response()
 }
 
 fn legacy_external_sha1_hex(bytes: &[u8]) -> String {

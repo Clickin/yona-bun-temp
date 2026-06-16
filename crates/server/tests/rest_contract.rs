@@ -1691,6 +1691,50 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .unwrap()
         .expect("created favorite issue")
         .id;
+    let legacy_comment_receivers = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+            Some(&owner_cookie),
+            None,
+            Some(json!({
+                "comment": "preview receiver @visitor",
+                "parentCommentId": ""
+            })),
+        )
+        .await,
+    )
+    .await;
+    let legacy_comment_receivers = legacy_comment_receivers["receivers"]
+        .as_array()
+        .expect("legacy comment receivers");
+    assert!(legacy_comment_receivers
+        .iter()
+        .any(|receiver| receiver["loginId"] == "visitor"
+            && receiver["name"] == "visitor"
+            && receiver["pureNameOnly"] == "visitor"
+            && receiver["type"] == "user"
+            && receiver["avatarUrl"]
+                .as_str()
+                .expect("receiver avatar")
+                .contains("gravatar.com")));
+    assert!(!legacy_comment_receivers
+        .iter()
+        .any(|receiver| receiver["loginId"] == "owner"));
+    let anonymous_legacy_comment_receivers = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+        None,
+        None,
+        Some(json!({
+            "comment": "anonymous",
+            "parentCommentId": ""
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_comment_receivers).await;
     let legacy_issue_label_fixture = ok_json(
         rest(
             app.clone(),
