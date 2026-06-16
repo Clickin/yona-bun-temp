@@ -1635,6 +1635,63 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_weight).await;
+    let legacy_issue_content = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "content": "Favorite issue body updated",
+                "original": "Favorite issue body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_content["number"], 1);
+    assert_eq!(legacy_issue_content["title"], "Favorite issue");
+    assert_eq!(legacy_issue_content["type"], "ISSUE_POST");
+    assert_eq!(legacy_issue_content["author"]["loginId"], "owner");
+    assert_eq!(legacy_issue_content["body"], "Favorite issue body updated");
+    assert_eq!(legacy_issue_content["owner"], "owner");
+    assert_eq!(legacy_issue_content["projectName"], "projectYobi");
+    assert_eq!(legacy_issue_content["state"], "open");
+
+    let legacy_issue_content_conflict = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "content": "stale issue update",
+            "original": "Favorite issue body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_issue_content_conflict.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        response_json(legacy_issue_content_conflict).await,
+        json!({
+            "message": "Already modified by someone.",
+            "storedContent": "Favorite issue body updated"
+        })
+    );
+    let anonymous_legacy_issue_content = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+        None,
+        None,
+        Some(json!({
+            "content": "anonymous",
+            "original": "Favorite issue body updated"
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_content).await;
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

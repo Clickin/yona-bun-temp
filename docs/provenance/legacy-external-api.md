@@ -64,7 +64,7 @@ contract.
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number` | `IssueApi.getIssue()` | Token-authored issue export JSON with events. | Migrator/export scope. |
 | `PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number` | `IssueApi.updateIssue()` | Token-authored issue title/body/state/assignee update. | Migrator/deferred; app uses canonical `/api/v1`. |
 | `PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number` | `IssueApi.updateIssueState()` | Token-authored issue state update with event. | Migrator/deferred; app uses canonical `/api/v1`. |
-| `PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content` | `IssueApi.updateIssueContent()` | Body-only edit with conflict detection. | Migrator/deferred; app uses canonical `/api/v1`. |
+| `PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content` | `IssueApi.updateIssueContent()` | Body-only edit with conflict detection. | Implemented in app server with legacy conflict JSON and `ProjectApi.getResult`-style payload. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments` | `IssueApi.newIssueComment()` | Issue comment creation via token or session/import payload. | Migrator/import scope. |
 | `PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId` | `IssueApi.updateIssueComment()` | Comment content update with conflict detection. | Migrator/deferred; app uses canonical `/api/v1`. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers` | `IssueApi.commentNotiRecivers()` | Preview mandatory notification receivers for a comment. | Migrator/deferred; not app-server scope. |

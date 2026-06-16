@@ -625,6 +625,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_weight_up_session_manager = session_manager.clone();
     let legacy_issue_weight_down_backend = route_backend.clone();
     let legacy_issue_weight_down_session_manager = session_manager.clone();
+    let legacy_issue_content_backend = route_backend.clone();
+    let legacy_issue_content_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -880,6 +882,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             -1,
                             legacy_issue_weight_down_session_manager.clone(),
                             legacy_issue_weight_down_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/content",
+            patch(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyBoardContentUpdateBody>| {
+                    async move {
+                        legacy_external_update_issue_content(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_content_session_manager.clone(),
+                            legacy_issue_content_backend.clone(),
                         )
                         .await
                     }
@@ -26534,6 +26557,120 @@ async fn legacy_external_update_issue_weight(
         "weight": issue.weight,
     }))
     .into_response()
+}
+
+async fn legacy_external_update_issue_content(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyBoardContentUpdateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue content requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let Some(actor) = access.actor.as_ref() else {
+        return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+            "unauthorized request",
+        ));
+    };
+    if !issue_can_mutate(&access.authorization, &access.issue, actor) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Forbidden request",
+            })),
+        )
+            .into_response();
+    }
+    if access.issue.body_markdown != body.original {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "message": "Already modified by someone.",
+                "storedContent": access.issue.body_markdown,
+            })),
+        )
+            .into_response();
+    }
+    let issue = match repository
+        .update_issue_body(
+            &owner,
+            &project_name,
+            number,
+            actor.id,
+            &actor.login_id,
+            &body.content,
+        )
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(legacy_external_issue_result(&issue)).into_response()
+}
+
+fn legacy_external_issue_result(issue: &persistence::IssueRecord) -> serde_json::Value {
+    let mut payload = serde_json::json!({
+        "number": issue.issue_number,
+        "id": issue.id,
+        "title": issue.title,
+        "type": "ISSUE_POST",
+        "author": {
+            "loginId": issue.author_login_id,
+            "name": issue.author_label,
+            "email": issue.author_email_address,
+        },
+        "createdAt": "",
+        "updatedAt": "",
+        "body": issue.body_markdown,
+        "owner": issue.owner_name,
+        "projectName": issue.project_name,
+        "state": issue.state,
+        "refUrl": format!(
+            "/{}/{}/issue/{}",
+            issue.owner_name, issue.project_name, issue.issue_number
+        ),
+    });
+    if !issue.assignee_login_id.is_empty() {
+        payload["assignees"] = serde_json::json!([{
+            "loginId": issue.assignee_login_id,
+            "name": issue.assignee_label,
+            "email": issue.assignee_email_address,
+        }]);
+    }
+    if !issue.labels.is_empty() {
+        payload["labels"] = serde_json::json!(issue
+            .labels
+            .iter()
+            .map(|label| serde_json::json!({
+                "labelName": label.name,
+                "labelColor": label.color,
+                "category": label.category_name,
+            }))
+            .collect::<Vec<_>>());
+    }
+    if let Some(milestone_id) = issue.milestone_id {
+        payload["milestoneId"] = serde_json::json!(milestone_id);
+        payload["milestoneTitle"] = serde_json::json!(issue.milestone_title);
+    }
+    payload
 }
 
 fn legacy_external_label_id(value: &serde_json::Value) -> Option<i64> {

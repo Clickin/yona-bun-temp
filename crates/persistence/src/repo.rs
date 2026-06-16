@@ -4219,6 +4219,52 @@ impl AppRepository {
             .map(Some)
     }
 
+    pub async fn update_issue_body(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: i64,
+        _actor_login_id: &str,
+        body_markdown: &str,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let old_body = self.read_text_column("issue", "body", model.id).await?;
+        let next_history =
+            append_posting_history(model.history.as_deref(), &old_body, body_markdown);
+        let mut active = issue::ActiveModel::from(model);
+        active.updated_date = Set(Some(current_datetime()));
+        let mut updated = active.update(&self.db).await?;
+        self.write_text_column("issue", "body", updated.id, body_markdown)
+            .await?;
+        self.write_text_column(
+            "issue",
+            "history",
+            updated.id,
+            next_history.as_deref().unwrap_or(""),
+        )
+        .await?;
+        updated.history = next_history;
+        self.sync_mentions_and_notify(
+            actor_id,
+            "issue_post",
+            updated.id,
+            body_markdown,
+            "ISSUE_BODY_CHANGED",
+            &old_body,
+            body_markdown,
+        )
+        .await?;
+        self.issue_record_from_model(updated, &project_record, Some(actor_id))
+            .await
+            .map(Some)
+    }
+
     pub async fn delete_issue(
         &self,
         owner_name: &str,
