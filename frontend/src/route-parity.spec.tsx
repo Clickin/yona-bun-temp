@@ -5203,6 +5203,15 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("label-protected");
     expect(viewSource).toContain("label-private");
     expect(viewSource).toContain("images/fork-pull/fork.jpg");
+    expect(viewSource).toContain("fork.help.title");
+    expect(viewSource).toContain("fork.help.message.1");
+    expect(viewSource).toContain("fork.help.message.2");
+    expect(viewSource).toContain("fork.already.exist");
+    expect(viewSource).toContain("project.name.alert");
+    expect(viewSource).toContain("project.shareOption");
+    expect(viewSource).not.toContain("project.fork.help");
+    expect(viewSource).not.toContain("project.name.help");
+    expect(viewSource).not.toContain("project.scope.");
   });
 
   it("requires project statistics route to preserve the legacy under-construction shell", () => {

@@ -2323,12 +2323,14 @@ export function ProjectForkPage(props: {
   };
   const [owner, setOwner] = React.useState(selected.ownerName);
   const [name, setName] = React.useState(selected.projectName);
-  const [projectScope, setProjectScope] = React.useState(selected.projectScope || "public");
+  const [projectScope, setProjectScope] = React.useState(() =>
+    (selected.projectScope || "public").toLowerCase(),
+  );
 
   React.useEffect(() => {
     setOwner(selected.ownerName);
     setName(selected.projectName);
-    setProjectScope(selected.projectScope || "public");
+    setProjectScope((selected.projectScope || "public").toLowerCase());
   }, [selected.ownerName, selected.projectName, selected.projectScope]);
 
   const ownerOptions = props.forkOptions?.ownerOptions.length
@@ -2341,6 +2343,9 @@ export function ProjectForkPage(props: {
         },
       ];
   const existingForks = props.forkOptions?.existingForks ?? [];
+  const selectedOwnerIsOrganization = ownerOptions.some(
+    (option) => option.ownerName === owner && option.organization,
+  );
   const canSubmit =
     Boolean(props.forkOptions?.canFork) && owner.trim().length > 0 && name.trim().length > 0;
   const forkPath = buildProjectHref(
@@ -2373,43 +2378,56 @@ export function ProjectForkPage(props: {
                 });
               }}
             >
-              <input name="owner" type="hidden" value={detail.ownerName} />
+              <input name="owner" type="hidden" value={owner} />
               <fieldset>
                 <legend>
-                  <h4>{`${detail.ownerName}/${detail.projectName}`}</h4>
+                  <h4>{`${detail.ownerName} / ${detail.projectName} fork`}</h4>
                 </legend>
                 <div className="well" id="helpMessage">
                   <div className="row-fluid">
-                    <div className="span6 pull-left">
-                      <img
-                        alt="fork"
-                        className="img-polaroid"
-                        src={prefixBasePath(
-                          props.runtimeConfig.basePath,
-                          "/images/fork-pull/fork.jpg",
-                        )}
-                      />
-                    </div>
-                    <div className="span6 help-messages">
-                      <p className="lead">project.fork.help</p>
-                      {existingForks.length ? (
-                        <ul className="unstyled existing-forks">
-                          {existingForks.map((fork) => (
-                            <li key={`${fork.ownerName}/${fork.projectName}`}>
-                              <a
-                                href={buildProjectHref(
-                                  props.runtimeConfig,
-                                  fork.ownerName,
-                                  fork.projectName,
-                                )}
-                              >
-                                {`${fork.ownerName}/${fork.projectName}`}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
+                    {existingForks.length === 0 ? (
+                      <>
+                        <div className="pull-left">
+                          <img
+                            alt="fork"
+                            className="img-polaroid"
+                            src={prefixBasePath(
+                              props.runtimeConfig.basePath,
+                              "/images/fork-pull/fork.jpg",
+                            )}
+                          />
+                          <br />
+                        </div>
+                        <div className="pull-left help-messages">
+                          <p className="lead">fork.help.title</p>
+                          <p>fork.help.message.1</p>
+                          <p>fork.help.message.2</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="help-messages center-txt">
+                        <i className="ico ico-err2" />
+                        <p>fork.already.exist</p>
+                        {existingForks.map((fork) => (
+                          <p key={`${fork.ownerName}/${fork.projectName}`}>
+                            <strong className="vmiddle">
+                              {`${detail.ownerName} / ${detail.projectName}`}
+                            </strong>
+                            <i className="yobicon-right vmiddle" />
+                            <a
+                              className="vmiddle primary-txt"
+                              href={buildProjectHref(
+                                props.runtimeConfig,
+                                fork.ownerName,
+                                fork.projectName,
+                              )}
+                            >
+                              {`${fork.ownerName} / ${fork.projectName}`}
+                            </a>
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2456,19 +2474,35 @@ export function ProjectForkPage(props: {
                       type="text"
                       value={name}
                     />
-                    <span className="help-inline">project.name.help</span>
+                    <span className="help-inline">project.name.alert</span>
                   </div>
                 </div>
 
                 <div className="control-group project-share-option">
                   <label className="control-label" htmlFor="public">
-                    project.scope
+                    project.shareOption
                   </label>
                   <div className="controls">
                     {[
-                      { className: "bg-radiobtn label-public", id: "public" },
-                      { className: "bg-radiobtn label-protected", id: "protected" },
-                      { className: "bg-radiobtn label-private", id: "private" },
+                      {
+                        className: "bg-radiobtn label-public",
+                        id: "public",
+                        label: "project.public",
+                      },
+                      ...(selectedOwnerIsOrganization
+                        ? [
+                            {
+                              className: "bg-radiobtn label-protected",
+                              id: "protected",
+                              label: "project.protected",
+                            },
+                          ]
+                        : []),
+                      {
+                        className: "bg-radiobtn label-private",
+                        id: "private",
+                        label: "project.private",
+                      },
                     ].map((scope) => (
                       <label className={scope.className} htmlFor={scope.id} key={scope.id}>
                         <input
@@ -2479,7 +2513,7 @@ export function ProjectForkPage(props: {
                           type="radio"
                           value={scope.id.toUpperCase()}
                         />
-                        {`project.scope.${scope.id}`}
+                        {scope.label}
                       </label>
                     ))}
                   </div>

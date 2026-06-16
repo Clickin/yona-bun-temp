@@ -918,7 +918,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 | 리뷰 상태 카운트           | 필수 reviewer 수와 부족 reviewer 수 표시 | required/lacking/reviewed detail projection 구현 | 4     |
 | 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + side-aware single/multi-line ranged inline create/edit/delete 구현 | 4     |
 | 리뷰 스레드                | 인라인 댓글 스레드 open/close, 목록/Excel export | Phase 4B open/close mutation + project review list shell/current-user side filters/pagination/deep-link + `format=xls` export 구현 | 4     |
-| Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + reviewer-threshold-gated conflict-free PR merge accept 구현 | 4     |
+| Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone with legacy `git/fork.scala.html` scalar shell + reviewer-threshold-gated conflict-free PR merge accept 구현 | 4     |
 | from 브랜치 삭제/복구      | merge 후 소스 브랜치 삭제/복구       | native Git wrapper 구현 | 4     |
 | PR commit 변경             | source branch push 시 PR commit/event 갱신 | Smart HTTP post-receive에서 `PULL_REQUEST_COMMIT_CHANGED` event/webhook 구현 | 4     |
 | 리뷰어 상태                | 현재 사용자의 review/unreview와 reviewer count | review/unreview, reviewer threshold projection, project default reviewer threshold settings lifecycle 구현; 별도 per-PR assignment route는 legacy에 없음으로 재분류 | 4     |
