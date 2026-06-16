@@ -4869,6 +4869,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="webhookDeliveryHistory"');
     expect(viewSource).toContain("data-webhook-delivery-id");
     expect(viewSource).toContain('data-request-method="delete"');
+    expect(viewSource).toContain("project.webhook.payloadUrl.empty");
+    expect(viewSource).not.toContain('required\n                      type="url"');
 
     const serverSource = fs.readFileSync(
       path.resolve(__dirname, "../..", "crates/server/src/lib.rs"),
@@ -4939,6 +4941,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('action="/yona/yona/projectYobi/webhooks"');
     expect(html).toContain('<strong class="form-legend">project.webhook.new</strong>');
     expect(html).toContain('placeholder="project.webhook.payloadUrl"');
+    expect(html).toContain('type="text"');
     expect(html).toContain('placeholder="project.webhook.secret"');
     expect(html).toContain("Messenger (Only text)");
     expect(html).toContain("Slack (Meta)");

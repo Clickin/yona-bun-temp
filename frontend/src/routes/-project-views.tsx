@@ -1898,6 +1898,7 @@ export function ProjectWebhooksPage(props: {
     secret: "",
     webhookType: "SIMPLE",
   });
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const webhooksPath = `/${detail.ownerName}/${detail.projectName}/webhooks`;
   const webhookTypeLabels: Record<ProjectWebhookType, string> = {
     DETAIL_HANGOUT_CHAT: "Google Chat (Thread)",
@@ -1934,6 +1935,11 @@ export function ProjectWebhooksPage(props: {
                 method="post"
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (formState.payloadUrl.length === 0) {
+                    setValidationMessage("project.webhook.payloadUrl.empty");
+                    return;
+                  }
+                  setValidationMessage(null);
                   props.onCreateWebhook?.(formState);
                   setFormState({
                     gitPush: false,
@@ -1952,15 +1958,15 @@ export function ProjectWebhooksPage(props: {
                       id="payloadUrl"
                       maxLength={2000}
                       name="payloadUrl"
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setFormState((current) => ({
                           ...current,
                           payloadUrl: event.target.value,
-                        }))
-                      }
+                        }));
+                        setValidationMessage(null);
+                      }}
                       placeholder="project.webhook.payloadUrl"
-                      required
-                      type="url"
+                      type="text"
                       value={formState.payloadUrl}
                     />
                     <input
@@ -2021,6 +2027,11 @@ export function ProjectWebhooksPage(props: {
                     </label>
                   </div>
                 </div>
+                {validationMessage ? (
+                  <div className="alert alert-error" role="alert">
+                    {validationMessage}
+                  </div>
+                ) : null}
                 <div>project.webhook.help</div>
               </form>
             ) : null}
