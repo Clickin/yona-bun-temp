@@ -2597,6 +2597,11 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain(">button.cancel</a>");
     expect(createHtml).not.toContain(">Save</button>");
     expect(createHtml).not.toContain(">Cancel</a>");
+    const boardViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-board-views.tsx"),
+      "utf8",
+    );
+    expect(boardViewsSource).toContain("post.error.emptyTitle");
 
     const labeledCreateHtml = renderToStaticMarkup(
       <ProjectPostFormPage

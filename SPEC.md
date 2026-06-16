@@ -647,9 +647,9 @@ DELETE /:owner/:project/post/:number/comment/:commentId/delete → 댓글 삭제
 | 기능             | Legacy 동작                             | 현재 상태 | Phase |
 | ---------------- | --------------------------------------- | --------- | ----- |
 | 게시글 목록      | 검색, 페이지네이션, 공지 상단 고정      | implemented (core) | 5B    |
-| 게시글 작성      | 제목, 본문(마크다운), 라벨              | implemented (core) | 5B    |
+| 게시글 작성      | 제목, 본문(마크다운), 라벨              | implemented (core); legacy `yobi.board.Write.js` title validation scalar preserved | 5B    |
 | 게시글 상세      | 제목/본문/댓글, 공지 표시               | implemented (core) | 5B    |
-| 게시글 수정/삭제 | 작성자 또는 관리자                      | implemented (core) | 5B    |
+| 게시글 수정/삭제 | 작성자 또는 관리자                      | implemented (core); legacy `yobi.board.Write.js` title validation scalar preserved | 5B    |
 | 댓글 CRUD        | 마크다운, 작성/수정/삭제                | implemented (core) | 5B    |
 | 공지 (notice)    | `posting.notice=true` 시 목록 상단 고정 | implemented (core) | 5B    |
 | README 게시글    | `posting.readme=true` 시 특별 표시      | implemented (DB-only) | 5B    |

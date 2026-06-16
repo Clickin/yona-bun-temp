@@ -215,7 +215,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/organizations\/\$organizationName\/boards\/route\.tsx$/i,
       /^crates\/(?:persistence|server)\/.*(?:posting|board)/i,
     ],
-    testKeywords: ["board", "posting", "post"],
+    testKeywords: ["board", "posting", "post", "route-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },
   {

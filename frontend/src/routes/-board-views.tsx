@@ -1542,6 +1542,7 @@ export function ProjectPostFormPage(props: {
   const [selectedLabelIds, setSelectedLabelIds] = React.useState(
     () => new Set((props.initialPost?.labels ?? []).map((label) => label.id)),
   );
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setTitle(props.initialPost?.title ?? onlineCommit?.title ?? "");
@@ -1551,6 +1552,7 @@ export function ProjectPostFormPage(props: {
     setNotice(props.initialPost?.notice ?? false);
     setReadme(props.initialPost?.readme ?? false);
     setSelectedLabelIds(new Set((props.initialPost?.labels ?? []).map((label) => label.id)));
+    setValidationMessage(null);
   }, [props.initialPost, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
 
   const formAction =
@@ -1584,6 +1586,11 @@ export function ProjectPostFormPage(props: {
             method="post"
             onSubmit={(event) => {
               event.preventDefault();
+              if (title.length === 0) {
+                setValidationMessage("post.error.emptyTitle");
+                return;
+              }
+              setValidationMessage(null);
               void props.onSubmit({
                 attachmentIds,
                 bodyMarkdown,
@@ -1609,9 +1616,11 @@ export function ProjectPostFormPage(props: {
                     id="title"
                     maxLength={250}
                     name="title"
-                    onChange={(event) => setTitle(event.target.value)}
+                    onChange={(event) => {
+                      setValidationMessage(null);
+                      setTitle(event.target.value);
+                    }}
                     placeholder={titlePlaceholder}
-                    required
                     data-legacy-tabindex="1"
                     type="text"
                     value={title}
@@ -1664,7 +1673,10 @@ export function ProjectPostFormPage(props: {
                       onAttachmentUpload={(attachment) =>
                         setAttachmentIds((current) => [...current, attachment.id])
                       }
-                      onChange={setBodyMarkdown}
+                      onChange={(nextBodyMarkdown) => {
+                        setValidationMessage(null);
+                        setBodyMarkdown(nextBodyMarkdown);
+                      }}
                       runtimeConfig={props.runtimeConfig}
                       value={bodyMarkdown}
                     />
@@ -1775,6 +1787,11 @@ export function ProjectPostFormPage(props: {
                   button.cancel
                 </a>
               </div>
+              {validationMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {validationMessage}
+                </div>
+              ) : null}
             </div>
           </form>
         </div>
