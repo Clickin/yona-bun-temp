@@ -27610,6 +27610,16 @@ async fn legacy_external_issue_comment_notification_receivers(
         .get("comment")
         .and_then(|value| value.as_str())
         .unwrap_or_default();
+    let parent_comment_id = body
+        .get("parentCommentId")
+        .and_then(|value| {
+            value.as_i64().or_else(|| {
+                value
+                    .as_str()
+                    .and_then(|raw| raw.trim().parse::<i64>().ok())
+            })
+        })
+        .filter(|value| *value > 0);
     let receivers = match repository
         .list_issue_comment_notification_receivers(
             &owner,
@@ -27617,6 +27627,7 @@ async fn legacy_external_issue_comment_notification_receivers(
             number,
             actor_id,
             comment_markdown,
+            parent_comment_id,
         )
         .await
     {

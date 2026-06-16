@@ -13778,6 +13778,7 @@ impl AppRepository {
         issue_number: i64,
         actor_id: i64,
         comment_markdown: &str,
+        parent_comment_id: Option<i64>,
     ) -> Result<Option<Vec<IssueCommentNotificationReceiverRecord>>, DbErr> {
         let Some((project, issue)) = self
             .read_project_issue_model(owner_name, project_name, issue_number)
@@ -13793,6 +13794,53 @@ impl AppRepository {
         {
             if user_id != actor_id && seen.insert(user_id) {
                 receiver_ids.push(user_id);
+            }
+        }
+        if let Some(parent_comment_id) = parent_comment_id {
+            if let Some(parent_comment) = issue_comment::Entity::find_by_id(parent_comment_id)
+                .one(&self.db)
+                .await?
+                .filter(|comment| comment.issue_id == Some(issue.id))
+            {
+                Self::remove_issue_comment_receiver_id(
+                    &mut receiver_ids,
+                    &mut seen,
+                    issue.author_id,
+                );
+                self.push_active_issue_comment_receiver_id(
+                    &mut receiver_ids,
+                    &mut seen,
+                    Some(actor_id),
+                    parent_comment.author_id,
+                )
+                .await?;
+                let parent_comment_contents = self
+                    .read_text_column("issue_comment", "contents", parent_comment.id)
+                    .await?;
+                for user_id in self
+                    .mentioned_active_user_ids(&parent_comment_contents)
+                    .await?
+                {
+                    if user_id != actor_id && seen.insert(user_id) {
+                        receiver_ids.push(user_id);
+                    }
+                }
+                if parent_comment.author_id == Some(actor_id) {
+                    let sibling_comments = issue_comment::Entity::find()
+                        .filter(issue_comment::Column::IssueId.eq(Some(issue.id)))
+                        .filter(issue_comment::Column::ParentCommentId.eq(Some(parent_comment.id)))
+                        .all(&self.db)
+                        .await?;
+                    for sibling in sibling_comments {
+                        self.push_active_issue_comment_receiver_id(
+                            &mut receiver_ids,
+                            &mut seen,
+                            Some(actor_id),
+                            sibling.author_id,
+                        )
+                        .await?;
+                    }
+                }
             }
         }
         for user_id in self.mentioned_active_user_ids(comment_markdown).await? {
@@ -13815,6 +13863,43 @@ impl AppRepository {
             });
         }
         Ok(Some(receivers))
+    }
+
+    fn remove_issue_comment_receiver_id(
+        receiver_ids: &mut Vec<i64>,
+        seen: &mut HashSet<i64>,
+        user_id: Option<i64>,
+    ) {
+        let Some(user_id) = user_id else {
+            return;
+        };
+        seen.remove(&user_id);
+        receiver_ids.retain(|receiver_id| *receiver_id != user_id);
+    }
+
+    async fn push_active_issue_comment_receiver_id(
+        &self,
+        receiver_ids: &mut Vec<i64>,
+        seen: &mut HashSet<i64>,
+        excluded_user_id: Option<i64>,
+        user_id: Option<i64>,
+    ) -> Result<(), DbErr> {
+        let Some(user_id) = user_id else {
+            return Ok(());
+        };
+        if Some(user_id) == excluded_user_id || seen.contains(&user_id) {
+            return Ok(());
+        }
+        if !self
+            .find_user_model_by_id(user_id)
+            .await?
+            .is_some_and(|user| n4user_is_active(&user))
+        {
+            return Ok(());
+        }
+        seen.insert(user_id);
+        receiver_ids.push(user_id);
+        Ok(())
     }
 
     async fn read_project_issue_model(

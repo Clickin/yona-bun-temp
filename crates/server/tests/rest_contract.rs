@@ -2302,6 +2302,79 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_detect_change).await;
+    let visitor_user = repository
+        .find_user_by_login_id("visitor")
+        .await
+        .unwrap()
+        .expect("visitor exists");
+    let guest_user = repository
+        .find_user_by_login_id("guest")
+        .await
+        .unwrap()
+        .expect("guest exists");
+    let issue_with_parent_comment = repository
+        .create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: visitor_user.display_name.clone(),
+            actor_id: visitor_user.id,
+            actor_login_id: visitor_user.login_id.clone(),
+            attachment_ids: Vec::new(),
+            contents_markdown: "Parent comment for receiver preview".to_string(),
+            issue_number: 1,
+            owner_name: "owner".to_string(),
+            parent_comment_id: None,
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue after parent comment");
+    let parent_comment_id = issue_with_parent_comment
+        .comments
+        .iter()
+        .find(|comment| comment.contents_markdown == "Parent comment for receiver preview")
+        .expect("parent comment")
+        .id;
+    repository
+        .create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: guest_user.display_name.clone(),
+            actor_id: guest_user.id,
+            actor_login_id: guest_user.login_id.clone(),
+            attachment_ids: Vec::new(),
+            contents_markdown: "Sibling comment for receiver preview".to_string(),
+            issue_number: 1,
+            owner_name: "owner".to_string(),
+            parent_comment_id: Some(parent_comment_id),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue after sibling comment");
+    let legacy_parent_comment_receivers = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "comment": "reply preview",
+                "parentCommentId": parent_comment_id.to_string()
+            })),
+        )
+        .await,
+    )
+    .await;
+    let legacy_parent_comment_receivers = legacy_parent_comment_receivers["receivers"]
+        .as_array()
+        .expect("legacy parent comment receivers");
+    assert!(legacy_parent_comment_receivers
+        .iter()
+        .any(|receiver| receiver["loginId"] == "guest"));
+    assert!(!legacy_parent_comment_receivers
+        .iter()
+        .any(|receiver| receiver["loginId"] == "visitor"));
+    assert!(!legacy_parent_comment_receivers
+        .iter()
+        .any(|receiver| receiver["loginId"] == "owner"));
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,
