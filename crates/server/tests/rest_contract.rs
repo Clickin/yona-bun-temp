@@ -2958,8 +2958,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
                         "email": "visitor@example.com"
                     },
                     "body": "legacy board post body",
+                    "createdAt": "2020-01-02 AM 03:04:05 +0000",
                     "number": 77,
-                    "title": "legacy board post"
+                    "title": "legacy board post",
+                    "updatedAt": "2020-01-03 AM 04:05:06 +0000"
                 }
             ]
         })),
@@ -3028,9 +3030,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     );
     assert_eq!(legacy_board_content["owner"], "owner");
     assert_eq!(legacy_board_content["projectName"], "projectYobi");
-    assert!(legacy_board_content["createdAt"]
-        .as_str()
-        .is_some_and(|value| value.ends_with("+0000")));
+    assert_eq!(
+        legacy_board_content["createdAt"],
+        "2020-01-02T03:04:05+0000"
+    );
     assert!(legacy_board_content["updatedAt"]
         .as_str()
         .is_some_and(|value| value.ends_with("+0000")));
@@ -3066,7 +3069,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             "author": {
                 "email": "visitor@example.com"
             },
-            "body": "legacy board comment body"
+            "body": "legacy board comment body",
+            "createdAt": "2020-02-03 AM 04:05:06 +0000"
         })),
     )
     .await;
@@ -3135,9 +3139,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_comment_update["result"]["body"],
         "legacy board comment body updated"
     );
-    assert!(legacy_board_comment_update["result"]["createdAt"]
-        .as_str()
-        .is_some_and(|value| value.ends_with("+0000")));
+    assert_eq!(
+        legacy_board_comment_update["result"]["createdAt"],
+        "2020-02-03T04:05:06+0000"
+    );
 
     let legacy_board_comment_conflict = rest(
         app.clone(),
@@ -4493,6 +4498,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             actor_login_id: "owner".to_string(),
             attachment_ids: Vec::new(),
             contents_markdown: "owner posting comment".to_string(),
+            created_at: None,
             owner_name: "owner".to_string(),
             parent_comment_id: None,
             post_number: posting.post_number,

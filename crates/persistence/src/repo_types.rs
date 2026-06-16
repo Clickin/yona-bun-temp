@@ -844,9 +844,11 @@ pub struct CreateLegacyExternalPostingInput {
     pub actor_display_name: String,
     pub actor_id: i64,
     pub actor_login_id: String,
+    pub created_at: Option<DateTime>,
     pub owner_name: String,
     pub post_number: Option<i64>,
     pub project_name: String,
+    pub updated_at: Option<DateTime>,
     pub values: PostingMutationInput,
 }
 
@@ -867,6 +869,7 @@ pub struct CreatePostingCommentInput {
     pub actor_login_id: String,
     pub attachment_ids: Vec<i64>,
     pub contents_markdown: String,
+    pub created_at: Option<DateTime>,
     pub owner_name: String,
     pub parent_comment_id: Option<i64>,
     pub post_number: i64,

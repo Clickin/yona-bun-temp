@@ -4909,11 +4909,13 @@ impl AppRepository {
             _ => self.next_posting_number(project_record.id).await?,
         };
         let now = current_datetime();
+        let created_at = input.created_at.unwrap_or(now);
+        let updated_at = input.updated_at.unwrap_or(created_at);
         let created = posting::ActiveModel {
             id: NotSet,
             title: Set(Some(input.values.title.trim().to_string())),
-            created_date: Set(Some(now)),
-            updated_date: Set(Some(now)),
+            created_date: Set(Some(created_at)),
+            updated_date: Set(Some(updated_at)),
             author_id: Set(Some(input.actor_id)),
             author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
             author_name: Set(Some(input.actor_display_name.clone())),
@@ -5197,7 +5199,7 @@ impl AppRepository {
         };
         let created = posting_comment::ActiveModel {
             id: NotSet,
-            created_date: Set(Some(current_datetime())),
+            created_date: Set(Some(input.created_at.unwrap_or_else(current_datetime))),
             author_id: Set(Some(input.actor_id)),
             author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
             author_name: Set(Some(input.actor_display_name)),
@@ -5257,6 +5259,7 @@ impl AppRepository {
                 actor_login_id: input.actor_login_id,
                 attachment_ids: Vec::new(),
                 contents_markdown: input.contents_markdown.clone(),
+                created_at: None,
                 owner_name: input.owner_name.clone(),
                 parent_comment_id: None,
                 post_number: input.post_number,

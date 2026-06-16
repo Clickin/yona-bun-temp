@@ -21335,6 +21335,7 @@ async fn rest_site_import_post_comments(
                 actor_login_id: actor.login_id.clone(),
                 attachment_ids: imported_attachments.ids,
                 contents_markdown,
+                created_at: None,
                 owner_name: owner_name.trim().to_string(),
                 parent_comment_id,
                 post_number,
@@ -26670,9 +26671,11 @@ struct LegacyBoardPostingBody {
     author: Option<serde_json::Value>,
     #[serde(default)]
     body: String,
+    created_at: Option<serde_json::Value>,
     number: Option<i64>,
     #[serde(default)]
     title: String,
+    updated_at: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -26693,10 +26696,12 @@ struct LegacyIssueDetectChangeBody {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct LegacyBoardCommentCreateBody {
     author: Option<serde_json::Value>,
     #[serde(default)]
     body: String,
+    created_at: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -26822,9 +26827,11 @@ async fn legacy_external_create_board_postings(
                 actor_display_name: post_author.display_name.clone(),
                 actor_id: post_author.id,
                 actor_login_id: post_author.login_id.clone(),
+                created_at: legacy_external_parse_datetime(post.created_at.as_ref()),
                 owner_name: owner.clone(),
                 post_number: post.number.filter(|number| *number > 0),
                 project_name: project_name.clone(),
+                updated_at: legacy_external_parse_datetime(post.updated_at.as_ref()),
                 values: persistence::PostingMutationInput {
                     attachment_ids: Vec::new(),
                     body_markdown: post.body,
@@ -27005,6 +27012,7 @@ async fn legacy_external_create_board_posting_comment(
             actor_login_id: comment_author.login_id.clone(),
             attachment_ids: Vec::new(),
             contents_markdown: body.body,
+            created_at: legacy_external_parse_datetime(body.created_at.as_ref()),
             owner_name: owner.clone(),
             parent_comment_id: None,
             post_number: number,
@@ -28607,6 +28615,27 @@ fn legacy_external_posting_comment_result(
 fn legacy_external_date_string(date: Option<DateTime>) -> String {
     date.map(|date| date.format("%Y-%m-%dT%H:%M:%S+0000").to_string())
         .unwrap_or_default()
+}
+
+fn legacy_external_parse_datetime(value: Option<&serde_json::Value>) -> Option<DateTime> {
+    let value = value?;
+    let text = value.as_str()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+    for format in [
+        "%Y-%m-%d %p %I:%M:%S %z",
+        "%Y-%m-%d %p %I:%M:%S",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S%.f%z",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S%.f",
+    ] {
+        if let Ok(parsed) = DateTime::parse_from_str(text, format) {
+            return Some(parsed);
+        }
+    }
+    None
 }
 
 fn legacy_external_author_identifier(author: Option<&serde_json::Value>) -> Option<&str> {
@@ -34022,6 +34051,7 @@ async fn rest_create_posting_comment(
             actor_login_id: actor.login_id.clone(),
             attachment_ids: body.attachment_ids,
             contents_markdown: body.contents_markdown,
+            created_at: None,
             owner_name,
             parent_comment_id: body.parent_comment_id,
             post_number,
