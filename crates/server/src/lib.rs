@@ -632,6 +632,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_comment_base_path = base_path.clone();
     let legacy_issue_comment_update_backend = route_backend.clone();
     let legacy_issue_comment_update_session_manager = session_manager.clone();
+    let legacy_issue_update_backend = route_backend.clone();
+    let legacy_issue_update_session_manager = session_manager.clone();
     let legacy_issue_state_backend = route_backend.clone();
     let legacy_issue_state_session_manager = session_manager.clone();
     let legacy_issue_assignee_backend = route_backend.clone();
@@ -976,6 +978,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     }
                 },
             ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
+            put(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyIssueUpdateBody>| {
+                    async move {
+                        legacy_external_update_issue(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_update_session_manager.clone(),
+                            legacy_issue_update_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            )
         )
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
@@ -26221,6 +26244,26 @@ struct LegacyIssueCommentCreateBody {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyIssueUpdateBody {
+    #[serde(default)]
+    assignees: Vec<LegacyIssueAssigneeBody>,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    state: String,
+    #[serde(default)]
+    title: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyIssueAssigneeBody {
+    #[serde(default)]
+    login_id: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 struct LegacyBoardCommentUpdateBody {
     #[serde(default)]
     content: String,
@@ -26922,6 +26965,124 @@ async fn legacy_external_update_issue_weight(
     };
     Json(serde_json::json!({
         "weight": issue.weight,
+    }))
+    .into_response()
+}
+
+async fn legacy_external_update_issue(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyIssueUpdateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue update requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let Some(actor) = access.actor.as_ref() else {
+        return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+            "unauthorized request",
+        ));
+    };
+    if !issue_can_mutate(&access.authorization, &access.issue, actor) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Permission denied",
+            })),
+        )
+            .into_response();
+    }
+    let assignee_login_id = body
+        .assignees
+        .first()
+        .map(|assignee| assignee.login_id.trim().to_string())
+        .filter(|login_id| !login_id.is_empty())
+        .or_else(|| {
+            (!access.issue.assignee_login_id.trim().is_empty())
+                .then(|| access.issue.assignee_login_id.clone())
+        });
+    let target_state = match body.state.as_str() {
+        value if value.eq_ignore_ascii_case("open") => "open",
+        value if value.eq_ignore_ascii_case("closed") => "closed",
+        value if value.eq_ignore_ascii_case("close") => "closed",
+        value if value.trim().is_empty() => "open",
+        _ => "closed",
+    };
+    let issue = match repository
+        .update_issue(persistence::UpdateIssueInput {
+            actor_login_id: actor.login_id.clone(),
+            issue_number: number,
+            owner_name: owner.clone(),
+            project_name: project_name.clone(),
+            values: persistence::IssueMutationInput {
+                assignee_login_id,
+                attachment_ids: access
+                    .issue
+                    .attachments
+                    .iter()
+                    .map(|attachment| attachment.id)
+                    .collect(),
+                body_markdown: if body.body.is_empty() {
+                    access.issue.body_markdown.clone()
+                } else {
+                    body.body
+                },
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: access.issue.labels.iter().map(|label| label.id).collect(),
+                milestone_id: access.issue.milestone_id,
+                parent_issue_id: access.issue.parent_issue_id,
+                title: if body.title.trim().is_empty() {
+                    access.issue.title.clone()
+                } else {
+                    body.title.trim().to_string()
+                },
+            },
+        })
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let issue = if issue.state.eq_ignore_ascii_case(target_state) {
+        issue
+    } else {
+        match repository
+            .update_issue_state_as_actor(
+                &owner,
+                &project_name,
+                number,
+                target_state,
+                actor.id,
+                &actor.login_id,
+            )
+            .await
+        {
+            Ok(Some(issue)) => issue,
+            Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+    };
+    Json(serde_json::json!({
+        "result": legacy_external_issue_result(&issue),
     }))
     .into_response()
 }

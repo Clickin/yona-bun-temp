@@ -1905,6 +1905,76 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_issue_assignee_detail["assigneeLoginId"], "visitor");
+    let legacy_issue_updated = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::PUT,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            &[("Authorization", &authorization_header)],
+            Some(json!({
+                "title": "Favorite issue via legacy put",
+                "body": "Favorite issue body via legacy put",
+                "state": "CLOSED",
+                "assignees": [
+                    {
+                        "loginId": "visitor"
+                    }
+                ]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_updated["result"]["number"], 1);
+    assert_eq!(
+        legacy_issue_updated["result"]["title"],
+        "Favorite issue via legacy put"
+    );
+    assert_eq!(
+        legacy_issue_updated["result"]["body"],
+        "Favorite issue body via legacy put"
+    );
+    assert_eq!(legacy_issue_updated["result"]["state"], "closed");
+    assert_eq!(
+        legacy_issue_updated["result"]["assignees"][0]["loginId"],
+        "visitor"
+    );
+    let legacy_issue_put_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_put_detail["title"],
+        "Favorite issue via legacy put"
+    );
+    assert_eq!(
+        legacy_issue_put_detail["bodyMarkdown"],
+        "Favorite issue body via legacy put"
+    );
+    assert_eq!(legacy_issue_put_detail["state"], "closed");
+    let anonymous_legacy_issue_update = rest(
+        app.clone(),
+        Method::PUT,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        None,
+        None,
+        Some(json!({
+            "title": "anonymous legacy put",
+            "body": "anonymous",
+            "state": "OPEN",
+            "assignees": []
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_update).await;
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,
@@ -2179,7 +2249,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_issues["projectIds"], json!([issue_id]));
     assert_eq!(legacy_issues["projects"][0]["issueId"], issue_id);
-    assert_eq!(legacy_issues["projects"][0]["issueTitle"], "Favorite issue");
+    assert_eq!(
+        legacy_issues["projects"][0]["issueTitle"],
+        "Favorite issue via legacy put"
+    );
     assert_eq!(legacy_issues["projects"][0]["issueAuthorName"], "owner");
     let legacy_issue_unfavorited = ok_json(
         rest(
