@@ -1975,6 +1975,45 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_update).await;
+    let legacy_issue_read = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            &[("Authorization", &authorization_header)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_read["result"]["title"],
+        "Favorite issue via legacy put"
+    );
+    assert_eq!(legacy_issue_read["result"]["state"], "closed");
+    assert!(legacy_issue_read["result"]["comments"]
+        .as_array()
+        .expect("legacy issue read comments")
+        .iter()
+        .any(
+            |comment| comment["body"] == "legacy issue comment body updated"
+                && comment["author"]["loginId"] == "visitor"
+        ));
+    assert!(legacy_issue_read["result"]["events"]
+        .as_array()
+        .expect("legacy issue read events")
+        .iter()
+        .any(|event| event["eventType"] == "ISSUE_STATE_CHANGED"));
+    let anonymous_legacy_issue_read = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_read).await;
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,

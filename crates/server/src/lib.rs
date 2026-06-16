@@ -627,6 +627,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_weight_down_session_manager = session_manager.clone();
     let legacy_issue_content_backend = route_backend.clone();
     let legacy_issue_content_session_manager = session_manager.clone();
+    let legacy_issue_read_backend = route_backend.clone();
+    let legacy_issue_read_session_manager = session_manager.clone();
     let legacy_issue_comment_backend = route_backend.clone();
     let legacy_issue_comment_session_manager = session_manager.clone();
     let legacy_issue_comment_base_path = base_path.clone();
@@ -978,6 +980,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     }
                 },
             ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>| {
+                    async move {
+                        legacy_external_read_issue(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            legacy_issue_read_session_manager.clone(),
+                            legacy_issue_read_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            )
         )
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
@@ -26969,6 +26990,40 @@ async fn legacy_external_update_issue_weight(
     .into_response()
 }
 
+async fn legacy_external_read_issue(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue read requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let payload = match legacy_external_issue_result_with_detail(repository, &access.issue).await {
+        Ok(payload) => payload,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "result": payload,
+    }))
+    .into_response()
+}
+
 async fn legacy_external_update_issue(
     headers: HeaderMap,
     owner: String,
@@ -27546,6 +27601,110 @@ fn legacy_external_issue_result(issue: &persistence::IssueRecord) -> serde_json:
         payload["milestoneTitle"] = serde_json::json!(issue.milestone_title);
     }
     payload
+}
+
+async fn legacy_external_issue_result_with_detail(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+) -> Result<serde_json::Value, sea_orm::DbErr> {
+    let mut payload = legacy_external_issue_result(issue);
+    if !issue.attachments.is_empty() {
+        payload["attachments"] = serde_json::json!(issue
+            .attachments
+            .iter()
+            .map(legacy_external_attachment_result)
+            .collect::<Vec<_>>());
+    }
+    if !issue.comments.is_empty() {
+        payload["comments"] = serde_json::json!(issue
+            .comments
+            .iter()
+            .filter(|comment| comment.parent_comment_id.is_none())
+            .map(|comment| legacy_external_issue_comment_result(issue, comment))
+            .collect::<Vec<_>>());
+    }
+    let events = legacy_external_issue_events_result(repository, issue).await?;
+    if !events.is_empty() {
+        payload["events"] = serde_json::json!(events);
+    }
+    Ok(payload)
+}
+
+fn legacy_external_issue_comment_result(
+    issue: &persistence::IssueRecord,
+    comment: &persistence::IssueCommentRecord,
+) -> serde_json::Value {
+    let child_comments = issue
+        .comments
+        .iter()
+        .filter(|child| child.parent_comment_id == Some(comment.id))
+        .map(|child| legacy_external_issue_comment_result(issue, child))
+        .collect::<Vec<_>>();
+    let mut payload = serde_json::json!({
+        "id": comment.id,
+        "type": "ISSUE_COMMENT",
+        "author": {
+            "loginId": comment.author_login_id,
+            "name": comment.author_label,
+            "email": comment.author_email_address,
+        },
+        "createdAt": comment.created_label,
+        "body": comment.contents_markdown,
+    });
+    if !comment.attachments.is_empty() {
+        payload["attachments"] = serde_json::json!(comment
+            .attachments
+            .iter()
+            .map(legacy_external_attachment_result)
+            .collect::<Vec<_>>());
+    }
+    if !child_comments.is_empty() {
+        payload["childComments"] = serde_json::json!(child_comments);
+    }
+    payload
+}
+
+async fn legacy_external_issue_events_result(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+) -> Result<Vec<serde_json::Value>, sea_orm::DbErr> {
+    let mut events = Vec::new();
+    for item in &issue.timeline {
+        let persistence::IssueTimelineItemRecord::Event {
+            created_label,
+            event_type,
+            id,
+            new_value,
+            old_value,
+            sender_login_id,
+        } = item
+        else {
+            continue;
+        };
+        let actor = repository.find_user_by_identifier(sender_login_id).await?;
+        let actor_payload = match actor {
+            Some(actor) => serde_json::json!({
+                "name": actor.display_name,
+                "loginId": actor.login_id,
+                "englishName": "",
+            }),
+            None => serde_json::json!({
+                "name": sender_login_id,
+                "loginId": sender_login_id,
+                "englishName": "",
+            }),
+        };
+        events.push(serde_json::json!({
+            "id": id,
+            "createdDate": created_label,
+            "eventType": event_type,
+            "eventDescription": event_type,
+            "oldValue": old_value,
+            "newValue": new_value,
+            "actor": actor_payload,
+        }));
+    }
+    Ok(events)
 }
 
 fn legacy_external_label_id(value: &serde_json::Value) -> Option<i64> {
