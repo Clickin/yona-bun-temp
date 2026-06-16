@@ -163,7 +163,7 @@ Interpretation:
 
 ## Organization
 
-- [x] Organization create
+- [x] Organization create, including legacy `yobi.organization.New.js` name validation scalar (`organization.name.alert`)
 - [x] Public organization detail/home
 - [x] Organization settings update, including legacy `yobi.organization.Setting.js` name/logo validation scalars (`organization.name.alert`, `project.logo.alert`)
 - [x] Organization delete guards, common legacy route shells for forbidden/not-found/non-specific admin read failures, legacy `organization.delete.error` mutation fallback scalar, and legacy `organization/deleteForm.scala.html` confirmation shell (`#btnDelete`, `#alertDeletion`, `#btnDeleteExec`)

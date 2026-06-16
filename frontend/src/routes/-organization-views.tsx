@@ -359,6 +359,7 @@ export function OrganizationNewPage(props: {
     description: "",
     organizationName: "",
   });
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   return (
     <main className="app-shell organization-new-shell">
@@ -372,6 +373,11 @@ export function OrganizationNewPage(props: {
               name="new-org"
               onSubmit={(event) => {
                 event.preventDefault();
+                if (!isLegacyOrganizationName(formState.organizationName)) {
+                  setValidationMessage("organization.name.alert");
+                  return;
+                }
+                setValidationMessage(null);
                 props.onCreateOrganization?.(formState);
               }}
             >
@@ -389,16 +395,22 @@ export function OrganizationNewPage(props: {
                     placeholder=""
                     type="text"
                     value={formState.organizationName}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setFormState((current) => ({
                         ...current,
                         organizationName: event.target.value,
-                      }))
-                    }
+                      }));
+                      setValidationMessage(null);
+                    }}
                   />
                   <div className="n-alert" data-errtype="name">
                     <div className="orange-txt">
-                      <span className="msg wrongName" style={{ display: "none" }} />
+                      <span
+                        className="msg wrongName"
+                        style={{ display: validationMessage ? undefined : "none" }}
+                      >
+                        {validationMessage}
+                      </span>
                     </div>
                   </div>
                 </dd>

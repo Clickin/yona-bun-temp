@@ -4758,6 +4758,9 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(viewSource).toContain("organization.name.alert");
+    expect(viewSource.match(/setValidationMessage\("organization\.name\.alert"\)/g)?.length).toBe(
+      2,
+    );
     expect(viewSource).toContain("project.logo.alert");
     expect(viewSource).toContain("isOrganizationLogoImageFile");
     expect(viewSource).toContain("isLegacyOrganizationName");
