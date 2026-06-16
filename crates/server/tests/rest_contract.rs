@@ -2014,6 +2014,42 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_read).await;
+    let legacy_issue_detect_change = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "issueBodyChecksum": "stale",
+                "numOfComments": 0
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_detect_change["result"], "ok");
+    assert_eq!(legacy_issue_detect_change["issueBodyChanged"], true);
+    assert_eq!(legacy_issue_detect_change["numOfComments"], 2);
+    assert_eq!(legacy_issue_detect_change["commentAuthorName"], "visitor");
+    assert!(legacy_issue_detect_change["issueBodyChecksum"]
+        .as_str()
+        .is_some_and(|value| value.len() == 40));
+    assert!(legacy_issue_detect_change["issueUpdateDate"].is_number());
+    let anonymous_legacy_issue_detect_change = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+        None,
+        None,
+        Some(json!({
+            "issueBodyChecksum": "stale",
+            "numOfComments": 0
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_detect_change).await;
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,

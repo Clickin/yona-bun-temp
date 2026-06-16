@@ -21,6 +21,7 @@ use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
+use sha1::Sha1;
 use std::{
     collections::HashMap,
     path::{Path as StdPath, PathBuf},
@@ -627,6 +628,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_weight_down_session_manager = session_manager.clone();
     let legacy_issue_content_backend = route_backend.clone();
     let legacy_issue_content_session_manager = session_manager.clone();
+    let legacy_issue_detect_change_backend = route_backend.clone();
+    let legacy_issue_detect_change_session_manager = session_manager.clone();
     let legacy_issue_read_backend = route_backend.clone();
     let legacy_issue_read_session_manager = session_manager.clone();
     let legacy_issue_comment_backend = route_backend.clone();
@@ -975,6 +978,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_issue_content_session_manager.clone(),
                             legacy_issue_content_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/detectChange",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyIssueDetectChangeBody>| {
+                    async move {
+                        legacy_external_detect_issue_change(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_detect_change_session_manager.clone(),
+                            legacy_issue_detect_change_backend.clone(),
                         )
                         .await
                     }
@@ -26248,6 +26272,15 @@ struct LegacyBoardContentUpdateBody {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyIssueDetectChangeBody {
+    #[serde(default)]
+    issue_body_checksum: String,
+    #[serde(default)]
+    num_of_comments: u32,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 struct LegacyBoardCommentCreateBody {
     author: Option<serde_json::Value>,
     #[serde(default)]
@@ -27140,6 +27173,58 @@ async fn legacy_external_update_issue(
         "result": legacy_external_issue_result(&issue),
     }))
     .into_response()
+}
+
+async fn legacy_external_detect_issue_change(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyIssueDetectChangeBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue detectChange requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let issue_body_checksum = legacy_external_sha1_hex(access.issue.body_markdown.as_bytes());
+    let mut payload = serde_json::json!({
+        "issueBodyChanged": issue_body_checksum != body.issue_body_checksum,
+        "numOfComments": access.issue.comment_count,
+        "issueBodyChecksum": issue_body_checksum,
+        "issueUpdateDate": 0,
+        "result": "ok",
+    });
+    if body.num_of_comments < access.issue.comment_count {
+        if let Some(comment) = access
+            .issue
+            .comments
+            .iter()
+            .max_by_key(|comment| comment.id)
+        {
+            payload["commentAuthorName"] = serde_json::json!(comment.author_label);
+        }
+    }
+    Json(payload).into_response()
+}
+
+fn legacy_external_sha1_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha1::new();
+    hasher.update(bytes);
+    format!("{:x}", hasher.finalize())
 }
 
 async fn legacy_external_update_issue_content(

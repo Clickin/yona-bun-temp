@@ -4973,6 +4973,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "sha1",
  "tempfile",
  "testcontainers-modules",
  "thiserror",
