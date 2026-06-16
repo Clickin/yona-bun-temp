@@ -1974,6 +1974,46 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         })
     );
 
+    let legacy_board_comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "author": {
+                "email": "visitor@example.com"
+            },
+            "body": "legacy board comment body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_board_comment_response.status(), StatusCode::CREATED);
+    let legacy_board_comment = response_json(legacy_board_comment_response).await;
+    assert_eq!(legacy_board_comment["status"], 201);
+    assert!(legacy_board_comment["location"]
+        .as_str()
+        .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/post/77#comment-")));
+    let legacy_board_detail_with_comment = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/77",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let legacy_created_comment = legacy_board_detail_with_comment["comments"]
+        .as_array()
+        .expect("comments")
+        .iter()
+        .find(|comment| comment["contentsMarkdown"] == "legacy board comment body")
+        .expect("legacy board comment");
+    assert_eq!(legacy_created_comment["authorLoginId"], "visitor");
+
     let anonymous_legacy_board_create = rest(
         app.clone(),
         Method::POST,

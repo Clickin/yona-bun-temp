@@ -613,6 +613,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_board_posts_base_path = base_path.clone();
     let legacy_board_content_backend = route_backend.clone();
     let legacy_board_content_session_manager = session_manager.clone();
+    let legacy_board_comment_backend = route_backend.clone();
+    let legacy_board_comment_session_manager = session_manager.clone();
+    let legacy_board_comment_base_path = base_path.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -765,6 +768,28 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_board_content_session_manager.clone(),
                             legacy_board_content_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/comments",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyBoardCommentCreateBody>| {
+                    async move {
+                        legacy_external_create_board_posting_comment(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_board_comment_session_manager.clone(),
+                            legacy_board_comment_backend.clone(),
+                            legacy_board_comment_base_path.clone(),
                         )
                         .await
                     }
@@ -25804,6 +25829,13 @@ struct LegacyBoardContentUpdateBody {
     original: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyBoardCommentCreateBody {
+    author: Option<serde_json::Value>,
+    #[serde(default)]
+    body: String,
+}
+
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -26000,6 +26032,93 @@ async fn legacy_external_update_board_posting_content(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
     Json(payload).into_response()
+}
+
+async fn legacy_external_create_board_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyBoardCommentCreateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "board posting comments require repository backend",
+        )
+        .into_response();
+    };
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let request_actor = match repository.find_user_by_id(request_user_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let _access = match read_posting_comment_create_access(
+        repository,
+        &owner,
+        &project_name,
+        number,
+        &request_actor,
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let comment_author =
+        match legacy_external_post_author(repository, &request_actor, body.author.as_ref()).await {
+            Ok(actor) => actor,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+    let posting = match repository
+        .create_posting_comment(persistence::CreatePostingCommentInput {
+            actor_display_name: comment_author.display_name.clone(),
+            actor_id: comment_author.id,
+            actor_login_id: comment_author.login_id.clone(),
+            attachment_ids: Vec::new(),
+            contents_markdown: body.body,
+            owner_name: owner.clone(),
+            parent_comment_id: None,
+            post_number: number,
+            project_name: project_name.clone(),
+        })
+        .await
+    {
+        Ok(Some(posting)) => posting,
+        Ok(None) => return RestRouteError::not_found("pilot posting not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let comment_id = posting
+        .comments
+        .iter()
+        .map(|comment| comment.id)
+        .max()
+        .unwrap_or_default();
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "status": 201,
+            "location": format!(
+                "{}#comment-{}",
+                base_path_href(&base_path, &format!("/{owner}/{project_name}/post/{number}")),
+                comment_id,
+            ),
+        })),
+    )
+        .into_response()
 }
 
 async fn legacy_external_posting_result(
