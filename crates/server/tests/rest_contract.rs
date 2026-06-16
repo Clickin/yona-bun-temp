@@ -1786,6 +1786,61 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_assignee).await;
+    let legacy_project_assignable = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/assignableUsers?query=visitor",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(legacy_project_assignable
+        .as_array()
+        .expect("legacy project assignable users")
+        .iter()
+        .any(|user| user["loginId"] == "visitor"
+            && user["name"] == "visitor"
+            && user["type"] == "user"));
+    let legacy_issue_assignable = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignableUsers",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(legacy_issue_assignable
+        .as_array()
+        .expect("legacy issue assignable users")
+        .iter()
+        .any(|user| user["loginId"] == "owner" && user["name"] == "issue.assignToMe"));
+    assert!(legacy_issue_assignable
+        .as_array()
+        .expect("legacy issue assignable users")
+        .iter()
+        .any(|user| user["loginId"] == "anonymous" && user["name"] == "issue.noAssignee"));
+    assert!(legacy_issue_assignable
+        .as_array()
+        .expect("legacy issue assignable users")
+        .iter()
+        .any(|user| user["loginId"] == "visitor" && user["name"] == "visitor"));
+    let legacy_assignable_html = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/assignableUsers",
+        &[("Accept", "text/html")],
+        None,
+    )
+    .await;
+    assert_eq!(legacy_assignable_html.status(), StatusCode::NOT_ACCEPTABLE);
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

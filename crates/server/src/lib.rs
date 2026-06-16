@@ -631,6 +631,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_state_session_manager = session_manager.clone();
     let legacy_issue_assignee_backend = route_backend.clone();
     let legacy_issue_assignee_session_manager = session_manager.clone();
+    let legacy_project_assignable_backend = route_backend.clone();
+    let legacy_project_assignable_session_manager = session_manager.clone();
+    let legacy_issue_assignable_backend = route_backend.clone();
+    let legacy_issue_assignable_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -1106,6 +1110,47 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             query,
                             legacy_title_heads_session_manager.clone(),
                             legacy_title_heads_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/assignableUsers",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    async move {
+                        legacy_external_project_assignable_users(
+                            headers,
+                            owner,
+                            project_name,
+                            query,
+                            legacy_project_assignable_session_manager.clone(),
+                            legacy_project_assignable_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignableUsers",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    async move {
+                        legacy_external_issue_assignable_users(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            query,
+                            legacy_issue_assignable_session_manager.clone(),
+                            legacy_issue_assignable_backend.clone(),
                         )
                         .await
                     }
@@ -27588,6 +27633,109 @@ async fn legacy_project_title_heads(
     }
 
     Json(serde_json::json!({ "result": result })).into_response()
+}
+
+async fn legacy_external_project_assignable_users(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "project assignable users require repository backend",
+        )
+        .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if let Err(error) = require_project_read(repository, &owner, &project_name, actor_id).await {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+    let record = match repository
+        .list_project_assignable_users(
+            &owner,
+            &project_name,
+            actor_id,
+            &query.query,
+            &query.search_type,
+            10,
+        )
+        .await
+    {
+        Ok(Some(record)) => record,
+        Ok(None) => return RestRouteError::not_found("pilot project not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(legacy_external_assignable_users_result(record)).into_response()
+}
+
+async fn legacy_external_issue_assignable_users(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "issue assignable users require repository backend",
+        )
+        .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if let Err(error) = read_issue_access(repository, &owner, &project_name, number, actor_id).await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+    let record = match repository
+        .list_issue_assignable_users(
+            &owner,
+            &project_name,
+            number,
+            actor_id,
+            &query.query,
+            &query.search_type,
+            10,
+        )
+        .await
+    {
+        Ok(Some(record)) => record,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(legacy_external_assignable_users_result(record)).into_response()
+}
+
+fn legacy_external_assignable_users_result(
+    record: persistence::IssueAssignableUserSearchRecord,
+) -> Vec<serde_json::Value> {
+    record
+        .items
+        .into_iter()
+        .map(|item| {
+            serde_json::json!({
+                "loginId": item.login_id,
+                "name": item.display_name,
+                "pureNameOnly": item.pure_name_only,
+                "avatarUrl": item.avatar_url,
+                "type": item.item_type,
+            })
+        })
+        .collect()
 }
 
 async fn legacy_project_create_labels(
