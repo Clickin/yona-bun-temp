@@ -66,9 +66,7 @@ export function toWorkspaceOverview(
   session: Awaited<ReturnType<typeof readCurrentSession>>,
   overview: Awaited<ReturnType<typeof readWorkspaceOverview>>,
 ): WorkspaceOverviewViewModel {
-  const profile = overview.profile as
-    | (typeof overview.profile & { isGuest?: boolean })
-    | undefined;
+  const profile = overview.profile as (typeof overview.profile & { isGuest?: boolean }) | undefined;
   return {
     apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
@@ -410,7 +408,9 @@ export function toProjectContainerView(
       ? {
           bodyHtml: detailWithReadme.readmeFile.bodyHtml ?? "",
           bodyMarkdown: detailWithReadme.readmeFile.bodyMarkdown ?? "",
-          mentionReferences: normalizeMentionReferences(detailWithReadme.readmeFile.mentionReferences),
+          mentionReferences: normalizeMentionReferences(
+            detailWithReadme.readmeFile.mentionReferences,
+          ),
           name: detailWithReadme.readmeFile.name ?? "README.md",
         }
       : undefined,
@@ -722,6 +722,7 @@ type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>
   issueId?: bigint | number;
   issueVoters?: Array<{
     avatarUrl: string;
+    emailAddress?: string;
     loginId: string;
     userId: bigint | number;
     userLabel: string;
@@ -809,6 +810,7 @@ export function toProjectIssueDetailView(
     issueId: Number(response.issueId ?? 0),
     issueVoters: (response.issueVoters ?? []).map((voter) => ({
       avatarUrl: voter.avatarUrl,
+      emailAddress: voter.emailAddress,
       loginId: voter.loginId,
       userId: Number(voter.userId),
       userLabel: voter.userLabel,

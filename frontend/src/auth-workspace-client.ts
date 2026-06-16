@@ -329,6 +329,7 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
   issueId?: bigint | number;
   issueVoters?: Array<{
     avatarUrl: string;
+    emailAddress?: string;
     loginId: string;
     userId: bigint | number;
     userLabel: string;

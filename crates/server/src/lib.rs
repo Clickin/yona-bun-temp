@@ -15042,7 +15042,7 @@ struct RestIssueDetailResponse {
     history_markdown: String,
     comment_parent_links: Vec<RestIssueCommentParentLink>,
     issue_id: i64,
-    issue_voters: Vec<IssueCommentVoter>,
+    issue_voters: Vec<RestIssueVoter>,
     is_draft: bool,
     parent_issue_id: Option<i64>,
     parent_issue_number: Option<i64>,
@@ -15055,6 +15055,16 @@ struct RestIssueDetailResponse {
 struct RestIssueCommentParentLink {
     id: i64,
     parent_comment_id: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueVoter {
+    avatar_url: String,
+    email_address: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
 }
 
 #[derive(Serialize)]
@@ -34947,13 +34957,13 @@ fn issue_comment_voter_from_record(
     }
 }
 
-fn issue_voter_from_record(record: &persistence::IssueVoterRecord) -> IssueCommentVoter {
-    IssueCommentVoter {
+fn issue_voter_from_record(record: &persistence::IssueVoterRecord) -> RestIssueVoter {
+    RestIssueVoter {
         avatar_url: gravatar_url(&record.email_address),
+        email_address: record.email_address.clone(),
         login_id: record.login_id.clone(),
         user_id: record.user_id,
         user_label: record.user_label.clone(),
-        ..Default::default()
     }
 }
 

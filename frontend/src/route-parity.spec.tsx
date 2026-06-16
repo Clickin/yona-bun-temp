@@ -212,6 +212,9 @@ describe("file-route parity harness", () => {
     expect(issueDetailRouteSource).toContain("voteIssueComment");
     expect(issueDetailRouteSource).toContain("unvoteIssueComment");
     expect(issueDetailRouteSource).toContain("onCommentVoteToggle");
+    expect(issueViewsSource).toContain("copyEmailBtn");
+    expect(issueViewsSource).toContain("button.copy.email.success.message");
+    expect(issueViewsSource).toContain("site.features.error.clipboard");
 
     const directIssueFormRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/user/issues/new/route.tsx"),

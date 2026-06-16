@@ -20,12 +20,14 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
           issueVoters: [
             {
               avatarUrl: "https://cdn.yona/avatar-door.png",
+              emailAddress: "door@yona.test",
               loginId: "door",
               userId: 2,
               userLabel: "Door User",
             },
             {
               avatarUrl: "https://cdn.yona/avatar-nori.png",
+              emailAddress: "nori@yona.test",
               loginId: "nori",
               userId: 3,
               userLabel: "Nori User",
@@ -37,7 +39,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
           watcherCount: 3,
           weight: 3,
         }}
-        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona", showUserEmail: true }}
         onFavoriteToggle={async () => undefined}
         onIssueWeightChange={async () => undefined}
         onVoteToggle={async () => undefined}
@@ -99,6 +101,10 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("issue.voters");
     expect(html).toContain('class="usf-group"');
     expect(html).toContain("Door User");
+    expect(html).toContain('id="copyEmailBtn"');
+    expect(html).toContain("button.copy.email");
+    expect(html).toContain("Door User &lt;door@yona.test&gt;;");
+    expect(html).toContain("Nori User &lt;nori@yona.test&gt;;");
     expect(html).not.toContain("Voters: 2");
     expect(html).not.toContain("Unvote");
     expect(html).toContain('<div class="watcher-list"></div>');
@@ -311,7 +317,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="act-row pull-right"');
     expect(html).toContain('class="new-issue-by"');
     expect(html).toContain('href="/yona/user/issues/new?commentId=55"');
-    expect(html).toContain('class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"');
+    expect(html).toContain(
+      'class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
+    );
     expect(html).toContain('data-comment-id="55"');
     expect(html).toContain('title="button.translation"');
     expect(html).toContain('data-request-type="comment-vote"');

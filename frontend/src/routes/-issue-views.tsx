@@ -241,12 +241,16 @@ function IssueDetailVoters(props: {
   runtimeConfig: RuntimeConfig;
 }) {
   const voters = props.issue.issueVoters ?? [];
+  const [clipboardMessage, setClipboardMessage] = React.useState("");
   if (voters.length === 0) {
     return null;
   }
   const avatarVoters = voters.slice(0, 3);
   const hiddenCount = Math.max(0, voters.length - avatarVoters.length);
   const modalVoters = voters;
+  const voterEmailText = voters
+    .map((voter) => `${voter.userLabel || voter.loginId} <${voter.emailAddress ?? ""}>;`)
+    .join("");
   return (
     <>
       <div className="voter-list-wrap">
@@ -322,6 +326,31 @@ function IssueDetailVoters(props: {
           </ul>
         </div>
         <div className="modal-footer">
+          {clipboardMessage ? (
+            <span className="clipboard-alert" role="alert">
+              {clipboardMessage}
+            </span>
+          ) : null}
+          {props.runtimeConfig.showUserEmail ? (
+            <button
+              className="ybtn ybtn-info ybtn-small"
+              data-clipboard-text={voterEmailText}
+              id="copyEmailBtn"
+              onClick={() => {
+                if (!navigator.clipboard?.writeText) {
+                  setClipboardMessage("site.features.error.clipboard");
+                  return;
+                }
+                void navigator.clipboard
+                  .writeText(voterEmailText)
+                  .then(() => setClipboardMessage("button.copy.email.success.message"))
+                  .catch(() => setClipboardMessage("site.features.error.clipboard"));
+              }}
+              type="button"
+            >
+              button.copy.email
+            </button>
+          ) : null}
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
             button.close
           </button>

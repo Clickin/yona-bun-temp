@@ -467,7 +467,13 @@ export interface ProjectIssueDetailViewModel {
   viewerHasInheritedShare: boolean;
   viewerIsDirectSharer: boolean;
   voterCount: number;
-  issueVoters?: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
+  issueVoters?: Array<{
+    avatarUrl: string;
+    emailAddress?: string;
+    loginId: string;
+    userId: number;
+    userLabel: string;
+  }>;
   watcherCount: number;
   weight?: number;
 }

@@ -2215,6 +2215,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     assert_eq!(voted["voterCount"], 1);
     assert_eq!(voted["issueVoters"][0]["loginId"], "guest");
     assert_eq!(voted["issueVoters"][0]["userLabel"], "guest");
+    assert_eq!(voted["issueVoters"][0]["emailAddress"], "guest@example.com");
     assert!(voted["issueVoters"][0]["avatarUrl"]
         .as_str()
         .unwrap_or_default()
