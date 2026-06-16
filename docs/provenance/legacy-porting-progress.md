@@ -736,5 +736,5 @@ Interpretation:
 - [ ] Project REST API
 - [ ] Board REST API
 - [ ] Milestone REST API (legacy external `/-_-api/v1/**`, separate migrator scope)
-- [ ] Watcher REST API
+- [x] Watcher REST API: `GET /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers?type=issues|posts` returns the legacy `WatcherApi.getWatchers` JSON shape (`totalWatchers`, `watchersInList`, `watchers[{name,url}]`) with the 100-item list cap and preserves the legacy empty 200 response when `type` is omitted or unsupported
 - [~] Favorite REST API: user-menu helpers `GET/POST /-_-api/v1/favoriteProjects|favoriteIssues|favoriteOrganizations` implemented with legacy JSON shapes including default issue favorite toggle `message` copy, legacy `Yona-Token` / `Authorization: token ...` authentication, and legacy unauthenticated `401 {"message":"unauthorized request"}` error JSON; broader legacy external favorite APIs remain migrator scope

@@ -606,6 +606,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let direct_project_watch_session_manager = session_manager.clone();
     let direct_project_unwatch_backend = route_backend.clone();
     let direct_project_unwatch_session_manager = session_manager.clone();
+    let legacy_watchers_backend = route_backend.clone();
+    let legacy_watchers_base_path = base_path.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -697,6 +699,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .nest("/api/v1", rest_router)
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/watchers",
+            get(
+                move |Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Query(query): Query<LegacyExternalWatchersQuery>| {
+                    async move {
+                        legacy_external_watchers(
+                            owner,
+                            project_name,
+                            number,
+                            query,
+                            legacy_watchers_base_path.clone(),
+                            legacy_watchers_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
         .route(
             "/-_-api/v1/favoriteProjects",
             get(move |headers: HeaderMap| {
@@ -25599,6 +25620,57 @@ fn legacy_external_api_auth_error_response(error: ConnectError) -> Response {
             .into_response();
     }
     RestRouteError::from_connect_error(error).into_response()
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyExternalWatchersQuery {
+    #[serde(rename = "type")]
+    resource_type: Option<String>,
+}
+
+async fn legacy_external_watchers(
+    owner: String,
+    project_name: String,
+    number: i64,
+    query: LegacyExternalWatchersQuery,
+    base_path: String,
+    backend: PilotBackend,
+) -> Response {
+    let Some(resource_type) = query.resource_type.as_deref() else {
+        return StatusCode::OK.into_response();
+    };
+    if !matches!(resource_type, "issues" | "posts") {
+        return StatusCode::OK.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("watchers require repository backend")
+            .into_response();
+    };
+
+    let watcher_list = match repository
+        .list_legacy_external_post_watchers(&owner, &project_name, number, resource_type, 100)
+        .await
+    {
+        Ok(watcher_list) => watcher_list,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let watcher_payload: Vec<_> = watcher_list
+        .watchers
+        .into_iter()
+        .map(|watcher| {
+            serde_json::json!({
+                "name": watcher.name,
+                "url": base_path_href(&base_path, &format!("/{}", watcher.login_id)),
+            })
+        })
+        .collect();
+
+    Json(serde_json::json!({
+        "totalWatchers": watcher_list.total_watchers,
+        "watchersInList": watcher_payload.len(),
+        "watchers": watcher_payload,
+    }))
+    .into_response()
 }
 
 async fn legacy_external_authenticated_user_id(

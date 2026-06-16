@@ -1190,6 +1190,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .expect("created project")
         .id;
     let project_id_text = project_id.to_string();
+    let owner_id = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("owner user")
+        .id;
     let visitor_id = repository
         .find_user_by_identifier("visitor")
         .await
@@ -1788,6 +1794,86 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_organization_toggle).await;
+
+    repository
+        .watch_issue(issue_id, visitor_id)
+        .await
+        .expect("legacy issue watcher");
+    let legacy_issue_watchers = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/1/watchers?type=issues",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_watchers["totalWatchers"], 2);
+    assert_eq!(legacy_issue_watchers["watchersInList"], 2);
+    assert_eq!(legacy_issue_watchers["watchers"][0]["name"], "owner");
+    assert_eq!(legacy_issue_watchers["watchers"][0]["url"], "/yona/owner");
+    assert_eq!(legacy_issue_watchers["watchers"][1]["name"], "visitor");
+    assert_eq!(legacy_issue_watchers["watchers"][1]["url"], "/yona/visitor");
+
+    let posting = repository
+        .create_posting(CreatePostingInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "legacy watcher post body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "legacy watcher post".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("legacy watcher posting");
+    repository
+        .watch_posting(posting.id, visitor_id)
+        .await
+        .expect("legacy posting watcher");
+    let legacy_post_watchers = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/{}/watchers?type=posts",
+                posting.post_number
+            ),
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_post_watchers["totalWatchers"], 2);
+    assert_eq!(legacy_post_watchers["watchersInList"], 2);
+    assert_eq!(legacy_post_watchers["watchers"][0]["name"], "owner");
+    assert_eq!(legacy_post_watchers["watchers"][0]["url"], "/yona/owner");
+    assert_eq!(legacy_post_watchers["watchers"][1]["name"], "visitor");
+    assert_eq!(legacy_post_watchers["watchers"][1]["url"], "/yona/visitor");
+
+    let legacy_watchers_without_type = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/1/watchers",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(legacy_watchers_without_type.status(), StatusCode::OK);
+    assert_eq!(response_text(legacy_watchers_without_type).await, "");
 
     let watched = ok_json(
         rest(

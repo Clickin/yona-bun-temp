@@ -1073,6 +1073,19 @@ pub struct ProjectWatcherListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyExternalWatcherRecord {
+    pub login_id: String,
+    pub name: String,
+    pub user_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyExternalWatcherListRecord {
+    pub total_watchers: u32,
+    pub watchers: Vec<LegacyExternalWatcherRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectWebhookRecord {
     pub git_push: bool,
     pub id: i64,
