@@ -408,6 +408,8 @@ const PROJECT_MENU_SETTINGS = [
   { id: "menuSettingMilestone", key: "milestone", label: "milestone", name: "milestone" },
   { id: "menuSettingBoard", key: "board", label: "menu.board", name: "board" },
 ] as const;
+const PROJECT_NAME_PATTERN = /^[0-9A-Za-z-_.가-힣]+$/;
+const PROJECT_RESERVED_NAMES = [".", "..", ".git"];
 
 function defaultProjectMenuSettings(defaultMenus?: string[]): ProjectMenuSettingsInput {
   const menus = new Set(
@@ -2974,6 +2976,7 @@ export function ProjectSettingsPage(props: {
     projectScope: detail.projectScope,
     ...projectMenuSettingsFromDetail(detail),
   });
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setFormState({
@@ -3011,6 +3014,15 @@ export function ProjectSettingsPage(props: {
             method="post"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
+                setValidationMessage("project.name.alert");
+                return;
+              }
+              if (PROJECT_RESERVED_NAMES.includes(formState.projectName)) {
+                setValidationMessage("project.name.reserved.alert");
+                return;
+              }
+              setValidationMessage(null);
               props.onUpdateProjectSettings?.({
                 board: formState.board,
                 code: formState.code,
@@ -3072,12 +3084,13 @@ export function ProjectSettingsPage(props: {
                       maxLength={250}
                       name="name"
                       value={formState.projectName}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setFormState((current) => ({
                           ...current,
                           projectName: event.target.value,
-                        }))
-                      }
+                        }));
+                        setValidationMessage(null);
+                      }}
                     />
                     <br />
                   </dd>
@@ -3101,6 +3114,11 @@ export function ProjectSettingsPage(props: {
                   </dd>
                 </dl>
               </div>
+              {validationMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {validationMessage}
+                </div>
+              ) : null}
 
               <div className="box-wrap middle">
                 <div className="cu-label">project.shareOption</div>

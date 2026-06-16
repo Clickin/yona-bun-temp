@@ -4801,6 +4801,15 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("updateProject");
     expect(routeSource).toContain("error.badrequest");
     expect(routeSource).not.toContain("Update project failed.");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("project.name.alert");
+    expect(viewSource).toContain("project.name.reserved.alert");
+    expect(viewSource).toContain('[".", "..", ".git"]');
+    expect(viewSource).toContain("/^[0-9A-Za-z-_.가-힣]+$/");
   });
 
   it("requires project delete confirmation route to preserve legacy anchors and mutation wiring", () => {
