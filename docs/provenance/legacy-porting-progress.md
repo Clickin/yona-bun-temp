@@ -297,7 +297,7 @@ Interpretation:
 - [x] Milestone detail with legacy `projectLayout.scala.html` / `milestone/view.scala.html` header/menu shell/action anchors (`.project-header-outer`, `.project-menu-outer`, `.milesion-wrap`, `.attachments[data-attachments]`, `#issues`, search box, open/close `data-request-uri`, `#deleteConfirm`, `issue/labels.css`) and the legacy `milestone` document-title fallback before detail load
 - [x] Milestone create with legacy `projectLayout.scala.html` / `milestone/create.scala.html` header/menu form shell anchors
 - [x] Milestone update with legacy `projectLayout.scala.html` / `milestone/edit.scala.html` header/menu form shell anchors
-- [x] Legacy milestone create/edit form shell anchors
+- [x] Legacy milestone create/edit form shell anchors and `yobi.milestone.Write.js` title/content/due-date validation message keys
 - [x] Common legacy route shells for milestone list/detail/create/edit forbidden, not-found, and non-specific read failures
 - [x] Milestone delete
 - [x] Open milestone

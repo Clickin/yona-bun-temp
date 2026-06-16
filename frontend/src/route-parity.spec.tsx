@@ -3007,6 +3007,14 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('class="date-picker"');
     expect(createHtml).not.toContain('placeholder="yyyy-MM-dd"');
     expect(createHtml).not.toContain("Yona Rust Project");
+    const milestoneViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-milestone-views.tsx"),
+      "utf8",
+    );
+    expect(milestoneViewsSource).toContain("legacyMilestoneValidationMessage");
+    expect(milestoneViewsSource).toContain("milestone.error.title");
+    expect(milestoneViewsSource).toContain("milestone.error.content");
+    expect(milestoneViewsSource).toContain("milestone.error.duedateFormat");
 
     const editHtml = renderToStaticMarkup(
       <ProjectMilestoneFormPage

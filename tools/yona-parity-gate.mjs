@@ -106,7 +106,7 @@ const PARITY_SLICES = [
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
-    testKeywords: ["issue", "issues", "label", "milestone"],
+    testKeywords: ["issue", "issues", "label", "milestone", "route-parity"],
     provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
   },
 ];
@@ -390,7 +390,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
-    testKeywords: ["issue", "issues", "label", "milestone"],
+    testKeywords: ["issue", "issues", "label", "milestone", "route-parity"],
     provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
   },
   {

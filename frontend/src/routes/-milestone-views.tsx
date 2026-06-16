@@ -113,6 +113,23 @@ function milestoneActionHref(
   );
 }
 
+function legacyMilestoneValidationMessage(input: {
+  contentsMarkdown: string;
+  dueDate: string;
+  title: string;
+}) {
+  if (input.title.trim().length === 0) {
+    return "milestone.error.title";
+  }
+  if (input.contentsMarkdown.trim().length === 0) {
+    return "milestone.error.content";
+  }
+  if (input.dueDate.trim().length > 0 && !/\d{4}-\d{2}-\d{2}$/.test(input.dueDate.trim())) {
+    return "milestone.error.duedateFormat";
+  }
+  return null;
+}
+
 function MilestoneSearchBox(props: { placeholder: string }) {
   return (
     <div className="pull-left search search-bar">
@@ -600,6 +617,7 @@ export function ProjectMilestoneFormPage(props: {
   const [dueDate, setDueDate] = React.useState(initial?.dueDateLabel ?? "");
   const [state, setState] = React.useState(initial?.state ?? "open");
   const [pending, setPending] = React.useState(false);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setTitle(initial?.title ?? "");
@@ -607,6 +625,7 @@ export function ProjectMilestoneFormPage(props: {
     setAttachmentIds([]);
     setDueDate(initial?.dueDateLabel ?? "");
     setState(initial?.state ?? "open");
+    setValidationMessage(null);
   }, [initial]);
 
   return (
@@ -639,6 +658,16 @@ export function ProjectMilestoneFormPage(props: {
               method="post"
               onSubmit={(event) => {
                 event.preventDefault();
+                const nextValidationMessage = legacyMilestoneValidationMessage({
+                  contentsMarkdown,
+                  dueDate,
+                  title,
+                });
+                if (nextValidationMessage) {
+                  setValidationMessage(nextValidationMessage);
+                  return;
+                }
+                setValidationMessage(null);
                 setPending(true);
                 void props
                   .onSubmit?.({
@@ -660,7 +689,10 @@ export function ProjectMilestoneFormPage(props: {
                         id="title"
                         maxLength={250}
                         name="title"
-                        onChange={(event) => setTitle(event.currentTarget.value)}
+                        onChange={(event) => {
+                          setTitle(event.currentTarget.value);
+                          setValidationMessage(null);
+                        }}
                         placeholder="title.text"
                         data-legacy-tabindex="1"
                         type="text"
@@ -688,7 +720,10 @@ export function ProjectMilestoneFormPage(props: {
                             onAttachmentUpload={(attachment) =>
                               setAttachmentIds((current) => [...current, attachment.id])
                             }
-                            onChange={setContentsMarkdown}
+                            onChange={(nextValue) => {
+                              setContentsMarkdown(nextValue);
+                              setValidationMessage(null);
+                            }}
                             runtimeConfig={props.runtimeConfig}
                             value={contentsMarkdown}
                           />
@@ -754,7 +789,10 @@ export function ProjectMilestoneFormPage(props: {
                               className="validate due-date"
                               id="dueDate"
                               name="dueDate"
-                              onChange={(event) => setDueDate(event.currentTarget.value)}
+                              onChange={(event) => {
+                                setDueDate(event.currentTarget.value);
+                                setValidationMessage(null);
+                              }}
                               type="text"
                               value={dueDate}
                             />
@@ -766,6 +804,11 @@ export function ProjectMilestoneFormPage(props: {
                   </div>
                 </div>
               </div>
+              {validationMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {validationMessage}
+                </div>
+              ) : null}
             </form>
           </div>
         </div>
