@@ -2047,6 +2047,35 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .1
         .parse::<i64>()
         .expect("legacy issue comment id");
+    let legacy_issue_imported_comment_author_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "author": {
+                "email": "legacy-issue-comment-author@example.com",
+                "loginId": "legacy-issue-comment-author",
+                "name": "Legacy Issue Comment Author"
+            },
+            "body": "legacy issue imported comment author body"
+        })),
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_imported_comment_author_response.status(),
+        StatusCode::CREATED
+    );
+    let legacy_issue_imported_comment_author = repository
+        .find_user_by_identifier("legacy-issue-comment-author@example.com")
+        .await
+        .unwrap()
+        .expect("legacy issue imported comment author");
+    assert_eq!(
+        legacy_issue_imported_comment_author.login_id,
+        "legacy-issue-comment-author"
+    );
     let legacy_issue_token_comment_response = rest_with_headers(
         app.clone(),
         Method::POST,
@@ -2089,6 +2118,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(legacy_issue_comments.iter().any(|comment| {
         comment["contentsMarkdown"] == "legacy issue token comment"
             && comment["authorLoginId"] == "visitor"
+    }));
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue imported comment author body"
+            && comment["authorLoginId"] == "legacy-issue-comment-author"
     }));
     let legacy_issue_comment_updated = ok_json(
         rest(
@@ -2316,7 +2349,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_issue_detect_change["result"], "ok");
     assert_eq!(legacy_issue_detect_change["issueBodyChanged"], true);
-    assert_eq!(legacy_issue_detect_change["numOfComments"], 2);
+    assert_eq!(legacy_issue_detect_change["numOfComments"], 3);
     assert_eq!(legacy_issue_detect_change["commentAuthorName"], "visitor");
     assert!(legacy_issue_detect_change["issueBodyChecksum"]
         .as_str()
