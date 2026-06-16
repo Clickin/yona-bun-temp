@@ -627,6 +627,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_weight_down_session_manager = session_manager.clone();
     let legacy_issue_content_backend = route_backend.clone();
     let legacy_issue_content_session_manager = session_manager.clone();
+    let legacy_issue_comment_backend = route_backend.clone();
+    let legacy_issue_comment_session_manager = session_manager.clone();
+    let legacy_issue_comment_base_path = base_path.clone();
     let legacy_issue_state_backend = route_backend.clone();
     let legacy_issue_state_session_manager = session_manager.clone();
     let legacy_issue_assignee_backend = route_backend.clone();
@@ -817,6 +820,28 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             legacy_board_comment_session_manager.clone(),
                             legacy_board_comment_backend.clone(),
                             legacy_board_comment_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyIssueCommentCreateBody>| {
+                    async move {
+                        legacy_external_create_issue_comment(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_comment_session_manager.clone(),
+                            legacy_issue_comment_backend.clone(),
+                            legacy_issue_comment_base_path.clone(),
                         )
                         .await
                     }
@@ -26157,6 +26182,16 @@ struct LegacyBoardCommentCreateBody {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyIssueCommentCreateBody {
+    author: Option<serde_json::Value>,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    comment: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 struct LegacyBoardCommentUpdateBody {
     #[serde(default)]
     content: String,
@@ -26456,6 +26491,149 @@ async fn legacy_external_create_board_posting_comment(
             "location": format!(
                 "{}#comment-{}",
                 base_path_href(&base_path, &format!("/{owner}/{project_name}/post/{number}")),
+                comment_id,
+            ),
+        })),
+    )
+        .into_response()
+}
+
+async fn legacy_external_create_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyIssueCommentCreateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue comments require repository backend")
+            .into_response();
+    };
+    let token_request = legacy_external_api_token_from_headers(&headers).is_some();
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let request_actor = match repository.find_user_by_id(request_user_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let _access = match read_issue_access(
+        repository,
+        &owner,
+        &project_name,
+        number,
+        Some(request_actor.id),
+    )
+    .await
+    {
+        Ok(access) if access.viewer_can_comment() => access,
+        Ok(_) => {
+            return RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "issue comment create is not allowed",
+            ))
+            .into_response();
+        }
+        Err(_) => {
+            match require_project_resource_create(
+                repository,
+                &owner,
+                &project_name,
+                Some(request_actor.id),
+                ProjectCreatableResource::IssueComment,
+            )
+            .await
+            {
+                Ok(_) => {}
+                Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            }
+            match read_issue_access(
+                repository,
+                &owner,
+                &project_name,
+                number,
+                Some(request_actor.id),
+            )
+            .await
+            {
+                Ok(access) => access,
+                Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+            }
+        }
+    };
+    let comment_markdown = if token_request {
+        body.comment.trim()
+    } else {
+        body.body.trim()
+    };
+    if comment_markdown.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "Expecting Json data",
+            })),
+        )
+            .into_response();
+    }
+    let comment_author = if token_request {
+        request_actor.clone()
+    } else {
+        match legacy_external_post_author(repository, &request_actor, body.author.as_ref()).await {
+            Ok(actor) => actor,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+    };
+    let issue = match repository
+        .create_issue_comment(persistence::CreateIssueCommentInput {
+            actor_display_name: comment_author.display_name.clone(),
+            actor_id: comment_author.id,
+            actor_login_id: comment_author.login_id.clone(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment_markdown.to_string(),
+            issue_number: number,
+            owner_name: owner.clone(),
+            parent_comment_id: None,
+            project_name: project_name.clone(),
+        })
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if token_request {
+        return (
+            StatusCode::CREATED,
+            Json(serde_json::json!({
+                "result": legacy_external_issue_result(&issue),
+            })),
+        )
+            .into_response();
+    }
+    let comment_id = issue
+        .comments
+        .iter()
+        .map(|comment| comment.id)
+        .max()
+        .unwrap_or_default();
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "status": 201,
+            "location": format!(
+                "{}#comment-{}",
+                base_path_href(&base_path, &format!("/{owner}/{project_name}/issue/{number}")),
                 comment_id,
             ),
         })),

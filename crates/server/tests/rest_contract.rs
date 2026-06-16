@@ -1734,6 +1734,79 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_state).await;
+    let legacy_issue_comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "author": {
+                "email": "visitor@example.com"
+            },
+            "body": "legacy issue comment body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_issue_comment_response.status(), StatusCode::CREATED);
+    let legacy_issue_comment = response_json(legacy_issue_comment_response).await;
+    assert_eq!(legacy_issue_comment["status"], 201);
+    assert!(legacy_issue_comment["location"]
+        .as_str()
+        .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/issue/1#comment-")));
+    let legacy_issue_token_comment_response = rest_with_headers(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        &[("Authorization", &authorization_header)],
+        Some(json!({
+            "comment": "legacy issue token comment"
+        })),
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_token_comment_response.status(),
+        StatusCode::CREATED
+    );
+    let legacy_issue_token_comment = response_json(legacy_issue_token_comment_response).await;
+    assert_eq!(legacy_issue_token_comment["result"]["number"], 1);
+    assert_eq!(
+        legacy_issue_token_comment["result"]["title"],
+        "Favorite issue"
+    );
+    let legacy_issue_comment_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let legacy_issue_comments = legacy_issue_comment_detail["comments"]
+        .as_array()
+        .expect("legacy issue comments");
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue comment body"
+            && comment["authorLoginId"] == "visitor"
+    }));
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue token comment"
+            && comment["authorLoginId"] == "visitor"
+    }));
+    let anonymous_legacy_issue_comment = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        None,
+        None,
+        Some(json!({ "body": "anonymous issue comment" })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_comment).await;
     let legacy_issue_assignee = ok_json(
         rest(
             app.clone(),
