@@ -5014,6 +5014,14 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("project.changeVCS.error");
     expect(routeSource).not.toContain("Change project VCS failed.");
 
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectChangeVcsPage");
+    expect(viewSource).toContain('setValidationMessage("project.changeVCS.alert")');
+    expect(viewSource).toContain("const canOpenChangeVcsModal = accepted");
+
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const projectDetail: ProjectDetailViewModel = {
       enrollmentRequested: false,
@@ -5062,6 +5070,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('id="btnChangeVCSExec"');
     expect(html).toContain("button.yes");
     expect(html).toContain("button.no");
+    expect(html).not.toContain("project.changeVCS.alert");
   });
 
   it("requires project transfer route to preserve legacy anchors and mutation wiring", () => {

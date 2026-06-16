@@ -204,7 +204,7 @@ Interpretation:
 - [x] Project default menu configuration and create/settings checkbox persistence (`project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`)
 - [x] Project Git import form and clone mutation (`/_import` preserves legacy `project/importing.scala.html` anchors, common route error shell for form-option read failures, and owner handoff; `POST /_import` creates the project/menu settings and clones the supplied Git source into ID-based bare storage through native `git clone --bare`)
 - [x] Project settings legacy `projectLayout.scala.html` / `project/setting.scala.html` header/menu plus shell anchors (`#saveSetting`, `.bubble-wrap.gray`, `.setting-box`, project scope/code-access radios, reviewer count panel, menu checkbox layout, `#save`)
-- [~] Git/SVN type change shell, metadata toggle, README flag clear, repository reset, `project.changeVCS.error` / fork `fork.failed` mutation fallback scalars, and common route error shells
+- [~] Git/SVN type change shell, metadata toggle, README flag clear, repository reset, unchecked-accept `project.changeVCS.alert` scalar, `project.changeVCS.error` / fork `fork.failed` mutation fallback scalars, and common route error shells
 - [x] Project statistics legacy `projectLayout.scala.html` header/menu plus under-construction shell, with common route error shells including `error.badrequest` for non-forbidden/non-not-found read failures instead of temporary English fallback copy
 - [x] Project home legacy header/menu/page shell anchors and common route error shells, including `projectMenu.scala.html` menu-name keys/count badges without temporary title tooltips
 - [x] Project home `tabId=history|dashboard` selection and legacy history/dashboard shell anchors

@@ -2542,7 +2542,8 @@ export function ProjectChangeVcsPage(props: {
   };
   const [accepted, setAccepted] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState(false);
-  const canSubmit = accepted && changeVcs.viewerCanChange && !props.pending;
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const canOpenChangeVcsModal = accepted && changeVcs.viewerCanChange && !props.pending;
 
   return (
     <main className="app-shell">
@@ -2575,7 +2576,10 @@ export function ProjectChangeVcsPage(props: {
                     checked={accepted}
                     className="checkbox"
                     id="acceptChangeVCS"
-                    onChange={(event) => setAccepted(event.currentTarget.checked)}
+                    onChange={(event) => {
+                      setAccepted(event.currentTarget.checked);
+                      setValidationMessage(null);
+                    }}
                     type="checkbox"
                   />
                   <label className="bg-checkbox label-agreement" htmlFor="acceptChangeVCS">
@@ -2585,6 +2589,11 @@ export function ProjectChangeVcsPage(props: {
               </div>
             </div>
           </div>
+          {validationMessage ? (
+            <div className="alert alert-error" role="alert">
+              {validationMessage}
+            </div>
+          ) : null}
           <div className="box-wrap bottom">
             <a
               className="ybtn ybtn-danger"
@@ -2593,8 +2602,11 @@ export function ProjectChangeVcsPage(props: {
               id="btnChangeVCS"
               onClick={(event) => {
                 event.preventDefault();
-                if (canSubmit) {
+                if (canOpenChangeVcsModal) {
+                  setValidationMessage(null);
                   setModalOpen(true);
+                } else if (!accepted) {
+                  setValidationMessage("project.changeVCS.alert");
                 }
               }}
             >
