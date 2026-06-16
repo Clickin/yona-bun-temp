@@ -4830,6 +4830,10 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="btnDelete"');
     expect(viewSource).toContain('id="alertDeletion"');
     expect(viewSource).toContain('id="btnDeleteExec"');
+    expect(viewSource).toContain('setValidationMessage("project.delete.alert")');
+    expect(viewSource).toContain("const canOpenDeleteModal = accepted");
+    expect(viewSource).toContain('href="#alertDeletion"');
+    expect(viewSource).not.toContain("disabled={!accepted || props.pending}");
   });
 
   it("requires project webhooks route to preserve legacy anchors and mutation wiring", () => {

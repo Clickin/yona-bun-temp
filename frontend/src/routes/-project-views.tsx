@@ -2777,6 +2777,8 @@ export function ProjectDeletePage(props: {
   };
   const [accepted, setAccepted] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const canOpenDeleteModal = accepted && !props.pending;
 
   return (
     <main className="app-shell">
@@ -2802,7 +2804,10 @@ export function ProjectDeletePage(props: {
                   checked={accepted}
                   className="checkbox"
                   id="accept"
-                  onChange={(event) => setAccepted(event.target.checked)}
+                  onChange={(event) => {
+                    setAccepted(event.target.checked);
+                    setValidationMessage(null);
+                  }}
                   type="checkbox"
                 />
                 <label className="bg-checkbox label-agreement" htmlFor="accept">
@@ -2811,17 +2816,29 @@ export function ProjectDeletePage(props: {
               </p>
             </div>
           </div>
+          {validationMessage ? (
+            <div className="alert alert-error" role="alert">
+              {validationMessage}
+            </div>
+          ) : null}
           <div className="box-wrap bottom">
-            <button
+            <a
               className="ybtn ybtn-danger"
               data-toggle="modal"
-              disabled={!accepted || props.pending}
+              href="#alertDeletion"
               id="btnDelete"
-              onClick={() => setModalOpen(true)}
-              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                if (canOpenDeleteModal) {
+                  setValidationMessage(null);
+                  setModalOpen(true);
+                } else if (!accepted) {
+                  setValidationMessage("project.delete.alert");
+                }
+              }}
             >
               <i className="yobicon-database-remove" /> project.delete.this
-            </button>
+            </a>
           </div>
 
           <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
