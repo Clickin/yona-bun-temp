@@ -87,6 +87,7 @@ describe("project issue list filters", () => {
         query={{
           assigneeLoginId: "door",
           authorLoginId: "nori",
+          dueDate: "",
           labelIds: [5],
           milestoneId: 7,
           pageNum: 2,

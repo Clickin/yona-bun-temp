@@ -500,6 +500,7 @@ export function ProjectIssueListPage(props: {
   const query = props.query ?? {
     assigneeLoginId: "",
     authorLoginId: "",
+    dueDate: "",
     labelIds: [],
     milestoneId: 0,
     pageNum: 1,
@@ -507,6 +508,12 @@ export function ProjectIssueListPage(props: {
   };
   const selectedLabelIds = query.labelIds.map(String);
   const issueList = props.issueList;
+  const [dueDateFilter, setDueDateFilter] = React.useState(query.dueDate);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setDueDateFilter(query.dueDate);
+    setValidationMessage(null);
+  }, [query.dueDate]);
   const openHref = buildProjectHref(
     props.runtimeConfig,
     detail.ownerName,
@@ -641,6 +648,12 @@ export function ProjectIssueListPage(props: {
                 id="search"
                 method="get"
                 name="search"
+                onSubmit={(event) => {
+                  if (!isLegacyIssueDueDateValid(dueDateFilter)) {
+                    event.preventDefault();
+                    setValidationMessage("issue.error.invalid.duedate");
+                  }
+                }}
               >
                 <input name="pageNum" type="hidden" value="1" />
                 <input name="orderBy" type="hidden" value="updatedDate" />
@@ -676,7 +689,7 @@ export function ProjectIssueListPage(props: {
                       type="text"
                       defaultValue=""
                     />
-                    <button className="search-btn" data-submit="submit" type="button">
+                    <button className="search-btn" data-submit="submit" type="submit">
                       <i className="yobicon-search"></i>
                     </button>
                   </div>
@@ -755,14 +768,23 @@ export function ProjectIssueListPage(props: {
                         data-toggle="calendar"
                         id="issueDueDate"
                         name="dueDate"
+                        onChange={(event) => {
+                          setValidationMessage(null);
+                          setDueDateFilter(event.currentTarget.value);
+                        }}
                         type="text"
-                        defaultValue=""
+                        value={dueDateFilter}
                       />
                       <button className="search-btn btn-calendar" type="button">
                         <i className="yobicon-calendar2"></i>
                       </button>
                     </dd>
                   </dl>
+                  {validationMessage ? (
+                    <div className="alert alert-error" role="alert">
+                      {validationMessage}
+                    </div>
+                  ) : null}
                   <div className="labels-wrap">
                     <a
                       className="ybtn ybtn-default ybtn-mini pull-right"
@@ -934,6 +956,7 @@ export interface ProjectIssueListQuery {
   assigneeId?: number;
   assigneeLoginId: string;
   authorLoginId: string;
+  dueDate: string;
   labelIds: number[];
   milestoneId: number;
   pageNum: number;

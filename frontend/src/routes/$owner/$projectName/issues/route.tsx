@@ -136,6 +136,7 @@ function defaultIssueListQuery(): ProjectIssueListQuery {
   return {
     assigneeLoginId: "",
     authorLoginId: "",
+    dueDate: "",
     labelIds: [],
     milestoneId: 0,
     pageNum: 1,
@@ -156,6 +157,7 @@ function issueListQueryFromSearchParams(searchParams: URLSearchParams): ProjectI
     assigneeId: optionalNumber(searchParams.get("assigneeId")),
     assigneeLoginId: searchParams.get("assigneeLoginId") ?? "",
     authorLoginId: searchParams.get("authorLoginId") ?? "",
+    dueDate: searchParams.get("dueDate") ?? "",
     labelIds,
     milestoneId: positiveNumber(searchParams.get("milestoneId")),
     pageNum: positiveNumber(searchParams.get("pageNum")) || 1,

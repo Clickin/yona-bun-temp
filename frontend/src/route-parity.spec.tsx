@@ -197,6 +197,14 @@ describe("file-route parity harness", () => {
     expect(issueListRouteSource).not.toContain("Read project issues failed.");
     expect(issueListRouteSource).toContain("BadRequestPage");
     expect(issueListRouteSource).toContain('"bad-request"');
+    expect(issueListRouteSource).toContain('searchParams.get("dueDate")');
+    const issueViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-issue-views.tsx"),
+      "utf8",
+    );
+    expect(issueViewsSource).toContain("issue.error.invalid.duedate");
+    expect(issueViewsSource).toContain('id="issueDueDate"');
+    expect(issueViewsSource).toContain('data-submit="submit" type="submit"');
     expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
     expect(issueDetailRouteSource).not.toContain("Read issue detail failed.");
     expect(issueDetailRouteSource).toContain("BadRequestPage");
