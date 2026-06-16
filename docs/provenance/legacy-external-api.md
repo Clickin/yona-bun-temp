@@ -53,7 +53,7 @@ contract.
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/exports` | `ProjectApi.exports()` | Project export JSON including metadata, members, labels, issues, posts, milestones. | Migrator/export scope. |
 | `POST /-_-api/v1/owners/:owner/projects` | `ProjectApi.newProject()` | Site/admin import-style project creation with members and repository creation. | Migrator/import scope. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/labels` | `ProjectApi.newLabel()` | Bulk issue-label/category import. | Migrator/import scope. |
-| `GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads?query=` | `ProjectApi.titleHeads()` | JSON title-head and label suggestion helper. | Migrator/deferred; app UI uses canonical `/api/v1`. |
+| `GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads?query=` | `ProjectApi.titleHeads()` | JSON title-head and label suggestion helper. | Implemented in app server with legacy JSON Accept gate and title-head/project-label result shape. |
 
 ### Issues / Comments
 
@@ -68,7 +68,7 @@ contract.
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments` | `IssueApi.newIssueComment()` | Issue comment creation via token or session/import payload. | Implemented in app server with legacy session `{status, location}` response and token `{result}` response. |
 | `PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId` | `IssueApi.updateIssueComment()` | Comment content update with conflict detection. | Implemented in app server with legacy `content`/`original` conflict contract and `{result}` comment payload. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers` | `IssueApi.commentNotiRecivers()` | Preview mandatory notification receivers for a comment. | Migrator/deferred; not app-server scope. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number` | `IssueApi.updateIssueLabel()` | Replace issue label set from label id array. | Migrator/deferred; app uses canonical `/api/v1`. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number` | `IssueApi.updateIssueLabel()` | Replace issue label set from label id array. | Implemented in app server with legacy label-id array request and `{id, labels}` response. |
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers?query=` | `IssueApi.findAssignableUsers()` | Select2 assignable-user search for an issue. | Implemented in app server with legacy array shape and JSON Accept gate. |
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/assignableUsers?query=` | `IssueApi.findAssignableUsersOfProject()` | Select2 assignable-user search for a project. | Implemented in app server with legacy array shape and JSON Accept gate. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees` | `IssueApi.updateAssginees()` | Legacy typo-preserving assignee mutation and notification. | Implemented in app server with legacy assignee-array request and `{assignee, issue}` payload. |
@@ -87,7 +87,7 @@ contract.
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/posts` | `BoardApi.newPostings()` | Bulk board post creation/import. | Migrator/import scope. |
 | `PATCH /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content` | `BoardApi.updatePostingContent()` | Body-only edit with conflict detection. | Migrator/deferred; app uses canonical `/api/v1`. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments` | `BoardApi.newPostingComment()` | Board comment creation/import. | Migrator/import scope. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number` | `BoardApi.updatePostLabel()` | Replace board post label set from label id array. | Migrator/deferred; app uses canonical `/api/v1`. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number` | `BoardApi.updatePostLabel()` | Replace board post label set from label id array. | Implemented in app server with legacy label-id array request and `{id, labels}` response. |
 
 ### Milestones
 
