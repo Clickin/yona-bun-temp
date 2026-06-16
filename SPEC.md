@@ -1344,7 +1344,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 | `POST /-_-api/v1/users/token` | API 토큰 발급      | implemented with legacy password validation/session/token response | app helper |
 | User statistics/default-login/admin-user state | user workspace/site-manager helpers | implemented where marked in `legacy-external-api.md`, including legacy admin-user recursive `state` parsing and `GUEST` state support | app helper |
 | Issue API                     | 이슈 CRUD + 댓글   | selected issue/comment helper rows implemented; bulk import/export remains deferred | mixed app helper + migrator |
-| Project API                   | 프로젝트 CRUD      | title-head/label helper rows implemented; project export/create remains migrator/deferred | mixed app helper + migrator |
+| Project API                   | 프로젝트 CRUD      | title-head/label helper rows implemented, including legacy recursive label batch parsing; project export/create remains migrator/deferred | mixed app helper + migrator |
 | Board API                     | 게시글 CRUD + 댓글 | selected post/comment/label helper rows implemented including payload author auto-create, legacy created-date restore, and current-user `temporaryUploadFiles` binding; broader migration/export rows remain migrator/deferred | mixed app helper + migrator |
 | Milestone API                 | 마일스톤 CRUD      | milestone batch helper implemented including untrimmed title scalar preservation; broader migration/export remains deferred | mixed app helper + migrator |
 | Watcher API                   | 감시자 목록        | issue/post watcher helper implemented | app helper |

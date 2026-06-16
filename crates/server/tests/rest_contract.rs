@@ -5022,6 +5022,40 @@ async fn rest_label_routes_manage_labels_and_categories() {
     );
     assert_eq!(legacy_created_labels[1]["user"]["labelName"], "Bug");
 
+    let legacy_nested_labels_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "import": {
+                "labels": [
+                    {
+                        "meta": {
+                            "category": "Nested",
+                            "isExclusive": false
+                        },
+                        "style": {
+                            "labelColor": "#0099ff"
+                        },
+                        "name": {
+                            "labelName": "NestedFeature"
+                        }
+                    }
+                ]
+            }
+        })),
+    )
+    .await;
+    assert_eq!(legacy_nested_labels_response.status(), StatusCode::CREATED);
+    let legacy_nested_labels = response_json(legacy_nested_labels_response).await;
+    assert_eq!(legacy_nested_labels[0]["status"], 201);
+    assert_eq!(legacy_nested_labels[0]["label"], "NestedFeature");
+    assert_eq!(legacy_nested_labels[0]["category"], "Nested");
+    assert_eq!(legacy_nested_labels[0]["labelColor"], "#0099ff");
+    assert_eq!(legacy_nested_labels[0]["isExclusive"], true);
+
     let anonymous_legacy_label = rest(
         app.clone(),
         Method::POST,

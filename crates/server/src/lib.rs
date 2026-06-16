@@ -1356,7 +1356,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
-                      Json(body): Json<LegacyProjectLabelsBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_project_create_labels(
                             headers,
@@ -29124,22 +29124,6 @@ struct LegacyProjectTitleHeadsQuery {
     query: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct LegacyProjectLabelsBody {
-    labels: Option<Vec<LegacyProjectLabelBody>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LegacyProjectLabelBody {
-    #[serde(rename = "category")]
-    category_name: String,
-    #[serde(default)]
-    is_exclusive: Option<bool>,
-    label_color: String,
-    label_name: String,
-}
-
 fn accepts_legacy_json(headers: &HeaderMap) -> bool {
     let Some(value) = headers.get(http::header::ACCEPT) else {
         return true;
@@ -29377,11 +29361,12 @@ async fn legacy_project_create_labels(
     headers: HeaderMap,
     owner: String,
     project_name: String,
-    body: LegacyProjectLabelsBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
-    let Some(labels) = body.labels else {
+    let Some(labels) = legacy_json_find_value(&body, "labels").and_then(|value| value.as_array())
+    else {
         return (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({
@@ -29419,12 +29404,9 @@ async fn legacy_project_create_labels(
 
     let mut results = Vec::new();
     for label in labels {
-        let original_label = serde_json::json!({
-            "category": label.category_name,
-            "isExclusive": label.is_exclusive,
-            "labelColor": label.label_color,
-            "labelName": label.label_name,
-        });
+        let Some(label) = legacy_project_label_body_from_value(label) else {
+            return RestRouteError::bad_request("invalid project label payload").into_response();
+        };
         let color = match normalize_issue_label_color(&label.label_color) {
             Ok(color) => color,
             Err(error) => return RestRouteError::from_connect_error(error).into_response(),
@@ -29458,12 +29440,46 @@ async fn legacy_project_create_labels(
                 "status": 409,
                 "reason": "Conflict",
                 "message": "Failed to create a new label. The label may already exist.",
-                "user": original_label,
+                "user": label.original,
             }));
         }
     }
 
     (StatusCode::CREATED, Json(results)).into_response()
+}
+
+#[derive(Clone, Debug)]
+struct LegacyProjectLabelCreateItem {
+    category_name: String,
+    is_exclusive: Option<bool>,
+    label_color: String,
+    label_name: String,
+    original: serde_json::Value,
+}
+
+fn legacy_project_label_body_from_value(
+    value: &serde_json::Value,
+) -> Option<LegacyProjectLabelCreateItem> {
+    let category_name = legacy_json_find_value(value, "category")?
+        .as_str()?
+        .to_string();
+    let label_color = legacy_json_find_value(value, "labelColor")?
+        .as_str()?
+        .to_string();
+    let label_name = legacy_json_find_value(value, "labelName")?
+        .as_str()?
+        .to_string();
+    let is_exclusive = legacy_json_find_value(value, "isExclusive")
+        .filter(|value| value.is_boolean())
+        .and_then(|value| value.as_bool());
+
+    Some(LegacyProjectLabelCreateItem {
+        category_name,
+        is_exclusive,
+        label_color,
+        label_name,
+        original: value.clone(),
+    })
 }
 
 #[derive(Clone, Debug, Deserialize)]
