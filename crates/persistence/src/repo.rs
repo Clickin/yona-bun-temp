@@ -4998,6 +4998,31 @@ impl AppRepository {
             .await
     }
 
+    pub async fn update_issue_labels(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        label_ids: &[i64],
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let mut active = issue::ActiveModel {
+            id: Set(model.id),
+            ..Default::default()
+        };
+        active.updated_date = Set(Some(current_datetime()));
+        active.update(&self.db).await?;
+        self.replace_issue_labels(model.id, project_record.id, label_ids)
+            .await?;
+        self.read_issue_detail_for_viewer(owner_name, project_name, issue_number, None)
+            .await
+    }
+
     pub async fn delete_posting(
         &self,
         owner_name: &str,

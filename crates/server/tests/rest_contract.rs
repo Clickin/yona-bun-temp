@@ -1538,6 +1538,67 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .unwrap()
         .expect("created favorite issue")
         .id;
+    let legacy_issue_label_fixture = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "categoryName": "IssueType",
+                "categoryIsExclusive": false,
+                "labelColor": "#f44336",
+                "labelName": "IssueLabel"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let legacy_issue_label_id = legacy_issue_label_fixture["label"]["id"]
+        .as_str()
+        .expect("legacy issue label id")
+        .to_string();
+    let legacy_issue_label_update = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!([legacy_issue_label_id])),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_label_update["id"], "owner");
+    assert_eq!(legacy_issue_label_update["labels"], 1);
+    let legacy_issue_detail_with_label = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_detail_with_label["labels"][0]["name"],
+        "IssueLabel"
+    );
+    let anonymous_legacy_issue_label_update = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
+        None,
+        None,
+        Some(json!([legacy_issue_label_fixture["label"]["id"].clone()])),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_label_update).await;
     let legacy_issue_favorited = ok_json(
         rest(
             app.clone(),

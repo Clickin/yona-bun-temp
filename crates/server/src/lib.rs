@@ -619,6 +619,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_board_comment_session_manager = session_manager.clone();
     let legacy_board_comment_base_path = base_path.clone();
     let legacy_board_label_backend = route_backend.clone();
+    let legacy_issue_label_backend = route_backend.clone();
+    let legacy_issue_label_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -813,6 +815,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             number,
                             body,
                             legacy_board_label_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issuelabel/{number}",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<Vec<serde_json::Value>>| {
+                    async move {
+                        legacy_external_update_issue_labels(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_label_session_manager.clone(),
+                            legacy_issue_label_backend.clone(),
                         )
                         .await
                     }
@@ -26362,6 +26385,53 @@ async fn legacy_external_update_board_posting_labels(
     Json(serde_json::json!({
         "id": owner,
         "labels": posting.labels.len(),
+    }))
+    .into_response()
+}
+
+async fn legacy_external_update_issue_labels(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: Vec<serde_json::Value>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue labels require repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    if !access.viewer_can_manage() {
+        return RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue label update is not allowed",
+        ))
+        .into_response();
+    }
+    let label_ids: Vec<i64> = body.iter().filter_map(legacy_external_label_id).collect();
+    let issue = match repository
+        .update_issue_labels(&owner, &project_name, number, &label_ids)
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "id": access.authorization.project.owner_name,
+        "labels": issue.labels.len(),
     }))
     .into_response()
 }
