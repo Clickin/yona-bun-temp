@@ -4808,8 +4808,10 @@ describe("file-route parity harness", () => {
     );
     expect(viewSource).toContain("project.name.alert");
     expect(viewSource).toContain("project.name.reserved.alert");
+    expect(viewSource).toContain("project.logo.alert");
     expect(viewSource).toContain('[".", "..", ".git"]');
     expect(viewSource).toContain("/^[0-9A-Za-z-_.가-힣]+$/");
+    expect(viewSource).toContain("isProjectLogoImageFile");
   });
 
   it("requires project delete confirmation route to preserve legacy anchors and mutation wiring", () => {

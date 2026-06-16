@@ -411,6 +411,13 @@ const PROJECT_MENU_SETTINGS = [
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z-_.가-힣]+$/;
 const PROJECT_RESERVED_NAMES = [".", "..", ".git"];
 
+function isProjectLogoImageFile(file: File) {
+  if (file.type.toLowerCase().startsWith("image/")) {
+    return true;
+  }
+  return /\.(?:bmp|gif|jpe?g|png)$/i.test(file.name);
+}
+
 function defaultProjectMenuSettings(defaultMenus?: string[]): ProjectMenuSettingsInput {
   const menus = new Set(
     defaultMenus && defaultMenus.length > 0
@@ -3063,6 +3070,15 @@ export function ProjectSettingsPage(props: {
                               className="file"
                               id="logoPath"
                               name="logoPath"
+                              onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                if (file && !isProjectLogoImageFile(file)) {
+                                  setValidationMessage("project.logo.alert");
+                                  event.currentTarget.value = "";
+                                } else {
+                                  setValidationMessage(null);
+                                }
+                              }}
                               type="file"
                             />
                           </div>
