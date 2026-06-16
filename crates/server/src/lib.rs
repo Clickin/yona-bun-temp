@@ -881,7 +881,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             patch(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyBoardContentUpdateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_update_board_posting_content(
                             headers,
@@ -1052,7 +1052,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             patch(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyBoardContentUpdateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_update_issue_content(
                             headers,
@@ -26697,12 +26697,25 @@ struct LegacyBoardPostingBody {
     updated_at: Option<serde_json::Value>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug)]
 struct LegacyBoardContentUpdateBody {
-    #[serde(default)]
     content: String,
-    #[serde(default)]
     original: String,
+}
+
+fn legacy_content_update_body_from_value(
+    value: &serde_json::Value,
+) -> LegacyBoardContentUpdateBody {
+    LegacyBoardContentUpdateBody {
+        content: legacy_json_find_value(value, "content")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        original: legacy_json_find_value(value, "original")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -26873,10 +26886,11 @@ async fn legacy_external_update_board_posting_content(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyBoardContentUpdateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_content_update_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented(
             "board posting content requires repository backend",
@@ -27781,10 +27795,11 @@ async fn legacy_external_update_issue_content(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyBoardContentUpdateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_content_update_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("issue content requires repository backend")
             .into_response();

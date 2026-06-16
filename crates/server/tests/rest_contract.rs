@@ -1958,6 +1958,32 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_content["projectName"], "projectYobi");
     assert_eq!(legacy_issue_content["state"], "open");
 
+    let nested_legacy_issue_content = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payload": {
+                    "body": {
+                        "content": "Favorite issue body nested update"
+                    },
+                    "base": {
+                        "original": "Favorite issue body updated"
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_issue_content["body"],
+        "Favorite issue body nested update"
+    );
+
     let legacy_issue_content_conflict = rest(
         app.clone(),
         Method::PATCH,
@@ -1975,7 +2001,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_json(legacy_issue_content_conflict).await,
         json!({
             "message": "Already modified by someone.",
-            "storedContent": "Favorite issue body updated"
+            "storedContent": "Favorite issue body nested update"
         })
     );
     let anonymous_legacy_issue_content = rest(
@@ -1986,7 +2012,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         None,
         Some(json!({
             "content": "anonymous",
-            "original": "Favorite issue body updated"
+            "original": "Favorite issue body nested update"
         })),
     )
     .await;
@@ -2008,7 +2034,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_closed["result"]["state"], "closed");
     assert_eq!(
         legacy_issue_closed["result"]["body"],
-        "Favorite issue body updated"
+        "Favorite issue body nested update"
     );
     let legacy_issue_opened = ok_json(
         rest(
@@ -3186,6 +3212,32 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .as_str()
         .is_some_and(|value| value.ends_with("+0000")));
 
+    let nested_legacy_board_content = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            Some(json!({
+                "payload": {
+                    "body": {
+                        "content": "legacy board post body nested update"
+                    },
+                    "base": {
+                        "original": "legacy board post body updated"
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_board_content["body"],
+        "legacy board post body nested update"
+    );
+
     let legacy_board_conflict = rest(
         app.clone(),
         Method::PATCH,
@@ -3203,7 +3255,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_json(legacy_board_conflict).await,
         json!({
             "message": "Already modified by someone.",
-            "storedContent": "legacy board post body updated"
+            "storedContent": "legacy board post body nested update"
         })
     );
 
