@@ -13,12 +13,12 @@ use crate::repo_types::{
     IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
     IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
     IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
-    LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyResourceTargetRecord,
-    MailboxActionExecutionInput, MailboxActionExecutionRecord, MailboxNormalizedMessageInput,
-    MailboxNormalizedMessageResult, MailboxReplyTargetRecord, MailboxResourceActionRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyProjectTitleHeadRecord,
+    LegacyResourceTargetRecord, MailboxActionExecutionInput, MailboxActionExecutionRecord,
+    MailboxNormalizedMessageInput, MailboxNormalizedMessageResult, MailboxReplyTargetRecord,
+    MailboxResourceActionRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
+    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
+    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -61,9 +61,9 @@ use crate::{
     posting, posting_comment, posting_issue_label, project, project_label, project_menu_setting,
     project_pushed_branch, project_transfer, project_user, project_visitation, pull_request,
     pull_request_commit, pull_request_event, pull_request_reviewers, recent_issue, recent_project,
-    review_comment, role, site_admin, unwatch, user_credential, user_enrolled_organization,
-    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
-    webhook, webhook_delivery, webhook_thread,
+    review_comment, role, site_admin, title_head, unwatch, user_credential,
+    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
+    user_verification, watch, webhook, webhook_delivery, webhook_thread,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -7373,6 +7373,40 @@ impl AppRepository {
             total_watchers,
             watchers,
         })
+    }
+
+    pub async fn list_legacy_project_title_heads(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        query: &str,
+    ) -> Result<Vec<LegacyProjectTitleHeadRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let needle = query.to_ascii_lowercase();
+        let mut title_heads = title_head::Entity::find()
+            .filter(title_head::Column::ProjectId.eq(Some(project.id)))
+            .order_by_asc(title_head::Column::HeadKeyword)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| {
+                let name = row.head_keyword.unwrap_or_default();
+                if !name.to_ascii_lowercase().contains(&needle) {
+                    return None;
+                }
+                Some(LegacyProjectTitleHeadRecord {
+                    frequency: row.frequency.unwrap_or_default(),
+                    name,
+                })
+            })
+            .collect::<Vec<_>>();
+        title_heads.sort_by(|left, right| left.name.cmp(&right.name));
+        Ok(title_heads)
     }
 
     pub async fn list_project_webhooks(

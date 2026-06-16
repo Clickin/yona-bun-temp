@@ -1086,6 +1086,12 @@ pub struct LegacyExternalWatcherListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyProjectTitleHeadRecord {
+    pub frequency: i32,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectWebhookRecord {
     pub git_push: bool,
     pub id: i64,

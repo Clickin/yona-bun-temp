@@ -733,7 +733,7 @@ Interpretation:
 - [x] `GET /-_-api/v1/hello`
 - [~] User REST APIs: `GET /-_-api/v1/users/:user/statistics` is mounted with the legacy `UserApi.statistics` JSON fields (`issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter`) plus session and `Yona-Token` / `Authorization: token ...` authentication; broader legacy user create/token/search/issue-list/admin APIs remain migrator/external compatibility scope
 - [~] Issue REST API: `POST /-_-api/v1/translation` issue/board helper is mounted with legacy unconfigured `412 Precondition Failed` behavior, legacy unauthenticated `401 {"message":"unauthorized request"}` error JSON, executable translation proxy, issue/board `#translate` and `.comment-translate` controls, and React-side Markdown-source rendering; broader issue REST API remains separate migrator scope
-- [ ] Project REST API
+- [~] Project REST API: `GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads` is mounted with the legacy `ProjectApi.titleHeads` JSON result array for title-head keywords plus project labels and preserves the legacy JSON `Accept` gate; broader legacy project create/label mutation/export compatibility remains migrator/external scope
 - [ ] Board REST API
 - [ ] Milestone REST API (legacy external `/-_-api/v1/**`, separate migrator scope)
 - [x] Watcher REST API: `GET /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers?type=issues|posts` returns the legacy `WatcherApi.getWatchers` JSON shape (`totalWatchers`, `watchersInList`, `watchers[{name,url}]`) with the 100-item list cap and preserves the legacy empty 200 response when `type` is omitted or unsupported

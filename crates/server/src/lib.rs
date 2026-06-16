@@ -622,6 +622,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
+    let legacy_title_heads_backend = route_backend.clone();
+    let legacy_title_heads_session_manager = session_manager.clone();
     let legacy_translation_backend = route_backend.clone();
     let legacy_translation_session_manager = session_manager.clone();
     let transfer_accept_backend = route_backend.clone();
@@ -816,6 +818,26 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/titleHeads",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name)): Path<(String, String)>,
+                      Query(query): Query<LegacyProjectTitleHeadsQuery>| {
+                    async move {
+                        legacy_project_title_heads(
+                            headers,
+                            owner,
+                            project_name,
+                            query,
+                            legacy_title_heads_session_manager.clone(),
+                            legacy_title_heads_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/-_-api/v1/translation",
@@ -26051,6 +26073,100 @@ async fn legacy_external_user_statistics(
     };
 
     Json(rest_user_statistics_from_record(&statistics)).into_response()
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct LegacyProjectTitleHeadsQuery {
+    query: Option<String>,
+}
+
+fn accepts_legacy_json(headers: &HeaderMap) -> bool {
+    let Some(value) = headers.get(http::header::ACCEPT) else {
+        return true;
+    };
+    let Ok(value) = value.to_str() else {
+        return false;
+    };
+    value.split(',').any(|part| {
+        let media_type = part
+            .split(';')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        matches!(
+            media_type.as_str(),
+            "application/json" | "application/*" | "*/*"
+        )
+    })
+}
+
+async fn legacy_project_title_heads(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    query: LegacyProjectTitleHeadsQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project title heads require repository backend")
+            .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization =
+        match require_project_read(repository, &owner, &project_name, actor_id).await {
+            Ok(authorization) => authorization,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    let query = query.query.unwrap_or_default();
+    let title_heads = match repository
+        .list_legacy_project_title_heads(&owner, &project_name, &query)
+        .await
+    {
+        Ok(title_heads) => title_heads,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let labels = match repository
+        .list_project_labels(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+    {
+        Ok(labels) => labels,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    let mut result = Vec::new();
+    for title_head in title_heads {
+        result.push(serde_json::json!({
+            "name": title_head.name,
+            "frequency": title_head.frequency,
+            "category": "",
+            "searchText": title_head.name,
+        }));
+    }
+    for label in labels {
+        result.push(serde_json::json!({
+            "name": label.name,
+            "frequency": 0,
+            "category": label.category_name,
+            "categoryId": label.category_id,
+            "id": label.id,
+            "labelColor": label.color,
+            "isExclusive": label.category_is_exclusive,
+            "searchText": format!("{}/{}", label.name, label.category_name),
+        }));
+    }
+
+    Json(serde_json::json!({ "result": result })).into_response()
 }
 
 #[derive(Clone, Debug, Deserialize)]

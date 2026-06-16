@@ -9,9 +9,9 @@ use serde_json::json;
 use serde_json::Value;
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    email, issue, user_project_notification, watch, AppRepository, CreateIssueCommentInput,
-    CreateIssueInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
-    IssueMutationInput, PostingMutationInput,
+    email, issue, title_head, user_project_notification, watch, AppRepository,
+    CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
+    CreateProjectInput, IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
@@ -3266,9 +3266,15 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
 
 #[tokio::test]
 async fn rest_label_routes_manage_labels_and_categories() {
-    let (app, _) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project_id = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("label project")
+        .id;
 
     let created_category = ok_json(
         rest(
@@ -3307,6 +3313,64 @@ async fn rest_label_routes_manage_labels_and_categories() {
     .await;
     let label_id = created_label["label"]["id"].as_str().unwrap();
     assert_eq!(created_label["label"]["name"], "Bug");
+    title_head::ActiveModel {
+        id: NotSet,
+        project_id: Set(Some(project_id)),
+        head_keyword: Set(Some("Bugfix".to_string())),
+        frequency: Set(Some(3)),
+    }
+    .insert(&db)
+    .await
+    .expect("legacy title head");
+
+    let legacy_title_heads = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/titleHeads?query=bug",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_title_heads["result"][0]["name"], "Bugfix");
+    assert_eq!(legacy_title_heads["result"][0]["frequency"], 3);
+    assert_eq!(legacy_title_heads["result"][0]["category"], "");
+    assert_eq!(legacy_title_heads["result"][0]["searchText"], "Bugfix");
+    assert_eq!(legacy_title_heads["result"][1]["name"], "Bug");
+    assert_eq!(legacy_title_heads["result"][1]["frequency"], 0);
+    assert_eq!(legacy_title_heads["result"][1]["category"], "Type");
+    assert_eq!(
+        legacy_title_heads["result"][1]["categoryId"],
+        json!(created_label["label"]["categoryId"]
+            .as_str()
+            .unwrap()
+            .parse::<i64>()
+            .unwrap())
+    );
+    assert_eq!(
+        legacy_title_heads["result"][1]["id"],
+        json!(created_label["label"]["id"]
+            .as_str()
+            .unwrap()
+            .parse::<i64>()
+            .unwrap())
+    );
+    assert_eq!(legacy_title_heads["result"][1]["labelColor"], "#f44336");
+    assert_eq!(legacy_title_heads["result"][1]["isExclusive"], true);
+    assert_eq!(legacy_title_heads["result"][1]["searchText"], "Bug/Type");
+
+    let legacy_title_heads_html = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/titleHeads",
+        &[("Accept", "text/html")],
+        None,
+    )
+    .await;
+    assert_eq!(legacy_title_heads_html.status(), StatusCode::NOT_ACCEPTABLE);
 
     let labels = ok_json(
         rest(
