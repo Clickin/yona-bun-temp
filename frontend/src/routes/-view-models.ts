@@ -176,6 +176,7 @@ export interface ProjectDetailViewModel {
     closedIssueCount: number;
     completionPercent: number;
     dueDateLabel: string;
+    id: number;
     openIssueCount: number;
     title: string;
   };

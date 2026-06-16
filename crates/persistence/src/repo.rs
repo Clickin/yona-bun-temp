@@ -8169,6 +8169,7 @@ impl AppRepository {
             closed_issue_count,
             completion_percent,
             due_date_label: format_workspace_date_label(row.due_date),
+            id: row.id,
             open_issue_count,
             title: row.title.unwrap_or_default(),
         }))

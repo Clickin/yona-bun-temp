@@ -1212,6 +1212,7 @@ pub struct ProjectMilestoneSummaryRecord {
     pub closed_issue_count: u32,
     pub completion_percent: u32,
     pub due_date_label: String,
+    pub id: i64,
     pub open_issue_count: u32,
     pub title: String,
 }

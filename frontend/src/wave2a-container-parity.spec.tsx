@@ -92,6 +92,7 @@ describe("wave 2A container parity", () => {
         closedIssueCount: 2,
         completionPercent: 67,
         dueDateLabel: "Due 2026-04-30",
+        id: 9,
         openIssueCount: 4,
         title: "Wave 2A",
       },
@@ -159,6 +160,9 @@ describe("wave 2A container parity", () => {
     expect(html).not.toContain('title="Reviews 3"');
     expect(html).not.toContain('title="Boards 7"');
     expect(html).toContain('class="milestone-info"');
+    expect(html).toContain(
+      'class="title" href="/yona/weblabs/projectYobi/milestone/9">Wave 2A</a>',
+    );
     expect(html).toContain('class="progress progress-success nm"');
     expect(html).toContain("label.dueDate");
     expect(html).toContain("2 / 6");

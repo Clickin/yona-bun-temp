@@ -682,6 +682,7 @@ message ProjectMilestoneSummary {
   uint32 open_issue_count = 3;
   uint32 closed_issue_count = 4;
   uint32 completion_percent = 5;
+  int64 id = 6;
 }
 
 message ProjectContainer {

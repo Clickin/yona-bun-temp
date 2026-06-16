@@ -11,6 +11,7 @@ function renderProjectHome(routeHref: string, overrides: Partial<ProjectDetailVi
       closedIssueCount: 1,
       completionPercent: 25,
       dueDateLabel: "Due 2026-06-30",
+      id: 7,
       openIssueCount: 3,
       title: "Phase dashboard",
     },
@@ -72,8 +73,15 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="project-menu-nav project-menu-gruop"');
     expect(html).toContain('class="code-menu');
     expect(html).toContain('class="project-menu-count"');
-    expect(html).toContain('href="/yona/yona/projectYobi"><span class="menu-name">title.projectHome</span>');
-    expect(html).toContain('href="/yona/yona/projectYobi/code"><span class="menu-name">menu.code</span>');
+    expect(html).toContain(
+      'href="/yona/yona/projectYobi"><span class="menu-name">title.projectHome</span>',
+    );
+    expect(html).toContain(
+      'href="/yona/yona/projectYobi/code"><span class="menu-name">menu.code</span>',
+    );
+    expect(html).toContain(
+      'class="title" href="/yona/yona/projectYobi/milestone/7">Phase dashboard</a>',
+    );
     expect(html).not.toContain('title="Home"');
     expect(html).not.toContain('title="Code"');
     expect(html).not.toContain('title="Settings"');
@@ -391,6 +399,7 @@ const projectHomeDetail: ProjectDetailViewModel = {
     closedIssueCount: 1,
     completionPercent: 25,
     dueDateLabel: "Due 2026-06-30",
+    id: 7,
     openIssueCount: 3,
     title: "Phase dashboard",
   },

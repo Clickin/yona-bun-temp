@@ -39871,6 +39871,7 @@ fn project_milestone_summary_from_record(
         closed_issue_count: record.closed_issue_count,
         completion_percent: record.completion_percent,
         due_date_label: record.due_date_label.clone(),
+        id: record.id,
         open_issue_count: record.open_issue_count,
         title: record.title.clone(),
         ..Default::default()

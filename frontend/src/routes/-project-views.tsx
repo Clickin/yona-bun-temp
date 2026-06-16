@@ -1591,7 +1591,17 @@ export function ProjectDetailPage(props: {
                 {detail.currentMilestone ? (
                   <div className="milestone-info">
                     <div className="meta-info">
-                      <span className="title">{detail.currentMilestone.title}</span>
+                      <a
+                        className="title"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `milestone/${detail.currentMilestone.id}`,
+                        )}
+                      >
+                        {detail.currentMilestone.title}
+                      </a>
                       {detail.currentMilestone.dueDateLabel ? (
                         <span className="due-date">
                           label.dueDate <strong>{detail.currentMilestone.dueDateLabel}</strong>

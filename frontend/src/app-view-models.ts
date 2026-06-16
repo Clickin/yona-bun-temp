@@ -343,6 +343,7 @@ export function toProjectContainerView(
           closedIssueCount: detail.currentMilestone.closedIssueCount,
           completionPercent: detail.currentMilestone.completionPercent,
           dueDateLabel: detail.currentMilestone.dueDateLabel,
+          id: Number(detail.currentMilestone.id),
           openIssueCount: detail.currentMilestone.openIssueCount,
           title: detail.currentMilestone.title,
         }

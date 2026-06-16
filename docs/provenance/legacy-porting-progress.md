@@ -33,7 +33,7 @@ Interpretation:
 - Organization member management mutation fallbacks now use the legacy common `error.badrequest` alert key instead of temporary `Accept enrollment failed.` / `Add member failed.` / `Delete member failed.` / `Update member failed.` copy for non-Error failures.
 - Organization create/settings mutation fallbacks now use the legacy common `error.badrequest` key instead of temporary create/update English copy, and settings read failures use the common route error shells.
 - Project clone URL controls now use legacy `project/home.scala.html` / `conf/messages` key `code.copyUrl` for control labels instead of temporary `Clone URL` copy.
-- Project home tab labels and right-pane milestone status now use legacy `project/home.scala.html` / `milestone/partial_status.scala.html` scalar/wrapper output (`project.history.recent`, `project.dashboard`, `.milestone-info`, `label.dueDate`, progress bar, closed/total issue ratio) instead of temporary `Recent history` / `Dashboard` / `Current milestone` summary copy; milestone detail linking remains constrained by the current project container DTO, which does not expose milestone id.
+- Project home tab labels and right-pane milestone status now use legacy `project/home.scala.html` / `milestone/partial_status.scala.html` scalar/wrapper output (`project.history.recent`, `project.dashboard`, `.milestone-info`, milestone title detail link, `label.dueDate`, progress bar, closed/total issue ratio) instead of temporary `Recent history` / `Dashboard` / `Current milestone` summary copy.
 - Project issue label management now preserves legacy `yobi.issue.LabelEditor.js` client validation/failure/delete-confirm scalars (`label.failedTo`, `label.error.empty`, `label.error.color`, `label.error.duplicated`, `label.error.duplicated.in.category`, `label.confirm.delete`, `error.failedTo`) instead of silent promise failures or browser-native validation.
 - Issue detail voter modal now preserves legacy `partial_voter_list.scala.html` / `issue/view.scala.html` email copy controls by projecting voter email addresses, rendering `#copyEmailBtn` with `button.copy.email`, and surfacing `button.copy.email.success.message` / `site.features.error.clipboard` for clipboard success/failure paths.
 - Common bad-request/forbidden/not-found route shells now use legacy `error/*.scala.html` message-key body copy and `menu.home` buttons instead of temporary explanatory English lede text.
@@ -219,7 +219,7 @@ Interpretation:
 - [x] Project home history issue/post/pull-request activity rows
 - [x] Project home history commit activity rows
 - [x] Project home overview edit-flow direct route and response shape
-- [x] Project home tab labels and right-pane milestone status scalar/wrapper parity with legacy `project/home.scala.html` and `milestone/partial_status.scala.html`
+- [x] Project home tab labels and right-pane milestone status scalar/wrapper/detail-link parity with legacy `project/home.scala.html` and `milestone/partial_status.scala.html`
 - [x] Project home watch/unwatch failure fallback preserves the legacy `yobi.project.Global.js` raw `Server Error` notification scalar
 - [x] Project home favorite failure fallback preserves the legacy `yona.Usermenu.js` `Update failed: ` alert prefix
 - [x] Project home enroll/cancel failure fallback preserves the legacy `yobi.project.Global.js` status-key mapping (`user.enroll.failed.*` and `error.forbidden`)
