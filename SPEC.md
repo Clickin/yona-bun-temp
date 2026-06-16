@@ -698,7 +698,7 @@ GET   /categories                          → 전역 카테고리
 
 | 기능               | Legacy 동작                             | 현재 상태           | Phase |
 | ------------------ | --------------------------------------- | ------------------- | ----- |
-| 프로젝트 라벨 CRUD | 이름, 색상, 카테고리                    | ✅ Phase 2B 구현    | 2     |
+| 프로젝트 라벨 CRUD | 이름, 색상, 카테고리                    | ✅ Phase 2B 구현; legacy `yobi.issue.LabelEditor.js` validation/failure/delete-confirm scalars preserved | 2     |
 | 라벨 카테고리      | 라벨을 카테고리별 그룹핑                | ✅ Phase 2B 구현    | 2     |
 | 라벨 필터링        | 이슈/게시판 목록에서 라벨 필터          | ✅ Phase 2A/2B 구현 | 2     |
 | 라벨 색상 CSS      | 자동 생성 CSS (`IssueLabel.labelCSS()`) | ✅ Phase 2B 구현    | 2     |
@@ -708,6 +708,7 @@ GET   /categories                          → 전역 카테고리
 
 - [x] 라벨 생성 시 이름, 색상(hex), 카테고리 지정 가능
 - [x] 라벨 관리 화면은 legacy `projectLayout.scala.html` / `projectMenu.scala.html` / `project/issuelabels.scala.html` / partial anchors (`.project-header-outer`, `.project-header-inner`, `.project-header-wrap`, `.project-menu-outer`, settings-active project menu, `.page-wrap-outer`, `.project-page-wrap.label-editor-wrap`, `#subMenuIssueLabel`, `#copyLabel`, `#frmNewLabel`, `.label-preset-colors`, `#labelsList`, `.row-fluid.list-head`, `.span3.category`, `.span9.name`, `.category-wrap[data-category-name]`, `data-delete-uri`, `data-update-uri`, `#editCategory`, `#editLabel`)를 보존한다
+- [x] 라벨 관리 클라이언트 validation/failure/delete confirm은 legacy `yobi.issue.LabelEditor.js` message key (`label.failedTo`, `label.error.empty`, `label.error.color`, `label.error.duplicated`, `label.error.duplicated.in.category`, `label.confirm.delete`, `error.failedTo`)를 보존한다
 - [x] 라벨 색상이 legacy와 동일하게 배경색 + 텍스트색으로 표시
 - [x] 이슈 필터에서 라벨 선택 시 해당 라벨이 붙은 이슈만 필터링
 - [x] 카테고리별 라벨 그룹핑이 legacy `labelsform` 화면과 동일
