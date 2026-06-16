@@ -33,4 +33,9 @@
 - model-origin behavior는 isolated domain test로 번역한다.
 - root mixed code는 target architecture가 아니라 contract snapshot과 workflow hint다.
 - provenance는 legacy source와 Rust target을 잇는 다리이지, old stack baseline을 유지하는 장치가 아니다.
-
+- Persistence record layout changes that do not alter legacy behavior may keep the same
+  canonical owner path and public Rust target layer while moving volatile compatibility
+  DTOs into narrower modules. The 2026-06-17 `IssueCommentNotificationReceiverRecord`
+  split keeps the legacy `IssueApi.commentNotiRecivers` translation contract unchanged
+  and was verified with `cargo check -p yona-rust-persistence` (cold sandbox check:
+  5m25s; immediate no-change check: 0.36s).

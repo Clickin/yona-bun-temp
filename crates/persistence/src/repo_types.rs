@@ -2,6 +2,10 @@ use sea_orm::entity::prelude::DateTime;
 use serde::Serialize;
 use yona_rust_search::SearchSnippet;
 
+mod legacy_external;
+
+pub use legacy_external::*;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppUserRecord {
     pub id: i64,
@@ -199,15 +203,6 @@ pub struct IssueMentionUserSearchRecord {
     pub items: Vec<IssueMentionUserRecord>,
     pub total: u32,
     pub truncated: bool,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct IssueCommentNotificationReceiverRecord {
-    pub avatar_url: String,
-    pub display_name: String,
-    pub email_address: String,
-    pub login_id: String,
-    pub pure_name_only: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
