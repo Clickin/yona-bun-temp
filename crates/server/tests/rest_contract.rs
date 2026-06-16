@@ -1994,6 +1994,14 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(legacy_board_comment["location"]
         .as_str()
         .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/post/77#comment-")));
+    let legacy_board_comment_id = legacy_board_comment["location"]
+        .as_str()
+        .expect("legacy board comment location")
+        .rsplit_once("#comment-")
+        .expect("legacy board comment anchor")
+        .1
+        .parse::<i64>()
+        .expect("legacy board comment id");
     let legacy_board_detail_with_comment = ok_json(
         rest(
             app.clone(),
@@ -2013,6 +2021,62 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .find(|comment| comment["contentsMarkdown"] == "legacy board comment body")
         .expect("legacy board comment");
     assert_eq!(legacy_created_comment["authorLoginId"], "visitor");
+
+    let legacy_board_comment_update = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            &format!("/yona/owner/projectYobi/post/77/comment/{legacy_board_comment_id}"),
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "content": "legacy board comment body updated",
+                "original": "legacy board comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_board_comment_update["result"]["id"],
+        legacy_board_comment_id
+    );
+    assert_eq!(
+        legacy_board_comment_update["result"]["author"]["loginId"],
+        "visitor"
+    );
+    assert_eq!(
+        legacy_board_comment_update["result"]["author"]["email"],
+        "visitor@example.com"
+    );
+    assert_eq!(
+        legacy_board_comment_update["result"]["body"],
+        "legacy board comment body updated"
+    );
+    assert!(legacy_board_comment_update["result"]["createdAt"]
+        .as_str()
+        .is_some_and(|value| value.ends_with("+0000")));
+
+    let legacy_board_comment_conflict = rest(
+        app.clone(),
+        Method::PATCH,
+        &format!("/yona/owner/projectYobi/post/77/comment/{legacy_board_comment_id}"),
+        Some(&visitor_cookie),
+        None,
+        Some(json!({
+            "content": "stale comment update",
+            "original": "legacy board comment body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_board_comment_conflict.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        response_json(legacy_board_comment_conflict).await,
+        json!({
+            "message": "Already modified by someone.",
+            "storedContent": "legacy board comment body updated"
+        })
+    );
 
     let legacy_board_label_fixture = ok_json(
         rest(

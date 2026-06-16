@@ -547,6 +547,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let board_comment_update_backend = route_backend.clone();
     let board_comment_update_session_manager = session_manager.clone();
     let board_comment_update_base_path = base_path.clone();
+    let legacy_board_comment_update_backend = route_backend.clone();
+    let legacy_board_comment_update_session_manager = session_manager.clone();
     let board_comment_delete_backend = route_backend.clone();
     let board_comment_delete_session_manager = session_manager.clone();
     let board_comment_delete_base_path = base_path.clone();
@@ -2463,6 +2465,33 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/{owner}/{project}/post/{number}/comment/{comment_id}",
+            patch(
+                move |headers: HeaderMap,
+                      Path((owner, project, number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<LegacyBoardCommentUpdateBody>| {
+                    async move {
+                        legacy_update_posting_comment(
+                            headers,
+                            owner,
+                            project,
+                            number,
+                            comment_id,
+                            body,
+                            legacy_board_comment_update_session_manager.clone(),
+                            legacy_board_comment_update_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/{owner}/{project}/post/{number}/comment/{comment_id}/delete",
@@ -25855,6 +25884,14 @@ struct LegacyBoardCommentCreateBody {
     body: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyBoardCommentUpdateBody {
+    #[serde(default)]
+    content: String,
+    #[serde(default)]
+    original: String,
+}
+
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -26171,6 +26208,130 @@ fn legacy_external_label_id(value: &serde_json::Value) -> Option<i64> {
     value
         .as_i64()
         .or_else(|| value.as_str()?.trim().parse::<i64>().ok())
+}
+
+async fn legacy_update_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    comment_id: i64,
+    body: LegacyBoardCommentUpdateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "board posting comment update requires repository backend",
+        )
+        .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let access = match read_posting_access(
+        repository,
+        &owner,
+        &project_name,
+        number,
+        Some(actor_id),
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let Some(existing_comment) = access
+        .posting
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+    else {
+        return RestRouteError::not_found("posting comment not found").into_response();
+    };
+    let can_edit_comment = existing_comment.author_id == Some(actor.id)
+        || posting_can_update(&access.authorization, &access.posting, &actor);
+    if !can_edit_comment {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Forbidden request",
+            })),
+        )
+            .into_response();
+    }
+    if existing_comment.contents_markdown != body.original {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "message": "Already modified by someone.",
+                "storedContent": existing_comment.contents_markdown,
+            })),
+        )
+            .into_response();
+    }
+    let existing_attachment_ids = existing_comment
+        .attachments
+        .iter()
+        .map(|attachment| attachment.id)
+        .collect();
+    let posting = match repository
+        .update_posting_comment(persistence::UpdatePostingCommentInput {
+            actor_id: actor.id,
+            attachment_ids: existing_attachment_ids,
+            comment_id,
+            contents_markdown: body.content,
+            owner_name: owner,
+            post_number: number,
+            project_name,
+        })
+        .await
+    {
+        Ok(Some(posting)) => posting,
+        Ok(None) => return RestRouteError::not_found("posting comment not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let Some(updated_comment) = posting
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+    else {
+        return RestRouteError::not_found("posting comment not found").into_response();
+    };
+    Json(serde_json::json!({
+        "result": legacy_posting_comment_update_result(updated_comment, &actor),
+    }))
+    .into_response()
+}
+
+fn legacy_posting_comment_update_result(
+    comment: &persistence::PostingCommentRecord,
+    actor: &persistence::AppUserRecord,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": comment.id,
+        "type": "NONISSUE_COMMENT",
+        "author": {
+            "loginId": actor.login_id,
+            "name": actor.display_name,
+            "email": actor.email_address,
+        },
+        "createdAt": legacy_external_date_string(comment.created_at),
+        "body": comment.contents_markdown,
+    })
 }
 
 async fn legacy_external_posting_result(

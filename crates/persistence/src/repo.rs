@@ -14575,6 +14575,7 @@ impl AppRepository {
             contents_markdown: self
                 .read_text_column("posting_comment", "contents", row.id)
                 .await?,
+            created_at: row.created_date,
             created_label: format_workspace_date_label(row.created_date),
             id: row.id,
             parent_comment_id: row.parent_comment_id,

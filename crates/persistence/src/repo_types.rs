@@ -155,6 +155,7 @@ pub struct PostingCommentRecord {
     pub author_label: String,
     pub author_login_id: String,
     pub contents_markdown: String,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
     pub id: i64,
     pub parent_comment_id: Option<i64>,
