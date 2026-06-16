@@ -41,6 +41,14 @@ describe("project create parity", () => {
     expect(html).toContain('href="/_import?owner=weblabs"');
   });
 
+  it("keeps the legacy create button copy while submit is pending", () => {
+    const html = renderToStaticMarkup(<ProjectNewPage pending />);
+
+    expect(html).toContain('<button class="ybtn ybtn-success" disabled="" type="submit">');
+    expect(html).toContain("project.create");
+    expect(html).not.toContain("Creating…");
+  });
+
   it("renders legacy project scope radios instead of a select", () => {
     const html = renderToStaticMarkup(<ProjectNewPage defaultProjectScope="private" />);
 

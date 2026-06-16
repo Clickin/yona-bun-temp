@@ -914,8 +914,8 @@ export function ProjectNewPage(props: {
               </div>
             </div>
             <div className="actions mt20">
-              <button className="ybtn ybtn-success" type="submit">
-                {props.pending ? "Creating…" : "project.create"}
+              <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
+                project.create
               </button>
               <a className="ybtn" href="/">
                 button.cancel
