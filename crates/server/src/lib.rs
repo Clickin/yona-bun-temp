@@ -446,6 +446,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let usermenu_tab_base_path = base_path.clone();
     let default_login_page_session_manager = session_manager.clone();
     let default_login_page_backend = route_backend.clone();
+    let legacy_default_login_page_session_manager = session_manager.clone();
+    let legacy_default_login_page_backend = route_backend.clone();
     let update_profile_session_manager = session_manager.clone();
     let update_profile_backend = route_backend.clone();
     let update_profile_base_path = base_path.clone();
@@ -757,6 +759,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .nest("/api/v1", rest_router)
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .route(
+            "/-_-api/v1/user/defultLoginPage",
+            post(move |headers: HeaderMap, Query(query): Query<DirectDefaultLoginPageQuery>| {
+                async move {
+                    direct_set_default_login_page(
+                        headers,
+                        query,
+                        legacy_default_login_page_session_manager.clone(),
+                        legacy_default_login_page_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
         .route(
             "/-_-api/v1/admin/users",
             get(move |headers: HeaderMap| {

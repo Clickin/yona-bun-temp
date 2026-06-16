@@ -2179,6 +2179,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
         .is_empty());
 
     let set_default = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -2199,6 +2200,29 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
             .unwrap()
             .as_deref(),
         Some("/search?pageSize=20&scope=global")
+    );
+
+    let legacy_set_default = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/-_-api/v1/user/defultLoginPage?path=%2Fme")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(legacy_set_default.status(), StatusCode::OK);
+    let legacy_set_default_json = response_text(legacy_set_default).await;
+    assert!(legacy_set_default_json.contains("\"defaultLoginPage\":\"/me\""));
+    assert_eq!(
+        repository
+            .read_default_landing_path(user.id)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("/me")
     );
 }
 
