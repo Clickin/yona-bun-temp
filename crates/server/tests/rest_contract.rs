@@ -2014,6 +2014,58 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .expect("legacy board comment");
     assert_eq!(legacy_created_comment["authorLoginId"], "visitor");
 
+    let legacy_board_label_fixture = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "categoryName": "BoardType",
+                "categoryIsExclusive": false,
+                "labelColor": "#2196f3",
+                "labelName": "BoardLabel"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let legacy_board_label_id = legacy_board_label_fixture["label"]["id"]
+        .as_str()
+        .expect("legacy board label id")
+        .to_string();
+    let legacy_board_label_update = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/postlabel/77",
+            None,
+            None,
+            Some(json!([legacy_board_label_id])),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_board_label_update["id"], "owner");
+    assert_eq!(legacy_board_label_update["labels"], 1);
+    let legacy_board_detail_with_label = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/77",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_board_detail_with_label["labels"][0]["name"],
+        "BoardLabel"
+    );
+
     let anonymous_legacy_board_create = rest(
         app.clone(),
         Method::POST,

@@ -4973,6 +4973,31 @@ impl AppRepository {
             .map(Some)
     }
 
+    pub async fn update_posting_labels(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        label_ids: &[i64],
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let mut active = posting::ActiveModel {
+            id: Set(model.id),
+            ..Default::default()
+        };
+        active.updated_date = Set(Some(current_datetime()));
+        active.update(&self.db).await?;
+        self.replace_posting_labels(model.id, project_record.id, label_ids)
+            .await?;
+        self.read_posting_detail_for_viewer(owner_name, project_name, post_number, None)
+            .await
+    }
+
     pub async fn delete_posting(
         &self,
         owner_name: &str,

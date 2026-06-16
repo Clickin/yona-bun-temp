@@ -616,6 +616,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_board_comment_backend = route_backend.clone();
     let legacy_board_comment_session_manager = session_manager.clone();
     let legacy_board_comment_base_path = base_path.clone();
+    let legacy_board_label_backend = route_backend.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -790,6 +791,24 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             legacy_board_comment_session_manager.clone(),
                             legacy_board_comment_backend.clone(),
                             legacy_board_comment_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/postlabel/{number}",
+            post(
+                move |Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<Vec<serde_json::Value>>| {
+                    async move {
+                        legacy_external_update_board_posting_labels(
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_board_label_backend.clone(),
                         )
                         .await
                     }
@@ -26119,6 +26138,39 @@ async fn legacy_external_create_board_posting_comment(
         })),
     )
         .into_response()
+}
+
+async fn legacy_external_update_board_posting_labels(
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: Vec<serde_json::Value>,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("board posting labels require repository backend")
+            .into_response();
+    };
+    let label_ids: Vec<i64> = body.iter().filter_map(legacy_external_label_id).collect();
+    let posting = match repository
+        .update_posting_labels(&owner, &project_name, number, &label_ids)
+        .await
+    {
+        Ok(Some(posting)) => posting,
+        Ok(None) => return RestRouteError::not_found("pilot posting not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(serde_json::json!({
+        "id": owner,
+        "labels": posting.labels.len(),
+    }))
+    .into_response()
+}
+
+fn legacy_external_label_id(value: &serde_json::Value) -> Option<i64> {
+    value
+        .as_i64()
+        .or_else(|| value.as_str()?.trim().parse::<i64>().ok())
 }
 
 async fn legacy_external_posting_result(
