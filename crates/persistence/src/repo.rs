@@ -6089,13 +6089,12 @@ impl AppRepository {
         else {
             return Ok(false);
         };
-        let normalized_title = title.trim();
-        if normalized_title.is_empty() {
+        if title.is_empty() {
             return Ok(false);
         }
         let mut query = milestone::Entity::find()
             .filter(milestone::Column::ProjectId.eq(Some(project.id)))
-            .filter(milestone::Column::Title.eq(Some(normalized_title.to_string())));
+            .filter(milestone::Column::Title.eq(Some(title.to_string())));
         if let Some(except_milestone_id) = except_milestone_id {
             query = query.filter(milestone::Column::Id.ne(except_milestone_id));
         }
@@ -6114,7 +6113,7 @@ impl AppRepository {
         };
         let created = milestone::ActiveModel {
             id: NotSet,
-            title: Set(Some(input.title.trim().to_string())),
+            title: Set(Some(input.title)),
             due_date: Set(input.due_date),
             state: Set(Some(issue_state_to_raw(&input.state))),
             project_id: Set(Some(project.id)),

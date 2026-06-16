@@ -3457,6 +3457,31 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "Legacy Milestone"
     );
 
+    let spaced_legacy_milestones = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "milestones": [
+                    {
+                        "title": "  Legacy Milestone  ",
+                        "description": "legacy spaced title"
+                    }
+                ]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(spaced_legacy_milestones[0]["title"], "  Legacy Milestone  ");
+    assert_eq!(
+        spaced_legacy_milestones[0]["description"],
+        "legacy spaced title"
+    );
+
     let anonymous_legacy_milestones = rest(
         app.clone(),
         Method::POST,

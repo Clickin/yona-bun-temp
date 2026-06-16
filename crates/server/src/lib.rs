@@ -27242,12 +27242,7 @@ async fn legacy_external_create_milestones(
 
     let mut results = Vec::new();
     for milestone in milestones {
-        let title = milestone
-            .title
-            .as_deref()
-            .unwrap_or("No title")
-            .trim()
-            .to_string();
+        let title = milestone.title.as_deref().unwrap_or("No title").to_string();
         match repository
             .project_milestone_title_exists(&owner, &project_name, &title, None)
             .await

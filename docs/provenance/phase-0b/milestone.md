@@ -3,12 +3,13 @@
 ## Scope
 
 - Phase 2C project milestone management parity.
-- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, React-side Markdown description rendering, attachment binding, create/edit image paste/drop upload, and legacy direct mutation routes.
-- REST `/-_-api/v1/.../milestones`, migration export/import, and search milestone result type remain follow-up packets.
+- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, React-side Markdown description rendering, attachment binding, create/edit image paste/drop upload, legacy direct mutation routes, and the app-owned legacy external milestone batch helper.
+- Migration export/import remains a follow-up packet.
 
 ## Legacy Sources
 
 - `yona-original/app/controllers/MilestoneApp.java`
+- `yona-original/app/controllers/api/MilestoneApi.java`
 - `yona-original/app/models/Milestone.java`
 - `yona-original/app/views/milestone/list.scala.html`
 - `yona-original/app/views/milestone/view.scala.html`
@@ -33,17 +34,18 @@
 | `MilestoneApp.open/close`                                          | state toggle only changes milestone state and preserves linked issue states                                                                    | `OpenProjectMilestone`, `CloseProjectMilestone`, direct open/close routes                                   |
 | `milestone/view.scala.html`                                        | detail shows due date, progress, Markdown contents, attachments, list/edit/delete/open-close actions, and open/closed/all issue tabs           | `ReadProjectMilestone` RPC returns `contentsMarkdown` with empty `contentsHtml`; `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx` renders the shared React Markdown renderer |
 | `common.editor` + `common.fileUploader` + `yobi.Files` / `yobi.Attachments` | create/edit milestone contents support image paste/drop upload, insert `![name](url)`, and submit temporary attachment ids                     | `MarkdownAttachmentTextarea` in `ProjectMilestoneFormPage` plus `attachmentIds` in milestone create/update   |
+| `MilestoneApi.newMilestone`                                        | legacy external import creates milestone batches with title/description/due_on/state, duplicate item payloads, and untrimmed title scalars     | `POST /-_-api/v1/owners/:owner/projects/:projectName/milestones`, `legacy_external_create_milestones`, raw-title repository persistence |
 
 ## Verification
 
 - `cargo test -p yona-rust-pilot-server --test milestone_contract`
+- `cargo test -p yona-rust-pilot-server --test rest_contract rest_project_routes_cover_directory_views_and_mutations`
 - `pnpm --dir frontend build`
 - `pnpm --dir frontend check`
 - `pnpm --dir frontend test:e2e -- tests/shell-routing-smoke.e2e.ts -g "project milestone .*image uploads|project milestone edit editor submits pasted image uploads"`
 
 ## Remaining Follow-ups
 
-- REST milestone API parity remains in the REST/API packet.
 - Migration export/import milestone flows remain in the migration/export packet.
 - Search `milestone` result type remains in the search packet.
 - React-rendered milestone issue-reference metadata (`title` / `data-issue-state`) is supplied through the shared Markdown reference metadata payload.
