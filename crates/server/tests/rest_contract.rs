@@ -2321,7 +2321,9 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(legacy_issue_detect_change["issueBodyChecksum"]
         .as_str()
         .is_some_and(|value| value.len() == 40));
-    assert!(legacy_issue_detect_change["issueUpdateDate"].is_number());
+    assert!(legacy_issue_detect_change["issueUpdateDate"]
+        .as_i64()
+        .is_some_and(|value| value > 0));
     let anonymous_legacy_issue_detect_change = rest(
         app.clone(),
         Method::POST,

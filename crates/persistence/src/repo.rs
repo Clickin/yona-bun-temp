@@ -2525,6 +2525,21 @@ impl AppRepository {
             .await
     }
 
+    pub async fn read_issue_updated_at(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+    ) -> Result<Option<DateTime>, DbErr> {
+        let Some((_project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(issue_model.updated_date.or(issue_model.created_date))
+    }
+
     pub async fn restore_issue_history(
         &self,
         owner_name: &str,

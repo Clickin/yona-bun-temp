@@ -27629,12 +27629,21 @@ async fn legacy_external_detect_issue_change(
             Ok(access) => access,
             Err(error) => return RestRouteError::from_connect_error(error).into_response(),
         };
+    let issue_update_date = match repository
+        .read_issue_updated_at(&owner, &project_name, number)
+        .await
+    {
+        Ok(updated_at) => updated_at
+            .map(|value| value.and_utc().timestamp_millis())
+            .unwrap_or_default(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
     let issue_body_checksum = legacy_external_sha1_hex(access.issue.body_markdown.as_bytes());
     let mut payload = serde_json::json!({
         "issueBodyChanged": issue_body_checksum != body.issue_body_checksum,
         "numOfComments": access.issue.comment_count,
         "issueBodyChecksum": issue_body_checksum,
-        "issueUpdateDate": 0,
+        "issueUpdateDate": issue_update_date,
         "result": "ok",
     });
     if body.num_of_comments < access.issue.comment_count {
