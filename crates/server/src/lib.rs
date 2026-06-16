@@ -28664,17 +28664,23 @@ fn legacy_external_temporary_upload_file_ids(value: Option<&serde_json::Value>) 
 fn legacy_external_author_identifier(author: Option<&serde_json::Value>) -> Option<&str> {
     let author = author?;
     for field in ["email", "loginId", "login_id", "login"] {
-        if let Some(value) = author
-            .get(field)
-            .and_then(|value| value.as_str())
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
+        if let Some(value) = legacy_external_json_text_field(author, field) {
             return Some(value);
         }
     }
     author
         .as_str()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn legacy_external_json_text_field<'a>(
+    value: &'a serde_json::Value,
+    field: &str,
+) -> Option<&'a str> {
+    value
+        .get(field)
+        .and_then(|value| value.as_str())
         .map(str::trim)
         .filter(|value| !value.is_empty())
 }
@@ -28689,7 +28695,42 @@ async fn legacy_external_post_author(
     };
     match repository.find_user_by_identifier(identifier).await? {
         Some(author) => Ok(author),
-        None => Ok(fallback.clone()),
+        None => {
+            let Some(author) = author else {
+                return Ok(fallback.clone());
+            };
+            let Some(email_address) = legacy_external_json_text_field(author, "email") else {
+                return Ok(fallback.clone());
+            };
+            let Some(login_id) = legacy_external_json_text_field(author, "loginId")
+                .or_else(|| legacy_external_json_text_field(author, "login_id"))
+                .or_else(|| legacy_external_json_text_field(author, "login"))
+            else {
+                return Ok(fallback.clone());
+            };
+            if repository.user_login_id_exists(login_id).await? {
+                return Ok(fallback.clone());
+            }
+            let display_name = legacy_external_json_text_field(author, "name").unwrap_or(login_id);
+            let password_hash = hash(
+                format!(
+                    "legacy-external-import-disabled:{login_id}:{}",
+                    random_storage_token()
+                ),
+                DEFAULT_COST,
+            )
+            .map_err(|error| sea_orm::DbErr::Custom(error.to_string()))?;
+            repository
+                .create_user(persistence::CreateUserInput {
+                    display_name: display_name.to_string(),
+                    email_address: email_address.to_string(),
+                    is_confirmed: true,
+                    is_site_admin: false,
+                    login_id: login_id.to_string(),
+                    password_hash,
+                })
+                .await
+        }
     }
 }
 

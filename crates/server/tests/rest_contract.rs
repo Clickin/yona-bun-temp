@@ -2999,6 +2999,16 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
                     ],
                     "title": "legacy board post",
                     "updatedAt": "2020-01-03 AM 04:05:06 +0000"
+                },
+                {
+                    "author": {
+                        "email": "legacy-board-author@example.com",
+                        "loginId": "legacy-board-author",
+                        "name": "Legacy Board Author"
+                    },
+                    "body": "legacy board imported author body",
+                    "number": 78,
+                    "title": "legacy board imported author"
                 }
             ]
         })),
@@ -3010,6 +3020,21 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(
         legacy_board_created[0]["location"],
         "/yona/owner/projectYobi/post/77"
+    );
+    assert_eq!(legacy_board_created[1]["status"], 201);
+    assert_eq!(
+        legacy_board_created[1]["location"],
+        "/yona/owner/projectYobi/post/78"
+    );
+    let legacy_board_imported_author = repository
+        .find_user_by_identifier("legacy-board-author@example.com")
+        .await
+        .unwrap()
+        .expect("legacy board imported author");
+    assert_eq!(legacy_board_imported_author.login_id, "legacy-board-author");
+    assert_eq!(
+        legacy_board_imported_author.display_name,
+        "Legacy Board Author"
     );
     let legacy_board_detail = ok_json(
         rest(
@@ -3029,6 +3054,22 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "legacy board post body"
     );
     assert_eq!(legacy_board_detail["authorLoginId"], "visitor");
+    let legacy_board_imported_author_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/78",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_board_imported_author_detail["authorLoginId"],
+        "legacy-board-author"
+    );
 
     let legacy_board_content = ok_json(
         rest(
@@ -3162,6 +3203,35 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_comment_file_after.container_id,
         legacy_board_comment_id
     );
+    let legacy_board_imported_comment_author_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "author": {
+                "email": "legacy-board-comment-author@example.com",
+                "loginId": "legacy-board-comment-author",
+                "name": "Legacy Board Comment Author"
+            },
+            "body": "legacy board imported comment author body"
+        })),
+    )
+    .await;
+    assert_eq!(
+        legacy_board_imported_comment_author_response.status(),
+        StatusCode::CREATED
+    );
+    let legacy_board_imported_comment_author = repository
+        .find_user_by_identifier("legacy-board-comment-author@example.com")
+        .await
+        .unwrap()
+        .expect("legacy board imported comment author");
+    assert_eq!(
+        legacy_board_imported_comment_author.login_id,
+        "legacy-board-comment-author"
+    );
     let legacy_board_detail_with_comment = ok_json(
         rest(
             app.clone(),
@@ -3181,6 +3251,14 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .find(|comment| comment["contentsMarkdown"] == "legacy board comment body")
         .expect("legacy board comment");
     assert_eq!(legacy_created_comment["authorLoginId"], "visitor");
+    assert!(legacy_board_detail_with_comment["comments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(
+            |comment| comment["authorLoginId"] == "legacy-board-comment-author"
+                && comment["contentsMarkdown"] == "legacy board imported comment author body"
+        ));
 
     let legacy_board_comment_update = ok_json(
         rest(

@@ -90,9 +90,9 @@ contract.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/posts` | `BoardApi.newPostings()` | Bulk board post creation/import. | Implemented in app server for legacy `posts[]` request, requested post number, existing-user author lookup, legacy `createdAt`/`updatedAt` restore, current-user `temporaryUploadFiles` binding, and created-array response; payload author auto-create remains a migrator/import gap. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/posts` | `BoardApi.newPostings()` | Bulk board post creation/import. | Implemented in app server for legacy `posts[]` request, requested post number, existing-user author lookup plus payload author auto-create from `email`/`loginId`/`name`, legacy `createdAt`/`updatedAt` restore, current-user `temporaryUploadFiles` binding, and created-array response. |
 | `PATCH /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content` | `BoardApi.updatePostingContent()` | Body-only edit with conflict detection. | Implemented in app server with legacy `content`/`original` conflict contract and `ProjectApi.getResult`-style board-post payload. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments` | `BoardApi.newPostingComment()` | Board comment creation/import. | Implemented in app server with legacy `body` request, legacy `createdAt` restore, current-user `temporaryUploadFiles` binding, and `{status, location}` created response; payload author auto-create remains a migrator/import gap. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments` | `BoardApi.newPostingComment()` | Board comment creation/import. | Implemented in app server with legacy `body` request, payload author lookup/auto-create from `email`/`loginId`/`name`, legacy `createdAt` restore, current-user `temporaryUploadFiles` binding, and `{status, location}` created response. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number` | `BoardApi.updatePostLabel()` | Replace board post label set from label id array. | Implemented in app server with legacy label-id array request and `{id, labels}` response. |
 
 ### Milestones
