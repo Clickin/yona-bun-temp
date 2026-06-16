@@ -21456,6 +21456,11 @@ async fn rest_site_import_attachments(
                 .map_err(|_| {
                     RestRouteError::bad_request("site.import.attachment.invalidContent")
                 })?;
+            if attachment.size >= 0 && attachment.size != bytes.len() as i64 {
+                return Err(RestRouteError::bad_request(
+                    "site.import.attachment.sizeMismatch",
+                ));
+            }
             if bytes.len() > max_uploaded_file_size() {
                 return Err(RestRouteError::bad_request(
                     "site.import.attachment.tooLarge",

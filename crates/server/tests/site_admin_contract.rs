@@ -1678,6 +1678,69 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
 }
 
 #[tokio::test]
+async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
+    let _data_guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempfile::tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable",
+    )
+    .await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "id": 901,
+                "mimeType": "text/plain",
+                "name": "portable-post.txt",
+                "size": 999
+            }],
+            "bodyMarkdown": "post with invalid portable attachment",
+            "ownerName": "member",
+            "projectName": "portable",
+            "title": "Rejected portable attached post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.sizeMismatch"));
+
+    assert!(repo
+        .read_posting_detail_for_viewer("member", "portable", 1, None)
+        .await
+        .expect("read rejected post")
+        .is_none());
+    std::env::remove_var("YONA_DATA");
+}
+
+#[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
