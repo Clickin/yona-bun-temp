@@ -1366,6 +1366,20 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_state_update["login_id"], "statee");
     assert_eq!(legacy_state_update["state"], "LOCKED");
+    let legacy_nested_guest_state_update = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/admin/users/statee",
+            Some(&owner_cookie),
+            None,
+            Some(json!({ "user": { "state": "guest" } })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_nested_guest_state_update["login_id"], "statee");
+    assert_eq!(legacy_nested_guest_state_update["state"], "GUEST");
     let legacy_state_update_site_admin = rest(
         app.clone(),
         Method::PATCH,

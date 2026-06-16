@@ -795,7 +795,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             patch(
                 move |headers: HeaderMap,
                       Path(login_id): Path<String>,
-                      Json(body): Json<LegacyAdminUserStateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_update_admin_user_state(
                             headers,
@@ -26333,12 +26333,6 @@ struct LegacyExternalUserTokenBody {
     password: String,
 }
 
-#[derive(Default, Deserialize)]
-#[serde(default)]
-struct LegacyAdminUserStateBody {
-    state: String,
-}
-
 async fn legacy_external_users(
     headers: HeaderMap,
     query: LegacyExternalUsersQuery,
@@ -26521,7 +26515,7 @@ async fn legacy_external_admin_users(
 async fn legacy_external_update_admin_user_state(
     headers: HeaderMap,
     login_id: String,
-    body: LegacyAdminUserStateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
@@ -26549,9 +26543,13 @@ async fn legacy_external_update_admin_user_state(
         return StatusCode::FORBIDDEN.into_response();
     }
 
-    let state = body.state.trim().to_ascii_uppercase();
+    let state = legacy_json_find_value(&body, "state")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_uppercase();
     let row_state = match state.as_str() {
-        "ACTIVE" | "LOCKED" | "DELETED" => state,
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" => state,
         "SITE_ADMIN" => return StatusCode::FORBIDDEN.into_response(),
         _ => return StatusCode::BAD_REQUEST.into_response(),
     };
@@ -26571,6 +26569,25 @@ async fn legacy_external_update_admin_user_state(
         "state": user.state.to_ascii_uppercase(),
     }))
     .into_response()
+}
+
+fn legacy_json_find_value<'a>(
+    value: &'a serde_json::Value,
+    field_name: &str,
+) -> Option<&'a serde_json::Value> {
+    match value {
+        serde_json::Value::Object(map) => {
+            if let Some(value) = map.get(field_name) {
+                return Some(value);
+            }
+            map.values()
+                .find_map(|value| legacy_json_find_value(value, field_name))
+        }
+        serde_json::Value::Array(items) => items
+            .iter()
+            .find_map(|value| legacy_json_find_value(value, field_name)),
+        _ => None,
+    }
 }
 
 fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String> {

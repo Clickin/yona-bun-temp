@@ -50,7 +50,7 @@ contract.
 | `GET /-_-api/v1/users/:user/statistics` | `UserApi.statistics()` | User activity count JSON. | Implemented in app server with legacy statistics fields and session/token auth. |
 | `POST /-_-api/v1/user/defultLoginPage` | `controllers.UserApp.setDefaultLoginPage()` | Legacy typo-preserving default login page mutation. | Implemented in app server as an alias of the direct typo-preserving default-login-page mutation with legacy `{defaultLoginPage}` response. |
 | `GET /-_-api/v1/admin/users` | `UserApi.users()` | Site-manager active user list JSON. | Implemented in app server with site-admin auth and legacy active-user JSON fields. |
-| `PATCH /-_-api/v1/admin/users/:user` | `UserApi.updateUserState()` | Site-manager user state mutation. | Implemented in app server for `ACTIVE`/`LOCKED`/`DELETED` row-state updates with legacy `SITE_ADMIN` forbidden behavior. |
+| `PATCH /-_-api/v1/admin/users/:user` | `UserApi.updateUserState()` | Site-manager user state mutation. | Implemented in app server for legacy `JsonNode.findValue("state")` request parsing, `ACTIVE`/`LOCKED`/`DELETED`/`GUEST` row-state updates, and legacy `SITE_ADMIN` forbidden behavior. |
 
 ### Projects
 

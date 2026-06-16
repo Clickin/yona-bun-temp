@@ -1459,13 +1459,16 @@ impl AppRepository {
     ) -> Result<Option<SiteUserRecord>, DbErr> {
         let normalized = site_user_filter_state(state)?;
         let state = match normalized.as_str() {
-            "ACTIVE" | "LOCKED" | "DELETED" => normalized.to_ascii_lowercase(),
+            "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" => normalized.to_ascii_lowercase(),
             _ => return Err(DbErr::Custom("invalid site user row state".to_string())),
         };
         let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
             return Ok(None);
         };
         let mut active = n4user::ActiveModel::from(user);
+        if normalized == "GUEST" {
+            active.is_guest = Set(Some(1));
+        }
         active.state = Set(Some(state));
         active.last_state_modified_date = Set(Some(current_datetime()));
         let updated = active.update(&self.db).await?;
