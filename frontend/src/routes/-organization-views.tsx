@@ -436,7 +436,7 @@ export function OrganizationNewPage(props: {
               <div className="actions">
                 <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
                   <i className="yobicon-friends" />
-                  {props.pending ? " organization.creating" : " organization.create"}
+                  {" organization.create"}
                 </button>
                 <a className="ybtn" href="/">
                   button.cancel
@@ -1255,7 +1255,7 @@ export function OrganizationSettingsPage(props: {
                   id="save"
                   type="submit"
                 >
-                  {props.pending ? "button.saving" : "button.save"}
+                  button.save
                 </button>
               </div>
             </div>

@@ -93,6 +93,8 @@ Board detail selected-label refresh: React right sidebar now preserves the `part
 
 Project create pending-copy refresh: React `ProjectNewPage` now keeps the legacy `project/create.scala.html` submit button label `project.create` even while the create mutation is pending, removing the temporary `Creating…` label while retaining submit disabling.
 
+Organization pending-copy refresh: React organization create and settings forms now keep the legacy `organization/create.scala.html` / `organization/setting.scala.html` submit labels (`organization.create`, `button.save`) while pending, removing temporary pending labels while retaining submit disabling.
+
 Issue detail watcher-list refresh: React issue detail now keeps the legacy `issue/view.scala.html` empty `.watcher-list` shell and removes the temporary visible `Watchers: N` copy while preserving the existing `#watch-button` state.
 
 Issue assignee autocomplete status-copy refresh: React now preserves the legacy bundled Select2 `formatSearching` / `formatLoadMore` copy (`Searching...`, `Loading more results...`) for issue assignee autocomplete loading and truncated states instead of the temporary Unicode ellipsis variants.

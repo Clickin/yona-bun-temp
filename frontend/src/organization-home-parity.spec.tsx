@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { renderOrganizationDetail } from "./auth-workspace-shell.test-helpers";
+import { OrganizationNewPage, OrganizationSettingsPage } from "./routes/-organization-views";
 
 describe("organization home parity", () => {
   it("renders the legacy page shell, project list, and roster side pane anchors", () => {
@@ -65,10 +67,14 @@ describe("organization home parity", () => {
     expect(html).toContain('class="dropdown-menu flat right title"');
     expect(html).toContain("organization.you.may.want.to.be.a.member weblabs");
     expect(html).toContain("organization.member.enrollment.help.before");
-    expect(html).toContain('class="ybtn ybtn-info enrollBtn" href="/yona/organizations/weblabs/enroll" id="enrollBtn"');
+    expect(html).toContain(
+      'class="ybtn ybtn-info enrollBtn" href="/yona/organizations/weblabs/enroll" id="enrollBtn"',
+    );
     expect(html).toContain("button.new.enrollment");
     expect(html).toContain('class="project-menu-nav project-menu-gruop"');
-    expect(html).toContain('<li class="active"><a href="/yona/organizations/weblabs">title.organizationHome</a>');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/organizations/weblabs">title.organizationHome</a>',
+    );
     expect(html).toContain('href="/yona/organizations/weblabs/issues"');
     expect(html).toContain('href="/yona/organizations/weblabs/boards"');
     expect(html).toContain('href="/yona/organizations/weblabs/pullrequests"');
@@ -102,5 +108,31 @@ describe("organization home parity", () => {
     expect(routeSource).toContain("Server Error");
     expect(routeSource).not.toContain("Cancel enrollment failed.");
     expect(routeSource).not.toContain("Enroll failed.");
+  });
+
+  it("keeps legacy organization submit copy while mutations are pending", () => {
+    const newHtml = renderToStaticMarkup(<OrganizationNewPage pending />);
+    expect(newHtml).toContain('<button class="ybtn ybtn-success" disabled="" type="submit">');
+    expect(newHtml).toContain("organization.create");
+    expect(newHtml).not.toContain("organization.creating");
+
+    const settingsHtml = renderToStaticMarkup(
+      <OrganizationSettingsPage
+        detail={{
+          adminMembers: [],
+          description: "Web labs",
+          memberMembers: [],
+          organizationName: "weblabs",
+          viewerCanCreateProject: true,
+          viewerCanUpdate: true,
+          visibleProjects: [],
+        }}
+        pending
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona", showUserEmail: true }}
+      />,
+    );
+    expect(settingsHtml).toContain('id="save" type="submit"');
+    expect(settingsHtml).toContain("button.save");
+    expect(settingsHtml).not.toContain("button.saving");
   });
 });
