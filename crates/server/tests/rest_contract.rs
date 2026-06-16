@@ -1909,6 +1909,71 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     );
     assert_eq!(legacy_board_detail["authorLoginId"], "visitor");
 
+    let legacy_board_content = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            Some(&visitor_cookie),
+            Some(&visitor_csrf),
+            Some(json!({
+                "content": "legacy board post body updated",
+                "original": "legacy board post body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_board_content["number"], 77);
+    assert_eq!(
+        legacy_board_content["id"],
+        json!(legacy_board_detail["id"]
+            .as_str()
+            .expect("post detail id")
+            .parse::<i64>()
+            .expect("numeric post detail id"))
+    );
+    assert_eq!(legacy_board_content["title"], "legacy board post");
+    assert_eq!(legacy_board_content["type"], "BOARD_POST");
+    assert_eq!(legacy_board_content["author"]["loginId"], "visitor");
+    assert_eq!(
+        legacy_board_content["author"]["email"],
+        "visitor@example.com"
+    );
+    assert_eq!(
+        legacy_board_content["body"],
+        "legacy board post body updated"
+    );
+    assert_eq!(legacy_board_content["owner"], "owner");
+    assert_eq!(legacy_board_content["projectName"], "projectYobi");
+    assert!(legacy_board_content["createdAt"]
+        .as_str()
+        .is_some_and(|value| value.ends_with("+0000")));
+    assert!(legacy_board_content["updatedAt"]
+        .as_str()
+        .is_some_and(|value| value.ends_with("+0000")));
+
+    let legacy_board_conflict = rest(
+        app.clone(),
+        Method::PATCH,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+        Some(&visitor_cookie),
+        Some(&visitor_csrf),
+        Some(json!({
+            "content": "stale update",
+            "original": "legacy board post body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_board_conflict.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        response_json(legacy_board_conflict).await,
+        json!({
+            "message": "Already modified by someone.",
+            "storedContent": "legacy board post body updated"
+        })
+    );
+
     let anonymous_legacy_board_create = rest(
         app.clone(),
         Method::POST,

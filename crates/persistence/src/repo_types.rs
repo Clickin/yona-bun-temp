@@ -131,6 +131,7 @@ pub struct PostingRecord {
     pub body_markdown: String,
     pub comment_count: u32,
     pub comments: Vec<PostingCommentRecord>,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
     pub id: i64,
     pub history_markdown: String,
@@ -142,6 +143,7 @@ pub struct PostingRecord {
     pub project_name: String,
     pub readme: bool,
     pub title: String,
+    pub updated_at: Option<DateTime>,
     pub updated_label: String,
     pub watcher_count: u32,
 }

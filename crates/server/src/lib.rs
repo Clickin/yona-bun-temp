@@ -611,6 +611,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_board_posts_backend = route_backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
     let legacy_board_posts_base_path = base_path.clone();
+    let legacy_board_content_backend = route_backend.clone();
+    let legacy_board_content_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = route_backend.clone();
@@ -742,6 +744,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             legacy_board_posts_session_manager.clone(),
                             legacy_board_posts_backend.clone(),
                             legacy_board_posts_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/content",
+            patch(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<LegacyBoardContentUpdateBody>| {
+                    async move {
+                        legacy_external_update_board_posting_content(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_board_content_session_manager.clone(),
+                            legacy_board_content_backend.clone(),
                         )
                         .await
                     }
@@ -25773,6 +25796,14 @@ struct LegacyBoardPostingBody {
     title: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyBoardContentUpdateBody {
+    #[serde(default)]
+    content: String,
+    #[serde(default)]
+    original: String,
+}
+
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -25872,6 +25903,188 @@ async fn legacy_external_create_board_postings(
     }
 
     (StatusCode::CREATED, Json(created_posts)).into_response()
+}
+
+async fn legacy_external_update_board_posting_content(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    body: LegacyBoardContentUpdateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented(
+            "board posting content requires repository backend",
+        )
+        .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let access = match read_posting_access(
+        repository,
+        &owner,
+        &project_name,
+        number,
+        Some(actor_id),
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    if !posting_can_update(&access.authorization, &access.posting, &actor) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Forbidden request",
+            })),
+        )
+            .into_response();
+    }
+    if access.posting.body_markdown != body.original {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "message": "Already modified by someone.",
+                "storedContent": access.posting.body_markdown,
+            })),
+        )
+            .into_response();
+    }
+
+    let updated = match repository
+        .update_posting(persistence::UpdatePostingInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name: owner,
+            post_number: number,
+            project_name,
+            values: persistence::PostingMutationInput {
+                attachment_ids: access
+                    .posting
+                    .attachments
+                    .iter()
+                    .map(|attachment| attachment.id)
+                    .collect(),
+                body_markdown: body.content,
+                label_ids: access.posting.labels.iter().map(|label| label.id).collect(),
+                notice: access.posting.notice,
+                readme: access.posting.readme,
+                title: access.posting.title.clone(),
+            },
+        })
+        .await
+    {
+        Ok(Some(posting)) => posting,
+        Ok(None) => return RestRouteError::not_found("pilot posting not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let payload = match legacy_external_posting_result(repository, &updated).await {
+        Ok(payload) => payload,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    Json(payload).into_response()
+}
+
+async fn legacy_external_posting_result(
+    repository: &PilotRepository,
+    posting: &persistence::PostingRecord,
+) -> Result<serde_json::Value, sea_orm::DbErr> {
+    let author = match posting.author_id {
+        Some(author_id) => repository.find_user_by_id(author_id).await?,
+        None => None,
+    };
+    let author_login_id = author
+        .as_ref()
+        .map(|author| author.login_id.as_str())
+        .unwrap_or(posting.author_login_id.as_str());
+    let author_name = author
+        .as_ref()
+        .map(|author| author.display_name.as_str())
+        .unwrap_or(posting.author_label.as_str());
+    let author_email = author
+        .as_ref()
+        .map(|author| author.email_address.as_str())
+        .unwrap_or("");
+    let mut payload = serde_json::json!({
+        "number": posting.post_number,
+        "id": posting.id,
+        "title": posting.title,
+        "type": "BOARD_POST",
+        "author": {
+            "loginId": author_login_id,
+            "name": author_name,
+            "email": author_email,
+        },
+        "createdAt": legacy_external_date_string(posting.created_at),
+        "updatedAt": legacy_external_date_string(posting.updated_at),
+        "body": posting.body_markdown,
+        "owner": posting.owner_name,
+        "projectName": posting.project_name,
+    });
+    if !posting.attachments.is_empty() {
+        payload["attachments"] = serde_json::json!(posting
+            .attachments
+            .iter()
+            .map(legacy_external_attachment_result)
+            .collect::<Vec<_>>());
+    }
+    if !posting.comments.is_empty() {
+        payload["comments"] = serde_json::json!(posting
+            .comments
+            .iter()
+            .map(legacy_external_posting_comment_result)
+            .collect::<Vec<_>>());
+    }
+    Ok(payload)
+}
+
+fn legacy_external_attachment_result(
+    attachment: &persistence::IssueAttachmentRecord,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": attachment.id,
+        "name": attachment.name,
+        "mimeType": attachment.mime_type,
+        "size": attachment.size,
+    })
+}
+
+fn legacy_external_posting_comment_result(
+    comment: &persistence::PostingCommentRecord,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": comment.id,
+        "type": "NONISSUE_COMMENT",
+        "author": {
+            "loginId": comment.author_login_id,
+            "name": comment.author_label,
+            "email": "",
+        },
+        "createdAt": comment.created_label,
+        "body": comment.contents_markdown,
+    })
+}
+
+fn legacy_external_date_string(date: Option<DateTime>) -> String {
+    date.map(|date| date.format("%Y-%m-%dT%H:%M:%S+0000").to_string())
+        .unwrap_or_default()
 }
 
 fn legacy_external_author_identifier(author: Option<&serde_json::Value>) -> Option<&str> {

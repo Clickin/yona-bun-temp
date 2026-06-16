@@ -14210,6 +14210,7 @@ impl AppRepository {
             body_markdown: self.read_text_column("posting", "body", model.id).await?,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments: self.list_posting_comments(model.id).await?,
+            created_at: model.created_date,
             created_label: format_workspace_date_label(model.created_date),
             history_markdown: self
                 .read_text_column("posting", "history", model.id)
@@ -14223,6 +14224,7 @@ impl AppRepository {
             project_name: project.project_name.clone(),
             readme: model.readme.unwrap_or_default() != 0,
             title: model.title.unwrap_or_default(),
+            updated_at: model.updated_date.or(model.created_date),
             updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
             watcher_count,
         })
