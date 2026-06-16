@@ -630,6 +630,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_comment_backend = route_backend.clone();
     let legacy_issue_comment_session_manager = session_manager.clone();
     let legacy_issue_comment_base_path = base_path.clone();
+    let legacy_issue_comment_update_backend = route_backend.clone();
+    let legacy_issue_comment_update_session_manager = session_manager.clone();
     let legacy_issue_state_backend = route_backend.clone();
     let legacy_issue_state_session_manager = session_manager.clone();
     let legacy_issue_assignee_backend = route_backend.clone();
@@ -842,6 +844,33 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             legacy_issue_comment_session_manager.clone(),
                             legacy_issue_comment_backend.clone(),
                             legacy_issue_comment_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments/{comment_id}",
+            put(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<LegacyBoardCommentUpdateBody>| {
+                    async move {
+                        legacy_external_update_issue_comment(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            comment_id,
+                            body,
+                            legacy_issue_comment_update_session_manager.clone(),
+                            legacy_issue_comment_update_backend.clone(),
                         )
                         .await
                     }
@@ -27485,6 +27514,120 @@ fn legacy_posting_comment_update_result(
         },
         "createdAt": legacy_external_date_string(comment.created_at),
         "body": comment.contents_markdown,
+    })
+}
+
+async fn legacy_external_update_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    comment_id: i64,
+    body: LegacyBoardCommentUpdateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue comment update requires repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "user not found",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let access =
+        match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
+            Ok(access) => access,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let Some(existing_comment) = access
+        .issue
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+    else {
+        return RestRouteError::not_found("issue comment not found").into_response();
+    };
+    if existing_comment.contents_markdown != body.original {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "message": "Already modified by someone.",
+                "storedContent": existing_comment.contents_markdown,
+            })),
+        )
+            .into_response();
+    }
+    let can_edit_comment = existing_comment.author_id == Some(actor.id)
+        || issue_can_mutate(&access.authorization, &access.issue, &actor);
+    if !can_edit_comment {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "Forbidden request",
+            })),
+        )
+            .into_response();
+    }
+    let existing_attachment_ids = existing_comment
+        .attachments
+        .iter()
+        .map(|attachment| attachment.id)
+        .collect();
+    let issue = match repository
+        .update_issue_comment(persistence::UpdateIssueCommentInput {
+            actor_id: actor.id,
+            attachment_ids: existing_attachment_ids,
+            comment_id,
+            contents_markdown: body.content,
+            issue_number: number,
+            owner_name: owner,
+            project_name,
+        })
+        .await
+    {
+        Ok(Some(issue)) => issue,
+        Ok(None) => return RestRouteError::not_found("issue comment not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let Some(updated_comment) = issue
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+    else {
+        return RestRouteError::not_found("issue comment not found").into_response();
+    };
+    Json(serde_json::json!({
+        "result": legacy_issue_comment_update_result(updated_comment, &actor),
+    }))
+    .into_response()
+}
+
+fn legacy_issue_comment_update_result(
+    comment: &persistence::IssueCommentRecord,
+    actor: &persistence::AppUserRecord,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": comment.id,
+        "contents": comment.contents_markdown,
+        "createdDate": comment.created_label,
+        "author": {
+            "id": actor.id,
+            "loginId": actor.login_id,
+            "name": actor.display_name,
+        },
     })
 }
 

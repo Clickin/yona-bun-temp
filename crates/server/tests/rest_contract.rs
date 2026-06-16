@@ -1754,6 +1754,14 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(legacy_issue_comment["location"]
         .as_str()
         .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/issue/1#comment-")));
+    let legacy_issue_comment_id = legacy_issue_comment["location"]
+        .as_str()
+        .expect("legacy issue comment location")
+        .rsplit_once("#comment-")
+        .expect("legacy issue comment anchor")
+        .1
+        .parse::<i64>()
+        .expect("legacy issue comment id");
     let legacy_issue_token_comment_response = rest_with_headers(
         app.clone(),
         Method::POST,
@@ -1797,6 +1805,53 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         comment["contentsMarkdown"] == "legacy issue token comment"
             && comment["authorLoginId"] == "visitor"
     }));
+    let legacy_issue_comment_updated = ok_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!(
+                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+            ),
+            Some(&visitor_cookie),
+            None,
+            Some(json!({
+                "content": "legacy issue comment body updated",
+                "original": "legacy issue comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_comment_updated["result"]["contents"],
+        "legacy issue comment body updated"
+    );
+    assert_eq!(
+        legacy_issue_comment_updated["result"]["author"]["loginId"],
+        "visitor"
+    );
+    let legacy_issue_comment_conflict = rest(
+        app.clone(),
+        Method::PUT,
+        &format!(
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+        ),
+        Some(&visitor_cookie),
+        None,
+        Some(json!({
+            "content": "stale issue comment update",
+            "original": "legacy issue comment body"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_issue_comment_conflict.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        response_json(legacy_issue_comment_conflict).await,
+        json!({
+            "message": "Already modified by someone.",
+            "storedContent": "legacy issue comment body updated"
+        })
+    );
     let anonymous_legacy_issue_comment = rest(
         app.clone(),
         Method::POST,
@@ -1807,6 +1862,21 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_comment).await;
+    let anonymous_legacy_issue_comment_update = rest(
+        app.clone(),
+        Method::PUT,
+        &format!(
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+        ),
+        None,
+        None,
+        Some(json!({
+            "content": "anonymous update",
+            "original": "legacy issue comment body updated"
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_comment_update).await;
     let legacy_issue_assignee = ok_json(
         rest(
             app.clone(),
