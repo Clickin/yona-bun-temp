@@ -165,7 +165,7 @@ Interpretation:
 
 - [x] Organization create
 - [x] Public organization detail/home
-- [x] Organization settings update
+- [x] Organization settings update, including legacy `yobi.organization.Setting.js` name/logo validation scalars (`organization.name.alert`, `project.logo.alert`)
 - [x] Organization delete guards, common legacy route shells for forbidden/not-found/non-specific admin read failures, legacy `organization.delete.error` mutation fallback scalar, and legacy `organization/deleteForm.scala.html` confirmation shell (`#btnDelete`, `#alertDeletion`, `#btnDeleteExec`)
 - [x] Members admin view with legacy `organization/members.scala.html` shell anchors (`#addNewMember`, `.members.project.row-fluid`, `.member-setting`, role dropdown apply action, delete modal, enrollment accept button)
 - [x] Add organization member with common legacy route shells for forbidden/not-found/non-specific admin read failures

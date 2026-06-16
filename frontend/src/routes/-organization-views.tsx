@@ -78,6 +78,17 @@ function userInfoHref(runtimeConfig: RuntimeConfig, loginId: string) {
   return prefixBasePath(runtimeConfig.basePath, `/${loginId}`);
 }
 
+function isOrganizationLogoImageFile(file: File) {
+  if (file.type.toLowerCase().startsWith("image/")) {
+    return true;
+  }
+  return /\.(?:bmp|gif|jpe?g|png)$/i.test(file.name);
+}
+
+function isLegacyOrganizationName(name: string) {
+  return /^[a-zA-Z0-9-가-힣]+([_.][a-zA-Z0-9-가-힣]+)*$/.test(name);
+}
+
 export interface OrganizationIssueListQuery {
   assigneeId: number;
   authorId: number;
@@ -1085,6 +1096,7 @@ export function OrganizationSettingsPage(props: {
     organizationName: detail.organizationName,
   });
   const [logoPreviewUrl, setLogoPreviewUrl] = React.useState(detail.logoUrl ?? "");
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setFormState({
@@ -1094,6 +1106,7 @@ export function OrganizationSettingsPage(props: {
       organizationName: detail.organizationName,
     });
     setLogoPreviewUrl(detail.logoUrl ?? "");
+    setValidationMessage(null);
   }, [detail.description, detail.logoUrl, detail.organizationName]);
 
   return (
@@ -1116,6 +1129,11 @@ export function OrganizationSettingsPage(props: {
             name="update-org"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!isLegacyOrganizationName(formState.organizationName)) {
+                setValidationMessage("organization.name.alert");
+                return;
+              }
+              setValidationMessage(null);
               props.onUpdateOrganization?.(formState);
             }}
           >
@@ -1146,6 +1164,12 @@ export function OrganizationSettingsPage(props: {
                         type="file"
                         onChange={(event) => {
                           const file = event.currentTarget.files?.[0];
+                          if (file && !isOrganizationLogoImageFile(file)) {
+                            setValidationMessage("project.logo.alert");
+                            event.currentTarget.value = "";
+                            return;
+                          }
+                          setValidationMessage(null);
                           if (!file || !props.csrfToken) {
                             return;
                           }
@@ -1184,7 +1208,12 @@ export function OrganizationSettingsPage(props: {
                       }
                     />
                     <div className="orange-txt">
-                      <span className="msg wrongName" style={{ display: "none" }} />
+                      <span
+                        className="msg wrongName"
+                        style={{ display: validationMessage ? undefined : "none" }}
+                      >
+                        {validationMessage}
+                      </span>
                     </div>
                   </dd>
                   <dt>

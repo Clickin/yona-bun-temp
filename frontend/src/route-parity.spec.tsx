@@ -4752,6 +4752,15 @@ describe("file-route parity harness", () => {
     expect(settingsRouteSource).toContain("updateOrganization");
     expect(settingsRouteSource).toContain("error.badrequest");
     expect(settingsRouteSource).not.toContain("Update organization failed.");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-organization-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("organization.name.alert");
+    expect(viewSource).toContain("project.logo.alert");
+    expect(viewSource).toContain("isOrganizationLogoImageFile");
+    expect(viewSource).toContain("isLegacyOrganizationName");
   });
 
   it("requires organization delete route to preserve legacy anchors and mutation wiring", () => {
