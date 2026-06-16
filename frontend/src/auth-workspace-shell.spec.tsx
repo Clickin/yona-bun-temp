@@ -89,6 +89,21 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain("oauth-login-btn");
   });
 
+  it("keeps legacy auth submit labels while submit is pending", () => {
+    const loginHtml = renderLogin({
+      pending: true,
+      routeHref: "/users/loginform",
+    });
+    expect(loginHtml).toContain(">button.login<");
+    expect(loginHtml).not.toContain(">Logging in<");
+    expect(loginHtml).not.toContain(">Loading<");
+
+    const registerHtml = renderRegister({ pending: true });
+    expect(registerHtml).toContain(">user.signupBtn<");
+    expect(registerHtml).not.toContain(">Signing up<");
+    expect(registerHtml).not.toContain(">Creating<");
+  });
+
   it("renders the common legacy login dialog shell", () => {
     const html = renderToStaticMarkup(
       <LegacyLoginDialog

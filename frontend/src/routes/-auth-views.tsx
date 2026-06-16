@@ -116,7 +116,6 @@ export function LoginPage({
   authUiCapabilities,
   csrfToken,
   onSignIn,
-  pending,
   routeHref,
   runtimeConfig,
 }: {
@@ -226,7 +225,7 @@ export function LoginPage({
                 </dl>
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
-                    {pending ? "button.login" : "button.login"}
+                    button.login
                   </button>
                 </div>
                 <SocialProviderButtons
@@ -375,7 +374,6 @@ export function RegisterPage({
   authUiCapabilities,
   csrfToken,
   onRegister,
-  pending,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
@@ -528,7 +526,7 @@ export function RegisterPage({
                 </dl>
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
-                    {pending ? "user.signupBtn" : "user.signupBtn"}
+                    user.signupBtn
                   </button>
                 </div>
                 <div className="act-row">
