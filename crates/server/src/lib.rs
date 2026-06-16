@@ -738,6 +738,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_migration_base_path = base_path.clone();
     let legacy_migration_json_session_manager = session_manager.clone();
     let legacy_migration_json_base_path = base_path.clone();
+    let legacy_admin_users_session_manager = session_manager.clone();
+    let legacy_admin_users_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
@@ -753,6 +755,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .nest("/api/v1", rest_router)
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .route(
+            "/-_-api/v1/admin/users",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_admin_users(
+                        headers,
+                        legacy_admin_users_session_manager.clone(),
+                        legacy_admin_users_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
         .route(
             "/-_-api/v1/users",
             get(
@@ -26234,6 +26249,69 @@ async fn legacy_external_users(
         );
     }
     response
+}
+
+async fn legacy_external_admin_users(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("admin users require repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(actor_id) => actor_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => {
+            return legacy_external_api_auth_error_response(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ));
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if !actor.is_site_admin {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+
+    let mut page = 1;
+    let mut users = Vec::new();
+    loop {
+        let record = match repository
+            .list_site_users(persistence::SiteUserListFilter {
+                page,
+                query: String::new(),
+                state: "active".to_string(),
+            })
+            .await
+        {
+            Ok(record) => record,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        let total_pages = record.total_pages;
+        users.extend(record.users.into_iter().map(|user| {
+            serde_json::json!({
+                "id": user.id,
+                "login_id": user.login_id,
+                "name": user.display_name,
+                "email": user.email_address,
+                "state": user.state.to_ascii_uppercase(),
+                "is_guest": user.is_guest,
+            })
+        }));
+        if total_pages == 0 || page >= total_pages {
+            break;
+        }
+        page += 1;
+    }
+
+    Json(users).into_response()
 }
 
 fn legacy_external_api_token_from_headers(headers: &HeaderMap) -> Option<String> {

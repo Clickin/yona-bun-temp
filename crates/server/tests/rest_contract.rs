@@ -1272,6 +1272,52 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .toggle_site_user_guest_mode("guest")
         .await
         .expect("mark project enrollment actor as guest");
+    repository
+        .toggle_site_admin_role("owner")
+        .await
+        .expect("mark legacy admin users actor as site admin");
+
+    let legacy_admin_users = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/admin/users",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let legacy_admin_users = legacy_admin_users
+        .as_array()
+        .expect("legacy admin users response");
+    let legacy_owner = legacy_admin_users
+        .iter()
+        .find(|user| user["login_id"] == "owner")
+        .expect("legacy owner user");
+    assert_eq!(legacy_owner["name"], "owner");
+    assert_eq!(legacy_owner["email"], "owner@example.com");
+    assert_eq!(legacy_owner["state"], "ACTIVE");
+    assert_eq!(legacy_owner["is_guest"], false);
+    let legacy_guest = legacy_admin_users
+        .iter()
+        .find(|user| user["login_id"] == "guest")
+        .expect("legacy guest user");
+    assert_eq!(legacy_guest["is_guest"], true);
+    let legacy_admin_users_by_visitor = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/admin/users",
+        Some(&visitor_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        legacy_admin_users_by_visitor.status(),
+        StatusCode::FORBIDDEN
+    );
 
     let listed = ok_json(
         rest(
