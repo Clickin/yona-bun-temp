@@ -97,6 +97,8 @@ Organization pending-copy refresh: React organization create and settings forms 
 
 Issue detail watcher-list refresh: React issue detail now keeps the legacy `issue/view.scala.html` empty `.watcher-list` shell and removes the temporary visible `Watchers: N` copy while preserving the existing `#watch-button` state.
 
+Issue mention/reference loading refresh: React issue mention and `#issue` reference autocomplete now hides loading result popovers like legacy At.js instead of rendering temporary `Searching…` status copy.
+
 Issue assignee autocomplete status-copy refresh: React now preserves the legacy bundled Select2 `formatSearching` / `formatLoadMore` copy (`Searching...`, `Loading more results...`) for issue assignee autocomplete loading and truncated states instead of the temporary Unicode ellipsis variants.
 
 Issue detail selected-label refresh: React issue detail now renders selected labels through the legacy `partial_show_selected_label.scala.html` shell (`dl`, `dt label`, `dd`, `.label.issue-label.active.static`, list-link `labelIds` hrefs) instead of temporary detail-only `.label.issue-label.list-label.active` spans.

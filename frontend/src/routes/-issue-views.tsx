@@ -3425,7 +3425,7 @@ export function IssueMentionUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="mention-autocomplete-status">Searching…</p>;
+    return null;
   }
   if (props.state.status === "error") {
     return null;
@@ -3461,7 +3461,7 @@ export function IssueReferenceSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="mention-autocomplete-status">Searching…</p>;
+    return null;
   }
   if (props.state.status === "error") {
     return null;

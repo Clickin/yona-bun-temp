@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import {
   ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
   IssueAssignableUserSuggestions,
+  IssueMentionUserSuggestions,
+  IssueReferenceSuggestions,
   ProjectIssueDetailPage,
 } from "./routes/-issue-views";
 import type { ProjectDetailViewModel, ProjectIssueDetailViewModel } from "./routes/-view-models";
@@ -63,6 +65,28 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(suggestionHtml).toContain("@door");
     expect(suggestionHtml).toContain("Loading more results...");
     expect(suggestionHtml).not.toContain("Loading more results…");
+  });
+
+  it("hides issue mention and reference loading states like legacy At.js", () => {
+    const mentionHtml = renderToStaticMarkup(
+      <IssueMentionUserSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "loading", truncated: false }}
+      />,
+    );
+    expect(mentionHtml).toBe("");
+    expect(mentionHtml).not.toContain("Searching…");
+    expect(mentionHtml).not.toContain("Searching...");
+
+    const referenceHtml = renderToStaticMarkup(
+      <IssueReferenceSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "loading", truncated: false }}
+      />,
+    );
+    expect(referenceHtml).toBe("");
+    expect(referenceHtml).not.toContain("Searching…");
+    expect(referenceHtml).not.toContain("Searching...");
   });
 
   it("renders the legacy board shell, state badge, watch, vote, and label anchors", () => {

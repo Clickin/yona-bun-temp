@@ -264,7 +264,7 @@ Interpretation:
 - [x] Legacy direct issue comment create/update/delete form routes
 - [x] Direct issue create form common legacy route shell for non-specific read failures
 - [x] Mention autocomplete
-- [x] Mention and issue-reference autocomplete result popovers follow legacy At.js by hiding empty/error/more status copy instead of rendering temporary English messages
+- [x] Mention and issue-reference autocomplete result popovers follow legacy At.js by hiding loading/empty/error/more status copy instead of rendering temporary status messages
 - [x] Mention notification semantics
 - [x] Shared-with-me issue filter
 - [x] Sharable user autocomplete/search
