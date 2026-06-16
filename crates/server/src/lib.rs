@@ -902,7 +902,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyBoardCommentCreateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_create_board_posting_comment(
                             headers,
@@ -26727,14 +26727,26 @@ struct LegacyIssueDetectChangeBody {
     num_of_comments: u32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 struct LegacyBoardCommentCreateBody {
     author: Option<serde_json::Value>,
-    #[serde(default)]
     body: String,
     created_at: Option<serde_json::Value>,
     temporary_upload_files: Option<serde_json::Value>,
+}
+
+fn legacy_board_comment_create_body_from_value(
+    value: &serde_json::Value,
+) -> LegacyBoardCommentCreateBody {
+    LegacyBoardCommentCreateBody {
+        author: legacy_json_find_value(value, "author").cloned(),
+        body: legacy_json_find_value(value, "body")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        created_at: legacy_json_find_value(value, "createdAt").cloned(),
+        temporary_upload_files: legacy_json_find_value(value, "temporaryUploadFiles").cloned(),
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -26976,11 +26988,12 @@ async fn legacy_external_create_board_posting_comment(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyBoardCommentCreateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
 ) -> Response {
+    let body = legacy_board_comment_create_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented(
             "board posting comments require repository backend",

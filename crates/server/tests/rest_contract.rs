@@ -3360,6 +3360,33 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_imported_comment_author.login_id,
         "legacy-board-comment-author"
     );
+    let nested_legacy_board_comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "payload": {
+                "actor": {
+                    "author": {
+                        "email": "visitor@example.com"
+                    }
+                },
+                "message": {
+                    "body": "legacy board nested comment body"
+                },
+                "time": {
+                    "createdAt": "2020-02-04 AM 04:05:06 +0000"
+                }
+            }
+        })),
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_board_comment_response.status(),
+        StatusCode::CREATED
+    );
     let legacy_board_detail_with_comment = ok_json(
         rest(
             app.clone(),
@@ -3387,6 +3414,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             |comment| comment["authorLoginId"] == "legacy-board-comment-author"
                 && comment["contentsMarkdown"] == "legacy board imported comment author body"
         ));
+    assert!(legacy_board_detail_with_comment["comments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|comment| comment["authorLoginId"] == "visitor"
+            && comment["contentsMarkdown"] == "legacy board nested comment body"));
 
     let legacy_board_comment_update = ok_json(
         rest(
