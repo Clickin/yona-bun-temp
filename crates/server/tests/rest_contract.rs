@@ -1291,6 +1291,17 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         )
         .await
         .expect("legacy board comment temp upload");
+    let legacy_issue_comment_file = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "legacy-issue-comment.png",
+            "image/png",
+            17,
+            "legacy-issue-comment-hash",
+        )
+        .await
+        .expect("legacy issue comment temp upload");
     let visitor_owned_file = repository
         .create_user_attachment_upload(
             visitor_id,
@@ -2116,6 +2127,78 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_issue_imported_comment_author.login_id,
         "legacy-issue-comment-author"
     );
+    let nested_legacy_issue_comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "payload": {
+                "actor": {
+                    "author": {
+                        "email": "visitor@example.com"
+                    }
+                },
+                "message": {
+                    "body": "legacy issue nested comment body"
+                }
+            }
+        })),
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_issue_comment_response.status(),
+        StatusCode::CREATED
+    );
+    let nested_legacy_issue_attachment_comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "payload": {
+                "message": {
+                    "body": "legacy issue nested attachment comment body"
+                },
+                "files": {
+                    "temporaryUploadFiles": [
+                        legacy_issue_comment_file.id
+                    ]
+                }
+            }
+        })),
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_issue_attachment_comment_response.status(),
+        StatusCode::CREATED
+    );
+    let nested_legacy_issue_attachment_comment =
+        response_json(nested_legacy_issue_attachment_comment_response).await;
+    let nested_legacy_issue_attachment_comment_id = nested_legacy_issue_attachment_comment
+        ["location"]
+        .as_str()
+        .expect("nested legacy issue attachment comment location")
+        .rsplit_once("#comment-")
+        .expect("nested legacy issue attachment comment anchor")
+        .1
+        .parse::<i64>()
+        .expect("nested legacy issue attachment comment id");
+    let legacy_issue_comment_file_after = repository
+        .read_attachment_by_id(legacy_issue_comment_file.id)
+        .await
+        .unwrap()
+        .expect("legacy issue comment attachment");
+    assert_eq!(
+        legacy_issue_comment_file_after.container_type,
+        "ISSUE_COMMENT"
+    );
+    assert_eq!(
+        legacy_issue_comment_file_after.container_id,
+        nested_legacy_issue_attachment_comment_id
+    );
     let legacy_issue_token_comment_response = rest_with_headers(
         app.clone(),
         Method::POST,
@@ -2135,6 +2218,24 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(
         legacy_issue_token_comment["result"]["title"],
         "Favorite issue"
+    );
+    let nested_legacy_issue_token_comment_response = rest_with_headers(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        &[("Authorization", &authorization_header)],
+        Some(json!({
+            "payload": {
+                "message": {
+                    "comment": "legacy issue token nested comment"
+                }
+            }
+        })),
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_issue_token_comment_response.status(),
+        StatusCode::CREATED
     );
     let legacy_issue_comment_detail = ok_json(
         rest(
@@ -2162,6 +2263,18 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(legacy_issue_comments.iter().any(|comment| {
         comment["contentsMarkdown"] == "legacy issue imported comment author body"
             && comment["authorLoginId"] == "legacy-issue-comment-author"
+    }));
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue nested comment body"
+            && comment["authorLoginId"] == "visitor"
+    }));
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue nested attachment comment body"
+            && comment["authorLoginId"] == "owner"
+    }));
+    assert!(legacy_issue_comments.iter().any(|comment| {
+        comment["contentsMarkdown"] == "legacy issue token nested comment"
+            && comment["authorLoginId"] == "visitor"
     }));
     let legacy_issue_comment_updated = ok_json(
         rest(
@@ -2416,7 +2529,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_issue_detect_change["result"], "ok");
     assert_eq!(legacy_issue_detect_change["issueBodyChanged"], true);
-    assert_eq!(legacy_issue_detect_change["numOfComments"], 3);
+    assert_eq!(legacy_issue_detect_change["numOfComments"], 6);
     assert_eq!(legacy_issue_detect_change["commentAuthorName"], "visitor");
     assert!(legacy_issue_detect_change["issueBodyChecksum"]
         .as_str()

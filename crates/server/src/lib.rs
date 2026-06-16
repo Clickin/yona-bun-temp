@@ -924,7 +924,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyIssueCommentCreateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_create_issue_comment(
                             headers,
@@ -26749,14 +26749,29 @@ fn legacy_board_comment_create_body_from_value(
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 struct LegacyIssueCommentCreateBody {
     author: Option<serde_json::Value>,
-    #[serde(default)]
     body: String,
-    #[serde(default)]
     comment: String,
+    temporary_upload_files: Option<serde_json::Value>,
+}
+
+fn legacy_issue_comment_create_body_from_value(
+    value: &serde_json::Value,
+) -> LegacyIssueCommentCreateBody {
+    LegacyIssueCommentCreateBody {
+        author: legacy_json_find_value(value, "author").cloned(),
+        body: legacy_json_find_value(value, "body")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        comment: legacy_json_find_value(value, "comment")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        temporary_upload_files: legacy_json_find_value(value, "temporaryUploadFiles").cloned(),
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -27080,11 +27095,12 @@ async fn legacy_external_create_issue_comment(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyIssueCommentCreateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
 ) -> Response {
+    let body = legacy_issue_comment_create_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("issue comments require repository backend")
             .into_response();
@@ -27176,7 +27192,9 @@ async fn legacy_external_create_issue_comment(
             actor_display_name: comment_author.display_name.clone(),
             actor_id: comment_author.id,
             actor_login_id: comment_author.login_id.clone(),
-            attachment_ids: Vec::new(),
+            attachment_ids: legacy_external_temporary_upload_file_ids(
+                body.temporary_upload_files.as_ref(),
+            ),
             contents_markdown: comment_markdown.to_string(),
             issue_number: number,
             owner_name: owner.clone(),
