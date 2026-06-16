@@ -4507,6 +4507,9 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="mergeResult"');
     expect(pullRequestViewsSource).toContain("title.newPullRequest");
     expect(pullRequestViewsSource).toContain("title.editPullRequest");
+    expect(pullRequestViewsSource).toContain("pullRequest.title.required");
+    expect(pullRequestViewsSource).toContain("pullRequest.fromBranch.required");
+    expect(pullRequestViewsSource).toContain("pullRequest.toBranch.required");
     expect(pullRequestViewsSource).toContain("pullRequest.from");
     expect(pullRequestViewsSource).toContain("pullRequest.to");
     expect(pullRequestViewsSource).toContain("pullRequest.select.branch");

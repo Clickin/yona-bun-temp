@@ -1173,6 +1173,7 @@ export function ProjectPullRequestFormPage(props: {
   const [bodyMarkdown, setBodyMarkdown] = React.useState(initialPullRequest?.bodyMarkdown ?? "");
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const editMode = props.mode === "edit";
   const mergeResultEnabled =
     fromProjectId > 0 && toProjectId > 0 && fromBranch.trim() !== "" && toBranch.trim() !== "";
@@ -1204,6 +1205,7 @@ export function ProjectPullRequestFormPage(props: {
     setTitle(options.pullRequest?.title ?? "");
     setBodyMarkdown(options.pullRequest?.bodyMarkdown ?? "");
     setAttachmentIds([]);
+    setValidationMessage(null);
   }, [options]);
 
   const formTitle = editMode ? "title.editPullRequest" : "title.newPullRequest";
@@ -1242,6 +1244,19 @@ export function ProjectPullRequestFormPage(props: {
                   if (submitting) {
                     return;
                   }
+                  if (title.trim().length === 0) {
+                    setValidationMessage("pullRequest.title.required");
+                    return;
+                  }
+                  if (fromBranch.trim().length === 0) {
+                    setValidationMessage("pullRequest.fromBranch.required");
+                    return;
+                  }
+                  if (toBranch.trim().length === 0) {
+                    setValidationMessage("pullRequest.toBranch.required");
+                    return;
+                  }
+                  setValidationMessage(null);
                   setSubmitting(true);
                   void props
                     .onSubmit({
@@ -1279,7 +1294,10 @@ export function ProjectPullRequestFormPage(props: {
                       disabled={editMode}
                       id="fromBranch"
                       name="fromBranch"
-                      onChange={(event) => setFromBranch(event.currentTarget.value)}
+                      onChange={(event) => {
+                        setValidationMessage(null);
+                        setFromBranch(event.currentTarget.value);
+                      }}
                       value={fromBranch}
                     >
                       {(options?.fromBranches ?? []).map((branch) => (
@@ -1311,7 +1329,10 @@ export function ProjectPullRequestFormPage(props: {
                       disabled={editMode}
                       id="toBranch"
                       name="toBranch"
-                      onChange={(event) => setToBranch(event.currentTarget.value)}
+                      onChange={(event) => {
+                        setValidationMessage(null);
+                        setToBranch(event.currentTarget.value);
+                      }}
                       value={toBranch}
                     >
                       {(options?.toBranches ?? []).map((branch) => (
@@ -1327,8 +1348,10 @@ export function ProjectPullRequestFormPage(props: {
                   <input
                     id="pullRequestState"
                     name="title"
-                    onChange={(event) => setTitle(event.currentTarget.value)}
-                    required
+                    onChange={(event) => {
+                      setValidationMessage(null);
+                      setTitle(event.currentTarget.value);
+                    }}
                     value={title}
                   />
                 </label>
@@ -1348,8 +1371,10 @@ export function ProjectPullRequestFormPage(props: {
                       onAttachmentUpload={(attachment) =>
                         setAttachmentIds((current) => [...current, attachment.id])
                       }
-                      onChange={setBodyMarkdown}
-                      required
+                      onChange={(nextBodyMarkdown) => {
+                        setValidationMessage(null);
+                        setBodyMarkdown(nextBodyMarkdown);
+                      }}
                       runtimeConfig={props.runtimeConfig}
                       value={bodyMarkdown}
                     />
@@ -1444,6 +1469,11 @@ export function ProjectPullRequestFormPage(props: {
                     button.cancel
                   </a>
                 </div>
+                {validationMessage ? (
+                  <div className="alert alert-error" role="alert">
+                    {validationMessage}
+                  </div>
+                ) : null}
               </form>
             </section>
           </div>

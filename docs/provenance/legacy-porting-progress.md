@@ -412,7 +412,7 @@ Interpretation:
 - [x] Project/organization PR list legacy tab `num-badge` counts
 - [x] Project PR list legacy sender contributor select options
 - [x] PR creation
-- [x] PR create/edit legacy `projectLayout.scala.html` / `git/create.scala.html` / `git/edit.scala.html` header/menu form shell, common route error shells, `pullRequest.error.newPullRequestForm` mutation fallback scalar, and merge preflight `mergeResultURL` / `#mergeResult` / `#numOfCommits`
+- [x] PR create/edit legacy `projectLayout.scala.html` / `git/create.scala.html` / `git/edit.scala.html` header/menu form shell, common route error shells, `pullRequest.error.newPullRequestForm` mutation fallback scalar, `yobi.git.Write.js` title/from-branch/to-branch validation message keys, and merge preflight `mergeResultURL` / `#mergeResult` / `#numOfCommits`
 - [x] PR detail read
 - [x] PR detail legacy `projectLayout.scala.html` / `git/view.scala.html` overview shell anchors, including project header/menu, common route error shell, and close/open `data-request-method="post"` footer action routes
 - [x] PR watcher projection + watch/unwatch mutation
