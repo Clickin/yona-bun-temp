@@ -3313,6 +3313,64 @@ async fn rest_label_routes_manage_labels_and_categories() {
     .await;
     let label_id = created_label["label"]["id"].as_str().unwrap();
     assert_eq!(created_label["label"]["name"], "Bug");
+    let legacy_created_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "labels": [
+                    {
+                        "category": "Kind",
+                        "isExclusive": false,
+                        "labelColor": "#00ff00",
+                        "labelName": "LegacyFeature"
+                },
+                {
+                    "category": "Type",
+                    "isExclusive": true,
+                    "labelColor": "#f44336",
+                    "labelName": "Bug"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_eq!(legacy_created_response.status(), StatusCode::CREATED);
+    let legacy_created_labels = response_json(legacy_created_response).await;
+    assert_eq!(legacy_created_labels[0]["status"], 201);
+    assert_eq!(legacy_created_labels[0]["label"], "LegacyFeature");
+    assert_eq!(legacy_created_labels[0]["category"], "Kind");
+    assert_eq!(legacy_created_labels[0]["labelColor"], "#00ff00");
+    assert_eq!(legacy_created_labels[0]["isExclusive"], true);
+    assert_eq!(legacy_created_labels[1]["status"], 409);
+    assert_eq!(legacy_created_labels[1]["reason"], "Conflict");
+    assert_eq!(
+        legacy_created_labels[1]["message"],
+        "Failed to create a new label. The label may already exist."
+    );
+    assert_eq!(legacy_created_labels[1]["user"]["labelName"], "Bug");
+
+    let anonymous_legacy_label = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        None,
+        None,
+        Some(json!({
+            "labels": [
+                {
+                    "category": "Kind",
+                    "labelColor": "#000000",
+                    "labelName": "Anonymous"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_label).await;
+
     title_head::ActiveModel {
         id: NotSet,
         project_id: Set(Some(project_id)),
@@ -3384,7 +3442,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
         .await,
     )
     .await;
-    assert_eq!(labels["labels"].as_array().unwrap().len(), 1);
+    assert_eq!(labels["labels"].as_array().unwrap().len(), 2);
 
     create_project_rest(
         app.clone(),

@@ -622,6 +622,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
+    let legacy_project_labels_backend = route_backend.clone();
+    let legacy_project_labels_session_manager = session_manager.clone();
     let legacy_title_heads_backend = route_backend.clone();
     let legacy_title_heads_session_manager = session_manager.clone();
     let legacy_translation_backend = route_backend.clone();
@@ -818,6 +820,26 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/labels",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name)): Path<(String, String)>,
+                      Json(body): Json<LegacyProjectLabelsBody>| {
+                    async move {
+                        legacy_project_create_labels(
+                            headers,
+                            owner,
+                            project_name,
+                            body,
+                            legacy_project_labels_session_manager.clone(),
+                            legacy_project_labels_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/titleHeads",
@@ -26080,6 +26102,22 @@ struct LegacyProjectTitleHeadsQuery {
     query: Option<String>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+struct LegacyProjectLabelsBody {
+    labels: Option<Vec<LegacyProjectLabelBody>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyProjectLabelBody {
+    #[serde(rename = "category")]
+    category_name: String,
+    #[serde(default)]
+    is_exclusive: Option<bool>,
+    label_color: String,
+    label_name: String,
+}
+
 fn accepts_legacy_json(headers: &HeaderMap) -> bool {
     let Some(value) = headers.get(http::header::ACCEPT) else {
         return true;
@@ -26167,6 +26205,99 @@ async fn legacy_project_title_heads(
     }
 
     Json(serde_json::json!({ "result": result })).into_response()
+}
+
+async fn legacy_project_create_labels(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    body: LegacyProjectLabelsBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Some(labels) = body.labels else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "No issues key exists or value wasn't array!",
+            })),
+        )
+            .into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project labels require repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let authorization =
+        match require_project_read(repository, &owner, &project_name, Some(actor_id)).await {
+            Ok(authorization) => authorization,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let can_update = match project_update_allowed(&authorization) {
+        Ok(can_update) => can_update,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    if !can_update {
+        return RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue label create is not allowed",
+        ))
+        .into_response();
+    }
+
+    let mut results = Vec::new();
+    for label in labels {
+        let original_label = serde_json::json!({
+            "category": label.category_name,
+            "isExclusive": label.is_exclusive,
+            "labelColor": label.label_color,
+            "labelName": label.label_name,
+        });
+        let color = match normalize_issue_label_color(&label.label_color) {
+            Ok(color) => color,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+        let create_result = match repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: label.is_exclusive.is_some(),
+                category_name: label.category_name.trim().to_string(),
+                label_color: color,
+                label_name: label.label_name.trim().to_string(),
+                owner_name: owner.clone(),
+                project_name: project_name.clone(),
+            })
+            .await
+        {
+            Ok(Some(result)) => result,
+            Ok(None) => return RestRouteError::not_found("project not found").into_response(),
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        let (created_label, created) = create_result;
+        if created {
+            results.push(serde_json::json!({
+                "status": 201,
+                "label": created_label.name,
+                "category": created_label.category_name,
+                "labelColor": created_label.color,
+                "isExclusive": created_label.category_is_exclusive,
+            }));
+        } else {
+            results.push(serde_json::json!({
+                "status": 409,
+                "reason": "Conflict",
+                "message": "Failed to create a new label. The label may already exist.",
+                "user": original_label,
+            }));
+        }
+    }
+
+    (StatusCode::CREATED, Json(results)).into_response()
 }
 
 #[derive(Clone, Debug, Deserialize)]
