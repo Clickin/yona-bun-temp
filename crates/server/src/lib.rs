@@ -1239,7 +1239,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
-                      Json(body): Json<LegacyMilestonesBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_create_milestones(
                             headers,
@@ -26762,20 +26762,6 @@ struct LegacyBoardCommentUpdateBody {
     original: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct LegacyMilestonesBody {
-    milestones: Option<Vec<LegacyMilestoneBody>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-struct LegacyMilestoneBody {
-    #[serde(default)]
-    description: String,
-    due_on: Option<String>,
-    state: Option<String>,
-    title: Option<String>,
-}
-
 async fn legacy_external_create_board_postings(
     headers: HeaderMap,
     owner: String,
@@ -27217,11 +27203,13 @@ async fn legacy_external_create_milestones(
     headers: HeaderMap,
     owner: String,
     project_name: String,
-    body: LegacyMilestonesBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
-    let Some(milestones) = body.milestones else {
+    let Some(milestones) =
+        legacy_json_find_value(&body, "milestones").and_then(|value| value.as_array())
+    else {
         return (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({
@@ -27259,14 +27247,15 @@ async fn legacy_external_create_milestones(
 
     let mut results = Vec::new();
     for milestone in milestones {
-        let title = milestone.title.as_deref().unwrap_or("No title").to_string();
+        let milestone = legacy_milestone_body_from_value(milestone);
+        let title = milestone.title.clone();
         match repository
             .project_milestone_title_exists(&owner, &project_name, &title, None)
             .await
         {
             Ok(true) => {
                 results.push(serde_json::json!({
-                    "milestone": milestone,
+                    "milestone": milestone.original,
                     "message": "This milestone title already exists. Please enter a different title.",
                 }));
                 continue;
@@ -27291,7 +27280,7 @@ async fn legacy_external_create_milestones(
             .create_project_milestone(persistence::MilestoneMutationInput {
                 actor_id: Some(actor_id),
                 attachment_ids: Vec::new(),
-                contents_markdown: milestone.description,
+                contents_markdown: milestone.description.clone(),
                 due_date,
                 owner_name: owner.clone(),
                 project_name: project_name.clone(),
@@ -27308,6 +27297,40 @@ async fn legacy_external_create_milestones(
     }
 
     (StatusCode::CREATED, Json(results)).into_response()
+}
+
+#[derive(Clone, Debug)]
+struct LegacyMilestoneCreateItem {
+    description: String,
+    due_on: Option<String>,
+    original: serde_json::Value,
+    state: Option<String>,
+    title: String,
+}
+
+fn legacy_milestone_body_from_value(value: &serde_json::Value) -> LegacyMilestoneCreateItem {
+    let title = legacy_json_find_value(value, "title")
+        .and_then(|value| value.as_str())
+        .unwrap_or("No title")
+        .to_string();
+    let description = legacy_json_find_value(value, "description")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let due_on = legacy_json_find_value(value, "due_on")
+        .and_then(|value| value.as_str())
+        .map(ToString::to_string);
+    let state = legacy_json_find_value(value, "state")
+        .and_then(|value| value.as_str())
+        .map(ToString::to_string);
+
+    LegacyMilestoneCreateItem {
+        description,
+        due_on,
+        original: value.clone(),
+        state,
+        title,
+    }
 }
 
 fn legacy_external_due_on(value: Option<&str>) -> Result<Option<DateTime>, ConnectError> {

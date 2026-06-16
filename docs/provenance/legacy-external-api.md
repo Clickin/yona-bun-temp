@@ -99,7 +99,7 @@ contract.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/milestones` | `MilestoneApi.newMilestone()` | Bulk milestone creation/import with title, description, due date, state. | Implemented in app server with legacy `milestones[]` request, duplicate-title item payload, untrimmed title scalar preservation, and `201 Created` array response. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/milestones` | `MilestoneApi.newMilestone()` | Bulk milestone creation/import with title, description, due date, state. | Implemented in app server with legacy recursive `JsonNode.findValue("milestones")` request parsing, per-milestone recursive scalar lookup/fallbacks, duplicate-title item payload, untrimmed title scalar preservation, and `201 Created` array response. |
 
 ### Watchers / Favorites
 

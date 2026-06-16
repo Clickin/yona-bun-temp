@@ -3496,6 +3496,57 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "legacy spaced title"
     );
 
+    let nested_legacy_milestones = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "import": {
+                    "milestones": [
+                        {
+                            "meta": {
+                                "title": "Nested Legacy Milestone",
+                                "state": "closed"
+                            },
+                            "body": {
+                                "description": "nested milestone body"
+                            },
+                            "schedule": {
+                                "due_on": "2026-08-20"
+                            }
+                        },
+                        {
+                            "body": {
+                                "description": "fallback title body"
+                            }
+                        }
+                    ]
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        nested_legacy_milestones[0]["title"],
+        "Nested Legacy Milestone"
+    );
+    assert_eq!(
+        nested_legacy_milestones[0]["description"],
+        "nested milestone body"
+    );
+    assert_eq!(nested_legacy_milestones[0]["due_on"], "2026-08-20");
+    assert_eq!(nested_legacy_milestones[0]["state"], "closed");
+    assert_eq!(nested_legacy_milestones[1]["title"], "No title");
+    assert_eq!(
+        nested_legacy_milestones[1]["description"],
+        "fallback title body"
+    );
+    assert_eq!(nested_legacy_milestones[1]["state"], "open");
+
     let anonymous_legacy_milestones = rest(
         app.clone(),
         Method::POST,
