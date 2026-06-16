@@ -338,7 +338,7 @@ Interpretation:
 - [x] Posting body change-history modal anchors
 - [x] Git-backed README commit/sync
 - [x] Issue template edit / online code file edit through posting forms
-- [ ] Legacy external `/-_-api/v1/**` board compatibility (migrator/deferred)
+- [x] Legacy external Board direct helper rows (`newPostings`, `updatePostingContent`, `newPostingComment`, `updatePostLabel`) implemented in the app server with the inventory in `docs/provenance/legacy-external-api.md`; broader import/export-only Board compatibility remains migrator/deferred
 - [x] Posting/comment app search
 
 ## Repository / VCS / Code

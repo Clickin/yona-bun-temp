@@ -674,7 +674,7 @@ DELETE /:owner/:project/post/:number/comment/:commentId/delete → 댓글 삭제
 - [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.
 - [x] Git-backed README commit/sync: README-marked board posting create/update commits `README.md` to the project Git repository when repository storage exists.
 - [x] Issue template edit and online code file edit: legacy `postform` query context (`issueTemplate`, `path`, `branch`, `edit`) reuses the board form shell, disables attachments where legacy does, prepares existing file content for edit, and commits `ISSUE_TEMPLATE.md` or the selected code path through the local Git executable without creating a board posting row.
-- [ ] Deferred: `/-_-api/v1/**` board compatibility.
+- [x] Legacy external Board direct helper rows: app server mounts the implemented `BoardApi.newPostings`, `BoardApi.updatePostingContent`, `BoardApi.newPostingComment`, and `BoardApi.updatePostLabel` compatibility rows listed in `docs/provenance/legacy-external-api.md`, including payload author auto-create, legacy created-date restore, current-user `temporaryUploadFiles` binding, conflict JSON, and label replacement response shape. Broader import/export-only external Board compatibility stays migrator/deferred.
 
 ---
 
