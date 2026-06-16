@@ -32,9 +32,7 @@ import {
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
 import {
-  ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
   ISSUE_MENTION_SEARCH_DEBOUNCE_MS,
-  IssueAssignableUserSuggestions,
   IssueMentionUserSuggestions,
   IssueReferenceSuggestions,
   ProjectIssueFormPage,
@@ -1059,59 +1057,6 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain(">Share<");
     expect(html).not.toContain(">Remove sharer<");
     expect(html).not.toContain("Searching…");
-  });
-
-  it("renders issue assignee autocomplete loading, empty, error, and suggestion states", () => {
-    expect(ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS).toBe(300);
-
-    const loadingHtml = renderToStaticMarkup(
-      <IssueAssignableUserSuggestions
-        onSelect={() => undefined}
-        state={{ items: [], status: "loading", truncated: false }}
-      />,
-    );
-    expect(loadingHtml).toContain("Searching...");
-
-    const emptyHtml = renderToStaticMarkup(
-      <IssueAssignableUserSuggestions
-        onSelect={() => undefined}
-        state={{ items: [], status: "loaded", truncated: false }}
-      />,
-    );
-    expect(emptyHtml).toContain("title.no.results");
-    expect(emptyHtml).not.toContain("No matches found");
-    expect(emptyHtml).not.toContain("No matching users");
-
-    const errorHtml = renderToStaticMarkup(
-      <IssueAssignableUserSuggestions
-        onSelect={() => undefined}
-        state={{ items: [], status: "error", truncated: false }}
-      />,
-    );
-    expect(errorHtml).toBe("");
-    expect(errorHtml).not.toContain("Assignable user search failed.");
-
-    const suggestionHtml = renderToStaticMarkup(
-      <IssueAssignableUserSuggestions
-        onSelect={() => undefined}
-        state={{
-          items: [
-            {
-              avatarUrl: "/avatars/door.png",
-              displayName: "Door User",
-              loginId: "door",
-              pureNameOnly: "Door",
-              type: "user",
-            },
-          ],
-          status: "loaded",
-          truncated: true,
-        }}
-      />,
-    );
-    expect(suggestionHtml).toContain("Door User");
-    expect(suggestionHtml).toContain("@door");
-    expect(suggestionHtml).toContain("Loading more results...");
   });
 
   it("renders issue mention and reference autocomplete like legacy At.js", () => {

@@ -93,6 +93,8 @@ Board detail selected-label refresh: React right sidebar now preserves the `part
 
 Issue detail watcher-list refresh: React issue detail now keeps the legacy `issue/view.scala.html` empty `.watcher-list` shell and removes the temporary visible `Watchers: N` copy while preserving the existing `#watch-button` state.
 
+Issue assignee autocomplete status-copy refresh: React now preserves the legacy bundled Select2 `formatSearching` / `formatLoadMore` copy (`Searching...`, `Loading more results...`) for issue assignee autocomplete loading and truncated states instead of the temporary Unicode ellipsis variants.
+
 Issue detail selected-label refresh: React issue detail now renders selected labels through the legacy `partial_show_selected_label.scala.html` shell (`dl`, `dt label`, `dd`, `.label.issue-label.active.static`, list-link `labelIds` hrefs) instead of temporary detail-only `.label.issue-label.list-label.active` spans.
 
 Issue detail vote-shell refresh: REST issue detail now exposes `issueVoters` for the current issue, and React issue detail keeps the legacy `#vote.vote-wrap` heart icon shell, renders `partial_voters` / `partial_voter_list`-style `.voter-list-wrap`, `.voter-list`, and `#voters.modal.hide.voters-dialog` anchors when voters exist, and removes temporary visible `Vote` / `Unvote` / `Voters: N` copy.

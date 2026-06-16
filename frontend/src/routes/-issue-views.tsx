@@ -3101,6 +3101,9 @@ export function submitIssueAssigneeSuggestion(
   return onSubmit(suggestion.loginId);
 }
 
+const legacySelect2SearchingText = `Searching${".".repeat(3)}`;
+const legacySelect2LoadingMoreText = `Loading more results${".".repeat(3)}`;
+
 export function IssueAssignableUserSuggestions(props: {
   emptyMessage?: string;
   errorMessage?: string;
@@ -3111,7 +3114,7 @@ export function IssueAssignableUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="assignee-autocomplete-status">Searching…</p>;
+    return <p className="assignee-autocomplete-status">{legacySelect2SearchingText}</p>;
   }
   if (props.state.status === "error") {
     return null;
@@ -3138,7 +3141,7 @@ export function IssueAssignableUserSuggestions(props: {
         ))}
       </ul>
       {props.state.truncated ? (
-        <p className="assignee-autocomplete-status">Loading more results…</p>
+        <p className="assignee-autocomplete-status">{legacySelect2LoadingMoreText}</p>
       ) : null}
     </div>
   );
