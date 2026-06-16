@@ -1823,6 +1823,37 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .expect("legacy issue sharers")
         .iter()
         .any(|sharer| sharer["loginId"] == "guest"));
+    let legacy_issue_find_sharer = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/findSharer?query=guest,missing",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_issue_find_sharer
+            .as_array()
+            .expect("legacy issue find sharer")
+            .len(),
+        1
+    );
+    assert_eq!(legacy_issue_find_sharer[0]["loginId"], "guest");
+    assert_eq!(legacy_issue_find_sharer[0]["name"], "guest");
+    assert_eq!(legacy_issue_find_sharer[0]["type"], "user");
+    let legacy_find_sharer_html = rest_with_headers(
+        app.clone(),
+        Method::GET,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/findSharer?query=guest",
+        &[("Accept", "text/html")],
+        None,
+    )
+    .await;
+    assert_eq!(legacy_find_sharer_html.status(), StatusCode::NOT_ACCEPTABLE);
     let legacy_issue_unshared = ok_json(
         rest(
             app.clone(),

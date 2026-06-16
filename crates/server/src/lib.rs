@@ -639,6 +639,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_issue_sharable_session_manager = session_manager.clone();
     let legacy_issue_share_backend = route_backend.clone();
     let legacy_issue_share_session_manager = session_manager.clone();
+    let legacy_issue_find_sharer_backend = route_backend.clone();
+    let legacy_issue_find_sharer_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -978,6 +980,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_issue_share_session_manager.clone(),
                             legacy_issue_share_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/findSharer",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    async move {
+                        legacy_external_find_issue_sharer(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            query,
+                            legacy_issue_find_sharer_session_manager.clone(),
+                            legacy_issue_find_sharer_backend.clone(),
                         )
                         .await
                     }
@@ -27055,6 +27078,59 @@ async fn legacy_external_update_issue_sharer(
         "sharer": sharer_name,
     }))
     .into_response()
+}
+
+async fn legacy_external_find_issue_sharer(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    number: i64,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("issue sharer lookup requires repository backend")
+            .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let access = match read_issue_access(repository, &owner, &project_name, number, actor_id).await
+    {
+        Ok(access) => access,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let requested = query
+        .query
+        .split(',')
+        .map(normalize_identifier)
+        .filter(|value| !value.is_empty())
+        .collect::<Vec<_>>();
+    let payload = access
+        .issue
+        .sharers
+        .iter()
+        .filter(|sharer| {
+            requested.is_empty()
+                || requested
+                    .iter()
+                    .any(|value| value.eq_ignore_ascii_case(&sharer.login_id))
+        })
+        .map(|sharer| {
+            serde_json::json!({
+                "loginId": sharer.login_id,
+                "name": sharer.user_label,
+                "pureNameOnly": sharer.user_label,
+                "avatarUrl": "",
+                "type": "user",
+            })
+        })
+        .collect::<Vec<_>>();
+    Json(payload).into_response()
 }
 
 fn legacy_external_issue_result(issue: &persistence::IssueRecord) -> serde_json::Value {
