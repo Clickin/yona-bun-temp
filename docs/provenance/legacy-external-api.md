@@ -39,7 +39,7 @@ contract.
 | --- | --- | --- | --- |
 | `GET /-_-api/v1/users?query=` | `conf/routes` -> `controllers.UserApp.users` | Members-page user mention/search helper. | Implemented in app server with legacy JSON Accept/referer gate and `[{info, loginId}]` shape. |
 | `POST /-_-api/v1/users` | `UserApi.newUser()` | Site-admin JSON user creation from `users` array. | Migrator/deferred; not app-server scope. |
-| `POST /-_-api/v1/users/token` | `UserApi.newToken()` | Validate id/password, set session, return `access_token`. | Migrator/deferred; not app-server scope. |
+| `POST /-_-api/v1/users/token` | `UserApi.newToken()` | Validate id/password, set session, return `access_token`. | Implemented in app server with legacy password validation messages, fresh API token issuance, authenticated session cookie attachment, and token-auth reuse coverage. |
 | `GET /-_-api/v1/user/issues?filter=&page=&pageNum=` | `UserApi.getIssuesByUser()` | Token-authored user issue export/list JSON. | Migrator/deferred; not app-server scope. |
 | `GET /-_-api/v1/users/:user/statistics` | `UserApi.statistics()` | User activity count JSON. | Implemented in app server with legacy statistics fields and session/token auth. |
 | `POST /-_-api/v1/user/defultLoginPage` | `controllers.UserApp.setDefaultLoginPage()` | Legacy typo-preserving default login page mutation. | Implemented in app server as an alias of the direct typo-preserving default-login-page mutation with legacy `{defaultLoginPage}` response. |

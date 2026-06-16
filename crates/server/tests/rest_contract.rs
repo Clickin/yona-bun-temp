@@ -1590,6 +1590,61 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_refavorited["projectId"], project_id.to_string());
     assert_eq!(legacy_refavorited["favored"], true);
 
+    let invalid_legacy_token = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/users/token",
+        None,
+        None,
+        Some(json!({
+            "id": "visitor",
+            "password": "wrong-password"
+        })),
+    )
+    .await;
+    assert_eq!(invalid_legacy_token.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        response_json(invalid_legacy_token).await,
+        json!({ "message": "No user by id and password" })
+    );
+
+    let legacy_token_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/users/token",
+        None,
+        None,
+        Some(json!({
+            "id": "visitor",
+            "password": "doorpass1"
+        })),
+    )
+    .await;
+    assert_eq!(legacy_token_response.status(), StatusCode::OK);
+    assert!(
+        legacy_token_response
+            .headers()
+            .contains_key(http::header::SET_COOKIE),
+        "legacy token API should attach an authenticated session cookie"
+    );
+    let legacy_api_token = response_json(legacy_token_response).await["access_token"]
+        .as_str()
+        .expect("legacy access token")
+        .to_string();
+    assert!(!legacy_api_token.is_empty());
+    let legacy_token_favorites = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/favoriteProjects",
+            &[("Yona-Token", &legacy_api_token)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_token_favorites["projectIds"], json!([project_id]));
+
     let guest_api_token = ok_json(
         rest(
             app.clone(),

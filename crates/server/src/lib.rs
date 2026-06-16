@@ -746,6 +746,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_admin_users_backend = route_backend.clone();
     let legacy_admin_user_state_session_manager = session_manager.clone();
     let legacy_admin_user_state_backend = route_backend.clone();
+    let legacy_user_token_session_manager = session_manager.clone();
+    let legacy_user_token_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
@@ -814,6 +816,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     async move {
                         legacy_external_users(headers, query, legacy_user_search_backend.clone())
                             .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/users/token",
+            post(
+                move |headers: HeaderMap, Json(body): Json<LegacyExternalUserTokenBody>| {
+                    async move {
+                        legacy_external_user_token(
+                            headers,
+                            body,
+                            legacy_user_token_session_manager.clone(),
+                            legacy_user_token_backend.clone(),
+                        )
+                        .await
                     }
                 },
             ),
@@ -26254,6 +26272,13 @@ struct LegacyExternalUsersQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+struct LegacyExternalUserTokenBody {
+    id: String,
+    password: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct LegacyAdminUserStateBody {
     state: String,
 }
@@ -26312,6 +26337,63 @@ async fn legacy_external_users(
             format!("items 10/{total}")
                 .parse()
                 .expect("legacy user search content-range"),
+        );
+    }
+    response
+}
+
+async fn legacy_external_user_token(
+    headers: HeaderMap,
+    body: LegacyExternalUserTokenBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("user token requires repository backend")
+            .into_response();
+    };
+
+    let identifier = body.id.trim();
+    let user = match repository.find_user_by_identifier(identifier).await {
+        Ok(Some(user)) if user.is_confirmed => user,
+        Ok(_) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "message": "No valid user by id" })),
+            )
+                .into_response();
+        }
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    let password_matches = verify(&body.password, &user.password_hash).unwrap_or(false);
+    if !password_matches {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({ "message": "No user by id and password" })),
+        )
+            .into_response();
+    }
+
+    let token = match repository.reset_api_token_for_user(user.id).await {
+        Ok(token) => token,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let previous_session = session_manager.read_session_from_headers(&headers);
+    let previous_token = previous_session
+        .as_ref()
+        .map(|session| session.token.as_str());
+    let authenticated_session =
+        session_manager.create_authenticated_session(previous_token, user.id, false);
+    let mut response = Json(serde_json::json!({ "access_token": token })).into_response();
+    response.headers_mut().insert(
+        "x-csrf-token",
+        HeaderValue::from_str(&authenticated_session.csrf_token).expect("csrf header"),
+    );
+    for cookie in session_manager.build_set_cookie_headers(&authenticated_session) {
+        response.headers_mut().append(
+            SET_COOKIE,
+            HeaderValue::from_str(&cookie).expect("set-cookie header"),
         );
     }
     response
