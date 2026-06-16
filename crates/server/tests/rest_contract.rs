@@ -1786,6 +1786,93 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_assignee).await;
+    let legacy_issue_shared = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "action": "add",
+                "sharer": {
+                    "loginId": "guest",
+                    "type": "user"
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_shared["action"], "added");
+    assert_eq!(legacy_issue_shared["sharer"], "guest");
+    let legacy_issue_shared_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(legacy_issue_shared_detail["sharers"]
+        .as_array()
+        .expect("legacy issue sharers")
+        .iter()
+        .any(|sharer| sharer["loginId"] == "guest"));
+    let legacy_issue_unshared = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "action": "delete",
+                "sharer": {
+                    "loginId": "guest",
+                    "type": "user"
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_issue_unshared["action"], "deleted");
+    assert_eq!(legacy_issue_unshared["sharer"], "guest");
+    let legacy_issue_no_sharer = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({ "action": "add" })),
+    )
+    .await;
+    assert_eq!(legacy_issue_no_sharer.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        response_json(legacy_issue_no_sharer).await,
+        json!({ "message": "No sharer" })
+    );
+    let anonymous_legacy_issue_share = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+        None,
+        None,
+        Some(json!({
+            "action": "add",
+            "sharer": {
+                "loginId": "guest",
+                "type": "user"
+            }
+        })),
+    )
+    .await;
+    assert_legacy_external_unauthorized(anonymous_legacy_issue_share).await;
     let legacy_project_assignable = ok_json(
         rest(
             app.clone(),
