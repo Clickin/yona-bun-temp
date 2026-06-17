@@ -97,6 +97,21 @@ test("passes parity-complete canonical route changes when a parity test changes 
   assert.equal(shouldBlockForStrictGate(result), false);
 });
 
+test("maps anonymous help route changes to the help parity slice", () => {
+  const result = runGate([
+    "frontend/src/routes/-help-views.tsx",
+    "frontend/src/help-route-parity.spec.tsx",
+    "docs/provenance/legacy-porting-progress.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["anonymous-help-route"],
+  );
+});
+
 test("marks partial legacy slices as expected non-parity until audit evidence lands", () => {
   const result = runGate([
     "crates/server/src/session.rs",

@@ -97,6 +97,17 @@ const PARITY_SLICES = [
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },
   {
+    id: "anonymous-help-route",
+    label: "Anonymous help route",
+    status: "parity",
+    implementationPatterns: [/^frontend\/src\/routes\/-help-views\.tsx$/i],
+    testKeywords: ["help-route", "help", "route-parity"],
+    provenanceDocs: [
+      "docs/agents/06-phase-plan.md",
+      "docs/provenance/legacy-porting-progress.md",
+    ],
+  },
+  {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
     status: "gap",

@@ -136,7 +136,7 @@ Interpretation:
 - [x] Global anonymous-access configuration parity
 - [x] Custom login placeholder configuration
 - [x] Unsupported/denied OAuth provider warning states (`/authenticate/:provider`, `/authenticate/:provider/denied`) with message-key copy instead of temporary English text, plus `application.social.login.support`-style configured provider buttons through auth UI capabilities
-- [x] Anonymous `/_help` route from legacy `HelpApp.help()` with `help/toc.scala.html` breadcrumb/page-wrap/Q&A anchors and FAQ copy
+- [x] Anonymous `/_help` route from legacy `HelpApp.help()` with `help/toc.scala.html` breadcrumb/page-wrap/Q&A anchors, FAQ copy, and item-wide `.qas > .qa` click toggle behavior
 - [x] Authenticated `/restricted` route from legacy `Restricted.index()` with `restricted.scala.html` current-user identity, verified marker, provider/user-id, session-expiry, YouTube iframe sample shell, plus route bootstrap/redirect shells using the legacy `common.loading` scalar and runtime error banner `button.close` / `error.internalServerError` fallback scalars
 - [ ] OAuth social login
 - [ ] LDAP

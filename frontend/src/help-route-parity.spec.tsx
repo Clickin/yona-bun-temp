@@ -6,9 +6,12 @@ import { HelpTocPage } from "./routes/-help-views";
 
 describe("legacy help route parity", () => {
   it("keeps the anonymous legacy /_help route mounted in React", () => {
-    const legacyRoutes = fs.readFileSync(path.resolve(__dirname, "../../yona-original/conf/routes"), {
-      encoding: "utf8",
-    });
+    const legacyRoutes = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/conf/routes"),
+      {
+        encoding: "utf8",
+      },
+    );
     const legacyController = fs.readFileSync(
       path.resolve(__dirname, "../../yona-original/app/controllers/HelpApp.java"),
       { encoding: "utf8" },
@@ -21,6 +24,21 @@ describe("legacy help route parity", () => {
     expect(legacyController).toContain("@AnonymousCheck");
     expect(routeSource).toContain('createFileRoute("/_help")');
     expect(routeSource).not.toContain("useRequireAuthenticatedRoute");
+  });
+
+  it("keeps the legacy FAQ item-wide toggle target", () => {
+    const legacyView = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/help/toc.scala.html"),
+      { encoding: "utf8" },
+    );
+    const helpViewSource = fs.readFileSync(path.resolve(__dirname, "routes/-help-views.tsx"), {
+      encoding: "utf8",
+    });
+
+    expect(legacyView).toContain('$(".qas > .qa").click');
+    expect(helpViewSource).toContain('querySelectorAll<HTMLLIElement>(":scope > .qa")');
+    expect(helpViewSource).toContain('item.addEventListener("click", listener)');
+    expect(helpViewSource).toContain('className={`qa${openItems.has(index) ? " open" : ""}`}');
   });
 
   it("renders the legacy help/toc FAQ shell and anchors", () => {
