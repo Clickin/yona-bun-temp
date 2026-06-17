@@ -27852,12 +27852,10 @@ async fn legacy_external_issue_comment_notification_receivers(
     {
         return RestRouteError::from_connect_error(error).into_response();
     }
-    let comment_markdown = body
-        .get("comment")
+    let comment_markdown = legacy_json_find_value(&body, "comment")
         .and_then(|value| value.as_str())
         .unwrap_or_default();
-    let parent_comment_id = body
-        .get("parentCommentId")
+    let parent_comment_id = legacy_json_find_value(&body, "parentCommentId")
         .and_then(|value| {
             value.as_i64().or_else(|| {
                 value

@@ -1834,8 +1834,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&owner_cookie),
             None,
             Some(json!({
-                "comment": "preview receiver @visitor",
-                "parentCommentId": ""
+                "draft": {
+                    "comment": "preview receiver @visitor",
+                    "parentCommentId": ""
+                }
             })),
         )
         .await,
@@ -2644,8 +2646,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&visitor_cookie),
             None,
             Some(json!({
-                "comment": "reply preview",
-                "parentCommentId": parent_comment_id.to_string()
+                "draft": {
+                    "comment": "reply preview",
+                    "parentCommentId": parent_comment_id.to_string()
+                }
             })),
         )
         .await,
