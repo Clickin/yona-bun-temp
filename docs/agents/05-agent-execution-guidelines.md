@@ -18,6 +18,11 @@
 7. `repo root` ownership 경계 안에서 Green 구현을 작성한다.
 8. `deferred`, `gap`, `deviation`과 historical/banner 영향까지 함께 갱신한다.
 
+## 테스트 실행
+
+- Agent가 Rust 테스트를 실행할 때는 `cargo test ...`를 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용한다.
+- Codex에서는 `pnpm agent:cargo-test`를 sandbox 밖 `require_escalated`로 실행한다. 전체 cargo 로그는 `.agent/cargo-test-logs/`에 저장되고 콘솔에는 시작/종료와 실패 tail만 출력한다.
+
 ## 코드 및 문서 배치 규칙
 
 - 새 frontend 장기 구현은 `frontend/`에 둔다.

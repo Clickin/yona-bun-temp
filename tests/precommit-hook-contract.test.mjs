@@ -16,6 +16,12 @@ const yonaExportProvenancePath = path.join(
   "phase-0b",
   "yona-export.md",
 );
+const legacyExternalApiProvenancePath = path.join(
+  repoRoot,
+  "docs",
+  "provenance",
+  "legacy-external-api.md",
+);
 const frontendToolExtensions = [".js", ".jsx", ".ts", ".tsx"];
 
 function readExtensionSet(source, name) {
@@ -82,13 +88,17 @@ test("pre-commit runs React Doctor when frontend source files are staged", () =>
   assert.match(verifySource, /file\.startsWith\("frontend\/"\)/u);
 });
 
-test("external REST harness requires yona-export provenance for issue and milestone REST", () => {
+test("external REST harness requires inventory provenance for issue and milestone REST", () => {
   const serverSource = readFileSync(serverSourcePath, "utf8");
   const specSource = readFileSync(specPath, "utf8");
   const provenanceSource = readFileSync(yonaExportProvenancePath, "utf8");
+  const legacyExternalApiSource = readFileSync(legacyExternalApiProvenancePath, "utf8");
 
-  assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/issues/u);
-  assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/milestones/u);
+  assert.match(serverSource, /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/issues/u);
+  assert.match(
+    serverSource,
+    /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/milestones/u,
+  );
   assert.match(
     specSource,
     /새 React application API는 `\/api\/v1\/\*\*`를 canonical surface로 사용/u,
@@ -100,5 +110,16 @@ test("external REST harness requires yona-export provenance for issue and milest
   assert.match(specSource, /외부 도구와의 호환/u);
   assert.match(specSource, /내부 React 화면/u);
   assert.match(provenanceSource, /migration-facing project export\/import tool contract/u);
-  assert.match(provenanceSource, /Do not add `\/-_-api\/v1` issue\/milestone/u);
+  assert.match(provenanceSource, /app server carries only the direct compatibility rows/u);
+  assert.match(provenanceSource, /New narrow app-owned helpers require updates to/u);
+  assert.match(legacyExternalApiSource, /Endpoint Inventory/u);
+  assert.match(
+    legacyExternalApiSource,
+    /`GET \/-_-api\/v1\/owners\/:owner\/projects\/:projectName\/issues\/:number`/u,
+  );
+  assert.match(
+    legacyExternalApiSource,
+    /`POST \/-_-api\/v1\/owners\/:owner\/projects\/:projectName\/milestones`/u,
+  );
+  assert.match(legacyExternalApiSource, /focused\s+contract tests are updated together/u);
 });
