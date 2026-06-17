@@ -83,7 +83,7 @@ contract.
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share` | `IssueApi.updateSharer()` | Add/delete issue sharer and send notification. | Implemented in app server with legacy user/project add/delete request and `{action, sharer}` payload. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight` | `IssueApi.upvoteWeight()` | Increment issue weight. | Implemented in app server with legacy `{weight}` response and permission-denied JSON. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight` | `IssueApi.downvoteWeight()` | Decrement issue weight. | Implemented in app server with legacy `{weight}` response and permission-denied JSON. |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange` | `IssueApi.detectChange()` | Poll issue body/comment changes and checksum. | Implemented in app server for SHA-1 body checksum/comment count polling with legacy JSON fields, including `issueUpdateDate` as issue updated-date epoch milliseconds. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange` | `IssueApi.detectChange()` | Poll issue body/comment changes and checksum. | Implemented in app server for recursive `JsonNode.findValue("issueBodyChecksum")`/`findValue("numOfComments")` parsing and SHA-1 body checksum/comment count polling with legacy JSON fields, including `issueUpdateDate` as issue updated-date epoch milliseconds. |
 | `POST /-_-api/v1/translation` | `IssueApi.translate()` | Translate issue/post/comment Markdown source; return 412 when unconfigured. | Implemented in app server as direct helper. |
 
 ### Board / Posts / Comments

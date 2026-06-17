@@ -2542,8 +2542,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&visitor_cookie),
             None,
             Some(json!({
-                "issueBodyChecksum": "stale",
-                "numOfComments": 0
+                "poll": {
+                    "issueBodyChecksum": "stale",
+                    "comments": {
+                        "numOfComments": "0"
+                    }
+                }
             })),
         )
         .await,

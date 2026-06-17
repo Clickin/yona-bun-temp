@@ -1073,7 +1073,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyIssueDetectChangeBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_detect_issue_change(
                             headers,
@@ -26765,13 +26765,29 @@ fn legacy_content_update_body_from_value(
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 struct LegacyIssueDetectChangeBody {
-    #[serde(default)]
     issue_body_checksum: String,
-    #[serde(default)]
     num_of_comments: u32,
+}
+
+fn legacy_issue_detect_change_body_from_value(
+    value: &serde_json::Value,
+) -> LegacyIssueDetectChangeBody {
+    LegacyIssueDetectChangeBody {
+        issue_body_checksum: legacy_json_find_value(value, "issueBodyChecksum")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        num_of_comments: legacy_json_find_value(value, "numOfComments")
+            .and_then(|value| {
+                value
+                    .as_u64()
+                    .or_else(|| value.as_str()?.trim().parse::<u64>().ok())
+            })
+            .and_then(|value| u32::try_from(value).ok())
+            .unwrap_or_default(),
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -27729,10 +27745,11 @@ async fn legacy_external_detect_issue_change(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyIssueDetectChangeBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_issue_detect_change_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("issue detectChange requires repository backend")
             .into_response();
