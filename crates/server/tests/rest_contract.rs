@@ -3068,10 +3068,14 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "owner": "owner",
-                "projectName": "projectYobi",
-                "type": "issue",
-                "number": 1
+                "context": {
+                    "owner": "owner",
+                    "projectName": "projectYobi"
+                },
+                "resource": {
+                    "type": "issue",
+                    "number": 1
+                }
             })),
         )
         .await,

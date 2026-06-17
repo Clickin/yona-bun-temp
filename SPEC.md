@@ -1358,7 +1358,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 
 - [x] `/-_-api/v1/hello` 가 200 OK를 반환한다
 - [~] API 인증: app-owned direct helpers in `docs/provenance/legacy-external-api.md` accept their legacy session/token/CSRF rules; token-auth-capable helpers accept legacy `Yona-Token` or `Authorization: token ...` where covered by contract tests, and unauthenticated direct-helper requests use legacy `401 {"message":"unauthorized request"}` where legacy expected it; broader legacy external APIs remain migrator/deferred
-- [~] API 응답: app-owned direct helpers use legacy JSON field names/shapes documented in `docs/provenance/legacy-external-api.md`, including favorite toggle message copy, token `access_token`, legacy receiver payloads, and translation source/response compatibility; broader legacy external APIs remain migrator/deferred
+- [~] API 응답: app-owned direct helpers use legacy JSON field names/shapes documented in `docs/provenance/legacy-external-api.md`, including favorite toggle message copy, token `access_token`, legacy receiver payloads, and translation recursive request parsing/source/response compatibility; broader legacy external APIs remain migrator/deferred
 - [~] 에러 응답: app-owned direct helper auth/conflict/unconfigured failures use the legacy HTTP status and JSON shape covered by focused route tests; broader legacy external API error schemas remain migrator/deferred
 
 ---
@@ -1782,7 +1782,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/-_-api/v1/favoriteIssues/:id`    | POST     | favorite issue toggle                 | legacy user-menu helper JSON                  | implemented        |
 | `/-_-api/v1/favoriteOrganizations` | GET      | favorite organization list            | legacy user-menu helper JSON                  | implemented        |
 | `/-_-api/v1/favoriteOrganizations/:id` | POST  | favorite organization toggle          | legacy user-menu helper JSON                  | implemented        |
-| `/-_-api/v1/translation`           | POST     | issue/board translation helper        | legacy 412 when unconfigured + executable translation proxy + React Markdown rendering | implemented        |
+| `/-_-api/v1/translation`           | POST     | issue/board translation helper        | legacy recursive request parsing + 412 when unconfigured + executable translation proxy + React Markdown rendering | implemented        |
 | `/notifications`                   | GET      | `GET /api/v1/notifications`           | `notifications/` full page                    | implemented        |
 | `/notification`                    | GET      | direct legacy partial fragment        | `partial_notifications.scala.html`            | implemented        |
 | `/noti/toggle/:projectId/:notiType` | POST    | `POST /api/v1/workspace/notifications` | direct empty OK adapter                       | implemented        |

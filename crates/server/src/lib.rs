@@ -1456,7 +1456,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         .route(
             "/-_-api/v1/translation",
             post(
-                move |headers: HeaderMap, Json(body): Json<DirectTranslationRequest>| {
+                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_translation(
                             headers,
@@ -29645,19 +29645,41 @@ fn legacy_project_label_body_from_value(
     })
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug)]
 struct DirectTranslationRequest {
     owner: String,
-    #[serde(rename = "projectName")]
     project_name: String,
-    #[serde(rename = "type")]
     resource_type: String,
     number: i64,
 }
 
+fn direct_translation_request_from_value(value: &serde_json::Value) -> DirectTranslationRequest {
+    DirectTranslationRequest {
+        owner: legacy_json_find_value(value, "owner")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        project_name: legacy_json_find_value(value, "projectName")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        resource_type: legacy_json_find_value(value, "type")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        number: legacy_json_find_value(value, "number")
+            .and_then(|value| {
+                value
+                    .as_i64()
+                    .or_else(|| value.as_str()?.trim().parse::<i64>().ok())
+            })
+            .unwrap_or_default(),
+    }
+}
+
 async fn legacy_external_translation(
     headers: HeaderMap,
-    body: DirectTranslationRequest,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
@@ -29679,6 +29701,7 @@ async fn legacy_external_translation(
             Ok(user_id) => user_id,
             Err(error) => return legacy_external_api_auth_error_response(error),
         };
+    let body = direct_translation_request_from_value(&body);
 
     let text = match legacy_translation_source(repository, &body, actor_id).await {
         Ok(text) => text,
