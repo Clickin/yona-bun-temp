@@ -2404,7 +2404,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
             Some(&owner_cookie),
             Some(&owner_csrf),
-            Some(json!({ "assignees": ["visitor"] })),
+            Some(json!({
+                "request": {
+                    "assignees": ["visitor"]
+                }
+            })),
         )
         .await,
     )

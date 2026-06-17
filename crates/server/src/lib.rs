@@ -28079,8 +28079,7 @@ async fn legacy_external_update_issue_assignee(
         )
             .into_response();
     }
-    let Some(assignee_login_id) = body
-        .get("assignees")
+    let Some(assignee_login_id) = legacy_json_find_value(&body, "assignees")
         .and_then(serde_json::Value::as_array)
         .and_then(|assignees| assignees.first())
         .and_then(serde_json::Value::as_str)
