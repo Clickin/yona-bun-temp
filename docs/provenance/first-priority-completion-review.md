@@ -28,18 +28,20 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 | `git clone` and `git push` work | Smart HTTP upload-pack/receive-pack and push post-receive records/webhooks are documented in `SPEC.md` and `core-parity-audit.md`; `smart_http_contract` now has harness evidence below for advertisement auth, real `git clone`, authenticated `git push`, and post-receive side effects. | Evidence present; keep under review | Keep `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` green. |
 | Single binary serves frontend and backend together | `crates/server/build.rs` embeds assets from `YONA_EMBED_ASSET_ROOT`; `pnpm smoke:embedded-assets` builds real frontend assets, rebuilds the server binary with that asset root, starts it with embedded assets enabled, and smokes HTML, JS asset, session, and `/api/v1/projects` routes. | Evidence present; keep under review | Keep `pnpm smoke:embedded-assets` green before release packaging. |
 | Docker image builds and runs | Root `Dockerfile` now builds frontend assets, embeds them into the release `yona-rust-pilot-server` binary, installs runtime Git/SVN/curl dependencies, and runs as a non-root `yona` user; `pnpm smoke:docker` builds the image, starts a container, and smokes HTML, JS asset, session, and `/api/v1/projects` routes. | Evidence present; keep under review | Keep `pnpm smoke:docker` green for container release checks. |
-| Full required gates are green | Current turn evidence should include parity gate and selected smoke checks. | Not closed | Run full `cargo test`, `pnpm --dir frontend test`, `pnpm --dir frontend build`, and any deployment smoke gates with logs. |
+| Full required gates are green | Current evidence includes parity gate, dev-script harness tests, frontend full test/build gates, and selected deployment smoke checks. | Partial evidence present; full cargo gate still needed | Run full `cargo test` through `pnpm agent:cargo-test -- ...` and preserve the command evidence in this review or release checklist. |
 
 ## Next Closure Steps
 
 1. Run the remaining migration/adopt closure matrix through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
-2. Run the full required gates (`cargo test`, `pnpm --dir frontend test`, `pnpm --dir frontend build`) and record evidence.
+2. Run the remaining full required Rust gate (`cargo test` through `pnpm agent:cargo-test -- ...`) and record evidence.
 3. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
 
 ## Current Verification Evidence
 
 - 2026-06-17: `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` passed.
 - 2026-06-17: `pnpm test:dev-scripts` passed, including the `agent:cargo-test` and turn-commit harness contracts.
+- 2026-06-17: `pnpm --dir frontend test` passed with 32 files and 720 tests after stale React DOM serialization assertions were aligned with current rendered DOM and the restricted sample page was restored to legacy `restricted.scala.html` copy (`Sshhh...don't tell anyone!`). The route has a file-local `react-doctor/design-no-three-period-ellipsis` precommit exception because the three-period ellipsis is legacy copy parity, not new UI text.
+- 2026-06-17: `pnpm --dir frontend build` passed with Vite; the only output was the existing large chunk warning.
 - 2026-06-17: `pnpm agent:cargo-test -- -p yona-rust-pilot-migration --test runtime_schema_contract adopt_policy_accepts_precreated_runtime_schema_and_marks_current_baseline_applied` passed in 585.5s. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-17T050209-357Z.log`.
 - 2026-06-17: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` passed in 364.1s, covering the Smart HTTP clone/push contract. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-17T051549-877Z.log`.
 - 2026-06-17: `pnpm smoke:embedded-assets` passed. It built `frontend/dist`, rebuilt `target/debug/yona-rust-pilot-server` with `YONA_EMBED_ASSET_ROOT=frontend/dist`, started the binary with `YONA_USE_EMBEDDED_ASSETS=1`, and verified `/yona/`, `/yona/projects`, the emitted JS asset, `/yona/api/auth/session`, and `/yona/api/v1/projects`.

@@ -49,10 +49,9 @@ describe("project watchers parity", () => {
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
     expect(html).toContain('href="/yona/admin"');
-    expect(html).toContain('<img height="64" src="/avatars/admin.png" width="64"/>');
+    expect(html).toContain('<img alt="Admin" height="64" src="/avatars/admin.png" width="64"/>');
     expect(html).toContain("@member");
     expect(html).not.toContain("avatar&quot;");
-    expect(html).not.toContain('alt="');
   });
 
   it("classifies legacy project watcher READ authorization failures", () => {

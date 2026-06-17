@@ -55,6 +55,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
+  "react-doctor.config.json",
   "frontend/README.md",
   "frontend/index.html",
   "frontend/package.json",
@@ -104,10 +105,7 @@ const PARITY_SLICES = [
     status: "parity",
     implementationPatterns: [/^frontend\/src\/routes\/-help-views\.tsx$/i],
     testKeywords: ["help-route", "help", "route-parity"],
-    provenanceDocs: [
-      "docs/agents/06-phase-plan.md",
-      "docs/provenance/legacy-porting-progress.md",
-    ],
+    provenanceDocs: ["docs/agents/06-phase-plan.md", "docs/provenance/legacy-porting-progress.md"],
   },
   {
     id: "issue-lifecycle",
@@ -271,7 +269,7 @@ const DOMAIN_BUCKETS = [
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
       /^crates\/persistence\/.*(auth|user|session|workspace)/i,
     ],
-    testKeywords: ["auth", "login", "register", "password", "session"],
+    testKeywords: ["auth", "login", "register", "password", "restricted", "session"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/legacy-porting-progress.md",

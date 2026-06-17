@@ -171,7 +171,9 @@ describe("project code browser routing", () => {
     );
 
     expect(html).toContain('id="branches"');
-    expect(html).toContain('<option value="/yona/owner/projectYobi/code/v1.0.0" selected="">v1.0.0</option>');
+    expect(html).toContain(
+      '<option value="/yona/owner/projectYobi/code/v1.0.0" selected="">v1.0.0</option>',
+    );
     expect(html).toContain('href="/yona/owner/projectYobi/code/v1.0.0"');
     expect(html).toContain('href="/yona/owner/projectYobi/branches"');
     expect(html).not.toContain('data-request-uri="/yona/owner/projectYobi/code/v1.0.0/');
@@ -189,14 +191,16 @@ describe("project code browser routing", () => {
       text: "fn main() {}\n",
     });
 
-    expect(textHtml).toContain('href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/src/main.rs"');
+    expect(textHtml).toContain(
+      'href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/src/main.rs"',
+    );
     expect(textHtml).toContain('href="/yona/owner/projectYobi/code/main/download"');
     expect(textHtml).toContain('id="open-in-browser"');
     expect(textHtml).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
     expect(textHtml).toContain("</i> Raw</a>");
     expect(textHtml).toContain("</i> code.open</a>");
     expect(textHtml).toContain('data-language="rust"');
-    expect(textHtml).toContain('data-mimeType="text/x-rust"');
+    expect(textHtml).toContain('data-mime-type="text/x-rust"');
     expect(textHtml).toContain('data-line-number="1"');
     expect(textHtml).toContain('class="syntax-token syntax-keyword">fn</span>');
     expect(textHtml).toContain('class="line-number">1</span>');
@@ -213,7 +217,9 @@ describe("project code browser routing", () => {
     });
 
     expect(imageHtml).toContain('id="showImage"');
-    expect(imageHtml).toContain('src="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/assets/logo.png"');
+    expect(imageHtml).toContain(
+      'src="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/assets/logo.png"',
+    );
     expect(imageHtml).toContain('href="/yona/owner/projectYobi/files/main/assets/logo.png"');
 
     const binaryHtml = renderCodeFile({
@@ -229,7 +235,9 @@ describe("project code browser routing", () => {
 
     expect(binaryHtml).toContain('id="showFile"');
     expect(binaryHtml).toContain('<span class="filesize">7 bytes</span>');
-    expect(binaryHtml).toContain('class="filehref ybtn" href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/bin/archive.bin"');
+    expect(binaryHtml).toContain(
+      'class="filehref ybtn" href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/bin/archive.bin"',
+    );
     expect(binaryHtml).toContain("</i> button.download</a>");
   });
 
@@ -278,7 +286,10 @@ describe("project code browser routing", () => {
   });
 
   it("renders legacy commit history table, branch tabs, and path-scoped actions", () => {
-    const codeViewsSource = fs.readFileSync(path.resolve(__dirname, "routes/-code-views.tsx"), "utf8");
+    const codeViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-code-views.tsx"),
+      "utf8",
+    );
     expect(codeViewsSource).toContain('document.addEventListener("keydown", onKeyDown)');
     expect(codeViewsSource).toContain('key === "a" && newerHref');
     expect(codeViewsSource).toContain('key === "s" && olderHref');
@@ -332,8 +343,8 @@ describe("project code browser routing", () => {
 
     expect(pathHtml).toContain('id="history"');
     expect(pathHtml).toContain('class="code-table commits mt10"');
-    expect(pathHtml).toContain('data-commitId="abcdef1234567890abcdef1234567890abcdef12"');
-    expect(pathHtml).not.toContain('data-commit-id="abcdef1234567890abcdef1234567890abcdef12"');
+    expect(pathHtml).toContain('data-commit-id="abcdef1234567890abcdef1234567890abcdef12"');
+    expect(pathHtml).not.toContain('data-commitId="abcdef1234567890abcdef1234567890abcdef12"');
     expect(pathHtml).toContain(
       'href="/yona/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&amp;path=src%2Fmain.rs#src-main-rs"',
     );
@@ -342,7 +353,10 @@ describe("project code browser routing", () => {
     expect(pathHtml).toContain(">code.older</a>");
     expect(pathHtml).toContain('class="commitMsg short"');
     expect(pathHtml).toContain(
-      '<span class="avatar-wrap" data-placement="top" data-toggle="tooltip" title="second@example.com"><img src="https://www.gravatar.com/avatar/second"/></span>',
+      'class="avatar-wrap" data-placement="top" data-toggle="tooltip" title="second@example.com"',
+    );
+    expect(pathHtml).toContain(
+      '<img alt="Second Author" src="https://www.gravatar.com/avatar/second"/>',
     );
     expect(pathHtml).toContain("Update main function");
 

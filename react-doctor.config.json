@@ -33,6 +33,14 @@
         "rules": [
           "react-doctor/js-set-map-lookups"
         ]
+      },
+      {
+        "files": [
+          "src/routes/-restricted-view.tsx"
+        ],
+        "rules": [
+          "react-doctor/design-no-three-period-ellipsis"
+        ]
       }
     ]
   }

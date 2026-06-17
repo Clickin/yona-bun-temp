@@ -55,6 +55,7 @@ test("ignores repo tooling and bootstrap files that do not define parity semanti
     "package.json",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
+    "react-doctor.config.json",
     "frontend/package.json",
     "frontend/pnpm-lock.yaml",
     "frontend/index.html",
@@ -141,6 +142,21 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
     "frontend/src/routes/users/signupform/route.tsx",
     "frontend/src/auth-workspace-shell.spec.tsx",
     "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["auth-account-lifecycle"],
+  );
+});
+
+test("maps restricted sample route changes to the account lifecycle slice", () => {
+  const result = runGate([
+    "frontend/src/routes/-restricted-view.tsx",
+    "frontend/src/restricted-route-parity.spec.tsx",
+    "docs/provenance/legacy-porting-progress.md",
   ]);
 
   assert.equal(result.verdict, "pass");

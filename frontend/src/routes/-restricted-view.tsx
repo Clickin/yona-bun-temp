@@ -8,7 +8,7 @@ export function RestrictedPage(props: {
 }) {
   return (
     <main>
-      <h1>Sshhh…don't tell anyone!</h1>
+      <h1>Sshhh...don't tell anyone!</h1>
       <p>
         <iframe
           allowFullScreen

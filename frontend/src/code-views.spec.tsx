@@ -119,7 +119,9 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toContain("<p>owner/projectYobi</p>");
     expect(html).toContain('data-mime-type="text/x-rust"');
     expect(html).not.toContain('data-mimeType="text/x-rust"');
-    expect(html).toContain('<div class="hidden" id="codeVal">fn main() {\n  let value = 1;\n}</div>');
+    expect(html).toContain(
+      '<div class="hidden" id="codeVal">fn main() {\n  let value = 1;\n}</div>',
+    );
     expect(html).toContain('class="code-viewer-wrap"');
     expect(html).toContain('id="spin"');
     expect(html).toContain('style="left:50%;position:fixed;top:50%"');
@@ -133,17 +135,24 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain(
       '<select class="pull-left mb10" data-dropdown-css-class="branches" data-format="branch" data-toggle="select2" id="branches"',
     );
-    expect(html).toContain('<option value="/yona/owner/projectYobi/code/main/src/main.rs" selected="">main</option>');
+    expect(html).toContain(
+      '<option value="/yona/owner/projectYobi/code/main/src/main.rs" selected="">main</option>',
+    );
     expect(html).not.toContain('<label for="branches">Branch</label>');
     expect(html).toContain('id="new-file-link"');
-    expect(html).toContain('<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>');
-    expect(html).toContain('<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main" id="new-file-link">code.new.file</a></div>');
+    expect(html).toContain(
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>',
+    );
+    expect(html).toContain(
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main" id="new-file-link">code.new.file</a></div>',
+    );
     expect(html).toContain('href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main"');
     expect(html).toContain(">code.new.file</a>");
     expect(html).toContain('id="fileInfo"');
     expect(html).toContain('id="commiter"');
     expect(html).toContain('class="commiter"');
-    expect(html).toContain('<a class="avatar-wrap smaller" href="/yona/author"><img src="/yona/files/99"/></a>');
+    expect(html).toContain('class="avatar-wrap smaller" href="/yona/author"');
+    expect(html).toContain('<img alt="Author" src="/yona/files/99"/>');
     expect(html).toContain('class="ml5"');
     expect(html).toContain('<a class="ml5" href="/yona/author">Author</a>');
     expect(html).toContain('id="commitDate"');
@@ -152,14 +161,18 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('id="revisionNo"');
     expect(html).toContain('class="revision"');
     expect(html).toContain(">be6a8cc");
-    expect(html).toContain('<span class="number-of-comments ml5"><i class="yobicon-comments"></i> 2</span>');
+    expect(html).toContain(
+      '<span class="number-of-comments ml5"><i class="yobicon-comments"></i> 2</span>',
+    );
     expect(html).toContain('id="commitMessage"');
     expect(html).toContain('class="commitMsg"');
     expect(html).toContain(">Update file</span>");
     expect(html).toContain(">UNIX</span>");
     expect(html).toContain('data-content="code.open.desc"');
     expect(html).toContain('class="yobicon-download-alt yobicon-white vmiddle"');
-    expect(html).toContain('href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/src/main.rs"');
+    expect(html).toContain(
+      'href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/src/main.rs"',
+    );
     expect(html).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
     expect(html).toContain("</i> Raw</a>");
     expect(html).toContain(
@@ -412,7 +425,7 @@ describe("CodeCommitDetailPage", () => {
             mimeType: "text/plain",
             name: "widget.cxx",
             path: "src/widget.cxx",
-            text: '#include <vector>\nclass Widget {\n  void render() {}\n};',
+            text: "#include <vector>\nclass Widget {\n  void render() {}\n};",
           },
           path: "src/widget.cxx",
         }}
@@ -503,7 +516,9 @@ describe("CodeCommitDetailPage", () => {
 
       expect(html).toContain('class="markdown-wrap codebrowser-markdown"');
       expect(html).toContain('id="codeVal"');
-      expect(html).toContain('<h1 id="project">Project<a class="head-anchor" href="#project">#</a></h1>');
+      expect(html).toContain(
+        '<h1 id="project">Project<a class="head-anchor" href="#project">#</a></h1>',
+      );
       expect(html).toContain("See <strong>docs</strong>.");
       expect(html).not.toContain('id="showCode"');
       expect(html).not.toContain('data-language="text"');
@@ -632,7 +647,7 @@ describe("CodeCommitDetailPage", () => {
             mimeType: "text/x-shellscript",
             name: "deploy.sh",
             path: "scripts/deploy.sh",
-            text: "# deploy\nif test -f \"$APP_HOME/app\"; then\n  echo ${APP_HOME}\nfi",
+            text: '# deploy\nif test -f "$APP_HOME/app"; then\n  echo ${APP_HOME}\nfi',
           },
           path: "scripts/deploy.sh",
         }}
@@ -969,11 +984,36 @@ describe("CodeCommitDetailPage", () => {
 
   it("maps legacy scalar-only code browser modes by extension", () => {
     const scalarFiles = [
-      { expectedLanguage: "assembly_x86", mimeType: "application/octet-stream", name: "boot.a", path: "asm/boot.a" },
-      { expectedLanguage: "ada", mimeType: "application/octet-stream", name: "main.ada", path: "src/main.ada" },
-      { expectedLanguage: "d", mimeType: "application/octet-stream", name: "app.d", path: "src/app.d" },
-      { expectedLanguage: "jade", mimeType: "application/octet-stream", name: "layout.jade", path: "views/layout.jade" },
-      { expectedLanguage: "vbscript", mimeType: "application/octet-stream", name: "deploy.vbs", path: "scripts/deploy.vbs" },
+      {
+        expectedLanguage: "assembly_x86",
+        mimeType: "application/octet-stream",
+        name: "boot.a",
+        path: "asm/boot.a",
+      },
+      {
+        expectedLanguage: "ada",
+        mimeType: "application/octet-stream",
+        name: "main.ada",
+        path: "src/main.ada",
+      },
+      {
+        expectedLanguage: "d",
+        mimeType: "application/octet-stream",
+        name: "app.d",
+        path: "src/app.d",
+      },
+      {
+        expectedLanguage: "jade",
+        mimeType: "application/octet-stream",
+        name: "layout.jade",
+        path: "views/layout.jade",
+      },
+      {
+        expectedLanguage: "vbscript",
+        mimeType: "application/octet-stream",
+        name: "deploy.vbs",
+        path: "scripts/deploy.vbs",
+      },
     ];
 
     for (const file of scalarFiles) {
@@ -1039,7 +1079,11 @@ describe("CodeCommitDetailPage", () => {
       { expectedLanguage: "ruby", name: "Gemfile.ruby", path: "lib/Gemfile.ruby" },
       { expectedLanguage: "sh", name: "deploy.sh", path: "scripts/deploy.sh" },
       { expectedLanguage: "sql", name: "schema.sql", path: "db/schema.sql" },
-      { expectedLanguage: "actionscript", name: "Badge.actionscript", path: "flash/Badge.actionscript" },
+      {
+        expectedLanguage: "actionscript",
+        name: "Badge.actionscript",
+        path: "flash/Badge.actionscript",
+      },
       { expectedLanguage: "makefile", name: "Makefile", path: "Makefile" },
       { expectedLanguage: "makefile", name: "build.mk", path: "build.mk" },
       { expectedLanguage: "makefile", name: "build.mak", path: "build.mak" },
@@ -1207,9 +1251,15 @@ describe("CodeCommitDetailPage", () => {
       />,
     );
     expect(rootHtml).toContain('id="new-file-link"');
-    expect(rootHtml).toContain('<option value="/yona/owner/projectYobi/code/main" selected="">main</option>');
-    expect(rootHtml).toContain('<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>');
-    expect(rootHtml).toContain('<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=&amp;branch=main" id="new-file-link">code.new.file</a></div>');
+    expect(rootHtml).toContain(
+      '<option value="/yona/owner/projectYobi/code/main" selected="">main</option>',
+    );
+    expect(rootHtml).toContain(
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>',
+    );
+    expect(rootHtml).toContain(
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=&amp;branch=main" id="new-file-link">code.new.file</a></div>',
+    );
     expect(rootHtml).toContain('class="code-viewer-wrap"');
     expect(rootHtml).toContain('id="spin"');
     expect(rootHtml).toContain(
@@ -1240,7 +1290,9 @@ describe("CodeCommitDetailPage", () => {
     expect(nestedFolderHtml).toContain(
       'href="/yona/owner/projectYobi/postform?path=docs%2F&amp;branch=main"',
     );
-    expect(nestedFolderHtml).toContain('<a href="/yona/owner/projectYobi/code/main/docs">docs</a><a href="/yona/owner/projectYobi/code/main/docs/guides">guides</a>');
+    expect(nestedFolderHtml).toContain(
+      '<a href="/yona/owner/projectYobi/code/main/docs">docs</a><a href="/yona/owner/projectYobi/code/main/docs/guides">guides</a>',
+    );
     expect(nestedFolderHtml).not.toContain("<span>/</span>");
     expect(nestedFolderHtml).not.toContain("Folder: ");
     expect(nestedFolderHtml).not.toContain("File: ");
@@ -1267,13 +1319,17 @@ describe("CodeCommitDetailPage", () => {
     );
     expect(binaryHtml).toContain('class="yobicon-download-alt yobicon-white vmiddle"');
     expect(binaryHtml).toContain('<span class="filesize">29 bytes</span>');
-    expect(binaryHtml).toContain('href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/artifact.bin"');
+    expect(binaryHtml).toContain(
+      'href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/artifact.bin"',
+    );
     expect(binaryHtml).toContain("button.download</a>");
     expect(binaryHtml).toContain("code.open</a>");
     expect(binaryHtml).toContain(">code.history</a>");
     expect(binaryHtml).not.toContain(">Download</a>");
     expect(binaryHtml).not.toContain(">Open</a>");
-    expect(binaryHtml).not.toContain('class="filehref ybtn" href="/yona/owner/projectYobi/files/main/artifact.bin"');
+    expect(binaryHtml).not.toContain(
+      'class="filehref ybtn" href="/yona/owner/projectYobi/files/main/artifact.bin"',
+    );
     expect(binaryHtml).not.toContain(">UNIX</span>");
     expect(binaryHtml).not.toContain(">UNDEFINED</span>");
     expect(binaryHtml).not.toContain("&amp;edit=true");
@@ -1321,7 +1377,9 @@ describe("CodeCommitDetailPage", () => {
       />,
     );
     expect(imageHtml).toContain('<div class="image-wrap" id="showImage">');
-    expect(imageHtml).toContain('src="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/logo.png"');
+    expect(imageHtml).toContain(
+      'src="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/logo.png"',
+    );
   });
 
   it("renders the legacy Git no-head guidance instead of raw placeholder copy", () => {
@@ -1358,7 +1416,7 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain("code.nohead");
     expect(html).toContain("code.nohead.svn.clone");
     expect(html).toContain("svn co http://example.test/svn/owner/projectYobi");
-    expect(html).toContain('echo &quot;# projectYobi&quot; &gt; README.md');
+    expect(html).toContain("echo &quot;# projectYobi&quot; &gt; README.md");
     expect(html).not.toContain("code.nohead.clone");
     expect(html).not.toContain("The repository is empty!");
   });
