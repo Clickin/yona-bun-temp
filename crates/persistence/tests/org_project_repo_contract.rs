@@ -42,6 +42,7 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
         overview: Some("org project".to_string()),
         project_name: "projectYobi".to_string(),
         project_scope: "public".to_string(),
+        vcs: "GIT".to_string(),
     })
     .await
     .expect("create org project");
@@ -114,6 +115,7 @@ async fn reads_project_members_enrollment_requests_and_workspace_project_lists()
             overview: Some("member directory".to_string()),
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
         })
         .await
         .expect("create project");

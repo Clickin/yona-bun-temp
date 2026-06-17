@@ -5573,7 +5573,11 @@ async fn rest_label_routes_manage_labels_and_categories() {
         .await,
     )
     .await;
-    assert_eq!(labels["labels"].as_array().unwrap().len(), 2);
+    let labels = labels["labels"].as_array().expect("labels array");
+    assert_eq!(labels.len(), 3);
+    assert!(labels.iter().any(|label| label["name"] == "Bug"));
+    assert!(labels.iter().any(|label| label["name"] == "LegacyFeature"));
+    assert!(labels.iter().any(|label| label["name"] == "NestedFeature"));
 
     create_project_rest(
         app.clone(),

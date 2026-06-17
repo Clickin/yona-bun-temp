@@ -307,18 +307,10 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
         .iter()
         .all(|member| member["loginId"] != "member"));
 
-    ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/api/v1/owners/owner/projects/projectYobi/enroll",
-            Some(&guest_cookie),
-            Some(&guest_csrf),
-            None,
-        )
-        .await,
-    )
-    .await;
+    repository
+        .create_project_enrollment_request(project.id, guest_id)
+        .await
+        .expect("seed project enrollment request");
     let added_guest = ok_json(
         rest(
             app.clone(),

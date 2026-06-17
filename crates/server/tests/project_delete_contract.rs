@@ -263,19 +263,10 @@ async fn project_delete_requires_update_authority_and_removes_project_state() {
     );
     std::fs::create_dir_all(&svn_repo_path).expect("seed stale svn repository path");
     seed_dependent_project_rows(&db, project.id, guest_id).await;
-
-    ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/api/v1/owners/owner/projects/projectYobi/enroll",
-            Some(&guest_cookie),
-            Some(&guest_csrf),
-            None,
-        )
-        .await,
-    )
-    .await;
+    repository
+        .create_project_enrollment_request(project.id, guest_id)
+        .await
+        .expect("seed project enrollment request");
     ok_json(
         rest(
             app.clone(),
