@@ -21,7 +21,7 @@
 ## 테스트 실행
 
 - Agent가 Rust 테스트를 실행할 때는 `cargo test ...`를 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용한다.
-- Codex에서는 `pnpm agent:cargo-test`를 sandbox 밖 `require_escalated`로 실행한다. 전체 cargo 로그는 `.agent/cargo-test-logs/`에 저장되고 콘솔에는 시작/종료와 실패 tail만 출력한다.
+- Codex에서는 `pnpm agent:cargo-test`를 sandbox 밖 `require_escalated`로 실행한다. harness는 Codex sandbox 내부의 실제 cargo 실행을 즉시 거절한다. 전체 cargo 로그는 `.agent/cargo-test-logs/`에 저장되고 콘솔에는 시작/종료와 실패 tail만 출력한다.
 
 ## 코드 및 문서 배치 규칙
 

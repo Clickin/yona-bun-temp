@@ -8,6 +8,7 @@ const DEFAULT_TAIL_LINES = 80;
 
 export function parseArgs(argv) {
   const options = {
+    allowSandbox: false,
     cargoArgs: [],
     cargoBin: "cargo",
     dryRun: false,
@@ -28,6 +29,10 @@ export function parseArgs(argv) {
     }
     if (arg === "--dry-run") {
       options.dryRun = true;
+      continue;
+    }
+    if (arg === "--allow-sandbox") {
+      options.allowSandbox = true;
       continue;
     }
     if (arg === "--cargo-bin") {
@@ -70,6 +75,13 @@ export function cargoCommand(options) {
   };
 }
 
+export function codexSandboxReason(env = process.env) {
+  if (env.CODEX_SANDBOX) {
+    return `CODEX_SANDBOX=${env.CODEX_SANDBOX}`;
+  }
+  return null;
+}
+
 export function shellQuote(value) {
   if (/^[A-Za-z0-9_./:=@+-]+$/u.test(value)) {
     return value;
@@ -94,6 +106,18 @@ function tailLines(path, lineCount) {
 }
 
 export async function runAgentCargoTest(options, env = process.env) {
+  const sandboxReason = codexSandboxReason(env);
+  if (!options.allowSandbox && !options.dryRun && sandboxReason) {
+    throw new Error(
+      [
+        `agent-cargo-test: refusing to run cargo test inside the Codex sandbox (${sandboxReason}).`,
+        "Run the same command with sandbox escalation:",
+        "  pnpm agent:cargo-test -- <cargo test args>",
+        "In Codex tool calls, use sandbox_permissions=require_escalated for this harness.",
+      ].join("\n"),
+    );
+  }
+
   const { args, command } = cargoCommand(options);
   const logDir = resolve(process.cwd(), options.logDir);
   mkdirSync(logDir, { recursive: true });

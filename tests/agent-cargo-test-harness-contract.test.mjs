@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 
 import {
   cargoCommand,
+  codexSandboxReason,
   formatCommand,
   parseArgs,
+  runAgentCargoTest,
   shellQuote,
 } from "../tools/agent-cargo-test.mjs";
 
@@ -52,6 +54,7 @@ describe("agent cargo test harness contract", () => {
     );
     assert.equal(parseArgs(["--", "--cargo-bin", "/opt/cargo", "--dry-run"]).cargoBin, "/opt/cargo");
     assert.equal(parseArgs(["--", "--tail-lines", "0"]).tailLines, 0);
+    assert.equal(parseArgs(["--", "--allow-sandbox"]).allowSandbox, true);
     assert.equal(parseArgs(["--", "--dry-run", "-p", "server"]).dryRun, true);
     assert.deepEqual(parseArgs(["--", "--dry-run", "-p", "server"]).cargoArgs, ["-p", "server"]);
   });
@@ -65,5 +68,25 @@ describe("agent cargo test harness contract", () => {
   it("rejects invalid harness option values", () => {
     assert.throws(() => parseArgs(["--log-dir"]), /requires a value/u);
     assert.throws(() => parseArgs(["--tail-lines", "-1"]), /non-negative integer/u);
+  });
+
+  it("detects Codex sandbox environments", () => {
+    assert.equal(codexSandboxReason({}), null);
+    assert.equal(codexSandboxReason({ CODEX_SANDBOX: "seatbelt" }), "CODEX_SANDBOX=seatbelt");
+    assert.equal(codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }), null);
+  });
+
+  it("refuses real cargo test execution inside the Codex sandbox", async () => {
+    await assert.rejects(
+      () =>
+        runAgentCargoTest(
+          {
+            ...parseArgs(["-p", "yona-rust-pilot-server"]),
+            logDir: ".tmp/agent-cargo-test-contract",
+          },
+          { CODEX_SANDBOX: "seatbelt" },
+        ),
+      /refusing to run cargo test inside the Codex sandbox/u,
+    );
   });
 });
