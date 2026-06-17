@@ -41,11 +41,13 @@ const NON_IMPLEMENTATION_PREFIXES = [
 
 const NON_IMPLEMENTATION_FILES = new Set([
   ".gitignore",
+  ".dockerignore",
   "AGENTS.md",
   "Cargo.lock",
   "Cargo.toml",
   "CLAUDE.md",
   "DESIGN.md",
+  "Dockerfile",
   "README.md",
   "SPEC.md",
   "buf.yaml",
