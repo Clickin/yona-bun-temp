@@ -26,16 +26,15 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 | Legacy `application.conf.default` core settings can map to `yona.toml` | `SPEC.md` Appendix A now contains the reviewed legacy-to-`yona.toml` migration guide, including env precedence, JDBC URL conversion, H2 handling, sectioned TOML keys, and deferred Play/JVM/LDAP/OAuth boundaries; `runtime_config_contract.rs` covers TOML loading and env override behavior. | Evidence present; keep under review | Keep Appendix A aligned with `crates/server/src/runtime_config.rs` and `crates/server/tests/runtime_config_contract.rs` when new runtime config keys are added. |
 | Existing MariaDB data can be adopted without data loss after validation | `crates/migration` implements `adopt`, `validate_only`, and multi-DB schema checks; `docs/provenance/legacy-porting-progress.md` marks SQLite/MySQL/PostgreSQL runtime migration/adopt/validate complete; one focused adopt contract now has harness evidence below. | Partial evidence present; full matrix still needed | Run the full migration contract/db matrix through `pnpm agent:cargo-test -- ...` and preserve the command evidence in this review or release checklist. |
 | `git clone` and `git push` work | Smart HTTP upload-pack/receive-pack and push post-receive records/webhooks are documented in `SPEC.md` and `core-parity-audit.md`; `smart_http_contract` now has harness evidence below for advertisement auth, real `git clone`, authenticated `git push`, and post-receive side effects. | Evidence present; keep under review | Keep `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` green. |
-| Single binary serves frontend and backend together | `crates/server/build.rs` embeds assets from `YONA_EMBED_ASSET_ROOT` and the server owns REST/static/session bootstrap. | Needs final closure evidence | Build frontend assets, build the release server binary with the real asset root, start it, and smoke an HTML route plus `/api/v1` route. |
+| Single binary serves frontend and backend together | `crates/server/build.rs` embeds assets from `YONA_EMBED_ASSET_ROOT`; `pnpm smoke:embedded-assets` builds real frontend assets, rebuilds the server binary with that asset root, starts it with embedded assets enabled, and smokes HTML, JS asset, session, and `/api/v1/projects` routes. | Evidence present; keep under review | Keep `pnpm smoke:embedded-assets` green before release packaging. |
 | Docker image builds and runs | No Dockerfile or container build artifact is currently present in repo root. | Not closed | Add or identify the canonical Docker build path, then run and record image build plus container smoke evidence. |
 | Full required gates are green | Current turn evidence should include parity gate and selected smoke checks. | Not closed | Run full `cargo test`, `pnpm --dir frontend test`, `pnpm --dir frontend build`, and any deployment smoke gates with logs. |
 
 ## Next Closure Steps
 
 1. Run the remaining migration/adopt closure matrix through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
-2. Produce single-binary closure evidence with real frontend assets embedded through `YONA_EMBED_ASSET_ROOT`.
-3. Add or identify the canonical Docker build path and run a container smoke.
-4. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
+2. Add or identify the canonical Docker build path and run a container smoke.
+3. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
 
 ## Current Verification Evidence
 
@@ -43,6 +42,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-17: `pnpm test:dev-scripts` passed, including the `agent:cargo-test` and turn-commit harness contracts.
 - 2026-06-17: `pnpm agent:cargo-test -- -p yona-rust-pilot-migration --test runtime_schema_contract adopt_policy_accepts_precreated_runtime_schema_and_marks_current_baseline_applied` passed in 585.5s. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-17T050209-357Z.log`.
 - 2026-06-17: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` passed in 364.1s, covering the Smart HTTP clone/push contract. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-17T051549-877Z.log`.
+- 2026-06-17: `pnpm smoke:embedded-assets` passed. It built `frontend/dist`, rebuilt `target/debug/yona-rust-pilot-server` with `YONA_EMBED_ASSET_ROOT=frontend/dist`, started the binary with `YONA_USE_EMBEDDED_ASSETS=1`, and verified `/yona/`, `/yona/projects`, the emitted JS asset, `/yona/api/auth/session`, and `/yona/api/v1/projects`.
 
 ## Compile-Time Note
 
