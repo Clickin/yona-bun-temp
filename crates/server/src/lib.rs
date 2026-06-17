@@ -1134,7 +1134,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             put(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<LegacyIssueUpdateBody>| {
+                      Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_update_issue(
                             headers,
@@ -26837,24 +26837,52 @@ fn legacy_issue_comment_create_body_from_value(
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 struct LegacyIssueUpdateBody {
-    #[serde(default)]
     assignees: Vec<LegacyIssueAssigneeBody>,
-    #[serde(default)]
     body: String,
-    #[serde(default)]
     state: String,
-    #[serde(default)]
     title: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+fn legacy_issue_update_body_from_value(value: &serde_json::Value) -> LegacyIssueUpdateBody {
+    LegacyIssueUpdateBody {
+        assignees: legacy_json_find_value(value, "assignees")
+            .and_then(|value| value.as_array())
+            .map(|items| {
+                items
+                    .iter()
+                    .map(legacy_issue_assignee_body_from_value)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        body: legacy_json_find_value(value, "body")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        state: legacy_json_find_value(value, "state")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        title: legacy_json_find_value(value, "title")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+    }
+}
+
+#[derive(Clone, Debug)]
 struct LegacyIssueAssigneeBody {
-    #[serde(default)]
     login_id: String,
+}
+
+fn legacy_issue_assignee_body_from_value(value: &serde_json::Value) -> LegacyIssueAssigneeBody {
+    LegacyIssueAssigneeBody {
+        login_id: legacy_json_find_value(value, "loginId")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+    }
 }
 
 async fn legacy_external_create_board_postings(
@@ -27627,10 +27655,11 @@ async fn legacy_external_update_issue(
     owner: String,
     project_name: String,
     number: i64,
-    body: LegacyIssueUpdateBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_issue_update_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("issue update requires repository backend")
             .into_response();

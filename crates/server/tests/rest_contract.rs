@@ -2432,14 +2432,24 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
             &[("Authorization", &authorization_header)],
             Some(json!({
-                "title": "Favorite issue via legacy put",
-                "body": "Favorite issue body via legacy put",
-                "state": "CLOSED",
-                "assignees": [
-                    {
-                        "loginId": "visitor"
-                    }
-                ]
+                "meta": {
+                    "title": "Favorite issue via nested legacy put"
+                },
+                "details": {
+                    "body": "Favorite issue body via nested legacy put"
+                },
+                "status": {
+                    "state": "CLOSED"
+                },
+                "users": {
+                    "assignees": [
+                        {
+                            "account": {
+                                "loginId": "visitor"
+                            }
+                        }
+                    ]
+                }
             })),
         )
         .await,
@@ -2448,11 +2458,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_updated["result"]["number"], 1);
     assert_eq!(
         legacy_issue_updated["result"]["title"],
-        "Favorite issue via legacy put"
+        "Favorite issue via nested legacy put"
     );
     assert_eq!(
         legacy_issue_updated["result"]["body"],
-        "Favorite issue body via legacy put"
+        "Favorite issue body via nested legacy put"
     );
     assert_eq!(legacy_issue_updated["result"]["state"], "closed");
     assert_eq!(
@@ -2473,11 +2483,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(
         legacy_issue_put_detail["title"],
-        "Favorite issue via legacy put"
+        "Favorite issue via nested legacy put"
     );
     assert_eq!(
         legacy_issue_put_detail["bodyMarkdown"],
-        "Favorite issue body via legacy put"
+        "Favorite issue body via nested legacy put"
     );
     assert_eq!(legacy_issue_put_detail["state"], "closed");
     let anonymous_legacy_issue_update = rest(
@@ -2508,7 +2518,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(
         legacy_issue_read["result"]["title"],
-        "Favorite issue via legacy put"
+        "Favorite issue via nested legacy put"
     );
     assert_eq!(legacy_issue_read["result"]["state"], "closed");
     assert!(legacy_issue_read["result"]["comments"]
@@ -2925,7 +2935,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issues["projects"][0]["issueId"], issue_id);
     assert_eq!(
         legacy_issues["projects"][0]["issueTitle"],
-        "Favorite issue via legacy put"
+        "Favorite issue via nested legacy put"
     );
     assert_eq!(legacy_issues["projects"][0]["issueAuthorName"], "owner");
     let legacy_issue_unfavorited = ok_json(
