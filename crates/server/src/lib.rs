@@ -672,6 +672,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_favorite_organization_toggle_backend = route_backend.clone();
     let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
     let legacy_user_search_backend = route_backend.clone();
+    let legacy_user_create_backend = route_backend.clone();
+    let legacy_user_create_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
     let legacy_project_labels_backend = route_backend.clone();
@@ -816,6 +818,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     async move {
                         legacy_external_users(headers, query, legacy_user_search_backend.clone())
                             .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/users",
+            post(
+                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_create_users(
+                            headers,
+                            body,
+                            legacy_user_create_session_manager.clone(),
+                            legacy_user_create_backend.clone(),
+                        )
+                        .await
                     }
                 },
             ),
@@ -26327,6 +26345,34 @@ struct LegacyExternalUsersQuery {
 }
 
 #[derive(Clone, Debug)]
+struct LegacyExternalUserCreateItem {
+    email: String,
+    login_id: String,
+    name: String,
+    original: serde_json::Value,
+}
+
+fn legacy_external_user_create_item_from_value(
+    value: &serde_json::Value,
+) -> LegacyExternalUserCreateItem {
+    LegacyExternalUserCreateItem {
+        email: legacy_json_find_value(value, "email")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        login_id: legacy_json_find_value(value, "loginId")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        name: legacy_json_find_value(value, "name")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        original: value.clone(),
+    }
+}
+
+#[derive(Clone, Debug)]
 struct LegacyExternalUserTokenBody {
     id: String,
     password: String,
@@ -26462,6 +26508,103 @@ async fn legacy_external_user_token(
         );
     }
     response
+}
+
+async fn legacy_external_create_users(
+    headers: HeaderMap,
+    body: serde_json::Value,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("user create requires repository backend")
+            .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let actor = match actor_id {
+        Some(actor_id) => match repository.find_user_by_id(actor_id).await {
+            Ok(actor) => actor,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        },
+        None => None,
+    };
+    if !actor.as_ref().is_some_and(|actor| actor.is_site_admin) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "User creation with api is allowed by Site admin only.",
+            })),
+        )
+            .into_response();
+    }
+    let Some(users) = legacy_json_find_value(&body, "users").and_then(|value| value.as_array())
+    else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "message": "No users key exists or value must be array!",
+            })),
+        )
+            .into_response();
+    };
+
+    let mut created_users = Vec::new();
+    for user in users {
+        let user = legacy_external_user_create_item_from_value(user);
+        match repository.find_user_by_identifier(&user.email).await {
+            Ok(Some(_)) => {
+                created_users.push(serde_json::json!({
+                    "status": 409,
+                    "reason": "Conflict",
+                    "message": "Already exists!",
+                    "user": user.original,
+                }));
+                continue;
+            }
+            Ok(None) => {}
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+
+        let password_hash = match hash(
+            format!(
+                "legacy-external-user-disabled:{}:{}",
+                user.login_id,
+                random_storage_token()
+            ),
+            DEFAULT_COST,
+        ) {
+            Ok(password_hash) => password_hash,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        let created = match repository
+            .create_user(persistence::CreateUserInput {
+                display_name: user.name,
+                email_address: user.email,
+                is_confirmed: true,
+                is_site_admin: false,
+                login_id: user.login_id,
+                password_hash,
+            })
+            .await
+        {
+            Ok(created) => created,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        created_users.push(serde_json::json!({
+            "status": 201,
+            "reason": "Created",
+            "user": {
+                "id": created.id,
+                "loginId": created.login_id,
+                "name": created.display_name,
+                "email": created.email_address,
+            },
+        }));
+    }
+
+    (StatusCode::CREATED, Json(created_users)).into_response()
 }
 
 async fn legacy_external_admin_users(

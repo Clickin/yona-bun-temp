@@ -1322,6 +1322,70 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await
         .expect("mark legacy admin users actor as site admin");
 
+    let legacy_created_users_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/users",
+        Some(&owner_cookie),
+        None,
+        Some(json!({
+            "payload": {
+                "users": [
+                    {
+                        "profile": {
+                            "loginId": "legacy-import",
+                            "name": "Legacy Import",
+                            "email": "legacy-import@example.com"
+                        }
+                    },
+                    {
+                        "profile": {
+                            "loginId": "visitor-copy",
+                            "name": "Visitor Copy",
+                            "email": "visitor@example.com"
+                        }
+                    }
+                ]
+            }
+        })),
+    )
+    .await;
+    assert_eq!(legacy_created_users_response.status(), StatusCode::CREATED);
+    let legacy_created_users = response_json(legacy_created_users_response).await;
+    assert_eq!(legacy_created_users[0]["status"], 201);
+    assert_eq!(legacy_created_users[0]["reason"], "Created");
+    assert_eq!(legacy_created_users[0]["user"]["loginId"], "legacy-import");
+    assert_eq!(legacy_created_users[0]["user"]["name"], "Legacy Import");
+    assert_eq!(
+        legacy_created_users[0]["user"]["email"],
+        "legacy-import@example.com"
+    );
+    assert_eq!(legacy_created_users[1]["status"], 409);
+    assert_eq!(legacy_created_users[1]["reason"], "Conflict");
+    assert_eq!(legacy_created_users[1]["message"], "Already exists!");
+    assert!(repository
+        .find_user_by_identifier("legacy-import")
+        .await
+        .unwrap()
+        .is_some());
+    let legacy_create_user_by_visitor = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/users",
+        Some(&visitor_cookie),
+        None,
+        Some(json!({ "users": [] })),
+    )
+    .await;
+    assert_eq!(
+        legacy_create_user_by_visitor.status(),
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        response_json(legacy_create_user_by_visitor).await,
+        json!({ "message": "User creation with api is allowed by Site admin only." })
+    );
+
     let legacy_admin_users = ok_json(
         rest(
             app.clone(),

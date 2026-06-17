@@ -44,7 +44,7 @@ contract.
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
 | `GET /-_-api/v1/users?query=` | `conf/routes` -> `controllers.UserApp.users` | Members-page user mention/search helper. | Implemented in app server with legacy JSON Accept/referer gate and `[{info, loginId}]` shape. |
-| `POST /-_-api/v1/users` | `UserApi.newUser()` | Site-admin JSON user creation from `users` array. | Migrator/deferred; not app-server scope. |
+| `POST /-_-api/v1/users` | `UserApi.newUser()` | Site-admin JSON user creation from `users` array. | Implemented in app server with legacy site-admin-only `400` message, recursive `JsonNode.findValue("users")` request parsing, per-user recursive `loginId`/`name`/`email` lookup, `201 Created` item payloads, and duplicate-email `409 Conflict` item payloads. |
 | `POST /-_-api/v1/users/token` | `UserApi.newToken()` | Validate id/password, set session, return `access_token`. | Implemented in app server with legacy recursive `JsonNode.findValue("id")`/`findValue("password")` parsing, password validation messages, fresh API token issuance, authenticated session cookie attachment, and token-auth reuse coverage. |
 | `GET /-_-api/v1/user/issues?filter=&page=&pageNum=` | `UserApi.getIssuesByUser()` | Token-authored user issue export/list JSON. | Migrator/deferred; not app-server scope. |
 | `GET /-_-api/v1/users/:user/statistics` | `UserApi.statistics()` | User activity count JSON. | Implemented in app server with legacy statistics fields and session/token auth. |
