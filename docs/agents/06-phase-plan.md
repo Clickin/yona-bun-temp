@@ -483,9 +483,7 @@
 - Workspace settings scalar fallback fix: profile/password/token/email setting mutation non-Error fallbacks now use the legacy common `error.badrequest` key instead of temporary English fallback copy, notification toggles preserve legacy `yobi.user.Setting.js` `error.failedTo` with `userinfo.changeNotifications`, and server validation continues to surface the specific legacy flash/message keys such as `user.wrongPassword.alert`, `user.wrongEmail.alert`, and `user.email.duplicate`.
 - Milestone shell scalar fix: milestone list/detail React shells now preserve the legacy `issue/labels.css` stylesheet link from `milestone/list.scala.html` and `milestone/view.scala.html` so issue label styling follows the project label CSS.
 - Profile/organization project-date scalar fix: `/me`, `/:user`, and organization home project rows now preserve legacy created/code-update date `title` attributes from `user/partial_projectlist.scala.html` and `organization/view.scala.html`.
-- migration tooling
-- deployment hardening
-- remaining deferred scope review
+- Completion review active: `docs/provenance/first-priority-completion-review.md` now tracks remaining 1차 PoC closure evidence for settings migration, migration/adopt verification, Smart HTTP closure tests, single-binary frontend embedding smoke, Docker image viability, and full cargo/frontend gates.
 
 ## Phase Gate 규칙
 
