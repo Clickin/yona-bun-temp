@@ -44,7 +44,7 @@
 | `reference/mixed-code/packages/vcs`          | `crates/vcs`                            |
 | `reference/mixed-code/packages/integrations` | `crates/integrations`                   |
 
-- Rows marked `missing`, `semantic-drift`, or `ux-drift` remain active gap tracking until their parity slice lands in `repo root`.
+- Rows marked `missing`, `semantic-drift`, or `ux-drift` continue to track parity work until their slice lands in `repo root`.
 
 ## Status Vocabulary
 
