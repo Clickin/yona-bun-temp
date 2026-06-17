@@ -23,7 +23,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 | FG-01 through FG-18 Phase 1-6 app-runtime features implemented | `docs/provenance/core-parity-audit.md` rows are no longer marked `missing`, `semantic-drift`, or `ux-drift`; `docs/provenance/legacy-porting-progress.md` marks the first-priority app-runtime audit closed. | Evidence present; keep under review | Run the parity gate and maintain no active non-deferred audit rows. |
 | Legacy route status, core HTML shell, and data-shape parity evidence recorded | `core-parity-audit.md`, phase plan entries, and focused contract/frontend tests map legacy sources to Rust/frontend owners. | Evidence present; keep under review | Keep `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` green. |
 | Same-phase gaps either implemented or reclassified | Current remaining named items are documented as deferred, migrator, hardening, or follow-up boundaries instead of active same-phase blockers. | Evidence present; keep under review | Keep canonical/provenance docs free of active first-priority `gap` rows. |
-| Legacy `application.conf.default` core settings can map to `yona.toml` | `SPEC.md` documents site/auth/session/database/issue/project/SMTP/webhook/notification/mailbox/update config compatibility, and runtime config entries are inventoried in progress docs. | Needs final closure evidence | Replace `SPEC.md` Appendix A template with the actual reviewed settings migration guide or link to an equivalent canonical guide. |
+| Legacy `application.conf.default` core settings can map to `yona.toml` | `SPEC.md` Appendix A now contains the reviewed legacy-to-`yona.toml` migration guide, including env precedence, JDBC URL conversion, H2 handling, sectioned TOML keys, and deferred Play/JVM/LDAP/OAuth boundaries; `runtime_config_contract.rs` covers TOML loading and env override behavior. | Evidence present; keep under review | Keep Appendix A aligned with `crates/server/src/runtime_config.rs` and `crates/server/tests/runtime_config_contract.rs` when new runtime config keys are added. |
 | Existing MariaDB data can be adopted without data loss after validation | `crates/migration` implements `adopt`, `validate_only`, and multi-DB schema checks; `docs/provenance/legacy-porting-progress.md` marks SQLite/MySQL/PostgreSQL runtime migration/adopt/validate complete; one focused adopt contract now has harness evidence below. | Partial evidence present; full matrix still needed | Run the full migration contract/db matrix through `pnpm agent:cargo-test -- ...` and preserve the command evidence in this review or release checklist. |
 | `git clone` and `git push` work | Smart HTTP upload-pack/receive-pack and push post-receive records/webhooks are documented in `SPEC.md` and `core-parity-audit.md`; server contract tests cover the app-runtime surface. | Needs final closure evidence | Run the Smart HTTP contract test set via the cargo harness and record the passing command/log path. |
 | Single binary serves frontend and backend together | `crates/server/build.rs` embeds assets from `YONA_EMBED_ASSET_ROOT` and the server owns REST/static/session bootstrap. | Needs final closure evidence | Build frontend assets, build the release server binary with the real asset root, start it, and smoke an HTML route plus `/api/v1` route. |
@@ -32,11 +32,10 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 
 ## Next Closure Steps
 
-1. Replace the Appendix A settings migration template with an actual reviewed legacy-to-`yona.toml` mapping, or create a canonical linked guide.
-2. Run migration/adopt and Smart HTTP closure tests through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
-3. Produce single-binary closure evidence with real frontend assets embedded through `YONA_EMBED_ASSET_ROOT`.
-4. Add or identify the canonical Docker build path and run a container smoke.
-5. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
+1. Run migration/adopt and Smart HTTP closure tests through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
+2. Produce single-binary closure evidence with real frontend assets embedded through `YONA_EMBED_ASSET_ROOT`.
+3. Add or identify the canonical Docker build path and run a container smoke.
+4. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
 
 ## Current Verification Evidence
 

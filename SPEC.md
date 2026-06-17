@@ -1615,22 +1615,31 @@ historical 문서(`docs/plans/*`, `docs/workflow/*`)는 삭제하지 않는다. 
 
 ---
 
-## 부록 A: Legacy 설정 Migration 가이드 (Template)
+## 부록 A: Legacy 설정 Migration 가이드
 
-> 이 부록은 1차 PoC 완료 시 실제 값으로 채워야 한다.
+Rust 런타임은 legacy `conf/application.conf` HOCON 파일을 직접 파싱하지 않는다. 운영자는 legacy 값을 `yona.toml`로 옮기거나 동일한 `YONA_*` 환경 변수로 주입한다. 우선순위는 `YONA_*` 환경 변수 > `YONA_CONFIG_TOML`로 지정한 파일 > 현재 작업 디렉터리의 `yona.toml` > 런타임 기본값이다.
+
+Legacy Play/JVM 전용 키(`application.secret`, `application.global`, `application.server`, Ebean/evolutions, Play/Akka thread-pool, JNDI, logger 설정)는 Rust 런타임 설정으로 옮기지 않는다. LDAP, full OAuth provider flow, GitHub migration, dynamic i18n switching, analytics/custom navbar, Slack color tuning, and broad external API/migrator behavior remain deferred/follow-up boundaries documented in the main SPEC and provenance.
 
 ```toml
 # yona.toml — legacy application.conf에서 변환
 
+base_path = "/yona"                     # application.context; "/" 또는 비어 있으면 root mount
+public_origin = "https://yona.example.com" # application.scheme + application.hostname + application.port
+bind_addr = "127.0.0.1:8089"            # Rust listen address; legacy %prod.http.port와 별도 매핑
+database_url = "mysql://yona:password@127.0.0.1:3306/yona?charset=utf8mb4"
+schema_policy = "adopt"                 # 기존 DB 사용 시 adopt, 신규 DB 생성 시 up, 검증 전용은 validate_only
+use_embedded_assets = true              # single-binary/SFX에서 embedded frontend assets 사용
+# asset_root = "frontend/dist"           # filesystem asset serving 또는 build-time YONA_EMBED_ASSET_ROOT 기준
+
 [site]
-name = "Yona"                          # application.siteName
-hostname = "localhost"                 # application.hostname
-base_path = "/"                        # application.context
+name = "Yona"                           # application.siteName
+hostname = "yona.example.com"           # application.hostname; mail/link metadata에 사용
 allow_anonymous_access = true          # application.allowsAnonymousAccess
-allowed_sending_mail_domains = []      # application.allowed.sending.mail.domains
+allowed_sending_mail_domains = []       # application.allowed.sending.mail.domains; CSV legacy 값을 배열로 변환
 guest_login_prefix = ""                # application.guest.user.login.id.prefix
 show_user_email = true                 # application.show.user.email
-langs = ["en-US", "ko-KR"]            # application.langs
+langs = ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"] # application.langs
 
 [auth]
 email_verification = false             # application.use.email.verification
@@ -1638,21 +1647,30 @@ login_id_placeholder = ""              # application.login.page.loginId.placehol
 password_placeholder = ""              # application.login.page.password.placeholder
 signup_require_confirm = false         # signup.require.admin.confirm
 social_login_only = false              # application.use.social.login.only
+social_login_support = ["github", "google"] # application.social.login.support; button/config surface only, provider login deferred
 
 [session]
-max_age = 3600                         # session.maxAge (seconds)
+max_age = 3600                          # session.maxAge, seconds
 
 [database]
-url = "mysql://user:pass@127.0.0.1:3306/yona"  # db.default.url (jdbc: prefix 제거)
+url = "mysql://yona:password@127.0.0.1:3306/yona?charset=utf8mb4"
+# Legacy JDBC examples:
+# - jdbc:mariadb://127.0.0.1:3306/yona?useServerPrepStmts=true + db.default.user/password
+#   -> mysql://USER:PASSWORD@127.0.0.1:3306/yona?useServerPrepStmts=true
+# - jdbc:mysql://127.0.0.1:3306/yona?characterEncoding=utf-8 + db.default.user/password
+#   -> mysql://USER:PASSWORD@127.0.0.1:3306/yona?characterEncoding=utf-8
+# - jdbc:postgresql://localhost:5432/yona + db.default.user/password
+#   -> postgres://USER:PASSWORD@localhost:5432/yona
+# H2 is not a Rust runtime dialect; convert H2 to SQLite first, then use the SQLite adopt path.
 
 [smtp]
-host = "smtp.gmail.com"               # smtp.host
-port = 465                            # smtp.port
+host = "smtp.gmail.com"                # smtp.host
+port = 465                             # smtp.port
 ssl = true                            # smtp.ssl
-user = ""                             # smtp.user
-password = ""                         # smtp.password
-domain = ""                           # smtp.domain
-from = ""                             # explicit sender override (`SMTP_FROM` / `YONA_SMTP_FROM`)
+user = "yourGmailId"                   # smtp.user
+password = "yourGmailPassword"         # smtp.password
+domain = "gmail.com"                   # smtp.domain
+from = "projects.yona@gmail.com"       # play-easymail.from.email or explicit sender override
 
 [webhook]
 delivery_retries = 0                  # YONA_WEBHOOK_DELIVERY_RETRIES
@@ -1660,7 +1678,7 @@ allow_private_networks = false        # YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS
 
 [notification]
 mail_enabled = true                    # notification.bymail.enabled
-mail_initial_delay = "5s"              # application.notification.bymail.initdelay
+mail_initial_delay = "5s"              # startup scheduler initial delay; no direct legacy key
 mail_interval = "60s"                  # application.notification.bymail.interval
 mail_delay = "180s"                    # application.notification.bymail.delay
 recipient_limit = 100                  # application.notification.bymail.recipientLimit
@@ -1668,18 +1686,18 @@ hide_address = true                    # application.notification.bymail.hideAdd
 draft_time = "30s"                     # application.notification.draft-time
 
 [mailbox]
-imap_address = "noreply@yona.local"    # YONA_MAILBOX_IMAP_ADDRESS
-polling_enabled = false                # YONA_MAILBOX_POLLING_ENABLED
-polling_initial_delay = "5s"           # YONA_MAILBOX_POLLING_INITIAL_DELAY
-polling_interval = "60s"               # YONA_MAILBOX_POLLING_INTERVAL
-fetch_command = ""                     # YONA_MAILBOX_FETCH_COMMAND
+imap_address = "your-yona-email-address@gmail.com" # imap.address
+polling_enabled = false                # imap.use
+polling_initial_delay = "5s"           # Rust scheduler initial delay
+polling_interval = "60s"               # Rust scheduler interval
+fetch_command = ""                     # executable-backed mailbox fetch bridge; host/user/password/folder stay outside app config
 
 [update]
 current_version = ""                   # YONA_CURRENT_VERSION
 error = ""                             # YONA_UPDATE_ERROR
 latest_version = ""                    # YONA_UPDATE_LATEST_VERSION
 version = ""                           # YONA_UPDATE_VERSION
-release_url = ""                       # YONA_UPDATE_RELEASE_URL
+release_url = ""                       # resolved URL from application.update.releaseUrlFormat
 metadata_url = ""                      # YONA_UPDATE_METADATA_URL
 metadata_file = ""                     # YONA_UPDATE_METADATA_FILE
 https_fetch_command = ""               # YONA_UPDATE_HTTPS_FETCH_COMMAND
@@ -1692,6 +1710,8 @@ default_scope = "public"               # project.default.scope.when.create
 default_menus = ["issue", "milestone", "board"]  # project.creation.default.menus
 max_file_size = 2147483454             # application.maxFileSize
 ```
+
+Environment variable equivalents use the names exercised by `crates/server/tests/runtime_config_contract.rs`, for example `YONA_CONFIG_TOML`, `YONA_BASE_PATH`, `YONA_PUBLIC_ORIGIN`, `YONA_BIND_ADDR`, `YONA_DATABASE_URL`, `YONA_SCHEMA_POLICY`, `YONA_SITE_NAME`, `YONA_APPLICATION_HOSTNAME`, `YONA_ALLOWED_MAIL_DOMAINS`, `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`, `YONA_SESSION_TIMEOUT_SECONDS`, `YONA_SMTP_*`, `YONA_NOTIFICATION_*`, `YONA_MAILBOX_*`, `YONA_UPDATE_*`, `YONA_PROJECT_DEFAULT_*`, `YONA_MAX_FILE_SIZE`, `YONA_USE_EMBEDDED_ASSETS`, and `YONA_ASSET_ROOT`.
 
 ---
 
