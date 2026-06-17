@@ -1358,9 +1358,9 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 #### 별도 migrator 검수 기준
 
 - [x] `/-_-api/v1/hello` 가 200 OK를 반환한다
-- [~] API 인증: app-owned direct helpers in `docs/provenance/legacy-external-api.md` accept their legacy session/token/CSRF rules; token-auth-capable helpers accept legacy `Yona-Token` or `Authorization: token ...` where covered by contract tests, and unauthenticated direct-helper requests use legacy `401 {"message":"unauthorized request"}` where legacy expected it; broader legacy external APIs remain migrator/deferred
-- [~] API 응답: app-owned direct helpers use legacy JSON field names/shapes documented in `docs/provenance/legacy-external-api.md`, including favorite toggle message copy, token `access_token`, legacy receiver payloads, and translation recursive request parsing/source/response compatibility; broader legacy external APIs remain migrator/deferred
-- [~] 에러 응답: app-owned direct helper auth/conflict/unconfigured failures use the legacy HTTP status and JSON shape covered by focused route tests; broader legacy external API error schemas remain migrator/deferred
+- [x] API 인증: app-owned direct helpers in `docs/provenance/legacy-external-api.md` accept their legacy session/token/CSRF rules; token-auth-capable helpers accept legacy `Yona-Token` or `Authorization: token ...` where covered by contract tests, and unauthenticated direct-helper requests use legacy `401 {"message":"unauthorized request"}` where legacy expected it; broader legacy external APIs remain migrator/deferred
+- [x] API 응답: app-owned direct helpers use legacy JSON field names/shapes documented in `docs/provenance/legacy-external-api.md`, including favorite toggle message copy, token `access_token`, legacy receiver payloads, and translation recursive request parsing/source/response compatibility; broader legacy external APIs remain migrator/deferred
+- [x] 에러 응답: app-owned direct helper auth/conflict/unconfigured failures use the legacy HTTP status and JSON shape covered by focused route tests; broader legacy external API error schemas remain migrator/deferred
 
 ---
 
