@@ -1342,6 +1342,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 | `GET /-_-api/v1/users`        | members-page 사용자 검색 helper | implemented with legacy JSON Accept/referer gate | app helper |
 | `POST /-_-api/v1/users`       | 사용자 생성        | implemented with legacy recursive bulk-user parsing, site-admin-only guard, created/conflict item payloads | app helper |
 | `POST /-_-api/v1/users/token` | API 토큰 발급      | implemented with legacy recursive credential parsing, password validation/session/token response | app helper |
+| `GET /-_-api/v1/user/issues`  | 사용자 이슈 목록/내보내기 | implemented with legacy `filter`/`page`/`pageNum` query handling and `{result:[...]}` issue payload | app helper |
 | User statistics/default-login/admin-user state | user workspace/site-manager helpers | implemented where marked in `legacy-external-api.md`, including legacy admin-user recursive `state` parsing and `GUEST` state support | app helper |
 | Issue API                     | 이슈 CRUD + 댓글   | selected issue/comment helper rows implemented, including recursive issue/comment/state update, assignee/sharer update, comment create, comment receiver preview, and detectChange polling parsing plus current-user `temporaryUploadFiles` binding; bulk import/export remains deferred | mixed app helper + migrator |
 | Project API                   | 프로젝트 CRUD      | title-head/label helper rows implemented, including legacy recursive label batch parsing; project export/create remains migrator/deferred | mixed app helper + migrator |

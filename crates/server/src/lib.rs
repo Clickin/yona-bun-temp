@@ -674,6 +674,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_user_search_backend = route_backend.clone();
     let legacy_user_create_backend = route_backend.clone();
     let legacy_user_create_session_manager = session_manager.clone();
+    let legacy_user_issues_backend = route_backend.clone();
+    let legacy_user_issues_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
     let legacy_project_labels_backend = route_backend.clone();
@@ -848,6 +850,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             body,
                             legacy_user_token_session_manager.clone(),
                             legacy_user_token_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/user/issues",
+            get(
+                move |headers: HeaderMap, Query(query): Query<LegacyExternalUserIssuesQuery>| {
+                    async move {
+                        legacy_external_user_issues(
+                            headers,
+                            query,
+                            legacy_user_issues_session_manager.clone(),
+                            legacy_user_issues_backend.clone(),
                         )
                         .await
                     }
@@ -26344,6 +26362,29 @@ struct LegacyExternalUsersQuery {
     query: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyExternalUserIssuesQuery {
+    #[serde(default = "legacy_external_user_issues_default_filter")]
+    filter: String,
+    #[serde(default = "legacy_external_user_issues_default_page")]
+    page: u32,
+    #[serde(default = "legacy_external_user_issues_default_page_num")]
+    page_num: u32,
+}
+
+fn legacy_external_user_issues_default_filter() -> String {
+    "assigned".to_string()
+}
+
+fn legacy_external_user_issues_default_page() -> u32 {
+    1
+}
+
+fn legacy_external_user_issues_default_page_num() -> u32 {
+    15
+}
+
 #[derive(Clone, Debug)]
 struct LegacyExternalUserCreateItem {
     email: String,
@@ -26605,6 +26646,117 @@ async fn legacy_external_create_users(
     }
 
     (StatusCode::CREATED, Json(created_users)).into_response()
+}
+
+async fn legacy_external_user_issues(
+    headers: HeaderMap,
+    query: LegacyExternalUserIssuesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("user issues require repository backend")
+            .into_response();
+    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
+            .await
+        {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
+    let filter_name = match user_issue_filter_name(&query.filter) {
+        Ok(filter_name) => filter_name,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let page_size = query.page_num.max(1);
+    let page_num = query.page.max(1);
+    let filter = persistence::UserIssueListFilter {
+        filter: filter_name,
+        order_by: "updatedDate".to_string(),
+        order_dir: "desc".to_string(),
+        page_num,
+        page_size,
+        query: None,
+        state: "open".to_string(),
+    };
+    let mut items = match visible_user_issue_items(repository, actor_id, filter).await {
+        Ok(items) => items,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let offset = ((page_num - 1) * page_size) as usize;
+    let mut result = Vec::new();
+    for item in items.drain(..).skip(offset).take(page_size as usize) {
+        let detail = match repository
+            .read_issue_detail_for_viewer(
+                &item.owner_name,
+                &item.project_name,
+                item.issue_number,
+                Some(actor_id),
+            )
+            .await
+        {
+            Ok(detail) => detail,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        };
+        let assignee_id = if item.assignee_login_id.trim().is_empty() {
+            None
+        } else {
+            match repository
+                .find_user_by_login_id(&item.assignee_login_id)
+                .await
+            {
+                Ok(user) => user.map(|user| user.id),
+                Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+            }
+        };
+        result.push(legacy_external_user_issue_result(
+            item,
+            detail.as_ref(),
+            assignee_id,
+        ));
+    }
+
+    Json(serde_json::json!({ "result": result })).into_response()
+}
+
+fn legacy_external_user_issue_result(
+    item: persistence::ProjectIssueListItemRecord,
+    detail: Option<&persistence::IssueRecord>,
+    assignee_id: Option<i64>,
+) -> serde_json::Value {
+    let mut assignee = serde_json::json!({});
+    if !item.assignee_login_id.trim().is_empty() {
+        assignee = serde_json::json!({
+            "id": assignee_id.unwrap_or_default(),
+            "loginId": item.assignee_login_id,
+            "name": item.assignee_label,
+        });
+    }
+    let author_id = detail.and_then(|issue| issue.author_id).unwrap_or_default();
+    serde_json::json!({
+        "id": item.id,
+        "number": item.issue_number,
+        "state": item.state.to_ascii_uppercase(),
+        "title": item.title,
+        "createdDate": item.created_label,
+        "updatedDate": item.updated_label,
+        "author": {
+            "id": author_id,
+            "loginId": item.author_login_id,
+            "name": item.author_label,
+        },
+        "assignee": assignee,
+        "project": {
+            "id": item.project_id,
+            "name": item.project_name,
+        },
+        "owner": item.owner_name,
+        "refUrl": format!(
+            "{}/{}/issue/{}",
+            item.owner_name, item.project_name, item.issue_number
+        ),
+    })
 }
 
 async fn legacy_external_admin_users(
