@@ -1504,6 +1504,8 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 | E2E             | `pnpm --dir frontend test:e2e`   | 브라우저 플로우            |
 | Multi-DB smoke  | `cargo test db_matrix*`          | SQLite/PostgreSQL/MySQL    |
 
+Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`로 감싸서 sandbox 밖 `require_escalated` 실행을 요청한다. harness는 전체 cargo stdout/stderr를 `.agent/cargo-test-logs/`에 남기고 콘솔에는 시작/종료와 실패 tail만 출력해 장시간 test polling token 사용량을 제한한다.
+
 ### 7.2 기능별 검수 절차
 
 각 Feature Group의 검수 기준 체크리스트를 **모두 통과**해야 해당 기능 구현 완료로 인정한다.
