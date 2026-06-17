@@ -2691,10 +2691,16 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "action": "add",
-                "sharer": {
-                    "loginId": "guest",
-                    "type": "user"
+                "request": {
+                    "action": "add"
+                },
+                "target": {
+                    "sharer": {
+                        "account": {
+                            "loginId": "guest",
+                            "type": "user"
+                        }
+                    }
                 }
             })),
         )
@@ -2759,10 +2765,16 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "action": "delete",
-                "sharer": {
-                    "loginId": "guest",
-                    "type": "user"
+                "request": {
+                    "action": "delete"
+                },
+                "target": {
+                    "sharer": {
+                        "account": {
+                            "loginId": "guest",
+                            "type": "user"
+                        }
+                    }
                 }
             })),
         )

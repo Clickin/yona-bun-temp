@@ -28164,7 +28164,14 @@ async fn legacy_external_update_issue_sharer(
         )
             .into_response();
     }
-    let Some(sharer) = body.get("sharer").filter(|value| !value.is_null()) else {
+    let Some(sharer) = legacy_json_find_value(&body, "sharer")
+        .filter(|value| !value.is_null())
+        .filter(|value| match value {
+            serde_json::Value::Array(items) => !items.is_empty(),
+            serde_json::Value::Object(map) => !map.is_empty(),
+            _ => true,
+        })
+    else {
         return (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({
@@ -28173,8 +28180,7 @@ async fn legacy_external_update_issue_sharer(
         )
             .into_response();
     };
-    let action = body
-        .get("action")
+    let action = legacy_json_find_value(&body, "action")
         .and_then(serde_json::Value::as_str)
         .unwrap_or_default();
     let action_result = if action.eq_ignore_ascii_case("add") {
@@ -28187,14 +28193,15 @@ async fn legacy_external_update_issue_sharer(
         }))
         .into_response();
     };
-    let target_type = sharer
-        .get("type")
+    let target_type = legacy_json_find_value(sharer, "type")
         .and_then(serde_json::Value::as_str)
         .unwrap_or("user")
         .trim()
         .to_ascii_lowercase();
     let (target_users, sharer_name) = if target_type == "project" {
-        let Some(project_id) = sharer.get("loginId").and_then(legacy_external_label_id) else {
+        let Some(project_id) =
+            legacy_json_find_value(sharer, "loginId").and_then(legacy_external_label_id)
+        else {
             return RestRouteError::not_found("issue sharer project not found").into_response();
         };
         let project = match repository.read_public_project_by_id(project_id).await {
@@ -28210,7 +28217,9 @@ async fn legacy_external_update_issue_sharer(
         };
         (users, project.project_name)
     } else {
-        let Some(login_id) = sharer.get("loginId").and_then(serde_json::Value::as_str) else {
+        let Some(login_id) =
+            legacy_json_find_value(sharer, "loginId").and_then(serde_json::Value::as_str)
+        else {
             return RestRouteError::not_found("issue sharer user not found").into_response();
         };
         let user = match repository.find_user_by_login_id(login_id).await {
