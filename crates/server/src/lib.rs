@@ -28012,7 +28012,7 @@ async fn legacy_external_update_issue_state(
         )
             .into_response();
     }
-    let state = match body.get("state").and_then(serde_json::Value::as_str) {
+    let state = match legacy_json_find_value(&body, "state").and_then(serde_json::Value::as_str) {
         Some(value) if value.eq_ignore_ascii_case("open") => "open",
         Some(_) => "closed",
         None => "open",

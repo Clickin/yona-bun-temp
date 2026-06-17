@@ -2059,7 +2059,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&owner_cookie),
             Some(&owner_csrf),
-            Some(json!({ "state": "closed" })),
+            Some(json!({
+                "transition": {
+                    "state": "closed"
+                }
+            })),
         )
         .await,
     )
