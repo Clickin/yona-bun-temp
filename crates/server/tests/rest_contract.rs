@@ -1690,12 +1690,34 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .expect("legacy access token")
         .to_string();
     assert!(!legacy_api_token.is_empty());
+    let nested_legacy_token_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/users/token",
+        None,
+        None,
+        Some(json!({
+            "credentials": {
+                "id": "visitor",
+                "secret": {
+                    "password": "doorpass1"
+                }
+            }
+        })),
+    )
+    .await;
+    assert_eq!(nested_legacy_token_response.status(), StatusCode::OK);
+    let nested_legacy_api_token = response_json(nested_legacy_token_response).await["access_token"]
+        .as_str()
+        .expect("nested legacy access token")
+        .to_string();
+    assert!(!nested_legacy_api_token.is_empty());
     let legacy_token_favorites = ok_json(
         rest_with_headers(
             app.clone(),
             Method::GET,
             "/yona/-_-api/v1/favoriteProjects",
-            &[("Yona-Token", &legacy_api_token)],
+            &[("Yona-Token", &nested_legacy_api_token)],
             None,
         )
         .await,

@@ -823,7 +823,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         .route(
             "/-_-api/v1/users/token",
             post(
-                move |headers: HeaderMap, Json(body): Json<LegacyExternalUserTokenBody>| {
+                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
                     async move {
                         legacy_external_user_token(
                             headers,
@@ -26326,11 +26326,25 @@ struct LegacyExternalUsersQuery {
     query: String,
 }
 
-#[derive(Default, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug)]
 struct LegacyExternalUserTokenBody {
     id: String,
     password: String,
+}
+
+fn legacy_external_user_token_body_from_value(
+    value: &serde_json::Value,
+) -> LegacyExternalUserTokenBody {
+    LegacyExternalUserTokenBody {
+        id: legacy_json_find_value(value, "id")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        password: legacy_json_find_value(value, "password")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_string(),
+    }
 }
 
 async fn legacy_external_users(
@@ -26394,10 +26408,11 @@ async fn legacy_external_users(
 
 async fn legacy_external_user_token(
     headers: HeaderMap,
-    body: LegacyExternalUserTokenBody,
+    body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
+    let body = legacy_external_user_token_body_from_value(&body);
     let PilotBackend::Repository(repository) = &backend else {
         return RestRouteError::not_implemented("user token requires repository backend")
             .into_response();
