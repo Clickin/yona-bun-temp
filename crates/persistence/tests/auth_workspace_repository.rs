@@ -84,4 +84,17 @@ async fn default_landing_repository_reads_and_writes_preferences() {
             .expect("read updated default"),
         Some("/me".to_string()),
     );
+
+    defaults
+        .set_default_landing_path(user.id, "/projects")
+        .await
+        .expect("replace default");
+
+    assert_eq!(
+        defaults
+            .read_default_landing_path(user.id)
+            .await
+            .expect("read replaced default"),
+        Some("/projects".to_string()),
+    );
 }

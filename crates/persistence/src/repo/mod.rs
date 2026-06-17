@@ -80,6 +80,9 @@ use yona_rust_search::{
     SearchType, SearchTypeCounts,
 };
 
+mod app_user;
+mod default_landing;
+
 fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
@@ -16924,43 +16927,5 @@ impl AppRepository {
         }
 
         Ok(())
-    }
-}
-
-impl AppUserRepository {
-    pub fn new(db: DatabaseConnection) -> Self {
-        Self {
-            inner: AppRepository::new(db),
-        }
-    }
-
-    pub async fn create_user(&self, input: AppUserInput) -> Result<AppUserRecord, DbErr> {
-        self.inner.create_user(input).await
-    }
-
-    pub async fn find_by_identifier(
-        &self,
-        identifier: &str,
-    ) -> Result<Option<AppUserRecord>, DbErr> {
-        self.inner.find_user_by_identifier(identifier).await
-    }
-}
-
-impl DefaultLandingRepository {
-    pub fn new(db: DatabaseConnection) -> Self {
-        Self {
-            inner: AppRepository::new(db),
-        }
-    }
-
-    pub async fn read_default_landing_path(&self, user_id: i64) -> Result<Option<String>, DbErr> {
-        self.inner.read_default_landing_path(user_id).await
-    }
-
-    pub async fn set_default_landing_path(&self, user_id: i64, path: &str) -> Result<(), DbErr> {
-        self.inner
-            .set_default_landing_path(user_id, Some(path.to_string()))
-            .await
-            .map(|_| ())
     }
 }
