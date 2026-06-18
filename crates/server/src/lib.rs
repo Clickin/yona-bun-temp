@@ -735,10 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let direct_project_watch_backend = route_backend.clone();
-    let direct_project_watch_session_manager = session_manager.clone();
-    let direct_project_unwatch_backend = route_backend.clone();
-    let direct_project_unwatch_session_manager = session_manager.clone();
     let legacy_watchers_backend = route_backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_board_posts_backend = route_backend.clone();
@@ -1607,44 +1603,10 @@ fn build_router_with_app_config(
             route_backend.clone(),
             base_path.clone(),
         ))
-        .route(
-            "/{owner_name}/{project_name}/watch",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>| {
-                    async move {
-                        direct_toggle_project_watch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            true,
-                            direct_project_watch_session_manager.clone(),
-                            direct_project_watch_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/{owner_name}/{project_name}/unwatch",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>| {
-                    async move {
-                        direct_toggle_project_watch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            false,
-                            direct_project_unwatch_session_manager.clone(),
-                            direct_project_unwatch_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
+        .merge(routes::project_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+        ))
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),

@@ -2045,6 +2045,7 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
     .await;
 
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -2073,6 +2074,42 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
     .unwrap();
     assert!(json.contains("\"isWatching\":true"));
     assert!(json.contains("\"watchCount\":1"));
+
+    let direct_unwatch = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/admin/projectYobi/unwatch")
+                .header(http::header::COOKIE, &guest_cookie)
+                .header("x-csrf-token", &guest_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_unwatch.status(), StatusCode::OK);
+    assert!(direct_unwatch
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    assert_eq!(response_json(direct_unwatch).await, "");
+
+    let direct_watch = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/admin/projectYobi/watch")
+                .header(http::header::COOKIE, &guest_cookie)
+                .header("x-csrf-token", &guest_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_watch.status(), StatusCode::OK);
+    assert!(direct_watch.headers().get(http::header::LOCATION).is_none());
+    assert_eq!(response_json(direct_watch).await, "");
 }
 
 #[tokio::test]

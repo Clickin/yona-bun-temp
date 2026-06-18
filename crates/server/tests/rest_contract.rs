@@ -4138,6 +4138,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(direct_watched.status(), StatusCode::OK);
+    assert!(direct_watched
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     assert_eq!(response_text(direct_watched).await, "");
     assert!(repository
         .is_watching_project(visitor_id, project_id)
@@ -4189,6 +4193,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(direct_unwatched.status(), StatusCode::OK);
+    assert!(direct_unwatched
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     assert_eq!(response_text(direct_unwatched).await, "");
     assert!(!repository
         .is_watching_project(visitor_id, project_id)
