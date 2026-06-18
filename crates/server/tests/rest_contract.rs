@@ -5066,6 +5066,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     )
     .await;
     assert_eq!(changed_password["isAnonymous"], true);
+    assert_eq!(changed_password["loginId"], serde_json::Value::Null);
 
     let (fresh_csrf, fresh_cookie) = bootstrap(app.clone()).await;
     let signed_in = ok_json(

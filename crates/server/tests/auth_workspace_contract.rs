@@ -2680,6 +2680,22 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .await
         .unwrap();
 
+    let workspace_overview = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/workspace")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(workspace_overview.status(), StatusCode::OK);
+    let workspace_overview_json = response_text(workspace_overview).await;
+    assert!(workspace_overview_json.contains("\"defaultLandingPath\":\"/me\""));
+
     let empty_profile_name = app
         .clone()
         .oneshot(

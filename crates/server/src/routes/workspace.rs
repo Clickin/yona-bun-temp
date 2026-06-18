@@ -2,7 +2,7 @@ use axum::{
     extract::{Form, Path, Query},
     http::HeaderMap,
     response::{IntoResponse, Redirect, Response},
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Json, Router,
 };
 use std::collections::HashMap;
@@ -17,8 +17,15 @@ use crate::{
     direct_user_sidebar, legacy_external_favorite_issues, legacy_external_favorite_organizations,
     legacy_external_favorite_projects, legacy_external_toggle_favorite_issue,
     legacy_external_toggle_favorite_organization, legacy_external_toggle_favorite_project,
-    normalize_default_landing_path, redirect_to, session::SessionManager, ConnectError,
-    DirectUserSidebarQuery, PilotBackend, RestRouteError,
+    normalize_default_landing_path, redirect_to, rest_add_workspace_email, rest_change_password,
+    rest_delete_workspace_email, rest_list_workspace_files, rest_read_workspace_overview,
+    rest_record_recent_project_visit, rest_reset_api_token, rest_reset_visited_projects,
+    rest_send_workspace_email_validation, rest_set_default_landing_path,
+    rest_set_main_workspace_email, rest_toggle_workspace_notification, rest_update_profile,
+    session::SessionManager, ConnectError, DirectUserSidebarQuery, PilotBackend, PilotServiceImpl,
+    RestChangePasswordBody, RestDefaultLandingPathBody, RestRecentProjectVisitBody, RestRouteError,
+    RestUpdateProfileBody, RestWorkspaceEmailBody, RestWorkspaceFilesQuery,
+    RestWorkspaceNotificationBody,
 };
 
 #[derive(Deserialize)]
@@ -30,6 +37,139 @@ struct DirectDefaultLoginPageQuery {
 struct DirectDefaultLoginPageResponse {
     #[serde(rename = "defaultLoginPage")]
     default_login_page: String,
+}
+
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/workspace",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_workspace_overview(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/default-landing-path",
+            put({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestDefaultLandingPathBody>| {
+                    let service = service.clone();
+                    async move { rest_set_default_landing_path(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/profile",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestUpdateProfileBody>| {
+                    let service = service.clone();
+                    async move { rest_update_profile(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/password",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestChangePasswordBody>| {
+                    let service = service.clone();
+                    async move { rest_change_password(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/recent-projects",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestRecentProjectVisitBody>| {
+                    let service = service.clone();
+                    async move { rest_record_recent_project_visit(headers, body, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_reset_visited_projects(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/files",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestWorkspaceFilesQuery>| {
+                    let service = service.clone();
+                    async move { rest_list_workspace_files(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestWorkspaceEmailBody>| {
+                    let service = service.clone();
+                    async move { rest_add_workspace_email(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_delete_workspace_email(headers, email_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}/validation",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move {
+                        rest_send_workspace_email_validation(headers, email_id, service).await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}/main",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_set_main_workspace_email(headers, email_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/api-token/reset",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_reset_api_token(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/notifications",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestWorkspaceNotificationBody>| {
+                    let service = service.clone();
+                    async move { rest_toggle_workspace_notification(headers, body, service).await }
+                }
+            }),
+        )
 }
 
 pub(crate) fn routes(

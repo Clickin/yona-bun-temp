@@ -10679,13 +10679,13 @@ struct RestVerifyUserRequest {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestDefaultLandingPathBody {
+pub(crate) struct RestDefaultLandingPathBody {
     path: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestUpdateProfileBody {
+pub(crate) struct RestUpdateProfileBody {
     #[serde(default)]
     avatar_attachment_id: String,
     email: String,
@@ -10694,7 +10694,7 @@ struct RestUpdateProfileBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestChangePasswordBody {
+pub(crate) struct RestChangePasswordBody {
     login_id: String,
     old_password: String,
     password: String,
@@ -10703,27 +10703,27 @@ struct RestChangePasswordBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestWorkspaceEmailBody {
+pub(crate) struct RestWorkspaceEmailBody {
     email: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestWorkspaceNotificationBody {
+pub(crate) struct RestWorkspaceNotificationBody {
     event_type: String,
     project_id: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestRecentProjectVisitBody {
+pub(crate) struct RestRecentProjectVisitBody {
     owner_name: String,
     project_name: String,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestWorkspaceFilesQuery {
+pub(crate) struct RestWorkspaceFilesQuery {
     filter: Option<String>,
     page: Option<u32>,
     page_num: Option<u32>,
@@ -12986,73 +12986,6 @@ fn build_rest_router(
             }),
         )
         .route(
-            "/workspace",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_read_workspace_overview(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/default-landing-path",
-            put({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestDefaultLandingPathBody>| {
-                    let service = service.clone();
-                    async move { rest_set_default_landing_path(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/profile",
-            patch({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestUpdateProfileBody>| {
-                    let service = service.clone();
-                    async move { rest_update_profile(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/password",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestChangePasswordBody>| {
-                    let service = service.clone();
-                    async move { rest_change_password(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/recent-projects",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestRecentProjectVisitBody>| {
-                    let service = service.clone();
-                    async move { rest_record_recent_project_visit(headers, body, service).await }
-                }
-            })
-            .delete({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_reset_visited_projects(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/files",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Query(query): Query<RestWorkspaceFilesQuery>| {
-                    let service = service.clone();
-                    async move { rest_list_workspace_files(headers, query, service).await }
-                }
-            }),
-        )
-        .route(
             "/users/{login_id}/profile",
             get({
                 let service = service.clone();
@@ -13075,68 +13008,7 @@ fn build_rest_router(
             }),
         )
         .merge(routes::site_admin_rest_routes(service.clone(), site_update.clone()))
-        .route(
-            "/workspace/emails",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestWorkspaceEmailBody>| {
-                    let service = service.clone();
-                    async move { rest_add_workspace_email(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/emails/{email_id}",
-            delete({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(email_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_delete_workspace_email(headers, email_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/emails/{email_id}/validation",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(email_id): Path<String>| {
-                    let service = service.clone();
-                    async move {
-                        rest_send_workspace_email_validation(headers, email_id, service).await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/workspace/emails/{email_id}/main",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(email_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_set_main_workspace_email(headers, email_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/api-token/reset",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_reset_api_token(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/workspace/notifications",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestWorkspaceNotificationBody>| {
-                    let service = service.clone();
-                    async move { rest_toggle_workspace_notification(headers, body, service).await }
-                }
-            }),
-        )
+        .merge(routes::workspace_rest_routes(service.clone()))
         .route(
             "/notifications",
             get({
@@ -14568,7 +14440,7 @@ async fn rest_sign_out(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_read_workspace_overview(
+pub(crate) async fn rest_read_workspace_overview(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
@@ -14581,7 +14453,7 @@ async fn rest_read_workspace_overview(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_list_workspace_files(
+pub(crate) async fn rest_list_workspace_files(
     headers: HeaderMap,
     query: RestWorkspaceFilesQuery,
     service: PilotServiceImpl,
@@ -16830,7 +16702,7 @@ pub(crate) async fn rest_delete_site_project(
     }))
 }
 
-async fn rest_set_default_landing_path(
+pub(crate) async fn rest_set_default_landing_path(
     headers: HeaderMap,
     body: RestDefaultLandingPathBody,
     service: PilotServiceImpl,
@@ -16847,7 +16719,7 @@ async fn rest_set_default_landing_path(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_update_profile(
+pub(crate) async fn rest_update_profile(
     headers: HeaderMap,
     body: RestUpdateProfileBody,
     service: PilotServiceImpl,
@@ -16866,7 +16738,7 @@ async fn rest_update_profile(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_change_password(
+pub(crate) async fn rest_change_password(
     headers: HeaderMap,
     body: RestChangePasswordBody,
     service: PilotServiceImpl,
@@ -16886,7 +16758,7 @@ async fn rest_change_password(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_reset_visited_projects(
+pub(crate) async fn rest_reset_visited_projects(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
@@ -16899,7 +16771,7 @@ async fn rest_reset_visited_projects(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_add_workspace_email(
+pub(crate) async fn rest_add_workspace_email(
     headers: HeaderMap,
     body: RestWorkspaceEmailBody,
     service: PilotServiceImpl,
@@ -16916,7 +16788,7 @@ async fn rest_add_workspace_email(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_delete_workspace_email(
+pub(crate) async fn rest_delete_workspace_email(
     headers: HeaderMap,
     email_id: String,
     service: PilotServiceImpl,
@@ -16933,7 +16805,7 @@ async fn rest_delete_workspace_email(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_send_workspace_email_validation(
+pub(crate) async fn rest_send_workspace_email_validation(
     headers: HeaderMap,
     email_id: String,
     service: PilotServiceImpl,
@@ -16950,7 +16822,7 @@ async fn rest_send_workspace_email_validation(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_set_main_workspace_email(
+pub(crate) async fn rest_set_main_workspace_email(
     headers: HeaderMap,
     email_id: String,
     service: PilotServiceImpl,
@@ -16967,7 +16839,7 @@ async fn rest_set_main_workspace_email(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_reset_api_token(
+pub(crate) async fn rest_reset_api_token(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
@@ -16980,7 +16852,7 @@ async fn rest_reset_api_token(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_toggle_workspace_notification(
+pub(crate) async fn rest_toggle_workspace_notification(
     headers: HeaderMap,
     body: RestWorkspaceNotificationBody,
     service: PilotServiceImpl,
@@ -17061,7 +16933,7 @@ async fn rest_list_notifications(
     Ok(Json(rest_notifications_response(record, &base_path)))
 }
 
-async fn rest_record_recent_project_visit(
+pub(crate) async fn rest_record_recent_project_visit(
     headers: HeaderMap,
     body: RestRecentProjectVisitBody,
     service: PilotServiceImpl,

@@ -18,6 +18,10 @@
 - `frontend/src/routes/-workspace-views.tsx` renders `PublicUserProfilePage` with the legacy user card, tab/list anchors, two-column mode checkbox shell, and show-subtasks checkbox shell without inheriting private `/me` workspace controls.
 - `crates/server/src/lib.rs` reuses existing workspace profile, issue, pull-request, and member-project projections, then filters project-backed rows by the current viewer's READ ACL. Anonymous viewers see public projects only.
 
+## Route Module Diet Note
+
+- 2026-06-19: REST workspace route registration for `/api/v1/workspace`, `/api/v1/workspace/default-landing-path`, `/api/v1/workspace/profile`, `/api/v1/workspace/password`, `/api/v1/workspace/recent-projects`, `/api/v1/workspace/files`, `/api/v1/workspace/emails/**`, `/api/v1/workspace/api-token/reset`, and `/api/v1/workspace/notifications` moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/workspace.rs`. This is a registration-only build/check diet change; behavior remains covered by `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects` and `assets_contract::workspace_files_list_returns_current_users_legacy_attachment_rows`.
+
 ## Status
 
 - Closed: public `/:user` profile shell, two-column/show-subtasks checkbox anchors, visible member-project list, organization-name redirect, missing-user 404, public email redaction for other viewers, authenticated user statistics counts, and app-owned legacy external user statistics/default-login/admin-user helpers.
