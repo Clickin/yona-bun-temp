@@ -483,6 +483,36 @@ async fn milestone_legacy_mutation_routes_preserve_redirects() {
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_public_project(app.clone(), &cookie, &csrf).await;
 
+    let legacy_external_create = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones")
+                .header(http::header::COOKIE, &cookie)
+                .header("x-csrf-token", &csrf)
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({
+                        "milestones": [{
+                            "title": "Legacy external",
+                            "description": "Legacy external body",
+                            "due_on": "2026-06-03",
+                            "state": "open"
+                        }]
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(legacy_external_create.status(), StatusCode::CREATED);
+    let legacy_external_payload: serde_json::Value =
+        serde_json::from_str(&response_text(legacy_external_create).await).unwrap();
+    assert_eq!(legacy_external_payload[0]["title"], "Legacy external");
+    assert_eq!(legacy_external_payload[0]["due_on"], "2026-06-03");
+
     let create_response = app
         .clone()
         .oneshot(

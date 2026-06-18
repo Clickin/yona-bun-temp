@@ -641,21 +641,6 @@ fn build_router_with_app_config(
     let category_update_session_manager = session_manager.clone();
     let category_delete_backend = route_backend.clone();
     let category_delete_session_manager = session_manager.clone();
-    let milestone_create_backend = route_backend.clone();
-    let milestone_create_session_manager = session_manager.clone();
-    let milestone_create_base_path = base_path.clone();
-    let milestone_update_backend = route_backend.clone();
-    let milestone_update_session_manager = session_manager.clone();
-    let milestone_update_base_path = base_path.clone();
-    let milestone_delete_backend = route_backend.clone();
-    let milestone_delete_session_manager = session_manager.clone();
-    let milestone_delete_base_path = base_path.clone();
-    let milestone_open_backend = route_backend.clone();
-    let milestone_open_session_manager = session_manager.clone();
-    let milestone_open_base_path = base_path.clone();
-    let milestone_close_backend = route_backend.clone();
-    let milestone_close_session_manager = session_manager.clone();
-    let milestone_close_base_path = base_path.clone();
     let board_comment_create_backend = route_backend.clone();
     let board_comment_create_session_manager = session_manager.clone();
     let board_comment_create_base_path = base_path.clone();
@@ -719,8 +704,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_milestone_backend = route_backend.clone();
-    let legacy_milestone_session_manager = session_manager.clone();
     let legacy_user_search_backend = route_backend.clone();
     let legacy_user_create_backend = route_backend.clone();
     let legacy_user_create_session_manager = session_manager.clone();
@@ -888,26 +871,6 @@ fn build_router_with_app_config(
             base_path.clone(),
             public_origin.clone(),
         ))
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name)): Path<(String, String)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_create_milestones(
-                            headers,
-                            owner,
-                            project_name,
-                            body,
-                            legacy_milestone_session_manager.clone(),
-                            legacy_milestone_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
         .route(
             "/-_-api/v1/users/{login_id}/statistics",
             get(move |headers: HeaderMap, Path(login_id): Path<String>| {
@@ -1806,94 +1769,6 @@ fn build_router_with_app_config(
                         category_id,
                         category_delete_session_manager.clone(),
                         category_delete_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/milestones",
-            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_create_project_milestone(
-                        headers,
-                        owner,
-                        project,
-                        form,
-                        milestone_create_session_manager.clone(),
-                        milestone_create_backend.clone(),
-                        milestone_create_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/milestone/{milestone_id}/edit",
-            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_update_project_milestone(
-                        headers,
-                        owner,
-                        project,
-                        milestone_id,
-                        form,
-                        milestone_update_session_manager.clone(),
-                        milestone_update_backend.clone(),
-                        milestone_update_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/milestone/{milestone_id}/delete",
-            delete(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
-                async move {
-                    direct_delete_project_milestone(
-                        headers,
-                        owner,
-                        project,
-                        milestone_id,
-                        milestone_delete_session_manager.clone(),
-                        milestone_delete_backend.clone(),
-                        milestone_delete_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/milestone/{milestone_id}/open",
-            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
-                async move {
-                    direct_update_project_milestone_state(
-                        headers,
-                        owner,
-                        project,
-                        milestone_id,
-                        "open",
-                        milestone_open_session_manager.clone(),
-                        milestone_open_backend.clone(),
-                        milestone_open_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/milestone/{milestone_id}/close",
-            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
-                async move {
-                    direct_update_project_milestone_state(
-                        headers,
-                        owner,
-                        project,
-                        milestone_id,
-                        "closed",
-                        milestone_close_session_manager.clone(),
-                        milestone_close_backend.clone(),
-                        milestone_close_base_path.clone(),
                     )
                     .await
                 }
