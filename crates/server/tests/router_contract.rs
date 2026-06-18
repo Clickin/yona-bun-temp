@@ -2,10 +2,14 @@ use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection};
+use std::fs;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router, create_router_with_app_repository, create_router_with_filesystem_assets,
+    RuntimeConfig,
+};
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -81,6 +85,65 @@ async fn register_user(app: axum::Router, login_id: &str) -> String {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     cookie_header
+}
+
+#[tokio::test]
+async fn legacy_external_api_roots_fall_back_to_application_index() {
+    let asset_root = std::env::temp_dir().join(format!(
+        "yona-legacy-api-index-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos()
+    ));
+    fs::create_dir_all(&asset_root).expect("asset root");
+    fs::write(
+        asset_root.join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">legacy index</main></body></html>",
+    )
+    .expect("index html");
+
+    let app = create_router_with_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        asset_root.clone(),
+    );
+
+    for path in ["/yona/-_-api", "/yona/-_-api/v1/"] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        let content_type = response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+        assert_eq!(content_type, "text/html; charset=utf-8");
+        assert!(html.contains("legacy index"), "{path}: {html}");
+        assert!(
+            html.contains("window.__YONA_RUNTIME_CONFIG__"),
+            "{path}: {html}"
+        );
+    }
+
+    fs::remove_dir_all(asset_root).expect("asset cleanup");
 }
 
 #[tokio::test]

@@ -7,7 +7,10 @@ use yona_rust_pilot_migration::Migrator;
 
 #[test]
 fn project_entity_reexport_preserves_legacy_table_name() {
-    assert_eq!(yona_rust_persistence::project::Entity.table_name(), "project");
+    assert_eq!(
+        yona_rust_persistence::project::Entity.table_name(),
+        "project"
+    );
 }
 
 #[tokio::test]

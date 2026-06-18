@@ -13,6 +13,7 @@ migrator/export/import scope.
 
 The first app-owned helpers were:
 
+- `GET /-_-api` and `GET /-_-api/v1/`
 - `GET /-_-api/v1/hello`
 - `GET /-_-api/v1/favoriteProjects` and `POST /-_-api/v1/favoriteProjects/:projectId`
 - `GET /-_-api/v1/favoriteIssues` and `POST /-_-api/v1/favoriteIssues/:issueId`
@@ -117,8 +118,8 @@ contract.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `GET /-_-api` | `controllers.Application.index()` | Legacy API index fallback to app index. | Not part of app-server external compatibility commitment. |
-| `GET /-_-api/v1/` | `controllers.Application.index()` | Legacy API v1 root fallback to app index. | Not part of app-server external compatibility commitment. |
+| `GET /-_-api` | `controllers.Application.index()` | Legacy API index fallback to app index. | Implemented in app server as an exact GET fallback to the frontend application index shell. |
+| `GET /-_-api/v1/` | `controllers.Application.index()` | Legacy API v1 root fallback to app index. | Implemented in app server as an exact GET fallback to the frontend application index shell. |
 | `GET /-_-api/v1/hello` | `GlobalApi.hello()` | Health JSON `{"message":"I'm alive!","ok":true}`. | Implemented in app server as direct helper. |
 
 ## Follow-up Worker Split

@@ -5,7 +5,10 @@ use yona_rust_pilot_migration::Migrator;
 #[test]
 fn persistence_crate_reexports_seaorm_entities() {
     assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
-    assert_eq!(yona_rust_persistence::project::Entity.table_name(), "project");
+    assert_eq!(
+        yona_rust_persistence::project::Entity.table_name(),
+        "project"
+    );
 }
 
 #[tokio::test]

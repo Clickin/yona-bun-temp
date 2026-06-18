@@ -435,6 +435,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
     let legacy_reset_password_page_assets = assets.clone();
     let legacy_reset_password_page_browser_runtime = browser_runtime.clone();
+    let legacy_api_index_assets = assets.clone();
+    let legacy_api_index_browser_runtime = browser_runtime.clone();
+    let legacy_api_v1_index_assets = assets.clone();
+    let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
     let reset_visited_session_manager = session_manager.clone();
     let reset_visited_backend = route_backend.clone();
     let reset_visited_base_path = base_path.clone();
@@ -766,6 +770,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             }),
         )
         .nest("/api/v1", rest_router)
+        .route(
+            "/-_-api",
+            get(move || {
+                let assets = legacy_api_index_assets.clone();
+                let browser_runtime = legacy_api_index_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            }),
+        )
+        .route(
+            "/-_-api/v1/",
+            get(move || {
+                let assets = legacy_api_v1_index_assets.clone();
+                let browser_runtime = legacy_api_v1_index_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            }),
+        )
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
         .route(
             "/-_-api/v1/user/defultLoginPage",
