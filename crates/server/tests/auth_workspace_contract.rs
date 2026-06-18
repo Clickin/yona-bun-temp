@@ -18,7 +18,8 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_repository_and_app_config,
-    create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, RuntimeConfig,
+    create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
+    RuntimeConfig,
 };
 
 fn auth_env_lock() -> &'static Mutex<()> {
@@ -270,6 +271,26 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
 
     let (app, _, _) = build_auth_router().await;
 
+    let rest_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(rest_response.status(), StatusCode::OK);
+    let rest_body = rest_response
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let rest_payload: serde_json::Value = serde_json::from_slice(&rest_body).unwrap();
+
     let response = app
         .oneshot(
             Request::builder()
@@ -286,6 +307,7 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(rest_payload, payload);
     assert_ne!(
         payload
             .get("emailVerificationEnabled")
@@ -311,16 +333,29 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
 }
 
 #[tokio::test]
-async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
-    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
-    std::env::set_var("YONA_AUTH_SOCIAL_LOGIN_ONLY", "true");
-    std::env::set_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT", "github, google");
-    std::env::set_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER", "Use employee number");
-    std::env::set_var("YONA_AUTH_PASSWORD_PLACEHOLDER", "Company password");
+async fn read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation() {
+    let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
+    let previous_email_verification = std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").ok();
+    let previous_social_login_only = std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").ok();
+    let previous_social_login_support = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
+    let previous_login_id_placeholder = std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER").ok();
+    let previous_password_placeholder = std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER").ok();
 
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                email_verification_enabled: true,
+                enabled_social_providers: vec!["github".to_string(), "google".to_string()],
+                login_id_placeholder: "Use employee number".to_string(),
+                password_placeholder: "Company password".to_string(),
+                signup_require_confirm: true,
+                social_login_only: true,
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
 
     let response = app
         .oneshot(
@@ -333,13 +368,6 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
-    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
-    std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
-    std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
 
     assert_eq!(response.status(), StatusCode::OK);
     let body = response.into_body().collect().await.unwrap().to_bytes();
@@ -386,6 +414,30 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
             .get("passwordPlaceholder")
             .and_then(|value| value.as_str()),
         Some("Company password")
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok(),
+        previous_signup_require_confirm
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").ok(),
+        previous_email_verification
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").ok(),
+        previous_social_login_only
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok(),
+        previous_social_login_support
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER").ok(),
+        previous_login_id_placeholder
+    );
+    assert_eq!(
+        std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER").ok(),
+        previous_password_placeholder
     );
 }
 

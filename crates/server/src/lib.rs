@@ -361,6 +361,7 @@ impl Default for RuntimeConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
+    pub auth_ui: AuthUiConfig,
     pub max_uploaded_file_size: usize,
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
@@ -369,6 +370,50 @@ pub struct AppRuntimeConfig {
     pub site_update: SiteUpdateConfig,
     pub supported_languages: Vec<String>,
     pub translation_proxy: TranslationProxyConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AuthUiConfig {
+    pub email_verification_enabled: bool,
+    pub enabled_social_providers: Vec<String>,
+    pub login_id_placeholder: String,
+    pub password_placeholder: String,
+    pub signup_require_confirm: bool,
+    pub social_login_only: bool,
+}
+
+impl AuthUiConfig {
+    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        Self {
+            email_verification_enabled: config.auth_email_verification_enabled.unwrap_or(false),
+            enabled_social_providers: auth_social_providers_from_option(
+                config.auth_social_login_support.as_deref(),
+            ),
+            login_id_placeholder: trimmed_option(config.auth_login_id_placeholder.as_deref())
+                .unwrap_or_default(),
+            password_placeholder: trimmed_option(config.auth_password_placeholder.as_deref())
+                .unwrap_or_default(),
+            signup_require_confirm: config.auth_signup_require_confirm.unwrap_or(false),
+            social_login_only: config.auth_social_login_only.unwrap_or(false),
+        }
+    }
+
+    fn from_env() -> Self {
+        Self {
+            email_verification_enabled: configured_bool_env(
+                &["YONA_AUTH_EMAIL_VERIFICATION_ENABLED"],
+                false,
+            ),
+            enabled_social_providers: configured_auth_social_providers(),
+            login_id_placeholder: configured_trimmed_string("YONA_AUTH_LOGIN_ID_PLACEHOLDER"),
+            password_placeholder: configured_trimmed_string("YONA_AUTH_PASSWORD_PLACEHOLDER"),
+            signup_require_confirm: configured_bool_env(
+                &["YONA_AUTH_SIGNUP_REQUIRE_CONFIRM"],
+                false,
+            ),
+            social_login_only: configured_bool_env(&["YONA_AUTH_SOCIAL_LOGIN_ONLY"], false),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -408,6 +453,7 @@ pub struct TranslationProxyConfig {
 impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
+            auth_ui: AuthUiConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
@@ -423,6 +469,7 @@ impl Default for AppRuntimeConfig {
 impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
+            auth_ui: AuthUiConfig::from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             project_default_menus: project_default_menus_from_option(
                 config.project_default_menus.as_deref(),
@@ -442,6 +489,7 @@ impl AppRuntimeConfig {
 
     fn from_env() -> Self {
         Self {
+            auth_ui: AuthUiConfig::from_env(),
             max_uploaded_file_size: configured_max_uploaded_file_size(),
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
@@ -655,6 +703,7 @@ fn build_router_with_app_config(
     let base_path = normalize_base_path(&config.base_path);
     let public_origin = default_public_origin(&config.public_origin);
     let allow_anonymous_access = config.allow_anonymous_access;
+    let auth_ui = app_config.auth_ui;
     let max_uploaded_file_size = app_config.max_uploaded_file_size;
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
@@ -675,6 +724,7 @@ fn build_router_with_app_config(
         backend: backend.clone(),
         project_default_scope: project_default_scope.clone(),
     };
+    let rest_auth_ui = auth_ui.clone();
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(
         &base_path,
@@ -1042,7 +1092,7 @@ fn build_router_with_app_config(
     let legacy_user_token_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
-    let rest_router = build_rest_router(pilot_service.clone(), site_update.clone());
+    let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = Router::new()
         .route(
@@ -10720,6 +10770,32 @@ fn trimmed_option(value: Option<&str>) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
+fn configured_trimmed_string(name: &str) -> String {
+    let value = std::env::var(name).ok();
+    trimmed_option(value.as_deref()).unwrap_or_default()
+}
+
+fn configured_auth_social_providers() -> Vec<String> {
+    let value = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
+    auth_social_providers_from_csv(value.as_deref())
+}
+
+fn auth_social_providers_from_option(values: Option<&[String]>) -> Vec<String> {
+    values
+        .map(|values| values.join(","))
+        .map(|value| auth_social_providers_from_csv(Some(&value)))
+        .unwrap_or_default()
+}
+
+fn auth_social_providers_from_csv(value: Option<&str>) -> Vec<String> {
+    value
+        .unwrap_or_default()
+        .split(',')
+        .map(|provider| provider.trim().to_ascii_lowercase())
+        .filter(|provider| !provider.is_empty())
+        .collect()
+}
+
 fn configured_project_default_scope() -> String {
     let value = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     project_default_scope_from_option(value.as_deref())
@@ -17274,7 +17350,11 @@ impl RestRouteError {
     }
 }
 
-fn build_rest_router(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
+fn build_rest_router(
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+    auth_ui: AuthUiConfig,
+) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
@@ -17298,10 +17378,10 @@ fn build_rest_router(service: PilotServiceImpl, site_update: SiteUpdateConfig) -
         .route(
             "/auth/capabilities",
             get({
-                let service = service.clone();
+                let auth_ui = auth_ui.clone();
                 move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_read_auth_ui_capabilities(headers, service).await }
+                    let auth_ui = auth_ui.clone();
+                    async move { rest_read_auth_ui_capabilities(headers, auth_ui).await }
                 }
             }),
         )
@@ -18815,7 +18895,7 @@ fn build_rest_router(service: PilotServiceImpl, site_update: SiteUpdateConfig) -
 
     #[cfg(debug_assertions)]
     {
-        router.merge(build_debug_method_router(service))
+        router.merge(build_debug_method_router(service, auth_ui))
     }
     #[cfg(not(debug_assertions))]
     {
@@ -18824,7 +18904,7 @@ fn build_rest_router(service: PilotServiceImpl, site_update: SiteUpdateConfig) -
 }
 
 #[cfg(debug_assertions)]
-fn build_debug_method_router(service: PilotServiceImpl) -> Router {
+fn build_debug_method_router(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
     Router::new().route(
         "/_pilot/{method_name}",
         post(
@@ -18832,7 +18912,8 @@ fn build_debug_method_router(service: PilotServiceImpl) -> Router {
                   Path(method_name): Path<String>,
                   Json(payload): Json<serde_json::Value>| {
                 let service = service.clone();
-                async move { rest_debug_method(headers, method_name, payload, service).await }
+                let auth_ui = auth_ui.clone();
+                async move { rest_debug_method(headers, method_name, payload, service, auth_ui).await }
             },
         ),
     )
@@ -20512,6 +20593,7 @@ async fn rest_debug_method(
     method_name: String,
     payload: serde_json::Value,
     service: PilotServiceImpl,
+    auth_ui: AuthUiConfig,
 ) -> Result<Response, RestRouteError> {
     macro_rules! call {
         ($method:ident, $request:ty, $view:ty) => {{
@@ -20533,11 +20615,16 @@ async fn rest_debug_method(
             ReadCurrentSessionRequest,
             ReadCurrentSessionRequestView<'static>
         ),
-        "ReadAuthUiCapabilities" => call!(
-            read_auth_ui_capabilities,
-            ReadAuthUiCapabilitiesRequest,
-            ReadAuthUiCapabilitiesRequestView<'static>
-        ),
+        "ReadAuthUiCapabilities" => {
+            let _request: ReadAuthUiCapabilitiesRequest =
+                serde_json::from_value(payload).map_err(|error| {
+                    RestRouteError::bad_request(format!("invalid debug method request: {error}"))
+                })?;
+            Ok(rest_json_response(
+                auth_ui_capabilities_from_config(&auth_ui),
+                Context::new(headers),
+            ))
+        }
         "SignInWithPassword" => call!(
             sign_in_with_password,
             SignInWithPasswordRequest,
@@ -20783,15 +20870,12 @@ fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
 
 async fn rest_read_auth_ui_capabilities(
     headers: HeaderMap,
-    service: PilotServiceImpl,
+    auth_ui: AuthUiConfig,
 ) -> Result<Response, RestRouteError> {
     let request = ReadAuthUiCapabilitiesRequest::default();
-    let request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_auth_ui_capabilities(Context::new(headers), request)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    Ok(rest_json_response(payload, ctx))
+    let _request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
+    let payload = auth_ui_capabilities_from_config(&auth_ui);
+    Ok(rest_json_response(payload, Context::new(headers)))
 }
 
 async fn rest_sign_in_with_password(
@@ -37755,42 +37839,17 @@ impl BrowserRuntimeConfig {
 }
 
 fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
-    fn parse_bool_env(name: &str) -> bool {
-        std::env::var(name)
-            .map(|value| {
-                matches!(
-                    value.trim().to_ascii_lowercase().as_str(),
-                    "1" | "true" | "yes" | "on"
-                )
-            })
-            .unwrap_or(false)
-    }
+    auth_ui_capabilities_from_config(&AuthUiConfig::from_env())
+}
 
-    fn parse_provider_env(name: &str) -> Vec<String> {
-        std::env::var(name)
-            .map(|value| {
-                value
-                    .split(',')
-                    .map(|provider| provider.trim().to_ascii_lowercase())
-                    .filter(|provider| !provider.is_empty())
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
+fn auth_ui_capabilities_from_config(config: &AuthUiConfig) -> ReadAuthUiCapabilitiesResponse {
     ReadAuthUiCapabilitiesResponse {
-        email_verification_enabled: parse_bool_env("YONA_AUTH_EMAIL_VERIFICATION_ENABLED"),
-        enabled_social_providers: parse_provider_env("YONA_AUTH_SOCIAL_LOGIN_SUPPORT"),
-        login_id_placeholder: std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER")
-            .unwrap_or_default()
-            .trim()
-            .to_string(),
-        password_placeholder: std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER")
-            .unwrap_or_default()
-            .trim()
-            .to_string(),
-        signup_require_confirm: parse_bool_env("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM"),
-        social_login_only: parse_bool_env("YONA_AUTH_SOCIAL_LOGIN_ONLY"),
+        email_verification_enabled: config.email_verification_enabled,
+        enabled_social_providers: config.enabled_social_providers.clone(),
+        login_id_placeholder: config.login_id_placeholder.clone(),
+        password_placeholder: config.password_placeholder.clone(),
+        signup_require_confirm: config.signup_require_confirm,
+        social_login_only: config.social_login_only,
         ..Default::default()
     }
 }
