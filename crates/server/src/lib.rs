@@ -735,8 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_watchers_backend = route_backend.clone();
-    let legacy_watchers_base_path = base_path.clone();
     let legacy_board_posts_backend = route_backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
     let legacy_board_posts_base_path = base_path.clone();
@@ -949,25 +947,6 @@ fn build_router_with_app_config(
                             query,
                             legacy_user_issues_session_manager.clone(),
                             legacy_user_issues_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/watchers",
-            get(
-                move |Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Query(query): Query<LegacyExternalWatchersQuery>| {
-                    async move {
-                        legacy_external_watchers(
-                            owner,
-                            project_name,
-                            number,
-                            query,
-                            legacy_watchers_base_path.clone(),
-                            legacy_watchers_backend.clone(),
                         )
                         .await
                     }
@@ -1606,6 +1585,7 @@ fn build_router_with_app_config(
         .merge(routes::project_routes(
             session_manager.clone(),
             route_backend.clone(),
+            base_path.clone(),
         ))
         .route(
             "/api/v1/{*rest_path}",

@@ -2109,6 +2109,10 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
         .unwrap();
     assert_eq!(direct_watch.status(), StatusCode::OK);
     assert!(direct_watch.headers().get(http::header::LOCATION).is_none());
+    assert!(direct_watch
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .is_none());
     assert_eq!(response_json(direct_watch).await, "");
 }
 

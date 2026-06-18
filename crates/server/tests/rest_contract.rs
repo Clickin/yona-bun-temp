@@ -4096,6 +4096,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_watchers_without_type.status(), StatusCode::OK);
+    assert!(legacy_watchers_without_type
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     assert_eq!(response_text(legacy_watchers_without_type).await, "");
 
     let watched = ok_json(
