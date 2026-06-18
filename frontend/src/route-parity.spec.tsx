@@ -1426,6 +1426,62 @@ describe("file-route parity harness", () => {
     expect(resultsHtml).not.toContain('title="issue.noAuthor"');
     expect(resultsHtml).not.toContain('href="/yona/issue.noAuthor"');
     expect(resultsHtml).toContain(" .....");
+
+    const milestoneResultsHtml = renderToStaticMarkup(
+      <SearchResults
+        activeType="milestone"
+        input={{ keyword: "Needle", pageNum: 1, searchType: "milestone" }}
+        isLoading={false}
+        response={{
+          context: { organizationName: "", ownerName: "", projectName: "" },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 1,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "",
+              authorLoginId: "",
+              createdLabel: "",
+              href: "/owner/projectYobi/milestone/7",
+              id: "7",
+              number: "7",
+              ownerName: "owner",
+              projectName: "projectYobi",
+              snippets: [{ highlights: [], text: "Needle milestone body" }],
+              state: "open",
+              title: "Search milestone",
+              type: "milestone",
+              updatedLabel: "2026-05-18",
+            },
+          ],
+          keyword: "Needle",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "milestone",
+          scope: "global",
+          searchType: "milestone",
+          totalCount: 1,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        scope={{ type: "global" }}
+      />,
+    );
+    expect(milestoneResultsHtml).toContain('href="/yona/owner/projectYobi/milestone/7"');
+    expect(milestoneResultsHtml).toContain(
+      'class="project-link meta-item" href="/yona/owner/projectYobi"',
+    );
+    expect(milestoneResultsHtml).toContain(
+      '<span class="due-date meta-item">label.dueDate <strong>2026-05-18</strong></span>',
+    );
+    expect(milestoneResultsHtml).not.toContain(">issue.noAuthor</span>");
+    expect(milestoneResultsHtml).not.toContain('<span class="meta-item">open</span>');
   });
 
   it("requires a real organization issue route instead of a placeholder page", () => {

@@ -410,7 +410,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "search",
     label: "Search",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/.*search/i,
       /^crates\/(?:search|persistence|server|domain)\/.*search/i,

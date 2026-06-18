@@ -202,6 +202,25 @@ function SearchMeta({
   runtimeConfig: RuntimeConfig;
   showProject: boolean;
 }) {
+  if (item.type === "milestone") {
+    return (
+      <div className="search-meta-info">
+        {showProject && item.ownerName && item.projectName ? (
+          <a
+            className="project-link meta-item"
+            href={prefixBasePath(runtimeConfig.basePath, `/${item.ownerName}/${item.projectName}`)}
+          >
+            {item.ownerName}/{item.projectName}
+          </a>
+        ) : null}
+        {item.updatedLabel ? (
+          <span className="due-date meta-item">
+            label.dueDate <strong>{item.updatedLabel}</strong>
+          </span>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className="search-meta-info">
       {showProject && item.ownerName && item.projectName ? (

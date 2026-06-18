@@ -47,5 +47,8 @@
 ## Remaining Follow-ups
 
 - Migration export/import milestone flows remain in the migration/export packet.
-- Search `milestone` result type remains in the search packet.
 - React-rendered milestone issue-reference metadata (`title` / `data-issue-state`) is supplied through the shared Markdown reference metadata payload.
+
+## Search Packet Closeout
+
+- Phase 5C closes the `milestone` search result type for app runtime scope. The server projects milestone result links, snippets, scope/visibility filtering, counts, due-date labels, and legacy baseline ordering through `/api/v1/search`, `/api/v1/projects/:owner/:project/search`, and `/api/v1/organizations/:organization/search`; React renders milestone results with the legacy `search/partial_milestones.scala.html` meta shape by showing the project link when outside project scope plus `label.dueDate` and omitting author fallback/state metadata.
