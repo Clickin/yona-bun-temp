@@ -232,6 +232,13 @@ async fn read_current_session_works_over_connect_json() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("application/json")
+    );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json = String::from_utf8(body.to_vec()).unwrap();
     assert!(json.contains("\"isAnonymous\":true"));

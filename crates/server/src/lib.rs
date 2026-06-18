@@ -14397,28 +14397,12 @@ fn build_rest_router(
 
     #[cfg(debug_assertions)]
     {
-        router.merge(build_debug_method_router(service, auth_ui))
+        router.merge(routes::debug_routes(service, auth_ui))
     }
     #[cfg(not(debug_assertions))]
     {
         router
     }
-}
-
-#[cfg(debug_assertions)]
-fn build_debug_method_router(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
-    Router::new().route(
-        "/_pilot/{method_name}",
-        post(
-            move |headers: HeaderMap,
-                  Path(method_name): Path<String>,
-                  Json(payload): Json<serde_json::Value>| {
-                let service = service.clone();
-                let auth_ui = auth_ui.clone();
-                async move { rest_debug_method(headers, method_name, payload, service, auth_ui).await }
-            },
-        ),
-    )
 }
 
 fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
@@ -16090,7 +16074,7 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
 }
 
 #[cfg(debug_assertions)]
-async fn rest_debug_method(
+pub(crate) async fn rest_debug_method(
     headers: HeaderMap,
     method_name: String,
     payload: serde_json::Value,
@@ -32734,7 +32718,7 @@ async fn direct_delete_project_milestone(
 }
 
 #[derive(Clone)]
-struct PilotServiceImpl {
+pub(crate) struct PilotServiceImpl {
     auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
