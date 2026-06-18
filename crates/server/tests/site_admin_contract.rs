@@ -712,6 +712,7 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
     .await;
     assert_eq!(deleted_user.status(), StatusCode::SEE_OTHER);
     assert_eq!(response_location(&deleted_user), "/yona/sites/userList");
+    assert_eq!(response_text(deleted_user).await, "");
     assert_eq!(
         repo.find_user_by_login_id("deletee")
             .await

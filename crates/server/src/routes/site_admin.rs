@@ -10,11 +10,12 @@ use serde::Deserialize;
 use std::sync::atomic::Ordering;
 
 use crate::{
-    direct_site_user_list_href, redirect_to, rest_require_site_admin_repository,
+    direct_site_user_list_href, persistence, redirect_to, rest_delete_site_project,
+    rest_require_site_admin_repository, rest_reset_site_user_password,
     rest_site_update_download_file_response, rest_site_update_download_redirect,
     rest_toggle_site_user_account_lock, rest_toggle_site_user_admin, rest_toggle_site_user_guest,
-    session::SessionManager, AuthUiConfig, PilotBackend, PilotServiceImpl, RestRouteError,
-    SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    session::SessionManager, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
+    RestRouteError, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 pub(crate) fn routes(
@@ -40,6 +41,14 @@ pub(crate) fn routes(
     let site_toggle_guest_session_manager = session_manager.clone();
     let site_toggle_guest_backend = backend.clone();
     let site_toggle_guest_base_path = base_path.clone();
+    let site_delete_user_session_manager = session_manager.clone();
+    let site_delete_user_backend = backend.clone();
+    let site_delete_user_base_path = base_path.clone();
+    let site_delete_project_session_manager = session_manager.clone();
+    let site_delete_project_backend = backend.clone();
+    let site_delete_project_base_path = base_path.clone();
+    let site_reset_user_password_session_manager = session_manager.clone();
+    let site_reset_user_password_backend = backend.clone();
 
     Router::new()
         .route(
@@ -122,6 +131,50 @@ pub(crate) fn routes(
                     }
                 },
             ),
+        )
+        .route(
+            "/sites/user/{*legacy_path}",
+            axum::routing::delete(move |headers: HeaderMap, Path(legacy_path): Path<String>| {
+                async move {
+                    direct_delete_site_user_by_legacy_path(
+                        headers,
+                        legacy_path,
+                        site_delete_user_session_manager.clone(),
+                        site_delete_user_backend.clone(),
+                        site_delete_user_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/project/delete/{project_id}",
+            axum::routing::delete(move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                async move {
+                    direct_delete_site_project(
+                        headers,
+                        project_id,
+                        site_delete_project_session_manager.clone(),
+                        site_delete_project_backend.clone(),
+                        site_delete_project_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{login_id}",
+            post(move |headers: HeaderMap, Path(login_id): Path<String>| {
+                async move {
+                    direct_reset_site_user_password(
+                        headers,
+                        login_id,
+                        site_reset_user_password_session_manager.clone(),
+                        site_reset_user_password_backend.clone(),
+                    )
+                    .await
+                }
+            }),
         )
 }
 
@@ -226,6 +279,103 @@ async fn direct_toggle_site_user_guest(
         Ok(_) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
     }
+}
+
+async fn direct_reset_site_user_password(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_reset_site_user_password(headers, login_id, service).await {
+        Ok(payload) => payload.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_site_user_by_legacy_path(
+    headers: HeaderMap,
+    legacy_path: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let user_id = match direct_site_user_delete_id(&legacy_path) {
+        Ok(user_id) => user_id,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
+        Ok(repository) => repository,
+        Err(error) => return error.into_response(),
+    };
+    let user = match repository.find_user_by_id(user_id).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return RestRouteError::not_found("user not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    match repository.delete_site_user(&user.login_id).await {
+        Ok(persistence::SiteUserDeleteResult::Deleted(_)) => {
+            redirect_to(&base_path, "/sites/userList")
+        }
+        Ok(persistence::SiteUserDeleteResult::NotFound) => {
+            RestRouteError::not_found("user not found").into_response()
+        }
+        Ok(persistence::SiteUserDeleteResult::OnlyManager) => RestRouteError::from_connect_error(
+            ConnectError::permission_denied("site.userList.deleteAlert"),
+        )
+        .into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_delete_site_project(
+    headers: HeaderMap,
+    project_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_delete_site_project(headers, project_id, service).await {
+        Ok(_) => redirect_to(&base_path, "/sites/projectList"),
+        Err(error) => error.into_response(),
+    }
+}
+
+fn direct_site_user_delete_id(legacy_path: &str) -> Result<i64, RestRouteError> {
+    let Some(candidate) = legacy_path
+        .strip_prefix("delete/")
+        .or_else(|| legacy_path.strip_prefix("delete"))
+    else {
+        return Err(RestRouteError::not_found("user not found"));
+    };
+    candidate
+        .trim()
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid user id"))
 }
 
 async fn direct_download_site_update(
