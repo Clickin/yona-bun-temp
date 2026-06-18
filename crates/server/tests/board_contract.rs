@@ -273,6 +273,41 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
     assert_eq!(created[0]["status"], 201);
     assert_eq!(created[0]["location"], "/yona/owner/projectYobi/post/77");
 
+    let comment_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "body": "legacy board comment"
+        })),
+    )
+    .await;
+    assert_eq!(comment_response.status(), StatusCode::CREATED);
+    let comment_text = response_text(comment_response).await;
+    let comment: serde_json::Value = serde_json::from_str(&comment_text).expect("comment json");
+    assert_eq!(comment["status"], 201);
+    assert!(comment["location"]
+        .as_str()
+        .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/post/77#comment-")));
+
+    let label_id = create_label(app.clone(), &owner_cookie, &owner_csrf).await;
+    let label_update = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/postlabel/77",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!([label_id])),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(label_update["id"], "owner");
+    assert_eq!(label_update["labels"], 1);
+
     let updated = ok_json(
         rest(
             app,

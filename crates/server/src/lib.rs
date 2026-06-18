@@ -735,10 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_board_comment_backend = route_backend.clone();
-    let legacy_board_comment_session_manager = session_manager.clone();
-    let legacy_board_comment_base_path = base_path.clone();
-    let legacy_board_label_backend = route_backend.clone();
     let legacy_issue_label_backend = route_backend.clone();
     let legacy_issue_label_session_manager = session_manager.clone();
     let legacy_issue_weight_up_backend = route_backend.clone();
@@ -954,28 +950,6 @@ fn build_router_with_app_config(
             base_path.clone(),
         ))
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/comments",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_create_board_posting_comment(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_board_comment_session_manager.clone(),
-                            legacy_board_comment_backend.clone(),
-                            legacy_board_comment_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
             post(
                 move |headers: HeaderMap,
@@ -1018,24 +992,6 @@ fn build_router_with_app_config(
                             body,
                             legacy_issue_comment_update_session_manager.clone(),
                             legacy_issue_comment_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/postlabel/{number}",
-            post(
-                move |Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<Vec<serde_json::Value>>| {
-                    async move {
-                        legacy_external_update_board_posting_labels(
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_board_label_backend.clone(),
                         )
                         .await
                     }
