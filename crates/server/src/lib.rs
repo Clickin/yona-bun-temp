@@ -118,38 +118,63 @@ impl Default for MailboxPollingConfig {
 }
 
 pub fn mailbox_polling_config_from_env() -> MailboxPollingConfig {
-    let defaults = MailboxPollingConfig::default();
     let fetch_command = std::env::var("YONA_MAILBOX_FETCH_COMMAND")
         .ok()
         .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_default();
+        .filter(|value| !value.is_empty());
     let enabled = std::env::var("YONA_MAILBOX_POLLING_ENABLED")
         .ok()
-        .map(|value| {
-            !matches!(
-                value.trim().to_ascii_lowercase().as_str(),
-                "0" | "false" | "no" | "off"
-            )
-        })
-        .unwrap_or(!fetch_command.is_empty());
-    MailboxPollingConfig {
+        .and_then(|value| parse_legacy_bool(&value));
+    let imap_address = std::env::var("YONA_MAILBOX_IMAP_ADDRESS").ok();
+    let initial_delay = std::env::var("YONA_MAILBOX_POLLING_INITIAL_DELAY").ok();
+    let interval = std::env::var("YONA_MAILBOX_POLLING_INTERVAL").ok();
+    mailbox_polling_config_from_options(
+        fetch_command.as_deref(),
         enabled,
+        imap_address.as_deref(),
+        initial_delay.as_deref(),
+        interval.as_deref(),
+    )
+}
+
+pub fn mailbox_polling_config_from_startup(
+    config: &runtime_config::StartupConfig,
+) -> MailboxPollingConfig {
+    mailbox_polling_config_from_options(
+        config.mailbox_fetch_command.as_deref(),
+        config.mailbox_polling_enabled,
+        config.mailbox_imap_address.as_deref(),
+        config.mailbox_polling_initial_delay.as_deref(),
+        config.mailbox_polling_interval.as_deref(),
+    )
+}
+
+fn mailbox_polling_config_from_options(
+    fetch_command: Option<&str>,
+    enabled: Option<bool>,
+    imap_address: Option<&str>,
+    initial_delay: Option<&str>,
+    interval: Option<&str>,
+) -> MailboxPollingConfig {
+    let defaults = MailboxPollingConfig::default();
+    let fetch_command = fetch_command
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_default();
+    MailboxPollingConfig {
+        enabled: enabled.unwrap_or(!fetch_command.is_empty()),
         fetch_command,
-        imap_address: std::env::var("YONA_MAILBOX_IMAP_ADDRESS")
-            .ok()
+        imap_address: imap_address
             .map(|value| value.trim().to_string())
             .filter(|value| !value.is_empty())
             .unwrap_or(defaults.imap_address),
-        initial_delay_ms: notification_mail_duration_ms_env(
-            "YONA_MAILBOX_POLLING_INITIAL_DELAY",
-            defaults.initial_delay_ms,
-        ),
-        interval_ms: notification_mail_duration_ms_env(
-            "YONA_MAILBOX_POLLING_INTERVAL",
-            defaults.interval_ms,
-        )
-        .max(1),
+        initial_delay_ms: initial_delay
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(defaults.initial_delay_ms),
+        interval_ms: interval
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(defaults.interval_ms)
+            .max(1),
     }
 }
 
@@ -9600,42 +9625,62 @@ impl Default for NotificationMailSchedulerConfig {
 
 pub fn notification_mail_scheduler_config_from_env() -> NotificationMailSchedulerConfig {
     let defaults = NotificationMailSchedulerConfig::default();
+    let enabled = std::env::var("YONA_NOTIFICATION_MAIL_ENABLED")
+        .ok()
+        .and_then(|value| parse_legacy_bool(&value));
+    let initial_delay = std::env::var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY").ok();
+    let interval = std::env::var("YONA_NOTIFICATION_MAIL_INTERVAL").ok();
+    let delay = std::env::var("YONA_NOTIFICATION_MAIL_DELAY").ok();
+    notification_mail_scheduler_config_from_options(
+        enabled,
+        initial_delay.as_deref(),
+        interval.as_deref(),
+        delay.as_deref(),
+        defaults,
+    )
+}
+
+pub fn notification_mail_scheduler_config_from_startup(
+    config: &runtime_config::StartupConfig,
+) -> NotificationMailSchedulerConfig {
+    notification_mail_scheduler_config_from_options(
+        config.notification_mail_enabled,
+        config.notification_mail_initial_delay.as_deref(),
+        config.notification_mail_interval.as_deref(),
+        config.notification_mail_delay.as_deref(),
+        NotificationMailSchedulerConfig::default(),
+    )
+}
+
+fn notification_mail_scheduler_config_from_options(
+    enabled: Option<bool>,
+    initial_delay: Option<&str>,
+    interval: Option<&str>,
+    delay: Option<&str>,
+    defaults: NotificationMailSchedulerConfig,
+) -> NotificationMailSchedulerConfig {
     NotificationMailSchedulerConfig {
-        enabled: notification_mail_scheduler_enabled(),
-        initial_delay_ms: notification_mail_duration_ms_env(
-            "YONA_NOTIFICATION_MAIL_INITIAL_DELAY",
-            defaults.initial_delay_ms,
-        ),
-        interval_ms: notification_mail_duration_ms_env(
-            "YONA_NOTIFICATION_MAIL_INTERVAL",
-            defaults.interval_ms,
-        )
-        .max(1),
-        delay_ms: notification_mail_duration_ms_env(
-            "YONA_NOTIFICATION_MAIL_DELAY",
-            defaults.delay_ms as u64,
-        )
-        .min(i64::MAX as u64) as i64,
+        enabled: enabled.unwrap_or(defaults.enabled),
+        initial_delay_ms: initial_delay
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(defaults.initial_delay_ms),
+        interval_ms: interval
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(defaults.interval_ms)
+            .max(1),
+        delay_ms: delay
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(defaults.delay_ms as u64)
+            .min(i64::MAX as u64) as i64,
     }
 }
 
-fn notification_mail_scheduler_enabled() -> bool {
-    std::env::var("YONA_NOTIFICATION_MAIL_ENABLED")
-        .ok()
-        .map(|value| {
-            !matches!(
-                value.trim().to_ascii_lowercase().as_str(),
-                "0" | "false" | "no" | "off"
-            )
-        })
-        .unwrap_or(true)
-}
-
-fn notification_mail_duration_ms_env(name: &str, default_ms: u64) -> u64 {
-    std::env::var(name)
-        .ok()
-        .and_then(|value| parse_legacy_duration_ms(&value))
-        .unwrap_or(default_ms)
+fn parse_legacy_bool(value: &str) -> Option<bool> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
+    }
 }
 
 fn parse_legacy_duration_ms(value: &str) -> Option<u64> {

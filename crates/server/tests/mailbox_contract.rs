@@ -2,6 +2,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     Set,
 };
+use std::collections::BTreeMap;
 use yona_rust_integrations::{MailboxMimePart, MailboxParsedMessageInput};
 use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
@@ -11,9 +12,11 @@ use yona_rust_persistence::{
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
+use yona_rust_pilot_server::runtime_config::load_startup_config;
 use yona_rust_pilot_server::{
-    mailbox_polling_config_from_env, poll_mailbox_scheduler_tick, process_mailbox_parsed_message,
-    process_mailbox_raw_message, MailboxPollingConfig,
+    mailbox_polling_config_from_env, mailbox_polling_config_from_startup,
+    poll_mailbox_scheduler_tick, process_mailbox_parsed_message, process_mailbox_raw_message,
+    MailboxPollingConfig,
 };
 
 async fn build_repository() -> (AppRepository, DatabaseConnection) {
@@ -853,4 +856,52 @@ fn mailbox_polling_config_from_env_preserves_legacy_scheduler_shape() {
     std::env::remove_var("YONA_MAILBOX_POLLING_INTERVAL");
     std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
     std::env::remove_var("YONA_MAILBOX_FETCH_COMMAND");
+}
+
+#[test]
+fn mailbox_polling_config_from_startup_uses_init_snapshot_without_env_mutation() {
+    let current_dir = tempfile::tempdir().expect("temp dir");
+    let previous_fetch_command = std::env::var("YONA_MAILBOX_FETCH_COMMAND").ok();
+    let startup = load_startup_config(
+        BTreeMap::from([
+            (
+                "YONA_MAILBOX_POLLING_ENABLED".to_string(),
+                "true".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_POLLING_INITIAL_DELAY".to_string(),
+                "2s".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_POLLING_INTERVAL".to_string(),
+                "750ms".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_IMAP_ADDRESS".to_string(),
+                "noreply@yona.local".to_string(),
+            ),
+            (
+                "YONA_MAILBOX_FETCH_COMMAND".to_string(),
+                "fetch-mailbox --unseen".to_string(),
+            ),
+        ]),
+        current_dir.path(),
+    )
+    .expect("startup config");
+
+    assert_eq!(
+        mailbox_polling_config_from_startup(&startup),
+        MailboxPollingConfig {
+            enabled: true,
+            fetch_command: "fetch-mailbox --unseen".to_string(),
+            imap_address: "noreply@yona.local".to_string(),
+            initial_delay_ms: 2_000,
+            interval_ms: 750,
+        }
+    );
+    assert_eq!(
+        std::env::var("YONA_MAILBOX_FETCH_COMMAND").ok(),
+        previous_fetch_command,
+        "startup snapshot conversion must not mutate process env"
+    );
 }

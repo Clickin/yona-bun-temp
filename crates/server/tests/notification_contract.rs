@@ -7,6 +7,7 @@ use sea_orm::{
     PaginatorTrait, QueryFilter, Set,
 };
 use serde_json::json;
+use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::SystemTime;
 use tower::ServiceExt;
@@ -17,11 +18,13 @@ use yona_rust_persistence::{
     unwatch, AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
+use yona_rust_pilot_server::runtime_config::load_startup_config;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, deliver_due_notification_mails,
     deliver_notification_mail_scheduler_tick, notification_mail_add_noreferrer_to_external_links,
     notification_mail_apply_legacy_html_postprocessing,
-    notification_mail_scheduler_config_from_env, NotificationMailSchedulerConfig, RuntimeConfig,
+    notification_mail_scheduler_config_from_env, notification_mail_scheduler_config_from_startup,
+    NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -823,6 +826,46 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
     std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
     std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
     std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
+}
+
+#[test]
+fn notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mutation() {
+    let current_dir = tempfile::tempdir().expect("temp dir");
+    let previous_enabled = std::env::var("YONA_NOTIFICATION_MAIL_ENABLED").ok();
+    let startup = load_startup_config(
+        BTreeMap::from([
+            (
+                "YONA_NOTIFICATION_MAIL_ENABLED".to_string(),
+                "false".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INITIAL_DELAY".to_string(),
+                "2s".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INTERVAL".to_string(),
+                "750ms".to_string(),
+            ),
+            ("YONA_NOTIFICATION_MAIL_DELAY".to_string(), "0".to_string()),
+        ]),
+        current_dir.path(),
+    )
+    .expect("startup config");
+
+    assert_eq!(
+        notification_mail_scheduler_config_from_startup(&startup),
+        NotificationMailSchedulerConfig {
+            enabled: false,
+            initial_delay_ms: 2_000,
+            interval_ms: 750,
+            delay_ms: 0,
+        }
+    );
+    assert_eq!(
+        std::env::var("YONA_NOTIFICATION_MAIL_ENABLED").ok(),
+        previous_enabled,
+        "startup snapshot conversion must not mutate process env"
+    );
 }
 
 #[tokio::test]
