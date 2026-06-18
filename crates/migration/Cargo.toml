@@ -3,6 +3,7 @@ name = "yona-rust-pilot-migration"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 base64.workspace = true
@@ -15,3 +16,7 @@ yona-rust-persistence = { path = "../persistence" }
 [dev-dependencies]
 tempfile.workspace = true
 tokio.workspace = true
+
+[[test]]
+name = "migration"
+path = "tests/main.rs"

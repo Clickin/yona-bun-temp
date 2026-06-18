@@ -3,6 +3,7 @@ name = "yona-rust-persistence"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 rand.workspace = true
@@ -15,3 +16,7 @@ yona-rust-search = { path = "../search" }
 tokio.workspace = true
 yona-rust-pilot-migration = { path = "../migration" }
 sea-orm.workspace = true
+
+[[test]]
+name = "persistence"
+path = "tests/main.rs"

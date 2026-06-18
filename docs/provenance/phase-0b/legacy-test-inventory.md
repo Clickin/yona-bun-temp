@@ -21,3 +21,4 @@ This table is the Phase 0B scan of `yona-original/test/**`. It groups legacy evi
 - This inventory is a routing aid, not a completion proof.
 - Any feature claiming completion still needs a narrower provenance doc, at least one failing Red test, and a passing Rust translation in the target layer.
 - Where direct legacy tests are missing, cite the matching controller/model source explicitly.
+- 2026-06-18 test harness note: `crates/persistence` and `crates/migration` now use `autotests = false` with one explicit integration target each (`--test persistence`, `--test migration`) to avoid compiling every `tests/*.rs` file as a separate Rust test binary; individual cases stay filterable by test name inside that target.
