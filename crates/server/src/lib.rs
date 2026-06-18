@@ -364,6 +364,7 @@ pub struct AppRuntimeConfig {
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub site_name: String,
+    pub supported_languages: Vec<String>,
 }
 
 impl Default for AppRuntimeConfig {
@@ -372,6 +373,7 @@ impl Default for AppRuntimeConfig {
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             site_name: "Yona".to_string(),
+            supported_languages: default_supported_languages(),
         }
     }
 }
@@ -386,6 +388,9 @@ impl AppRuntimeConfig {
                 config.project_default_scope.as_deref(),
             ),
             site_name: site_name_from_option(config.site_name.as_deref()),
+            supported_languages: supported_languages_from_option(
+                config.supported_languages.as_deref(),
+            ),
         }
     }
 
@@ -394,6 +399,7 @@ impl AppRuntimeConfig {
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             site_name: configured_site_name(),
+            supported_languages: configured_supported_languages(),
         }
     }
 }
@@ -438,8 +444,33 @@ pub fn create_router_with_filesystem_assets(config: RuntimeConfig, asset_root: P
     )
 }
 
+pub fn create_router_with_filesystem_assets_and_app_config(
+    config: RuntimeConfig,
+    asset_root: PathBuf,
+    app_config: AppRuntimeConfig,
+) -> Router {
+    build_router_with_app_config(
+        config,
+        PilotBackend::Static,
+        AssetMode::Filesystem(asset_root),
+        app_config,
+    )
+}
+
 pub fn create_router_with_embedded_assets(config: RuntimeConfig) -> Router {
     build_router(config, PilotBackend::Static, AssetMode::Embedded)
+}
+
+pub fn create_router_with_embedded_assets_and_app_config(
+    config: RuntimeConfig,
+    app_config: AppRuntimeConfig,
+) -> Router {
+    build_router_with_app_config(
+        config,
+        PilotBackend::Static,
+        AssetMode::Embedded,
+        app_config,
+    )
 }
 
 pub fn create_router_with_repository_and_filesystem_assets(
@@ -508,6 +539,7 @@ fn build_router_with_app_config(
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
     let site_name = app_config.site_name;
+    let supported_languages = app_config.supported_languages;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
@@ -525,6 +557,7 @@ fn build_router_with_app_config(
         &base_path,
         project_default_menus.clone(),
         project_default_scope.clone(),
+        supported_languages.clone(),
     );
     let legacy_init_backend = route_backend.clone();
     let legacy_init_base_path = base_path.clone();
@@ -10618,25 +10651,44 @@ fn normalize_project_default_menu_config_key(value: &str) -> String {
 }
 
 fn configured_supported_languages() -> Vec<String> {
-    let languages: Vec<String> = std::env::var("YONA_LANGS")
-        .ok()
+    let value = std::env::var("YONA_LANGS").ok();
+    supported_languages_from_csv(value.as_deref())
+}
+
+fn supported_languages_from_option(values: Option<&[String]>) -> Vec<String> {
+    let languages = values
+        .unwrap_or_default()
+        .iter()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    (!languages.is_empty())
+        .then_some(languages)
+        .unwrap_or_else(default_supported_languages)
+}
+
+fn supported_languages_from_csv(value: Option<&str>) -> Vec<String> {
+    let languages = value
         .unwrap_or_default()
         .split(',')
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToString::to_string)
-        .collect();
-    if languages.is_empty() {
-        vec![
-            "en-US".to_string(),
-            "ko-KR".to_string(),
-            "ja-JP".to_string(),
-            "ru-RU".to_string(),
-            "uz-UZ".to_string(),
-        ]
-    } else {
-        languages
-    }
+        .collect::<Vec<_>>();
+    (!languages.is_empty())
+        .then_some(languages)
+        .unwrap_or_else(default_supported_languages)
+}
+
+fn default_supported_languages() -> Vec<String> {
+    vec![
+        "en-US".to_string(),
+        "ko-KR".to_string(),
+        "ja-JP".to_string(),
+        "ru-RU".to_string(),
+        "uz-UZ".to_string(),
+    ]
 }
 
 fn configured_bool_env(names: &[&str], default: bool) -> bool {
@@ -37503,6 +37555,7 @@ impl BrowserRuntimeConfig {
         base_path: &str,
         project_default_menus: Vec<String>,
         project_default_scope: String,
+        supported_languages: Vec<String>,
     ) -> Self {
         let base_path = normalize_base_path(base_path);
         let api_base_url = if base_path == "/" {
@@ -37515,7 +37568,7 @@ impl BrowserRuntimeConfig {
             base_path,
             project_default_menus,
             project_default_scope,
-            supported_languages: configured_supported_languages(),
+            supported_languages,
             show_user_email: configured_bool_env(
                 &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],
                 true,

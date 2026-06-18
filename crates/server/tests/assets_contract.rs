@@ -17,7 +17,8 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
-    create_router_with_filesystem_assets, RuntimeConfig,
+    create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
+    AppRuntimeConfig, RuntimeConfig,
 };
 
 fn runtime_config_env_lock() -> &'static Mutex<()> {
@@ -238,17 +239,26 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 #[tokio::test]
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let _guard = runtime_config_env_lock().lock().unwrap();
-    std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
+    let previous_project_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
+    let previous_langs = std::env::var("YONA_LANGS").ok();
     std::env::set_var("YONA_SHOW_USER_EMAIL", "false");
-    std::env::set_var("YONA_LANGS", "ko-KR, en-US, ja-JP");
-    let app = create_router_with_embedded_assets(RuntimeConfig {
-        allow_anonymous_access: true,
-        base_path: "/yona".to_string(),
-        public_origin: String::new(),
-    });
-    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    let app = create_router_with_embedded_assets_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        AppRuntimeConfig {
+            project_default_scope: "private".to_string(),
+            supported_languages: vec![
+                "ko-KR".to_string(),
+                "en-US".to_string(),
+                "ja-JP".to_string(),
+            ],
+            ..AppRuntimeConfig::default()
+        },
+    );
     std::env::remove_var("YONA_SHOW_USER_EMAIL");
-    std::env::remove_var("YONA_LANGS");
 
     let index = app
         .clone()
@@ -269,6 +279,16 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("\"projectDefaultScope\":\"private\""));
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
+    assert_eq!(
+        std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok(),
+        previous_project_default_scope,
+        "asset runtime app config must not mutate project default scope env"
+    );
+    assert_eq!(
+        std::env::var("YONA_LANGS").ok(),
+        previous_langs,
+        "asset runtime app config must not mutate languages env"
+    );
 
     let asset = app
         .clone()
