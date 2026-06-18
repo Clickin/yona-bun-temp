@@ -13,7 +13,9 @@ use yona_rust_persistence::{
     PostingMutationInput, PullRequestMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+};
 use yona_rust_vcs::{repository_path, svn_repository_path};
 
 fn svnadmin_available() -> bool {
@@ -29,18 +31,25 @@ fn yona_data_env_lock() -> &'static Mutex<()> {
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
+    build_app_with_repository_and_app_config(AppRuntimeConfig::default()).await
+}
+
+async fn build_app_with_repository_and_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db);
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        app_config,
     );
 
     (app, app_repo)
@@ -620,8 +629,13 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
 #[tokio::test]
 async fn create_project_uses_configured_default_scope_when_request_omits_scope() {
     let _guard = yona_data_env_lock().lock().unwrap();
-    std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
-    let app = build_app().await;
+    let previous_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
+    let app = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        project_default_scope: "private".to_string(),
+        ..AppRuntimeConfig::default()
+    })
+    .await
+    .0;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -642,11 +656,15 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
         )
         .await
         .unwrap();
-    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
     assert_eq!(create_project.status(), StatusCode::OK);
 
     let json = response_json(create_project).await;
     assert!(json.contains("\"projectScope\":\"private\""));
+    assert_eq!(
+        std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok(),
+        previous_default_scope,
+        "project default scope app config must not mutate process env"
+    );
 }
 
 #[tokio::test]

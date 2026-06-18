@@ -361,12 +361,14 @@ impl Default for RuntimeConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
+    pub project_default_scope: String,
     pub site_name: String,
 }
 
 impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
+            project_default_scope: "public".to_string(),
             site_name: "Yona".to_string(),
         }
     }
@@ -375,12 +377,16 @@ impl Default for AppRuntimeConfig {
 impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
+            project_default_scope: project_default_scope_from_option(
+                config.project_default_scope.as_deref(),
+            ),
             site_name: site_name_from_option(config.site_name.as_deref()),
         }
     }
 
     fn from_env() -> Self {
         Self {
+            project_default_scope: configured_project_default_scope(),
             site_name: configured_site_name(),
         }
     }
@@ -493,6 +499,7 @@ fn build_router_with_app_config(
     let base_path = normalize_base_path(&config.base_path);
     let public_origin = default_public_origin(&config.public_origin);
     let allow_anonymous_access = config.allow_anonymous_access;
+    let project_default_scope = app_config.project_default_scope;
     let site_name = app_config.site_name;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
@@ -504,6 +511,7 @@ fn build_router_with_app_config(
         public_origin: public_origin.clone(),
         session_manager: session_manager.clone(),
         backend: backend.clone(),
+        project_default_scope: project_default_scope.clone(),
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
@@ -849,6 +857,7 @@ fn build_router_with_app_config(
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
+    let project_import_default_scope = project_default_scope.clone();
     let legacy_migration_session_manager = session_manager.clone();
     let legacy_migration_base_path = base_path.clone();
     let legacy_migration_json_session_manager = session_manager.clone();
@@ -1842,6 +1851,7 @@ fn build_router_with_app_config(
                         project_import_session_manager.clone(),
                         project_import_backend.clone(),
                         project_import_base_path.clone(),
+                        project_import_default_scope.clone(),
                     )
                     .await
                 }
@@ -10531,9 +10541,13 @@ fn site_name_from_option(value: Option<&str>) -> String {
 }
 
 fn configured_project_default_scope() -> String {
-    std::env::var("YONA_PROJECT_DEFAULT_SCOPE")
-        .ok()
-        .map(|value| normalize_identifier(&value))
+    let value = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
+    project_default_scope_from_option(value.as_deref())
+}
+
+fn project_default_scope_from_option(value: Option<&str>) -> String {
+    value
+        .map(normalize_identifier)
         .filter(|value| matches!(value.as_str(), "public" | "protected" | "private"))
         .unwrap_or_else(|| "public".to_string())
 }
@@ -11833,6 +11847,7 @@ async fn direct_legacy_login(
         public_origin,
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match service
         .sign_in_with_password(
@@ -11881,6 +11896,7 @@ async fn direct_legacy_signup(
         public_origin,
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match service
         .register_with_password(
@@ -11934,6 +11950,7 @@ async fn direct_update_user_profile(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_update_profile(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -11959,6 +11976,7 @@ async fn direct_change_user_password(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_change_password(headers, body, service).await {
         Ok(rest_response) => {
@@ -11993,6 +12011,7 @@ async fn direct_add_workspace_email(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12012,6 +12031,7 @@ async fn direct_reset_api_token_from_settings_form(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_reset_api_token(headers_with_form_csrf(headers, &form), service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform/token"),
@@ -12031,6 +12051,7 @@ async fn direct_delete_workspace_email(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_delete_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12050,6 +12071,7 @@ async fn direct_set_main_workspace_email(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_set_main_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12195,6 +12217,7 @@ async fn direct_read_site_no_avatar_users(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_read_site_no_avatar_users(headers, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -12212,6 +12235,7 @@ async fn direct_export_site_data(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_export_site_data(headers, service).await {
         Ok(payload) => direct_site_export_response(&payload),
@@ -12236,6 +12260,7 @@ async fn direct_import_site_data(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_import_site_data(headers, &payload, service).await {
         Ok(Json(payload)) => {
@@ -12259,6 +12284,7 @@ async fn direct_read_site_diagnostic_shell(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_read_site_diagnostics(headers, service).await {
         Ok(Json(payload)) => Html(render_legacy_site_diagnostic_shell(&payload)).into_response(),
@@ -12284,6 +12310,7 @@ async fn direct_set_attachment_to_user_avatar(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -12303,6 +12330,7 @@ async fn direct_read_site_mail_list(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(Json(payload)) => Json(payload.recipients).into_response(),
@@ -12330,6 +12358,7 @@ async fn direct_send_site_mail(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_send_site_test_mail(headers, body, service).await {
         Ok(_) => {
@@ -12465,6 +12494,7 @@ async fn direct_toggle_workspace_notification(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     let body = RestWorkspaceNotificationBody {
         event_type,
@@ -12489,6 +12519,7 @@ async fn direct_toggle_project_watch(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
         Ok(_) => StatusCode::OK.into_response(),
@@ -12658,6 +12689,7 @@ async fn direct_unwatch_site_update(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(_) => {
@@ -12678,6 +12710,7 @@ async fn direct_download_site_update(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_redirect() {
@@ -12698,6 +12731,7 @@ async fn direct_download_site_update_file(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_file_response() {
@@ -12888,6 +12922,7 @@ async fn direct_update_project_overview(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
@@ -13133,6 +13168,7 @@ async fn direct_import_project(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    project_default_scope: String,
 ) -> Response {
     let headers = headers_with_form_csrf(headers, &form);
     let session = match require_session(&session_manager, &headers) {
@@ -13174,7 +13210,7 @@ async fn direct_import_project(
     let request_scope = direct_form_value(&form, "projectScope");
     let default_scope;
     let scope_value = if request_scope.is_empty() {
-        default_scope = configured_project_default_scope();
+        default_scope = project_default_scope;
         default_scope.as_str()
     } else {
         request_scope.as_str()
@@ -13378,6 +13414,7 @@ async fn direct_legacy_leave_project(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
     redirect_to(
@@ -13398,6 +13435,7 @@ async fn direct_toggle_site_admin_role(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_toggle_site_user_admin(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, "/sites/userList"),
@@ -13422,6 +13460,7 @@ async fn direct_toggle_site_user_account_lock(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_toggle_site_user_account_lock(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
@@ -13446,6 +13485,7 @@ async fn direct_toggle_site_user_guest(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_toggle_site_user_guest(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
@@ -13472,6 +13512,7 @@ async fn direct_accept_pull_request(
         public_origin,
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_accept_pull_request(
         headers,
@@ -13512,6 +13553,7 @@ async fn direct_update_pull_request_source_branch(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     let result = match action {
         PullRequestSourceBranchAction::Delete => {
@@ -13592,6 +13634,7 @@ async fn direct_reset_site_user_password(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_reset_site_user_password(headers, login_id, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -13615,6 +13658,7 @@ async fn direct_delete_site_user_by_legacy_path(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(repository) => repository,
@@ -13652,6 +13696,7 @@ async fn direct_delete_site_project(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     match rest_delete_site_project(headers, project_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, "/sites/projectList"),
@@ -36499,6 +36544,7 @@ async fn direct_update_review_thread_state(
         public_origin: String::new(),
         session_manager,
         backend,
+        project_default_scope: "public".to_string(),
     };
     let result = if let Some(pull_request_number) = context.pull_request_number {
         rest_update_pull_request_thread_state(
@@ -37052,6 +37098,7 @@ struct PilotServiceImpl {
     public_origin: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    project_default_scope: String,
 }
 
 impl PilotServiceImpl {
@@ -42722,7 +42769,7 @@ impl PilotServiceImpl {
         let request_scope = request.project_scope.trim();
         let default_scope;
         let scope_value = if request_scope.is_empty() {
-            default_scope = configured_project_default_scope();
+            default_scope = self.project_default_scope.clone();
             default_scope.as_str()
         } else {
             request_scope
