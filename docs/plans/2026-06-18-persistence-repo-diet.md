@@ -9,6 +9,8 @@ Reduce the compile-time blast radius of `crates/persistence/src/repo.rs` without
 
 This is a move-only refactor first. Functional changes, new repository traits, generic storage abstractions, and cross-crate ownership changes are out of scope.
 
+Current status: the large repository file has been physically decomposed into legacy-model-oriented include files. Low-coupling files may later be promoted from `include!` files to child modules after their private helper dependencies are small enough to make `pub(super)` adjustments mechanical.
+
 ## Constraints
 
 - Keep persistence ownership inside `crates/persistence`.
@@ -22,7 +24,7 @@ This is a move-only refactor first. Functional changes, new repository traits, g
 
 Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, with controller files such as `yona-original/app/controllers/IssueApp.java` and `yona-original/app/controllers/ProjectApp.java` acting as route/use-case entry points. Persistence modules should follow legacy model/table names first, not new service-style groups.
 
-`repo.rs` becomes a `repo/` module tree:
+`repo.rs` becomes a `repo/` file tree. Most files are included into the same Rust module first, preserving the old private visibility and keeping the first pass behavior-neutral.
 
 - `repo/mod.rs`: repository structs, module declarations, shared imports, and any code not yet moved.
 - `repo/app_user.rs`: `AppUserRepository` wrapper implementation.
@@ -51,6 +53,7 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - `repo/attachment.rs`: `Attachment.java`, avatar/logo/container binding.
 - `repo/notification.rs`: `NotificationEvent.java`, `NotificationMail.java`, `Watch.java`, `Unwatch.java`, `UserProjectNotification.java`.
 - `repo/common.rs`: small pure helpers and constants only after their callers have moved enough to make the extraction mechanical.
+- `repo/*_helpers.rs`: temporary helper buckets created during the move-only pass. These are allowed to shrink or merge into child modules later, but should not accumulate new behavior.
 
 `repo_types.rs` remains unchanged until the repository module split is stable. A later pass may apply the same module tree to `repo_types/` with public re-exports.
 
@@ -94,11 +97,16 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - [x] Move `AppUserRepository` implementation to `repo/app_user.rs`.
 - [x] Move `DefaultLandingRepository` implementation to `repo/default_landing.rs`.
 - [x] Compile `yona-rust-persistence` after the wrapper split.
-- [ ] Move `site_admin.rs`.
-- [ ] Move `search.rs`.
-- [ ] Move `webhook.rs`.
-- [ ] Compile after narrow feature groups.
-- [ ] Move user/organization/project-related legacy model groups.
-- [ ] Move issue/posting/pull-request/mailbox/notification legacy model groups.
-- [ ] Extract `common.rs`.
-- [ ] Re-run incremental compile timing comparison.
+- [x] Move `site_admin.rs`.
+- [x] Move `search.rs`.
+- [x] Move webhook-related methods into `project.rs` for the initial physical split.
+- [x] Compile after narrow feature groups.
+- [x] Move user/organization/project-related legacy model groups.
+- [x] Move issue/posting/pull-request/mailbox/notification legacy model groups.
+- [x] Extract `common.rs`.
+- [x] Re-run incremental compile timing comparison.
+
+## Verification
+
+- 2026-06-18: `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed after the full physical split in 56.86s.
+- 2026-06-18: touching `crates/persistence/src/repo/search.rs` followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 10.73s. Timing report: `target/cargo-timings/cargo-timing-20260617T235305655Z-bd4efcc15b512d74.html`.

@@ -45,7 +45,7 @@
 | `reference/mixed-code/packages/integrations` | `crates/integrations`                   |
 
 - Rows marked `missing`, `semantic-drift`, or `ux-drift` continue to track parity work until their slice lands in `repo root`.
-- 2026-06-18 persistence refactor note: splitting `crates/persistence/src/repo.rs` is a behavior-neutral compile-time maintenance refactor. File boundaries should follow legacy `yona-original/app/models/*.java` and table-oriented data exchanger names before introducing any new service-style grouping; this note does not claim or change feature parity status.
+- 2026-06-18 persistence refactor note: splitting `crates/persistence/src/repo.rs` is a behavior-neutral compile-time maintenance refactor. File boundaries should follow legacy `yona-original/app/models/*.java` and table-oriented data exchanger names before introducing any new service-style grouping; this note does not claim or change feature parity status. The first pass keeps moved files in the same Rust module with `include!` to preserve existing private helper visibility, with later child-module promotion limited to dependency-light files.
 
 ## Status Vocabulary
 

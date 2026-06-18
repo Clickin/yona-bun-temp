@@ -687,6 +687,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     )
     .await;
     assert_eq!(detail["title"], "Project README");
+    assert_eq!(detail["postNumber"], "1");
     assert_eq!(detail["permissions"]["canRead"], true);
     assert_eq!(detail["permissions"]["canCreate"], true);
     assert_eq!(detail["permissions"]["canUpdate"], true);

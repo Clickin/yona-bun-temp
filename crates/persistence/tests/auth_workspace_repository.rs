@@ -41,6 +41,11 @@ async fn app_user_repository_creates_and_finds_users_by_login_or_email() {
             .id,
         created.id,
     );
+    assert!(users
+        .find_by_identifier("missing@example.com")
+        .await
+        .expect("lookup missing user")
+        .is_none());
 }
 
 #[tokio::test]
