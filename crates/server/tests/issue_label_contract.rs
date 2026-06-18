@@ -298,6 +298,7 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
     let created: serde_json::Value =
         serde_json::from_str(&response_text(create_response).await).unwrap();
     assert_eq!(created["name"], "UI");
+    assert_eq!(created["color"], "#111111");
 
     let source_label_response = app
         .clone()

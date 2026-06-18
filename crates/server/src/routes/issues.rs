@@ -19,9 +19,640 @@ use crate::{
     legacy_external_update_issue_assignee, legacy_external_update_issue_comment,
     legacy_external_update_issue_content, legacy_external_update_issue_labels,
     legacy_external_update_issue_sharer, legacy_external_update_issue_state,
-    legacy_external_update_issue_weight, session::SessionManager, PilotBackend,
-    RestIssueAssignableUsersQuery,
+    legacy_external_update_issue_weight, rest_assign_issue, rest_copy_project_labels,
+    rest_create_project_label, rest_create_project_label_category, rest_create_project_milestone,
+    rest_delete_project_label, rest_delete_project_label_category, rest_delete_project_milestone,
+    rest_issue_comment_participation, rest_issue_participation, rest_list_issue_assignable_users,
+    rest_list_issue_mention_users, rest_list_issue_sharable_users,
+    rest_list_project_assignable_users, rest_list_project_issue_references,
+    rest_list_project_label_categories, rest_list_project_labels, rest_list_project_milestones,
+    rest_read_project_milestone, rest_set_project_milestone_state, rest_share_issue,
+    rest_toggle_favorite_issue, rest_unshare_issue, rest_update_project_label,
+    rest_update_project_label_category, rest_update_project_milestone, session::SessionManager,
+    PilotBackend, PilotServiceImpl, RestIssueAssignableUsersQuery, RestIssueAssigneeBody,
+    RestIssueMentionUsersQuery, RestIssueSharerBody, RestIssueSharerDeleteQuery,
+    RestMilestoneListQuery, RestProjectIssueReferencesQuery, RestProjectLabelCategoryBody,
+    RestProjectLabelCopyBody, RestProjectLabelCreateBody, RestProjectLabelUpdateBody,
+    RestProjectMilestoneBody, RestProjectMilestoneStateBody,
 };
+
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/watch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "watch",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "unwatch",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/vote",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "vote",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "unvote",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/favorite",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_toggle_favorite_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/assignable-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_project_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issue-references",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestProjectIssueReferencesQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_project_issue_references(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignable-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_issue_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharable-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_issue_sharable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/mention-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueMentionUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_issue_mention_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignee",
+            put({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueAssigneeBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_assign_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueSharerBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_share_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers/{login_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, login_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    String,
+                )>,
+                      Query(query): Query<RestIssueSharerDeleteQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_unshare_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            login_id,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/comments/{comment_id}/vote",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_comment_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            service,
+                            "vote",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_comment_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            service,
+                            "unvote",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/categories",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_label_categories(
+                            headers,
+                            owner_name,
+                            project_name,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCategoryBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/categories/{category_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, category_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectLabelCategoryBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            category_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, category_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            category_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_list_project_labels(headers, owner_name, project_name, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCreateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_label(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/copy",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCopyBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_copy_project_labels(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/{label_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, label_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectLabelUpdateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            label_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, label_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            label_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestMilestoneListQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_milestones(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectMilestoneBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones/{milestone_id}/state",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectMilestoneStateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_project_milestone_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones/{milestone_id}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectMilestoneBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            service,
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+}
 
 pub(crate) fn routes(
     session_manager: SessionManager,

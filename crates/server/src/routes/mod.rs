@@ -23,6 +23,7 @@ pub(crate) use code::routes as code_routes;
 #[cfg(debug_assertions)]
 pub(crate) use debug::routes as debug_routes;
 pub(crate) use files::routes as file_routes;
+pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::routes as notification_routes;

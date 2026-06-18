@@ -4529,6 +4529,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     )
     .await;
     assert_eq!(watched["isWatching"], true);
+    assert_eq!(watched["issueId"], 1);
     assert!(watched["watcherCount"].as_u64().unwrap_or_default() >= 1);
 
     let voted = ok_json(
