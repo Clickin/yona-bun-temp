@@ -644,6 +644,7 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
     .await;
     assert_eq!(promoted.status(), StatusCode::SEE_OTHER);
     assert_eq!(response_location(&promoted), "/yona/sites/userList");
+    assert_eq!(response_text(promoted).await, "");
     assert!(
         repo.find_user_by_login_id("member")
             .await
