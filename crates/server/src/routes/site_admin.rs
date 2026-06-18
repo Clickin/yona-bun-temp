@@ -1,22 +1,25 @@
 use axum::{
+    body::Bytes,
     extract::{Path, Query},
     http::HeaderMap,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
 use serde::Deserialize;
 use std::sync::atomic::Ordering;
 
 use crate::{
     direct_site_user_list_href, escape_html_text, persistence, redirect_to,
-    rest_delete_site_project, rest_read_site_diagnostics, rest_require_site_admin_repository,
-    rest_reset_site_user_password, rest_site_update_download_file_response,
+    rest_delete_site_project, rest_read_site_diagnostics, rest_read_site_no_avatar_users,
+    rest_require_site_admin_repository, rest_reset_site_user_password,
+    rest_set_site_user_avatar_from_attachment, rest_site_update_download_file_response,
     rest_site_update_download_redirect, rest_toggle_site_user_account_lock,
     rest_toggle_site_user_admin, rest_toggle_site_user_guest, session::SessionManager,
     AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
-    RestSiteDiagnosticsResponse, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    RestSiteAvatarFromAttachmentBody, RestSiteDiagnosticsResponse, SiteUpdateConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 pub(crate) fn routes(
@@ -52,6 +55,10 @@ pub(crate) fn routes(
     let site_reset_user_password_backend = backend.clone();
     let site_diagnostic_shell_session_manager = session_manager.clone();
     let site_diagnostic_shell_backend = backend.clone();
+    let site_no_avatar_session_manager = session_manager.clone();
+    let site_no_avatar_backend = backend.clone();
+    let site_set_avatar_session_manager = session_manager.clone();
+    let site_set_avatar_backend = backend.clone();
 
     Router::new()
         .route(
@@ -62,6 +69,33 @@ pub(crate) fn routes(
                         headers,
                         site_diagnostic_shell_session_manager.clone(),
                         site_diagnostic_shell_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/noAvatarUsers",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_read_site_no_avatar_users(
+                        headers,
+                        site_no_avatar_session_manager.clone(),
+                        site_no_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/setAttachmentToUserAvatar",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_set_attachment_to_user_avatar(
+                        headers,
+                        body,
+                        site_set_avatar_session_manager.clone(),
+                        site_set_avatar_backend.clone(),
                     )
                     .await
                 }
@@ -260,6 +294,52 @@ fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) ->
 </body>
 </html>"#
     )
+}
+
+async fn direct_read_site_no_avatar_users(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_read_site_no_avatar_users(headers, service).await {
+        Ok(payload) => payload.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_set_attachment_to_user_avatar(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Ok(body) = serde_json::from_slice::<RestSiteAvatarFromAttachmentBody>(&body) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "message": "Expecting Json data" })),
+        )
+            .into_response();
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
+        Ok(payload) => payload.into_response(),
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn direct_unwatch_site_update(

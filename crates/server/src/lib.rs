@@ -868,10 +868,6 @@ fn build_router_with_app_config(
     let site_import_session_manager = session_manager.clone();
     let site_import_base_path = base_path.clone();
     let site_import_max_uploaded_file_size = max_uploaded_file_size;
-    let site_no_avatar_backend = route_backend.clone();
-    let site_no_avatar_session_manager = session_manager.clone();
-    let site_set_avatar_backend = route_backend.clone();
-    let site_set_avatar_session_manager = session_manager.clone();
     let site_mail_send_backend = route_backend.clone();
     let site_mail_send_session_manager = session_manager.clone();
     let site_mail_send_base_path = base_path.clone();
@@ -2278,33 +2274,6 @@ fn build_router_with_app_config(
                         site_import_backend.clone(),
                         site_import_base_path.clone(),
                         site_import_max_uploaded_file_size,
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/noAvatarUsers",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_read_site_no_avatar_users(
-                        headers,
-                        site_no_avatar_session_manager.clone(),
-                        site_no_avatar_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/setAttachmentToUserAvatar",
-            post(move |headers: HeaderMap, body: Bytes| {
-                async move {
-                    direct_set_attachment_to_user_avatar(
-                        headers,
-                        body,
-                        site_set_avatar_session_manager.clone(),
-                        site_set_avatar_backend.clone(),
                     )
                     .await
                 }
@@ -11678,25 +11647,6 @@ async fn direct_confirm_workspace_email(
     }
 }
 
-async fn direct_read_site_no_avatar_users(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_read_site_no_avatar_users(headers, service).await {
-        Ok(Json(payload)) => Json(payload).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
 async fn direct_export_site_data(
     headers: HeaderMap,
     session_manager: SessionManager,
@@ -11745,33 +11695,6 @@ async fn direct_import_site_data(
                 Json(payload).into_response()
             }
         }
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_set_attachment_to_user_avatar(
-    headers: HeaderMap,
-    body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let Ok(body) = serde_json::from_slice::<RestSiteAvatarFromAttachmentBody>(&body) else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({ "message": "Expecting Json data" })),
-        )
-            .into_response();
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
-        Ok(Json(payload)) => Json(payload).into_response(),
         Err(error) => error.into_response(),
     }
 }

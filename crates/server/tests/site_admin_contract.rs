@@ -501,6 +501,10 @@ async fn site_admin_no_avatar_json_routes_follow_legacy_contract() {
     )
     .await;
     assert_eq!(login_ids(&legacy_payload), ids);
+    assert!(legacy_payload
+        .get("users")
+        .and_then(Value::as_array)
+        .is_some());
 
     let bad_json = rest_raw_post(
         app.clone(),
