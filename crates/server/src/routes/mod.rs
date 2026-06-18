@@ -1,4 +1,10 @@
-use axum::Router;
+use axum::{routing::any, Router};
+
+use crate::session::SessionManager;
+use crate::{
+    rest_not_found_response, AssetMode, BrowserRuntimeConfig, PilotBackend, SiteUpdateConfig,
+    TranslationProxyConfig,
+};
 
 mod auth;
 mod boards;
@@ -42,6 +48,98 @@ pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
+
+pub(crate) fn app_routes(
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+    base_path: String,
+    public_origin: String,
+    site_name: String,
+    project_default_scope: String,
+    translation_proxy: TranslationProxyConfig,
+    site_update: SiteUpdateConfig,
+    max_uploaded_file_size: usize,
+    rest_router: Router,
+) -> Router {
+    Router::new()
+        .merge(auth_routes(
+            session_manager.clone(),
+            backend.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+            site_name,
+        ))
+        .nest("/api/v1", rest_router)
+        .merge(legacy_runtime_routes(
+            session_manager.clone(),
+            backend.clone(),
+            assets,
+            browser_runtime,
+            base_path.clone(),
+            project_default_scope,
+        ))
+        .merge(workspace_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+        ))
+        .merge(user_routes(
+            session_manager.clone(),
+            backend.clone(),
+            translation_proxy,
+        ))
+        .merge(board_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .merge(issue_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+        ))
+        .merge(static_compat_routes())
+        .merge(notification_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .merge(project_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .route(
+            "/api/v1/{*rest_path}",
+            any(|| async { rest_not_found_response() }),
+        )
+        .merge(file_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+            max_uploaded_file_size,
+        ))
+        .merge(pull_request_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+        ))
+        .merge(site_admin_routes(
+            session_manager.clone(),
+            backend.clone(),
+            site_update,
+            base_path.clone(),
+            max_uploaded_file_size,
+        ))
+        .merge(code_routes(session_manager, backend, base_path))
+}
 
 pub(crate) fn static_compat_routes() -> Router {
     Router::new().merge(messages::routes())

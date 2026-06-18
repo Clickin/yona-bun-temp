@@ -11,7 +11,7 @@ use axum::extract::{Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
 use axum::response::{Html, IntoResponse, Redirect, Response};
-use axum::routing::{any, delete, get, post, put};
+use axum::routing::{delete, get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use base64::{engine::general_purpose, Engine as _};
@@ -572,86 +572,20 @@ fn build_router_with_app_config(
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
-    let mut base_router = Router::new()
-        .merge(routes::auth_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            assets.clone(),
-            browser_runtime.clone(),
-            base_path.clone(),
-            public_origin.clone(),
-            site_name.clone(),
-        ))
-        .nest("/api/v1", rest_router)
-        .merge(routes::legacy_runtime_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            assets.clone(),
-            browser_runtime.clone(),
-            base_path.clone(),
-            project_default_scope.clone(),
-        ))
-        .merge(routes::workspace_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-            public_origin.clone(),
-        ))
-        .merge(routes::user_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            translation_proxy.clone(),
-        ))
-        .merge(routes::board_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-        ))
-        .merge(routes::issue_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-            public_origin.clone(),
-        ))
-        .merge(routes::static_compat_routes())
-        .merge(routes::notification_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-        ))
-        .merge(routes::project_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-        ))
-        .route(
-            "/api/v1/{*rest_path}",
-            any(|| async { rest_not_found_response() }),
-        )
-        .merge(routes::file_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-            max_uploaded_file_size,
-        ))
-        .merge(routes::pull_request_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-            public_origin.clone(),
-        ))
-        .merge(routes::site_admin_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            site_update.clone(),
-            base_path.clone(),
-            max_uploaded_file_size,
-        ))
-        .merge(routes::code_routes(
-            session_manager.clone(),
-            route_backend.clone(),
-            base_path.clone(),
-        ));
+    let mut base_router = routes::app_routes(
+        session_manager.clone(),
+        route_backend.clone(),
+        assets.clone(),
+        browser_runtime.clone(),
+        base_path.clone(),
+        public_origin.clone(),
+        site_name.clone(),
+        project_default_scope.clone(),
+        translation_proxy.clone(),
+        site_update.clone(),
+        max_uploaded_file_size,
+        rest_router,
+    );
 
     base_router = apply_asset_routes(
         base_router,
@@ -12925,7 +12859,10 @@ fn build_rest_router(
     let router = Router::new()
         .merge(routes::auth_rest_routes(service.clone(), auth_ui.clone()))
         .merge(routes::user_rest_routes(service.clone()))
-        .merge(routes::site_admin_rest_routes(service.clone(), site_update.clone()))
+        .merge(routes::site_admin_rest_routes(
+            service.clone(),
+            site_update.clone(),
+        ))
         .merge(routes::workspace_rest_routes(service.clone()))
         .merge(routes::notification_rest_routes(
             session_manager.clone(),
@@ -19303,7 +19240,7 @@ pub(crate) async fn rest_read_current_session(
     Ok(response)
 }
 
-fn rest_not_found_response() -> Response {
+pub(crate) fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
 }
 
