@@ -766,6 +766,11 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
     let text_upload_body = text_upload.into_body().collect().await.unwrap().to_bytes();
     let text_upload_json: serde_json::Value = serde_json::from_slice(&text_upload_body).unwrap();
     let text_file_id = text_upload_json["id"].as_i64().expect("text file id");
+    let expected_text_file_url = format!("/yona/files/{text_file_id}");
+    assert_eq!(
+        text_upload_json["url"].as_str(),
+        Some(expected_text_file_url.as_str())
+    );
     assert_eq!(
         text_upload_json["mimeType"].as_str(),
         Some("text/plain; charset=UTF-8"),

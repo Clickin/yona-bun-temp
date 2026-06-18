@@ -603,23 +603,6 @@ fn build_router_with_app_config(
     let legacy_api_index_browser_runtime = browser_runtime.clone();
     let legacy_api_v1_index_assets = assets.clone();
     let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
-    let file_session_manager = session_manager.clone();
-    let file_backend = route_backend.clone();
-    let file_base_path = base_path.clone();
-    let file_max_uploaded_file_size = max_uploaded_file_size;
-    let file_list_session_manager = session_manager.clone();
-    let file_list_backend = route_backend.clone();
-    let file_list_base_path = base_path.clone();
-    let file_read_session_manager = session_manager.clone();
-    let file_read_backend = route_backend.clone();
-    let file_read_trailing_session_manager = session_manager.clone();
-    let file_read_trailing_backend = route_backend.clone();
-    let file_delete_post_session_manager = session_manager.clone();
-    let file_delete_post_backend = route_backend.clone();
-    let file_delete_post_trailing_session_manager = session_manager.clone();
-    let file_delete_post_trailing_backend = route_backend.clone();
-    let file_delete_session_manager = session_manager.clone();
-    let file_delete_backend = route_backend.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
@@ -1033,101 +1016,12 @@ fn build_router_with_app_config(
                 }
             }),
         )
-        .route(
-            "/files",
-            get(move |headers: HeaderMap, Query(query): Query<AttachmentListQuery>| {
-                async move {
-                    list_uploaded_files(
-                        headers,
-                        query,
-                        file_list_session_manager.clone(),
-                        file_list_backend.clone(),
-                        file_list_base_path.clone(),
-                    )
-                    .await
-                }
-            })
-            .post(move |headers: HeaderMap, multipart: Multipart| {
-                async move {
-                    upload_file(
-                        headers,
-                        multipart,
-                        file_session_manager.clone(),
-                        file_backend.clone(),
-                        file_base_path.clone(),
-                        file_max_uploaded_file_size,
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/files/{id}",
-            get(move |headers: HeaderMap,
-                      Path(id): Path<i64>,
-                      RawQuery(raw_query): RawQuery| {
-                async move {
-                    get_uploaded_file(
-                        headers,
-                        id,
-                        raw_query,
-                        file_read_session_manager.clone(),
-                        file_read_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .post(move |headers: HeaderMap, Path(id): Path<i64>| {
-                async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_post_session_manager.clone(),
-                        file_delete_post_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .delete(move |headers: HeaderMap, Path(id): Path<i64>| {
-                async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_session_manager.clone(),
-                        file_delete_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/files/{id}/",
-            get(move |headers: HeaderMap,
-                      Path(id): Path<i64>,
-                      RawQuery(raw_query): RawQuery| {
-                async move {
-                    get_uploaded_file(
-                        headers,
-                        id,
-                        raw_query,
-                        file_read_trailing_session_manager.clone(),
-                        file_read_trailing_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .post(move |headers: HeaderMap, Path(id): Path<i64>| {
-                async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_post_trailing_session_manager.clone(),
-                        file_delete_post_trailing_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
+        .merge(routes::file_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            base_path.clone(),
+            max_uploaded_file_size,
+        ))
         .merge(routes::pull_request_routes(
             session_manager.clone(),
             route_backend.clone(),
@@ -34179,7 +34073,7 @@ struct UploadFileResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct AttachmentListQuery {
+pub(crate) struct AttachmentListQuery {
     container_id: Option<String>,
     container_type: Option<String>,
 }
@@ -34204,7 +34098,7 @@ fn attachment_upload_response(
     }
 }
 
-async fn list_uploaded_files(
+pub(crate) async fn list_uploaded_files(
     headers: HeaderMap,
     query: AttachmentListQuery,
     session_manager: SessionManager,
@@ -34271,7 +34165,7 @@ async fn list_uploaded_files(
     .into_response()
 }
 
-async fn upload_file(
+pub(crate) async fn upload_file(
     headers: HeaderMap,
     mut multipart: Multipart,
     session_manager: SessionManager,
@@ -34350,7 +34244,7 @@ async fn upload_file(
     StatusCode::BAD_REQUEST.into_response()
 }
 
-async fn get_uploaded_file(
+pub(crate) async fn get_uploaded_file(
     headers: HeaderMap,
     attachment_id: i64,
     raw_query: Option<String>,
@@ -34461,7 +34355,7 @@ async fn get_uploaded_file(
     response
 }
 
-async fn delete_uploaded_file(
+pub(crate) async fn delete_uploaded_file(
     headers: HeaderMap,
     attachment_id: i64,
     session_manager: SessionManager,
