@@ -2529,6 +2529,7 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
     let direct_body = response_text(direct).await;
     assert!(direct_body.contains("site.sidebar.diagnostics"));
     assert!(direct_body.contains("site.diagnostic.errorNotFound"));
+    assert!(direct_body.contains(r#"<li class="active"><a href="/sites/diagnostic">"#));
 }
 
 #[tokio::test]

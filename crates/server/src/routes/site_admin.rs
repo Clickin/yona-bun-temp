@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, Query},
     http::HeaderMap,
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{Html, IntoResponse, Response},
     routing::{get, post},
     Router,
 };
@@ -10,12 +10,13 @@ use serde::Deserialize;
 use std::sync::atomic::Ordering;
 
 use crate::{
-    direct_site_user_list_href, persistence, redirect_to, rest_delete_site_project,
-    rest_require_site_admin_repository, rest_reset_site_user_password,
-    rest_site_update_download_file_response, rest_site_update_download_redirect,
-    rest_toggle_site_user_account_lock, rest_toggle_site_user_admin, rest_toggle_site_user_guest,
-    session::SessionManager, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
-    RestRouteError, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    direct_site_user_list_href, escape_html_text, persistence, redirect_to,
+    rest_delete_site_project, rest_read_site_diagnostics, rest_require_site_admin_repository,
+    rest_reset_site_user_password, rest_site_update_download_file_response,
+    rest_site_update_download_redirect, rest_toggle_site_user_account_lock,
+    rest_toggle_site_user_admin, rest_toggle_site_user_guest, session::SessionManager,
+    AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
+    RestSiteDiagnosticsResponse, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 pub(crate) fn routes(
@@ -49,8 +50,23 @@ pub(crate) fn routes(
     let site_delete_project_base_path = base_path.clone();
     let site_reset_user_password_session_manager = session_manager.clone();
     let site_reset_user_password_backend = backend.clone();
+    let site_diagnostic_shell_session_manager = session_manager.clone();
+    let site_diagnostic_shell_backend = backend.clone();
 
     Router::new()
+        .route(
+            "/sites/diagnostic",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_read_site_diagnostic_shell(
+                        headers,
+                        site_diagnostic_shell_session_manager.clone(),
+                        site_diagnostic_shell_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
         .route(
             "/sites/unwatchUpdate",
             post(move |headers: HeaderMap| {
@@ -184,6 +200,66 @@ struct RestSiteDirectUserMutationQuery {
     login_id: String,
     query: Option<String>,
     state: Option<String>,
+}
+
+async fn direct_read_site_diagnostic_shell(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_read_site_diagnostics(headers, service).await {
+        Ok(payload) => {
+            let payload = payload.0;
+            Html(render_legacy_site_diagnostic_shell(&payload)).into_response()
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) -> String {
+    let body = if payload.errors.is_empty() {
+        "<p>site.diagnostic.errorNotFound</p>".to_string()
+    } else {
+        let mut items = String::new();
+        for error in &payload.errors {
+            items.push_str(&format!("<li><pre>{}</pre></li>", escape_html_text(error)));
+        }
+        format!(
+            "<p>site.diagnostic.errorFound {}</p><ul>{items}</ul>",
+            payload.error_count
+        )
+    };
+    format!(
+        r#"<!doctype html>
+<html>
+<head><title>title.siteSetting</title></head>
+<body>
+<div class="site-breadcrumb-outer"><h3>site.sidebar</h3></div>
+<div class="site-setting-wrap">
+<ul class="site-setting-nav">
+<li><a href="/sites/userList">site.sidebar.userList</a></li>
+<li><a href="/sites/postList">site.sidebar.postList</a></li>
+<li><a href="/sites/issueList">site.sidebar.issueList</a></li>
+<li><a href="/sites/projectList">site.sidebar.projectList</a></li>
+<li><a href="/sites/mail">site.sidebar.mailSend</a></li>
+<li><a href="/sites/massmail">site.sidebar.massMail</a></li>
+<li><a href="/sites/update">site.sidebar.update</a></li>
+<li class="active"><a href="/sites/diagnostic">site.sidebar.diagnostics</a></li>
+</ul>
+<div class="title_area"><h2 class="pull-left">site.sidebar.diagnostics</h2></div>
+{body}
+</div>
+</body>
+</html>"#
+    )
 }
 
 async fn direct_unwatch_site_update(
