@@ -996,6 +996,10 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         .headers()
         .get(http::header::LOCATION)
         .is_none());
+    assert!(json_unwatch_response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .is_none());
     assert!(response_text(json_unwatch_response).await.is_empty());
     let issue_unwatch_count = unwatch::Entity::find()
         .filter(unwatch::Column::UserId.eq(Some(watcher_id)))

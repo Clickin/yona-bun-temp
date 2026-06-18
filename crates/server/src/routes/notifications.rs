@@ -1,7 +1,8 @@
 use axum::{
     extract::Query,
     http::HeaderMap,
-    response::{Html, IntoResponse, Response},
+    http::StatusCode,
+    response::{Html, IntoResponse, Redirect, Response},
     routing::get,
     Router,
 };
@@ -9,7 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     base_path_href, escape_html_attr, escape_html_text, format_project_date_label, persistence,
-    session::SessionManager, PilotBackend, RestRouteError,
+    redirect_to, require_project_read, session::SessionManager, PilotBackend, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -20,25 +21,62 @@ struct DirectNotificationPartialQuery {
     limit: Option<u32>,
 }
 
+#[derive(Deserialize)]
+struct LegacyResourceQuery {
+    #[serde(rename = "resource.id")]
+    resource_id: Option<String>,
+    #[serde(rename = "resource.type")]
+    resource_type: Option<String>,
+}
+
 pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
 ) -> Router {
-    Router::new().route(
-        "/notification",
-        get(
-            move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                async move {
-                    direct_notification_partial(headers, query, session_manager, backend, base_path)
+    let notification_session_manager = session_manager.clone();
+    let notification_backend = backend.clone();
+    let notification_base_path = base_path.clone();
+    let unwatch_session_manager = session_manager.clone();
+    let unwatch_backend = backend.clone();
+    let unwatch_base_path = base_path.clone();
+
+    Router::new()
+        .route(
+            "/notification",
+            get(
+                move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
+                    let session_manager = notification_session_manager.clone();
+                    let backend = notification_backend.clone();
+                    let base_path = notification_base_path.clone();
+                    async move {
+                        direct_notification_partial(
+                            headers,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
                         .await
-                }
-            },
-        ),
-    )
+                    }
+                },
+            ),
+        )
+        .route(
+            "/unwatch",
+            get(
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
+                    direct_legacy_unwatch(
+                        headers,
+                        query,
+                        unwatch_session_manager.clone(),
+                        unwatch_backend.clone(),
+                        unwatch_base_path.clone(),
+                    )
+                    .await
+                },
+            ),
+        )
 }
 
 async fn direct_notification_partial(
@@ -83,6 +121,76 @@ async fn direct_notification_partial(
         .into_response(),
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
+}
+
+async fn direct_legacy_unwatch(
+    headers: HeaderMap,
+    Query(query): Query<LegacyResourceQuery>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let resource_type = query.resource_type.unwrap_or_default();
+    let resource_id = query.resource_id.unwrap_or_default();
+    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
+        return RestRouteError::bad_request("resource.type and resource.id are required")
+            .into_response();
+    }
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fnotification",
+        ))
+        .into_response();
+    };
+    let Some(user_id) = session.user_id else {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fnotification",
+        ))
+        .into_response();
+    };
+    let repository = match backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("unwatch requires repository backend")
+                .into_response();
+        }
+    };
+    let target = match repository
+        .resolve_legacy_resource_target(&resource_type, &resource_id)
+        .await
+    {
+        Ok(Some(target)) => target,
+        Ok(None) => return RestRouteError::not_found("resource not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if let Err(error) = require_project_read(
+        &repository,
+        &target.owner_name,
+        &target.project_name,
+        Some(user_id),
+    )
+    .await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+    match repository
+        .unwatch_notification_resource(user_id, &resource_type, &resource_id)
+        .await
+    {
+        Ok(()) if legacy_prefers_json(&headers) => StatusCode::OK.into_response(),
+        Ok(()) => redirect_to(&base_path, &target.target_path),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+fn legacy_prefers_json(headers: &HeaderMap) -> bool {
+    headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.to_ascii_lowercase().contains("application/json"))
+        .unwrap_or(false)
 }
 
 fn render_legacy_notification_partial(

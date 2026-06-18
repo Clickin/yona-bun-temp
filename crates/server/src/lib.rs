@@ -864,9 +864,6 @@ fn build_router_with_app_config(
     let project_overview_update_session_manager = session_manager.clone();
     let direct_notification_toggle_backend = route_backend.clone();
     let direct_notification_toggle_session_manager = session_manager.clone();
-    let direct_unwatch_backend = route_backend.clone();
-    let direct_unwatch_session_manager = session_manager.clone();
-    let direct_unwatch_base_path = base_path.clone();
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
@@ -2234,21 +2231,6 @@ fn build_router_with_app_config(
                         "closed",
                         thread_close_session_manager.clone(),
                         thread_close_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/unwatch",
-            get(move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
-                async move {
-                    direct_legacy_unwatch(
-                        headers,
-                        query,
-                        direct_unwatch_session_manager.clone(),
-                        direct_unwatch_backend.clone(),
-                        direct_unwatch_base_path.clone(),
                     )
                     .await
                 }
@@ -11579,76 +11561,6 @@ async fn direct_confirm_workspace_email(
     }
 }
 
-#[derive(Deserialize)]
-struct LegacyResourceQuery {
-    #[serde(rename = "resource.id")]
-    resource_id: Option<String>,
-    #[serde(rename = "resource.type")]
-    resource_type: Option<String>,
-}
-
-async fn direct_legacy_unwatch(
-    headers: HeaderMap,
-    Query(query): Query<LegacyResourceQuery>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let resource_type = query.resource_type.unwrap_or_default();
-    let resource_id = query.resource_id.unwrap_or_default();
-    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
-        return RestRouteError::bad_request("resource.type and resource.id are required")
-            .into_response();
-    }
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
-        return Redirect::to(&base_path_href(
-            &base_path,
-            "/users/loginform?redirectUrl=%2Fnotification",
-        ))
-        .into_response();
-    };
-    let Some(user_id) = session.user_id else {
-        return Redirect::to(&base_path_href(
-            &base_path,
-            "/users/loginform?redirectUrl=%2Fnotification",
-        ))
-        .into_response();
-    };
-    let repository = match backend {
-        PilotBackend::Repository(repository) => repository,
-        PilotBackend::Static => {
-            return RestRouteError::not_implemented("unwatch requires repository backend")
-                .into_response();
-        }
-    };
-    let target = match repository
-        .resolve_legacy_resource_target(&resource_type, &resource_id)
-        .await
-    {
-        Ok(Some(target)) => target,
-        Ok(None) => return RestRouteError::not_found("resource not found").into_response(),
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    if let Err(error) = require_project_read(
-        &repository,
-        &target.owner_name,
-        &target.project_name,
-        Some(user_id),
-    )
-    .await
-    {
-        return RestRouteError::from_connect_error(error).into_response();
-    }
-    match repository
-        .unwatch_notification_resource(user_id, &resource_type, &resource_id)
-        .await
-    {
-        Ok(()) if legacy_prefers_json(&headers) => StatusCode::OK.into_response(),
-        Ok(()) => redirect_to(&base_path, &target.target_path),
-        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
-    }
-}
-
 async fn direct_toggle_workspace_notification(
     headers: HeaderMap,
     project_id: i64,
@@ -11694,14 +11606,6 @@ async fn direct_toggle_project_watch(
         Ok(_) => StatusCode::OK.into_response(),
         Err(error) => error.into_response(),
     }
-}
-
-fn legacy_prefers_json(headers: &HeaderMap) -> bool {
-    headers
-        .get(http::header::ACCEPT)
-        .and_then(|value| value.to_str().ok())
-        .map(|value| value.to_ascii_lowercase().contains("application/json"))
-        .unwrap_or(false)
 }
 
 fn site_export_filename_stamp() -> String {
