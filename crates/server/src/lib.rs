@@ -726,6 +726,7 @@ fn build_router_with_app_config(
         session_timeout_seconds,
     });
     let pilot_service = PilotServiceImpl {
+        auth_ui: auth_ui.clone(),
         base_path: base_path.clone(),
         public_origin: public_origin.clone(),
         session_manager: session_manager.clone(),
@@ -12141,6 +12142,7 @@ async fn direct_legacy_login(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match service
         .sign_in_with_password(
@@ -12190,6 +12192,7 @@ async fn direct_legacy_signup(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match service
         .register_with_password(
@@ -12199,8 +12202,8 @@ async fn direct_legacy_signup(
         .await
     {
         Ok((payload, ctx)) => {
+            let capabilities = auth_ui_capabilities_from_config(&service.auth_ui);
             let redirect_path = if payload.is_anonymous {
-                let capabilities = fixed_auth_ui_capabilities();
                 if capabilities.signup_require_confirm {
                     "/users/loginform?signup=requested"
                 } else if capabilities.email_verification_enabled {
@@ -12244,6 +12247,7 @@ async fn direct_update_user_profile(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_update_profile(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12270,6 +12274,7 @@ async fn direct_change_user_password(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_change_password(headers, body, service).await {
         Ok(rest_response) => {
@@ -12305,6 +12310,7 @@ async fn direct_add_workspace_email(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12325,6 +12331,7 @@ async fn direct_reset_api_token_from_settings_form(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_reset_api_token(headers_with_form_csrf(headers, &form), service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform/token"),
@@ -12345,6 +12352,7 @@ async fn direct_delete_workspace_email(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_delete_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12365,6 +12373,7 @@ async fn direct_set_main_workspace_email(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_set_main_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -12511,6 +12520,7 @@ async fn direct_read_site_no_avatar_users(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_read_site_no_avatar_users(headers, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -12529,6 +12539,7 @@ async fn direct_export_site_data(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_export_site_data(headers, service).await {
         Ok(payload) => direct_site_export_response(&payload),
@@ -12555,6 +12566,7 @@ async fn direct_import_site_data(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
         Ok(Json(payload)) => {
@@ -12579,6 +12591,7 @@ async fn direct_read_site_diagnostic_shell(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_read_site_diagnostics(headers, service).await {
         Ok(Json(payload)) => Html(render_legacy_site_diagnostic_shell(&payload)).into_response(),
@@ -12605,6 +12618,7 @@ async fn direct_set_attachment_to_user_avatar(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -12625,6 +12639,7 @@ async fn direct_read_site_mail_list(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(Json(payload)) => Json(payload.recipients).into_response(),
@@ -12653,6 +12668,7 @@ async fn direct_send_site_mail(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_send_site_test_mail(headers, body, service).await {
         Ok(_) => {
@@ -12789,6 +12805,7 @@ async fn direct_toggle_workspace_notification(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     let body = RestWorkspaceNotificationBody {
         event_type,
@@ -12814,6 +12831,7 @@ async fn direct_toggle_project_watch(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
         Ok(_) => StatusCode::OK.into_response(),
@@ -12984,6 +13002,7 @@ async fn direct_unwatch_site_update(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(_) => {
@@ -13006,6 +13025,7 @@ async fn direct_download_site_update(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_redirect(&site_update) {
@@ -13028,6 +13048,7 @@ async fn direct_download_site_update_file(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_file_response(&site_update) {
@@ -13219,6 +13240,7 @@ async fn direct_update_project_overview(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
@@ -13711,6 +13733,7 @@ async fn direct_legacy_leave_project(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
     redirect_to(
@@ -13732,6 +13755,7 @@ async fn direct_toggle_site_admin_role(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_toggle_site_user_admin(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, "/sites/userList"),
@@ -13757,6 +13781,7 @@ async fn direct_toggle_site_user_account_lock(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_toggle_site_user_account_lock(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
@@ -13782,6 +13807,7 @@ async fn direct_toggle_site_user_guest(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_toggle_site_user_guest(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
@@ -13809,6 +13835,7 @@ async fn direct_accept_pull_request(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_accept_pull_request(
         headers,
@@ -13850,6 +13877,7 @@ async fn direct_update_pull_request_source_branch(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     let result = match action {
         PullRequestSourceBranchAction::Delete => {
@@ -13931,6 +13959,7 @@ async fn direct_reset_site_user_password(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_reset_site_user_password(headers, login_id, service).await {
         Ok(Json(payload)) => Json(payload).into_response(),
@@ -13955,6 +13984,7 @@ async fn direct_delete_site_user_by_legacy_path(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(repository) => repository,
@@ -13993,6 +14023,7 @@ async fn direct_delete_site_project(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     match rest_delete_site_project(headers, project_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, "/sites/projectList"),
@@ -36883,6 +36914,7 @@ async fn direct_update_review_thread_state(
         session_manager,
         backend,
         project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
     };
     let result = if let Some(pull_request_number) = context.pull_request_number {
         rest_update_pull_request_thread_state(
@@ -37432,6 +37464,7 @@ async fn direct_delete_project_milestone(
 
 #[derive(Clone)]
 struct PilotServiceImpl {
+    auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
     session_manager: SessionManager,
@@ -37862,8 +37895,11 @@ fn auth_ui_capabilities_from_config(config: &AuthUiConfig) -> ReadAuthUiCapabili
 }
 
 fn confirmation_session_required() -> bool {
-    let capabilities = fixed_auth_ui_capabilities();
-    capabilities.signup_require_confirm || capabilities.email_verification_enabled
+    confirmation_session_required_from_config(&AuthUiConfig::from_env())
+}
+
+fn confirmation_session_required_from_config(config: &AuthUiConfig) -> bool {
+    config.signup_require_confirm || config.email_verification_enabled
 }
 
 const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
@@ -41625,7 +41661,7 @@ impl PilotServiceImpl {
         ctx: Context,
         _request: OwnedView<ReadAuthUiCapabilitiesRequestView<'static>>,
     ) -> Result<(ReadAuthUiCapabilitiesResponse, Context), ConnectError> {
-        Ok((fixed_auth_ui_capabilities(), ctx))
+        Ok((auth_ui_capabilities_from_config(&self.auth_ui), ctx))
     }
 
     async fn sign_in_with_password(
@@ -41660,7 +41696,7 @@ impl PilotServiceImpl {
         if !verified {
             return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
         }
-        if confirmation_session_required() && !user.is_confirmed {
+        if confirmation_session_required_from_config(&self.auth_ui) && !user.is_confirmed {
             return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
         }
 
@@ -41694,7 +41730,7 @@ impl PilotServiceImpl {
             ));
         };
 
-        let capabilities = fixed_auth_ui_capabilities();
+        let capabilities = auth_ui_capabilities_from_config(&self.auth_ui);
         let login_id = normalize_identifier(request.login_id);
         let email_address = normalize_identifier(request.email_address);
         if login_id.is_empty() {
@@ -41737,7 +41773,7 @@ impl PilotServiceImpl {
             .create_user(persistence::CreateUserInput {
                 display_name: request.name.trim().to_string(),
                 email_address,
-                is_confirmed: !confirmation_session_required(),
+                is_confirmed: !confirmation_session_required_from_config(&self.auth_ui),
                 is_site_admin: false,
                 login_id,
                 password_hash,
@@ -41759,7 +41795,7 @@ impl PilotServiceImpl {
             )?;
         }
 
-        if confirmation_session_required() {
+        if confirmation_session_required_from_config(&self.auth_ui) {
             return Ok((anonymous_current_session_response(), ctx));
         }
 

@@ -901,13 +901,21 @@ async fn rest_verify_user_confirms_pending_signup() {
 }
 
 #[tokio::test]
-async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled(
-) {
-    let _guard = auth_env_lock().lock().unwrap();
+async fn register_requires_confirmation_session_from_runtime_config_without_env_mutation() {
     clear_test_outbox();
-    std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
+    let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
 
-    let (app, _, db) = build_auth_router().await;
+    let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                signup_require_confirm: true,
+                ..AuthUiConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .oneshot(
@@ -922,8 +930,6 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
 
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
@@ -941,6 +947,11 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
         .unwrap()
         .is_empty());
     assert!(snapshot_test_outbox().is_empty());
+    assert_eq!(
+        std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok(),
+        previous_signup_require_confirm,
+        "signup confirmation runtime config must not mutate process env"
+    );
 }
 
 #[tokio::test]
