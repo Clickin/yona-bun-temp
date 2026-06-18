@@ -800,6 +800,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(open_list["totalCount"], 2);
     assert_eq!(open_list["openCount"], 2);
     assert_eq!(open_list["closedCount"], 2);
+    assert_eq!(open_list["items"].as_array().unwrap().len(), 2);
     assert!(open_list["contributors"]
         .as_array()
         .unwrap()

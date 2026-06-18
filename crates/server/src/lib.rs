@@ -12532,7 +12532,7 @@ struct RestCodeCommit {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPullRequestListQuery {
+pub(crate) struct RestPullRequestListQuery {
     category: String,
     contributor_id: i64,
     filter: String,
@@ -12541,7 +12541,7 @@ struct RestPullRequestListQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPullRequestFormQuery {
+pub(crate) struct RestPullRequestFormQuery {
     from_branch: String,
     from_project_id: i64,
     to_branch: String,
@@ -12550,13 +12550,13 @@ struct RestPullRequestFormQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPullRequestChangesQuery {
+pub(crate) struct RestPullRequestChangesQuery {
     commit_id: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestPullRequestCreateBody {
+pub(crate) struct RestPullRequestCreateBody {
     #[serde(default)]
     attachment_ids: Vec<i64>,
     body_markdown: String,
@@ -12569,7 +12569,7 @@ struct RestPullRequestCreateBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestPullRequestEditBody {
+pub(crate) struct RestPullRequestEditBody {
     #[serde(default)]
     attachment_ids: Vec<i64>,
     body_markdown: String,
@@ -12578,7 +12578,7 @@ struct RestPullRequestEditBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestPullRequestCommentBody {
+pub(crate) struct RestPullRequestCommentBody {
     #[serde(default)]
     attachment_ids: Vec<i64>,
     commit_id: Option<String>,
@@ -12594,7 +12594,7 @@ struct RestPullRequestCommentBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestOrganizationPullRequestListQuery {
+pub(crate) struct RestOrganizationPullRequestListQuery {
     category: String,
     filter: String,
     page_num: u32,
@@ -12602,7 +12602,7 @@ struct RestOrganizationPullRequestListQuery {
 
 #[derive(Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestReviewThreadListQuery {
+pub(crate) struct RestReviewThreadListQuery {
     author_id: i64,
     filter: String,
     format: String,
@@ -14393,7 +14393,7 @@ fn build_rest_router(
         )
         .merge(build_rest_issue_meta_router(issue_meta_service))
         .merge(build_rest_org_project_router(org_project_service))
-        .merge(build_rest_pull_request_router(pull_request_service));
+        .merge(routes::pull_request_rest_routes(pull_request_service));
 
     #[cfg(debug_assertions)]
     {
@@ -14886,570 +14886,6 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
                     let service = service.clone();
                     async move { rest_toggle_project_watch(headers, owner_name, project_name, false, service).await }
-                }
-            }),
-        )
-}
-
-fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
-    Router::new()
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestPullRequestListQuery>| {
-                    let service = service.clone();
-                    async move {
-                        rest_list_project_pull_requests(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            })
-            .post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Json(body): Json<RestPullRequestCreateBody>| {
-                    let service = service.clone();
-                    async move {
-                        rest_create_pull_request(headers, owner_name, project_name, body, service)
-                            .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/form-options",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestPullRequestFormQuery>| {
-                    let service = service.clone();
-                    async move {
-                        rest_read_pull_request_create_form_options(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/merge-result",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestPullRequestFormQuery>| {
-                    let service = service.clone();
-                    async move {
-                        rest_read_pull_request_merge_result(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_read_pull_request_detail(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            })
-            .patch({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>,
-                      Json(body): Json<RestPullRequestEditBody>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            body,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/form-options",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_read_pull_request_edit_form_options(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/close",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request_state(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            "closed".to_string(),
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/open",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request_state(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            "open".to_string(),
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/accept",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_accept_pull_request(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/source-branch",
-            delete({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_delete_pull_request_source_branch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            })
-            .post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_restore_pull_request_source_branch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/review",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_set_pull_request_review(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            true,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/unreview",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_set_pull_request_review(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            false,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/watch",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_set_pull_request_watch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            true,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_set_pull_request_watch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            false,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/comments",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>,
-                      Json(body): Json<RestPullRequestCommentBody>| {
-                    let service = service.clone();
-                    async move {
-                        rest_create_pull_request_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            body,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/comments/{comment_id}",
-            delete({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_delete_pull_request_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            comment_id,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            })
-            .patch({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>,
-                      Json(body): Json<RestPullRequestCommentBody>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            comment_id,
-                            body,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/threads/{thread_id}/close",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number, thread_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request_thread_state(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            thread_id,
-                            "closed".to_string(),
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/threads/{thread_id}/open",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, pull_request_number, thread_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_update_pull_request_thread_state(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            thread_id,
-                            "open".to_string(),
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/changes",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Query(query): Query<RestPullRequestChangesQuery>,
-                      Path((owner_name, project_name, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    let service = service.clone();
-                    async move {
-                        rest_read_pull_request_changes(
-                            headers,
-                            owner_name,
-                            project_name,
-                            pull_request_number,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/owners/{owner_name}/projects/{project_name}/reviews",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestReviewThreadListQuery>| {
-                    let service = service.clone();
-                    async move {
-                        rest_list_project_reviews(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/organizations/{organization_name}/pull-requests",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path(organization_name): Path<String>,
-                      Query(query): Query<RestOrganizationPullRequestListQuery>| {
-                    let service = service.clone();
-                    async move {
-                        rest_list_organization_pull_requests(
-                            headers,
-                            organization_name,
-                            query,
-                            service,
-                        )
-                        .await
-                    }
                 }
             }),
         )
@@ -27662,7 +27098,7 @@ async fn rest_pull_request_detail_response(
     .map_err(RestRouteError::from_connect_error)
 }
 
-async fn rest_read_pull_request_create_form_options(
+pub(crate) async fn rest_read_pull_request_create_form_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27735,7 +27171,7 @@ async fn rest_read_pull_request_create_form_options(
     }))
 }
 
-async fn rest_read_pull_request_edit_form_options(
+pub(crate) async fn rest_read_pull_request_edit_form_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27811,7 +27247,7 @@ async fn rest_read_pull_request_edit_form_options(
     }))
 }
 
-async fn rest_read_pull_request_merge_result(
+pub(crate) async fn rest_read_pull_request_merge_result(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27877,7 +27313,7 @@ async fn rest_read_pull_request_merge_result(
     }))
 }
 
-async fn rest_create_pull_request(
+pub(crate) async fn rest_create_pull_request(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27968,7 +27404,7 @@ async fn rest_create_pull_request(
     ))
 }
 
-async fn rest_update_pull_request(
+pub(crate) async fn rest_update_pull_request(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28029,7 +27465,7 @@ async fn rest_update_pull_request(
     ))
 }
 
-async fn rest_update_pull_request_state(
+pub(crate) async fn rest_update_pull_request_state(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28099,7 +27535,7 @@ async fn rest_update_pull_request_state(
     ))
 }
 
-async fn rest_accept_pull_request(
+pub(crate) async fn rest_accept_pull_request(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28230,7 +27666,7 @@ async fn accept_pull_request_for_actor(
     Ok((record, authorization))
 }
 
-async fn rest_delete_pull_request_source_branch(
+pub(crate) async fn rest_delete_pull_request_source_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28301,7 +27737,7 @@ async fn rest_delete_pull_request_source_branch(
     ))
 }
 
-async fn rest_restore_pull_request_source_branch(
+pub(crate) async fn rest_restore_pull_request_source_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28379,7 +27815,7 @@ async fn rest_restore_pull_request_source_branch(
     ))
 }
 
-async fn rest_set_pull_request_review(
+pub(crate) async fn rest_set_pull_request_review(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28450,7 +27886,7 @@ async fn rest_set_pull_request_review(
     ))
 }
 
-async fn rest_set_pull_request_watch(
+pub(crate) async fn rest_set_pull_request_watch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28515,7 +27951,7 @@ async fn rest_set_pull_request_watch(
     ))
 }
 
-async fn rest_create_pull_request_comment(
+pub(crate) async fn rest_create_pull_request_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28603,7 +28039,7 @@ async fn rest_create_pull_request_comment(
     ))
 }
 
-async fn rest_update_pull_request_comment(
+pub(crate) async fn rest_update_pull_request_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28676,7 +28112,7 @@ async fn rest_update_pull_request_comment(
     ))
 }
 
-async fn rest_delete_pull_request_comment(
+pub(crate) async fn rest_delete_pull_request_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28740,7 +28176,7 @@ async fn rest_delete_pull_request_comment(
     ))
 }
 
-async fn rest_update_pull_request_thread_state(
+pub(crate) async fn rest_update_pull_request_thread_state(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28803,7 +28239,7 @@ async fn rest_update_pull_request_thread_state(
     )))
 }
 
-async fn rest_list_project_pull_requests(
+pub(crate) async fn rest_list_project_pull_requests(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28826,7 +28262,7 @@ async fn rest_list_project_pull_requests(
     Ok(Json(rest_project_pull_request_list_from_record(record)))
 }
 
-async fn rest_read_pull_request_detail(
+pub(crate) async fn rest_read_pull_request_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28894,7 +28330,7 @@ fn rest_review_thread_is_non_ranged_for_changes(
     selected_commit_id.is_empty() || thread.commit_id.trim() == selected_commit_id
 }
 
-async fn rest_read_pull_request_changes(
+pub(crate) async fn rest_read_pull_request_changes(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29008,7 +28444,7 @@ async fn rest_read_pull_request_changes(
     }))
 }
 
-async fn rest_list_project_reviews(
+pub(crate) async fn rest_list_project_reviews(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29092,7 +28528,7 @@ async fn rest_project_review_side_filter_counts(
     Ok((all_count, participant_count, author_count))
 }
 
-async fn rest_list_organization_pull_requests(
+pub(crate) async fn rest_list_organization_pull_requests(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationPullRequestListQuery,

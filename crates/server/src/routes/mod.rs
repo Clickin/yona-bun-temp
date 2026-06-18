@@ -27,6 +27,7 @@ pub(crate) use issues::routes as issue_routes;
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::routes as notification_routes;
 pub(crate) use projects::routes as project_routes;
+pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
 pub(crate) use search::routes as search_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
