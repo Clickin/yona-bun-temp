@@ -104,12 +104,12 @@ use common::*;
 mod repo_attachment;
 #[path = "comment_helpers.rs"]
 mod repo_comment_helpers;
-#[path = "event_notification_helpers.rs"]
-mod repo_event_notification_helpers;
 #[path = "issue.rs"]
 mod repo_issue;
 #[path = "issue_comment.rs"]
 mod repo_issue_comment;
+#[path = "issue_event.rs"]
+mod repo_issue_event;
 #[path = "issue_label.rs"]
 mod repo_issue_label;
 #[path = "issue_label_helpers.rs"]
@@ -120,16 +120,26 @@ mod repo_issue_relation;
 mod repo_issue_relation_helpers;
 #[path = "mailbox.rs"]
 mod repo_mailbox;
+#[path = "mention_sync.rs"]
+mod repo_mention_sync;
 #[path = "milestone.rs"]
 mod repo_milestone;
 #[path = "notification.rs"]
 mod repo_notification;
+#[path = "notification_event.rs"]
+mod repo_notification_event;
+#[path = "notification_receivers.rs"]
+mod repo_notification_receivers;
+#[path = "notification_targets.rs"]
+mod repo_notification_targets;
 #[path = "organization.rs"]
 mod repo_organization;
 #[path = "posting.rs"]
 mod repo_posting;
 #[path = "posting_comment.rs"]
 mod repo_posting_comment;
+#[path = "posting_event_helpers.rs"]
+mod repo_posting_event_helpers;
 #[path = "project.rs"]
 mod repo_project;
 #[path = "project_activity.rs"]
@@ -148,6 +158,8 @@ mod repo_project_vcs;
 mod repo_pull_request;
 #[path = "pull_request_commit.rs"]
 mod repo_pull_request_commit;
+#[path = "pull_request_event.rs"]
+mod repo_pull_request_event;
 #[path = "pull_request_review.rs"]
 mod repo_pull_request_review;
 #[path = "pull_request_review_actions.rs"]

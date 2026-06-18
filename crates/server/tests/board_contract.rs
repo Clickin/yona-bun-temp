@@ -670,6 +670,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(list["items"][0]["labels"][0]["name"], "Guide");
     assert_eq!(list["notices"].as_array().unwrap().len(), 1);
     assert_eq!(list["notices"][0]["postNumber"], "2");
+    assert_eq!(list["notices"][0]["title"], "Pinned notice");
     assert_eq!(list["readme"]["postNumber"], "1");
     assert_eq!(
         list["readme"]["bodyMarkdown"],

@@ -845,6 +845,10 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
         commenter_notifications["items"][0]["typeIcon"],
         "merge closed"
     );
+    assert_eq!(
+        commenter_notifications["items"][0]["targetTitle"],
+        "Notification watcher parity"
+    );
 
     fs::remove_dir_all(data_root).unwrap();
 }

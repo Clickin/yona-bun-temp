@@ -54,6 +54,12 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - `repo/mailbox.rs`: `OriginalEmail.java`, `mailbox/*`, inbound mail target planning and normalized message processing.
 - `repo/attachment.rs`: `Attachment.java`, avatar/logo/container binding.
 - `repo/notification.rs`: `NotificationEvent.java`, `NotificationMail.java`, `Watch.java`, `Unwatch.java`, `UserProjectNotification.java`.
+- `repo/notification_event.rs`: notification event row creation and merge/dedup helpers.
+- `repo/notification_receivers.rs`: project, issue, posting, pull-request, and commit notification receiver calculation.
+- `repo/notification_targets.rs`: notification target route/title projection.
+- `repo/mention_sync.rs`: mention row synchronization and mention-triggered notification fan-out.
+- `repo/posting_event_helpers.rs`: posting event helpers retained separately from board posting mutation code.
+- `repo/pull_request_event.rs`: pull-request event row helpers.
 - `repo/common.rs`: repo-private pure helpers, constants, query row structs, and small record conversion functions shared across child modules.
 - `repo/*_helpers.rs`: helper buckets created during the move-only pass. These are allowed to shrink or merge into narrower modules later, but should not accumulate unrelated new behavior.
 
@@ -122,3 +128,12 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 289.2s.
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test board_contract board_posting_contract_covers_labels_readme_notice_mentions_comments_email_and_legacy_direct_routes` in 290.6s.
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test pull_request_mutation_contract pull_request_interaction_surface_mutates_state_review_comments_threads_and_events` in 262.0s.
+- 2026-06-18: split `event_notification_helpers.rs` into issue/pull-request event helpers, notification events, receiver calculation, mention sync, and target projection modules; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 4m49s.
+- 2026-06-18: touching `crates/persistence/src/repo/notification_receivers.rs` followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 42.37s. Timing report: `target/cargo-timings/cargo-timing-20260618T010744732Z-bd4efcc15b512d74.html`.
+- 2026-06-18: Rosetta check for the persistence compile path found native Apple Silicon toolchain evidence: `uname -m` returned `arm64`, `rustc -vV` and `cargo -vV` reported host `aarch64-apple-darwin`, `rustup show active-toolchain` reported `stable-aarch64-apple-darwin`, and `file $(which rustc) $(which cargo)` reported Mach-O `arm64` binaries.
+- 2026-06-18: `cargo build --locked --offline -p yona-rust-persistence --timings` passed in 1m00s. Timing report: `target/cargo-timings/cargo-timing-20260618T012110664Z-bd4efcc15b512d74.html`. The critical dependency chain is SeaORM/SQLx multi-dialect work rather than Rosetta: `sea-query` 26.0s with MySQL/PostgreSQL/SQLite backends, `sqlx-core` 3.6s, `sqlx-postgres` 4.3s, `sqlx-sqlite` 3.7s, `sqlx-mysql` 3.6s, `sqlx` 2.8s, `sea-query-binder` 2.5s, `sea-orm` 4.9s, then `yona-rust-persistence` 6.7s.
+- 2026-06-18: focused notification tests passed after receiver/mention split:
+  - `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` in 295.4s.
+  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test pull_request_mutation_contract pull_request_state_notifications_include_legacy_review_comment_watchers` in 147.9s.
+  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 274.8s.
+  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test board_contract board_contract_manages_project_posts_comments_watch_and_notifications` in 18.9s.

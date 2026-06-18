@@ -349,6 +349,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     .await;
     assert_eq!(listed["items"].as_array().unwrap().len(), 1);
     assert_eq!(listed["items"][0]["issueNumber"], 1);
+    assert_eq!(listed["items"][0]["state"], "closed");
     assert_eq!(listed["items"][0]["commentCount"], 1);
 
     let deleted_comment = response_json(
