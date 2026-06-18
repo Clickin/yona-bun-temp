@@ -5,6 +5,25 @@ license.workspace = true
 version.workspace = true
 autotests = false
 
+[features]
+default = ["sqlite"]
+sqlite = [
+    "sea-orm/sqlx-sqlite",
+    "sea-orm-migration/sqlx-sqlite",
+    "yona-rust-persistence/sqlite",
+]
+postgres = [
+    "sea-orm/sqlx-postgres",
+    "sea-orm-migration/sqlx-postgres",
+    "yona-rust-persistence/postgres",
+]
+mysql = [
+    "sea-orm/sqlx-mysql",
+    "sea-orm-migration/sqlx-mysql",
+    "yona-rust-persistence/mysql",
+]
+db-matrix = ["sqlite", "postgres", "mysql"]
+
 [dependencies]
 base64.workspace = true
 sea-orm.workspace = true

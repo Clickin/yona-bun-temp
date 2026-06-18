@@ -24,7 +24,6 @@ axum = "0.8"
 base64 = "0.22"
 bcrypt = "0.16"
 buffa = { version = "0.2", features = ["json"] }
-buffa-codegen = "0.2"
 buffa-types = { version = "0.2", features = ["json"] }
 bytes = "1.10"
 futures = "0.3"
@@ -35,11 +34,10 @@ include_dir = "0.7"
 lettre = "0.11"
 md-5 = "0.10"
 mime_guess = "2.0"
-protoc-bin-vendored = "3.2"
 pulldown-cmark = "0.13"
 rand = "0.8"
-sea-orm = { version = "1.1", default-features = false, features = ["macros", "runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite", "with-chrono"] }
-sea-orm-migration = { version = "1.1", default-features = false, features = ["runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite", "with-chrono"] }
+sea-orm = { version = "1.1", default-features = false, features = ["macros", "runtime-tokio-rustls", "with-chrono"] }
+sea-orm-migration = { version = "1.1", default-features = false, features = ["runtime-tokio-rustls", "with-chrono"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tempfile = "3.23"

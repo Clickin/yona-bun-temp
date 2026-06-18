@@ -6,6 +6,25 @@ version.workspace = true
 build = "build.rs"
 autotests = false
 
+[features]
+default = ["sqlite"]
+sqlite = [
+    "sea-orm/sqlx-sqlite",
+    "yona-rust-persistence/sqlite",
+    "yona-rust-pilot-migration/sqlite",
+]
+postgres = [
+    "sea-orm/sqlx-postgres",
+    "yona-rust-persistence/postgres",
+    "yona-rust-pilot-migration/postgres",
+]
+mysql = [
+    "sea-orm/sqlx-mysql",
+    "yona-rust-persistence/mysql",
+    "yona-rust-pilot-migration/mysql",
+]
+db-matrix = ["sqlite", "postgres", "mysql"]
+
 [dependencies]
 anyhow.workspace = true
 ammonia.workspace = true
@@ -42,11 +61,6 @@ yona-rust-pilot-migration = { path = "../migration" }
 yona-rust-search = { path = "../search" }
 yona-rust-vcs = { path = "../vcs" }
 
-[build-dependencies]
-buffa.workspace = true
-buffa-codegen.workspace = true
-protoc-bin-vendored.workspace = true
-
 [dev-dependencies]
 tempfile.workspace = true
 testcontainers-modules = { version = "0.15", features = ["postgres", "mariadb"] }
@@ -74,10 +88,12 @@ path = "tests/code_browser_contract.rs"
 [[test]]
 name = "db_matrix_env"
 path = "tests/db_matrix_env.rs"
+required-features = ["db-matrix"]
 
 [[test]]
 name = "db_matrix_testcontainers"
 path = "tests/db_matrix_testcontainers.rs"
+required-features = ["db-matrix"]
 
 [[test]]
 name = "issue_assignable_contract"

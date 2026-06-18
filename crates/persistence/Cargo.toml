@@ -5,6 +5,13 @@ license.workspace = true
 version.workspace = true
 autotests = false
 
+[features]
+default = ["sqlite"]
+sqlite = ["sea-orm/sqlx-sqlite"]
+postgres = ["sea-orm/sqlx-postgres"]
+mysql = ["sea-orm/sqlx-mysql"]
+db-matrix = ["sqlite", "postgres", "mysql"]
+
 [dependencies]
 rand.workspace = true
 sea-orm.workspace = true
