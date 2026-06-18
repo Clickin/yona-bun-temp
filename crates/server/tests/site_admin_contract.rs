@@ -320,6 +320,47 @@ async fn mark_site_admin(db: &DatabaseConnection, user_id: i64) {
     .expect("site admin insert");
 }
 
+#[tokio::test]
+async fn site_admin_legacy_external_user_list_route_is_admin_only() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_plain_csrf, plain_cookie, _plain_id) = register_user(app.clone(), "plain").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let admin_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/-_-api/v1/admin/users")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(admin_response.status(), StatusCode::OK);
+    let users: Value = serde_json::from_str(&response_text(admin_response).await).unwrap();
+    assert!(users
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|user| user["login_id"] == "siteboss"));
+
+    let plain_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/-_-api/v1/admin/users")
+                .header(http::header::COOKIE, &plain_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(plain_response.status(), StatusCode::FORBIDDEN);
+}
+
 async fn insert_attachment(
     db: &DatabaseConnection,
     container_type: &str,

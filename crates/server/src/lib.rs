@@ -610,16 +610,6 @@ fn build_router_with_app_config(
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
     let smart_http_public_origin = public_origin.clone();
-    let legacy_user_search_backend = route_backend.clone();
-    let legacy_user_create_backend = route_backend.clone();
-    let legacy_user_create_session_manager = session_manager.clone();
-    let legacy_user_issues_backend = route_backend.clone();
-    let legacy_user_issues_session_manager = session_manager.clone();
-    let legacy_user_statistics_backend = route_backend.clone();
-    let legacy_user_statistics_session_manager = session_manager.clone();
-    let legacy_translation_backend = route_backend.clone();
-    let legacy_translation_session_manager = session_manager.clone();
-    let legacy_translation_proxy = translation_proxy.clone();
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
@@ -628,12 +618,6 @@ fn build_router_with_app_config(
     let legacy_migration_base_path = base_path.clone();
     let legacy_migration_json_session_manager = session_manager.clone();
     let legacy_migration_json_base_path = base_path.clone();
-    let legacy_admin_users_session_manager = session_manager.clone();
-    let legacy_admin_users_backend = route_backend.clone();
-    let legacy_admin_user_state_session_manager = session_manager.clone();
-    let legacy_admin_user_state_backend = route_backend.clone();
-    let legacy_user_token_session_manager = session_manager.clone();
-    let legacy_user_token_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
@@ -667,97 +651,11 @@ fn build_router_with_app_config(
             base_path.clone(),
             public_origin.clone(),
         ))
-        .route(
-            "/-_-api/v1/admin/users",
-            get(move |headers: HeaderMap| {
-                async move {
-                    legacy_external_admin_users(
-                        headers,
-                        legacy_admin_users_session_manager.clone(),
-                        legacy_admin_users_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/admin/users/{login_id}",
-            patch(
-                move |headers: HeaderMap,
-                      Path(login_id): Path<String>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_admin_user_state(
-                            headers,
-                            login_id,
-                            body,
-                            legacy_admin_user_state_session_manager.clone(),
-                            legacy_admin_user_state_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/users",
-            get(
-                move |headers: HeaderMap, Query(query): Query<LegacyExternalUsersQuery>| {
-                    async move {
-                        legacy_external_users(headers, query, legacy_user_search_backend.clone())
-                            .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/users",
-            post(
-                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_create_users(
-                            headers,
-                            body,
-                            legacy_user_create_session_manager.clone(),
-                            legacy_user_create_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/users/token",
-            post(
-                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_user_token(
-                            headers,
-                            body,
-                            legacy_user_token_session_manager.clone(),
-                            legacy_user_token_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/user/issues",
-            get(
-                move |headers: HeaderMap, Query(query): Query<LegacyExternalUserIssuesQuery>| {
-                    async move {
-                        legacy_external_user_issues(
-                            headers,
-                            query,
-                            legacy_user_issues_session_manager.clone(),
-                            legacy_user_issues_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
+        .merge(routes::user_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            translation_proxy.clone(),
+        ))
         .merge(routes::board_routes(
             session_manager.clone(),
             route_backend.clone(),
@@ -769,37 +667,6 @@ fn build_router_with_app_config(
             base_path.clone(),
             public_origin.clone(),
         ))
-        .route(
-            "/-_-api/v1/users/{login_id}/statistics",
-            get(move |headers: HeaderMap, Path(login_id): Path<String>| {
-                async move {
-                    legacy_external_user_statistics(
-                        headers,
-                        login_id,
-                        legacy_user_statistics_session_manager.clone(),
-                        legacy_user_statistics_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/translation",
-            post(
-                move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_translation(
-                            headers,
-                            body,
-                            legacy_translation_session_manager.clone(),
-                            legacy_translation_backend.clone(),
-                            legacy_translation_proxy.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
         .merge(routes::static_compat_routes())
         .route(
             "/_init",
@@ -825,52 +692,38 @@ fn build_router_with_app_config(
         )
         .route(
             "/authenticate/{provider}/denied",
-            get(move |Path(provider): Path<String>| {
-                async move {
-                    direct_authenticate_provider_denied(
-                        provider,
-                        authenticate_denied_base_path.clone(),
-                    )
+            get(move |Path(provider): Path<String>| async move {
+                direct_authenticate_provider_denied(provider, authenticate_denied_base_path.clone())
                     .await
-                }
             }),
         )
         .route(
             "/authenticate/{provider}",
-            get(move |Path(provider): Path<String>| {
-                async move {
-                    direct_unsupported_authenticate_provider(
-                        provider,
-                        authenticate_base_path.clone(),
-                    )
+            get(move |Path(provider): Path<String>| async move {
+                direct_unsupported_authenticate_provider(provider, authenticate_base_path.clone())
                     .await
-                }
             }),
         )
         .route(
             "/logout",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_legacy_logout(
-                        headers,
-                        direct_logout_session_manager.clone(),
-                        direct_logout_base_path.clone(),
-                    )
-                    .await
-                }
+            get(move |headers: HeaderMap| async move {
+                direct_legacy_logout(
+                    headers,
+                    direct_logout_session_manager.clone(),
+                    direct_logout_base_path.clone(),
+                )
+                .await
             }),
         )
         .route(
             "/users/logout",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_legacy_logout(
-                        headers,
-                        direct_user_logout_session_manager.clone(),
-                        direct_user_logout_base_path.clone(),
-                    )
-                    .await
-                }
+            get(move |headers: HeaderMap| async move {
+                direct_legacy_logout(
+                    headers,
+                    direct_user_logout_session_manager.clone(),
+                    direct_user_logout_base_path.clone(),
+                )
+                .await
             }),
         )
         .route(
@@ -891,8 +744,8 @@ fn build_router_with_app_config(
         )
         .route(
             "/users/login",
-            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
-                async move {
+            post(
+                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_legacy_login(
                         headers,
                         form,
@@ -902,13 +755,13 @@ fn build_router_with_app_config(
                         direct_login_public_origin.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/users/signup",
-            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
-                async move {
+            post(
+                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_legacy_signup(
                         headers,
                         form,
@@ -918,34 +771,34 @@ fn build_router_with_app_config(
                         direct_signup_public_origin.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/user/isUsed",
-            get(move |Query(query): Query<DirectUserNameValidationQuery>| {
-                async move {
+            get(
+                move |Query(query): Query<DirectUserNameValidationQuery>| async move {
                     direct_legacy_user_name_validation(query, signup_name_validator_backend.clone())
                         .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/user/isEmailExist",
-            get(move |Query(query): Query<DirectUserEmailValidationQuery>| {
-                async move {
+            get(
+                move |Query(query): Query<DirectUserEmailValidationQuery>| async move {
                     direct_legacy_user_email_validation(
                         query,
                         signup_email_validator_backend.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/_import",
-            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
-                async move {
+            post(
+                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_import_project(
                         headers,
                         form,
@@ -955,15 +808,17 @@ fn build_router_with_app_config(
                         project_import_default_scope.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/migration",
             get(move |headers: HeaderMap| {
                 let session_manager = legacy_migration_session_manager.clone();
                 let base_path = legacy_migration_base_path.clone();
-                async move { direct_legacy_migration_disabled(headers, session_manager, base_path).await }
+                async move {
+                    direct_legacy_migration_disabled(headers, session_manager, base_path).await
+                }
             }),
         )
         .route(
@@ -983,8 +838,8 @@ fn build_router_with_app_config(
                 let browser_runtime = legacy_lost_password_page_browser_runtime.clone();
                 async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
             })
-            .post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
-                async move {
+            .post(
+                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_request_reset_password_email(
                         headers,
                         form,
@@ -995,8 +850,8 @@ fn build_router_with_app_config(
                         lost_password_site_name.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .route(
             "/resetPassword",
@@ -1005,16 +860,16 @@ fn build_router_with_app_config(
                 let browser_runtime = legacy_reset_password_page_browser_runtime.clone();
                 async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
             })
-            .post(move |Form(form): Form<HashMap<String, String>>| {
-                async move {
+            .post(
+                move |Form(form): Form<HashMap<String, String>>| async move {
                     direct_reset_password(
                         form,
                         reset_password_backend.clone(),
                         reset_password_base_path.clone(),
                     )
                     .await
-                }
-            }),
+                },
+            ),
         )
         .merge(routes::file_routes(
             session_manager.clone(),
@@ -1039,8 +894,7 @@ fn build_router_with_app_config(
             session_manager.clone(),
             route_backend.clone(),
             base_path.clone(),
-        ))
-        ;
+        ));
 
     match assets.clone() {
         AssetMode::Filesystem(asset_root) => {
@@ -23016,14 +22870,14 @@ async fn legacy_external_api_hello() -> Json<serde_json::Value> {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct LegacyExternalUsersQuery {
+pub(crate) struct LegacyExternalUsersQuery {
     #[serde(default)]
     query: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct LegacyExternalUserIssuesQuery {
+pub(crate) struct LegacyExternalUserIssuesQuery {
     #[serde(default = "legacy_external_user_issues_default_filter")]
     filter: String,
     #[serde(default = "legacy_external_user_issues_default_page")]
@@ -23093,7 +22947,7 @@ fn legacy_external_user_token_body_from_value(
     }
 }
 
-async fn legacy_external_users(
+pub(crate) async fn legacy_external_users(
     headers: HeaderMap,
     query: LegacyExternalUsersQuery,
     backend: PilotBackend,
@@ -23152,7 +23006,7 @@ async fn legacy_external_users(
     response
 }
 
-async fn legacy_external_user_token(
+pub(crate) async fn legacy_external_user_token(
     headers: HeaderMap,
     body: serde_json::Value,
     session_manager: SessionManager,
@@ -23210,7 +23064,7 @@ async fn legacy_external_user_token(
     response
 }
 
-async fn legacy_external_create_users(
+pub(crate) async fn legacy_external_create_users(
     headers: HeaderMap,
     body: serde_json::Value,
     session_manager: SessionManager,
@@ -23307,7 +23161,7 @@ async fn legacy_external_create_users(
     (StatusCode::CREATED, Json(created_users)).into_response()
 }
 
-async fn legacy_external_user_issues(
+pub(crate) async fn legacy_external_user_issues(
     headers: HeaderMap,
     query: LegacyExternalUserIssuesQuery,
     session_manager: SessionManager,
@@ -23418,7 +23272,7 @@ fn legacy_external_user_issue_result(
     })
 }
 
-async fn legacy_external_admin_users(
+pub(crate) async fn legacy_external_admin_users(
     headers: HeaderMap,
     session_manager: SessionManager,
     backend: PilotBackend,
@@ -23481,7 +23335,7 @@ async fn legacy_external_admin_users(
     Json(users).into_response()
 }
 
-async fn legacy_external_update_admin_user_state(
+pub(crate) async fn legacy_external_update_admin_user_state(
     headers: HeaderMap,
     login_id: String,
     body: serde_json::Value,
@@ -26208,7 +26062,7 @@ async fn legacy_external_toggle_favorite_organization(
     .into_response()
 }
 
-async fn legacy_external_user_statistics(
+pub(crate) async fn legacy_external_user_statistics(
     headers: HeaderMap,
     login_id: String,
     session_manager: SessionManager,
@@ -26631,7 +26485,7 @@ fn direct_translation_request_from_value(value: &serde_json::Value) -> DirectTra
     }
 }
 
-async fn legacy_external_translation(
+pub(crate) async fn legacy_external_translation(
     headers: HeaderMap,
     body: serde_json::Value,
     session_manager: SessionManager,

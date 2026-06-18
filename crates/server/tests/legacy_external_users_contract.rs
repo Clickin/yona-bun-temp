@@ -184,6 +184,10 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         .as_str()
         .expect("legacy user info html")
         .contains("mention_username"));
+    assert!(legacy_users[0]["info"]
+        .as_str()
+        .expect("legacy user info html")
+        .contains("mention_image"));
 
     let legacy_users_html = rest_with_headers(
         app.clone(),
