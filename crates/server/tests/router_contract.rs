@@ -202,6 +202,7 @@ async fn session_bootstrap_issues_cookies_and_csrf_header() {
     assert!(cookies
         .iter()
         .any(|cookie| cookie.starts_with("yona_csrf_token=")));
+    assert!(cookies.iter().all(|cookie| cookie.contains("Path=/yona")));
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json = String::from_utf8(body.to_vec()).unwrap();

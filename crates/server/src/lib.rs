@@ -935,14 +935,10 @@ fn build_router_with_app_config(
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = Router::new()
-        .route(
-            "/api/auth/session",
-            get(move |headers: HeaderMap| {
-                let session_manager = session_manager.clone();
-                let backend = route_backend.clone();
-                async move { session_bootstrap(headers, session_manager, backend).await }
-            }),
-        )
+        .merge(routes::auth_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+        ))
         .nest("/api/v1", rest_router)
         .route(
             "/-_-api",
@@ -3559,27 +3555,6 @@ fn build_router_with_app_config(
     } else {
         Router::new().nest(&base_path, base_router)
     }
-}
-
-async fn session_bootstrap(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> impl IntoResponse {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = build_session_route_payload(&backend, &session).await;
-    let mut response = Json(payload).into_response();
-    response.headers_mut().insert(
-        "X-CSRF-Token",
-        session.csrf_token.parse().expect("csrf token header"),
-    );
-    for cookie in session_manager.build_set_cookie_headers(&session) {
-        response.headers_mut().append(
-            axum::http::header::SET_COOKIE,
-            cookie.parse().expect("set-cookie header"),
-        );
-    }
-    response
 }
 
 fn base_path_href(base_path: &str, path: &str) -> String {

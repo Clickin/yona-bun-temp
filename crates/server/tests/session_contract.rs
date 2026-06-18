@@ -36,6 +36,10 @@ fn configured_session_timeout_expires_stored_session_and_cookie() {
             .any(|cookie| cookie.starts_with("yona_session=") && cookie.contains("Max-Age=0")),
         "configured session timeout should be reflected in the session cookie: {cookies:?}"
     );
+    assert!(
+        cookies.iter().all(|cookie| cookie.contains("Path=/yona")),
+        "session bootstrap cookies should preserve the configured base path: {cookies:?}"
+    );
 
     let mut headers = HeaderMap::new();
     headers.insert(
