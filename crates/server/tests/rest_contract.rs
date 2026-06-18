@@ -3420,6 +3420,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_board_create_response.status(), StatusCode::CREATED);
+    assert!(legacy_board_create_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     let legacy_board_created = response_json(legacy_board_create_response).await;
     assert_eq!(legacy_board_created[0]["status"], 201);
     assert_eq!(
@@ -3477,6 +3481,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         nested_legacy_board_create_response.status(),
         StatusCode::CREATED
     );
+    assert!(nested_legacy_board_create_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     let nested_legacy_board_created = response_json(nested_legacy_board_create_response).await;
     assert_eq!(nested_legacy_board_created[0]["status"], 201);
     assert_eq!(

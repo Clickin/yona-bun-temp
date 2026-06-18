@@ -241,6 +241,60 @@ fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, 
 }
 
 #[tokio::test]
+async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json_shape() {
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    let created_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "posts": [
+                {
+                    "body": "legacy board body",
+                    "number": 77,
+                    "title": "legacy board title"
+                }
+            ]
+        })),
+    )
+    .await;
+    assert_eq!(created_response.status(), StatusCode::CREATED);
+    assert!(created_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    let created_text = response_text(created_response).await;
+    let created: serde_json::Value = serde_json::from_str(&created_text).expect("created json");
+    assert_eq!(created[0]["status"], 201);
+    assert_eq!(created[0]["location"], "/yona/owner/projectYobi/post/77");
+
+    let updated = ok_json(
+        rest(
+            app,
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "content": "legacy board body updated",
+                "original": "legacy board body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["number"], 77);
+    assert_eq!(updated["title"], "legacy board title");
+    assert_eq!(updated["body"], "legacy board body updated");
+    assert_eq!(updated["type"], "BOARD_POST");
+}
+
+#[tokio::test]
 async fn board_readme_posting_commits_git_readme_file() {
     let _guard = yona_data_env_lock()
         .lock()
