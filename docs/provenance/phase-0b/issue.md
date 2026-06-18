@@ -239,9 +239,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
 
 ## Remaining Phase 2 Follow-ups
 
-- Group/org sharer mutation is not implemented as an app parity gap: the available legacy UI artifact only forwards a generic `type` from sharable-user results, while Rust has evidence-backed user and public-project expansion. Unsupported target types now fail with 400 instead of being treated as user login IDs.
-- Legacy external `/-_-api/v1` issue API parity is deferred to a separate migrator/export/import deliverable, not the app server.
+- Legacy external `/-_-api/v1` issue API parity beyond the app-owned direct helper rows is deferred to a separate migrator/export/import deliverable, not the app server.
 
 ## Shared Surface Notes
 
 - Phase 3A Code Browser changes may touch shared frontend client/view-model files that also serve issue routes. Those edits are contract plumbing only; they do not change issue lifecycle behavior or close any remaining Phase 2 issue follow-up.
+- Issue sharer project-target parity is closed for app-owned surfaces: Rust preserves legacy `IssueApi.updateSharer` `type=project` expansion by applying share/unshare to all target project members, while unsupported non-legacy target types fail explicitly.

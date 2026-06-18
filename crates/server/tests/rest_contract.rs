@@ -1203,6 +1203,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .unwrap()
         .expect("visitor user")
         .id;
+    let guest_id = repository
+        .find_user_by_identifier("guest")
+        .await
+        .unwrap()
+        .expect("guest user")
+        .id;
     let legacy_board_post_file = repository
         .create_user_attachment_upload(
             owner_id,
@@ -2793,6 +2799,100 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(legacy_issue_unshared["action"], "deleted");
     assert_eq!(legacy_issue_unshared["sharer"], "guest");
+    let target_share_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "statee".to_string(),
+            overview: Some("legacy project sharer target".to_string()),
+            project_name: "targetShare".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("target share project");
+    repository
+        .add_project_membership(target_share_project.id, guest_id, "member")
+        .await
+        .expect("target share guest membership");
+    repository
+        .add_project_membership(target_share_project.id, visitor_id, "member")
+        .await
+        .expect("target share visitor membership");
+    let legacy_project_shared = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "request": {
+                    "action": "add"
+                },
+                "target": {
+                    "sharer": {
+                        "project": {
+                            "loginId": target_share_project.id,
+                            "type": "project"
+                        }
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_project_shared["action"], "added");
+    assert_eq!(legacy_project_shared["sharer"], "targetShare");
+    let legacy_project_shared_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let mut legacy_project_sharers = legacy_project_shared_detail["sharers"]
+        .as_array()
+        .expect("legacy project share issue sharers")
+        .iter()
+        .map(|sharer| sharer["loginId"].as_str().unwrap_or_default().to_string())
+        .collect::<Vec<_>>();
+    legacy_project_sharers.sort();
+    assert_eq!(
+        legacy_project_sharers,
+        vec!["guest".to_string(), "visitor".to_string()]
+    );
+    let legacy_project_unshared = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "request": {
+                    "action": "delete"
+                },
+                "target": {
+                    "sharer": {
+                        "project": {
+                            "loginId": target_share_project.id,
+                            "type": "project"
+                        }
+                    }
+                }
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_project_unshared["action"], "deleted");
+    assert_eq!(legacy_project_unshared["sharer"], "targetShare");
     let legacy_issue_no_sharer = rest(
         app.clone(),
         Method::POST,
