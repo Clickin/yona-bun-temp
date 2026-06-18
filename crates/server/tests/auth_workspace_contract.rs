@@ -446,6 +446,7 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
     let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -463,6 +464,25 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
         Some("/yona/users/loginform?error=unsupported&provider=github")
+    );
+
+    let encoded_provider = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/git%20hub")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(encoded_provider.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        encoded_provider
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?error=unsupported&provider=git%20hub")
     );
 }
 

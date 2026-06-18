@@ -570,35 +570,6 @@ fn build_router_with_app_config(
     );
     let legacy_init_backend = route_backend.clone();
     let legacy_init_base_path = base_path.clone();
-    let direct_logout_session_manager = session_manager.clone();
-    let direct_logout_base_path = base_path.clone();
-    let direct_user_logout_session_manager = session_manager.clone();
-    let direct_user_logout_base_path = base_path.clone();
-    let direct_login_session_manager = session_manager.clone();
-    let direct_login_backend = route_backend.clone();
-    let direct_login_base_path = base_path.clone();
-    let direct_login_public_origin = public_origin.clone();
-    let direct_signup_session_manager = session_manager.clone();
-    let direct_signup_backend = route_backend.clone();
-    let direct_signup_base_path = base_path.clone();
-    let direct_signup_public_origin = public_origin.clone();
-    let signup_name_validator_backend = route_backend.clone();
-    let signup_email_validator_backend = route_backend.clone();
-    let lost_password_session_manager = session_manager.clone();
-    let lost_password_backend = route_backend.clone();
-    let lost_password_base_path = base_path.clone();
-    let lost_password_public_origin = public_origin.clone();
-    let lost_password_site_name = site_name.clone();
-    let reset_password_backend = route_backend.clone();
-    let reset_password_base_path = base_path.clone();
-    let legacy_login_page_assets = assets.clone();
-    let legacy_login_page_browser_runtime = browser_runtime.clone();
-    let legacy_signup_page_assets = assets.clone();
-    let legacy_signup_page_browser_runtime = browser_runtime.clone();
-    let legacy_lost_password_page_assets = assets.clone();
-    let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
-    let legacy_reset_password_page_assets = assets.clone();
-    let legacy_reset_password_page_browser_runtime = browser_runtime.clone();
     let legacy_api_index_assets = assets.clone();
     let legacy_api_index_browser_runtime = browser_runtime.clone();
     let legacy_api_v1_index_assets = assets.clone();
@@ -618,14 +589,17 @@ fn build_router_with_app_config(
     let legacy_migration_base_path = base_path.clone();
     let legacy_migration_json_session_manager = session_manager.clone();
     let legacy_migration_json_base_path = base_path.clone();
-    let authenticate_base_path = base_path.clone();
-    let authenticate_denied_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = Router::new()
         .merge(routes::auth_routes(
             session_manager.clone(),
             route_backend.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+            site_name.clone(),
         ))
         .nest("/api/v1", rest_router)
         .route(
@@ -691,111 +665,6 @@ fn build_router_with_app_config(
             any(|| async { rest_not_found_response() }),
         )
         .route(
-            "/authenticate/{provider}/denied",
-            get(move |Path(provider): Path<String>| async move {
-                direct_authenticate_provider_denied(provider, authenticate_denied_base_path.clone())
-                    .await
-            }),
-        )
-        .route(
-            "/authenticate/{provider}",
-            get(move |Path(provider): Path<String>| async move {
-                direct_unsupported_authenticate_provider(provider, authenticate_base_path.clone())
-                    .await
-            }),
-        )
-        .route(
-            "/logout",
-            get(move |headers: HeaderMap| async move {
-                direct_legacy_logout(
-                    headers,
-                    direct_logout_session_manager.clone(),
-                    direct_logout_base_path.clone(),
-                )
-                .await
-            }),
-        )
-        .route(
-            "/users/logout",
-            get(move |headers: HeaderMap| async move {
-                direct_legacy_logout(
-                    headers,
-                    direct_user_logout_session_manager.clone(),
-                    direct_user_logout_base_path.clone(),
-                )
-                .await
-            }),
-        )
-        .route(
-            "/users/loginform",
-            get(move || {
-                let assets = legacy_login_page_assets.clone();
-                let browser_runtime = legacy_login_page_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route(
-            "/users/signupform",
-            get(move || {
-                let assets = legacy_signup_page_assets.clone();
-                let browser_runtime = legacy_signup_page_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route(
-            "/users/login",
-            post(
-                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_legacy_login(
-                        headers,
-                        form,
-                        direct_login_session_manager.clone(),
-                        direct_login_backend.clone(),
-                        direct_login_base_path.clone(),
-                        direct_login_public_origin.clone(),
-                    )
-                    .await
-                },
-            ),
-        )
-        .route(
-            "/users/signup",
-            post(
-                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_legacy_signup(
-                        headers,
-                        form,
-                        direct_signup_session_manager.clone(),
-                        direct_signup_backend.clone(),
-                        direct_signup_base_path.clone(),
-                        direct_signup_public_origin.clone(),
-                    )
-                    .await
-                },
-            ),
-        )
-        .route(
-            "/user/isUsed",
-            get(
-                move |Query(query): Query<DirectUserNameValidationQuery>| async move {
-                    direct_legacy_user_name_validation(query, signup_name_validator_backend.clone())
-                        .await
-                },
-            ),
-        )
-        .route(
-            "/user/isEmailExist",
-            get(
-                move |Query(query): Query<DirectUserEmailValidationQuery>| async move {
-                    direct_legacy_user_email_validation(
-                        query,
-                        signup_email_validator_backend.clone(),
-                    )
-                    .await
-                },
-            ),
-        )
-        .route(
             "/_import",
             post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
@@ -830,46 +699,6 @@ fn build_router_with_app_config(
                     direct_legacy_migration_json_disabled(headers, session_manager, base_path).await
                 }
             }),
-        )
-        .route(
-            "/lostPassword",
-            get(move || {
-                let assets = legacy_lost_password_page_assets.clone();
-                let browser_runtime = legacy_lost_password_page_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            })
-            .post(
-                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_request_reset_password_email(
-                        headers,
-                        form,
-                        lost_password_session_manager.clone(),
-                        lost_password_backend.clone(),
-                        lost_password_base_path.clone(),
-                        lost_password_public_origin.clone(),
-                        lost_password_site_name.clone(),
-                    )
-                    .await
-                },
-            ),
-        )
-        .route(
-            "/resetPassword",
-            get(move || {
-                let assets = legacy_reset_password_page_assets.clone();
-                let browser_runtime = legacy_reset_password_page_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            })
-            .post(
-                move |Form(form): Form<HashMap<String, String>>| async move {
-                    direct_reset_password(
-                        form,
-                        reset_password_backend.clone(),
-                        reset_password_base_path.clone(),
-                    )
-                    .await
-                },
-            ),
         )
         .merge(routes::file_routes(
             session_manager.clone(),
@@ -1499,7 +1328,7 @@ async fn smart_http_or_not_found(
     StatusCode::NOT_FOUND.into_response()
 }
 
-async fn serve_frontend_page(
+pub(crate) async fn serve_frontend_page(
     assets: AssetMode,
     method: Method,
     browser_runtime: BrowserRuntimeConfig,
@@ -8138,7 +7967,7 @@ async fn send_project_transfer_request_mail(
     Ok(())
 }
 
-async fn direct_request_reset_password_email(
+pub(crate) async fn direct_request_reset_password_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
     session_manager: SessionManager,
@@ -8194,7 +8023,7 @@ async fn direct_request_reset_password_email(
     response
 }
 
-async fn direct_reset_password(
+pub(crate) async fn direct_reset_password(
     form: HashMap<String, String>,
     backend: PilotBackend,
     base_path: String,
@@ -8950,7 +8779,7 @@ fn redirect_with_context_headers(base_path: &str, path: &str, ctx: &Context) -> 
     response
 }
 
-async fn direct_legacy_login(
+pub(crate) async fn direct_legacy_login(
     headers: HeaderMap,
     form: HashMap<String, String>,
     session_manager: SessionManager,
@@ -8998,7 +8827,7 @@ async fn direct_legacy_login(
     }
 }
 
-async fn direct_legacy_signup(
+pub(crate) async fn direct_legacy_signup(
     headers: HeaderMap,
     form: HashMap<String, String>,
     session_manager: SessionManager,
@@ -9425,7 +9254,10 @@ pub(crate) async fn direct_update_project_overview(
     }
 }
 
-async fn direct_unsupported_authenticate_provider(provider: String, base_path: String) -> Response {
+pub(crate) async fn direct_unsupported_authenticate_provider(
+    provider: String,
+    base_path: String,
+) -> Response {
     let provider = provider.trim();
     let redirect_path = if provider.is_empty() {
         "/users/loginform?error=unsupported".to_string()
@@ -9438,7 +9270,10 @@ async fn direct_unsupported_authenticate_provider(provider: String, base_path: S
     Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
 }
 
-async fn direct_authenticate_provider_denied(provider: String, base_path: String) -> Response {
+pub(crate) async fn direct_authenticate_provider_denied(
+    provider: String,
+    base_path: String,
+) -> Response {
     let provider = provider.trim();
     let redirect_path = if provider.is_empty() {
         "/users/loginform?error=oauthDenied".to_string()
@@ -9586,7 +9421,7 @@ const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
 ];
 
 #[derive(Deserialize)]
-struct DirectUserNameValidationQuery {
+pub(crate) struct DirectUserNameValidationQuery {
     name: Option<String>,
 }
 
@@ -9599,7 +9434,7 @@ struct DirectUserNameValidationResponse {
 }
 
 #[derive(Deserialize)]
-struct DirectUserEmailValidationQuery {
+pub(crate) struct DirectUserEmailValidationQuery {
     email: Option<String>,
 }
 
@@ -9609,7 +9444,7 @@ struct DirectUserEmailValidationResponse {
     is_exist: bool,
 }
 
-async fn direct_legacy_user_name_validation(
+pub(crate) async fn direct_legacy_user_name_validation(
     query: DirectUserNameValidationQuery,
     backend: PilotBackend,
 ) -> Response {
@@ -9640,7 +9475,7 @@ async fn direct_legacy_user_name_validation(
     .into_response()
 }
 
-async fn direct_legacy_user_email_validation(
+pub(crate) async fn direct_legacy_user_email_validation(
     query: DirectUserEmailValidationQuery,
     backend: PilotBackend,
 ) -> Response {
@@ -9850,7 +9685,7 @@ fn is_legacy_reserved_user_name(name: &str) -> bool {
         .any(|reserved| normalize_identifier(reserved) == normalized)
 }
 
-async fn direct_legacy_logout(
+pub(crate) async fn direct_legacy_logout(
     headers: HeaderMap,
     session_manager: SessionManager,
     base_path: String,
@@ -33500,7 +33335,7 @@ enum PilotBackend {
 }
 
 #[derive(Clone)]
-enum AssetMode {
+pub(crate) enum AssetMode {
     None,
     Filesystem(PathBuf),
     Embedded,
