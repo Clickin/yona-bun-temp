@@ -735,10 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_issue_content_backend = route_backend.clone();
-    let legacy_issue_content_session_manager = session_manager.clone();
-    let legacy_issue_detect_change_backend = route_backend.clone();
-    let legacy_issue_detect_change_session_manager = session_manager.clone();
     let legacy_issue_read_backend = route_backend.clone();
     let legacy_issue_read_session_manager = session_manager.clone();
     let legacy_issue_comment_backend = route_backend.clone();
@@ -990,48 +986,6 @@ fn build_router_with_app_config(
                             body,
                             legacy_issue_comment_update_session_manager.clone(),
                             legacy_issue_comment_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/content",
-            patch(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue_content(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_content_session_manager.clone(),
-                            legacy_issue_content_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/detectChange",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_detect_issue_change(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_detect_change_session_manager.clone(),
-                            legacy_issue_detect_change_backend.clone(),
                         )
                         .await
                     }

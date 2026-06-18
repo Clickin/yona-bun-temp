@@ -1,6 +1,12 @@
-use axum::{extract::Path, http::HeaderMap, routing::post, Json, Router};
+use axum::{
+    extract::Path,
+    http::HeaderMap,
+    routing::{patch, post},
+    Json, Router,
+};
 
 use crate::{
+    legacy_external_detect_issue_change, legacy_external_update_issue_content,
     legacy_external_update_issue_labels, legacy_external_update_issue_weight,
     session::SessionManager, PilotBackend,
 };
@@ -12,6 +18,10 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
     let legacy_issue_weight_up_session_manager = session_manager.clone();
     let legacy_issue_weight_down_backend = backend.clone();
     let legacy_issue_weight_down_session_manager = session_manager.clone();
+    let legacy_issue_content_backend = backend.clone();
+    let legacy_issue_content_session_manager = session_manager.clone();
+    let legacy_issue_detect_change_backend = backend.clone();
+    let legacy_issue_detect_change_session_manager = session_manager.clone();
 
     Router::new()
         .route(
@@ -69,6 +79,48 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
                             -1,
                             legacy_issue_weight_down_session_manager.clone(),
                             legacy_issue_weight_down_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/content",
+            patch(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_update_issue_content(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_content_session_manager.clone(),
+                            legacy_issue_content_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/detectChange",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_detect_issue_change(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_detect_change_session_manager.clone(),
+                            legacy_issue_detect_change_backend.clone(),
                         )
                         .await
                     }

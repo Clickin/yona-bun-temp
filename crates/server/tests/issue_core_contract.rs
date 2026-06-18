@@ -727,6 +727,44 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     assert_eq!(updated["historyMarkdown"], "body");
     assert_eq!(updated["historyHtml"].as_str().unwrap_or(""), "");
 
+    let legacy_content_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({
+                "content": "legacy external content update",
+                "original": "updated"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_content_updated["body"],
+        "legacy external content update"
+    );
+
+    let legacy_detect_change = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({
+                "issueBodyChecksum": "stale",
+                "numOfComments": 0
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_detect_change["result"], "ok");
+    assert_eq!(legacy_detect_change["issueBodyChanged"], true);
+
     let state_updated = response_json(
         rest(
             app.clone(),
