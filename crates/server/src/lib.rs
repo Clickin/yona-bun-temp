@@ -641,10 +641,6 @@ fn build_router_with_app_config(
     let category_update_session_manager = session_manager.clone();
     let category_delete_backend = route_backend.clone();
     let category_delete_session_manager = session_manager.clone();
-    let thread_open_backend = route_backend.clone();
-    let thread_open_session_manager = session_manager.clone();
-    let thread_close_backend = route_backend.clone();
-    let thread_close_session_manager = session_manager.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
@@ -681,16 +677,6 @@ fn build_router_with_app_config(
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
     let smart_http_public_origin = public_origin.clone();
-    let pull_request_accept_backend = route_backend.clone();
-    let pull_request_accept_session_manager = session_manager.clone();
-    let pull_request_accept_base_path = base_path.clone();
-    let pull_request_accept_public_origin = public_origin.clone();
-    let pull_request_delete_source_branch_backend = route_backend.clone();
-    let pull_request_delete_source_branch_session_manager = session_manager.clone();
-    let pull_request_delete_source_branch_base_path = base_path.clone();
-    let pull_request_restore_source_branch_backend = route_backend.clone();
-    let pull_request_restore_source_branch_session_manager = session_manager.clone();
-    let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
     let legacy_user_search_backend = route_backend.clone();
@@ -1202,36 +1188,12 @@ fn build_router_with_app_config(
                 }
             }),
         )
-        .route(
-            "/threads/{thread_id}/open",
-            post(move |headers: HeaderMap, Path(thread_id): Path<i64>| {
-                async move {
-                    direct_update_review_thread_state(
-                        headers,
-                        thread_id,
-                        "open",
-                        thread_open_session_manager.clone(),
-                        thread_open_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/threads/{thread_id}/close",
-            post(move |headers: HeaderMap, Path(thread_id): Path<i64>| {
-                async move {
-                    direct_update_review_thread_state(
-                        headers,
-                        thread_id,
-                        "closed",
-                        thread_close_session_manager.clone(),
-                        thread_close_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
+        .merge(routes::pull_request_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            base_path.clone(),
+            public_origin.clone(),
+        ))
         .merge(routes::site_admin_routes(
             session_manager.clone(),
             route_backend.clone(),
@@ -1478,81 +1440,6 @@ fn build_router_with_app_config(
                             code_ajax_branch_root_slash_session_manager.clone(),
                             code_ajax_branch_root_slash_backend.clone(),
                             code_ajax_branch_root_slash_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/{owner}/{project}/pullRequest/{pull_request_number}/accept",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    async move {
-                        direct_accept_pull_request(
-                            headers,
-                            owner,
-                            project,
-                            pull_request_number,
-                            pull_request_accept_session_manager.clone(),
-                            pull_request_accept_backend.clone(),
-                            pull_request_accept_base_path.clone(),
-                            pull_request_accept_public_origin.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/{owner}/{project}/pullRequest/{pull_request_number}/deletefrombranch",
-            delete(
-                move |headers: HeaderMap,
-                      Path((owner, project, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    async move {
-                        direct_update_pull_request_source_branch(
-                            headers,
-                            owner,
-                            project,
-                            pull_request_number,
-                            PullRequestSourceBranchAction::Delete,
-                            pull_request_delete_source_branch_session_manager.clone(),
-                            pull_request_delete_source_branch_backend.clone(),
-                            pull_request_delete_source_branch_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/{owner}/{project}/pullRequest/{pull_request_number}/restorefrombranch",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project, pull_request_number)): Path<(
-                    String,
-                    String,
-                    i64,
-                )>| {
-                    async move {
-                        direct_update_pull_request_source_branch(
-                            headers,
-                            owner,
-                            project,
-                            pull_request_number,
-                            PullRequestSourceBranchAction::Restore,
-                            pull_request_restore_source_branch_session_manager.clone(),
-                            pull_request_restore_source_branch_backend.clone(),
-                            pull_request_restore_source_branch_base_path.clone(),
                         )
                         .await
                     }
@@ -10788,7 +10675,7 @@ async fn direct_legacy_leave_project(
     )
 }
 
-async fn direct_accept_pull_request(
+pub(crate) async fn direct_accept_pull_request(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -10825,12 +10712,12 @@ async fn direct_accept_pull_request(
 }
 
 #[derive(Clone, Copy)]
-enum PullRequestSourceBranchAction {
+pub(crate) enum PullRequestSourceBranchAction {
     Delete,
     Restore,
 }
 
-async fn direct_update_pull_request_source_branch(
+pub(crate) async fn direct_update_pull_request_source_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -33456,7 +33343,7 @@ fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBo
     }
 }
 
-async fn direct_update_review_thread_state(
+pub(crate) async fn direct_update_review_thread_state(
     headers: HeaderMap,
     thread_id: i64,
     next_state: &str,

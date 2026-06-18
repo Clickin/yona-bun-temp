@@ -1651,6 +1651,34 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(opened_thread["state"], "open");
+    let direct_closed_thread = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/threads/{thread_id}/close"))
+                .header(http::header::COOKIE, reviewer_cookie.as_str())
+                .header("x-csrf-token", reviewer_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_closed_thread.status(), StatusCode::OK);
+    let direct_opened_thread = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/threads/{thread_id}/open"))
+                .header(http::header::COOKIE, reviewer_cookie.as_str())
+                .header("x-csrf-token", reviewer_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_opened_thread.status(), StatusCode::OK);
 
     let forbidden_close = rest_json(
         app.clone(),
@@ -1700,7 +1728,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     );
     assert_eq!(
         count_rows(&db, "pull_request_event", "REVIEW_THREAD_STATE_CHANGED").await,
-        4
+        6
     );
     assert_eq!(snapshot_test_webhook_outbox().len(), 5);
 
