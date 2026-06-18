@@ -3,7 +3,12 @@ name = "yona-rust-integrations"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 base64.workspace = true
 lettre.workspace = true
+
+[[test]]
+name = "integrations"
+path = "tests/integrations_contract.rs"

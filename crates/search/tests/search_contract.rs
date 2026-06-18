@@ -1,0 +1,1 @@
+mod search_result_legacy_contract;

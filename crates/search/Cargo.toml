@@ -3,6 +3,11 @@ name = "yona-rust-search"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 serde.workspace = true
+
+[[test]]
+name = "search"
+path = "tests/search_contract.rs"

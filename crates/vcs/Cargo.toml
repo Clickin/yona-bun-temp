@@ -3,6 +3,7 @@ name = "yona-rust-vcs"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 mime_guess.workspace = true
@@ -10,3 +11,7 @@ thiserror.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+
+[[test]]
+name = "vcs"
+path = "tests/vcs_contract.rs"

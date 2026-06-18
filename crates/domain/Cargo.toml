@@ -3,7 +3,12 @@ name = "yona-rust-domain"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+autotests = false
 
 [dependencies]
 
 [dev-dependencies]
+
+[[test]]
+name = "domain"
+path = "tests/domain_contract.rs"
