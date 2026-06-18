@@ -141,6 +141,7 @@ async fn legacy_external_api_roots_fall_back_to_application_index() {
             html.contains("window.__YONA_RUNTIME_CONFIG__"),
             "{path}: {html}"
         );
+        assert!(html.contains(r#""basePath":"/yona""#), "{path}: {html}");
     }
 
     fs::remove_dir_all(asset_root).expect("asset cleanup");

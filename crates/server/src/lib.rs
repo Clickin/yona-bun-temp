@@ -7,7 +7,7 @@ mod server_config;
 pub mod session;
 
 use axum::body::Bytes;
-use axum::extract::{Form, Multipart, Query, RawQuery, Request};
+use axum::extract::{Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
 use axum::response::{Html, IntoResponse, Redirect, Response};
@@ -568,12 +568,6 @@ fn build_router_with_app_config(
         supported_languages.clone(),
         show_user_email,
     );
-    let legacy_init_backend = route_backend.clone();
-    let legacy_init_base_path = base_path.clone();
-    let legacy_api_index_assets = assets.clone();
-    let legacy_api_index_browser_runtime = browser_runtime.clone();
-    let legacy_api_v1_index_assets = assets.clone();
-    let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
@@ -581,14 +575,6 @@ fn build_router_with_app_config(
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
     let smart_http_public_origin = public_origin.clone();
-    let project_import_session_manager = session_manager.clone();
-    let project_import_backend = route_backend.clone();
-    let project_import_base_path = base_path.clone();
-    let project_import_default_scope = project_default_scope.clone();
-    let legacy_migration_session_manager = session_manager.clone();
-    let legacy_migration_base_path = base_path.clone();
-    let legacy_migration_json_session_manager = session_manager.clone();
-    let legacy_migration_json_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = Router::new()
@@ -602,23 +588,14 @@ fn build_router_with_app_config(
             site_name.clone(),
         ))
         .nest("/api/v1", rest_router)
-        .route(
-            "/-_-api",
-            get(move || {
-                let assets = legacy_api_index_assets.clone();
-                let browser_runtime = legacy_api_index_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route(
-            "/-_-api/v1/",
-            get(move || {
-                let assets = legacy_api_v1_index_assets.clone();
-                let browser_runtime = legacy_api_v1_index_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .merge(routes::legacy_runtime_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+            base_path.clone(),
+            project_default_scope.clone(),
+        ))
         .merge(routes::workspace_routes(
             session_manager.clone(),
             route_backend.clone(),
@@ -642,14 +619,6 @@ fn build_router_with_app_config(
             public_origin.clone(),
         ))
         .merge(routes::static_compat_routes())
-        .route(
-            "/_init",
-            get(move || {
-                let backend = legacy_init_backend.clone();
-                let base_path = legacy_init_base_path.clone();
-                async move { direct_legacy_init(backend, base_path).await }
-            }),
-        )
         .merge(routes::notification_routes(
             session_manager.clone(),
             route_backend.clone(),
@@ -663,42 +632,6 @@ fn build_router_with_app_config(
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
-        )
-        .route(
-            "/_import",
-            post(
-                move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_import_project(
-                        headers,
-                        form,
-                        project_import_session_manager.clone(),
-                        project_import_backend.clone(),
-                        project_import_base_path.clone(),
-                        project_import_default_scope.clone(),
-                    )
-                    .await
-                },
-            ),
-        )
-        .route(
-            "/migration",
-            get(move |headers: HeaderMap| {
-                let session_manager = legacy_migration_session_manager.clone();
-                let base_path = legacy_migration_base_path.clone();
-                async move {
-                    direct_legacy_migration_disabled(headers, session_manager, base_path).await
-                }
-            }),
-        )
-        .route(
-            "/migration/{*legacy_path}",
-            get(move |headers: HeaderMap| {
-                let session_manager = legacy_migration_json_session_manager.clone();
-                let base_path = legacy_migration_json_base_path.clone();
-                async move {
-                    direct_legacy_migration_json_disabled(headers, session_manager, base_path).await
-                }
-            }),
         )
         .merge(routes::file_routes(
             session_manager.clone(),
@@ -952,7 +885,7 @@ fn base_path_href(base_path: &str, path: &str) -> String {
     }
 }
 
-async fn direct_legacy_init(backend: PilotBackend, base_path: String) -> Response {
+pub(crate) async fn direct_legacy_init(backend: PilotBackend, base_path: String) -> Response {
     if let PilotBackend::Repository(repository) = backend {
         make_legacy_test_repositories(&repository).await;
     }
@@ -9286,7 +9219,7 @@ pub(crate) async fn direct_authenticate_provider_denied(
     Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
 }
 
-async fn direct_legacy_migration_disabled(
+pub(crate) async fn direct_legacy_migration_disabled(
     headers: HeaderMap,
     session_manager: SessionManager,
     base_path: String,
@@ -9358,7 +9291,7 @@ async fn direct_legacy_migration_disabled(
     (StatusCode::FORBIDDEN, Html(body)).into_response()
 }
 
-async fn direct_legacy_migration_json_disabled(
+pub(crate) async fn direct_legacy_migration_json_disabled(
     headers: HeaderMap,
     session_manager: SessionManager,
     base_path: String,
@@ -9492,7 +9425,7 @@ pub(crate) async fn direct_legacy_user_email_validation(
     Json(DirectUserEmailValidationResponse { is_exist }).into_response()
 }
 
-async fn direct_import_project(
+pub(crate) async fn direct_import_project(
     headers: HeaderMap,
     form: HashMap<String, String>,
     session_manager: SessionManager,
@@ -22697,7 +22630,7 @@ fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
 }
 
-async fn legacy_external_api_hello() -> Json<serde_json::Value> {
+pub(crate) async fn legacy_external_api_hello() -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "message": "I'm alive!",
         "ok": true,
