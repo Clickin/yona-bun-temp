@@ -363,6 +363,7 @@ impl Default for RuntimeConfig {
 pub struct AppRuntimeConfig {
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
+    pub session_timeout_seconds: Option<u64>,
     pub site_name: String,
     pub site_update: SiteUpdateConfig,
     pub supported_languages: Vec<String>,
@@ -408,6 +409,7 @@ impl Default for AppRuntimeConfig {
         Self {
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
+            session_timeout_seconds: None,
             site_name: "Yona".to_string(),
             site_update: SiteUpdateConfig::default(),
             supported_languages: default_supported_languages(),
@@ -425,6 +427,7 @@ impl AppRuntimeConfig {
             project_default_scope: project_default_scope_from_option(
                 config.project_default_scope.as_deref(),
             ),
+            session_timeout_seconds: config.session_timeout_seconds,
             site_name: site_name_from_option(config.site_name.as_deref()),
             site_update: SiteUpdateConfig::from_startup(config),
             supported_languages: supported_languages_from_option(
@@ -438,6 +441,7 @@ impl AppRuntimeConfig {
         Self {
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
+            session_timeout_seconds: configured_session_timeout_seconds(),
             site_name: configured_site_name(),
             site_update: SiteUpdateConfig::from_env(),
             supported_languages: configured_supported_languages(),
@@ -649,6 +653,7 @@ fn build_router_with_app_config(
     let allow_anonymous_access = config.allow_anonymous_access;
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
+    let session_timeout_seconds = app_config.session_timeout_seconds;
     let site_name = app_config.site_name;
     let site_update = app_config.site_update;
     let supported_languages = app_config.supported_languages;
@@ -656,7 +661,7 @@ fn build_router_with_app_config(
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
-        session_timeout_seconds: configured_session_timeout_seconds(),
+        session_timeout_seconds,
     });
     let pilot_service = PilotServiceImpl {
         base_path: base_path.clone(),

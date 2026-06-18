@@ -1018,7 +1018,6 @@ async fn remember_me_controls_session_cookie_persistence() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1087,12 +1086,18 @@ async fn remember_me_controls_session_cookie_persistence() {
 }
 
 #[tokio::test]
-async fn session_timeout_env_controls_non_remember_cookie_persistence() {
+async fn session_timeout_config_controls_non_remember_cookie_persistence() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    std::env::set_var("YONA_SESSION_TIMEOUT_SECONDS", "1800");
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            session_timeout_seconds: Some(1800),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1157,8 +1162,6 @@ async fn session_timeout_env_controls_non_remember_cookie_persistence() {
         named_cookie(&remember_cookies, "yona_session=").contains("Max-Age=2592000"),
         "remember-me should keep the legacy 30-day persistence window"
     );
-
-    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
 }
 
 #[tokio::test]
