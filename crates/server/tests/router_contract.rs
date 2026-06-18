@@ -243,6 +243,9 @@ async fn read_current_session_works_over_connect_json() {
     let json = String::from_utf8(body.to_vec()).unwrap();
     assert!(json.contains("\"isAnonymous\":true"));
     assert!(json.contains("\"defaultLandingPath\":\"/me\""));
+    let json: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(json["isAnonymous"], true);
+    assert_eq!(json["defaultLandingPath"], "/me");
 }
 
 #[tokio::test]
