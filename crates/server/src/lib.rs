@@ -366,6 +366,7 @@ pub struct AppRuntimeConfig {
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub session_timeout_seconds: Option<u64>,
+    pub show_user_email: bool,
     pub site_name: String,
     pub site_update: SiteUpdateConfig,
     pub supported_languages: Vec<String>,
@@ -458,6 +459,7 @@ impl Default for AppRuntimeConfig {
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             session_timeout_seconds: None,
+            show_user_email: true,
             site_name: "Yona".to_string(),
             site_update: SiteUpdateConfig::default(),
             supported_languages: default_supported_languages(),
@@ -478,6 +480,7 @@ impl AppRuntimeConfig {
                 config.project_default_scope.as_deref(),
             ),
             session_timeout_seconds: config.session_timeout_seconds,
+            show_user_email: config.show_user_email.unwrap_or(true),
             site_name: site_name_from_option(config.site_name.as_deref()),
             site_update: SiteUpdateConfig::from_startup(config),
             supported_languages: supported_languages_from_option(
@@ -494,6 +497,10 @@ impl AppRuntimeConfig {
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             session_timeout_seconds: configured_session_timeout_seconds(),
+            show_user_email: configured_bool_env(
+                &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],
+                true,
+            ),
             site_name: configured_site_name(),
             site_update: SiteUpdateConfig::from_env(),
             supported_languages: configured_supported_languages(),
@@ -708,6 +715,7 @@ fn build_router_with_app_config(
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
     let session_timeout_seconds = app_config.session_timeout_seconds;
+    let show_user_email = app_config.show_user_email;
     let site_name = app_config.site_name;
     let site_update = app_config.site_update;
     let supported_languages = app_config.supported_languages;
@@ -731,6 +739,7 @@ fn build_router_with_app_config(
         project_default_menus.clone(),
         project_default_scope.clone(),
         supported_languages.clone(),
+        show_user_email,
     );
     let legacy_init_backend = route_backend.clone();
     let legacy_init_base_path = base_path.clone();
@@ -37817,6 +37826,7 @@ impl BrowserRuntimeConfig {
         project_default_menus: Vec<String>,
         project_default_scope: String,
         supported_languages: Vec<String>,
+        show_user_email: bool,
     ) -> Self {
         let base_path = normalize_base_path(base_path);
         let api_base_url = if base_path == "/" {
@@ -37830,10 +37840,7 @@ impl BrowserRuntimeConfig {
             project_default_menus,
             project_default_scope,
             supported_languages,
-            show_user_email: configured_bool_env(
-                &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],
-                true,
-            ),
+            show_user_email,
         }
     }
 }

@@ -265,7 +265,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let _guard = runtime_config_env_lock().lock().unwrap();
     let previous_project_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let previous_langs = std::env::var("YONA_LANGS").ok();
-    std::env::set_var("YONA_SHOW_USER_EMAIL", "false");
+    let previous_show_user_email = std::env::var("YONA_SHOW_USER_EMAIL").ok();
     let app = create_router_with_embedded_assets_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
@@ -279,10 +279,10 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
                 "en-US".to_string(),
                 "ja-JP".to_string(),
             ],
+            show_user_email: false,
             ..AppRuntimeConfig::default()
         },
     );
-    std::env::remove_var("YONA_SHOW_USER_EMAIL");
 
     let index = app
         .clone()
@@ -312,6 +312,11 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         std::env::var("YONA_LANGS").ok(),
         previous_langs,
         "asset runtime app config must not mutate languages env"
+    );
+    assert_eq!(
+        std::env::var("YONA_SHOW_USER_EMAIL").ok(),
+        previous_show_user_email,
+        "asset runtime app config must not mutate show-user-email env"
     );
 
     let asset = app
