@@ -603,19 +603,12 @@ fn build_router_with_app_config(
     let legacy_api_index_browser_runtime = browser_runtime.clone();
     let legacy_api_v1_index_assets = assets.clone();
     let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
-    let reset_visited_session_manager = session_manager.clone();
-    let reset_visited_backend = route_backend.clone();
-    let reset_visited_base_path = base_path.clone();
     let user_sidebar_session_manager = session_manager.clone();
     let user_sidebar_backend = route_backend.clone();
     let user_sidebar_base_path = base_path.clone();
     let usermenu_tab_session_manager = session_manager.clone();
     let usermenu_tab_backend = route_backend.clone();
     let usermenu_tab_base_path = base_path.clone();
-    let default_login_page_session_manager = session_manager.clone();
-    let default_login_page_backend = route_backend.clone();
-    let legacy_default_login_page_session_manager = session_manager.clone();
-    let legacy_default_login_page_backend = route_backend.clone();
     let update_profile_session_manager = session_manager.clone();
     let update_profile_backend = route_backend.clone();
     let update_profile_base_path = base_path.clone();
@@ -905,20 +898,11 @@ fn build_router_with_app_config(
             }),
         )
         .route("/-_-api/v1/hello", get(legacy_external_api_hello))
-        .route(
-            "/-_-api/v1/user/defultLoginPage",
-            post(move |headers: HeaderMap, Query(query): Query<DirectDefaultLoginPageQuery>| {
-                async move {
-                    direct_set_default_login_page(
-                        headers,
-                        query,
-                        legacy_default_login_page_session_manager.clone(),
-                        legacy_default_login_page_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
+        .merge(routes::workspace_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            base_path.clone(),
+        ))
         .route(
             "/-_-api/v1/admin/users",
             get(move |headers: HeaderMap| {
@@ -1928,20 +1912,6 @@ fn build_router_with_app_config(
             ),
         )
         .route(
-            "/user/resetVisitedList",
-            post(move |headers: HeaderMap| {
-                async move {
-                    direct_reset_user_visited_list(
-                        headers,
-                        reset_visited_session_manager.clone(),
-                        reset_visited_backend.clone(),
-                        reset_visited_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
             "/user/usermenuTabContentList",
             get(move |headers: HeaderMap| {
                 async move {
@@ -1950,20 +1920,6 @@ fn build_router_with_app_config(
                         usermenu_tab_session_manager.clone(),
                         usermenu_tab_backend.clone(),
                         usermenu_tab_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/user/defultLoginPage",
-            post(move |headers: HeaderMap, Query(query): Query<DirectDefaultLoginPageQuery>| {
-                async move {
-                    direct_set_default_login_page(
-                        headers,
-                        query,
-                        default_login_page_session_manager.clone(),
-                        default_login_page_backend.clone(),
                     )
                     .await
                 }
@@ -10381,50 +10337,9 @@ async fn direct_reset_password(
 }
 
 #[derive(Deserialize)]
-struct DirectDefaultLoginPageQuery {
-    path: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct DirectUserSidebarQuery {
     hash: Option<String>,
     path: Option<String>,
-}
-
-#[derive(Serialize)]
-struct DirectDefaultLoginPageResponse {
-    #[serde(rename = "defaultLoginPage")]
-    default_login_page: String,
-}
-
-async fn direct_reset_user_visited_list(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let login_redirect = base_path_href(
-        &base_path,
-        "/users/loginform?redirectUrl=%2Fuser%2Feditform",
-    );
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
-        return Redirect::to(&login_redirect).into_response();
-    };
-    let Some(user_id) = session.user_id else {
-        return Redirect::to(&login_redirect).into_response();
-    };
-
-    match &backend {
-        PilotBackend::Repository(repository) => {
-            match repository.clear_recent_projects_for_user(user_id).await {
-                Ok(()) => redirect_to(&base_path, "/user/editform"),
-                Err(error) => RestRouteError::internal(error.to_string()).into_response(),
-            }
-        }
-        _ => {
-            RestRouteError::not_implemented("workspace requires repository backend").into_response()
-        }
-    }
 }
 
 async fn direct_user_sidebar(
@@ -11054,45 +10969,6 @@ fn render_legacy_usermenu_list(id: &str, active: bool, rows: &str) -> String {
         escape_html_attr(id),
         rows
     )
-}
-
-async fn direct_set_default_login_page(
-    headers: HeaderMap,
-    query: DirectDefaultLoginPageQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
-        return RestRouteError::from_connect_error(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ))
-        .into_response();
-    };
-    let Some(user_id) = session.user_id else {
-        return RestRouteError::from_connect_error(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ))
-        .into_response();
-    };
-    let Some(path) = normalize_default_landing_path(query.path.as_deref()) else {
-        return RestRouteError::bad_request("invalid default landing path").into_response();
-    };
-
-    match &backend {
-        PilotBackend::Repository(repository) => match repository
-            .set_default_landing_path(user_id, Some(path.clone()))
-            .await
-        {
-            Ok(_) => Json(DirectDefaultLoginPageResponse {
-                default_login_page: path,
-            })
-            .into_response(),
-            Err(error) => RestRouteError::internal(error.to_string()).into_response(),
-        },
-        _ => {
-            RestRouteError::not_implemented("workspace requires repository backend").into_response()
-        }
-    }
 }
 
 fn headers_with_form_csrf(mut headers: HeaderMap, form: &HashMap<String, String>) -> HeaderMap {

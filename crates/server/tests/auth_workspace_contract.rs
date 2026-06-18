@@ -2260,6 +2260,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
         reset_visited.headers().get(http::header::LOCATION).unwrap(),
         "/yona/user/editform"
     );
+    assert_eq!(response_text(reset_visited).await, "");
     assert!(yona_rust_persistence::recent_project::Entity::find()
         .filter(yona_rust_persistence::recent_project::Column::UserId.eq(Some(user.id)))
         .all(&db)
