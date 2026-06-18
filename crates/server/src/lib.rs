@@ -30,10 +30,7 @@ use std::{
     collections::HashMap,
     path::{Path as StdPath, PathBuf},
     process::Command,
-    sync::{
-        atomic::AtomicBool,
-        Mutex, OnceLock,
-    },
+    sync::{atomic::AtomicBool, Mutex, OnceLock},
     time::{Duration, SystemTime},
     vec,
 };
@@ -887,12 +884,6 @@ fn build_router_with_app_config(
     let direct_unwatch_backend = route_backend.clone();
     let direct_unwatch_session_manager = session_manager.clone();
     let direct_unwatch_base_path = base_path.clone();
-    let site_update_download_backend = route_backend.clone();
-    let site_update_download_session_manager = session_manager.clone();
-    let site_update_download_config = site_update.clone();
-    let site_update_download_file_backend = route_backend.clone();
-    let site_update_download_file_session_manager = session_manager.clone();
-    let site_update_download_file_config = site_update.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -2398,35 +2389,8 @@ fn build_router_with_app_config(
         .merge(routes::site_admin_routes(
             session_manager.clone(),
             route_backend.clone(),
+            site_update.clone(),
         ))
-        .route(
-            "/sites/update/download",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_download_site_update(
-                        headers,
-                        site_update_download_session_manager.clone(),
-                        site_update_download_backend.clone(),
-                        site_update_download_config.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/update/download-file",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_download_site_update_file(
-                        headers,
-                        site_update_download_file_session_manager.clone(),
-                        site_update_download_file_backend.clone(),
-                        site_update_download_file_config.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
         .route(
             "/sites/toggleSiteAdminRole/{login_id}",
             post(move |headers: HeaderMap, Path(login_id): Path<String>| {
@@ -12132,52 +12096,6 @@ fn legacy_prefers_json(headers: &HeaderMap) -> bool {
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
         .unwrap_or(false)
-}
-
-async fn direct_download_site_update(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    site_update: SiteUpdateConfig,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_redirect(&site_update) {
-            Ok(redirect) => redirect.into_response(),
-            Err(error) => error.into_response(),
-        },
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_download_site_update_file(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    site_update: SiteUpdateConfig,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_file_response(&site_update) {
-            Ok(response) => response,
-            Err(error) => error.into_response(),
-        },
-        Err(error) => error.into_response(),
-    }
 }
 
 fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) -> String {

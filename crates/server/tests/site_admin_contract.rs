@@ -2675,6 +2675,7 @@ async fn site_admin_update_download_redirects_through_app_owned_routes() {
         response_location(&direct_download),
         "https://downloads.example.test/yona/v9.9.9"
     );
+    assert_eq!(response_text(direct_download).await, "");
 }
 
 #[tokio::test]
