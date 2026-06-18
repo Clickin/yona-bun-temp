@@ -1020,6 +1020,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert!(disposition.ends_with(".json"));
 
     let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
+    assert!(payload.as_object().is_some());
     assert_eq!(payload["format"], "yobi-data");
     assert_eq!(payload["provenance"], "rust-app-runtime");
     assert!(payload["users"]

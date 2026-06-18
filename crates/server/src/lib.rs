@@ -862,12 +862,6 @@ fn build_router_with_app_config(
     let markdown_render_base_path = base_path.clone();
     let project_overview_update_backend = route_backend.clone();
     let project_overview_update_session_manager = session_manager.clone();
-    let site_export_backend = route_backend.clone();
-    let site_export_session_manager = session_manager.clone();
-    let site_import_backend = route_backend.clone();
-    let site_import_session_manager = session_manager.clone();
-    let site_import_base_path = base_path.clone();
-    let site_import_max_uploaded_file_size = max_uploaded_file_size;
     let direct_notification_toggle_backend = route_backend.clone();
     let direct_notification_toggle_session_manager = session_manager.clone();
     let direct_unwatch_backend = route_backend.clone();
@@ -2246,35 +2240,6 @@ fn build_router_with_app_config(
             }),
         )
         .route(
-            "/sites/export",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_export_site_data(
-                        headers,
-                        site_export_session_manager.clone(),
-                        site_export_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/import",
-            post(move |headers: HeaderMap, body: Bytes| {
-                async move {
-                    direct_import_site_data(
-                        headers,
-                        body,
-                        site_import_session_manager.clone(),
-                        site_import_backend.clone(),
-                        site_import_base_path.clone(),
-                        site_import_max_uploaded_file_size,
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
             "/unwatch",
             get(move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
                 async move {
@@ -2294,6 +2259,7 @@ fn build_router_with_app_config(
             route_backend.clone(),
             site_update.clone(),
             base_path.clone(),
+            max_uploaded_file_size,
         ))
         .route(
             "/{owner}/{project}",
@@ -11613,58 +11579,6 @@ async fn direct_confirm_workspace_email(
     }
 }
 
-async fn direct_export_site_data(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_export_site_data(headers, service).await {
-        Ok(payload) => direct_site_export_response(&payload),
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_import_site_data(
-    headers: HeaderMap,
-    body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    max_uploaded_file_size: usize,
-) -> Response {
-    let (form, payload, is_multipart, has_data_file) = direct_site_import_payload(&headers, &body);
-    if is_multipart && !has_data_file {
-        return Redirect::to(&base_path_href(&base_path, "/sites/data")).into_response();
-    }
-    let headers = headers_with_form_csrf(headers, &form);
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
-        Ok(Json(payload)) => {
-            if is_multipart {
-                Redirect::to(&base_path_href(&base_path, "/")).into_response()
-            } else {
-                Json(payload).into_response()
-            }
-        }
-        Err(error) => error.into_response(),
-    }
-}
-
 #[derive(Deserialize)]
 struct LegacyResourceQuery {
     #[serde(rename = "resource.id")]
@@ -11788,84 +11702,6 @@ fn legacy_prefers_json(headers: &HeaderMap) -> bool {
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
         .unwrap_or(false)
-}
-
-fn direct_site_export_response(payload: &RestSiteExportResponse) -> Response {
-    match serde_json::to_vec(payload) {
-        Ok(body) => {
-            let mut response = body.into_response();
-            let headers = response.headers_mut();
-            headers.insert(
-                axum::http::header::CONTENT_TYPE,
-                HeaderValue::from_static("application/x-download"),
-            );
-            if let Ok(header_value) = HeaderValue::from_str(&format!(
-                "attachment; filename=yobi-data-{}.json",
-                site_export_filename_stamp()
-            )) {
-                headers.insert(axum::http::header::CONTENT_DISPOSITION, header_value);
-            }
-            response
-        }
-        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
-    }
-}
-
-fn direct_site_import_payload(
-    headers: &HeaderMap,
-    body: &[u8],
-) -> (HashMap<String, String>, String, bool, bool) {
-    let content_type = headers
-        .get(http::header::CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or_default();
-    if !content_type
-        .to_ascii_lowercase()
-        .starts_with("multipart/form-data")
-    {
-        return (
-            HashMap::new(),
-            String::from_utf8_lossy(body).to_string(),
-            false,
-            true,
-        );
-    }
-    let Some(boundary) = content_type
-        .split(';')
-        .map(str::trim)
-        .find_map(|part| part.strip_prefix("boundary="))
-        .map(|part| part.trim_matches('"').to_string())
-    else {
-        return (HashMap::new(), String::new(), true, false);
-    };
-    let mut form = HashMap::new();
-    let mut data = String::new();
-    let mut has_data_file = false;
-    let text = String::from_utf8_lossy(body);
-    for part in text.split(&format!("--{boundary}")) {
-        let Some((headers, value)) = part.split_once("\r\n\r\n") else {
-            continue;
-        };
-        let Some(name) = headers
-            .split(';')
-            .find_map(|segment| segment.trim().strip_prefix("name=\""))
-            .and_then(|segment| segment.split('"').next())
-        else {
-            continue;
-        };
-        let value = value
-            .trim_start_matches("\r\n")
-            .trim_end_matches("\r\n")
-            .trim_end_matches("--")
-            .to_string();
-        if name == "data" {
-            has_data_file = headers.contains("filename=");
-            data = value;
-        } else {
-            form.insert(name.to_string(), value);
-        }
-    }
-    (form, data, true, has_data_file)
 }
 
 fn site_export_filename_stamp() -> String {
