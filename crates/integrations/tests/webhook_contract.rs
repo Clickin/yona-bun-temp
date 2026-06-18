@@ -1,61 +1,51 @@
-use std::sync::{Mutex, OnceLock};
-
 use yona_rust_integrations::{
-    clear_test_webhook_outbox, deliver_webhook, queue_test_webhook_failure,
-    queue_test_webhook_response, snapshot_test_webhook_outbox,
-    webhook_delivery_retry_count_from_env, OutboundWebhook,
+    clear_test_webhook_outbox, deliver_webhook_with_config, queue_test_webhook_failure,
+    queue_test_webhook_response, snapshot_test_webhook_outbox, IntegrationConfig, OutboundWebhook,
 };
-
-fn webhook_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
-fn clear_webhook_retry_env() {
-    std::env::remove_var("WEBHOOK_DELIVERY_RETRIES");
-    std::env::remove_var("YONA_WEBHOOK_DELIVERY_RETRIES");
-    std::env::remove_var("WEBHOOK_HTTP_DELIVERY_ENABLED");
-    std::env::remove_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS");
-    std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
-    std::env::remove_var("WEBHOOK_HTTPS_DELIVERY_COMMAND");
-    std::env::remove_var("YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND");
-}
 
 #[test]
 fn webhook_delivery_retry_count_accepts_legacy_yona_alias() {
-    let _guard = webhook_env_lock().lock().unwrap();
-    clear_webhook_retry_env();
-    assert_eq!(webhook_delivery_retry_count_from_env(), 0);
+    assert_eq!(
+        IntegrationConfig::default().webhook_delivery_retry_count(),
+        0
+    );
 
-    std::env::set_var("YONA_WEBHOOK_DELIVERY_RETRIES", "2");
-    assert_eq!(webhook_delivery_retry_count_from_env(), 2);
+    assert_eq!(
+        IntegrationConfig::from_pairs([("YONA_WEBHOOK_DELIVERY_RETRIES", "2")])
+            .webhook_delivery_retry_count(),
+        2
+    );
 
-    std::env::set_var("YONA_WEBHOOK_DELIVERY_RETRIES", "99");
-    assert_eq!(webhook_delivery_retry_count_from_env(), 5);
+    assert_eq!(
+        IntegrationConfig::from_pairs([("YONA_WEBHOOK_DELIVERY_RETRIES", "99")])
+            .webhook_delivery_retry_count(),
+        5
+    );
 
-    std::env::remove_var("YONA_WEBHOOK_DELIVERY_RETRIES");
-    std::env::set_var("WEBHOOK_DELIVERY_RETRIES", "1");
-    assert_eq!(webhook_delivery_retry_count_from_env(), 1);
-
-    clear_webhook_retry_env();
+    assert_eq!(
+        IntegrationConfig::from_pairs([("WEBHOOK_DELIVERY_RETRIES", "1")])
+            .webhook_delivery_retry_count(),
+        1
+    );
 }
 
 #[test]
 fn webhook_delivery_retries_transient_failures_before_returning_success() {
-    let _guard = webhook_env_lock().lock().unwrap();
-    clear_webhook_retry_env();
     clear_test_webhook_outbox();
-    std::env::set_var("YONA_WEBHOOK_DELIVERY_RETRIES", "1");
+    let config = IntegrationConfig::from_pairs([("YONA_WEBHOOK_DELIVERY_RETRIES", "1")]);
     queue_test_webhook_failure("temporary webhook failure");
     queue_test_webhook_response("ok");
 
-    let outcome = deliver_webhook(OutboundWebhook {
-        body: "{\"text\":\"hello\"}".to_string(),
-        event_type: "NEW_ISSUE".to_string(),
-        payload_url: "https://hooks.example/retry".to_string(),
-        secret: "s3".to_string(),
-        webhook_type: "SIMPLE".to_string(),
-    })
+    let outcome = deliver_webhook_with_config(
+        OutboundWebhook {
+            body: "{\"text\":\"hello\"}".to_string(),
+            event_type: "NEW_ISSUE".to_string(),
+            payload_url: "https://hooks.example/retry".to_string(),
+            secret: "s3".to_string(),
+            webhook_type: "SIMPLE".to_string(),
+        },
+        &config,
+    )
     .expect("retried webhook succeeds");
 
     assert_eq!(outcome.response_body.as_deref(), Some("ok"));
@@ -67,14 +57,11 @@ fn webhook_delivery_retries_transient_failures_before_returning_success() {
             && attempt.webhook_type == "SIMPLE"
     }));
 
-    clear_webhook_retry_env();
     clear_test_webhook_outbox();
 }
 
 #[test]
 fn webhook_https_delivery_uses_executable_fetcher_and_preserves_legacy_headers() {
-    let _guard = webhook_env_lock().lock().unwrap();
-    clear_webhook_retry_env();
     clear_test_webhook_outbox();
     let fake_curl_dir = std::env::temp_dir().join(format!(
         "yona-webhook-https-{}-{}",
@@ -103,20 +90,26 @@ printf "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nthread.name"
         ),
     )
     .expect("write fake curl");
-    std::env::set_var("WEBHOOK_HTTP_DELIVERY_ENABLED", "true");
-    std::env::set_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true");
-    std::env::set_var(
-        "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
-        format!("sh {}", fake_curl.display()),
-    );
+    let fetch_command = format!("sh {}", fake_curl.display());
+    let config = IntegrationConfig::from_pairs([
+        ("WEBHOOK_HTTP_DELIVERY_ENABLED", "true"),
+        ("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true"),
+        (
+            "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
+            fetch_command.as_str(),
+        ),
+    ]);
 
-    let outcome = deliver_webhook(OutboundWebhook {
-        body: "{\"text\":\"hello\"}".to_string(),
-        event_type: "NEW_ISSUE".to_string(),
-        payload_url: "https://127.0.0.1/webhook".to_string(),
-        secret: "s3".to_string(),
-        webhook_type: "DETAIL_HANGOUT_CHAT".to_string(),
-    })
+    let outcome = deliver_webhook_with_config(
+        OutboundWebhook {
+            body: "{\"text\":\"hello\"}".to_string(),
+            event_type: "NEW_ISSUE".to_string(),
+            payload_url: "https://127.0.0.1/webhook".to_string(),
+            secret: "s3".to_string(),
+            webhook_type: "DETAIL_HANGOUT_CHAT".to_string(),
+        },
+        &config,
+    )
     .expect("https webhook succeeds through executable fetcher");
 
     assert_eq!(outcome.response_body.as_deref(), Some("thread.name"));
@@ -126,7 +119,6 @@ printf "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nthread.name"
     );
     assert!(snapshot_test_webhook_outbox().is_empty());
 
-    clear_webhook_retry_env();
     clear_test_webhook_outbox();
     let _ = std::fs::remove_dir_all(fake_curl_dir);
 }

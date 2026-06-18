@@ -1,38 +1,24 @@
-use std::sync::{Mutex, OnceLock};
-
 use yona_rust_integrations::{
-    notification_mail_batches, notification_mail_hide_address_from_env,
-    notification_mail_recipient_limit_from_env, NotificationMailAddress, NotificationMailRecipient,
+    notification_mail_batches, IntegrationConfig, NotificationMailAddress,
+    NotificationMailRecipient,
 };
-
-fn notification_mail_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
-fn clear_notification_mail_env() {
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
-}
 
 #[test]
 fn notification_mail_env_uses_legacy_yona_hide_address_and_recipient_limit_keys() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    clear_notification_mail_env();
+    let defaults = IntegrationConfig::default();
+    assert!(defaults.notification_mail_hide_address());
+    assert_eq!(defaults.notification_mail_recipient_limit(), None);
 
-    assert!(notification_mail_hide_address_from_env());
-    assert_eq!(notification_mail_recipient_limit_from_env(), None);
+    let configured = IntegrationConfig::from_pairs([
+        ("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false"),
+        ("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT", "100"),
+    ]);
+    assert!(!configured.notification_mail_hide_address());
+    assert_eq!(configured.notification_mail_recipient_limit(), Some(100));
 
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT", "100");
-
-    assert!(!notification_mail_hide_address_from_env());
-    assert_eq!(notification_mail_recipient_limit_from_env(), Some(100));
-
-    std::env::set_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT", "0");
-    assert_eq!(notification_mail_recipient_limit_from_env(), None);
-
-    clear_notification_mail_env();
+    let disabled_limit =
+        IntegrationConfig::from_pairs([("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT", "0")]);
+    assert_eq!(disabled_limit.notification_mail_recipient_limit(), None);
 }
 
 #[test]

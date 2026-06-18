@@ -1,6 +1,6 @@
 //! Canonical integrations ownership for outbound provider slices.
 
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, VecDeque};
 use std::io::{Read, Write};
 use std::net::{IpAddr, TcpStream, ToSocketAddrs};
 use std::process::{Command, Stdio};
@@ -57,16 +57,148 @@ pub struct NotificationMailBatch {
     pub to: Vec<NotificationMailAddress>,
 }
 
-pub fn notification_mail_hide_address_from_env() -> bool {
-    configured_env_value(&["YONA_NOTIFICATION_MAIL_HIDE_ADDRESS"])
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct IntegrationConfig {
+    values: BTreeMap<String, String>,
+}
+
+impl IntegrationConfig {
+    pub fn from_env() -> Self {
+        Self {
+            values: std::env::vars().collect(),
+        }
+    }
+
+    pub fn from_pairs<I, K, V>(pairs: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        Self {
+            values: pairs
+                .into_iter()
+                .map(|(key, value)| (key.into(), value.into()))
+                .collect(),
+        }
+    }
+
+    fn configured_value(&self, names: &[&str]) -> Option<String> {
+        names.iter().find_map(|name| {
+            self.values
+                .get(*name)
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+    }
+
+    fn bool_value(&self, name: &str) -> bool {
+        self.values
+            .get(name)
+            .map(|value| parse_bool_env_value(value))
+            .unwrap_or(false)
+    }
+
+    pub fn notification_mail_hide_address(&self) -> bool {
+        self.configured_value(&["YONA_NOTIFICATION_MAIL_HIDE_ADDRESS"])
+            .map(|value| parse_bool_env_value(&value))
+            .unwrap_or(true)
+    }
+
+    pub fn notification_mail_recipient_limit(&self) -> Option<usize> {
+        self.configured_value(&["YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT"])
+            .and_then(|value| value.parse::<usize>().ok())
+            .filter(|limit| *limit > 0)
+    }
+
+    pub fn smtp_enabled(&self) -> bool {
+        self.bool_value("SMTP_ENABLED")
+    }
+
+    pub fn smtp_delivery_config(&self) -> SmtpDeliveryConfig {
+        let ssl_enabled = self.smtp_ssl_enabled();
+        SmtpDeliveryConfig {
+            default_port: smtp_default_port(ssl_enabled),
+            ssl_enabled,
+        }
+    }
+
+    fn smtp_ssl_enabled(&self) -> Option<bool> {
+        self.configured_value(&["SMTP_SSL", "YONA_SMTP_SSL"])
+            .map(|value| parse_bool_env_value(&value))
+    }
+
+    fn smtp_credentials(&self) -> Option<(String, String)> {
+        let user = self.configured_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
+        let pass = self.configured_value(&["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"])?;
+        Some((user, pass))
+    }
+
+    pub fn webhook_http_delivery_enabled(&self) -> bool {
+        self.bool_value("WEBHOOK_HTTP_DELIVERY_ENABLED")
+    }
+
+    pub fn webhook_delivery_retry_count(&self) -> usize {
+        self.configured_value(&["WEBHOOK_DELIVERY_RETRIES", "YONA_WEBHOOK_DELIVERY_RETRIES"])
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0)
+            .min(5)
+    }
+
+    pub fn webhook_private_network_delivery_allowed(&self) -> bool {
+        self.configured_value(&[
+            "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+            "WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+        ])
         .map(|value| parse_bool_env_value(&value))
-        .unwrap_or(true)
+        .unwrap_or(false)
+    }
+
+    fn webhook_https_delivery_command(
+        &self,
+        record: &WebhookDeliveryRecord,
+    ) -> Result<(String, Vec<String>), String> {
+        if let Some(configured) = self.configured_value(&[
+            "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
+            "WEBHOOK_HTTPS_DELIVERY_COMMAND",
+        ]) {
+            let (program, mut args) =
+                configured_command_parts(&configured, "webhook HTTPS delivery command is empty")?;
+            args.push(record.payload_url.clone());
+            return Ok((program, args));
+        }
+
+        let mut args = vec![
+            "--fail".to_string(),
+            "--location".to_string(),
+            "--silent".to_string(),
+            "--show-error".to_string(),
+            "--max-time".to_string(),
+            "30".to_string(),
+            "--dump-header".to_string(),
+            "-".to_string(),
+            "--output".to_string(),
+            "-".to_string(),
+            "--request".to_string(),
+            "POST".to_string(),
+            "--data-binary".to_string(),
+            "@-".to_string(),
+        ];
+        for header in &record.headers {
+            args.push("--header".to_string());
+            args.push(format!("{}: {}", header.name, header.value));
+        }
+        args.push(record.payload_url.clone());
+        Ok(("curl".to_string(), args))
+    }
+}
+
+pub fn notification_mail_hide_address_from_env() -> bool {
+    IntegrationConfig::from_env().notification_mail_hide_address()
 }
 
 pub fn notification_mail_recipient_limit_from_env() -> Option<usize> {
-    configured_env_value(&["YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT"])
-        .and_then(|value| value.parse::<usize>().ok())
-        .filter(|limit| *limit > 0)
+    IntegrationConfig::from_env().notification_mail_recipient_limit()
 }
 
 pub fn notification_mail_batches(
@@ -761,48 +893,31 @@ pub fn queue_test_webhook_failure(error: impl ToString) {
 }
 
 pub fn smtp_enabled() -> bool {
-    read_bool_env("SMTP_ENABLED")
-}
-
-fn configured_env_value(names: &[&str]) -> Option<String> {
-    names.iter().find_map(|name| {
-        std::env::var(name)
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-    })
+    IntegrationConfig::from_env().smtp_enabled()
 }
 
 pub fn webhook_http_delivery_enabled() -> bool {
-    read_bool_env("WEBHOOK_HTTP_DELIVERY_ENABLED")
+    IntegrationConfig::from_env().webhook_http_delivery_enabled()
 }
 
 pub fn webhook_delivery_retry_count_from_env() -> usize {
-    configured_env_value(&["WEBHOOK_DELIVERY_RETRIES", "YONA_WEBHOOK_DELIVERY_RETRIES"])
-        .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(0)
-        .min(5)
+    IntegrationConfig::from_env().webhook_delivery_retry_count()
 }
 
 pub fn webhook_private_network_delivery_allowed() -> bool {
-    configured_env_value(&[
-        "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
-        "WEBHOOK_ALLOW_PRIVATE_NETWORKS",
-    ])
-    .map(|value| parse_bool_env_value(&value))
-    .unwrap_or(false)
+    IntegrationConfig::from_env().webhook_private_network_delivery_allowed()
 }
 
 pub fn smtp_delivery_config_from_env() -> SmtpDeliveryConfig {
-    let ssl_enabled = smtp_ssl_enabled_from_env();
-    SmtpDeliveryConfig {
-        default_port: smtp_default_port(ssl_enabled),
-        ssl_enabled,
-    }
+    IntegrationConfig::from_env().smtp_delivery_config()
 }
 
 pub fn deliver(mail: OutboundMail) -> Result<(), String> {
-    if !smtp_enabled() {
+    deliver_with_config(mail, &IntegrationConfig::from_env())
+}
+
+pub fn deliver_with_config(mail: OutboundMail, config: &IntegrationConfig) -> Result<(), String> {
+    if !config.smtp_enabled() {
         test_outbox().lock().unwrap().push(MailDeliveryRecord {
             bcc: mail.bcc,
             body: mail.body,
@@ -817,10 +932,12 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
 
     let email = build_mail_message(mail)?;
 
-    let host = configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
+    let host = config
+        .configured_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
         .ok_or_else(|| "SMTP_HOST is required.".to_string())?;
-    let smtp_config = smtp_delivery_config_from_env();
-    let port = configured_env_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
+    let smtp_config = config.smtp_delivery_config();
+    let port = config
+        .configured_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(smtp_config.default_port);
     let mut builder = match smtp_config.ssl_enabled {
@@ -829,7 +946,7 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
             .map_err(|error| format!("smtp relay configuration failed: {error}"))?,
     }
     .port(port);
-    if let Some((user, pass)) = smtp_credentials_from_env() {
+    if let Some((user, pass)) = config.smtp_credentials() {
         builder = builder.credentials(Credentials::new(user, pass));
     }
     builder
@@ -875,13 +992,14 @@ fn build_mail_message(mail: OutboundMail) -> Result<Message, String> {
     }
 }
 
-fn smtp_credentials_from_env() -> Option<(String, String)> {
-    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
-    let pass = configured_env_value(&["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"])?;
-    Some((user, pass))
+pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcome, String> {
+    deliver_webhook_with_config(webhook, &IntegrationConfig::from_env())
 }
 
-pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcome, String> {
+pub fn deliver_webhook_with_config(
+    webhook: OutboundWebhook,
+    config: &IntegrationConfig,
+) -> Result<WebhookDeliveryOutcome, String> {
     let record = WebhookDeliveryRecord {
         body: webhook.body,
         event_type: webhook.event_type,
@@ -889,10 +1007,10 @@ pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcom
         payload_url: webhook.payload_url,
         webhook_type: webhook.webhook_type,
     };
-    let attempts = webhook_delivery_retry_count_from_env() + 1;
+    let attempts = config.webhook_delivery_retry_count() + 1;
     let mut last_error = None;
     for _attempt in 0..attempts {
-        match deliver_webhook_once(&record) {
+        match deliver_webhook_once(&record, config) {
             Ok(outcome) => return Ok(outcome),
             Err(error) => last_error = Some(error),
         }
@@ -900,8 +1018,11 @@ pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcom
     Err(last_error.unwrap_or_else(|| "webhook delivery failed".to_string()))
 }
 
-fn deliver_webhook_once(record: &WebhookDeliveryRecord) -> Result<WebhookDeliveryOutcome, String> {
-    if !webhook_http_delivery_enabled() {
+fn deliver_webhook_once(
+    record: &WebhookDeliveryRecord,
+    config: &IntegrationConfig,
+) -> Result<WebhookDeliveryOutcome, String> {
+    if !config.webhook_http_delivery_enabled() {
         test_webhook_outbox().lock().unwrap().push(record.clone());
         return match test_webhook_responses().lock().unwrap().pop_front() {
             Some(Ok(response_body)) => Ok(WebhookDeliveryOutcome {
@@ -915,9 +1036,9 @@ fn deliver_webhook_once(record: &WebhookDeliveryRecord) -> Result<WebhookDeliver
     }
 
     if record.payload_url.starts_with("https://") {
-        return post_webhook_over_https(record);
+        return post_webhook_over_https(record, config);
     }
-    post_webhook_over_plain_http(record)
+    post_webhook_over_plain_http(record, config)
 }
 
 fn webhook_headers(secret: &str) -> Vec<WebhookHeaderRecord> {
@@ -942,6 +1063,7 @@ fn webhook_headers(secret: &str) -> Vec<WebhookHeaderRecord> {
 
 fn post_webhook_over_plain_http(
     record: &WebhookDeliveryRecord,
+    config: &IntegrationConfig,
 ) -> Result<WebhookDeliveryOutcome, String> {
     let parsed = parse_plain_http_url(&record.payload_url)?;
     let addresses = (parsed.host.as_str(), parsed.port)
@@ -951,7 +1073,7 @@ fn post_webhook_over_plain_http(
     if addresses.is_empty() {
         return Err("webhook address resolution returned no endpoints".to_string());
     }
-    let allow_private_networks = webhook_private_network_delivery_allowed();
+    let allow_private_networks = config.webhook_private_network_delivery_allowed();
     let address = addresses
         .into_iter()
         .find(|address| webhook_endpoint_allowed(address.ip(), allow_private_networks))
@@ -996,10 +1118,11 @@ fn post_webhook_over_plain_http(
 
 fn post_webhook_over_https(
     record: &WebhookDeliveryRecord,
+    config: &IntegrationConfig,
 ) -> Result<WebhookDeliveryOutcome, String> {
     let parsed = parse_webhook_https_url(&record.payload_url)?;
-    ensure_webhook_endpoint_allowed(&parsed.host, parsed.port)?;
-    let (program, args) = webhook_https_delivery_command(record)?;
+    ensure_webhook_endpoint_allowed_with_config(&parsed.host, parsed.port, config)?;
+    let (program, args) = config.webhook_https_delivery_command(record)?;
     let mut child = Command::new(&program)
         .args(&args)
         .stdin(Stdio::piped())
@@ -1028,43 +1151,6 @@ fn post_webhook_over_https(
         });
     }
     webhook_outcome_from_http_response_bytes(&output.stdout)
-}
-
-fn webhook_https_delivery_command(
-    record: &WebhookDeliveryRecord,
-) -> Result<(String, Vec<String>), String> {
-    if let Some(configured) = configured_env_value(&[
-        "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
-        "WEBHOOK_HTTPS_DELIVERY_COMMAND",
-    ]) {
-        let (program, mut args) =
-            configured_command_parts(&configured, "webhook HTTPS delivery command is empty")?;
-        args.push(record.payload_url.clone());
-        return Ok((program, args));
-    }
-
-    let mut args = vec![
-        "--fail".to_string(),
-        "--location".to_string(),
-        "--silent".to_string(),
-        "--show-error".to_string(),
-        "--max-time".to_string(),
-        "30".to_string(),
-        "--dump-header".to_string(),
-        "-".to_string(),
-        "--output".to_string(),
-        "-".to_string(),
-        "--request".to_string(),
-        "POST".to_string(),
-        "--data-binary".to_string(),
-        "@-".to_string(),
-    ];
-    for header in &record.headers {
-        args.push("--header".to_string());
-        args.push(format!("{}: {}", header.name, header.value));
-    }
-    args.push(record.payload_url.clone());
-    Ok(("curl".to_string(), args))
 }
 
 fn configured_command_parts(
@@ -1147,7 +1233,11 @@ fn webhook_outcome_from_http_response_bytes(
     })
 }
 
-fn ensure_webhook_endpoint_allowed(host: &str, port: u16) -> Result<(), String> {
+fn ensure_webhook_endpoint_allowed_with_config(
+    host: &str,
+    port: u16,
+    config: &IntegrationConfig,
+) -> Result<(), String> {
     let addresses = (host, port)
         .to_socket_addrs()
         .map_err(|error| format!("webhook address resolution failed: {error}"))?
@@ -1155,7 +1245,7 @@ fn ensure_webhook_endpoint_allowed(host: &str, port: u16) -> Result<(), String> 
     if addresses.is_empty() {
         return Err("webhook address resolution returned no endpoints".to_string());
     }
-    let allow_private_networks = webhook_private_network_delivery_allowed();
+    let allow_private_networks = config.webhook_private_network_delivery_allowed();
     addresses
         .into_iter()
         .find(|address| webhook_endpoint_allowed(address.ip(), allow_private_networks))
@@ -1254,16 +1344,6 @@ fn parse_plain_http_url(value: &str) -> Result<PlainHttpUrl, String> {
     })
 }
 
-fn read_bool_env(name: &str) -> bool {
-    std::env::var(name)
-        .map(|value| parse_bool_env_value(&value))
-        .unwrap_or(false)
-}
-
-fn smtp_ssl_enabled_from_env() -> Option<bool> {
-    configured_env_value(&["SMTP_SSL", "YONA_SMTP_SSL"]).map(|value| parse_bool_env_value(&value))
-}
-
 fn smtp_default_port(ssl_enabled: Option<bool>) -> u16 {
     match ssl_enabled {
         Some(true) => 465,
@@ -1282,33 +1362,11 @@ fn parse_bool_env_value(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-    use std::sync::{Mutex, OnceLock};
 
     use super::{
-        build_mail_message, smtp_credentials_from_env, webhook_endpoint_allowed, webhook_headers,
-        webhook_https_delivery_command, webhook_private_network_delivery_allowed, OutboundMail,
-        WebhookDeliveryRecord,
+        build_mail_message, webhook_endpoint_allowed, webhook_headers, IntegrationConfig,
+        OutboundMail, WebhookDeliveryRecord,
     };
-
-    fn webhook_env_lock() -> &'static Mutex<()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(()))
-    }
-
-    fn clear_webhook_private_network_env() {
-        std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
-        std::env::remove_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS");
-        std::env::remove_var("YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND");
-        std::env::remove_var("WEBHOOK_HTTPS_DELIVERY_COMMAND");
-    }
-
-    fn clear_smtp_credential_env() {
-        std::env::remove_var("SMTP_USER");
-        std::env::remove_var("YONA_SMTP_USER");
-        std::env::remove_var("SMTP_PASSWORD");
-        std::env::remove_var("SMTP_PASS");
-        std::env::remove_var("YONA_SMTP_PASSWORD");
-    }
 
     fn mail_body_for(html: bool) -> String {
         let message = build_mail_message(OutboundMail {
@@ -1347,31 +1405,32 @@ mod tests {
 
     #[test]
     fn smtp_credentials_accept_legacy_password_aliases() {
-        let _guard = webhook_env_lock().lock().unwrap();
-        clear_smtp_credential_env();
-
-        std::env::set_var("SMTP_USER", "mailer");
-        std::env::set_var("SMTP_PASSWORD", "legacy-password");
         assert_eq!(
-            smtp_credentials_from_env(),
+            IntegrationConfig::from_pairs([
+                ("SMTP_USER", "mailer"),
+                ("SMTP_PASSWORD", "legacy-password"),
+            ])
+            .smtp_credentials(),
             Some(("mailer".to_string(), "legacy-password".to_string()))
         );
 
-        std::env::remove_var("SMTP_PASSWORD");
-        std::env::set_var("SMTP_PASS", "reference-password");
         assert_eq!(
-            smtp_credentials_from_env(),
+            IntegrationConfig::from_pairs([
+                ("SMTP_USER", "mailer"),
+                ("SMTP_PASS", "reference-password"),
+            ])
+            .smtp_credentials(),
             Some(("mailer".to_string(), "reference-password".to_string()))
         );
 
-        std::env::remove_var("SMTP_PASS");
-        std::env::set_var("YONA_SMTP_PASSWORD", "yona-password");
         assert_eq!(
-            smtp_credentials_from_env(),
+            IntegrationConfig::from_pairs([
+                ("SMTP_USER", "mailer"),
+                ("YONA_SMTP_PASSWORD", "yona-password"),
+            ])
+            .smtp_credentials(),
             Some(("mailer".to_string(), "yona-password".to_string()))
         );
-
-        clear_smtp_credential_env();
     }
 
     #[test]
@@ -1396,18 +1455,17 @@ mod tests {
 
     #[test]
     fn webhook_private_network_delivery_env_uses_yona_alias() {
-        let _guard = webhook_env_lock().lock().unwrap();
-        clear_webhook_private_network_env();
-        assert!(!webhook_private_network_delivery_allowed());
+        assert!(!IntegrationConfig::default().webhook_private_network_delivery_allowed());
 
-        std::env::set_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true");
-        assert!(webhook_private_network_delivery_allowed());
+        assert!(
+            IntegrationConfig::from_pairs([("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true",)])
+                .webhook_private_network_delivery_allowed()
+        );
 
-        std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
-        std::env::set_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS", "on");
-        assert!(webhook_private_network_delivery_allowed());
-
-        clear_webhook_private_network_env();
+        assert!(
+            IntegrationConfig::from_pairs([("WEBHOOK_ALLOW_PRIVATE_NETWORKS", "on")])
+                .webhook_private_network_delivery_allowed()
+        );
     }
 
     #[test]
@@ -1424,8 +1482,6 @@ mod tests {
 
     #[test]
     fn webhook_https_default_command_preserves_legacy_headers_and_body_stdin() {
-        let _guard = webhook_env_lock().lock().unwrap();
-        clear_webhook_private_network_env();
         let record = WebhookDeliveryRecord {
             body: "{\"text\":\"hello\"}".to_string(),
             event_type: "NEW_ISSUE".to_string(),
@@ -1434,7 +1490,9 @@ mod tests {
             webhook_type: "SIMPLE".to_string(),
         };
 
-        let (program, args) = webhook_https_delivery_command(&record).expect("default command");
+        let (program, args) = IntegrationConfig::default()
+            .webhook_https_delivery_command(&record)
+            .expect("default command");
 
         assert_eq!(program, "curl");
         assert!(args
@@ -1453,18 +1511,10 @@ mod tests {
             args.last().map(String::as_str),
             Some("https://hooks.example/yona")
         );
-
-        clear_webhook_private_network_env();
     }
 
     #[test]
     fn webhook_https_override_command_preserves_quoted_programs_and_arguments() {
-        let _guard = webhook_env_lock().lock().unwrap();
-        clear_webhook_private_network_env();
-        std::env::set_var(
-            "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
-            r#""/opt/Yona Tools/webhook fetch" --header "X-Test: yes""#,
-        );
         let record = WebhookDeliveryRecord {
             body: "{}".to_string(),
             event_type: "NEW_ISSUE".to_string(),
@@ -1473,7 +1523,13 @@ mod tests {
             webhook_type: "SIMPLE".to_string(),
         };
 
-        let (program, args) = webhook_https_delivery_command(&record).expect("override command");
+        let config = IntegrationConfig::from_pairs([(
+            "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
+            r#""/opt/Yona Tools/webhook fetch" --header "X-Test: yes""#,
+        )]);
+        let (program, args) = config
+            .webhook_https_delivery_command(&record)
+            .expect("override command");
 
         assert_eq!(program, "/opt/Yona Tools/webhook fetch");
         assert_eq!(
@@ -1484,6 +1540,5 @@ mod tests {
                 "https://hooks.example/yona".to_string(),
             ]
         );
-        clear_webhook_private_network_env();
     }
 }
