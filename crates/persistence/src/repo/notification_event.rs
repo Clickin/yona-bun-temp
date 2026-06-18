@@ -100,7 +100,7 @@ impl AppRepository {
         Ok(events.into_iter().find(|event| {
             event.created.is_some_and(|created| {
                 now.signed_duration_since(created).num_milliseconds()
-                    < notification_draft_time_in_millis()
+                    < self.config.notification_draft_time_in_millis()
             })
         }))
     }

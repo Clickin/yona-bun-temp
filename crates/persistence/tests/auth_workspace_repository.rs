@@ -1,5 +1,8 @@
 use sea_orm::{Database, EntityName};
-use yona_rust_persistence::{AppUserInput, AppUserRepository, DefaultLandingRepository};
+use yona_rust_persistence::{
+    AppRepository, AppUserInput, AppUserRepository, CreateUserInput, DefaultLandingRepository,
+    RepositoryConfig,
+};
 use yona_rust_pilot_migration::Migrator;
 
 #[test]
@@ -9,6 +12,32 @@ fn persistence_crate_reexports_seaorm_entities() {
         yona_rust_persistence::project::Entity.table_name(),
         "project"
     );
+}
+
+#[tokio::test]
+async fn app_repository_uses_injected_config_for_guest_classification() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+
+    let repo = AppRepository::new_with_config(
+        db,
+        RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "guest_")]),
+    );
+    let created = repo
+        .create_user(CreateUserInput {
+            display_name: "Guest".to_string(),
+            email_address: "guest@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "guest_alice".to_string(),
+            password_hash: "bcrypt-hash".to_string(),
+        })
+        .await
+        .expect("create guest user");
+
+    assert!(created.is_guest);
 }
 
 #[tokio::test]

@@ -26,7 +26,7 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
 
-        let menu_settings = configured_project_default_menu_settings();
+        let menu_settings = self.config.project_default_menu_settings();
         self.set_project_menu_settings(created.id, menu_settings)
             .await?;
 
@@ -63,7 +63,7 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
 
-        let menu_settings = configured_project_default_menu_settings();
+        let menu_settings = self.config.project_default_menu_settings();
         self.set_project_menu_settings(created.id, menu_settings)
             .await?;
 

@@ -73,7 +73,7 @@ use sea_orm::{
     DatabaseConnection, DbErr, EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set, Statement, TransactionTrait,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::time::{Duration, SystemTime};
 use yona_rust_search::{
     keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
@@ -85,7 +85,84 @@ mod default_landing;
 
 #[derive(Clone)]
 pub struct AppRepository {
+    config: RepositoryConfig,
     db: DatabaseConnection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RepositoryConfig {
+    values: BTreeMap<String, String>,
+}
+
+impl Default for RepositoryConfig {
+    fn default() -> Self {
+        Self {
+            values: BTreeMap::new(),
+        }
+    }
+}
+
+impl RepositoryConfig {
+    pub fn from_env() -> Self {
+        Self {
+            values: std::env::vars().collect(),
+        }
+    }
+
+    pub fn from_pairs<I, K, V>(pairs: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        Self {
+            values: pairs
+                .into_iter()
+                .map(|(key, value)| (key.into(), value.into()))
+                .collect(),
+        }
+    }
+
+    fn value(&self, name: &str) -> Option<&str> {
+        self.values
+            .get(name)
+            .map(String::as_str)
+            .filter(|value| !value.trim().is_empty())
+    }
+
+    pub fn login_id_matches_guest_prefix(&self, login_id: &str) -> bool {
+        let normalized_login_id = normalize_identity(login_id);
+        if normalized_login_id.is_empty() {
+            return false;
+        }
+        let Some(prefixes) = self.value("YONA_GUEST_LOGIN_PREFIX") else {
+            return false;
+        };
+        prefixes
+            .replace(' ', "")
+            .split(',')
+            .map(normalize_identity)
+            .filter(|prefix| !prefix.is_empty())
+            .any(|prefix| normalized_login_id.starts_with(&prefix))
+    }
+
+    pub fn notification_draft_time_in_millis(&self) -> i64 {
+        self.value("YONA_NOTIFICATION_DRAFT_TIME")
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(NOTIFICATION_DRAFT_TIME_IN_MILLIS)
+    }
+
+    pub fn issue_event_draft_time_in_millis(&self) -> i64 {
+        self.value("YONA_ISSUE_EVENT_DRAFT_TIME")
+            .and_then(parse_legacy_duration_ms)
+            .unwrap_or(ISSUE_EVENT_DRAFT_TIME_IN_MILLIS)
+    }
+
+    pub fn project_default_menu_settings(&self) -> ProjectMenuSettingsRecord {
+        configured_project_default_menu_settings_from_value(
+            self.value("YONA_PROJECT_DEFAULT_MENUS"),
+        )
+    }
 }
 
 #[derive(Clone)]

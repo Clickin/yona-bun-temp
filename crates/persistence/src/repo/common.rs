@@ -61,22 +61,6 @@ pub(super) fn mailbox_canonical_resource_type(resource_type: &str) -> String {
     .to_string()
 }
 
-pub(super) fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
-    let normalized_login_id = normalize_identity(login_id);
-    if normalized_login_id.is_empty() {
-        return false;
-    }
-    let Ok(prefixes) = std::env::var("YONA_GUEST_LOGIN_PREFIX") else {
-        return false;
-    };
-    prefixes
-        .replace(' ', "")
-        .split(',')
-        .map(normalize_identity)
-        .filter(|prefix| !prefix.is_empty())
-        .any(|prefix| normalized_login_id.starts_with(&prefix))
-}
-
 pub(super) fn normalize_optional(value: Option<&str>) -> Option<String> {
     value
         .map(normalize_identity)
@@ -415,20 +399,6 @@ pub(super) const RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "BOARD_POST_COM
 pub(super) const MILESTONE_ATTACHMENT_CONTAINER: &str = "MILESTONE";
 pub(super) const PULL_REQUEST_ATTACHMENT_CONTAINER: &str = "PULL_REQUEST";
 pub(super) const REVIEW_COMMENT_ATTACHMENT_CONTAINER: &str = "REVIEW_COMMENT";
-
-pub(super) fn notification_draft_time_in_millis() -> i64 {
-    std::env::var("YONA_NOTIFICATION_DRAFT_TIME")
-        .ok()
-        .and_then(|value| parse_legacy_duration_ms(&value))
-        .unwrap_or(NOTIFICATION_DRAFT_TIME_IN_MILLIS)
-}
-
-pub(super) fn issue_event_draft_time_in_millis() -> i64 {
-    std::env::var("YONA_ISSUE_EVENT_DRAFT_TIME")
-        .ok()
-        .and_then(|value| parse_legacy_duration_ms(&value))
-        .unwrap_or(ISSUE_EVENT_DRAFT_TIME_IN_MILLIS)
-}
 
 pub(super) fn parse_legacy_duration_ms(value: &str) -> Option<i64> {
     let trimmed = value.trim();
@@ -799,11 +769,10 @@ pub(super) fn all_project_menu_settings_enabled() -> ProjectMenuSettingsRecord {
     }
 }
 
-pub(super) fn configured_project_default_menu_settings() -> ProjectMenuSettingsRecord {
-    let Some(configured) = std::env::var("YONA_PROJECT_DEFAULT_MENUS")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-    else {
+pub(super) fn configured_project_default_menu_settings_from_value(
+    configured: Option<&str>,
+) -> ProjectMenuSettingsRecord {
+    let Some(configured) = configured else {
         return all_project_menu_settings_enabled();
     };
 

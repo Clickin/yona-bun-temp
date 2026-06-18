@@ -61,7 +61,7 @@ impl AppRepository {
         Ok(events.into_iter().find(|event| {
             event.created.is_some_and(|created| {
                 now.signed_duration_since(created).num_milliseconds()
-                    < issue_event_draft_time_in_millis()
+                    < self.config.issue_event_draft_time_in_millis()
             })
         }))
     }

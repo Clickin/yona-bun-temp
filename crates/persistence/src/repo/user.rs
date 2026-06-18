@@ -2,7 +2,11 @@ use super::*;
 
 impl AppRepository {
     pub fn new(db: DatabaseConnection) -> Self {
-        Self { db }
+        Self::new_with_config(db, RepositoryConfig::from_env())
+    }
+
+    pub fn new_with_config(db: DatabaseConnection, config: RepositoryConfig) -> Self {
+        Self { config, db }
     }
 
     pub async fn create_user(&self, input: CreateUserInput) -> Result<AppUserRecord, DbErr> {
@@ -21,7 +25,7 @@ impl AppRepository {
             lang: Set(None),
             token: Set(None),
             is_guest: Set(Some(
-                if login_id_matches_configured_guest_prefix(&login_id) {
+                if self.config.login_id_matches_guest_prefix(&login_id) {
                     1
                 } else {
                     0
