@@ -9665,9 +9665,27 @@ fn application_hostname_from_env() -> Option<String> {
     configured_env_value(&["YONA_APPLICATION_HOSTNAME", "APPLICATION_HOSTNAME"])
 }
 
-fn notification_mail_recipient_allowed(email: &str) -> bool {
-    let raw_domains = std::env::var("YONA_ALLOWED_MAIL_DOMAINS").unwrap_or_default();
-    if raw_domains.trim().is_empty() {
+fn parse_mail_domain_csv(value: Option<&str>) -> Vec<String> {
+    value
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_ascii_lowercase())
+        .collect()
+}
+
+fn normalize_mail_domain_list(values: &[String]) -> Vec<String> {
+    values
+        .iter()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_ascii_lowercase())
+        .collect()
+}
+
+fn notification_mail_recipient_allowed(email: &str, allowed_domains: &[String]) -> bool {
+    if allowed_domains.is_empty() {
         return true;
     }
     let Some((_, domain)) = email.rsplit_once('@') else {
@@ -9677,10 +9695,9 @@ fn notification_mail_recipient_allowed(email: &str) -> bool {
         return false;
     }
     let domain = domain.to_ascii_lowercase();
-    raw_domains
-        .split(',')
-        .map(|allowed| allowed.trim().to_ascii_lowercase())
-        .any(|allowed| allowed == domain)
+    allowed_domains
+        .iter()
+        .any(|allowed| allowed.as_str() == domain)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -9689,6 +9706,52 @@ pub struct NotificationMailSchedulerConfig {
     pub initial_delay_ms: u64,
     pub interval_ms: u64,
     pub delay_ms: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailDeliveryConfig {
+    pub allowed_domains: Vec<String>,
+    pub hide_address: bool,
+    pub recipient_limit: Option<usize>,
+    pub site_name: String,
+}
+
+impl Default for NotificationMailDeliveryConfig {
+    fn default() -> Self {
+        Self {
+            allowed_domains: Vec::new(),
+            hide_address: false,
+            recipient_limit: None,
+            site_name: "Yona".to_string(),
+        }
+    }
+}
+
+impl NotificationMailDeliveryConfig {
+    pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        Self {
+            allowed_domains: normalize_mail_domain_list(
+                config
+                    .allowed_sending_mail_domains
+                    .as_deref()
+                    .unwrap_or(&[]),
+            ),
+            hide_address: config.notification_mail_hide_address.unwrap_or(false),
+            recipient_limit: config.notification_mail_recipient_limit,
+            site_name: site_name_from_option(config.site_name.as_deref()),
+        }
+    }
+
+    fn from_env() -> Self {
+        Self {
+            allowed_domains: parse_mail_domain_csv(
+                std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok().as_deref(),
+            ),
+            hide_address: notification_mail_hide_address_from_env(),
+            recipient_limit: notification_mail_recipient_limit_from_env(),
+            site_name: configured_site_name(),
+        }
+    }
 }
 
 impl Default for NotificationMailSchedulerConfig {
@@ -9790,6 +9853,7 @@ fn notification_mail_content(
     target_url: &str,
     public_origin: &str,
     base_path: &str,
+    site_name: &str,
 ) -> (String, String) {
     let subject = if item.target_title.is_empty() {
         item.message.clone()
@@ -9797,7 +9861,7 @@ fn notification_mail_content(
         item.target_title.clone()
     };
     let body = notification_mail_apply_legacy_html_postprocessing(
-        &notification_mail_legacy_body(item, target_url, public_origin, base_path),
+        &notification_mail_legacy_body(item, target_url, public_origin, base_path, site_name),
         public_origin,
     );
     (subject, body)
@@ -9808,6 +9872,7 @@ fn notification_mail_legacy_body(
     target_url: &str,
     public_origin: &str,
     base_path: &str,
+    site_name: &str,
 ) -> String {
     let settings_url = absolute_app_url(public_origin, base_path, "/user/editform/notifications");
     let settings_link = notification_mail_footer_link(&settings_url, "Notification settings");
@@ -9826,7 +9891,7 @@ fn notification_mail_legacy_body(
             "\n\n{}<a href=\"{}\" target=\"_blank\">View it on {}</a>\n",
             prefix,
             escape_html_attr(target_url),
-            escape_html_text(&configured_site_name())
+            escape_html_text(site_name)
         )
     };
 
@@ -10284,6 +10349,25 @@ pub async fn deliver_due_notification_mails(
     public_origin: &str,
     base_path: &str,
 ) -> Result<usize, String> {
+    deliver_due_notification_mails_with_config(
+        repository,
+        now,
+        delay_ms,
+        public_origin,
+        base_path,
+        &NotificationMailDeliveryConfig::from_env(),
+    )
+    .await
+}
+
+pub async fn deliver_due_notification_mails_with_config(
+    repository: &PilotRepository,
+    now: DateTime,
+    delay_ms: i64,
+    public_origin: &str,
+    base_path: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
+) -> Result<usize, String> {
     let public_origin = default_public_origin(public_origin);
     let deliveries = repository
         .drain_due_notification_mail_deliveries(now, delay_ms)
@@ -10291,7 +10375,12 @@ pub async fn deliver_due_notification_mails(
         .map_err(|error| error.to_string())?;
     let deliveries: Vec<_> = deliveries
         .into_iter()
-        .filter(|delivery| notification_mail_recipient_allowed(&delivery.recipient_email))
+        .filter(|delivery| {
+            notification_mail_recipient_allowed(
+                &delivery.recipient_email,
+                &delivery_config.allowed_domains,
+            )
+        })
         .collect();
     let mut grouped: Vec<(
         persistence::NotificationItemRecord,
@@ -10314,24 +10403,26 @@ pub async fn deliver_due_notification_mails(
     }
 
     let mut delivered = 0;
-    let hide_address = notification_mail_hide_address_from_env();
-    let recipient_limit = notification_mail_recipient_limit_from_env();
     let default_from = default_smtp_from();
-    let site_name = configured_site_name();
     for (item, recipients) in grouped {
         let target_url = if item.target_path.is_empty() {
             String::new()
         } else {
             absolute_app_url(&public_origin, base_path, &item.target_path)
         };
-        let (subject, body) =
-            notification_mail_content(&item, &target_url, &public_origin, base_path);
+        let (subject, body) = notification_mail_content(
+            &item,
+            &target_url,
+            &public_origin,
+            base_path,
+            &delivery_config.site_name,
+        );
         for batch in notification_mail_batches(
             &recipients,
             &default_from,
-            &site_name,
-            hide_address,
-            recipient_limit,
+            &delivery_config.site_name,
+            delivery_config.hide_address,
+            delivery_config.recipient_limit,
         ) {
             let bcc = batch
                 .bcc
@@ -10363,15 +10454,33 @@ pub async fn deliver_notification_mail_scheduler_tick(
     public_origin: &str,
     base_path: &str,
 ) -> Result<usize, String> {
+    deliver_notification_mail_scheduler_tick_with_config(
+        repository,
+        config,
+        public_origin,
+        base_path,
+        &NotificationMailDeliveryConfig::from_env(),
+    )
+    .await
+}
+
+pub async fn deliver_notification_mail_scheduler_tick_with_config(
+    repository: &PilotRepository,
+    config: &NotificationMailSchedulerConfig,
+    public_origin: &str,
+    base_path: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
+) -> Result<usize, String> {
     if !config.enabled {
         return Ok(0);
     }
-    deliver_due_notification_mails(
+    deliver_due_notification_mails_with_config(
         repository,
         DateTimeUtc::from(SystemTime::now()).naive_utc(),
         config.delay_ms,
         public_origin,
         base_path,
+        delivery_config,
     )
     .await
 }
@@ -10381,6 +10490,7 @@ pub fn spawn_notification_mail_scheduler(
     public_origin: impl Into<String>,
     base_path: impl Into<String>,
     config: NotificationMailSchedulerConfig,
+    delivery_config: NotificationMailDeliveryConfig,
 ) -> Option<tokio::task::JoinHandle<()>> {
     if !config.enabled {
         return None;
@@ -10392,11 +10502,12 @@ pub fn spawn_notification_mail_scheduler(
             tokio::time::sleep(Duration::from_millis(config.initial_delay_ms)).await;
         }
         loop {
-            if let Err(error) = deliver_notification_mail_scheduler_tick(
+            if let Err(error) = deliver_notification_mail_scheduler_tick_with_config(
                 &repository,
                 &config,
                 &public_origin,
                 &base_path,
+                &delivery_config,
             )
             .await
             {

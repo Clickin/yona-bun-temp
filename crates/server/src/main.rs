@@ -10,7 +10,7 @@ use yona_rust_pilot_server::{
     create_router_with_repository_and_filesystem_assets_and_app_config,
     mailbox_polling_config_from_startup, notification_mail_scheduler_config_from_startup,
     spawn_mailbox_polling_scheduler, spawn_notification_mail_scheduler, AppRuntimeConfig,
-    RuntimeConfig,
+    NotificationMailDeliveryConfig, RuntimeConfig,
 };
 
 #[tokio::main]
@@ -35,6 +35,7 @@ async fn main() -> anyhow::Result<()> {
         config.public_origin.clone(),
         config.base_path.clone(),
         notification_mail_scheduler_config_from_startup(&startup),
+        NotificationMailDeliveryConfig::from_startup(&startup),
     );
     let _mailbox_polling_scheduler = spawn_mailbox_polling_scheduler(
         repository.clone(),

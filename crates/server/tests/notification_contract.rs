@@ -21,10 +21,11 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::runtime_config::load_startup_config;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, deliver_due_notification_mails,
-    deliver_notification_mail_scheduler_tick, notification_mail_add_noreferrer_to_external_links,
+    deliver_due_notification_mails_with_config, deliver_notification_mail_scheduler_tick,
+    notification_mail_add_noreferrer_to_external_links,
     notification_mail_apply_legacy_html_postprocessing,
     notification_mail_scheduler_config_from_env, notification_mail_scheduler_config_from_startup,
-    NotificationMailSchedulerConfig, RuntimeConfig,
+    NotificationMailDeliveryConfig, NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -1332,8 +1333,7 @@ async fn notification_contract_review_comment_mail_replies_to_parent_thread_like
 #[tokio::test]
 async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
     let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ALLOWED_MAIL_DOMAINS", "allowed.example.com");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    let previous_allowed_domains = std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1393,12 +1393,18 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
         .unwrap()
         .expect("state change event");
 
-    let delivered = deliver_due_notification_mails(
+    let delivered = deliver_due_notification_mails_with_config(
         &repo,
         event.created.expect("event created"),
         0,
         "https://yona.example",
         "/yona",
+        &NotificationMailDeliveryConfig {
+            allowed_domains: vec!["allowed.example.com".to_string()],
+            hide_address: false,
+            recipient_limit: None,
+            site_name: "Yona".to_string(),
+        },
     )
     .await
     .unwrap();
@@ -1412,8 +1418,11 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].to, "allowed@allowed.example.com");
     clear_test_outbox();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+    assert_eq!(
+        std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok(),
+        previous_allowed_domains,
+        "delivery config must not mutate process env"
+    );
 }
 
 #[tokio::test]
