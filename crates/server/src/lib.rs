@@ -11,7 +11,7 @@ use axum::extract::{Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
 use axum::response::{Html, IntoResponse, Redirect, Response};
-use axum::routing::{any, delete, get, patch, post, put};
+use axum::routing::{any, delete, get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use base64::{engine::general_purpose, Engine as _};
@@ -11253,7 +11253,7 @@ struct RestNotificationsResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestProjectPostsQuery {
+pub(crate) struct RestProjectPostsQuery {
     filter: String,
     label_ids: Vec<i64>,
     order_by: String,
@@ -11262,7 +11262,7 @@ struct RestProjectPostsQuery {
 }
 
 impl RestProjectPostsQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
         let Some(raw_query) = raw_query else {
             return Ok(query);
@@ -11291,7 +11291,7 @@ impl RestProjectPostsQuery {
 }
 
 #[derive(Default)]
-struct RestPostFormOptionsQuery {
+pub(crate) struct RestPostFormOptionsQuery {
     branch: Option<String>,
     edit: bool,
     issue_template: bool,
@@ -11299,7 +11299,7 @@ struct RestPostFormOptionsQuery {
 }
 
 impl RestPostFormOptionsQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
         let Some(raw_query) = raw_query else {
             return Ok(query);
@@ -11324,7 +11324,7 @@ impl RestPostFormOptionsQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestOrganizationBoardsQuery {
+pub(crate) struct RestOrganizationBoardsQuery {
     filter: String,
     order_by: String,
     order_dir: String,
@@ -11333,7 +11333,7 @@ struct RestOrganizationBoardsQuery {
 }
 
 impl RestOrganizationBoardsQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
         let Some(raw_query) = raw_query else {
             return Ok(query);
@@ -13337,322 +13337,11 @@ fn build_rest_router(
                 }
             }),
         )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        let query =
-                            RestProjectPostsQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_list_project_posts(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Json(body): Json<RestPostMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_create_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts/form-options",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query = RestPostFormOptionsQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_project_post_form_options(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts/{post_number}",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_read_posting_detail(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .patch({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
-                      Json(body): Json<RestPostMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_update_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_delete_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts/{post_number}/comments",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
-                      Json(body): Json<RestPostCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_create_posting_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts/{post_number}/comments/{comment_id}",
-            patch({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>,
-                      Json(body): Json<RestPostCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_update_posting_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            comment_id,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_delete_posting_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            comment_id,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/posts/{post_number}/watch",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_watch_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            session_manager,
-                            backend,
-                            base_path,
-                            true,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_watch_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            session_manager,
-                            backend,
-                            base_path,
-                            false,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/organizations/{organization_name}/boards",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path(organization_name): Path<String>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query =
-                            RestOrganizationBoardsQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_list_organization_boards(
-                            headers,
-                            organization_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
+        .merge(routes::board_rest_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
         .route(
             "/user/issues/new-options",
             get({
@@ -27379,7 +27068,7 @@ struct RestIssueCommentBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPostMutationBody {
+pub(crate) struct RestPostMutationBody {
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
@@ -27404,7 +27093,7 @@ struct RestPostMutationBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPostCommentBody {
+pub(crate) struct RestPostCommentBody {
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
@@ -27971,7 +27660,7 @@ async fn rest_list_organization_issues(
     }))
 }
 
-async fn rest_list_project_posts(
+pub(crate) async fn rest_list_project_posts(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28050,7 +27739,7 @@ async fn rest_list_project_posts(
     }))
 }
 
-async fn rest_project_post_form_options(
+pub(crate) async fn rest_project_post_form_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28101,7 +27790,7 @@ async fn rest_project_post_form_options(
     }))
 }
 
-async fn rest_list_organization_boards(
+pub(crate) async fn rest_list_organization_boards(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationBoardsQuery,
@@ -28176,7 +27865,7 @@ async fn rest_list_organization_boards(
     }))
 }
 
-async fn rest_read_posting_detail(
+pub(crate) async fn rest_read_posting_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28225,7 +27914,7 @@ async fn rest_read_posting_detail(
     ))
 }
 
-async fn rest_create_posting(
+pub(crate) async fn rest_create_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28323,7 +28012,7 @@ async fn rest_create_posting(
     )))
 }
 
-async fn rest_update_posting(
+pub(crate) async fn rest_update_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28415,7 +28104,7 @@ async fn rest_update_posting(
     ))
 }
 
-async fn rest_delete_posting(
+pub(crate) async fn rest_delete_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28466,7 +28155,7 @@ async fn rest_delete_posting(
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn rest_create_posting_comment(
+pub(crate) async fn rest_create_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28539,7 +28228,7 @@ async fn rest_create_posting_comment(
     ))
 }
 
-async fn rest_update_posting_comment(
+pub(crate) async fn rest_update_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28619,7 +28308,7 @@ async fn rest_update_posting_comment(
     ))
 }
 
-async fn rest_delete_posting_comment(
+pub(crate) async fn rest_delete_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28696,7 +28385,7 @@ async fn rest_delete_posting_comment(
     ))
 }
 
-async fn rest_watch_posting(
+pub(crate) async fn rest_watch_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,

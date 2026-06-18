@@ -669,6 +669,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(form_options["canMarkReadme"], true);
     assert_eq!(form_options["canAttachFiles"], true);
     assert_eq!(form_options["defaultPermissions"]["canCreate"], true);
+    assert_eq!(form_options["labels"].as_array().unwrap().len(), 1);
     assert_eq!(form_options["labels"][0]["name"], "Guide");
 
     let readme = ok_json(
