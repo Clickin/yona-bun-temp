@@ -666,6 +666,7 @@ async fn notification_contract_direct_notification_route_returns_legacy_partial_
     assert!(html.contains(r#"<a href="/yona/owner/projectYobi/issue/1">Private issue</a>"#));
     assert!(html.contains(r#"class="avatar-wrap smaller""#));
     assert!(html.contains(r#"<a href="/yona/owner" class="author">owner</a>@owner"#));
+    assert!(html.contains(r#"data-target="message-"#));
     assert!(html.contains(r#"class="ago pull-right""#));
     assert!(html
         .contains(r#"<a href="javascript:void(0);" id="notification-more" class="ybtn">More</a>"#));

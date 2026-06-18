@@ -883,9 +883,6 @@ fn build_router_with_app_config(
     let site_mail_send_base_path = base_path.clone();
     let site_mail_list_backend = route_backend.clone();
     let site_mail_list_session_manager = session_manager.clone();
-    let direct_notification_backend = route_backend.clone();
-    let direct_notification_session_manager = session_manager.clone();
-    let direct_notification_base_path = base_path.clone();
     let direct_notification_toggle_backend = route_backend.clone();
     let direct_notification_toggle_session_manager = session_manager.clone();
     let direct_unwatch_backend = route_backend.clone();
@@ -1705,23 +1702,11 @@ fn build_router_with_app_config(
                 async move { direct_legacy_init(backend, base_path).await }
             }),
         )
-        .route(
-            "/notification",
-            get(
-                move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
-                    async move {
-                        direct_notification_partial(
-                            headers,
-                            query,
-                            direct_notification_session_manager.clone(),
-                            direct_notification_backend.clone(),
-                            direct_notification_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
+        .merge(routes::notification_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+            base_path.clone(),
+        ))
         .route(
             "/noti/toggle/{project_id}/{noti_type}",
             post(
@@ -12106,7 +12091,7 @@ async fn direct_legacy_unwatch(
     }
 }
 
-async fn direct_notification_partial(
+pub(crate) async fn direct_notification_partial(
     headers: HeaderMap,
     query: DirectNotificationPartialQuery,
     session_manager: SessionManager,
@@ -15009,7 +14994,7 @@ struct RestNotificationsQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-struct DirectNotificationPartialQuery {
+pub(crate) struct DirectNotificationPartialQuery {
     from: Option<u32>,
     size: Option<u32>,
     limit: Option<u32>,
