@@ -662,6 +662,7 @@ async fn notification_contract_direct_notification_route_returns_legacy_partial_
     assert!(html.contains(r#"<div class="stream-type megaphone">"#));
     assert!(html.contains(r#"data-toggle="learnmore""#));
     assert!(html.contains(r#"id="message-"#));
+    assert!(html.contains(r#"class="message-wrap nowrap""#));
     assert!(html.contains(r#"<div class="message">Issue is shared with guest</div>"#));
     assert!(html.contains(r#"<a href="/yona/owner/projectYobi/issue/1">Private issue</a>"#));
     assert!(html.contains(r#"class="avatar-wrap smaller""#));
