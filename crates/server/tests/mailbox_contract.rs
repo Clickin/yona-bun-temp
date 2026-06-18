@@ -43,6 +43,20 @@ async fn original_email_exists(
         .is_some()
 }
 
+#[test]
+fn mailbox_polling_config_reexport_preserves_default_scheduler_shape() {
+    assert_eq!(
+        MailboxPollingConfig::default(),
+        MailboxPollingConfig {
+            enabled: false,
+            fetch_command: String::new(),
+            imap_address: "noreply@yona.local".to_string(),
+            initial_delay_ms: 5_000,
+            interval_ms: 60_000,
+        }
+    );
+}
+
 #[tokio::test]
 async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_resources() {
     let (repo, db) = build_repository().await;
