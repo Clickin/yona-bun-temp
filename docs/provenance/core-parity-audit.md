@@ -222,6 +222,6 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - `pnpm --dir frontend test` is green, including `src/route-parity.spec.tsx`.
 - `pnpm --dir frontend build` is green.
 - `pnpm --dir frontend test:e2e` is green for `tests/shell-routing-smoke.e2e.ts`.
-- `cargo test --manifest-path Cargo.toml -p yona-rust-pilot-server --test router_contract --test db_router_contract` is green.
+- `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test server_core_contract` is green; this consolidated target covers the legacy router, DB router, markdown, session, and SQLite smoke contracts.
 - `/api/v1/organizations` now provides the additive public organization directory feed used by the Rust route shell.
 - Rust workspace verification is green, including Docker/testcontainers coverage.

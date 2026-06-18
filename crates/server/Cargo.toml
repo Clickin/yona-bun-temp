@@ -4,6 +4,7 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 build = "build.rs"
+autotests = false
 
 [dependencies]
 anyhow.workspace = true
@@ -49,3 +50,151 @@ protoc-bin-vendored.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
 testcontainers-modules = { version = "0.15", features = ["postgres", "mariadb"] }
+
+[[test]]
+name = "server_core_contract"
+path = "tests/server_core_contract.rs"
+
+[[test]]
+name = "assets_contract"
+path = "tests/assets_contract.rs"
+
+[[test]]
+name = "auth_workspace_contract"
+path = "tests/auth_workspace_contract.rs"
+
+[[test]]
+name = "board_contract"
+path = "tests/board_contract.rs"
+
+[[test]]
+name = "code_browser_contract"
+path = "tests/code_browser_contract.rs"
+
+[[test]]
+name = "db_matrix_env"
+path = "tests/db_matrix_env.rs"
+
+[[test]]
+name = "db_matrix_testcontainers"
+path = "tests/db_matrix_testcontainers.rs"
+
+[[test]]
+name = "issue_assignable_contract"
+path = "tests/issue_assignable_contract.rs"
+
+[[test]]
+name = "issue_comment_vote_contract"
+path = "tests/issue_comment_vote_contract.rs"
+
+[[test]]
+name = "issue_core_contract"
+path = "tests/issue_core_contract.rs"
+
+[[test]]
+name = "issue_label_contract"
+path = "tests/issue_label_contract.rs"
+
+[[test]]
+name = "issue_mention_contract"
+path = "tests/issue_mention_contract.rs"
+
+[[test]]
+name = "issue_reference_autocomplete_contract"
+path = "tests/issue_reference_autocomplete_contract.rs"
+
+[[test]]
+name = "issue_sharer_contract"
+path = "tests/issue_sharer_contract.rs"
+
+[[test]]
+name = "legacy_external_user_issues_contract"
+path = "tests/legacy_external_user_issues_contract.rs"
+
+[[test]]
+name = "legacy_external_users_contract"
+path = "tests/legacy_external_users_contract.rs"
+
+[[test]]
+name = "mailbox_contract"
+path = "tests/mailbox_contract.rs"
+
+[[test]]
+name = "milestone_contract"
+path = "tests/milestone_contract.rs"
+
+[[test]]
+name = "notification_contract"
+path = "tests/notification_contract.rs"
+
+[[test]]
+name = "org_project_contract"
+path = "tests/org_project_contract.rs"
+
+[[test]]
+name = "organization_board_contract"
+path = "tests/organization_board_contract.rs"
+
+[[test]]
+name = "organization_issue_contract"
+path = "tests/organization_issue_contract.rs"
+
+[[test]]
+name = "project_change_vcs_contract"
+path = "tests/project_change_vcs_contract.rs"
+
+[[test]]
+name = "project_delete_contract"
+path = "tests/project_delete_contract.rs"
+
+[[test]]
+name = "project_fork_contract"
+path = "tests/project_fork_contract.rs"
+
+[[test]]
+name = "project_members_contract"
+path = "tests/project_members_contract.rs"
+
+[[test]]
+name = "project_transfer_contract"
+path = "tests/project_transfer_contract.rs"
+
+[[test]]
+name = "project_webhook_contract"
+path = "tests/project_webhook_contract.rs"
+
+[[test]]
+name = "pull_request_mutation_contract"
+path = "tests/pull_request_mutation_contract.rs"
+
+[[test]]
+name = "pull_request_read_contract"
+path = "tests/pull_request_read_contract.rs"
+
+[[test]]
+name = "rest_contract"
+path = "tests/rest_contract.rs"
+
+[[test]]
+name = "runtime_config_contract"
+path = "tests/runtime_config_contract.rs"
+
+[[test]]
+name = "search_contract"
+path = "tests/search_contract.rs"
+
+[[test]]
+name = "site_admin_contract"
+path = "tests/site_admin_contract.rs"
+
+[[test]]
+name = "smart_http_contract"
+path = "tests/smart_http_contract.rs"
+
+[[test]]
+name = "svn_protocol_contract"
+path = "tests/svn_protocol_contract.rs"
+
+[[test]]
+name = "user_issue_favorite_contract"
+path = "tests/user_issue_favorite_contract.rs"
