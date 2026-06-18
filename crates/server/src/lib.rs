@@ -14944,14 +14944,14 @@ impl RestOrganizationBoardsQuery {
     }
 }
 
-struct RestSearchQuery {
+pub(crate) struct RestSearchQuery {
     keyword: String,
     page_num: u32,
     search_type: String,
 }
 
 impl RestSearchQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut keyword = None;
         let mut page_num = 1;
         let mut search_type = None;
@@ -16978,70 +16978,10 @@ fn build_rest_router(
                 }
             }),
         )
-        .route(
-            "/search",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap, RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_global(headers, query, session_manager, backend).await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/search",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_project(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/organizations/{organization_name}/search",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path(organization_name): Path<String>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_organization(
-                            headers,
-                            organization_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
+        .merge(routes::search_routes(
+            session_manager.clone(),
+            backend.clone(),
+        ))
         .route(
             "/projects/{owner_name}/{project_name}/issues",
             get({
@@ -33533,7 +33473,7 @@ fn rest_project_posting_filter_from_query(
     }
 }
 
-async fn rest_search_global(
+pub(crate) async fn rest_search_global(
     headers: HeaderMap,
     query: RestSearchQuery,
     session_manager: SessionManager,
@@ -33564,7 +33504,7 @@ async fn rest_search_global(
     .await
 }
 
-async fn rest_search_project(
+pub(crate) async fn rest_search_project(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -33609,7 +33549,7 @@ async fn rest_search_project(
     .await
 }
 
-async fn rest_search_organization(
+pub(crate) async fn rest_search_organization(
     headers: HeaderMap,
     organization_name: String,
     query: RestSearchQuery,

@@ -475,6 +475,7 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
     assert_eq!(payload["searchType"], "issue");
     assert_eq!(payload["pageNum"], 1);
     assert_eq!(payload["pageSize"], 20);
+    assert!(!payload["items"].as_array().unwrap().is_empty());
     for key in [
         "issues",
         "users",
