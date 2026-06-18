@@ -4403,6 +4403,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "yona-rust-pilot-protocol"
+version = "0.1.0"
+dependencies = [
+ "buffa",
+ "serde",
+]
+
+[[package]]
 name = "yona-rust-pilot-server"
 version = "0.1.0"
 dependencies = [
@@ -4440,6 +4448,7 @@ dependencies = [
  "yona-rust-integrations",
  "yona-rust-persistence",
  "yona-rust-pilot-migration",
+ "yona-rust-pilot-protocol",
  "yona-rust-search",
  "yona-rust-vcs",
 ]

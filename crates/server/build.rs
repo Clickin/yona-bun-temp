@@ -4,23 +4,7 @@ use std::path::{Path, PathBuf};
 fn main() {
     println!("cargo:rerun-if-env-changed=YONA_EMBED_ASSET_ROOT");
 
-    copy_pilot_proto().expect("failed to copy generated pilot proto");
-
     generate_embedded_assets().expect("failed to generate embedded assets");
-}
-
-fn copy_pilot_proto() -> std::io::Result<()> {
-    let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("manifest dir"));
-    let source_root = manifest_dir.join("src").join("generated");
-    let wrapper = source_root.join("pilot_proto.rs");
-    let generated = source_root.join("yona.pilot.v1.pilot.rs");
-    println!("cargo:rerun-if-changed={}", wrapper.display());
-    println!("cargo:rerun-if-changed={}", generated.display());
-
-    let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("out dir"));
-    fs::copy(wrapper, out_dir.join("_pilot_proto.rs"))?;
-    fs::copy(generated, out_dir.join("yona.pilot.v1.pilot.rs"))?;
-    Ok(())
 }
 
 fn generate_embedded_assets() -> std::io::Result<()> {

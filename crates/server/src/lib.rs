@@ -56,10 +56,7 @@ use yona_rust_vcs::{
     MAX_SMART_HTTP_RPC_BYTES,
 };
 
-#[allow(clippy::missing_panics_doc)]
-pub mod generated {
-    include!(concat!(env!("OUT_DIR"), "/_pilot_proto.rs"));
-}
+pub use yona_rust_pilot_protocol as generated;
 
 pub mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
@@ -37878,10 +37875,6 @@ impl BrowserRuntimeConfig {
     }
 }
 
-fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
-    auth_ui_capabilities_from_config(&AuthUiConfig::from_env())
-}
-
 fn auth_ui_capabilities_from_config(config: &AuthUiConfig) -> ReadAuthUiCapabilitiesResponse {
     ReadAuthUiCapabilitiesResponse {
         email_verification_enabled: config.email_verification_enabled,
@@ -41654,14 +41647,6 @@ impl PilotServiceImpl {
         let session = self.session_manager.read_session_from_headers(&ctx.headers);
         let response = resolve_current_session_response(&self.backend, session.as_ref()).await?;
         Ok((response, ctx))
-    }
-
-    async fn read_auth_ui_capabilities(
-        &self,
-        ctx: Context,
-        _request: OwnedView<ReadAuthUiCapabilitiesRequestView<'static>>,
-    ) -> Result<(ReadAuthUiCapabilitiesResponse, Context), ConnectError> {
-        Ok((auth_ui_capabilities_from_config(&self.auth_ui), ctx))
     }
 
     async fn sign_in_with_password(

@@ -36,6 +36,7 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "reference/mixed-code/",
   "reference/spikes/",
   "scripts/",
+  "crates/protocol/src/generated/",
   "crates/server/src/generated/",
   "frontend/src/gen/",
 ];
@@ -519,6 +520,10 @@ function isNonImplementationFile(filePath) {
   }
 
   if (/^crates\/[^/]+\/Cargo\.toml$/i.test(filePath) || filePath === "crates/server/build.rs") {
+    return true;
+  }
+
+  if (filePath === "crates/protocol/src/lib.rs") {
     return true;
   }
 

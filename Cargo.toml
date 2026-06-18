@@ -3,6 +3,7 @@ members = [
     "crates/server",
     "crates/migration",
     "crates/domain",
+    "crates/protocol",
     "crates/persistence",
     "crates/persistence-entities",
     "crates/vcs",
