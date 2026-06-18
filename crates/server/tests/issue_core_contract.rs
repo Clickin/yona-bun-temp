@@ -78,6 +78,17 @@ async fn response_json(response: Response<Body>) -> serde_json::Value {
     serde_json::from_str(&text).expect("json response")
 }
 
+async fn response_json_with_status(
+    response: Response<Body>,
+    expected_status: StatusCode,
+) -> serde_json::Value {
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(status, expected_status, "{text}");
+    serde_json::from_str(&text).expect("json response")
+}
+
 async fn rpc(
     app: axum::Router,
     method_name: &str,
@@ -373,6 +384,53 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .get("comments")
         .and_then(serde_json::Value::as_array)
         .is_none_or(|comments| comments.is_empty()));
+
+    let legacy_external_comment = response_json_with_status(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "body": "legacy external issue comment"
+            })),
+        )
+        .await,
+        StatusCode::CREATED,
+    )
+    .await;
+    assert_eq!(legacy_external_comment["status"], 201);
+    let legacy_external_comment_id = legacy_external_comment["location"]
+        .as_str()
+        .expect("legacy external issue comment location")
+        .rsplit_once("#comment-")
+        .expect("legacy external issue comment anchor")
+        .1
+        .parse::<i64>()
+        .expect("legacy external issue comment id");
+
+    let legacy_external_comment_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!(
+                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_external_comment_id}"
+            ),
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "content": "legacy external issue comment updated",
+                "original": "legacy external issue comment"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_external_comment_updated["result"]["contents"],
+        "legacy external issue comment updated"
+    );
 
     let direct_created_comment = app
         .clone()

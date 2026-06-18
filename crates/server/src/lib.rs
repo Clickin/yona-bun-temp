@@ -735,13 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_issue_comment_backend = route_backend.clone();
-    let legacy_issue_comment_session_manager = session_manager.clone();
-    let legacy_issue_comment_base_path = base_path.clone();
-    let legacy_issue_comment_receivers_backend = route_backend.clone();
-    let legacy_issue_comment_receivers_session_manager = session_manager.clone();
-    let legacy_issue_comment_update_backend = route_backend.clone();
-    let legacy_issue_comment_update_session_manager = session_manager.clone();
     let legacy_project_assignable_backend = route_backend.clone();
     let legacy_project_assignable_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
@@ -926,77 +919,8 @@ fn build_router_with_app_config(
         .merge(routes::issue_routes(
             session_manager.clone(),
             route_backend.clone(),
+            base_path.clone(),
         ))
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_create_issue_comment(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_comment_session_manager.clone(),
-                            legacy_issue_comment_backend.clone(),
-                            legacy_issue_comment_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments/{comment_id}",
-            put(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue_comment(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            comment_id,
-                            body,
-                            legacy_issue_comment_update_session_manager.clone(),
-                            legacy_issue_comment_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/commentNotiReceivers",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_issue_comment_notification_receivers(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_comment_receivers_session_manager.clone(),
-                            legacy_issue_comment_receivers_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
             post(

@@ -6,16 +6,22 @@ use axum::{
 };
 
 use crate::{
-    legacy_external_detect_issue_change, legacy_external_find_issue_sharer,
-    legacy_external_issue_assignable_users, legacy_external_issue_sharable_users,
+    legacy_external_create_issue_comment, legacy_external_detect_issue_change,
+    legacy_external_find_issue_sharer, legacy_external_issue_assignable_users,
+    legacy_external_issue_comment_notification_receivers, legacy_external_issue_sharable_users,
     legacy_external_read_issue, legacy_external_update_issue,
-    legacy_external_update_issue_assignee, legacy_external_update_issue_content,
-    legacy_external_update_issue_labels, legacy_external_update_issue_sharer,
-    legacy_external_update_issue_state, legacy_external_update_issue_weight,
-    session::SessionManager, PilotBackend, RestIssueAssignableUsersQuery,
+    legacy_external_update_issue_assignee, legacy_external_update_issue_comment,
+    legacy_external_update_issue_content, legacy_external_update_issue_labels,
+    legacy_external_update_issue_sharer, legacy_external_update_issue_state,
+    legacy_external_update_issue_weight, session::SessionManager, PilotBackend,
+    RestIssueAssignableUsersQuery,
 };
 
-pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> Router {
+pub(crate) fn routes(
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Router {
     let legacy_issue_label_backend = backend.clone();
     let legacy_issue_label_session_manager = session_manager.clone();
     let legacy_issue_weight_up_backend = backend.clone();
@@ -42,6 +48,13 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
     let legacy_issue_assignable_session_manager = session_manager.clone();
     let legacy_issue_sharable_backend = backend.clone();
     let legacy_issue_sharable_session_manager = session_manager.clone();
+    let legacy_issue_comment_backend = backend.clone();
+    let legacy_issue_comment_session_manager = session_manager.clone();
+    let legacy_issue_comment_base_path = base_path.clone();
+    let legacy_issue_comment_receivers_backend = backend.clone();
+    let legacy_issue_comment_receivers_session_manager = session_manager.clone();
+    let legacy_issue_comment_update_backend = backend.clone();
+    let legacy_issue_comment_update_session_manager = session_manager.clone();
 
     Router::new()
         .route(
@@ -307,6 +320,76 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
                             query,
                             legacy_issue_sharable_session_manager.clone(),
                             legacy_issue_sharable_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_create_issue_comment(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_comment_session_manager.clone(),
+                            legacy_issue_comment_backend.clone(),
+                            legacy_issue_comment_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments/{comment_id}",
+            put(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_update_issue_comment(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            comment_id,
+                            body,
+                            legacy_issue_comment_update_session_manager.clone(),
+                            legacy_issue_comment_update_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/commentNotiReceivers",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project_name, number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    async move {
+                        legacy_external_issue_comment_notification_receivers(
+                            headers,
+                            owner,
+                            project_name,
+                            number,
+                            body,
+                            legacy_issue_comment_receivers_session_manager.clone(),
+                            legacy_issue_comment_receivers_backend.clone(),
                         )
                         .await
                     }
