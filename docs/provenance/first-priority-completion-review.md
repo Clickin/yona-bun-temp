@@ -3,7 +3,7 @@
 > Status: active completion review for the current first-priority conversion scope.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and `docs/provenance/core-parity-audit.md`.
 
-Last updated: 2026-06-17
+Last updated: 2026-06-18
 
 ## Scope
 
@@ -24,7 +24,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 | Legacy route status, core HTML shell, and data-shape parity evidence recorded | `core-parity-audit.md`, phase plan entries, and focused contract/frontend tests map legacy sources to Rust/frontend owners. | Evidence present; keep under review | Keep `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` green. |
 | Same-phase gaps either implemented or reclassified | Current remaining named items are documented as deferred, migrator, hardening, or follow-up boundaries instead of active same-phase blockers. | Evidence present; keep under review | Keep canonical/provenance docs free of active first-priority `gap` rows. |
 | Legacy `application.conf.default` core settings can map to `yona.toml` | `SPEC.md` Appendix A now contains the reviewed legacy-to-`yona.toml` migration guide, including env precedence, JDBC URL conversion, H2 handling, sectioned TOML keys, and deferred Play/JVM/LDAP/OAuth boundaries; `runtime_config_contract.rs` covers TOML loading and env override behavior. | Evidence present; keep under review | Keep Appendix A aligned with `crates/server/src/runtime_config.rs` and `crates/server/tests/runtime_config_contract.rs` when new runtime config keys are added. |
-| Existing MariaDB data can be adopted without data loss after validation | `crates/migration` implements `adopt`, `validate_only`, and multi-DB schema checks; `docs/provenance/legacy-porting-progress.md` marks SQLite/MySQL/PostgreSQL runtime migration/adopt/validate complete; one focused adopt contract now has harness evidence below. | Partial evidence present; full matrix still needed | Run the full migration contract/db matrix through `pnpm agent:cargo-test -- ...` and preserve the command evidence in this review or release checklist. |
+| Existing MariaDB data can be adopted without data loss after validation | `crates/migration` implements `adopt`, `validate_only`, and multi-DB schema checks; `docs/provenance/legacy-porting-progress.md` marks SQLite/MySQL/PostgreSQL runtime migration/adopt/validate complete; the full `runtime_schema_contract` and env-backed DB matrix now have harness evidence below. | Evidence present for runtime schema/adopt/validate plus SQLite env-backed DB smoke; live container DB matrix still pending | Run `db_matrix_testcontainers` or equivalent live PostgreSQL/MariaDB matrix through `pnpm agent:cargo-test -- ...` before release closure and preserve the command evidence in this review or release checklist. |
 | `git clone` and `git push` work | Smart HTTP upload-pack/receive-pack and push post-receive records/webhooks are documented in `SPEC.md` and `core-parity-audit.md`; `smart_http_contract` now has harness evidence below for advertisement auth, real `git clone`, authenticated `git push`, and post-receive side effects. | Evidence present; keep under review | Keep `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` green. |
 | Single binary serves frontend and backend together | `crates/server/build.rs` embeds assets from `YONA_EMBED_ASSET_ROOT`; `pnpm smoke:embedded-assets` builds real frontend assets, rebuilds the server binary with that asset root, starts it with embedded assets enabled, and smokes HTML, JS asset, session, and `/api/v1/projects` routes. | Evidence present; keep under review | Keep `pnpm smoke:embedded-assets` green before release packaging. |
 | Docker image builds and runs | Root `Dockerfile` now builds frontend assets, embeds them into the release `yona-rust-pilot-server` binary, installs runtime Git/SVN/curl dependencies, and runs as a non-root `yona` user; `pnpm smoke:docker` builds the image, starts a container, and smokes HTML, JS asset, session, and `/api/v1/projects` routes. | Evidence present; keep under review | Keep `pnpm smoke:docker` green for container release checks. |
@@ -32,7 +32,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 
 ## Next Closure Steps
 
-1. Run the remaining migration/adopt closure matrix through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
+1. Run the remaining live PostgreSQL/MariaDB DB matrix (`db_matrix_testcontainers` or equivalent env-backed URLs) through `pnpm agent:cargo-test -- ...` so long output stays in `.agent/cargo-test-logs/`.
 2. Run the remaining full required Rust gate (`cargo test` through `pnpm agent:cargo-test -- ...`) and record evidence.
 3. Only after the matrix above is closed, consider the persistent `1순위 전환 범위 완료까지 진행` goal complete.
 
@@ -46,7 +46,12 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-17: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test smart_http_contract` passed in 364.1s, covering the Smart HTTP clone/push contract. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-17T051549-877Z.log`.
 - 2026-06-17: `pnpm smoke:embedded-assets` passed. It built `frontend/dist`, rebuilt `target/debug/yona-rust-pilot-server` with `YONA_EMBED_ASSET_ROOT=frontend/dist`, started the binary with `YONA_USE_EMBEDDED_ASSETS=1`, and verified `/yona/`, `/yona/projects`, the emitted JS asset, `/yona/api/auth/session`, and `/yona/api/v1/projects`.
 - 2026-06-17: `pnpm smoke:docker` passed. It built `yona-rust-pilot:smoke`, started a container with `/yona` base path, in-memory SQLite, seed data, and embedded assets enabled, then verified `/yona/`, `/yona/projects`, the emitted JS asset, `/yona/api/auth/session`, and `/yona/api/v1/projects`.
+- 2026-06-18: `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx` passed with 1 file and 59 tests after milestone search result metadata was aligned with legacy `search/partial_milestones.scala.html`.
+- 2026-06-18: `pnpm test:dev-scripts` passed, including the `agent:cargo-test`, `agent:turn-commit`, precommit, design harness, and external REST inventory contracts.
+- 2026-06-18: `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` passed after the search gate metadata was aligned with the Phase 5C app-runtime parity state.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-pilot-migration --test runtime_schema_contract` passed in 577.7s, covering 8 runtime schema/adopt/validate tests including empty SQLite up, no-op current baseline, legacy pilot migration rejection, partial schema rejection, adopt, validate-only accept/reject, and MySQL schema SQL identity/optional-table checks. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-18T040521-210Z.log`.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test db_matrix_env` passed in 110.9s, covering the env-backed DB matrix's default SQLite migrate/seed/repository read/update smoke path. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-18T041517-575Z.log`.
 
 ## Compile-Time Note
 
-The focused migration adopt test still cold-compiled `yona-rust-persistence`, `sea-orm`, `sqlx` SQLite/MySQL/Postgres features, `sea-orm-migration`, and `yona-rust-pilot-migration`, taking 8m16s before the single test ran. The `agent:cargo-test` harness avoids poll token blow-up by writing full output to `.agent/cargo-test-logs/`, but it does not remove the underlying SeaORM/SQLx multi-dialect cold compile cost.
+The full `runtime_schema_contract` still cold-compiled `yona-rust-persistence`, `sea-orm`, `sqlx` SQLite/MySQL/Postgres features, `sea-orm-migration`, and `yona-rust-pilot-migration`, taking 8m56s before the 8 tests ran. The subsequent `db_matrix_env` server test compiled in 1m23s with the warmed cache. The `agent:cargo-test` harness avoids poll token blow-up by writing full output to `.agent/cargo-test-logs/`, but it does not remove the underlying SeaORM/SQLx multi-dialect cold compile cost.
