@@ -656,22 +656,6 @@ fn build_router_with_app_config(
     let milestone_close_backend = route_backend.clone();
     let milestone_close_session_manager = session_manager.clone();
     let milestone_close_base_path = base_path.clone();
-    let issue_comment_create_backend = route_backend.clone();
-    let issue_comment_create_session_manager = session_manager.clone();
-    let issue_comment_create_base_path = base_path.clone();
-    let issue_comment_create_public_origin = public_origin.clone();
-    let issue_comment_update_backend = route_backend.clone();
-    let issue_comment_update_session_manager = session_manager.clone();
-    let issue_comment_update_base_path = base_path.clone();
-    let issue_comment_delete_backend = route_backend.clone();
-    let issue_comment_delete_session_manager = session_manager.clone();
-    let issue_comment_delete_base_path = base_path.clone();
-    let comment_vote_backend = route_backend.clone();
-    let comment_vote_session_manager = session_manager.clone();
-    let comment_vote_base_path = base_path.clone();
-    let comment_unvote_backend = route_backend.clone();
-    let comment_unvote_session_manager = session_manager.clone();
-    let comment_unvote_base_path = base_path.clone();
     let board_comment_create_backend = route_backend.clone();
     let board_comment_create_session_manager = session_manager.clone();
     let board_comment_create_base_path = base_path.clone();
@@ -920,6 +904,7 @@ fn build_router_with_app_config(
             session_manager.clone(),
             route_backend.clone(),
             base_path.clone(),
+            public_origin.clone(),
         ))
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
@@ -2157,100 +2142,7 @@ fn build_router_with_app_config(
                 }
             }),
         )
-        .route(
-            "/{owner}/{project}/issue/{number}/comments",
-            post(move |headers: HeaderMap, Path((owner, project, number)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_create_issue_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        form,
-                        issue_comment_create_session_manager.clone(),
-                        issue_comment_create_backend.clone(),
-                        issue_comment_create_base_path.clone(),
-                        issue_comment_create_public_origin.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/{number}/comments/{comment_id}",
-            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_update_issue_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        form,
-                        issue_comment_update_session_manager.clone(),
-                        issue_comment_update_backend.clone(),
-                        issue_comment_update_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/{number}/comment/{comment_id}/delete",
-            delete(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
-                async move {
-                    direct_delete_issue_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        issue_comment_delete_session_manager.clone(),
-                        issue_comment_delete_backend.clone(),
-                        issue_comment_delete_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/{number}/comment/{comment_id}/vote",
-            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
-                async move {
-                    direct_issue_comment_vote(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        "vote",
-                        comment_vote_session_manager.clone(),
-                        comment_vote_backend.clone(),
-                        comment_vote_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/{number}/comment/{comment_id}/unvote",
-            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
-                async move {
-                    direct_issue_comment_vote(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        "unvote",
-                        comment_unvote_session_manager.clone(),
-                        comment_unvote_backend.clone(),
-                        comment_unvote_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        );
+        ;
 
     match assets.clone() {
         AssetMode::Filesystem(asset_root) => {

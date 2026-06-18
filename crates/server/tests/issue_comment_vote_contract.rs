@@ -585,6 +585,13 @@ async fn issue_comment_vote_legacy_post_routes_redirect_and_preserve_unvote_poli
     )
     .await;
     assert_eq!(unvote.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        unvote
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/issue/1#comment-{comment_id_string}").as_str())
+    );
 
     let not_voted = direct_comment_vote(
         app,
