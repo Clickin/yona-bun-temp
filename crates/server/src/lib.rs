@@ -31,7 +31,7 @@ use std::{
     path::{Path as StdPath, PathBuf},
     process::Command,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::AtomicBool,
         Mutex, OnceLock,
     },
     time::{Duration, SystemTime},
@@ -12132,28 +12132,6 @@ fn legacy_prefers_json(headers: &HeaderMap) -> bool {
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
         .unwrap_or(false)
-}
-
-pub(crate) async fn direct_unwatch_site_update(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_require_site_admin_repository(&service, &headers, true).await {
-        Ok(_) => {
-            SITE_UPDATE_NOTIFICATION_WATCHED.store(false, Ordering::SeqCst);
-            StatusCode::OK.into_response()
-        }
-        Err(error) => error.into_response(),
-    }
 }
 
 async fn direct_download_site_update(
