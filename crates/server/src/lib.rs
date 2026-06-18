@@ -10654,7 +10654,7 @@ impl IntoResponse for RestRouteError {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSignInRequest {
+pub(crate) struct RestSignInRequest {
     identifier: String,
     password: String,
     remember_me: bool,
@@ -10662,7 +10662,7 @@ struct RestSignInRequest {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestRegisterRequest {
+pub(crate) struct RestRegisterRequest {
     email_address: String,
     login_id: String,
     name: String,
@@ -10672,7 +10672,7 @@ struct RestRegisterRequest {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestVerifyUserRequest {
+pub(crate) struct RestVerifyUserRequest {
     login_id: String,
     verification_code: String,
 }
@@ -12924,67 +12924,7 @@ fn build_rest_router(
     let pull_request_service = service.clone();
 
     let router = Router::new()
-        .route(
-            "/session",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
-                    async move { rest_read_current_session(headers, session_manager, backend).await }
-                }
-            }),
-        )
-        .route(
-            "/auth/capabilities",
-            get({
-                let auth_ui = auth_ui.clone();
-                move |headers: HeaderMap| {
-                    let auth_ui = auth_ui.clone();
-                    async move { rest_read_auth_ui_capabilities(headers, auth_ui).await }
-                }
-            }),
-        )
-        .route(
-            "/auth/sign-in",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(input): Json<RestSignInRequest>| {
-                    let service = service.clone();
-                    async move { rest_sign_in_with_password(headers, input, service).await }
-                }
-            }),
-        )
-        .route(
-            "/auth/register",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(input): Json<RestRegisterRequest>| {
-                    let service = service.clone();
-                    async move { rest_register_with_password(headers, input, service).await }
-                }
-            }),
-        )
-        .route(
-            "/auth/sign-out",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_sign_out(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/auth/verify",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
-                    let service = service.clone();
-                    async move { rest_verify_user(headers, input, service).await }
-                }
-            }),
-        )
+        .merge(routes::auth_rest_routes(service.clone(), auth_ui.clone()))
         .route(
             "/users/{login_id}/profile",
             get({
@@ -14359,7 +14299,7 @@ fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
     response
 }
 
-async fn rest_read_auth_ui_capabilities(
+pub(crate) async fn rest_read_auth_ui_capabilities(
     headers: HeaderMap,
     auth_ui: AuthUiConfig,
 ) -> Result<Response, RestRouteError> {
@@ -14369,7 +14309,7 @@ async fn rest_read_auth_ui_capabilities(
     Ok(rest_json_response(payload, Context::new(headers)))
 }
 
-async fn rest_sign_in_with_password(
+pub(crate) async fn rest_sign_in_with_password(
     headers: HeaderMap,
     input: RestSignInRequest,
     service: PilotServiceImpl,
@@ -14388,7 +14328,7 @@ async fn rest_sign_in_with_password(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_register_with_password(
+pub(crate) async fn rest_register_with_password(
     headers: HeaderMap,
     input: RestRegisterRequest,
     service: PilotServiceImpl,
@@ -14409,7 +14349,7 @@ async fn rest_register_with_password(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_verify_user(
+pub(crate) async fn rest_verify_user(
     headers: HeaderMap,
     input: RestVerifyUserRequest,
     service: PilotServiceImpl,
@@ -14427,7 +14367,7 @@ async fn rest_verify_user(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_sign_out(
+pub(crate) async fn rest_sign_out(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
@@ -20397,7 +20337,7 @@ pub(crate) async fn rest_set_project_milestone_state(
     Ok(rest_json_response(payload, ctx))
 }
 
-async fn rest_read_current_session(
+pub(crate) async fn rest_read_current_session(
     headers: HeaderMap,
     session_manager: SessionManager,
     backend: PilotBackend,

@@ -11,10 +11,78 @@ use crate::{
     direct_authenticate_provider_denied, direct_legacy_login, direct_legacy_logout,
     direct_legacy_signup, direct_legacy_user_email_validation, direct_legacy_user_name_validation,
     direct_request_reset_password_email, direct_reset_password,
-    direct_unsupported_authenticate_provider, serve_frontend_page, session::SessionManager,
-    AssetMode, BrowserRuntimeConfig, DirectUserEmailValidationQuery, DirectUserNameValidationQuery,
-    PilotBackend,
+    direct_unsupported_authenticate_provider, rest_read_auth_ui_capabilities,
+    rest_read_current_session, rest_register_with_password, rest_sign_in_with_password,
+    rest_sign_out, rest_verify_user, serve_frontend_page, session::SessionManager, AssetMode,
+    AuthUiConfig, BrowserRuntimeConfig, DirectUserEmailValidationQuery,
+    DirectUserNameValidationQuery, PilotBackend, PilotServiceImpl, RestRegisterRequest,
+    RestSignInRequest, RestVerifyUserRequest,
 };
+
+pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
+    Router::new()
+        .route(
+            "/session",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move { rest_read_current_session(headers, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/capabilities",
+            get({
+                let auth_ui = auth_ui.clone();
+                move |headers: HeaderMap| {
+                    let auth_ui = auth_ui.clone();
+                    async move { rest_read_auth_ui_capabilities(headers, auth_ui).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/sign-in",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestSignInRequest>| {
+                    let service = service.clone();
+                    async move { rest_sign_in_with_password(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/register",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestRegisterRequest>| {
+                    let service = service.clone();
+                    async move { rest_register_with_password(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/sign-out",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_sign_out(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/verify",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
+                    let service = service.clone();
+                    async move { rest_verify_user(headers, input, service).await }
+                }
+            }),
+        )
+}
 
 pub(crate) fn routes(
     session_manager: SessionManager,

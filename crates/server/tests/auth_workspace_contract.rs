@@ -578,6 +578,24 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let current_json = response_text(current).await;
     assert!(current_json.contains("\"loginId\":\"door\""));
 
+    let verify = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/verify")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"verificationCode\":\"route-diet:missing\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(verify.status(), StatusCode::NOT_FOUND);
+    let verify_json = response_text(verify).await;
+    assert!(verify_json.contains("\"error\""));
+
     let sign_out = app
         .clone()
         .oneshot(

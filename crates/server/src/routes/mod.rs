@@ -17,6 +17,7 @@ mod site_admin;
 mod users;
 mod workspace;
 
+pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
 pub(crate) use boards::routes as board_routes;
 pub(crate) use code::routes as code_routes;
