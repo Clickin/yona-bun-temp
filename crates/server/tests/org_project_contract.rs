@@ -1532,6 +1532,30 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
         .expect("created chore label")
         .0;
 
+    let title_heads_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/-_-api/v1/owners/admin/projects/projectYobi/titleHeads?query=guide")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(title_heads_response.status(), StatusCode::OK);
+    let title_heads: serde_json::Value =
+        serde_json::from_str(&response_json(title_heads_response).await).unwrap();
+    let guide_title_head = title_heads["result"]
+        .as_array()
+        .expect("title heads")
+        .iter()
+        .find(|item| item["name"] == "Guide")
+        .expect("guide title head");
+    assert_eq!(guide_title_head["category"], "Type");
+    assert_eq!(guide_title_head["id"], guide_label.id);
+
     let create_open_issue = app
         .clone()
         .oneshot(

@@ -719,8 +719,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_project_assignable_backend = route_backend.clone();
-    let legacy_project_assignable_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -742,10 +740,6 @@ fn build_router_with_app_config(
     let legacy_user_issues_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = route_backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
-    let legacy_project_labels_backend = route_backend.clone();
-    let legacy_project_labels_session_manager = session_manager.clone();
-    let legacy_title_heads_backend = route_backend.clone();
-    let legacy_title_heads_session_manager = session_manager.clone();
     let legacy_translation_backend = route_backend.clone();
     let legacy_translation_session_manager = session_manager.clone();
     let legacy_translation_proxy = translation_proxy.clone();
@@ -1022,66 +1016,6 @@ fn build_router_with_app_config(
                     .await
                 }
             }),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/labels",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name)): Path<(String, String)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_project_create_labels(
-                            headers,
-                            owner,
-                            project_name,
-                            body,
-                            legacy_project_labels_session_manager.clone(),
-                            legacy_project_labels_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/titleHeads",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name)): Path<(String, String)>,
-                      Query(query): Query<LegacyProjectTitleHeadsQuery>| {
-                    async move {
-                        legacy_project_title_heads(
-                            headers,
-                            owner,
-                            project_name,
-                            query,
-                            legacy_title_heads_session_manager.clone(),
-                            legacy_title_heads_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/assignableUsers",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    async move {
-                        legacy_external_project_assignable_users(
-                            headers,
-                            owner,
-                            project_name,
-                            query,
-                            legacy_project_assignable_session_manager.clone(),
-                            legacy_project_assignable_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
         )
         .route(
             "/-_-api/v1/translation",

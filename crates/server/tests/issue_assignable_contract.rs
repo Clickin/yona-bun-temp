@@ -426,6 +426,25 @@ async fn project_assignable_users_searches_active_public_users() {
     assert!(broad_login_ids.contains(&"english-holder".to_string()));
     assert!(!broad_login_ids.contains(&"matchterm-locked".to_string()));
 
+    let legacy_alias = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/assignableUsers?query=matchterm-login",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_alias
+            .as_array()
+            .expect("legacy assignable users")
+            .len(),
+        1
+    );
+    assert_eq!(legacy_alias[0]["loginId"], "matchterm-login");
+
     let exact_name = response_json(
         rest(
             app.clone(),
