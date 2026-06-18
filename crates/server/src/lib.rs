@@ -735,8 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_issue_read_backend = route_backend.clone();
-    let legacy_issue_read_session_manager = session_manager.clone();
     let legacy_issue_comment_backend = route_backend.clone();
     let legacy_issue_comment_session_manager = session_manager.clone();
     let legacy_issue_comment_base_path = base_path.clone();
@@ -744,22 +742,8 @@ fn build_router_with_app_config(
     let legacy_issue_comment_receivers_session_manager = session_manager.clone();
     let legacy_issue_comment_update_backend = route_backend.clone();
     let legacy_issue_comment_update_session_manager = session_manager.clone();
-    let legacy_issue_update_backend = route_backend.clone();
-    let legacy_issue_update_session_manager = session_manager.clone();
-    let legacy_issue_state_backend = route_backend.clone();
-    let legacy_issue_state_session_manager = session_manager.clone();
-    let legacy_issue_assignee_backend = route_backend.clone();
-    let legacy_issue_assignee_session_manager = session_manager.clone();
     let legacy_project_assignable_backend = route_backend.clone();
     let legacy_project_assignable_session_manager = session_manager.clone();
-    let legacy_issue_assignable_backend = route_backend.clone();
-    let legacy_issue_assignable_session_manager = session_manager.clone();
-    let legacy_issue_sharable_backend = route_backend.clone();
-    let legacy_issue_sharable_session_manager = session_manager.clone();
-    let legacy_issue_share_backend = route_backend.clone();
-    let legacy_issue_share_session_manager = session_manager.clone();
-    let legacy_issue_find_sharer_backend = route_backend.clone();
-    let legacy_issue_find_sharer_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
     let legacy_favorite_projects_list_backend = route_backend.clone();
@@ -1014,130 +998,6 @@ fn build_router_with_app_config(
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>| {
-                    async move {
-                        legacy_external_read_issue(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            legacy_issue_read_session_manager.clone(),
-                            legacy_issue_read_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            )
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
-            put(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_update_session_manager.clone(),
-                            legacy_issue_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            )
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
-            patch(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue_state(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_state_session_manager.clone(),
-                            legacy_issue_state_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignees",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue_assignee(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_assignee_session_manager.clone(),
-                            legacy_issue_assignee_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/share",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_update_issue_sharer(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_share_session_manager.clone(),
-                            legacy_issue_share_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/findSharer",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    async move {
-                        legacy_external_find_issue_sharer(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            query,
-                            legacy_issue_find_sharer_session_manager.clone(),
-                            legacy_issue_find_sharer_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
             post(
                 move |headers: HeaderMap,
@@ -1308,48 +1168,6 @@ fn build_router_with_app_config(
                             query,
                             legacy_project_assignable_session_manager.clone(),
                             legacy_project_assignable_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignableUsers",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    async move {
-                        legacy_external_issue_assignable_users(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            query,
-                            legacy_issue_assignable_session_manager.clone(),
-                            legacy_issue_assignable_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/sharableUsers",
-            get(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    async move {
-                        legacy_external_issue_sharable_users(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            query,
-                            legacy_issue_sharable_session_manager.clone(),
-                            legacy_issue_sharable_backend.clone(),
                         )
                         .await
                     }

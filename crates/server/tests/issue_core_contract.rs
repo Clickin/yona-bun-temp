@@ -765,6 +765,62 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     assert_eq!(legacy_detect_change["result"], "ok");
     assert_eq!(legacy_detect_change["issueBodyChanged"], true);
 
+    let legacy_read = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_read["result"]["body"],
+        "legacy external content update"
+    );
+
+    let legacy_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({
+                "title": "legacy external issue update",
+                "body": "legacy external full update",
+                "state": "open"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_updated["result"]["title"],
+        "legacy external issue update"
+    );
+    assert_eq!(
+        legacy_updated["result"]["body"],
+        "legacy external full update"
+    );
+
+    let legacy_state_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_state_updated["result"]["state"], "closed");
+
     let state_updated = response_json(
         rest(
             app.clone(),
