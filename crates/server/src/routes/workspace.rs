@@ -8,8 +8,9 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    base_path_href, normalize_default_landing_path, redirect_to, session::SessionManager,
-    ConnectError, PilotBackend, RestRouteError,
+    base_path_href, direct_user_menu_tab_content_list, direct_user_sidebar,
+    normalize_default_landing_path, redirect_to, session::SessionManager, ConnectError,
+    DirectUserSidebarQuery, PilotBackend, RestRouteError,
 };
 
 #[derive(Deserialize)]
@@ -35,8 +36,45 @@ pub(crate) fn routes(
     let default_login_page_backend = backend.clone();
     let legacy_default_login_page_session_manager = session_manager.clone();
     let legacy_default_login_page_backend = backend.clone();
+    let user_sidebar_session_manager = session_manager.clone();
+    let user_sidebar_backend = backend.clone();
+    let user_sidebar_base_path = base_path.clone();
+    let usermenu_tab_session_manager = session_manager.clone();
+    let usermenu_tab_backend = backend.clone();
+    let usermenu_tab_base_path = base_path.clone();
 
     Router::new()
+        .route(
+            "/user/sidebar",
+            axum::routing::get(
+                move |headers: HeaderMap, Query(query): Query<DirectUserSidebarQuery>| {
+                    async move {
+                        direct_user_sidebar(
+                            headers,
+                            query,
+                            user_sidebar_session_manager.clone(),
+                            user_sidebar_backend.clone(),
+                            user_sidebar_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/user/usermenuTabContentList",
+            axum::routing::get(move |headers: HeaderMap| {
+                async move {
+                    direct_user_menu_tab_content_list(
+                        headers,
+                        usermenu_tab_session_manager.clone(),
+                        usermenu_tab_backend.clone(),
+                        usermenu_tab_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
         .route(
             "/user/resetVisitedList",
             post(move |headers: HeaderMap| {

@@ -2374,6 +2374,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
         .await
         .unwrap();
     assert_eq!(fragment.status(), StatusCode::OK);
+    assert!(fragment.headers().get(http::header::LOCATION).is_none());
     assert_eq!(
         fragment
             .headers()

@@ -603,12 +603,6 @@ fn build_router_with_app_config(
     let legacy_api_index_browser_runtime = browser_runtime.clone();
     let legacy_api_v1_index_assets = assets.clone();
     let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
-    let user_sidebar_session_manager = session_manager.clone();
-    let user_sidebar_backend = route_backend.clone();
-    let user_sidebar_base_path = base_path.clone();
-    let usermenu_tab_session_manager = session_manager.clone();
-    let usermenu_tab_backend = route_backend.clone();
-    let usermenu_tab_base_path = base_path.clone();
     let update_profile_session_manager = session_manager.clone();
     let update_profile_backend = route_backend.clone();
     let update_profile_base_path = base_path.clone();
@@ -1889,37 +1883,6 @@ fn build_router_with_app_config(
                         form,
                         reset_password_backend.clone(),
                         reset_password_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/user/sidebar",
-            get(
-                move |headers: HeaderMap, Query(query): Query<DirectUserSidebarQuery>| {
-                    async move {
-                        direct_user_sidebar(
-                            headers,
-                            query,
-                            user_sidebar_session_manager.clone(),
-                            user_sidebar_backend.clone(),
-                            user_sidebar_base_path.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/user/usermenuTabContentList",
-            get(move |headers: HeaderMap| {
-                async move {
-                    direct_user_menu_tab_content_list(
-                        headers,
-                        usermenu_tab_session_manager.clone(),
-                        usermenu_tab_backend.clone(),
-                        usermenu_tab_base_path.clone(),
                     )
                     .await
                 }
