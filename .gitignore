@@ -2,6 +2,7 @@ node_modules
 .codex-worktrees/
 .worktrees/
 .agent/
+.tmp/
 
 # Output
 .output

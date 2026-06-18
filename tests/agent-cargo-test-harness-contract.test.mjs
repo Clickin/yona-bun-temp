@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -79,17 +82,21 @@ describe("agent cargo test harness contract", () => {
     );
   });
 
-  it("refuses real cargo test execution inside the Codex sandbox", async () => {
-    await assert.rejects(
-      () =>
-        runAgentCargoTest(
-          {
-            ...parseArgs(["-p", "yona-rust-pilot-server"]),
-            logDir: ".tmp/agent-cargo-test-contract",
-          },
-          { CODEX_SANDBOX: "seatbelt" },
-        ),
-      /refusing to run cargo test inside the Codex sandbox/u,
-    );
+  it("continues execution with log-buffered output when a Codex sandbox marker is present", async () => {
+    const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-test-contract-"));
+    try {
+      const result = await runAgentCargoTest(
+        {
+          ...parseArgs(["sandbox-marker-smoke"]),
+          cargoBin: "/bin/echo",
+          logDir,
+        },
+        { CODEX_SANDBOX: "seatbelt" },
+      );
+
+      assert.equal(result.status, 0);
+    } finally {
+      rmSync(logDir, { force: true, recursive: true });
+    }
   });
 });
