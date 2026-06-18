@@ -2,8 +2,8 @@ use axum::{routing::any, Router};
 
 use crate::session::SessionManager;
 use crate::{
-    rest_not_found_response, AssetMode, BrowserRuntimeConfig, PilotBackend, SiteUpdateConfig,
-    TranslationProxyConfig,
+    rest_not_found_response, AssetMode, AuthUiConfig, BrowserRuntimeConfig, PilotBackend,
+    PilotServiceImpl, SiteUpdateConfig, TranslationProxyConfig,
 };
 
 mod auth;
@@ -48,6 +48,52 @@ pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
+
+pub(crate) fn rest_api_routes(
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+    auth_ui: AuthUiConfig,
+) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+    let pull_request_service = service.clone();
+
+    let router = Router::new()
+        .merge(auth_rest_routes(service.clone(), auth_ui.clone()))
+        .merge(user_rest_routes(service.clone()))
+        .merge(site_admin_rest_routes(service.clone(), site_update.clone()))
+        .merge(workspace_rest_routes(service.clone()))
+        .merge(notification_rest_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .merge(search_routes(session_manager.clone(), backend.clone()))
+        .merge(issue_rest_routes(service.clone()))
+        .merge(board_rest_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .merge(code_rest_routes(
+            service.clone(),
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
+        .merge(project_rest_routes(service.clone()))
+        .merge(pull_request_rest_routes(pull_request_service));
+
+    #[cfg(debug_assertions)]
+    {
+        router.merge(debug_routes(service, auth_ui))
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        router
+    }
+}
 
 pub(crate) fn app_routes(
     session_manager: SessionManager,

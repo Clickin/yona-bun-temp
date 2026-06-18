@@ -570,7 +570,8 @@ fn build_router_with_app_config(
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
-    let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
+    let rest_router =
+        routes::rest_api_routes(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = routes::app_routes(
         session_manager.clone(),
@@ -12843,58 +12844,6 @@ impl RestRouteError {
             message: message.into(),
             status: StatusCode::INTERNAL_SERVER_ERROR,
         }
-    }
-}
-
-fn build_rest_router(
-    service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
-    auth_ui: AuthUiConfig,
-) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-    let pull_request_service = service.clone();
-
-    let router = Router::new()
-        .merge(routes::auth_rest_routes(service.clone(), auth_ui.clone()))
-        .merge(routes::user_rest_routes(service.clone()))
-        .merge(routes::site_admin_rest_routes(
-            service.clone(),
-            site_update.clone(),
-        ))
-        .merge(routes::workspace_rest_routes(service.clone()))
-        .merge(routes::notification_rest_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-        ))
-        .merge(routes::search_routes(
-            session_manager.clone(),
-            backend.clone(),
-        ))
-        .merge(routes::issue_rest_routes(service.clone()))
-        .merge(routes::board_rest_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-        ))
-        .merge(routes::code_rest_routes(
-            service.clone(),
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-        ))
-        .merge(routes::project_rest_routes(service.clone()))
-        .merge(routes::pull_request_rest_routes(pull_request_service));
-
-    #[cfg(debug_assertions)]
-    {
-        router.merge(routes::debug_routes(service, auth_ui))
-    }
-    #[cfg(not(debug_assertions))]
-    {
-        router
     }
 }
 

@@ -872,6 +872,7 @@ async fn unknown_rest_route_returns_shared_json_error_envelope() {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
     let body = response_json(response).await;
     assert!(body["error"].is_object());
+    assert_eq!(body["error"].as_object().unwrap().len(), 3);
     assert_eq!(body["error"]["code"], "not_found");
     assert_eq!(body["error"]["message"], "REST endpoint not found.");
     assert_eq!(body["error"]["status"], 404);
