@@ -4,7 +4,7 @@ use axum::{
     http::HeaderMap,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use http::HeaderValue;
@@ -14,17 +14,223 @@ use std::{collections::HashMap, sync::atomic::Ordering};
 use crate::{
     base_path_href, decode_query_component, direct_site_user_list_href, escape_html_text,
     headers_with_form_csrf, persistence, redirect_to, rest_delete_site_project,
+    rest_delete_site_user, rest_download_site_update, rest_download_site_update_file,
     rest_export_site_data, rest_import_site_data, rest_read_site_diagnostics,
-    rest_read_site_mail_list, rest_read_site_no_avatar_users, rest_require_site_admin_repository,
+    rest_read_site_issues, rest_read_site_mail, rest_read_site_mail_list,
+    rest_read_site_no_avatar_users, rest_read_site_posts, rest_read_site_projects,
+    rest_read_site_update, rest_read_site_users, rest_require_site_admin_repository,
     rest_reset_site_user_password, rest_send_site_test_mail,
     rest_set_site_user_avatar_from_attachment, rest_site_update_download_file_response,
     rest_site_update_download_redirect, rest_toggle_site_user_account_lock,
     rest_toggle_site_user_admin, rest_toggle_site_user_guest, session::SessionManager,
     site_export_filename_stamp, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
     RestRouteError, RestSiteAvatarFromAttachmentBody, RestSiteDiagnosticsResponse,
-    RestSiteExportResponse, RestSiteMailListBody, RestSiteMailSendBody, SiteUpdateConfig,
+    RestSiteExportResponse, RestSiteIssuesQuery, RestSiteMailListBody, RestSiteMailSendBody,
+    RestSitePostsQuery, RestSiteProjectsQuery, RestSiteUsersQuery, SiteUpdateConfig,
     SITE_UPDATE_NOTIFICATION_WATCHED,
 };
+
+pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
+    Router::new()
+        .route(
+            "/site/users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteUsersQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_users(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/no-avatar-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_no_avatar_users(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/avatar-from-attachment",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteAvatarFromAttachmentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_site_user_avatar_from_attachment(headers, body, service).await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_delete_site_user(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/site-admin/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_admin(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/account-lock/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_account_lock(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/guest/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_guest(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/password/reset",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_reset_site_user_password(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/projects",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteProjectsQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_projects(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/posts",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSitePostsQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_posts(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/issues",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteIssuesQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_issues(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/diagnostics",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_diagnostics(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/update",
+            get({
+                let service = service.clone();
+                let site_update = site_update.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    let site_update = site_update.clone();
+                    async move { rest_read_site_update(headers, service, site_update).await }
+                }
+            }),
+        )
+        .route(
+            "/site/update/download",
+            get({
+                let service = service.clone();
+                let site_update = site_update.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    let site_update = site_update.clone();
+                    async move { rest_download_site_update(headers, service, site_update).await }
+                }
+            }),
+        )
+        .route(
+            "/site/update/download-file",
+            get({
+                let service = service.clone();
+                let site_update = site_update.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    let site_update = site_update.clone();
+                    async move { rest_download_site_update_file(headers, service, site_update).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_mail(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail/test",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
+                    let service = service.clone();
+                    async move { rest_send_site_test_mail(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail-list",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMailListBody>| {
+                    let service = service.clone();
+                    async move { rest_read_site_mail_list(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/projects/{project_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                    let service = service.clone();
+                    async move { rest_delete_site_project(headers, project_id, service).await }
+                }
+            }),
+        )
+}
 
 pub(crate) fn routes(
     session_manager: SessionManager,

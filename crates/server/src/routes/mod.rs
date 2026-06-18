@@ -32,6 +32,7 @@ pub(crate) use projects::routes as project_routes;
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
 pub(crate) use search::routes as search_routes;
+pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use workspace::routes as workspace_routes;

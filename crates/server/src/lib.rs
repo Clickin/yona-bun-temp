@@ -10792,7 +10792,7 @@ struct RestUserStatisticsResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteUsersQuery {
+pub(crate) struct RestSiteUsersQuery {
     page: Option<u32>,
     query: Option<String>,
     state: Option<String>,
@@ -10848,7 +10848,7 @@ struct RestSiteUserMutationResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteAvatarFromAttachmentBody {
+pub(crate) struct RestSiteAvatarFromAttachmentBody {
     avatar_file_id: i64,
     email: String,
 }
@@ -10871,7 +10871,7 @@ struct RestSiteUserPasswordResetResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteProjectsQuery {
+pub(crate) struct RestSiteProjectsQuery {
     filter: Option<String>,
     page: Option<u32>,
     page_num: Option<u32>,
@@ -10923,7 +10923,7 @@ struct RestProjectDirectoryResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSitePostsQuery {
+pub(crate) struct RestSitePostsQuery {
     page: Option<u32>,
     page_num: Option<u32>,
 }
@@ -10960,7 +10960,7 @@ struct RestSitePostItem {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteIssuesQuery {
+pub(crate) struct RestSiteIssuesQuery {
     page: Option<u32>,
     page_num: Option<u32>,
     state: Option<String>,
@@ -11027,7 +11027,7 @@ struct RestSiteMailOptionsResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteMailSendBody {
+pub(crate) struct RestSiteMailSendBody {
     from: String,
     to: String,
     subject: String,
@@ -11036,7 +11036,7 @@ struct RestSiteMailSendBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteMailListBody {
+pub(crate) struct RestSiteMailListBody {
     all: bool,
     projects: Vec<String>,
 }
@@ -13074,204 +13074,7 @@ fn build_rest_router(
                 }
             }),
         )
-        .route(
-            "/site/users",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Query(query): Query<RestSiteUsersQuery>| {
-                    let service = service.clone();
-                    async move { rest_read_site_users(headers, query, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/no-avatar-users",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_read_site_no_avatar_users(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/users/avatar-from-attachment",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestSiteAvatarFromAttachmentBody>| {
-                    let service = service.clone();
-                    async move {
-                        rest_set_site_user_avatar_from_attachment(headers, body, service).await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/site/users/{login_id}",
-            delete({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_delete_site_user(headers, login_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/users/{login_id}/site-admin/toggle",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_toggle_site_user_admin(headers, login_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/users/{login_id}/account-lock/toggle",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_toggle_site_user_account_lock(headers, login_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/users/{login_id}/guest/toggle",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_toggle_site_user_guest(headers, login_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/users/{login_id}/password/reset",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_reset_site_user_password(headers, login_id, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/projects",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Query(query): Query<RestSiteProjectsQuery>| {
-                    let service = service.clone();
-                    async move { rest_read_site_projects(headers, query, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/posts",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Query(query): Query<RestSitePostsQuery>| {
-                    let service = service.clone();
-                    async move { rest_read_site_posts(headers, query, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/issues",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Query(query): Query<RestSiteIssuesQuery>| {
-                    let service = service.clone();
-                    async move { rest_read_site_issues(headers, query, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/diagnostics",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_read_site_diagnostics(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/update",
-            get({
-                let service = service.clone();
-                let site_update = site_update.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_read_site_update(headers, service, site_update).await }
-                }
-            }),
-        )
-        .route(
-            "/site/update/download",
-            get({
-                let service = service.clone();
-                let site_update = site_update.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_download_site_update(headers, service, site_update).await }
-                }
-            }),
-        )
-        .route(
-            "/site/update/download-file",
-            get({
-                let service = service.clone();
-                let site_update = site_update.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_download_site_update_file(headers, service, site_update).await }
-                }
-            }),
-        )
-        .route(
-            "/site/mail",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap| {
-                    let service = service.clone();
-                    async move { rest_read_site_mail(headers, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/mail/test",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
-                    let service = service.clone();
-                    async move { rest_send_site_test_mail(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/mail-list",
-            post({
-                let service = service.clone();
-                move |headers: HeaderMap, Json(body): Json<RestSiteMailListBody>| {
-                    let service = service.clone();
-                    async move { rest_read_site_mail_list(headers, body, service).await }
-                }
-            }),
-        )
-        .route(
-            "/site/projects/{project_id}",
-            delete({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(project_id): Path<i64>| {
-                    let service = service.clone();
-                    async move { rest_delete_site_project(headers, project_id, service).await }
-                }
-            }),
-        )
+        .merge(routes::site_admin_rest_routes(service.clone(), site_update.clone()))
         .route(
             "/workspace/emails",
             post({
@@ -14967,7 +14770,7 @@ async fn rest_read_user_statistics(
     ))
 }
 
-async fn rest_read_site_users(
+pub(crate) async fn rest_read_site_users(
     headers: HeaderMap,
     query: RestSiteUsersQuery,
     service: PilotServiceImpl,
@@ -14990,7 +14793,7 @@ async fn rest_read_site_users(
     ))
 }
 
-async fn rest_read_site_no_avatar_users(
+pub(crate) async fn rest_read_site_no_avatar_users(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteNoAvatarUsersResponse>, RestRouteError> {
@@ -15008,7 +14811,7 @@ async fn rest_read_site_no_avatar_users(
     }))
 }
 
-async fn rest_set_site_user_avatar_from_attachment(
+pub(crate) async fn rest_set_site_user_avatar_from_attachment(
     headers: HeaderMap,
     body: RestSiteAvatarFromAttachmentBody,
     service: PilotServiceImpl,
@@ -15039,7 +14842,7 @@ async fn rest_set_site_user_avatar_from_attachment(
     }
 }
 
-async fn rest_toggle_site_user_admin(
+pub(crate) async fn rest_toggle_site_user_admin(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -15058,7 +14861,7 @@ async fn rest_toggle_site_user_admin(
     }))
 }
 
-async fn rest_toggle_site_user_account_lock(
+pub(crate) async fn rest_toggle_site_user_account_lock(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -15077,7 +14880,7 @@ async fn rest_toggle_site_user_account_lock(
     }))
 }
 
-async fn rest_toggle_site_user_guest(
+pub(crate) async fn rest_toggle_site_user_guest(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -15096,7 +14899,7 @@ async fn rest_toggle_site_user_guest(
     }))
 }
 
-async fn rest_delete_site_user(
+pub(crate) async fn rest_delete_site_user(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -15125,7 +14928,7 @@ async fn rest_delete_site_user(
     }))
 }
 
-async fn rest_reset_site_user_password(
+pub(crate) async fn rest_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -15153,7 +14956,7 @@ async fn rest_reset_site_user_password(
     }))
 }
 
-async fn rest_read_site_projects(
+pub(crate) async fn rest_read_site_projects(
     headers: HeaderMap,
     query: RestSiteProjectsQuery,
     service: PilotServiceImpl,
@@ -15212,7 +15015,7 @@ async fn rest_read_site_projects(
     }))
 }
 
-async fn rest_read_site_posts(
+pub(crate) async fn rest_read_site_posts(
     headers: HeaderMap,
     query: RestSitePostsQuery,
     service: PilotServiceImpl,
@@ -15241,7 +15044,7 @@ async fn rest_read_site_posts(
     }))
 }
 
-async fn rest_read_site_issues(
+pub(crate) async fn rest_read_site_issues(
     headers: HeaderMap,
     query: RestSiteIssuesQuery,
     service: PilotServiceImpl,
@@ -15272,7 +15075,7 @@ async fn rest_read_site_issues(
     }))
 }
 
-async fn rest_read_site_diagnostics(
+pub(crate) async fn rest_read_site_diagnostics(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteDiagnosticsResponse>, RestRouteError> {
@@ -15288,7 +15091,7 @@ async fn rest_read_site_diagnostics(
     }))
 }
 
-async fn rest_read_site_update(
+pub(crate) async fn rest_read_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
@@ -15297,7 +15100,7 @@ async fn rest_read_site_update(
     Ok(Json(rest_site_update_response(&site_update)))
 }
 
-async fn rest_download_site_update(
+pub(crate) async fn rest_download_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
@@ -15306,7 +15109,7 @@ async fn rest_download_site_update(
     rest_site_update_download_redirect(&site_update)
 }
 
-async fn rest_download_site_update_file(
+pub(crate) async fn rest_download_site_update_file(
     headers: HeaderMap,
     service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
@@ -16380,7 +16183,7 @@ async fn rest_export_site_issues(
     Ok(issues)
 }
 
-async fn rest_read_site_mail(
+pub(crate) async fn rest_read_site_mail(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
@@ -16388,7 +16191,7 @@ async fn rest_read_site_mail(
     Ok(Json(rest_site_mail_options(false)))
 }
 
-async fn rest_send_site_test_mail(
+pub(crate) async fn rest_send_site_test_mail(
     headers: HeaderMap,
     body: RestSiteMailSendBody,
     service: PilotServiceImpl,
@@ -16412,7 +16215,7 @@ async fn rest_send_site_test_mail(
     Ok(Json(rest_site_mail_options(true)))
 }
 
-async fn rest_read_site_mail_list(
+pub(crate) async fn rest_read_site_mail_list(
     headers: HeaderMap,
     body: RestSiteMailListBody,
     service: PilotServiceImpl,
@@ -17003,7 +16806,7 @@ async fn rest_find_site_mail_project(
     Ok(project)
 }
 
-async fn rest_delete_site_project(
+pub(crate) async fn rest_delete_site_project(
     headers: HeaderMap,
     project_id: i64,
     service: PilotServiceImpl,
