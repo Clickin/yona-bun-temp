@@ -108,6 +108,25 @@ async fn rest_get(app: axum::Router, path: &str, cookie_header: &str) -> Respons
     .unwrap()
 }
 
+async fn rest_post(
+    app: axum::Router,
+    path: &str,
+    cookie_header: &str,
+    csrf: &str,
+) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::POST)
+            .uri(path)
+            .header(http::header::COOKIE, cookie_header)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -183,7 +202,7 @@ async fn create_issue(
 
 #[tokio::test]
 async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues() {
-    let (app, _) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
@@ -240,23 +259,30 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
     )
     .await;
     assert_eq!(favored["isFavorited"].as_bool().unwrap_or(false), true);
+    let issue_id = repo
+        .read_issue_detail("owner", "projectYobi", 1)
+        .await
+        .unwrap()
+        .expect("favorite issue")
+        .id;
+    let legacy_favorites =
+        response_json(rest_get(app.clone(), "/yona/-_-api/v1/favoriteIssues", &owner_cookie).await)
+            .await;
+    assert_eq!(legacy_favorites["projectIds"], json!([issue_id]));
+    assert_eq!(legacy_favorites["projects"][0]["issueId"], issue_id);
 
     let unfavored = response_json(
-        rpc(
-            app,
-            "ToggleFavoriteIssue",
-            Some(&owner_cookie),
-            Some(&owner_csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
-                "issueNumber": "1"
-            }),
+        rest_post(
+            app.clone(),
+            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            &owner_cookie,
+            &owner_csrf,
         )
         .await,
     )
     .await;
-    assert_eq!(unfavored["isFavorited"].as_bool().unwrap_or(false), false);
+    assert_eq!(unfavored["issueId"], issue_id.to_string());
+    assert_eq!(unfavored["favored"], false);
 }
 
 #[tokio::test]

@@ -14,8 +14,11 @@ use crate::{
     direct_confirm_workspace_email, direct_delete_workspace_email, direct_legacy_leave_project,
     direct_reset_api_token_from_settings_form, direct_send_workspace_email_validation,
     direct_set_main_workspace_email, direct_update_user_profile, direct_user_menu_tab_content_list,
-    direct_user_sidebar, normalize_default_landing_path, redirect_to, session::SessionManager,
-    ConnectError, DirectUserSidebarQuery, PilotBackend, RestRouteError,
+    direct_user_sidebar, legacy_external_favorite_issues, legacy_external_favorite_organizations,
+    legacy_external_favorite_projects, legacy_external_toggle_favorite_issue,
+    legacy_external_toggle_favorite_organization, legacy_external_toggle_favorite_project,
+    normalize_default_landing_path, redirect_to, session::SessionManager, ConnectError,
+    DirectUserSidebarQuery, PilotBackend, RestRouteError,
 };
 
 #[derive(Deserialize)]
@@ -76,8 +79,103 @@ pub(crate) fn routes(
     let info_leave_session_manager = session_manager.clone();
     let info_leave_backend = backend.clone();
     let info_leave_base_path = base_path.clone();
+    let legacy_favorite_projects_list_backend = backend.clone();
+    let legacy_favorite_projects_list_session_manager = session_manager.clone();
+    let legacy_favorite_project_toggle_backend = backend.clone();
+    let legacy_favorite_project_toggle_session_manager = session_manager.clone();
+    let legacy_favorite_issues_list_backend = backend.clone();
+    let legacy_favorite_issues_list_session_manager = session_manager.clone();
+    let legacy_favorite_issue_toggle_backend = backend.clone();
+    let legacy_favorite_issue_toggle_session_manager = session_manager.clone();
+    let legacy_favorite_organizations_list_backend = backend.clone();
+    let legacy_favorite_organizations_list_session_manager = session_manager.clone();
+    let legacy_favorite_organization_toggle_backend = backend.clone();
+    let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
 
     Router::new()
+        .route(
+            "/-_-api/v1/favoriteProjects",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_projects(
+                        headers,
+                        legacy_favorite_projects_list_session_manager.clone(),
+                        legacy_favorite_projects_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteProjects/{project_id}",
+            post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                async move {
+                    legacy_external_toggle_favorite_project(
+                        headers,
+                        project_id,
+                        legacy_favorite_project_toggle_session_manager.clone(),
+                        legacy_favorite_project_toggle_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteIssues",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_issues(
+                        headers,
+                        legacy_favorite_issues_list_session_manager.clone(),
+                        legacy_favorite_issues_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteIssues/{issue_id}",
+            post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
+                async move {
+                    legacy_external_toggle_favorite_issue(
+                        headers,
+                        issue_id,
+                        legacy_favorite_issue_toggle_session_manager.clone(),
+                        legacy_favorite_issue_toggle_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteOrganizations",
+            get(move |headers: HeaderMap| {
+                async move {
+                    legacy_external_favorite_organizations(
+                        headers,
+                        legacy_favorite_organizations_list_session_manager.clone(),
+                        legacy_favorite_organizations_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/favoriteOrganizations/{organization_id}",
+            post(
+                move |headers: HeaderMap, Path(organization_id): Path<i64>| {
+                    async move {
+                        legacy_external_toggle_favorite_organization(
+                            headers,
+                            organization_id,
+                            legacy_favorite_organization_toggle_session_manager.clone(),
+                            legacy_favorite_organization_toggle_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
         .route(
             "/user/sidebar",
             axum::routing::get(

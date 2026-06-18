@@ -721,18 +721,6 @@ fn build_router_with_app_config(
     let pushed_branch_delete_session_manager = session_manager.clone();
     let legacy_milestone_backend = route_backend.clone();
     let legacy_milestone_session_manager = session_manager.clone();
-    let legacy_favorite_projects_list_backend = route_backend.clone();
-    let legacy_favorite_projects_list_session_manager = session_manager.clone();
-    let legacy_favorite_project_toggle_backend = route_backend.clone();
-    let legacy_favorite_project_toggle_session_manager = session_manager.clone();
-    let legacy_favorite_issues_list_backend = route_backend.clone();
-    let legacy_favorite_issues_list_session_manager = session_manager.clone();
-    let legacy_favorite_issue_toggle_backend = route_backend.clone();
-    let legacy_favorite_issue_toggle_session_manager = session_manager.clone();
-    let legacy_favorite_organizations_list_backend = route_backend.clone();
-    let legacy_favorite_organizations_list_session_manager = session_manager.clone();
-    let legacy_favorite_organization_toggle_backend = route_backend.clone();
-    let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
     let legacy_user_search_backend = route_backend.clone();
     let legacy_user_create_backend = route_backend.clone();
     let legacy_user_create_session_manager = session_manager.clone();
@@ -914,89 +902,6 @@ fn build_router_with_app_config(
                             body,
                             legacy_milestone_session_manager.clone(),
                             legacy_milestone_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/favoriteProjects",
-            get(move |headers: HeaderMap| {
-                async move {
-                    legacy_external_favorite_projects(
-                        headers,
-                        legacy_favorite_projects_list_session_manager.clone(),
-                        legacy_favorite_projects_list_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/favoriteProjects/{project_id}",
-            post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
-                async move {
-                    legacy_external_toggle_favorite_project(
-                        headers,
-                        project_id,
-                        legacy_favorite_project_toggle_session_manager.clone(),
-                        legacy_favorite_project_toggle_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/favoriteIssues",
-            get(move |headers: HeaderMap| {
-                async move {
-                    legacy_external_favorite_issues(
-                        headers,
-                        legacy_favorite_issues_list_session_manager.clone(),
-                        legacy_favorite_issues_list_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/favoriteIssues/{issue_id}",
-            post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
-                async move {
-                    legacy_external_toggle_favorite_issue(
-                        headers,
-                        issue_id,
-                        legacy_favorite_issue_toggle_session_manager.clone(),
-                        legacy_favorite_issue_toggle_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/favoriteOrganizations",
-            get(move |headers: HeaderMap| {
-                async move {
-                    legacy_external_favorite_organizations(
-                        headers,
-                        legacy_favorite_organizations_list_session_manager.clone(),
-                        legacy_favorite_organizations_list_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/-_-api/v1/favoriteOrganizations/{organization_id}",
-            post(
-                move |headers: HeaderMap, Path(organization_id): Path<i64>| {
-                    async move {
-                        legacy_external_toggle_favorite_organization(
-                            headers,
-                            organization_id,
-                            legacy_favorite_organization_toggle_session_manager.clone(),
-                            legacy_favorite_organization_toggle_backend.clone(),
                         )
                         .await
                     }
