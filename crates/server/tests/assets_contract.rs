@@ -18,7 +18,7 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
     create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
-    AppRuntimeConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 
 fn runtime_config_env_lock() -> &'static Mutex<()> {
@@ -41,6 +41,30 @@ async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection
                 public_origin: String::new(),
             },
             app_repo.clone(),
+        ),
+        app_repo,
+        db,
+    )
+}
+
+async fn build_auth_router_with_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+
+    (
+        create_router_with_repository_and_app_config(
+            RuntimeConfig {
+                allow_anonymous_access: true,
+                base_path: "/yona".to_string(),
+                public_origin: String::new(),
+            },
+            app_repo.clone(),
+            app_config,
         ),
         app_repo,
         db,
@@ -1002,6 +1026,43 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
     assert_eq!(
         legacy_default_json["size"].as_i64(),
         Some(legacy_default_size_bytes.len() as i64)
+    );
+}
+
+#[tokio::test]
+async fn file_upload_respects_configured_max_file_size_without_env_mutation() {
+    let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
+    let (app, _, _) = build_auth_router_with_app_config(AppRuntimeConfig {
+        max_uploaded_file_size: 8,
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &cookie_header, &csrf, "limit-user").await;
+
+    let (boundary, body) = multipart_body("too-large.txt", "text/plain", b"larger than eight");
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/files")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        std::env::var("YONA_MAX_FILE_SIZE").ok(),
+        previous_max_file_size,
+        "per-test file upload limit must not mutate process env"
     );
 }
 

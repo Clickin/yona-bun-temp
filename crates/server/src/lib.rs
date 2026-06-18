@@ -361,6 +361,7 @@ impl Default for RuntimeConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
+    pub max_uploaded_file_size: usize,
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub session_timeout_seconds: Option<u64>,
@@ -407,6 +408,7 @@ pub struct TranslationProxyConfig {
 impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
+            max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             session_timeout_seconds: None,
@@ -421,6 +423,7 @@ impl Default for AppRuntimeConfig {
 impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
+            max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             project_default_menus: project_default_menus_from_option(
                 config.project_default_menus.as_deref(),
             ),
@@ -439,6 +442,7 @@ impl AppRuntimeConfig {
 
     fn from_env() -> Self {
         Self {
+            max_uploaded_file_size: configured_max_uploaded_file_size(),
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             session_timeout_seconds: configured_session_timeout_seconds(),
@@ -651,6 +655,7 @@ fn build_router_with_app_config(
     let base_path = normalize_base_path(&config.base_path);
     let public_origin = default_public_origin(&config.public_origin);
     let allow_anonymous_access = config.allow_anonymous_access;
+    let max_uploaded_file_size = app_config.max_uploaded_file_size;
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
     let session_timeout_seconds = app_config.session_timeout_seconds;
@@ -756,6 +761,7 @@ fn build_router_with_app_config(
     let file_session_manager = session_manager.clone();
     let file_backend = route_backend.clone();
     let file_base_path = base_path.clone();
+    let file_max_uploaded_file_size = max_uploaded_file_size;
     let file_list_session_manager = session_manager.clone();
     let file_list_backend = route_backend.clone();
     let file_list_base_path = base_path.clone();
@@ -2304,6 +2310,7 @@ fn build_router_with_app_config(
                         file_session_manager.clone(),
                         file_backend.clone(),
                         file_base_path.clone(),
+                        file_max_uploaded_file_size,
                     )
                     .await
                 }
@@ -10872,7 +10879,11 @@ fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
         .unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
 }
 
-fn max_uploaded_file_size() -> usize {
+fn max_uploaded_file_size_from_option(value: Option<usize>) -> usize {
+    value.unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
+}
+
+fn configured_max_uploaded_file_size() -> usize {
     let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
     max_uploaded_file_size_from_env_value(env_value.as_deref())
 }
@@ -22012,7 +22023,7 @@ async fn rest_site_import_attachments(
                     "site.import.attachment.sizeMismatch",
                 ));
             }
-            if bytes.len() > max_uploaded_file_size() {
+            if bytes.len() > configured_max_uploaded_file_size() {
                 return Err(RestRouteError::bad_request(
                     "site.import.attachment.tooLarge",
                 ));
@@ -38182,6 +38193,7 @@ async fn upload_file(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    max_uploaded_file_size: usize,
 ) -> Response {
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
@@ -38212,7 +38224,7 @@ async fn upload_file(
         let Ok(bytes) = field.bytes().await else {
             return StatusCode::BAD_REQUEST.into_response();
         };
-        if bytes.len() > max_uploaded_file_size() {
+        if bytes.len() > max_uploaded_file_size {
             return StatusCode::BAD_REQUEST.into_response();
         }
         let mime_type =
