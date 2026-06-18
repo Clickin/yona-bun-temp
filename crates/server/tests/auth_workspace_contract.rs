@@ -1973,6 +1973,7 @@ async fn direct_legacy_profile_and_email_routes_accept_form_csrf_redirect_and_mu
             .unwrap(),
         "/yona/user/editform"
     );
+    assert_eq!(response_text(updated_profile).await, "");
 
     let user = repository
         .find_user_by_identifier("door")
