@@ -9,9 +9,82 @@ use crate::{
     legacy_external_admin_users, legacy_external_create_users, legacy_external_translation,
     legacy_external_update_admin_user_state, legacy_external_user_issues,
     legacy_external_user_statistics, legacy_external_user_token, legacy_external_users,
-    session::SessionManager, LegacyExternalUserIssuesQuery, LegacyExternalUsersQuery, PilotBackend,
-    TranslationProxyConfig,
+    rest_list_user_issues, rest_read_direct_issue_form_options, rest_read_public_user_profile,
+    rest_read_user_statistics, session::SessionManager, LegacyExternalUserIssuesQuery,
+    LegacyExternalUsersQuery, PilotBackend, PilotServiceImpl, RestDirectIssueFormQuery,
+    RestPublicUserProfileQuery, RestUserIssuesQuery, TranslationProxyConfig,
 };
+
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+    let public_origin = service.public_origin.clone();
+
+    Router::new()
+        .route(
+            "/users/{login_id}/profile",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path(login_id): Path<String>,
+                      Query(query): Query<RestPublicUserProfileQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_public_user_profile(headers, login_id, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/users/{login_id}/statistics",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_user_statistics(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/user/issues/new-options",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
+                move |headers: HeaderMap, Query(query): Query<RestDirectIssueFormQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
+                    async move {
+                        rest_read_direct_issue_form_options(
+                            headers,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                            public_origin,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/user/issues",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Query(query): Query<RestUserIssuesQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_list_user_issues(headers, query, session_manager, backend).await
+                    }
+                }
+            }),
+        )
+}
 
 pub(crate) fn routes(
     session_manager: SessionManager,

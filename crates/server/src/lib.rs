@@ -10760,7 +10760,7 @@ struct RestWorkspaceFilesResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestPublicUserProfileQuery {
+pub(crate) struct RestPublicUserProfileQuery {
     days_ago: Option<i64>,
     selected: Option<String>,
 }
@@ -12920,33 +12920,11 @@ fn build_rest_router(
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
-    let public_origin = service.public_origin.clone();
     let pull_request_service = service.clone();
 
     let router = Router::new()
         .merge(routes::auth_rest_routes(service.clone(), auth_ui.clone()))
-        .route(
-            "/users/{login_id}/profile",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap,
-                      Path(login_id): Path<String>,
-                      Query(query): Query<RestPublicUserProfileQuery>| {
-                    let service = service.clone();
-                    async move { rest_read_public_user_profile(headers, login_id, query, service).await }
-                }
-            }),
-        )
-        .route(
-            "/users/{login_id}/statistics",
-            get({
-                let service = service.clone();
-                move |headers: HeaderMap, Path(login_id): Path<String>| {
-                    let service = service.clone();
-                    async move { rest_read_user_statistics(headers, login_id, service).await }
-                }
-            }),
-        )
+        .merge(routes::user_rest_routes(service.clone()))
         .merge(routes::site_admin_rest_routes(service.clone(), site_update.clone()))
         .merge(routes::workspace_rest_routes(service.clone()))
         .merge(routes::notification_rest_routes(
@@ -12964,46 +12942,6 @@ fn build_rest_router(
             backend.clone(),
             base_path.clone(),
         ))
-        .route(
-            "/user/issues/new-options",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                move |headers: HeaderMap, Query(query): Query<RestDirectIssueFormQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    async move {
-                        rest_read_direct_issue_form_options(
-                            headers,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                            public_origin,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/user/issues",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap, Query(query): Query<RestUserIssuesQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_list_user_issues(headers, query, session_manager, backend).await
-                    }
-                }
-            }),
-        )
         .merge(routes::code_rest_routes(
             service.clone(),
             session_manager.clone(),
@@ -13439,7 +13377,7 @@ pub(crate) async fn rest_list_workspace_files(
     }))
 }
 
-async fn rest_read_public_user_profile(
+pub(crate) async fn rest_read_public_user_profile(
     headers: HeaderMap,
     login_id: String,
     query: RestPublicUserProfileQuery,
@@ -13554,7 +13492,7 @@ async fn rest_read_public_user_profile(
     ))
 }
 
-async fn rest_read_user_statistics(
+pub(crate) async fn rest_read_user_statistics(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -26277,7 +26215,7 @@ pub(crate) fn decode_query_component(value: &str) -> String {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestUserIssuesQuery {
+pub(crate) struct RestUserIssuesQuery {
     filter: String,
     order_by: String,
     order_dir: String,
@@ -26289,7 +26227,7 @@ struct RestUserIssuesQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestDirectIssueFormQuery {
+pub(crate) struct RestDirectIssueFormQuery {
     #[serde(
         default,
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
@@ -27774,7 +27712,7 @@ pub(crate) async fn rest_watch_posting(
     ))
 }
 
-async fn rest_list_user_issues(
+pub(crate) async fn rest_list_user_issues(
     headers: HeaderMap,
     query: RestUserIssuesQuery,
     session_manager: SessionManager,
@@ -27886,7 +27824,7 @@ async fn rest_list_user_issues(
     }))
 }
 
-async fn rest_read_direct_issue_form_options(
+pub(crate) async fn rest_read_direct_issue_form_options(
     headers: HeaderMap,
     query: RestDirectIssueFormQuery,
     session_manager: SessionManager,
