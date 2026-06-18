@@ -260,6 +260,27 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let fallback_html = String::from_utf8(fallback_body.to_vec()).unwrap();
     assert!(fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
 
+    let project_fallback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(project_fallback.status(), StatusCode::OK);
+    let project_fallback_body = project_fallback
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let project_fallback_html = String::from_utf8(project_fallback_body.to_vec()).unwrap();
+    assert!(project_fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
+
     let head_fallback = app
         .oneshot(
             Request::builder()
@@ -351,6 +372,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     );
 
     let fallback = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -364,6 +386,26 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let fallback_body = fallback.into_body().collect().await.unwrap().to_bytes();
     let fallback_html = String::from_utf8(fallback_body.to_vec()).unwrap();
     assert!(fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
+
+    let project_fallback = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(project_fallback.status(), StatusCode::OK);
+    let project_fallback_body = project_fallback
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let project_fallback_html = String::from_utf8(project_fallback_body.to_vec()).unwrap();
+    assert!(project_fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
 }
 
 #[tokio::test]

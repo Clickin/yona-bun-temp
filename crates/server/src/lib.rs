@@ -36,8 +36,7 @@ use std::{
 };
 
 use assets::{
-    serve_embedded_asset, serve_embedded_fallback, serve_embedded_index_html,
-    serve_filesystem_asset, serve_filesystem_fallback, serve_index_html,
+    apply_asset_routes, mount_base_path, serve_embedded_fallback, serve_filesystem_fallback,
 };
 use generated::yona::pilot::v1::*;
 pub use mailbox::{
@@ -571,10 +570,6 @@ fn build_router_with_app_config(
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
-    let smart_http_backend = route_backend.clone();
-    let smart_http_session_manager = session_manager.clone();
-    let smart_http_base_path = base_path.clone();
-    let smart_http_public_origin = public_origin.clone();
     let rest_router = build_rest_router(pilot_service.clone(), site_update.clone(), rest_auth_ui);
 
     let mut base_router = Router::new()
@@ -658,175 +653,15 @@ fn build_router_with_app_config(
             base_path.clone(),
         ));
 
-    match assets.clone() {
-        AssetMode::Filesystem(asset_root) => {
-            let asset_root_for_assets = asset_root.clone();
-            let browser_runtime_for_assets = browser_runtime.clone();
-            let asset_root_for_index = asset_root.clone();
-            let browser_runtime_for_index = browser_runtime.clone();
-            let asset_root_for_fallback = asset_root.clone();
-            let browser_runtime_for_fallback = browser_runtime.clone();
-            let asset_root_for_single_segment_fallback = asset_root.clone();
-            let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
-            let asset_root_for_two_segment_fallback = asset_root.clone();
-            let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
-            let smart_http_backend_for_fallback = smart_http_backend.clone();
-            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
-            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
-            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
-
-            if base_path == "/" {
-                base_router = base_router.route(
-                    "/",
-                    get(move || {
-                        let asset_root = asset_root_for_index.clone();
-                        let browser_runtime = browser_runtime_for_index.clone();
-                        async move { serve_index_html(asset_root, browser_runtime).await }
-                    }),
-                );
-            }
-
-            base_router =
-                base_router
-                    .route(
-                        "/assets/{*path}",
-                        get(move |Path(path): Path<String>| {
-                            let asset_root = asset_root_for_assets.clone();
-                            let browser_runtime = browser_runtime_for_assets.clone();
-                            async move {
-                                serve_filesystem_asset(asset_root, &path, browser_runtime).await
-                            }
-                        }),
-                    )
-                    .route(
-                        "/{login_id}",
-                        get(move || {
-                            let asset_root = asset_root_for_single_segment_fallback.clone();
-                            let browser_runtime =
-                                browser_runtime_for_single_segment_fallback.clone();
-                            async move {
-                                serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
-                                    .await
-                            }
-                        }),
-                    )
-                    .route(
-                        "/{owner}/{project}",
-                        get(move || {
-                            let asset_root = asset_root_for_two_segment_fallback.clone();
-                            let browser_runtime = browser_runtime_for_two_segment_fallback.clone();
-                            async move {
-                                serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
-                                    .await
-                            }
-                        }),
-                    )
-                    .fallback(move |request: Request| {
-                        let asset_root = asset_root_for_fallback.clone();
-                        let browser_runtime = browser_runtime_for_fallback.clone();
-                        let session_manager = smart_http_session_manager_for_fallback.clone();
-                        let backend = smart_http_backend_for_fallback.clone();
-                        let base_path = smart_http_base_path_for_fallback.clone();
-                        let public_origin = smart_http_public_origin_for_fallback.clone();
-                        async move {
-                            serve_filesystem_or_smart_http_fallback(
-                                request,
-                                asset_root,
-                                browser_runtime,
-                                session_manager,
-                                backend,
-                                base_path,
-                                public_origin,
-                            )
-                            .await
-                        }
-                    });
-        }
-        AssetMode::Embedded => {
-            let browser_runtime_for_index = browser_runtime.clone();
-            let browser_runtime_for_assets = browser_runtime.clone();
-            let browser_runtime_for_fallback = browser_runtime.clone();
-            let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
-            let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
-            let smart_http_backend_for_fallback = smart_http_backend.clone();
-            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
-            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
-            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
-
-            if base_path == "/" {
-                base_router = base_router.route(
-                    "/",
-                    get(move || {
-                        let browser_runtime = browser_runtime_for_index.clone();
-                        async move { serve_embedded_index_html(browser_runtime).await }
-                    }),
-                );
-            }
-
-            base_router = base_router
-                .route(
-                    "/assets/{*path}",
-                    get(move |Path(path): Path<String>| {
-                        let browser_runtime = browser_runtime_for_assets.clone();
-                        async move { serve_embedded_asset(&path, browser_runtime).await }
-                    }),
-                )
-                .route(
-                    "/{login_id}",
-                    get(move || {
-                        let browser_runtime = browser_runtime_for_single_segment_fallback.clone();
-                        async move { serve_embedded_fallback(Method::GET, browser_runtime).await }
-                    }),
-                )
-                .route(
-                    "/{owner}/{project}",
-                    get(move || {
-                        let browser_runtime = browser_runtime_for_two_segment_fallback.clone();
-                        async move { serve_embedded_fallback(Method::GET, browser_runtime).await }
-                    }),
-                )
-                .fallback(move |request: Request| {
-                    let browser_runtime = browser_runtime_for_fallback.clone();
-                    let session_manager = smart_http_session_manager_for_fallback.clone();
-                    let backend = smart_http_backend_for_fallback.clone();
-                    let base_path = smart_http_base_path_for_fallback.clone();
-                    let public_origin = smart_http_public_origin_for_fallback.clone();
-                    async move {
-                        serve_embedded_or_smart_http_fallback(
-                            request,
-                            browser_runtime,
-                            session_manager,
-                            backend,
-                            base_path,
-                            public_origin,
-                        )
-                        .await
-                    }
-                });
-        }
-        AssetMode::None => {
-            let smart_http_backend_for_fallback = smart_http_backend.clone();
-            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
-            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
-            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
-            base_router = base_router.fallback(move |request: Request| {
-                let session_manager = smart_http_session_manager_for_fallback.clone();
-                let backend = smart_http_backend_for_fallback.clone();
-                let base_path = smart_http_base_path_for_fallback.clone();
-                let public_origin = smart_http_public_origin_for_fallback.clone();
-                async move {
-                    smart_http_or_not_found(
-                        request,
-                        session_manager,
-                        backend,
-                        base_path,
-                        public_origin,
-                    )
-                    .await
-                }
-            });
-        }
-    }
+    base_router = apply_asset_routes(
+        base_router,
+        assets.clone(),
+        browser_runtime.clone(),
+        base_path.clone(),
+        session_manager.clone(),
+        route_backend.clone(),
+        public_origin.clone(),
+    );
 
     base_router = base_router.layer(from_fn(move |request: Request, next: Next| {
         let session_manager = anonymous_gate_session_manager.clone();
@@ -844,37 +679,7 @@ fn build_router_with_app_config(
         }
     }));
 
-    if base_path == "/" {
-        base_router
-    } else if let AssetMode::Filesystem(asset_root) = assets {
-        let browser_runtime_for_mount = browser_runtime.clone();
-        let asset_root_for_mount = asset_root.clone();
-
-        Router::new()
-            .route(
-                &format!("{base_path}/"),
-                get(move || {
-                    let asset_root = asset_root_for_mount.clone();
-                    let browser_runtime = browser_runtime_for_mount.clone();
-                    async move { serve_index_html(asset_root, browser_runtime).await }
-                }),
-            )
-            .nest(&base_path, base_router)
-    } else if matches!(assets, AssetMode::Embedded) {
-        let browser_runtime_for_mount = browser_runtime.clone();
-
-        Router::new()
-            .route(
-                &format!("{base_path}/"),
-                get(move || {
-                    let browser_runtime = browser_runtime_for_mount.clone();
-                    async move { serve_embedded_index_html(browser_runtime).await }
-                }),
-            )
-            .nest(&base_path, base_router)
-    } else {
-        Router::new().nest(&base_path, base_router)
-    }
+    mount_base_path(base_router, assets, browser_runtime, base_path)
 }
 
 fn base_path_href(base_path: &str, path: &str) -> String {
@@ -1091,7 +896,7 @@ impl SmartHttpPushSummary {
     }
 }
 
-async fn serve_filesystem_or_smart_http_fallback(
+pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     request: Request,
     asset_root: PathBuf,
     browser_runtime: BrowserRuntimeConfig,
@@ -1149,7 +954,7 @@ async fn serve_filesystem_or_smart_http_fallback(
     serve_filesystem_fallback(asset_root, method, browser_runtime).await
 }
 
-async fn serve_embedded_or_smart_http_fallback(
+pub(crate) async fn serve_embedded_or_smart_http_fallback(
     request: Request,
     browser_runtime: BrowserRuntimeConfig,
     session_manager: SessionManager,
@@ -1206,7 +1011,7 @@ async fn serve_embedded_or_smart_http_fallback(
     serve_embedded_fallback(method, browser_runtime).await
 }
 
-async fn smart_http_or_not_found(
+pub(crate) async fn smart_http_or_not_found(
     request: Request,
     session_manager: SessionManager,
     backend: PilotBackend,
@@ -33262,7 +33067,7 @@ impl PilotServiceImpl {
 }
 
 #[derive(Clone)]
-enum PilotBackend {
+pub(crate) enum PilotBackend {
     Static,
     Repository(PilotRepository),
 }
