@@ -1,16 +1,17 @@
 use axum::{
-    extract::Query,
+    extract::{Path, Query},
     http::HeaderMap,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 use serde::Deserialize;
 
 use crate::{
-    base_path_href, escape_html_attr, escape_html_text, format_project_date_label, persistence,
-    redirect_to, require_project_read, session::SessionManager, PilotBackend, RestRouteError,
+    base_path_href, direct_toggle_workspace_notification, escape_html_attr, escape_html_text,
+    format_project_date_label, persistence, redirect_to, require_project_read,
+    session::SessionManager, PilotBackend, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -40,6 +41,8 @@ pub(crate) fn routes(
     let unwatch_session_manager = session_manager.clone();
     let unwatch_backend = backend.clone();
     let unwatch_base_path = base_path.clone();
+    let direct_notification_toggle_session_manager = session_manager.clone();
+    let direct_notification_toggle_backend = backend.clone();
 
     Router::new()
         .route(
@@ -56,6 +59,23 @@ pub(crate) fn routes(
                             session_manager,
                             backend,
                             base_path,
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/noti/toggle/{project_id}/{noti_type}",
+            post(
+                move |headers: HeaderMap, Path((project_id, noti_type)): Path<(i64, String)>| {
+                    async move {
+                        direct_toggle_workspace_notification(
+                            headers,
+                            project_id,
+                            noti_type,
+                            direct_notification_toggle_session_manager.clone(),
+                            direct_notification_toggle_backend.clone(),
                         )
                         .await
                     }

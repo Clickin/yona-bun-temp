@@ -821,8 +821,6 @@ fn build_router_with_app_config(
     let markdown_render_base_path = base_path.clone();
     let project_overview_update_backend = route_backend.clone();
     let project_overview_update_session_manager = session_manager.clone();
-    let direct_notification_toggle_backend = route_backend.clone();
-    let direct_notification_toggle_session_manager = session_manager.clone();
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
@@ -1609,23 +1607,6 @@ fn build_router_with_app_config(
             route_backend.clone(),
             base_path.clone(),
         ))
-        .route(
-            "/noti/toggle/{project_id}/{noti_type}",
-            post(
-                move |headers: HeaderMap, Path((project_id, noti_type)): Path<(i64, String)>| {
-                    async move {
-                        direct_toggle_workspace_notification(
-                            headers,
-                            project_id,
-                            noti_type,
-                            direct_notification_toggle_session_manager.clone(),
-                            direct_notification_toggle_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
         .route(
             "/{owner_name}/{project_name}/watch",
             post(

@@ -4922,6 +4922,10 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     )
     .await;
     assert_eq!(direct_toggle_notification.status(), StatusCode::OK);
+    assert!(direct_toggle_notification
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
     assert_eq!(response_text(direct_toggle_notification).await, "");
     let direct_toggle_row = user_project_notification::Entity::find()
         .filter(user_project_notification::Column::UserId.eq(Some(user.id)))

@@ -14,8 +14,8 @@ use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     comment_thread, issue, issue_comment, issue_event, n4user, notification_event,
-    notification_event_n4user, notification_mail, posting, posting_comment, review_comment,
-    unwatch, AppRepository,
+    notification_event_n4user, notification_mail, posting, posting_comment, project,
+    review_comment, unwatch, user_project_notification, watch, AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::runtime_config::load_startup_config;
@@ -307,7 +307,12 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
     (csrf, cookie_header, actor_id)
 }
 
-async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str) {
+async fn create_project(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    scope: &str,
+) -> serde_json::Value {
     response_json(
         rpc(
             app,
@@ -323,7 +328,7 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
         )
         .await,
     )
-    .await;
+    .await
 }
 
 async fn create_issue(app: axum::Router, cookie: &str, csrf: &str, title: &str) {
@@ -421,8 +426,50 @@ async fn share_issue(app: axum::Router, cookie: &str, csrf: &str, login_id: &str
 async fn notification_contract_stages_issue_state_change_rows_for_watchers() {
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    let (watcher_csrf, watcher_cookie, watcher_id) = register_user(app.clone(), "watcher").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project_id = project::Entity::find()
+        .filter(project::Column::Owner.eq(Some("owner".to_string())))
+        .filter(project::Column::Name.eq(Some("projectYobi".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("project row")
+        .id;
+    watch::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(watcher_id)),
+        resource_type: Set(Some("PROJECT".to_string())),
+        resource_id: Set(Some(project_id.to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let direct_toggle_notification = rest(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/noti/toggle/{project_id}/NEW_COMMENT"),
+        Some(&watcher_cookie),
+        Some(&watcher_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_toggle_notification.status(), StatusCode::OK);
+    assert!(direct_toggle_notification
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    assert!(response_text(direct_toggle_notification).await.is_empty());
+    assert!(user_project_notification::Entity::find()
+        .filter(user_project_notification::Column::UserId.eq(Some(watcher_id)))
+        .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+        .filter(
+            user_project_notification::Column::NotificationType.eq(Some("NEW_COMMENT".to_string()))
+        )
+        .one(&db)
+        .await
+        .unwrap()
+        .is_some());
     create_issue(
         app.clone(),
         &owner_cookie,
