@@ -620,27 +620,6 @@ fn build_router_with_app_config(
     let file_delete_post_trailing_backend = route_backend.clone();
     let file_delete_session_manager = session_manager.clone();
     let file_delete_backend = route_backend.clone();
-    let label_list_backend = route_backend.clone();
-    let label_list_session_manager = session_manager.clone();
-    let label_create_backend = route_backend.clone();
-    let label_create_session_manager = session_manager.clone();
-    let label_css_backend = route_backend.clone();
-    let label_css_session_manager = session_manager.clone();
-    let label_update_backend = route_backend.clone();
-    let label_update_session_manager = session_manager.clone();
-    let label_delete_backend = route_backend.clone();
-    let label_delete_session_manager = session_manager.clone();
-    let label_copy_backend = route_backend.clone();
-    let label_copy_session_manager = session_manager.clone();
-    let label_copy_base_path = base_path.clone();
-    let category_list_backend = route_backend.clone();
-    let category_list_session_manager = session_manager.clone();
-    let category_create_backend = route_backend.clone();
-    let category_create_session_manager = session_manager.clone();
-    let category_update_backend = route_backend.clone();
-    let category_update_session_manager = session_manager.clone();
-    let category_delete_backend = route_backend.clone();
-    let category_delete_session_manager = session_manager.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
@@ -1240,158 +1219,6 @@ fn build_router_with_app_config(
                         markdown_render_session_manager.clone(),
                         markdown_render_backend.clone(),
                         markdown_render_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/labels",
-            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
-                async move {
-                    direct_list_issue_labels(
-                        headers,
-                        owner,
-                        project,
-                        label_list_session_manager.clone(),
-                        label_list_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_create_issue_label(
-                        headers,
-                        owner,
-                        project,
-                        form,
-                        label_create_session_manager.clone(),
-                        label_create_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/labels.css",
-            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
-                async move {
-                    direct_issue_label_css(
-                        headers,
-                        owner,
-                        project,
-                        label_css_session_manager.clone(),
-                        label_css_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/label/{label_id}",
-            put(move |headers: HeaderMap, Path((owner, project, label_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_update_issue_label(
-                        headers,
-                        owner,
-                        project,
-                        label_id,
-                        form,
-                        label_update_session_manager.clone(),
-                        label_update_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/label/{label_id}/delete",
-            post(move |headers: HeaderMap, Path((owner, project, label_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_delete_issue_label(
-                        headers,
-                        owner,
-                        project,
-                        label_id,
-                        form,
-                        label_delete_session_manager.clone(),
-                        label_delete_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/copyLabels",
-            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_copy_issue_labels(
-                        headers,
-                        owner,
-                        project,
-                        form,
-                        label_copy_session_manager.clone(),
-                        label_copy_backend.clone(),
-                        label_copy_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/label/categories",
-            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
-                async move {
-                    direct_list_issue_label_categories(
-                        headers,
-                        owner,
-                        project,
-                        category_list_session_manager.clone(),
-                        category_list_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_create_issue_label_category(
-                        headers,
-                        owner,
-                        project,
-                        form,
-                        category_create_session_manager.clone(),
-                        category_create_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/issue/label/category/{category_id}",
-            put(move |headers: HeaderMap, Path((owner, project, category_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_update_issue_label_category(
-                        headers,
-                        owner,
-                        project,
-                        category_id,
-                        form,
-                        category_update_session_manager.clone(),
-                        category_update_backend.clone(),
-                    )
-                    .await
-                }
-            })
-            .delete(move |headers: HeaderMap, Path((owner, project, category_id)): Path<(String, String, i64)>| {
-                async move {
-                    direct_delete_issue_label_category(
-                        headers,
-                        owner,
-                        project,
-                        category_id,
-                        category_delete_session_manager.clone(),
-                        category_delete_backend.clone(),
                     )
                     .await
                 }
@@ -10700,7 +10527,7 @@ async fn direct_accept_project_transfer(
     }
 }
 
-async fn direct_list_issue_labels(
+pub(crate) async fn direct_list_issue_labels(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10727,7 +10554,7 @@ async fn direct_list_issue_labels(
     }
 }
 
-async fn direct_create_issue_label(
+pub(crate) async fn direct_create_issue_label(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10779,7 +10606,7 @@ async fn direct_create_issue_label(
     }
 }
 
-async fn direct_issue_label_css(
+pub(crate) async fn direct_issue_label_css(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10808,7 +10635,7 @@ async fn direct_issue_label_css(
     }
 }
 
-async fn direct_update_issue_label(
+pub(crate) async fn direct_update_issue_label(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10856,7 +10683,7 @@ async fn direct_update_issue_label(
     }
 }
 
-async fn direct_delete_issue_label(
+pub(crate) async fn direct_delete_issue_label(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10893,7 +10720,7 @@ async fn direct_delete_issue_label(
     }
 }
 
-async fn direct_copy_issue_labels(
+pub(crate) async fn direct_copy_issue_labels(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10945,7 +10772,7 @@ async fn direct_copy_issue_labels(
     redirect_response()
 }
 
-async fn direct_list_issue_label_categories(
+pub(crate) async fn direct_list_issue_label_categories(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -10979,7 +10806,7 @@ async fn direct_list_issue_label_categories(
     }
 }
 
-async fn direct_create_issue_label_category(
+pub(crate) async fn direct_create_issue_label_category(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -11020,7 +10847,7 @@ async fn direct_create_issue_label_category(
     }
 }
 
-async fn direct_update_issue_label_category(
+pub(crate) async fn direct_update_issue_label_category(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -11060,7 +10887,7 @@ async fn direct_update_issue_label_category(
     }
 }
 
-async fn direct_delete_issue_label_category(
+pub(crate) async fn direct_delete_issue_label_category(
     headers: HeaderMap,
     owner: String,
     project: String,

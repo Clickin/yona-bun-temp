@@ -367,6 +367,26 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
         .unwrap()
         .iter()
         .any(|label| label["name"] == "Copied" && label["category"] == "FromSource"));
+    let categories_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/issue/label/categories")
+                .header(http::header::ACCEPT, "application/json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(categories_response.status(), StatusCode::OK);
+    let categories: serde_json::Value =
+        serde_json::from_str(&response_text(categories_response).await).unwrap();
+    assert!(categories
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|category| category["name"] == "Area"));
 
     let css_response = app
         .clone()
