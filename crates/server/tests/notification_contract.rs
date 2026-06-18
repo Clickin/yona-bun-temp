@@ -677,6 +677,7 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
     assert_eq!(payload["hasMore"], false);
     let items = payload["items"].as_array().unwrap();
     assert_eq!(items.len(), 1);
+    assert!(items[0]["targetHref"].as_str().unwrap().starts_with("/yona/"));
     assert_eq!(items[0]["eventType"], "ISSUE_SHARER_CHANGED");
     assert_eq!(items[0]["actor"]["loginId"], "owner");
     assert_eq!(items[0]["message"], "Issue is shared with guest");

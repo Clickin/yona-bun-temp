@@ -11,7 +11,8 @@ use serde::Deserialize;
 use crate::{
     base_path_href, direct_toggle_workspace_notification, escape_html_attr, escape_html_text,
     format_project_date_label, persistence, redirect_to, require_project_read,
-    session::SessionManager, PilotBackend, RestRouteError,
+    rest_list_notifications, session::SessionManager, PilotBackend, RestNotificationsQuery,
+    RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -97,6 +98,30 @@ pub(crate) fn routes(
                 },
             ),
         )
+}
+
+pub(crate) fn rest_routes(
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Router {
+    Router::new().route(
+        "/notifications",
+        get({
+            let session_manager = session_manager.clone();
+            let backend = backend.clone();
+            let base_path = base_path.clone();
+            move |headers: HeaderMap, Query(query): Query<RestNotificationsQuery>| {
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                async move {
+                    rest_list_notifications(headers, query, session_manager, backend, base_path)
+                        .await
+                }
+            }
+        }),
+    )
 }
 
 async fn direct_notification_partial(

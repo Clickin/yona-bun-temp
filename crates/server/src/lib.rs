@@ -11216,7 +11216,7 @@ struct RestSiteImportResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestNotificationsQuery {
+pub(crate) struct RestNotificationsQuery {
     from: u32,
     size: u32,
 }
@@ -12949,23 +12949,11 @@ fn build_rest_router(
         )
         .merge(routes::site_admin_rest_routes(service.clone(), site_update.clone()))
         .merge(routes::workspace_rest_routes(service.clone()))
-        .route(
-            "/notifications",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap, Query(query): Query<RestNotificationsQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_list_notifications(headers, query, session_manager, backend, base_path)
-                            .await
-                    }
-                }
-            }),
-        )
+        .merge(routes::notification_rest_routes(
+            session_manager.clone(),
+            backend.clone(),
+            base_path.clone(),
+        ))
         .merge(routes::search_routes(
             session_manager.clone(),
             backend.clone(),
@@ -16230,7 +16218,7 @@ fn rest_notifications_response(
     }
 }
 
-async fn rest_list_notifications(
+pub(crate) async fn rest_list_notifications(
     headers: HeaderMap,
     query: RestNotificationsQuery,
     session_manager: SessionManager,
