@@ -12958,373 +12958,7 @@ fn build_rest_router(
             session_manager.clone(),
             backend.clone(),
         ))
-        .route(
-            "/projects/{owner_name}/{project_name}/issues",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestProjectIssuesQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_list_project_issues(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            })
-            .post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Json(body): Json<RestIssueMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    async move {
-                        rest_create_issue(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                            public_origin,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/mass-update",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Json(body): Json<RestMassUpdateIssuesBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_mass_update_issues(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/parent-options",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestIssueParentOptionsQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_list_issue_parent_options(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_read_issue_detail(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
-                      Json(body): Json<RestIssueMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_update_issue(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_delete_issue(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}/state",
-            put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
-                      Json(body): Json<RestIssueStateBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_update_issue_state(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}/upvoteWeight",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_update_issue_weight(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            1,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}/downvoteWeight",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        rest_update_issue_weight(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            -1,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments",
-            post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
-                      Json(body): Json<RestIssueCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    async move {
-                        rest_create_issue_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                            public_origin,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments/{comment_id}",
-            put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>,
-                      Json(body): Json<RestIssueCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_update_issue_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            comment_id,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            })
-            .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                move |headers: HeaderMap,
-                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    async move {
-                        rest_delete_issue_comment(
-                            headers,
-                            owner_name,
-                            project_name,
-                            issue_number,
-                            comment_id,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
-        .route(
-            "/organizations/{organization_name}/issues",
-            get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                move |headers: HeaderMap,
-                      Path(organization_name): Path<String>,
-                      RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    async move {
-                        let query = RestOrganizationIssuesQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_list_organization_issues(
-                            headers,
-                            organization_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
-                    }
-                }
-            }),
-        )
+        .merge(routes::issue_rest_routes(service.clone()))
         .merge(routes::board_rest_routes(
             session_manager.clone(),
             backend.clone(),
@@ -13376,7 +13010,6 @@ fn build_rest_router(
             backend.clone(),
             base_path.clone(),
         ))
-        .merge(routes::issue_rest_routes(service.clone()))
         .merge(routes::project_rest_routes(service.clone()))
         .merge(routes::pull_request_rest_routes(pull_request_service));
 
@@ -26491,7 +26124,7 @@ where
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestProjectIssuesQuery {
+pub(crate) struct RestProjectIssuesQuery {
     assignee_id: Option<i64>,
     assignee_login_id: String,
     author_login_id: String,
@@ -26504,7 +26137,7 @@ struct RestProjectIssuesQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestIssueParentOptionsQuery {
+pub(crate) struct RestIssueParentOptionsQuery {
     current_issue_number: Option<i64>,
 }
 
@@ -26546,7 +26179,7 @@ impl RestProjectIssuesQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestOrganizationIssuesQuery {
+pub(crate) struct RestOrganizationIssuesQuery {
     assignee_id: i64,
     author_id: i64,
     filter: String,
@@ -26560,7 +26193,7 @@ struct RestOrganizationIssuesQuery {
 }
 
 impl RestOrganizationIssuesQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
         let Some(raw_query) = raw_query else {
             return Ok(query);
@@ -26697,7 +26330,7 @@ struct RestIssueParentOptionsResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestIssueMutationBody {
+pub(crate) struct RestIssueMutationBody {
     assignee_login_id: String,
     #[serde(
         default,
@@ -26733,13 +26366,13 @@ struct RestIssueMutationBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestIssueStateBody {
+pub(crate) struct RestIssueStateBody {
     state: String,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestIssueCommentBody {
+pub(crate) struct RestIssueCommentBody {
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
@@ -27149,7 +26782,7 @@ fn rest_project_posting_filter_from_query(
     }
 }
 
-async fn rest_list_project_issues(
+pub(crate) async fn rest_list_project_issues(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27208,7 +26841,7 @@ async fn rest_list_project_issues(
     }))
 }
 
-async fn rest_list_issue_parent_options(
+pub(crate) async fn rest_list_issue_parent_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -27250,7 +26883,7 @@ async fn rest_list_issue_parent_options(
     }))
 }
 
-async fn rest_list_organization_issues(
+pub(crate) async fn rest_list_organization_issues(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationIssuesQuery,
@@ -28366,7 +27999,7 @@ fn derived_issue_comment_markdown(
     )
 }
 
-async fn rest_read_issue_detail(
+pub(crate) async fn rest_read_issue_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28740,7 +28373,7 @@ pub(crate) async fn rest_list_project_issue_references(
     Ok(Json(rest_project_issue_references_response(record)))
 }
 
-async fn rest_update_issue_state(
+pub(crate) async fn rest_update_issue_state(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28812,7 +28445,7 @@ async fn rest_update_issue_state(
     ))
 }
 
-async fn rest_create_issue(
+pub(crate) async fn rest_create_issue(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28931,7 +28564,7 @@ async fn rest_create_issue(
     ))
 }
 
-async fn rest_update_issue(
+pub(crate) async fn rest_update_issue(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -28999,7 +28632,7 @@ async fn rest_update_issue(
     ))
 }
 
-async fn rest_delete_issue(
+pub(crate) async fn rest_delete_issue(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29050,7 +28683,7 @@ async fn rest_delete_issue(
     }))
 }
 
-async fn rest_create_issue_comment(
+pub(crate) async fn rest_create_issue_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29150,7 +28783,7 @@ async fn rest_create_issue_comment(
     ))
 }
 
-async fn rest_update_issue_comment(
+pub(crate) async fn rest_update_issue_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29223,7 +28856,7 @@ async fn rest_update_issue_comment(
     ))
 }
 
-async fn rest_delete_issue_comment(
+pub(crate) async fn rest_delete_issue_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29284,7 +28917,7 @@ async fn rest_delete_issue_comment(
     ))
 }
 
-async fn rest_update_issue_weight(
+pub(crate) async fn rest_update_issue_weight(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -29339,7 +28972,7 @@ async fn rest_update_issue_weight(
     }))
 }
 
-async fn rest_mass_update_issues(
+pub(crate) async fn rest_mass_update_issues(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
