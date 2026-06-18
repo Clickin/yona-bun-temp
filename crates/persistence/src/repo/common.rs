@@ -1,8 +1,10 @@
-fn normalize_identity(value: &str) -> String {
+use super::*;
+
+pub(super) fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
 
-fn mailbox_message_id_left_local(message_id: &str) -> Option<String> {
+pub(super) fn mailbox_message_id_left_local(message_id: &str) -> Option<String> {
     let left_angle = message_id.find('<')?;
     let at_sign = message_id[left_angle + 1..]
         .find('@')
@@ -12,7 +14,7 @@ fn mailbox_message_id_left_local(message_id: &str) -> Option<String> {
     (!left.is_empty()).then_some(left)
 }
 
-fn mailbox_project_detail_local(detail: &str) -> Option<(String, String)> {
+pub(super) fn mailbox_project_detail_local(detail: &str) -> Option<(String, String)> {
     let mut parts = detail.split('/');
     let owner_name = parts.next()?;
     let project_name = parts.next()?;
@@ -22,7 +24,7 @@ fn mailbox_project_detail_local(detail: &str) -> Option<(String, String)> {
     Some((owner_name.to_string(), project_name.to_string()))
 }
 
-fn mailbox_resource_path_from_detail_local(detail: &str) -> Option<&str> {
+pub(super) fn mailbox_resource_path_from_detail_local(detail: &str) -> Option<&str> {
     let mut parts = detail.splitn(3, '/');
     parts.next()?;
     parts.next()?;
@@ -30,7 +32,7 @@ fn mailbox_resource_path_from_detail_local(detail: &str) -> Option<&str> {
     (!resource_path.is_empty()).then_some(resource_path)
 }
 
-fn mailbox_execution_record(
+pub(super) fn mailbox_execution_record(
     action: &MailboxResourceActionRecord,
     status: &str,
 ) -> MailboxActionExecutionRecord {
@@ -44,7 +46,7 @@ fn mailbox_execution_record(
     }
 }
 
-fn mailbox_canonical_resource_type(resource_type: &str) -> String {
+pub(super) fn mailbox_canonical_resource_type(resource_type: &str) -> String {
     let resource_type = resource_type.trim();
     match resource_type {
         "ISSUE_POST" => "issue_post",
@@ -59,7 +61,7 @@ fn mailbox_canonical_resource_type(resource_type: &str) -> String {
     .to_string()
 }
 
-fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
+pub(super) fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
     let normalized_login_id = normalize_identity(login_id);
     if normalized_login_id.is_empty() {
         return false;
@@ -75,31 +77,35 @@ fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
         .any(|prefix| normalized_login_id.starts_with(&prefix))
 }
 
-fn normalize_optional(value: Option<&str>) -> Option<String> {
+pub(super) fn normalize_optional(value: Option<&str>) -> Option<String> {
     value
         .map(normalize_identity)
         .filter(|item| !item.is_empty())
 }
 
-fn empty_to_none(value: Option<String>) -> Option<String> {
+pub(super) fn empty_to_none(value: Option<String>) -> Option<String> {
     value.and_then(|item| {
         let trimmed = item.trim();
         (!trimmed.is_empty()).then(|| trimmed.to_string())
     })
 }
 
-fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
+pub(super) fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
     Some(if is_confirmed { "active" } else { "locked" }.to_string())
 }
 
-fn finish_ranked_search_items(
+pub(super) fn finish_ranked_search_items(
     mut ranked_items: Vec<(u32, usize, SearchItemRecord)>,
 ) -> Vec<SearchItemRecord> {
     ranked_items.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
     ranked_items.into_iter().map(|(_, _, item)| item).collect()
 }
 
-fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
+pub(super) fn issue_assignable_user_matches(
+    user: &n4user::Model,
+    query: &str,
+    search_type: &str,
+) -> bool {
     let query = query.trim();
     let normalized_query = normalize_identity(query);
     match search_type {
@@ -127,7 +133,7 @@ fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type:
     }
 }
 
-fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecord {
+pub(super) fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecord {
     let login_id = user.login_id.unwrap_or_default();
     let display_name = user.name.unwrap_or_else(|| login_id.clone());
     let pure_name_only = pure_user_name(&display_name);
@@ -140,7 +146,7 @@ fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecor
     }
 }
 
-fn issue_assignable_custom_user_record(
+pub(super) fn issue_assignable_custom_user_record(
     user: &n4user::Model,
     display_name: &str,
 ) -> IssueAssignableUserRecord {
@@ -153,7 +159,7 @@ fn issue_assignable_custom_user_record(
     }
 }
 
-fn issue_assignable_no_assignee_record() -> IssueAssignableUserRecord {
+pub(super) fn issue_assignable_no_assignee_record() -> IssueAssignableUserRecord {
     IssueAssignableUserRecord {
         avatar_url: String::new(),
         display_name: "issue.noAssignee".to_string(),
@@ -163,7 +169,7 @@ fn issue_assignable_no_assignee_record() -> IssueAssignableUserRecord {
     }
 }
 
-fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssignableUserRecord {
+pub(super) fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssignableUserRecord {
     let display_name = format!("{}/{}", project.owner_name, project.project_name);
     IssueAssignableUserRecord {
         avatar_url: String::new(),
@@ -174,24 +180,24 @@ fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssignableUserR
     }
 }
 
-fn n4user_is_active(user: &n4user::Model) -> bool {
+pub(super) fn n4user_is_active(user: &n4user::Model) -> bool {
     normalize_optional(user.state.as_deref()).as_deref() == Some("active")
 }
 
-const SITE_USER_PAGE_SIZE: usize = 30;
-const LEGACY_ANONYMOUS_LOGIN_ID: &str = "anonymous";
+pub(super) const SITE_USER_PAGE_SIZE: usize = 30;
+pub(super) const LEGACY_ANONYMOUS_LOGIN_ID: &str = "anonymous";
 
-fn usize_to_u32_saturating(value: usize) -> u32 {
+pub(super) fn usize_to_u32_saturating(value: usize) -> u32 {
     u32::try_from(value).unwrap_or(u32::MAX)
 }
 
-fn site_user_state_label(user: &n4user::Model) -> String {
+pub(super) fn site_user_state_label(user: &n4user::Model) -> String {
     normalize_optional(user.state.as_deref())
         .unwrap_or_else(|| "pending".to_string())
         .to_ascii_uppercase()
 }
 
-fn site_user_query_matches(user: &n4user::Model, query: &str) -> bool {
+pub(super) fn site_user_query_matches(user: &n4user::Model, query: &str) -> bool {
     let normalized_query = normalize_identity(query);
     if normalized_query.is_empty() {
         return true;
@@ -205,7 +211,7 @@ fn site_user_query_matches(user: &n4user::Model, query: &str) -> bool {
         || contains_query(user.email.as_deref())
 }
 
-fn site_user_state_matches(
+pub(super) fn site_user_state_matches(
     user: &n4user::Model,
     state: &str,
     site_admin_ids: &HashSet<i64>,
@@ -217,7 +223,7 @@ fn site_user_state_matches(
     }
 }
 
-fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
+pub(super) fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
     let normalized = normalize_identity(state).to_ascii_uppercase();
     let normalized = if normalized.is_empty() {
         "ACTIVE".to_string()
@@ -230,7 +236,10 @@ fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
     }
 }
 
-fn site_user_record_from_model(user: n4user::Model, is_site_admin: bool) -> SiteUserRecord {
+pub(super) fn site_user_record_from_model(
+    user: n4user::Model,
+    is_site_admin: bool,
+) -> SiteUserRecord {
     let state = site_user_state_label(&user);
     SiteUserRecord {
         created_at: user.created_date,
@@ -245,7 +254,7 @@ fn site_user_record_from_model(user: n4user::Model, is_site_admin: bool) -> Site
     }
 }
 
-fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
+pub(super) fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
     let login_id = user.login_id.unwrap_or_default();
     let display_name = user.name.unwrap_or_else(|| login_id.clone());
     let search_text = format!("{display_name}{login_id}");
@@ -258,7 +267,7 @@ fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
     }
 }
 
-fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
+pub(super) fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
     let normalized = normalize_identity(query);
     normalized.is_empty()
         || normalize_identity(&record.login_id).contains(&normalized)
@@ -266,7 +275,7 @@ fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
         || normalize_identity(&record.search_text).contains(&normalized)
 }
 
-fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReferenceRecord {
+pub(super) fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReferenceRecord {
     ProjectIssueReferenceRecord {
         issue_number: model.number.unwrap_or_default(),
         state: issue_state_from_raw(model.state),
@@ -274,7 +283,11 @@ fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReference
     }
 }
 
-fn push_unique_user_id(user_ids: &mut Vec<i64>, seen: &mut HashSet<i64>, user_id: Option<i64>) {
+pub(super) fn push_unique_user_id(
+    user_ids: &mut Vec<i64>,
+    seen: &mut HashSet<i64>,
+    user_id: Option<i64>,
+) {
     if let Some(user_id) = user_id {
         if seen.insert(user_id) {
             user_ids.push(user_id);
@@ -282,7 +295,7 @@ fn push_unique_user_id(user_ids: &mut Vec<i64>, seen: &mut HashSet<i64>, user_id
     }
 }
 
-fn extract_mention_tokens(text: &str) -> Vec<String> {
+pub(super) fn extract_mention_tokens(text: &str) -> Vec<String> {
     let chars = text.char_indices().collect::<Vec<_>>();
     let mut tokens = Vec::new();
     let mut index = 0;
@@ -325,7 +338,7 @@ fn extract_mention_tokens(text: &str) -> Vec<String> {
     tokens
 }
 
-fn pure_user_name(display_name: &str) -> String {
+pub(super) fn pure_user_name(display_name: &str) -> String {
     let bracket_index = ["[", "("]
         .iter()
         .filter_map(|marker| display_name.find(marker))
@@ -334,7 +347,7 @@ fn pure_user_name(display_name: &str) -> String {
     display_name[..bracket_index].trim().to_string()
 }
 
-fn issue_state_to_raw(value: &str) -> i32 {
+pub(super) fn issue_state_to_raw(value: &str) -> i32 {
     if normalize_identity(value) == "open" {
         0
     } else {
@@ -342,7 +355,7 @@ fn issue_state_to_raw(value: &str) -> i32 {
     }
 }
 
-const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
+pub(super) const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
     ("NEW_ISSUE", "New issue"),
     ("NEW_POSTING", "New post"),
     ("NEW_PULL_REQUEST", "New pull request"),
@@ -384,40 +397,40 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
     ),
 ];
 
-const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
-const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
-const ISSUE_EVENT_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
-const NOTIFICATION_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
-const PROJECT_PUSHED_BRANCH_DRAFT_TIME_IN_MILLIS: i64 = 60 * 60 * 1000;
-const USER_ATTACHMENT_CONTAINER: &str = "USER";
-const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
-const PROJECT_ATTACHMENT_CONTAINER: &str = "PROJECT";
-const ORGANIZATION_ATTACHMENT_CONTAINER: &str = "ORGANIZATION";
-const ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE_POST";
-const RUST_ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE";
-const ISSUE_COMMENT_ATTACHMENT_CONTAINER: &str = "ISSUE_COMMENT";
-const BOARD_POST_ATTACHMENT_CONTAINER: &str = "BOARD_POST";
-const BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "NONISSUE_COMMENT";
-const RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "BOARD_POST_COMMENT";
-const MILESTONE_ATTACHMENT_CONTAINER: &str = "MILESTONE";
-const PULL_REQUEST_ATTACHMENT_CONTAINER: &str = "PULL_REQUEST";
-const REVIEW_COMMENT_ATTACHMENT_CONTAINER: &str = "REVIEW_COMMENT";
+pub(super) const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
+pub(super) const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
+pub(super) const ISSUE_EVENT_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
+pub(super) const NOTIFICATION_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
+pub(super) const PROJECT_PUSHED_BRANCH_DRAFT_TIME_IN_MILLIS: i64 = 60 * 60 * 1000;
+pub(super) const USER_ATTACHMENT_CONTAINER: &str = "USER";
+pub(super) const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
+pub(super) const PROJECT_ATTACHMENT_CONTAINER: &str = "PROJECT";
+pub(super) const ORGANIZATION_ATTACHMENT_CONTAINER: &str = "ORGANIZATION";
+pub(super) const ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE_POST";
+pub(super) const RUST_ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE";
+pub(super) const ISSUE_COMMENT_ATTACHMENT_CONTAINER: &str = "ISSUE_COMMENT";
+pub(super) const BOARD_POST_ATTACHMENT_CONTAINER: &str = "BOARD_POST";
+pub(super) const BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "NONISSUE_COMMENT";
+pub(super) const RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "BOARD_POST_COMMENT";
+pub(super) const MILESTONE_ATTACHMENT_CONTAINER: &str = "MILESTONE";
+pub(super) const PULL_REQUEST_ATTACHMENT_CONTAINER: &str = "PULL_REQUEST";
+pub(super) const REVIEW_COMMENT_ATTACHMENT_CONTAINER: &str = "REVIEW_COMMENT";
 
-fn notification_draft_time_in_millis() -> i64 {
+pub(super) fn notification_draft_time_in_millis() -> i64 {
     std::env::var("YONA_NOTIFICATION_DRAFT_TIME")
         .ok()
         .and_then(|value| parse_legacy_duration_ms(&value))
         .unwrap_or(NOTIFICATION_DRAFT_TIME_IN_MILLIS)
 }
 
-fn issue_event_draft_time_in_millis() -> i64 {
+pub(super) fn issue_event_draft_time_in_millis() -> i64 {
     std::env::var("YONA_ISSUE_EVENT_DRAFT_TIME")
         .ok()
         .and_then(|value| parse_legacy_duration_ms(&value))
         .unwrap_or(ISSUE_EVENT_DRAFT_TIME_IN_MILLIS)
 }
 
-fn parse_legacy_duration_ms(value: &str) -> Option<i64> {
+pub(super) fn parse_legacy_duration_ms(value: &str) -> Option<i64> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
         return None;
@@ -436,12 +449,12 @@ fn parse_legacy_duration_ms(value: &str) -> Option<i64> {
     number.parse::<i64>().ok()?.checked_mul(multiplier)
 }
 
-enum PostingMentionNotificationMode {
+pub(super) enum PostingMentionNotificationMode {
     All,
     NewOnly,
 }
 
-fn attachment_container_aliases(container_type: &str) -> Vec<&str> {
+pub(super) fn attachment_container_aliases(container_type: &str) -> Vec<&str> {
     match container_type {
         ISSUE_ATTACHMENT_CONTAINER => {
             vec![ISSUE_ATTACHMENT_CONTAINER, RUST_ISSUE_ATTACHMENT_CONTAINER]
@@ -456,7 +469,7 @@ fn attachment_container_aliases(container_type: &str) -> Vec<&str> {
     }
 }
 
-fn can_bind_attachment(
+pub(super) fn can_bind_attachment(
     current_container_type: &str,
     current_container_id: i64,
     target_container_type: &str,
@@ -472,11 +485,11 @@ fn can_bind_attachment(
     actor_id.is_none() || already_bound_to_target || actor_owns_temporary_upload
 }
 
-fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
+pub(super) fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
 }
 
-fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> String {
+pub(super) fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> String {
     match event_type {
         "ISSUE_SHARER_CHANGED" if !new_value.trim().is_empty() => {
             format!("Issue is shared with {}", new_value.trim())
@@ -518,7 +531,7 @@ fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> S
     }
 }
 
-fn issue_state_notification_message(new_value: &str) -> String {
+pub(super) fn issue_state_notification_message(new_value: &str) -> String {
     if normalize_identity(new_value) == "closed" {
         "notification.issue.closed".to_string()
     } else {
@@ -526,7 +539,7 @@ fn issue_state_notification_message(new_value: &str) -> String {
     }
 }
 
-fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
+pub(super) fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
     let normalized_state = normalize_identity(state);
     match event_type {
         "NEW_COMMENT" | "NEW_REVIEW_COMMENT" | "REVIEW_THREAD_STATE_CHANGED" => "comment2",
@@ -572,7 +585,7 @@ fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
     }
 }
 
-fn notification_unwatch_resource_types(resource_type: &str) -> Vec<String> {
+pub(super) fn notification_unwatch_resource_types(resource_type: &str) -> Vec<String> {
     let normalized = normalize_identity(resource_type);
     let mut resource_types = match normalized.as_str() {
         "issue" | "issue_post" => vec![
@@ -596,7 +609,7 @@ fn notification_unwatch_resource_types(resource_type: &str) -> Vec<String> {
     resource_types
 }
 
-fn pull_request_state_notification_message(new_value: &str) -> String {
+pub(super) fn pull_request_state_notification_message(new_value: &str) -> String {
     let state = normalize_identity(new_value);
     if state == "open" {
         "notification.pullrequest.reopened".to_string()
@@ -607,14 +620,18 @@ fn pull_request_state_notification_message(new_value: &str) -> String {
     }
 }
 
-fn notification_mail_is_due(created: Option<DateTime>, now: DateTime, delay_ms: i64) -> bool {
+pub(super) fn notification_mail_is_due(
+    created: Option<DateTime>,
+    now: DateTime,
+    delay_ms: i64,
+) -> bool {
     let Some(created) = created else {
         return false;
     };
     now.signed_duration_since(created).num_milliseconds() >= delay_ms.max(0)
 }
 
-fn notification_event_uses_draft_merge(event_type: &str) -> bool {
+pub(super) fn notification_event_uses_draft_merge(event_type: &str) -> bool {
     !matches!(
         event_type,
         "ISSUE_SHARER_CHANGED"
@@ -625,11 +642,11 @@ fn notification_event_uses_draft_merge(event_type: &str) -> bool {
     )
 }
 
-fn issue_event_uses_draft_merge(event_type: &str) -> bool {
+pub(super) fn issue_event_uses_draft_merge(event_type: &str) -> bool {
     notification_event_uses_draft_merge(event_type)
 }
 
-fn random_workspace_token() -> String {
+pub(super) fn random_workspace_token() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(32)
@@ -637,7 +654,7 @@ fn random_workspace_token() -> String {
         .collect()
 }
 
-fn random_transfer_confirm_key() -> String {
+pub(super) fn random_transfer_confirm_key() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(50)
@@ -645,22 +662,22 @@ fn random_transfer_confirm_key() -> String {
         .collect()
 }
 
-fn prefixed_verification_code(prefix: &str) -> String {
+pub(super) fn prefixed_verification_code(prefix: &str) -> String {
     format!("{prefix}{}", random_workspace_token())
 }
 
-fn current_datetime() -> DateTime {
+pub(super) fn current_datetime() -> DateTime {
     DateTimeUtc::from(SystemTime::now()).naive_utc()
 }
 
-fn current_timestamp_millis() -> i64 {
+pub(super) fn current_timestamp_millis() -> i64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
 }
 
-fn days_ago_datetime(days: u64) -> DateTime {
+pub(super) fn days_ago_datetime(days: u64) -> DateTime {
     let seconds = days.saturating_mul(24 * 60 * 60);
     let cutoff = SystemTime::now()
         .checked_sub(Duration::from_secs(seconds))
@@ -668,19 +685,19 @@ fn days_ago_datetime(days: u64) -> DateTime {
     DateTimeUtc::from(cutoff).naive_utc()
 }
 
-fn format_workspace_date_label(value: Option<DateTime>) -> String {
+pub(super) fn format_workspace_date_label(value: Option<DateTime>) -> String {
     value
         .map(|value| value.format("%Y-%m-%d").to_string())
         .unwrap_or_default()
 }
 
-fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
+pub(super) fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
     value
         .map(|value| value.format("%Y-%m-%d %-I:%M:%S %p").to_string())
         .unwrap_or_default()
 }
 
-fn looks_like_email_address(value: &str) -> bool {
+pub(super) fn looks_like_email_address(value: &str) -> bool {
     let trimmed = value.trim();
     let Some((local, domain)) = trimmed.split_once('@') else {
         return false;
@@ -692,7 +709,7 @@ fn looks_like_email_address(value: &str) -> bool {
         && domain.contains('.')
 }
 
-fn issue_state_from_raw(value: Option<i32>) -> String {
+pub(super) fn issue_state_from_raw(value: Option<i32>) -> String {
     if value.unwrap_or(0) == 0 {
         "open".to_string()
     } else {
@@ -700,7 +717,7 @@ fn issue_state_from_raw(value: Option<i32>) -> String {
     }
 }
 
-fn child_issue_state_order(state: &str) -> u8 {
+pub(super) fn child_issue_state_order(state: &str) -> u8 {
     match normalize_identity(state).as_str() {
         "draft" => 0,
         "open" => 1,
@@ -709,7 +726,7 @@ fn child_issue_state_order(state: &str) -> u8 {
     }
 }
 
-fn sort_issue_models_for_organization(
+pub(super) fn sort_issue_models_for_organization(
     items: &mut [(issue::Model, ProjectRecord)],
     order_by: &str,
     order_dir: &str,
@@ -736,7 +753,7 @@ fn sort_issue_models_for_organization(
     });
 }
 
-fn sort_posting_models(
+pub(super) fn sort_posting_models(
     items: &mut [(posting::Model, ProjectRecord)],
     order_by: &str,
     order_dir: &str,
@@ -763,7 +780,7 @@ fn sort_posting_models(
     });
 }
 
-fn bool_to_i16(value: bool) -> i16 {
+pub(super) fn bool_to_i16(value: bool) -> i16 {
     if value {
         1
     } else {
@@ -771,7 +788,7 @@ fn bool_to_i16(value: bool) -> i16 {
     }
 }
 
-fn all_project_menu_settings_enabled() -> ProjectMenuSettingsRecord {
+pub(super) fn all_project_menu_settings_enabled() -> ProjectMenuSettingsRecord {
     ProjectMenuSettingsRecord {
         board: true,
         code: true,
@@ -782,7 +799,7 @@ fn all_project_menu_settings_enabled() -> ProjectMenuSettingsRecord {
     }
 }
 
-fn configured_project_default_menu_settings() -> ProjectMenuSettingsRecord {
+pub(super) fn configured_project_default_menu_settings() -> ProjectMenuSettingsRecord {
     let Some(configured) = std::env::var("YONA_PROJECT_DEFAULT_MENUS")
         .ok()
         .filter(|value| !value.trim().is_empty())
@@ -814,7 +831,7 @@ fn configured_project_default_menu_settings() -> ProjectMenuSettingsRecord {
     settings
 }
 
-fn normalize_project_menu_config_key(value: &str) -> String {
+pub(super) fn normalize_project_menu_config_key(value: &str) -> String {
     value
         .chars()
         .filter(|ch| !ch.is_whitespace() && *ch != '_' && *ch != '-')
@@ -822,14 +839,16 @@ fn normalize_project_menu_config_key(value: &str) -> String {
         .to_ascii_lowercase()
 }
 
-fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
+pub(super) fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
     let message = error.to_string().to_ascii_lowercase();
     (message.contains("unique") || message.contains("duplicate"))
         && message.contains("posting")
         && (message.contains("number") || message.contains("uq_posting_1"))
 }
 
-fn issue_label_category_record(row: issue_label_category::Model) -> IssueLabelCategoryRecord {
+pub(super) fn issue_label_category_record(
+    row: issue_label_category::Model,
+) -> IssueLabelCategoryRecord {
     IssueLabelCategoryRecord {
         id: row.id,
         is_exclusive: row.is_exclusive.unwrap_or_default() != 0,
@@ -837,14 +856,14 @@ fn issue_label_category_record(row: issue_label_category::Model) -> IssueLabelCa
     }
 }
 
-fn sql_placeholders(backend: DatabaseBackend, count: usize) -> Vec<String> {
+pub(super) fn sql_placeholders(backend: DatabaseBackend, count: usize) -> Vec<String> {
     match backend {
         DatabaseBackend::Postgres => (1..=count).map(|index| format!("${index}")).collect(),
         _ => (0..count).map(|_| "?".to_string()).collect(),
     }
 }
 
-fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> String {
+pub(super) fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> String {
     if is_conflict.unwrap_or_default() != 0 {
         return "conflict".to_string();
     }
@@ -852,7 +871,7 @@ fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> 
     pull_request_lifecycle_state(value)
 }
 
-fn pull_request_lifecycle_state(value: Option<i32>) -> String {
+pub(super) fn pull_request_lifecycle_state(value: Option<i32>) -> String {
     match value.unwrap_or(1) {
         6 => "merged".to_string(),
         2 => "closed".to_string(),
@@ -860,26 +879,26 @@ fn pull_request_lifecycle_state(value: Option<i32>) -> String {
     }
 }
 
-fn pull_request_open_condition() -> Condition {
+pub(super) fn pull_request_open_condition() -> Condition {
     Condition::any()
         .add(pull_request::Column::State.eq(Some(1)))
         .add(pull_request::Column::State.is_null())
 }
 
-fn pull_request_closed_condition() -> Condition {
+pub(super) fn pull_request_closed_condition() -> Condition {
     Condition::any()
         .add(pull_request::Column::State.eq(Some(2)))
         .add(pull_request::Column::State.eq(Some(6)))
 }
 
-fn review_thread_state(value: Option<&str>) -> String {
+pub(super) fn review_thread_state(value: Option<&str>) -> String {
     match value.map(normalize_identity).as_deref() {
         Some("closed") => "closed".to_string(),
         _ => "open".to_string(),
     }
 }
 
-fn review_thread_side(value: Option<&str>) -> Option<String> {
+pub(super) fn review_thread_side(value: Option<&str>) -> Option<String> {
     match value.map(str::trim).filter(|side| !side.is_empty()) {
         Some(side) if side.eq_ignore_ascii_case("a") => Some("A".to_string()),
         Some(side) if side.eq_ignore_ascii_case("b") => Some("B".to_string()),
@@ -887,7 +906,7 @@ fn review_thread_side(value: Option<&str>) -> Option<String> {
     }
 }
 
-fn review_thread_open_condition() -> Condition {
+pub(super) fn review_thread_open_condition() -> Condition {
     Condition::any()
         .add(comment_thread::Column::State.is_null())
         .add(
@@ -897,33 +916,33 @@ fn review_thread_open_condition() -> Condition {
         )
 }
 
-fn review_thread_closed_condition() -> Condition {
+pub(super) fn review_thread_closed_condition() -> Condition {
     Condition::any()
         .add(comment_thread::Column::State.eq(Some("closed".to_string())))
         .add(comment_thread::Column::State.eq(Some("CLOSED".to_string())))
 }
 
 #[derive(Debug, FromQueryResult)]
-struct ProjectRow {
-    created_date: Option<DateTime>,
-    default_reviewer_count: Option<i32>,
-    id: i64,
-    is_code_accessible_member_only: Option<i16>,
-    is_using_reviewer_count: Option<i16>,
-    last_pushed_date: Option<DateTime>,
-    name: Option<String>,
-    original_project_id: Option<i64>,
-    overview: Option<String>,
-    owner: Option<String>,
-    organization_id: Option<i64>,
-    previous_name: Option<String>,
-    previous_name_changed_time: Option<i64>,
-    previous_owner_login_id: Option<String>,
-    project_scope: Option<String>,
-    vcs: Option<String>,
+pub(super) struct ProjectRow {
+    pub(super) created_date: Option<DateTime>,
+    pub(super) default_reviewer_count: Option<i32>,
+    pub(super) id: i64,
+    pub(super) is_code_accessible_member_only: Option<i16>,
+    pub(super) is_using_reviewer_count: Option<i16>,
+    pub(super) last_pushed_date: Option<DateTime>,
+    pub(super) name: Option<String>,
+    pub(super) original_project_id: Option<i64>,
+    pub(super) overview: Option<String>,
+    pub(super) owner: Option<String>,
+    pub(super) organization_id: Option<i64>,
+    pub(super) previous_name: Option<String>,
+    pub(super) previous_name_changed_time: Option<i64>,
+    pub(super) previous_owner_login_id: Option<String>,
+    pub(super) project_scope: Option<String>,
+    pub(super) vcs: Option<String>,
 }
 
-fn next_project_vcs(current: &str) -> String {
+pub(super) fn next_project_vcs(current: &str) -> String {
     if current == "GIT" {
         "Subversion".to_string()
     } else {
@@ -931,7 +950,7 @@ fn next_project_vcs(current: &str) -> String {
     }
 }
 
-fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecord {
+pub(super) fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecord {
     ProjectWebhookRecord {
         git_push: row.git_push.unwrap_or_default() != 0,
         id: row.id,
@@ -941,7 +960,7 @@ fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecor
     }
 }
 
-fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThreadRecord {
+pub(super) fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThreadRecord {
     WebhookThreadRecord {
         created_at: row.created_at,
         id: row.id,
@@ -952,7 +971,7 @@ fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThread
     }
 }
 
-fn project_webhook_delivery_record_from_model(
+pub(super) fn project_webhook_delivery_record_from_model(
     row: webhook_delivery::Model,
 ) -> ProjectWebhookDeliveryRecord {
     ProjectWebhookDeliveryRecord {
@@ -969,7 +988,7 @@ fn project_webhook_delivery_record_from_model(
     }
 }
 
-fn append_posting_history(
+pub(super) fn append_posting_history(
     existing_history: Option<&str>,
     old_body: &str,
     new_body: &str,
@@ -988,7 +1007,7 @@ fn append_posting_history(
     }
 }
 
-fn project_transfer_record_from_model(
+pub(super) fn project_transfer_record_from_model(
     row: project_transfer::Model,
 ) -> Option<ProjectTransferRecord> {
     Some(ProjectTransferRecord {

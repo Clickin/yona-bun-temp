@@ -176,6 +176,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     )
     .await;
     assert_eq!(created["issueNumber"], "1");
+    assert_eq!(created["title"], "Markdown issue");
     assert_eq!(created["state"], "open");
     assert_eq!(created["isWatching"], true);
     assert_eq!(created["bodyHtml"].as_str().unwrap_or(""), "");

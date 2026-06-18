@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn next_project_transfer_name(
         &self,

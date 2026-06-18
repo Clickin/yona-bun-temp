@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn record_original_email(
+    pub(super) async fn record_original_email(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -21,7 +23,10 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn mailbox_message_id_already_recorded(&self, message_id: &str) -> Result<bool, DbErr> {
+    pub(super) async fn mailbox_message_id_already_recorded(
+        &self,
+        message_id: &str,
+    ) -> Result<bool, DbErr> {
         let message_id = message_id.trim();
         if message_id.is_empty() {
             return Ok(false);
@@ -326,7 +331,7 @@ impl AppRepository {
         })
     }
 
-    async fn mailbox_action_issue_number(
+    pub(super) async fn mailbox_action_issue_number(
         &self,
         action: &MailboxResourceActionRecord,
     ) -> Result<Option<i64>, DbErr> {
@@ -357,7 +362,7 @@ impl AppRepository {
         }
     }
 
-    async fn mailbox_action_post_number(
+    pub(super) async fn mailbox_action_post_number(
         &self,
         action: &MailboxResourceActionRecord,
     ) -> Result<Option<i64>, DbErr> {
@@ -388,7 +393,7 @@ impl AppRepository {
         }
     }
 
-    async fn mailbox_action_for_target(
+    pub(super) async fn mailbox_action_for_target(
         &self,
         project: &ProjectRecord,
         target: &MailboxReplyTargetRecord,
@@ -410,7 +415,7 @@ impl AppRepository {
         }))
     }
 
-    async fn mailbox_target_action_metadata(
+    pub(super) async fn mailbox_target_action_metadata(
         &self,
         target: &MailboxReplyTargetRecord,
     ) -> Result<Option<(i64, String, i64, String)>, DbErr> {
@@ -542,7 +547,7 @@ impl AppRepository {
         }
     }
 
-    async fn mailbox_reply_target_from_message_id_left(
+    pub(super) async fn mailbox_reply_target_from_message_id_left(
         &self,
         message_id: &str,
     ) -> Result<Option<MailboxReplyTargetRecord>, DbErr> {
@@ -569,7 +574,7 @@ impl AppRepository {
         }))
     }
 
-    async fn mailbox_reply_resource_exists(
+    pub(super) async fn mailbox_reply_resource_exists(
         &self,
         resource_type: &str,
         resource_id: i64,

@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn clear_recent_projects_for_user(&self, user_id: i64) -> Result<(), DbErr> {
         let rows = recent_project::Entity::find()

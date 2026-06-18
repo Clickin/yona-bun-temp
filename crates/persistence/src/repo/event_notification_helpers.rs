@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn clear_other_readme_postings(
+    pub(super) async fn clear_other_readme_postings(
         &self,
         project_id: i64,
         keep_posting_id: i64,
@@ -20,7 +22,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn create_issue_event(
+    pub(super) async fn create_issue_event(
         &self,
         issue_id: i64,
         sender_login_id: &str,
@@ -63,7 +65,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn recent_mergeable_issue_event(
+    pub(super) async fn recent_mergeable_issue_event(
         &self,
         issue_id: i64,
         sender_login_id: &str,
@@ -85,7 +87,7 @@ impl AppRepository {
         }))
     }
 
-    async fn create_pull_request_event(
+    pub(super) async fn create_pull_request_event(
         &self,
         pull_request_id: i64,
         sender_login_id: &str,
@@ -109,7 +111,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn create_notification_event_for_receivers(
+    pub(super) async fn create_notification_event_for_receivers(
         &self,
         sender_id: i64,
         resource_type: &str,
@@ -189,7 +191,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn recent_mergeable_notification_event(
+    pub(super) async fn recent_mergeable_notification_event(
         &self,
         sender_id: i64,
         resource_type: &str,
@@ -213,7 +215,7 @@ impl AppRepository {
         }))
     }
 
-    async fn delete_notification_event_rows(&self, event_id: i64) -> Result<(), DbErr> {
+    pub(super) async fn delete_notification_event_rows(&self, event_id: i64) -> Result<(), DbErr> {
         notification_event_n4user::Entity::delete_many()
             .filter(notification_event_n4user::Column::NotificationEventId.eq(event_id))
             .exec(&self.db)
@@ -228,7 +230,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn create_notification_event_for_commit_discussion(
+    pub(super) async fn create_notification_event_for_commit_discussion(
         &self,
         sender_id: i64,
         resource_type: &str,
@@ -277,7 +279,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn active_watch_user_ids(
+    pub(super) async fn active_watch_user_ids(
         &self,
         resource_type: &str,
         resource_id: &str,
@@ -302,7 +304,7 @@ impl AppRepository {
         Ok(user_ids)
     }
 
-    async fn active_unwatch_user_ids(
+    pub(super) async fn active_unwatch_user_ids(
         &self,
         resource_type: &str,
         resource_id: &str,
@@ -327,7 +329,7 @@ impl AppRepository {
         Ok(user_ids)
     }
 
-    async fn explicit_project_notification_user_ids(
+    pub(super) async fn explicit_project_notification_user_ids(
         &self,
         project_id: i64,
         event_type: &str,
@@ -359,7 +361,7 @@ impl AppRepository {
         Ok(user_ids)
     }
 
-    async fn project_notification_enabled_for_user(
+    pub(super) async fn project_notification_enabled_for_user(
         &self,
         user_id: i64,
         project_id: i64,
@@ -379,7 +381,7 @@ impl AppRepository {
             .unwrap_or_else(|| workspace_notification_enabled_by_default(event_type)))
     }
 
-    async fn posting_notification_receiver_ids(
+    pub(super) async fn posting_notification_receiver_ids(
         &self,
         project_id: i64,
         posting_id: i64,
@@ -431,7 +433,7 @@ impl AppRepository {
         Ok(receivers)
     }
 
-    async fn push_issue_notification_receiver_id(
+    pub(super) async fn push_issue_notification_receiver_id(
         &self,
         project: &ProjectRecord,
         issue: &issue::Model,
@@ -469,7 +471,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn issue_notification_receiver_ids(
+    pub(super) async fn issue_notification_receiver_ids(
         &self,
         project: &ProjectRecord,
         issue: &issue::Model,
@@ -589,7 +591,7 @@ impl AppRepository {
         Ok(receivers)
     }
 
-    async fn pull_request_notification_receiver_ids(
+    pub(super) async fn pull_request_notification_receiver_ids(
         &self,
         project_id: i64,
         pull_request_id: i64,
@@ -670,7 +672,7 @@ impl AppRepository {
         Ok(receivers)
     }
 
-    async fn commit_notification_receiver_ids(
+    pub(super) async fn commit_notification_receiver_ids(
         &self,
         project_id: i64,
         actor_id: i64,
@@ -710,7 +712,7 @@ impl AppRepository {
         Ok(receivers)
     }
 
-    async fn sync_posting_mentions_and_notify(
+    pub(super) async fn sync_posting_mentions_and_notify(
         &self,
         sender_id: i64,
         project_id: i64,
@@ -757,7 +759,7 @@ impl AppRepository {
         Ok(sync_result)
     }
 
-    async fn sync_mentions_for_resource(
+    pub(super) async fn sync_mentions_for_resource(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -809,7 +811,10 @@ impl AppRepository {
         })
     }
 
-    async fn mentioned_active_user_ids(&self, text: &str) -> Result<HashSet<i64>, DbErr> {
+    pub(super) async fn mentioned_active_user_ids(
+        &self,
+        text: &str,
+    ) -> Result<HashSet<i64>, DbErr> {
         let mut user_ids = HashSet::new();
         for token in extract_mention_tokens(text) {
             if let Some((owner_name, project_name)) = token.split_once('/') {
@@ -855,7 +860,7 @@ impl AppRepository {
         Ok(user_ids)
     }
 
-    async fn insert_active_mentioned_user_id(
+    pub(super) async fn insert_active_mentioned_user_id(
         &self,
         user_ids: &mut HashSet<i64>,
         user_id: Option<i64>,
@@ -871,7 +876,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn sync_mentions_and_notify(
+    pub(super) async fn sync_mentions_and_notify(
         &self,
         sender_id: i64,
         resource_type: &str,
@@ -898,7 +903,7 @@ impl AppRepository {
         Ok(sync_result)
     }
 
-    async fn notification_item_record(
+    pub(super) async fn notification_item_record(
         &self,
         event: notification_event::Model,
     ) -> Result<NotificationItemRecord, DbErr> {
@@ -959,7 +964,7 @@ impl AppRepository {
         })
     }
 
-    async fn notification_reply_target(
+    pub(super) async fn notification_reply_target(
         &self,
         resource_type: &str,
         resource_id: &str,
@@ -1008,7 +1013,7 @@ impl AppRepository {
         }
     }
 
-    async fn notification_target(
+    pub(super) async fn notification_target(
         &self,
         resource_type: &str,
         resource_id: &str,
@@ -1034,7 +1039,7 @@ impl AppRepository {
             .await
     }
 
-    async fn notification_project_target(
+    pub(super) async fn notification_project_target(
         &self,
         project_id: i64,
     ) -> Result<(String, String), DbErr> {
@@ -1047,7 +1052,7 @@ impl AppRepository {
         ))
     }
 
-    async fn notification_issue_target(
+    pub(super) async fn notification_issue_target(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -1087,7 +1092,7 @@ impl AppRepository {
         ))
     }
 
-    async fn notification_posting_target(
+    pub(super) async fn notification_posting_target(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -1137,7 +1142,7 @@ impl AppRepository {
         ))
     }
 
-    async fn notification_pull_request_target(
+    pub(super) async fn notification_pull_request_target(
         &self,
         resource_type: &str,
         resource_id: i64,

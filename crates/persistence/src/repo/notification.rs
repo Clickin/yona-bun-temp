@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn list_watched_project_notifications_for_user(
         &self,

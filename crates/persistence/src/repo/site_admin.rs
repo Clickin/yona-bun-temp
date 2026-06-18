@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     /// Lists users for the legacy site-admin user-management surface.
     ///

@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {
+    pub(super) async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {
         if site_admin::Entity::find()
             .filter(site_admin::Column::AdminId.eq(Some(user_id)))
             .one(&self.db)
@@ -17,7 +19,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn ensure_role_id(&self, role_name: &str) -> Result<i64, DbErr> {
+    pub(super) async fn ensure_role_id(&self, role_name: &str) -> Result<i64, DbErr> {
         let normalized = normalize_identity(role_name);
         let roles = role::Entity::find().all(&self.db).await?;
         for existing in roles {
@@ -38,7 +40,7 @@ impl AppRepository {
         Ok(created.id)
     }
 
-    async fn role_name_for_id(&self, role_id: Option<i64>) -> Result<String, DbErr> {
+    pub(super) async fn role_name_for_id(&self, role_id: Option<i64>) -> Result<String, DbErr> {
         let Some(role_id) = role_id else {
             return Ok(String::new());
         };
@@ -50,7 +52,10 @@ impl AppRepository {
             .unwrap_or_default())
     }
 
-    async fn sync_project_label_cache(&self, project_model: &project::Model) -> Result<(), DbErr> {
+    pub(super) async fn sync_project_label_cache(
+        &self,
+        project_model: &project::Model,
+    ) -> Result<(), DbErr> {
         let owner = project_model.owner.clone();
         let name = project_model.name.clone();
 

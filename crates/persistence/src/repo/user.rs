@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
@@ -162,5 +164,4 @@ impl AppRepository {
             normalize_optional(user.email.as_deref()).as_deref() == Some(normalized.as_str())
         }))
     }
-
 }

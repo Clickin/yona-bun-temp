@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn list_project_home_history_items(
         &self,
@@ -106,7 +108,7 @@ impl AppRepository {
         Ok(items)
     }
 
-    async fn project_home_history_item(
+    pub(super) async fn project_home_history_item(
         &self,
         actor_id: Option<i64>,
         actor_login_id: Option<&str>,

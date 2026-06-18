@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn update_commit_discussion_thread_state(
         &self,
@@ -173,7 +175,7 @@ impl AppRepository {
             .await
     }
 
-    async fn list_project_review_threads_with_page_size(
+    pub(super) async fn list_project_review_threads_with_page_size(
         &self,
         project: &ProjectRecord,
         filter: ReviewThreadListFilter,

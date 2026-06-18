@@ -98,35 +98,67 @@ pub struct DefaultLandingRepository {
     inner: AppRepository,
 }
 
-include!("common.rs");
-include!("user.rs");
-include!("site_admin.rs");
-include!("search.rs");
-include!("issue.rs");
-include!("posting.rs");
-include!("issue_relation.rs");
-include!("issue_label.rs");
-include!("milestone.rs");
-include!("project_lookup.rs");
-include!("organization.rs");
-include!("project.rs");
-include!("project_transfer.rs");
-include!("project_setting.rs");
-include!("project_activity.rs");
-include!("pull_request.rs");
-include!("mailbox.rs");
-include!("pull_request_review.rs");
-include!("user_workspace.rs");
-include!("attachment.rs");
-include!("project_vcs.rs");
-include!("workspace.rs");
-include!("notification.rs");
-include!("user_helpers.rs");
-include!("record_helpers.rs");
-include!("issue_relation_helpers.rs");
-include!("project_home_helpers.rs");
-include!("issue_label_helpers.rs");
-include!("comment_helpers.rs");
-include!("watch_helpers.rs");
-include!("event_notification_helpers.rs");
-include!("role_project_helpers.rs");
+mod common;
+use common::*;
+#[path = "attachment.rs"]
+mod repo_attachment;
+#[path = "comment_helpers.rs"]
+mod repo_comment_helpers;
+#[path = "event_notification_helpers.rs"]
+mod repo_event_notification_helpers;
+#[path = "issue.rs"]
+mod repo_issue;
+#[path = "issue_label.rs"]
+mod repo_issue_label;
+#[path = "issue_label_helpers.rs"]
+mod repo_issue_label_helpers;
+#[path = "issue_relation.rs"]
+mod repo_issue_relation;
+#[path = "issue_relation_helpers.rs"]
+mod repo_issue_relation_helpers;
+#[path = "mailbox.rs"]
+mod repo_mailbox;
+#[path = "milestone.rs"]
+mod repo_milestone;
+#[path = "notification.rs"]
+mod repo_notification;
+#[path = "organization.rs"]
+mod repo_organization;
+#[path = "posting.rs"]
+mod repo_posting;
+#[path = "project.rs"]
+mod repo_project;
+#[path = "project_activity.rs"]
+mod repo_project_activity;
+#[path = "project_home_helpers.rs"]
+mod repo_project_home_helpers;
+#[path = "project_lookup.rs"]
+mod repo_project_lookup;
+#[path = "project_setting.rs"]
+mod repo_project_setting;
+#[path = "project_transfer.rs"]
+mod repo_project_transfer;
+#[path = "project_vcs.rs"]
+mod repo_project_vcs;
+#[path = "pull_request.rs"]
+mod repo_pull_request;
+#[path = "pull_request_review.rs"]
+mod repo_pull_request_review;
+#[path = "record_helpers.rs"]
+mod repo_record_helpers;
+#[path = "role_project_helpers.rs"]
+mod repo_role_project_helpers;
+#[path = "search.rs"]
+mod repo_search;
+#[path = "site_admin.rs"]
+mod repo_site_admin;
+#[path = "user.rs"]
+mod repo_user;
+#[path = "user_helpers.rs"]
+mod repo_user_helpers;
+#[path = "user_workspace.rs"]
+mod repo_user_workspace;
+#[path = "watch_helpers.rs"]
+mod repo_watch_helpers;
+#[path = "workspace.rs"]
+mod repo_workspace;

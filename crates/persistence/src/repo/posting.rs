@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn list_project_postings_filtered(
         &self,

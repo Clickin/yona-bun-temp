@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn list_workspace_emails_for_user(
         &self,

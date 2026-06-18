@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn issue_label_record(
+    pub(super) async fn issue_label_record(
         &self,
         label: issue_label::Model,
     ) -> Result<IssueLabelRecord, DbErr> {
@@ -32,7 +34,7 @@ impl AppRepository {
         })
     }
 
-    async fn read_project_posting_model(
+    pub(super) async fn read_project_posting_model(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -52,7 +54,7 @@ impl AppRepository {
         Ok(model.map(|model| (project_record, model)))
     }
 
-    async fn project_posting_list_item_from_model(
+    pub(super) async fn project_posting_list_item_from_model(
         &self,
         model: posting::Model,
         project: &ProjectRecord,
@@ -81,7 +83,7 @@ impl AppRepository {
         })
     }
 
-    async fn posting_record_from_model(
+    pub(super) async fn posting_record_from_model(
         &self,
         model: posting::Model,
         project: &ProjectRecord,
@@ -122,7 +124,10 @@ impl AppRepository {
         })
     }
 
-    async fn list_posting_labels(&self, posting_id: i64) -> Result<Vec<IssueLabelRecord>, DbErr> {
+    pub(super) async fn list_posting_labels(
+        &self,
+        posting_id: i64,
+    ) -> Result<Vec<IssueLabelRecord>, DbErr> {
         let links = posting_issue_label::Entity::find()
             .filter(posting_issue_label::Column::PostingId.eq(posting_id))
             .all(&self.db)
@@ -139,7 +144,7 @@ impl AppRepository {
         Ok(labels)
     }
 
-    async fn find_or_create_issue_label_category(
+    pub(super) async fn find_or_create_issue_label_category(
         &self,
         project_id: i64,
         category_name: &str,
@@ -161,7 +166,7 @@ impl AppRepository {
         .await
     }
 
-    async fn find_issue_label_category_by_name(
+    pub(super) async fn find_issue_label_category_by_name(
         &self,
         project_id: i64,
         category_name: &str,
@@ -173,7 +178,7 @@ impl AppRepository {
             .await
     }
 
-    async fn find_issue_label_by_project_category_name(
+    pub(super) async fn find_issue_label_by_project_category_name(
         &self,
         project_id: i64,
         category_id: i64,
@@ -187,7 +192,7 @@ impl AppRepository {
             .await
     }
 
-    async fn project_issue_list_item_record(
+    pub(super) async fn project_issue_list_item_record(
         &self,
         model: issue::Model,
         project: &ProjectRecord,
@@ -257,7 +262,7 @@ impl AppRepository {
         Ok(item)
     }
 
-    async fn list_milestone_issues(
+    pub(super) async fn list_milestone_issues(
         &self,
         project: &ProjectRecord,
         milestone_id: i64,
@@ -277,7 +282,7 @@ impl AppRepository {
         Ok(items)
     }
 
-    async fn issue_milestone_record(
+    pub(super) async fn issue_milestone_record(
         &self,
         row: milestone::Model,
         project: &ProjectRecord,
@@ -322,7 +327,7 @@ impl AppRepository {
         })
     }
 
-    async fn replace_issue_labels(
+    pub(super) async fn replace_issue_labels(
         &self,
         issue_id: i64,
         project_id: i64,
@@ -348,7 +353,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn replace_posting_labels(
+    pub(super) async fn replace_posting_labels(
         &self,
         posting_id: i64,
         project_id: i64,
@@ -374,7 +379,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn label_belongs_to_project(
+    pub(super) async fn label_belongs_to_project(
         &self,
         project_id: i64,
         label_id: i64,

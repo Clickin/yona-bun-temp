@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn app_user_record_from_model(
+    pub(super) async fn app_user_record_from_model(
         &self,
         model: n4user::Model,
     ) -> Result<AppUserRecord, DbErr> {
@@ -17,7 +19,7 @@ impl AppRepository {
         })
     }
 
-    async fn find_user_model_by_login_id(
+    pub(super) async fn find_user_model_by_login_id(
         &self,
         login_id: &str,
     ) -> Result<Option<n4user::Model>, DbErr> {
@@ -32,7 +34,7 @@ impl AppRepository {
         }))
     }
 
-    async fn find_user_model_by_email(
+    pub(super) async fn find_user_model_by_email(
         &self,
         email_address: &str,
     ) -> Result<Option<n4user::Model>, DbErr> {
@@ -47,7 +49,7 @@ impl AppRepository {
         }))
     }
 
-    async fn find_mailbox_sender_model_by_email(
+    pub(super) async fn find_mailbox_sender_model_by_email(
         &self,
         email_address: &str,
     ) -> Result<Option<n4user::Model>, DbErr> {
@@ -75,7 +77,10 @@ impl AppRepository {
         n4user::Entity::find_by_id(user_id).one(&self.db).await
     }
 
-    async fn site_user_is_only_project_manager(&self, user_id: i64) -> Result<bool, DbErr> {
+    pub(super) async fn site_user_is_only_project_manager(
+        &self,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
         let manager_role_id = role::Entity::find()
             .all(&self.db)
             .await?
@@ -108,7 +113,7 @@ impl AppRepository {
         Ok(false)
     }
 
-    async fn site_admin_user_ids(&self) -> Result<HashSet<i64>, DbErr> {
+    pub(super) async fn site_admin_user_ids(&self) -> Result<HashSet<i64>, DbErr> {
         Ok(site_admin::Entity::find()
             .all(&self.db)
             .await?
@@ -117,7 +122,10 @@ impl AppRepository {
             .collect())
     }
 
-    async fn site_admin_count(&self, site_admin_ids: &HashSet<i64>) -> Result<usize, DbErr> {
+    pub(super) async fn site_admin_count(
+        &self,
+        site_admin_ids: &HashSet<i64>,
+    ) -> Result<usize, DbErr> {
         let users = n4user::Entity::find().all(&self.db).await?;
         Ok(users
             .into_iter()
@@ -129,7 +137,7 @@ impl AppRepository {
             .count())
     }
 
-    async fn user_is_site_admin(&self, user_id: i64) -> Result<bool, DbErr> {
+    pub(super) async fn user_is_site_admin(&self, user_id: i64) -> Result<bool, DbErr> {
         Ok(site_admin::Entity::find()
             .filter(site_admin::Column::AdminId.eq(Some(user_id)))
             .one(&self.db)
@@ -137,7 +145,7 @@ impl AppRepository {
             .is_some())
     }
 
-    async fn list_connected_social_providers_for_user(
+    pub(super) async fn list_connected_social_providers_for_user(
         &self,
         user_id: i64,
     ) -> Result<Vec<String>, DbErr> {

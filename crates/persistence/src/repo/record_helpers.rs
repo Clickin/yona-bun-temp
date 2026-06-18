@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    fn organization_record_from_model(
+    pub(super) fn organization_record_from_model(
         &self,
         model: organization::Model,
     ) -> Option<OrganizationRecord> {
@@ -10,7 +12,7 @@ impl AppRepository {
         })
     }
 
-    async fn project_record_from_row(
+    pub(super) async fn project_record_from_row(
         &self,
         row: ProjectRow,
     ) -> Result<Option<ProjectRecord>, DbErr> {
@@ -49,7 +51,7 @@ impl AppRepository {
         }))
     }
 
-    async fn project_record_from_model(
+    pub(super) async fn project_record_from_model(
         &self,
         model: project::Model,
     ) -> Result<Option<ProjectRecord>, DbErr> {
@@ -90,7 +92,7 @@ impl AppRepository {
         }))
     }
 
-    async fn issue_record_from_model(
+    pub(super) async fn issue_record_from_model(
         &self,
         model: issue::Model,
         project: &ProjectRecord,
@@ -223,7 +225,7 @@ impl AppRepository {
         .await
     }
 
-    async fn list_issue_child_records(
+    pub(super) async fn list_issue_child_records(
         &self,
         parent_issue_id: i64,
         viewer_login_id: &str,
@@ -273,7 +275,7 @@ impl AppRepository {
         Ok(items)
     }
 
-    async fn read_project_pull_request_model(
+    pub(super) async fn read_project_pull_request_model(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -293,7 +295,7 @@ impl AppRepository {
         Ok(row.map(|row| (project, row)))
     }
 
-    async fn user_record_for_optional_id(
+    pub(super) async fn user_record_for_optional_id(
         &self,
         user_id: Option<i64>,
     ) -> Result<PullRequestUserRecord, DbErr> {
@@ -322,7 +324,7 @@ impl AppRepository {
             }))
     }
 
-    async fn pull_request_list_item_from_model(
+    pub(super) async fn pull_request_list_item_from_model(
         &self,
         row: pull_request::Model,
         project: &ProjectRecord,
@@ -372,7 +374,7 @@ impl AppRepository {
         })
     }
 
-    async fn pull_request_detail_from_model(
+    pub(super) async fn pull_request_detail_from_model(
         &self,
         row: pull_request::Model,
         project: &ProjectRecord,
@@ -438,7 +440,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_pull_request_reviewers(
+    pub(super) async fn list_pull_request_reviewers(
         &self,
         pull_request_id: i64,
     ) -> Result<Vec<PullRequestUserRecord>, DbErr> {
@@ -458,7 +460,7 @@ impl AppRepository {
         Ok(reviewers)
     }
 
-    async fn list_pull_request_review_threads(
+    pub(super) async fn list_pull_request_review_threads(
         &self,
         pull_request_id: i64,
     ) -> Result<Vec<ReviewThreadRecord>, DbErr> {
@@ -476,14 +478,14 @@ impl AppRepository {
         Ok(threads)
     }
 
-    async fn list_review_comments(
+    pub(super) async fn list_review_comments(
         &self,
         thread_id: i64,
     ) -> Result<Vec<ReviewCommentRecord>, DbErr> {
         Ok(self.list_review_comments_with_latest(thread_id).await?.0)
     }
 
-    async fn list_review_comments_with_latest(
+    pub(super) async fn list_review_comments_with_latest(
         &self,
         thread_id: i64,
     ) -> Result<(Vec<ReviewCommentRecord>, Option<DateTime>), DbErr> {
@@ -524,7 +526,7 @@ impl AppRepository {
         Ok((comments, latest_comment_created))
     }
 
-    async fn review_thread_record(
+    pub(super) async fn review_thread_record(
         &self,
         row: comment_thread::Model,
         comments: Vec<ReviewCommentRecord>,
@@ -562,7 +564,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_pull_request_commits(
+    pub(super) async fn list_pull_request_commits(
         &self,
         pull_request_id: i64,
     ) -> Result<Vec<PullRequestCommitRecord>, DbErr> {
@@ -579,7 +581,7 @@ impl AppRepository {
         Ok(commits)
     }
 
-    async fn pull_request_commit_record_from_model(
+    pub(super) async fn pull_request_commit_record_from_model(
         &self,
         row: pull_request_commit::Model,
     ) -> Result<PullRequestCommitRecord, DbErr> {
@@ -596,7 +598,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_pull_request_event_commits(
+    pub(super) async fn list_pull_request_event_commits(
         &self,
         event_type: &str,
         new_value: &str,
@@ -624,7 +626,7 @@ impl AppRepository {
         Ok(commits)
     }
 
-    async fn list_pull_request_events(
+    pub(super) async fn list_pull_request_events(
         &self,
         pull_request_id: i64,
     ) -> Result<Vec<PullRequestEventRecord>, DbErr> {
@@ -658,7 +660,7 @@ impl AppRepository {
         Ok(events)
     }
 
-    async fn project_issue_list_item_from_model(
+    pub(super) async fn project_issue_list_item_from_model(
         &self,
         model: issue::Model,
         project: &ProjectRecord,
@@ -728,7 +730,7 @@ impl AppRepository {
         })
     }
 
-    async fn issue_model_matches_text_filter(
+    pub(super) async fn issue_model_matches_text_filter(
         &self,
         model: &issue::Model,
         text_filter: &str,
@@ -766,7 +768,7 @@ impl AppRepository {
         Ok(false)
     }
 
-    async fn posting_model_matches_text_filter(
+    pub(super) async fn posting_model_matches_text_filter(
         &self,
         model: &posting::Model,
         text_filter: &str,
@@ -804,7 +806,11 @@ impl AppRepository {
         Ok(false)
     }
 
-    async fn has_direct_issue_share(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+    pub(super) async fn has_direct_issue_share(
+        &self,
+        issue_id: i64,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
         Ok(issue_sharer::Entity::find()
             .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
             .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
@@ -813,7 +819,10 @@ impl AppRepository {
             .is_some())
     }
 
-    async fn find_user_model_by_id(&self, user_id: i64) -> Result<Option<n4user::Model>, DbErr> {
+    pub(super) async fn find_user_model_by_id(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<n4user::Model>, DbErr> {
         n4user::Entity::find_by_id(user_id).one(&self.db).await
     }
 }

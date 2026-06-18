@@ -9,7 +9,7 @@ Reduce the compile-time blast radius of `crates/persistence/src/repo.rs` without
 
 This is a move-only refactor first. Functional changes, new repository traits, generic storage abstractions, and cross-crate ownership changes are out of scope.
 
-Current status: the large repository file has been physically decomposed into legacy-model-oriented include files. Low-coupling files may later be promoted from `include!` files to child modules after their private helper dependencies are small enough to make `pub(super)` adjustments mechanical.
+Current status: the large repository file has been decomposed into legacy-model-oriented child modules. Private cross-module repository helpers use `pub(super)` so visibility stays limited to `repo`.
 
 ## Constraints
 
@@ -24,9 +24,9 @@ Current status: the large repository file has been physically decomposed into le
 
 Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, with controller files such as `yona-original/app/controllers/IssueApp.java` and `yona-original/app/controllers/ProjectApp.java` acting as route/use-case entry points. Persistence modules should follow legacy model/table names first, not new service-style groups.
 
-`repo.rs` becomes a `repo/` file tree. Most files are included into the same Rust module first, preserving the old private visibility and keeping the first pass behavior-neutral.
+`repo.rs` becomes a `repo/` module tree. Repository implementation files are real child modules loaded from the legacy-model-oriented file names. Shared helpers live in `repo/common.rs` and are re-exported only inside `repo`.
 
-- `repo/mod.rs`: repository structs, module declarations, shared imports, and any code not yet moved.
+- `repo/mod.rs`: repository structs, module declarations, shared imports, and repo-private common helper imports.
 - `repo/app_user.rs`: `AppUserRepository` wrapper implementation.
 - `repo/default_landing.rs`: `DefaultLandingRepository` wrapper implementation.
 - `repo/user.rs`: `User.java`, `UserCredential.java`, `UserVerification.java`, `Email.java`, `UserSetting.java`.
@@ -52,8 +52,8 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - `repo/mailbox.rs`: `OriginalEmail.java`, `mailbox/*`, inbound mail target planning and normalized message processing.
 - `repo/attachment.rs`: `Attachment.java`, avatar/logo/container binding.
 - `repo/notification.rs`: `NotificationEvent.java`, `NotificationMail.java`, `Watch.java`, `Unwatch.java`, `UserProjectNotification.java`.
-- `repo/common.rs`: small pure helpers and constants only after their callers have moved enough to make the extraction mechanical.
-- `repo/*_helpers.rs`: temporary helper buckets created during the move-only pass. These are allowed to shrink or merge into child modules later, but should not accumulate new behavior.
+- `repo/common.rs`: repo-private pure helpers, constants, query row structs, and small record conversion functions shared across child modules.
+- `repo/*_helpers.rs`: helper buckets created during the move-only pass. These are allowed to shrink or merge into narrower modules later, but should not accumulate unrelated new behavior.
 
 `repo_types.rs` remains unchanged until the repository module split is stable. A later pass may apply the same module tree to `repo_types/` with public re-exports.
 
@@ -110,3 +110,6 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 
 - 2026-06-18: `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed after the full physical split in 56.86s.
 - 2026-06-18: touching `crates/persistence/src/repo/search.rs` followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 10.73s. Timing report: `target/cargo-timings/cargo-timing-20260617T235305655Z-bd4efcc15b512d74.html`.
+- 2026-06-18: `repo/` implementation files were promoted from `include!` files to child modules; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 18.56s.
+- 2026-06-18: touching `crates/persistence/src/repo/search.rs` after child-module promotion followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 9.95s. Timing report: `target/cargo-timings/cargo-timing-20260618T001741584Z-bd4efcc15b512d74.html`.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` passed in 27.2s after child-module promotion.

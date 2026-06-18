@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn contextual_issue_mention_users(
+    pub(super) async fn contextual_issue_mention_users(
         &self,
         project_record: &ProjectRecord,
         issue_model: &issue::Model,
@@ -65,7 +67,7 @@ impl AppRepository {
         Ok(records)
     }
 
-    async fn append_project_mention_targets(
+    pub(super) async fn append_project_mention_targets(
         &self,
         project_record: &ProjectRecord,
         query: &str,
@@ -102,7 +104,10 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn list_issue_sharers(&self, issue_id: i64) -> Result<Vec<IssueSharerRecord>, DbErr> {
+    pub(super) async fn list_issue_sharers(
+        &self,
+        issue_id: i64,
+    ) -> Result<Vec<IssueSharerRecord>, DbErr> {
         let rows = issue_sharer::Entity::find()
             .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
             .order_by_asc(issue_sharer::Column::Created)
@@ -232,7 +237,7 @@ impl AppRepository {
         Ok(Some(receivers))
     }
 
-    fn remove_issue_comment_receiver_id(
+    pub(super) fn remove_issue_comment_receiver_id(
         receiver_ids: &mut Vec<i64>,
         seen: &mut HashSet<i64>,
         user_id: Option<i64>,
@@ -244,7 +249,7 @@ impl AppRepository {
         receiver_ids.retain(|receiver_id| *receiver_id != user_id);
     }
 
-    async fn push_active_issue_comment_receiver_id(
+    pub(super) async fn push_active_issue_comment_receiver_id(
         &self,
         receiver_ids: &mut Vec<i64>,
         seen: &mut HashSet<i64>,
@@ -269,7 +274,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn read_project_issue_model(
+    pub(super) async fn read_project_issue_model(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -289,7 +294,7 @@ impl AppRepository {
         Ok(issue.map(|model| (project_record, model)))
     }
 
-    async fn read_project_milestone_model(
+    pub(super) async fn read_project_milestone_model(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -308,7 +313,12 @@ impl AppRepository {
         Ok(row.map(|model| (project_record, model)))
     }
 
-    async fn read_text_column(&self, table: &str, column: &str, id: i64) -> Result<String, DbErr> {
+    pub(super) async fn read_text_column(
+        &self,
+        table: &str,
+        column: &str,
+        id: i64,
+    ) -> Result<String, DbErr> {
         let backend = self.db.get_database_backend();
         let placeholders = sql_placeholders(backend, 1);
         let sql = format!(
@@ -333,7 +343,7 @@ impl AppRepository {
             .unwrap_or_default())
     }
 
-    async fn write_text_column(
+    pub(super) async fn write_text_column(
         &self,
         table: &str,
         column: &str,
@@ -356,7 +366,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
+    pub(super) async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
         let project_row = project::Entity::find_by_id(project_id)
             .one(&self.db)
             .await?;
@@ -374,7 +384,7 @@ impl AppRepository {
         Ok(project_last.max(max_existing) + 1)
     }
 
-    async fn next_posting_number(&self, project_id: i64) -> Result<i64, DbErr> {
+    pub(super) async fn next_posting_number(&self, project_id: i64) -> Result<i64, DbErr> {
         let project_row = project::Entity::find_by_id(project_id)
             .one(&self.db)
             .await?;
@@ -392,7 +402,7 @@ impl AppRepository {
         Ok(project_last.max(max_existing) + 1)
     }
 
-    async fn next_pull_request_number(&self, project_id: i64) -> Result<i64, DbErr> {
+    pub(super) async fn next_pull_request_number(&self, project_id: i64) -> Result<i64, DbErr> {
         let max_existing = pull_request::Entity::find()
             .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
             .all(&self.db)
@@ -404,7 +414,7 @@ impl AppRepository {
         Ok(max_existing + 1)
     }
 
-    async fn find_duplicate_open_pull_request(
+    pub(super) async fn find_duplicate_open_pull_request(
         &self,
         from_project_id: i64,
         to_project_id: i64,
@@ -423,7 +433,7 @@ impl AppRepository {
             .await
     }
 
-    async fn resolve_assignee_id(
+    pub(super) async fn resolve_assignee_id(
         &self,
         project_id: i64,
         assignee_login_id: Option<&str>,
@@ -459,7 +469,7 @@ impl AppRepository {
         Ok(Some(created.id))
     }
 
-    async fn resolve_issue_parent_id(
+    pub(super) async fn resolve_issue_parent_id(
         &self,
         project_id: i64,
         parent_issue_id: Option<i64>,
@@ -490,7 +500,7 @@ impl AppRepository {
         Ok(Some(parent.id))
     }
 
-    async fn issue_assignee_summary(
+    pub(super) async fn issue_assignee_summary(
         &self,
         assignee_id: Option<i64>,
     ) -> Result<(String, String), DbErr> {
@@ -515,7 +525,7 @@ impl AppRepository {
         ))
     }
 
-    async fn issue_assignee_email_address(
+    pub(super) async fn issue_assignee_email_address(
         &self,
         assignee_id: Option<i64>,
     ) -> Result<String, DbErr> {
@@ -538,7 +548,7 @@ impl AppRepository {
             .unwrap_or_default())
     }
 
-    async fn issue_milestone_summary(
+    pub(super) async fn issue_milestone_summary(
         &self,
         milestone_id: Option<i64>,
     ) -> Result<(Option<i64>, String), DbErr> {
@@ -554,7 +564,7 @@ impl AppRepository {
         Ok((Some(row.id), row.title.unwrap_or_default()))
     }
 
-    async fn issue_parent_summary(
+    pub(super) async fn issue_parent_summary(
         &self,
         parent_issue_id: Option<i64>,
     ) -> Result<(Option<i64>, String), DbErr> {
@@ -570,7 +580,10 @@ impl AppRepository {
         Ok((row.number, row.title.unwrap_or_default()))
     }
 
-    async fn list_issue_labels(&self, issue_id: i64) -> Result<Vec<IssueLabelRecord>, DbErr> {
+    pub(super) async fn list_issue_labels(
+        &self,
+        issue_id: i64,
+    ) -> Result<Vec<IssueLabelRecord>, DbErr> {
         let links = issue_issue_label::Entity::find()
             .filter(issue_issue_label::Column::IssueId.eq(issue_id))
             .all(&self.db)

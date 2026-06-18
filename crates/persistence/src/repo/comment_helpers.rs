@@ -1,5 +1,7 @@
+use super::*;
+
 impl AppRepository {
-    async fn list_issue_comments(
+    pub(super) async fn list_issue_comments(
         &self,
         issue_id: i64,
         viewer_id: Option<i64>,
@@ -17,7 +19,7 @@ impl AppRepository {
         Ok(comments)
     }
 
-    async fn list_posting_comments(
+    pub(super) async fn list_posting_comments(
         &self,
         posting_id: i64,
     ) -> Result<Vec<PostingCommentRecord>, DbErr> {
@@ -34,7 +36,7 @@ impl AppRepository {
         Ok(comments)
     }
 
-    async fn posting_comment_record(
+    pub(super) async fn posting_comment_record(
         &self,
         row: posting_comment::Model,
     ) -> Result<PostingCommentRecord, DbErr> {
@@ -65,7 +67,7 @@ impl AppRepository {
         })
     }
 
-    async fn issue_comment_record(
+    pub(super) async fn issue_comment_record(
         &self,
         row: issue_comment::Model,
         viewer_id: Option<i64>,
@@ -109,7 +111,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_issue_comment_voters(
+    pub(super) async fn list_issue_comment_voters(
         &self,
         comment_id: i64,
     ) -> Result<Vec<IssueCommentVoterRecord>, DbErr> {
@@ -139,7 +141,7 @@ impl AppRepository {
         Ok(voters)
     }
 
-    async fn list_issue_timeline_items(
+    pub(super) async fn list_issue_timeline_items(
         &self,
         issue_id: i64,
         viewer_id: Option<i64>,
@@ -185,7 +187,7 @@ impl AppRepository {
         Ok(items.into_iter().map(|(_, _, item)| item).collect())
     }
 
-    async fn user_email_for_id_or_login(
+    pub(super) async fn user_email_for_id_or_login(
         &self,
         user_id: Option<i64>,
         login_id: &str,
@@ -210,7 +212,7 @@ impl AppRepository {
             .unwrap_or_default())
     }
 
-    async fn list_issue_attachments(
+    pub(super) async fn list_issue_attachments(
         &self,
         container_type: &str,
         container_id: i64,
@@ -238,7 +240,7 @@ impl AppRepository {
             .collect())
     }
 
-    async fn bind_attachments(
+    pub(super) async fn bind_attachments(
         &self,
         container_type: &str,
         container_id: i64,
@@ -268,7 +270,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn sync_attachments(
+    pub(super) async fn sync_attachments(
         &self,
         container_type: &str,
         container_id: i64,

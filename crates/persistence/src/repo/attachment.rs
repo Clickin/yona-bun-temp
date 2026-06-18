@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn create_user_attachment_upload(
         &self,

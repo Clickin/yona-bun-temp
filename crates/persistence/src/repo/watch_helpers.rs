@@ -1,12 +1,14 @@
+use super::*;
+
 impl AppRepository {
-    async fn count_issue_voters(&self, issue_id: i64) -> Result<u32, DbErr> {
+    pub(super) async fn count_issue_voters(&self, issue_id: i64) -> Result<u32, DbErr> {
         Ok(issue_voter::Entity::find()
             .filter(issue_voter::Column::IssueId.eq(issue_id))
             .count(&self.db)
             .await? as u32)
     }
 
-    async fn list_issue_voters(
+    pub(super) async fn list_issue_voters(
         &self,
         issue_id: i64,
         viewer_id: Option<i64>,
@@ -41,7 +43,7 @@ impl AppRepository {
         Ok(voters)
     }
 
-    async fn count_issue_watchers(&self, issue_id: i64) -> Result<u32, DbErr> {
+    pub(super) async fn count_issue_watchers(&self, issue_id: i64) -> Result<u32, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
             .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
@@ -49,7 +51,7 @@ impl AppRepository {
             .await? as u32)
     }
 
-    async fn count_pull_request_watchers(
+    pub(super) async fn count_pull_request_watchers(
         &self,
         project: &ProjectRecord,
         pull_request_id: i64,
@@ -62,7 +64,7 @@ impl AppRepository {
         ))
     }
 
-    async fn count_posting_watchers(&self, posting_id: i64) -> Result<u32, DbErr> {
+    pub(super) async fn count_posting_watchers(&self, posting_id: i64) -> Result<u32, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
             .filter(watch::Column::ResourceId.eq(Some(posting_id.to_string())))
@@ -70,7 +72,11 @@ impl AppRepository {
             .await? as u32)
     }
 
-    async fn is_issue_watched_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+    pub(super) async fn is_issue_watched_by(
+        &self,
+        issue_id: i64,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
@@ -80,7 +86,7 @@ impl AppRepository {
             .is_some())
     }
 
-    async fn is_pull_request_watched_by(
+    pub(super) async fn is_pull_request_watched_by(
         &self,
         project: &ProjectRecord,
         pull_request_id: i64,
@@ -215,7 +221,7 @@ impl AppRepository {
         }
     }
 
-    async fn legacy_project_resource_target(
+    pub(super) async fn legacy_project_resource_target(
         &self,
         project_id: i64,
     ) -> Result<Option<LegacyResourceTargetRecord>, DbErr> {
@@ -231,7 +237,7 @@ impl AppRepository {
         }))
     }
 
-    async fn legacy_issue_resource_target(
+    pub(super) async fn legacy_issue_resource_target(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -274,7 +280,7 @@ impl AppRepository {
         }))
     }
 
-    async fn legacy_posting_resource_target(
+    pub(super) async fn legacy_posting_resource_target(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -327,7 +333,7 @@ impl AppRepository {
         }))
     }
 
-    async fn legacy_pull_request_resource_target(
+    pub(super) async fn legacy_pull_request_resource_target(
         &self,
         resource_type: &str,
         resource_id: i64,
@@ -388,7 +394,7 @@ impl AppRepository {
         }))
     }
 
-    async fn has_explicit_pull_request_watch(
+    pub(super) async fn has_explicit_pull_request_watch(
         &self,
         pull_request_id: i64,
         user_id: i64,
@@ -402,7 +408,7 @@ impl AppRepository {
             .is_some())
     }
 
-    async fn pull_request_watcher_ids(
+    pub(super) async fn pull_request_watcher_ids(
         &self,
         project: &ProjectRecord,
         pull_request_id: i64,
@@ -466,7 +472,7 @@ impl AppRepository {
         Ok(user_ids)
     }
 
-    async fn pull_request_review_comment_author_ids(
+    pub(super) async fn pull_request_review_comment_author_ids(
         &self,
         pull_request_id: i64,
     ) -> Result<Vec<i64>, DbErr> {
@@ -487,7 +493,7 @@ impl AppRepository {
         Ok(rows.into_iter().filter_map(|row| row.author_id).collect())
     }
 
-    async fn push_readable_pull_request_watcher_id(
+    pub(super) async fn push_readable_pull_request_watcher_id(
         &self,
         project: &ProjectRecord,
         user_ids: &mut Vec<i64>,
@@ -518,7 +524,11 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn is_posting_watched_by(&self, posting_id: i64, user_id: i64) -> Result<bool, DbErr> {
+    pub(super) async fn is_posting_watched_by(
+        &self,
+        posting_id: i64,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
@@ -528,7 +538,7 @@ impl AppRepository {
             .is_some())
     }
 
-    async fn recount_issue_comments(&self, issue_id: i64) -> Result<(), DbErr> {
+    pub(super) async fn recount_issue_comments(&self, issue_id: i64) -> Result<(), DbErr> {
         let count = issue_comment::Entity::find()
             .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
             .count(&self.db)
@@ -543,7 +553,7 @@ impl AppRepository {
         Ok(())
     }
 
-    async fn recount_posting_comments(&self, posting_id: i64) -> Result<(), DbErr> {
+    pub(super) async fn recount_posting_comments(&self, posting_id: i64) -> Result<(), DbErr> {
         let count = posting_comment::Entity::find()
             .filter(posting_comment::Column::PostingId.eq(Some(posting_id)))
             .count(&self.db)

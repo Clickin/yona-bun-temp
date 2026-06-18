@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn create_project(&self, input: CreateProjectInput) -> Result<ProjectRecord, DbErr> {
         let created = project::ActiveModel {
@@ -225,7 +227,7 @@ impl AppRepository {
         Ok(users)
     }
 
-    async fn assignable_member_user_ids(
+    pub(super) async fn assignable_member_user_ids(
         &self,
         project_record: &ProjectRecord,
     ) -> Result<HashSet<i64>, DbErr> {

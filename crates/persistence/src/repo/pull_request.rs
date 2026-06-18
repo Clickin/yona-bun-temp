@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn list_project_pull_requests(
         &self,
@@ -159,7 +161,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_recently_pushed_branches_for_pull_request_list(
+    pub(super) async fn list_recently_pushed_branches_for_pull_request_list(
         &self,
         project: &ProjectRecord,
         actor_id: Option<i64>,
@@ -241,7 +243,7 @@ impl AppRepository {
         Ok(records)
     }
 
-    async fn list_pull_request_contributors_for_project(
+    pub(super) async fn list_pull_request_contributors_for_project(
         &self,
         project_id: i64,
     ) -> Result<Vec<PullRequestUserRecord>, DbErr> {
@@ -274,7 +276,7 @@ impl AppRepository {
         Ok(contributors)
     }
 
-    async fn count_project_pull_requests_for_category(
+    pub(super) async fn count_project_pull_requests_for_category(
         &self,
         project: &ProjectRecord,
         category: &str,
@@ -304,7 +306,7 @@ impl AppRepository {
             .await
     }
 
-    async fn count_pull_request_rows_matching_filter(
+    pub(super) async fn count_pull_request_rows_matching_filter(
         &self,
         rows: Vec<pull_request::Model>,
         text_filter: Option<&str>,
@@ -526,7 +528,7 @@ impl AppRepository {
         })
     }
 
-    async fn count_organization_pull_requests_for_category(
+    pub(super) async fn count_organization_pull_requests_for_category(
         &self,
         project_ids: Vec<i64>,
         category: &str,

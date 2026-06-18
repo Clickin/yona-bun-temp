@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn read_issue_detail(
         &self,
@@ -177,7 +179,7 @@ impl AppRepository {
         })
     }
 
-    async fn list_assignable_users_for_project(
+    pub(super) async fn list_assignable_users_for_project(
         &self,
         project_record: &ProjectRecord,
         actor_id: Option<i64>,
@@ -1042,7 +1044,7 @@ impl AppRepository {
             .collect())
     }
 
-    async fn list_project_issues_filtered_with_page_size(
+    pub(super) async fn list_project_issues_filtered_with_page_size(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -1421,7 +1423,7 @@ impl AppRepository {
         .await
     }
 
-    async fn update_issue_state_for_actor(
+    pub(super) async fn update_issue_state_for_actor(
         &self,
         owner_name: &str,
         project_name: &str,

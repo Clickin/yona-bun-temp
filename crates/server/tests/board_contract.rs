@@ -600,6 +600,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     )
     .await;
     assert_eq!(readme["postNumber"], "1");
+    assert_eq!(readme["title"], "Project README");
     assert_eq!(readme["readme"], true);
     assert_eq!(readme["isWatching"], true);
     assert_eq!(readme["bodyHtml"], "");

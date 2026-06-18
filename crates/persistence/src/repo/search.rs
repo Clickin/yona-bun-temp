@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn search_app(
         &self,
@@ -110,7 +112,7 @@ impl AppRepository {
         }))
     }
 
-    async fn search_issue_items(
+    pub(super) async fn search_issue_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -175,7 +177,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_user_items(
+    pub(super) async fn search_user_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -240,7 +242,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_project_items(
+    pub(super) async fn search_project_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -286,7 +288,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_post_items(
+    pub(super) async fn search_post_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -345,7 +347,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_milestone_items(
+    pub(super) async fn search_milestone_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -404,7 +406,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_issue_comment_items(
+    pub(super) async fn search_issue_comment_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -469,7 +471,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_post_comment_items(
+    pub(super) async fn search_post_comment_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -537,7 +539,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_review_items(
+    pub(super) async fn search_review_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
@@ -621,7 +623,7 @@ impl AppRepository {
         Ok(finish_ranked_search_items(ranked_items))
     }
 
-    async fn search_project_for_id(
+    pub(super) async fn search_project_for_id(
         &self,
         project_id: Option<i64>,
     ) -> Result<Option<ProjectRecord>, DbErr> {
@@ -631,7 +633,7 @@ impl AppRepository {
         self.read_project_by_id(project_id).await
     }
 
-    async fn search_issue_assignee_user_id(
+    pub(super) async fn search_issue_assignee_user_id(
         &self,
         assignee_id: Option<i64>,
     ) -> Result<Option<i64>, DbErr> {
@@ -644,7 +646,7 @@ impl AppRepository {
             .and_then(|row| row.user_id))
     }
 
-    fn search_project_matches_scope(
+    pub(super) fn search_project_matches_scope(
         &self,
         project: &ProjectRecord,
         input: &SearchRepositoryInput,
@@ -677,7 +679,7 @@ impl AppRepository {
         }
     }
 
-    async fn search_project_visible_or_self(
+    pub(super) async fn search_project_visible_or_self(
         &self,
         project: &ProjectRecord,
         actor_id: Option<i64>,
@@ -695,7 +697,7 @@ impl AppRepository {
         }))
     }
 
-    async fn search_project_visible_for_actor(
+    pub(super) async fn search_project_visible_for_actor(
         &self,
         project: &ProjectRecord,
         actor_id: Option<i64>,
@@ -723,7 +725,7 @@ impl AppRepository {
         Ok(project_scope == "protected" && viewer.is_organization_member)
     }
 
-    async fn search_scope_user_ids(
+    pub(super) async fn search_scope_user_ids(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Option<HashSet<i64>>, DbErr> {
@@ -776,7 +778,12 @@ impl AppRepository {
         }
     }
 
-    fn search_snippets(&self, title: &str, body: &str, keyword: &str) -> Vec<SearchSnippet> {
+    pub(super) fn search_snippets(
+        &self,
+        title: &str,
+        body: &str,
+        keyword: &str,
+    ) -> Vec<SearchSnippet> {
         let title_snippets = make_snippets(title, keyword, 40);
         if !title_snippets.is_empty() {
             return title_snippets;

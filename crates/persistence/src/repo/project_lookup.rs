@@ -1,3 +1,5 @@
+use super::*;
+
 impl AppRepository {
     pub async fn read_project_by_owner_and_name(
         &self,
@@ -104,7 +106,7 @@ impl AppRepository {
             .await
     }
 
-    async fn read_latest_project_by_owner_and_scope(
+    pub(super) async fn read_latest_project_by_owner_and_scope(
         &self,
         owner_name: &str,
         project_scope: &str,
