@@ -13,7 +13,8 @@
 - `proto/`: REST pivot 이전 message schema snapshot; runtime RPC source가 아님
 - `crates/server/`: runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
 - `crates/domain/`: parity-first domain behavior, ACL, invariant
-- `crates/persistence/`: DB access, repositories, dialect handling
+- `crates/persistence-entities/`: SeaORM generated entity modules and relation derives
+- `crates/persistence/`: DB access, repositories, dialect handling; re-exports persistence entities for compatibility
 - `crates/migration/`: schema, seed, migration
 - `crates/vcs/`, `crates/search/`, `crates/integrations/`: 후속 vertical slice owner
 - `Cargo.toml`, `buf.yaml`, `buf.gen.yaml`: workspace root manifests

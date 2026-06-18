@@ -10,10 +10,12 @@ Reduce the compile-time blast radius of `crates/persistence/src/repo.rs` without
 This is a move-only refactor first. Functional changes, new repository traits, generic storage abstractions, and cross-crate ownership changes are out of scope.
 
 Current status: the large repository file has been decomposed into legacy-model-oriented child modules. Private cross-module repository helpers use `pub(super)` so visibility stays limited to `repo`.
+SeaORM generated entities now live in `crates/persistence-entities`; `crates/persistence` re-exports them while owning repository code and repo DTOs. This keeps generated entity derive macro expansion in a separate crate so repository-only edits can reuse the entity crate artifact.
 
 ## Constraints
 
 - Keep persistence ownership inside `crates/persistence`.
+- Keep generated SeaORM entity ownership inside `crates/persistence-entities`; `crates/persistence` may re-export those modules for compatibility but should not regain generated entity files.
 - Keep current public names and re-export behavior from `crates/persistence/src/lib.rs`.
 - Keep `AppRepository`, `AppUserRepository`, and `DefaultLandingRepository` as the externally visible repository entry points.
 - Preserve existing method signatures unless a later compile error proves that a visibility-only adjustment is required.
@@ -33,6 +35,11 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - `repo/site_admin.rs`: `SiteAdmin.java` and site user administration behavior.
 - `repo/search.rs`: `Search.java`, `SearchResult.java`, and app-wide ranked search.
 - `repo/issue.rs`: `Issue.java` core issue list/detail/mutation and issue summaries.
+- `repo/issue_list.rs`: project and organization issue list/filter/export/parent-option queries.
+- `repo/issue_mutation.rs`: issue create/update/delete/state/watch mutations.
+- `repo/issue_picker.rs`: issue assignable/shareable/mention picker queries.
+- `repo/issue_reference.rs`: issue reference search and issue-number lookup.
+- `repo/issue_user_list.rs`: user aggregate issue candidates, sharer, and favorite issue behavior.
 - `repo/issue_comment.rs`: `IssueComment.java` comments, comment origins, comment voters, comment notifications.
 - `repo/issue_event.rs`: `IssueEvent.java`, issue timeline, issue state/event notification helpers.
 - `repo/issue_label.rs`: `IssueLabel.java`, `IssueLabelCategory.java`, issue/posting label joins, label cache helpers.
@@ -64,6 +71,8 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - `repo/*_helpers.rs`: helper buckets created during the move-only pass. These are allowed to shrink or merge into narrower modules later, but should not accumulate unrelated new behavior.
 
 `repo_types.rs` remains unchanged until the repository module split is stable. A later pass may apply the same module tree to `repo_types/` with public re-exports.
+
+`crates/persistence-entities/src/*.rs` owns SeaORM generated entity modules, including `prelude.rs` and the historical `entities.rs` snapshot. `crates/persistence/src/lib.rs` re-exports this crate before exposing repository APIs, preserving existing `yona_rust_persistence::issue`-style imports.
 
 ## Move Order
 
@@ -113,6 +122,9 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - [x] Move issue/posting/pull-request/mailbox/notification legacy model groups.
 - [x] Extract `common.rs`.
 - [x] Re-run incremental compile timing comparison.
+- [x] Split the remaining large `issue.rs` implementation into focused child modules.
+- [x] Split generated SeaORM entities into `crates/persistence-entities`.
+- [x] Split the remaining large `project.rs` implementation into focused child modules.
 
 ## Verification
 
@@ -137,3 +149,14 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test pull_request_mutation_contract pull_request_state_notifications_include_legacy_review_comment_watchers` in 147.9s.
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 274.8s.
   - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test board_contract board_contract_manages_project_posts_comments_watch_and_notifications` in 18.9s.
+- 2026-06-18: split `repo/issue.rs` into `issue.rs`, `issue_list.rs`, `issue_mutation.rs`, `issue_picker.rs`, `issue_reference.rs`, and `issue_user_list.rs`; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 4m38s, and `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` passed in 59.9s.
+- 2026-06-18: split `repo/project.rs` into `project.rs`, `project_membership.rs`, `project_delete.rs`, and `project_watchers.rs`; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 3m20s.
+- 2026-06-18: moved generated SeaORM entity modules from `crates/persistence/src` into new `crates/persistence-entities`; `crates/persistence/src` now only contains `lib.rs`, `repo_types.rs`, and `repo/**`, while `crates/persistence/src/lib.rs` re-exports `yona_rust_persistence_entities::*` for compatibility.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --no-run --timings` passed in 110.6s. Timing report: `target/cargo-timings/cargo-timing-20260618T015542557Z-bd4efcc15b512d74.html`. Targets were the persistence lib plus three integration test binaries; `yona-rust-persistence-entities` compiled as a separate 4.6s unit, `yona-rust-persistence` as a separate 5.0s unit, and each persistence integration test binary as about 4.4s.
+- 2026-06-18: cached compile-only splits passed after entity crate separation: `pnpm agent:cargo-test -- -p yona-rust-persistence --lib --no-run --timings` in 0.4s (`target/cargo-timings/cargo-timing-20260618T015827380Z-bd4efcc15b512d74.html`) and `pnpm agent:cargo-test -- -p yona-rust-persistence --tests --no-run --timings` in 0.2s (`target/cargo-timings/cargo-timing-20260618T015849048Z-bd4efcc15b512d74.html`).
+- 2026-06-18: `cargo tree -p yona-rust-persistence -e features -i sea-orm`, `cargo tree -p yona-rust-persistence -e features -i sqlx`, and `cargo tree -p yona-rust-persistence --duplicates` confirmed the active SeaORM/SQLx surface is still the intended Day-1 MySQL/PostgreSQL/SQLite feature set, with duplicate transitive versions around proc-macro dependencies rather than a duplicate SeaORM/SQLx version.
+- 2026-06-18: `cargo check --locked --offline -p yona-rust-persistence-entities -p yona-rust-persistence --all-targets` passed in 6m25s after profile and crate-boundary changes.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` passed in 279.5s after adding the entity re-export contract assertion.
+- 2026-06-18: `cargo check --locked --offline -p yona-rust-pilot-server --tests` passed in 3m10s, confirming server test targets still resolve the persistence entity re-exports.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_entity_reexport_preserves_legacy_table_name` passed in 479.0s.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test org_project_repo_contract project_entity_reexport_preserves_legacy_table_name` passed in 114.4s.

@@ -4454,8 +4454,16 @@ dependencies = [
  "sea-orm",
  "serde",
  "tokio",
+ "yona-rust-persistence-entities",
  "yona-rust-pilot-migration",
  "yona-rust-search",
+]
+
+[[package]]
+name = "yona-rust-persistence-entities"
+version = "0.1.0"
+dependencies = [
+ "sea-orm",
 ]
 
 [[package]]

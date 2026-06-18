@@ -96,7 +96,8 @@ repo root/
   crates/
     server/               # runtime bootstrap, HTTP/REST, asset delivery, session/auth
     domain/               # domain behavior, ACL, invariant
-    persistence/          # DB access, entities, repositories, dialect handling
+    persistence-entities/ # SeaORM generated entities and relation derives
+    persistence/          # DB access, repositories, dialect handling, entity re-exports
     migration/            # schema, seed, migration
     vcs/                  # Git/SVN vertical slice owner
     search/               # search vertical slice owner
@@ -1377,7 +1378,7 @@ legacy Yona 사용자가 기존 DB를 그대로 사용할 수 있어야 한다.
 
 ### 5.2 핵심 테이블 (60+)
 
-현재 SeaORM 엔티티로 모든 legacy 테이블이 매핑되어 있다:
+현재 `crates/persistence-entities`의 SeaORM 엔티티로 모든 legacy 테이블이 매핑되어 있다. `crates/persistence`는 repository 코드와 DTO를 소유하며, 기존 import compatibility를 위해 entity crate를 re-export한다:
 
 | 카테고리    | 테이블                                                                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

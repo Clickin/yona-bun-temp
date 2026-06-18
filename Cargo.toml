@@ -4,6 +4,7 @@ members = [
     "crates/migration",
     "crates/domain",
     "crates/persistence",
+    "crates/persistence-entities",
     "crates/vcs",
     "crates/search",
     "crates/integrations",
@@ -50,9 +51,11 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [profile.dev]
+codegen-units = 256
 debug = 0
 incremental = true
 
 [profile.test]
+codegen-units = 256
 debug = 0
 incremental = true

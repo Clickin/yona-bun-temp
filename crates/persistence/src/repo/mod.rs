@@ -114,10 +114,20 @@ mod repo_issue_event;
 mod repo_issue_label;
 #[path = "issue_label_helpers.rs"]
 mod repo_issue_label_helpers;
+#[path = "issue_list.rs"]
+mod repo_issue_list;
+#[path = "issue_mutation.rs"]
+mod repo_issue_mutation;
+#[path = "issue_picker.rs"]
+mod repo_issue_picker;
+#[path = "issue_reference.rs"]
+mod repo_issue_reference;
 #[path = "issue_relation.rs"]
 mod repo_issue_relation;
 #[path = "issue_relation_helpers.rs"]
 mod repo_issue_relation_helpers;
+#[path = "issue_user_list.rs"]
+mod repo_issue_user_list;
 #[path = "mailbox.rs"]
 mod repo_mailbox;
 #[path = "mention_sync.rs"]
@@ -144,16 +154,22 @@ mod repo_posting_event_helpers;
 mod repo_project;
 #[path = "project_activity.rs"]
 mod repo_project_activity;
+#[path = "project_delete.rs"]
+mod repo_project_delete;
 #[path = "project_home_helpers.rs"]
 mod repo_project_home_helpers;
 #[path = "project_lookup.rs"]
 mod repo_project_lookup;
+#[path = "project_membership.rs"]
+mod repo_project_membership;
 #[path = "project_setting.rs"]
 mod repo_project_setting;
 #[path = "project_transfer.rs"]
 mod repo_project_transfer;
 #[path = "project_vcs.rs"]
 mod repo_project_vcs;
+#[path = "project_watchers.rs"]
+mod repo_project_watchers;
 #[path = "pull_request.rs"]
 mod repo_pull_request;
 #[path = "pull_request_commit.rs"]

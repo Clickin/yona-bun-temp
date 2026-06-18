@@ -54,7 +54,8 @@
 - 최소 ownership은 다음 경계로 고정한다.
   - [`crates/server`](/G:/programming/yona/crates/server): runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
   - [`crates/domain`](/G:/programming/yona/crates/domain): parity-first domain behavior, ACL, invariant
-  - [`crates/persistence`](/G:/programming/yona/crates/persistence): DB access, entities, repositories, dialect handling
+  - [`crates/persistence-entities`](/G:/programming/yona/crates/persistence-entities): SeaORM generated entities and relation derives
+  - [`crates/persistence`](/G:/programming/yona/crates/persistence): DB access, repositories, dialect handling, entity re-exports
   - [`crates/migration`](/G:/programming/yona/crates/migration): schema, seed, migration
   - [`crates/vcs`](/G:/programming/yona/crates/vcs), [`crates/search`](/G:/programming/yona/crates/search), [`crates/integrations`](/G:/programming/yona/crates/integrations): 후속 vertical slice owner
 - `reference/mixed-code/**` 경로는 모두 reference-only 또는 legacy-only로 재분류한다.

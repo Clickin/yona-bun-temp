@@ -1,0 +1,8 @@
+[package]
+name = "yona-rust-persistence-entities"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+sea-orm.workspace = true

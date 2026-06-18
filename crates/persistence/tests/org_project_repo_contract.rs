@@ -1,9 +1,14 @@
-use sea_orm::{ActiveModelTrait, Database, Set};
+use sea_orm::{ActiveModelTrait, Database, EntityName, Set};
 use yona_rust_persistence::{
     user_enrolled_organization, AppRepository, CreateOrganizationInput, CreateProjectInput,
     CreateUserInput, UpdateOrganizationInput,
 };
 use yona_rust_pilot_migration::Migrator;
+
+#[test]
+fn project_entity_reexport_preserves_legacy_table_name() {
+    assert_eq!(yona_rust_persistence::project::Entity.table_name(), "project");
+}
 
 #[tokio::test]
 async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() {

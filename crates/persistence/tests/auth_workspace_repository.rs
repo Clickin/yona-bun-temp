@@ -1,6 +1,12 @@
-use sea_orm::Database;
+use sea_orm::{Database, EntityName};
 use yona_rust_persistence::{AppUserInput, AppUserRepository, DefaultLandingRepository};
 use yona_rust_pilot_migration::Migrator;
+
+#[test]
+fn persistence_crate_reexports_seaorm_entities() {
+    assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
+    assert_eq!(yona_rust_persistence::project::Entity.table_name(), "project");
+}
 
 #[tokio::test]
 async fn app_user_repository_creates_and_finds_users_by_login_or_email() {

@@ -1,7 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::Database;
+use sea_orm::{Database, EntityName};
 use serde_json::json;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
@@ -9,6 +9,11 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
+
+#[test]
+fn issue_entity_reexport_preserves_legacy_table_name() {
+    assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")

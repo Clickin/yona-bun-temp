@@ -1,4 +1,4 @@
-include!("mod.rs");
+pub use yona_rust_persistence_entities::*;
 
 mod repo;
 mod repo_types;

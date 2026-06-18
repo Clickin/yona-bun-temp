@@ -235,6 +235,7 @@ const DOMAIN_BUCKETS = [
     status: "partial",
     implementationPatterns: [
       /^crates\/migration\//i,
+      /^crates\/persistence-entities\//i,
       /^crates\/persistence\//i,
       /^proto\//i,
       /^crates\/integrations\//i,
