@@ -21,6 +21,7 @@ pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;
+pub(crate) use code::rest_routes as code_rest_routes;
 pub(crate) use code::routes as code_routes;
 #[cfg(debug_assertions)]
 pub(crate) use debug::routes as debug_routes;

@@ -1,9 +1,340 @@
-use axum::{extract::Path, http::HeaderMap, routing::get, Router};
+use axum::{
+    extract::{Path, Query},
+    http::HeaderMap,
+    routing::{delete, get, patch, post},
+    Json, Router,
+};
 
 use crate::{
-    direct_code_ajax_compat, direct_code_archive, direct_code_file, session::SessionManager,
-    DirectCodeFileMode, PilotBackend,
+    direct_code_ajax_compat, direct_code_archive, direct_code_file,
+    rest_create_commit_discussion_comment, rest_delete_code_branch,
+    rest_delete_commit_discussion_comment, rest_read_code_branches, rest_read_code_browser,
+    rest_read_code_commit_detail, rest_read_code_compare, rest_read_code_history,
+    rest_set_default_code_branch, rest_update_commit_discussion_comment,
+    rest_update_commit_discussion_thread_state, session::SessionManager, DirectCodeFileMode,
+    PilotBackend, PilotServiceImpl, RestCodeBranchMutationBody, RestCodeBrowserQuery,
+    RestCodeCommitDetailQuery, RestCodeHistoryQuery, RestCommitCommentBody,
 };
+
+pub(crate) fn rest_routes(
+    service: PilotServiceImpl,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Router {
+    Router::new()
+        .route(
+            "/projects/{owner_name}/{project_name}/code",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestCodeBrowserQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_read_code_browser(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commits",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestCodeHistoryQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_read_code_history(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id)): Path<(
+                    String,
+                    String,
+                    String,
+                )>,
+                      Query(query): Query<RestCodeCommitDetailQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_read_code_commit_detail(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/comments",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id)): Path<(
+                    String,
+                    String,
+                    String,
+                )>,
+                      Json(body): Json<RestCommitCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/comments/{comment_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, comment_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            comment_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, comment_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>,
+                      Json(body): Json<RestCommitCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            comment_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/threads/{thread_id}/close",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, thread_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            thread_id,
+                            "closed".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/threads/{thread_id}/open",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, thread_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            thread_id,
+                            "open".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/compare/{revision_range}",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, revision_range)): Path<(
+                    String,
+                    String,
+                    String,
+                )>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_compare(
+                            headers,
+                            owner_name,
+                            project_name,
+                            revision_range,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/branches",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_branches(
+                            headers,
+                            owner_name,
+                            project_name,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestCodeBranchMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_delete_code_branch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/branches/default",
+            post({
+                let session_manager = session_manager;
+                let backend = backend;
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestCodeBranchMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_set_default_code_branch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+}
 
 pub(crate) fn routes(
     session_manager: SessionManager,

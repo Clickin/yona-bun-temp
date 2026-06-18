@@ -654,6 +654,12 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .iter()
         .any(|entry| entry["name"] == "README.md" && entry["kind"] == "file"));
 
+    let history =
+        response_json(rest_get(app.clone(), "/projects/owner/projectYobi/commits", None).await)
+            .await;
+    assert_eq!(history["commits"].as_array().unwrap().len(), 1);
+    assert_eq!(history["commits"][0]["shortMessage"], "Initial commit");
+
     let file = response_json(
         rest_get(
             app,
