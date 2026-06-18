@@ -397,6 +397,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains("function Messages(key)"));
     assert!(script.contains("global.Messages = Messages"));
     assert!(script.contains("Messages._messages = _messages"));
+    assert!(script.contains("return arguments.length > 1 ? format(value"));
     assert!(script.contains("\"app.name\": \"Yona\""));
     assert!(script.contains("\"title.login\": \"Log in\""));
     assert!(script.contains("\"button.cancel\": \"Cancel\""));
