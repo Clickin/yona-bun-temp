@@ -1501,6 +1501,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         true,
         AppRuntimeConfig {
             site_name: "Yona Test".to_string(),
+            ..AppRuntimeConfig::default()
         },
     )
     .await;

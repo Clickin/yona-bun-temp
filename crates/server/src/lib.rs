@@ -361,6 +361,7 @@ impl Default for RuntimeConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
+    pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub site_name: String,
 }
@@ -368,6 +369,7 @@ pub struct AppRuntimeConfig {
 impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
+            project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             site_name: "Yona".to_string(),
         }
@@ -377,6 +379,9 @@ impl Default for AppRuntimeConfig {
 impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
+            project_default_menus: project_default_menus_from_option(
+                config.project_default_menus.as_deref(),
+            ),
             project_default_scope: project_default_scope_from_option(
                 config.project_default_scope.as_deref(),
             ),
@@ -386,6 +391,7 @@ impl AppRuntimeConfig {
 
     fn from_env() -> Self {
         Self {
+            project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             site_name: configured_site_name(),
         }
@@ -500,6 +506,7 @@ fn build_router_with_app_config(
     let public_origin = default_public_origin(&config.public_origin);
     let allow_anonymous_access = config.allow_anonymous_access;
     let project_default_scope = app_config.project_default_scope;
+    let project_default_menus = app_config.project_default_menus;
     let site_name = app_config.site_name;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
@@ -514,7 +521,11 @@ fn build_router_with_app_config(
         project_default_scope: project_default_scope.clone(),
     };
     let route_backend = backend.clone();
-    let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
+    let browser_runtime = BrowserRuntimeConfig::from_base_path(
+        &base_path,
+        project_default_menus.clone(),
+        project_default_scope.clone(),
+    );
     let legacy_init_backend = route_backend.clone();
     let legacy_init_base_path = base_path.clone();
     let direct_logout_session_manager = session_manager.clone();
@@ -10553,32 +10564,37 @@ fn project_default_scope_from_option(value: Option<&str>) -> String {
 }
 
 fn configured_project_default_menus() -> Vec<String> {
-    let Some(configured) = std::env::var("YONA_PROJECT_DEFAULT_MENUS")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-    else {
-        return default_project_menu_keys();
-    };
+    let value = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
+    project_default_menus_from_csv(value.as_deref())
+}
 
-    let menus = configured
+fn project_default_menus_from_option(values: Option<&[String]>) -> Vec<String> {
+    values
+        .map(|values| values.join(","))
+        .map(|value| project_default_menus_from_csv(Some(&value)))
+        .unwrap_or_else(default_project_menu_keys)
+}
+
+fn project_default_menus_from_csv(value: Option<&str>) -> Vec<String> {
+    let menus = value
+        .unwrap_or_default()
         .split(',')
-        .filter_map(
-            |value| match normalize_project_default_menu_config_key(value).as_str() {
-                "board" => Some("board".to_string()),
-                "code" => Some("code".to_string()),
-                "issue" => Some("issue".to_string()),
-                "milestone" => Some("milestone".to_string()),
-                "pullrequest" => Some("pullRequest".to_string()),
-                "review" => Some("review".to_string()),
-                _ => None,
-            },
-        )
+        .filter_map(normalized_project_default_menu_key)
         .collect::<Vec<_>>();
+    (!menus.is_empty())
+        .then_some(menus)
+        .unwrap_or_else(default_project_menu_keys)
+}
 
-    if menus.is_empty() {
-        default_project_menu_keys()
-    } else {
-        menus
+fn normalized_project_default_menu_key(value: &str) -> Option<String> {
+    match normalize_project_default_menu_config_key(value).as_str() {
+        "board" => Some("board".to_string()),
+        "code" => Some("code".to_string()),
+        "issue" => Some("issue".to_string()),
+        "milestone" => Some("milestone".to_string()),
+        "pullrequest" => Some("pullRequest".to_string()),
+        "review" => Some("review".to_string()),
+        _ => None,
     }
 }
 
@@ -37483,7 +37499,11 @@ struct SessionRouteUser {
 }
 
 impl BrowserRuntimeConfig {
-    fn from_base_path(base_path: &str) -> Self {
+    fn from_base_path(
+        base_path: &str,
+        project_default_menus: Vec<String>,
+        project_default_scope: String,
+    ) -> Self {
         let base_path = normalize_base_path(base_path);
         let api_base_url = if base_path == "/" {
             "/api".to_string()
@@ -37493,8 +37513,8 @@ impl BrowserRuntimeConfig {
         Self {
             api_base_url,
             base_path,
-            project_default_menus: configured_project_default_menus(),
-            project_default_scope: configured_project_default_scope(),
+            project_default_menus,
+            project_default_scope,
             supported_languages: configured_supported_languages(),
             show_user_email: configured_bool_env(
                 &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],

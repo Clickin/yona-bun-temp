@@ -10,7 +10,7 @@ use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
-    PostingMutationInput, PullRequestMutationInput,
+    PostingMutationInput, PullRequestMutationInput, RepositoryConfig,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -31,17 +31,25 @@ fn yona_data_env_lock() -> &'static Mutex<()> {
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
-    build_app_with_repository_and_app_config(AppRuntimeConfig::default()).await
+    build_app_with_repository_and_configs(AppRuntimeConfig::default(), RepositoryConfig::default())
+        .await
 }
 
 async fn build_app_with_repository_and_app_config(
     app_config: AppRuntimeConfig,
 ) -> (axum::Router, AppRepository) {
+    build_app_with_repository_and_configs(app_config, RepositoryConfig::default()).await
+}
+
+async fn build_app_with_repository_and_configs(
+    app_config: AppRuntimeConfig,
+    repository_config: RepositoryConfig,
+) -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
-    let app_repo = AppRepository::new(db);
+    let app_repo = AppRepository::new_with_config(db, repository_config);
     let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
@@ -670,8 +678,15 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
 #[tokio::test]
 async fn create_project_uses_configured_default_menus_for_new_project_container() {
     let _guard = yona_data_env_lock().lock().unwrap();
-    std::env::set_var("YONA_PROJECT_DEFAULT_MENUS", "issue, board");
-    let (app, app_repo) = build_app_with_repository().await;
+    let previous_default_menus = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
+    let (app, app_repo) = build_app_with_repository_and_configs(
+        AppRuntimeConfig {
+            project_default_menus: vec!["issue".to_string(), "board".to_string()],
+            ..AppRuntimeConfig::default()
+        },
+        RepositoryConfig::from_pairs([("YONA_PROJECT_DEFAULT_MENUS", "issue, board")]),
+    )
+    .await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -686,7 +701,6 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
         "public",
     )
     .await;
-    std::env::remove_var("YONA_PROJECT_DEFAULT_MENUS");
 
     let authorization = app_repo
         .read_project_authorization("admin", "projectYobi", None)
@@ -729,6 +743,11 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
     assert!(payload.get("showPullRequest").is_none());
     assert!(payload.get("showReview").is_none());
     assert!(payload.get("showMilestone").is_none());
+    assert_eq!(
+        std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok(),
+        previous_default_menus,
+        "project default menu configs must not mutate process env"
+    );
 }
 
 #[tokio::test]
