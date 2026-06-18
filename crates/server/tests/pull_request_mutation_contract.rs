@@ -1368,6 +1368,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     let thread_id = commented["threads"][0]["id"].as_i64().unwrap();
+    assert_eq!(commented["threads"][0]["commitId"], "topic-head");
     assert_eq!(
         commented["threads"][0]["comments"][0]["contentsMarkdown"],
         "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"

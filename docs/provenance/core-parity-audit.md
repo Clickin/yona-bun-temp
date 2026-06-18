@@ -45,7 +45,7 @@
 | `reference/mixed-code/packages/integrations` | `crates/integrations`                   |
 
 - Rows marked `missing`, `semantic-drift`, or `ux-drift` continue to track parity work until their slice lands in `repo root`.
-- 2026-06-18 persistence refactor note: splitting `crates/persistence/src/repo.rs` is a behavior-neutral compile-time maintenance refactor. File boundaries should follow legacy `yona-original/app/models/*.java` and table-oriented data exchanger names before introducing any new service-style grouping; this note does not claim or change feature parity status. The repository implementation is now split into child modules under `crates/persistence/src/repo/`; cross-module helpers use `pub(super)` so visibility remains repo-private.
+- 2026-06-18 persistence refactor note: splitting `crates/persistence/src/repo.rs` is a behavior-neutral compile-time maintenance refactor. File boundaries should follow legacy `yona-original/app/models/*.java` and table-oriented data exchanger names before introducing any new service-style grouping; this note does not claim or change feature parity status. The repository implementation is now split into child modules under `crates/persistence/src/repo/`; cross-module helpers use `pub(super)` so visibility remains repo-private. Issue comments, board posting comments, project webhooks, pull-request review actions, and commit discussion methods were then moved into narrower child modules with focused issue, board, PR, and repository contract checks.
 
 ## Status Vocabulary
 

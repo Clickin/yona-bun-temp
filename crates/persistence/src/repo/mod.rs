@@ -108,6 +108,8 @@ mod repo_comment_helpers;
 mod repo_event_notification_helpers;
 #[path = "issue.rs"]
 mod repo_issue;
+#[path = "issue_comment.rs"]
+mod repo_issue_comment;
 #[path = "issue_label.rs"]
 mod repo_issue_label;
 #[path = "issue_label_helpers.rs"]
@@ -126,6 +128,8 @@ mod repo_notification;
 mod repo_organization;
 #[path = "posting.rs"]
 mod repo_posting;
+#[path = "posting_comment.rs"]
+mod repo_posting_comment;
 #[path = "project.rs"]
 mod repo_project;
 #[path = "project_activity.rs"]
@@ -142,8 +146,12 @@ mod repo_project_transfer;
 mod repo_project_vcs;
 #[path = "pull_request.rs"]
 mod repo_pull_request;
+#[path = "pull_request_commit.rs"]
+mod repo_pull_request_commit;
 #[path = "pull_request_review.rs"]
 mod repo_pull_request_review;
+#[path = "pull_request_review_actions.rs"]
+mod repo_pull_request_review_actions;
 #[path = "record_helpers.rs"]
 mod repo_record_helpers;
 #[path = "role_project_helpers.rs"]
@@ -160,5 +168,7 @@ mod repo_user_helpers;
 mod repo_user_workspace;
 #[path = "watch_helpers.rs"]
 mod repo_watch_helpers;
+#[path = "webhook.rs"]
+mod repo_webhook;
 #[path = "workspace.rs"]
 mod repo_workspace;
