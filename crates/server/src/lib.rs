@@ -364,8 +364,36 @@ pub struct AppRuntimeConfig {
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub site_name: String,
+    pub site_update: SiteUpdateConfig,
     pub supported_languages: Vec<String>,
     pub translation_proxy: TranslationProxyConfig,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteUpdateConfig {
+    pub current_version: String,
+    pub error: String,
+    pub https_fetch_command: String,
+    pub latest_version: String,
+    pub metadata_file: String,
+    pub metadata_url: String,
+    pub release_url: String,
+    pub version: String,
+}
+
+impl Default for SiteUpdateConfig {
+    fn default() -> Self {
+        Self {
+            current_version: env!("CARGO_PKG_VERSION").to_string(),
+            error: String::new(),
+            https_fetch_command: String::new(),
+            latest_version: String::new(),
+            metadata_file: String::new(),
+            metadata_url: String::new(),
+            release_url: String::new(),
+            version: String::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -381,6 +409,7 @@ impl Default for AppRuntimeConfig {
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             site_name: "Yona".to_string(),
+            site_update: SiteUpdateConfig::default(),
             supported_languages: default_supported_languages(),
             translation_proxy: TranslationProxyConfig::default(),
         }
@@ -397,6 +426,7 @@ impl AppRuntimeConfig {
                 config.project_default_scope.as_deref(),
             ),
             site_name: site_name_from_option(config.site_name.as_deref()),
+            site_update: SiteUpdateConfig::from_startup(config),
             supported_languages: supported_languages_from_option(
                 config.supported_languages.as_deref(),
             ),
@@ -409,8 +439,46 @@ impl AppRuntimeConfig {
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             site_name: configured_site_name(),
+            site_update: SiteUpdateConfig::from_env(),
             supported_languages: configured_supported_languages(),
             translation_proxy: TranslationProxyConfig::from_env(),
+        }
+    }
+}
+
+impl SiteUpdateConfig {
+    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        let defaults = Self::default();
+        Self {
+            current_version: trimmed_option(config.update_current_version.as_deref())
+                .unwrap_or(defaults.current_version),
+            error: trimmed_option(config.update_error.as_deref()).unwrap_or_default(),
+            https_fetch_command: trimmed_option(config.update_https_fetch_command.as_deref())
+                .unwrap_or_default(),
+            latest_version: trimmed_option(config.update_latest_version.as_deref())
+                .unwrap_or_default(),
+            metadata_file: trimmed_option(config.update_metadata_file.as_deref())
+                .unwrap_or_default(),
+            metadata_url: trimmed_option(config.update_metadata_url.as_deref()).unwrap_or_default(),
+            release_url: trimmed_option(config.update_release_url.as_deref()).unwrap_or_default(),
+            version: trimmed_option(config.update_version.as_deref()).unwrap_or_default(),
+        }
+    }
+
+    fn from_env() -> Self {
+        let defaults = Self::default();
+        Self {
+            current_version: configured_env_value(&["YONA_CURRENT_VERSION"])
+                .unwrap_or(defaults.current_version),
+            error: configured_env_value(&["YONA_UPDATE_ERROR"]).unwrap_or_default(),
+            https_fetch_command: configured_env_value(&["YONA_UPDATE_HTTPS_FETCH_COMMAND"])
+                .unwrap_or_default(),
+            latest_version: configured_env_value(&["YONA_UPDATE_LATEST_VERSION"])
+                .unwrap_or_default(),
+            metadata_file: configured_env_value(&["YONA_UPDATE_METADATA_FILE"]).unwrap_or_default(),
+            metadata_url: configured_env_value(&["YONA_UPDATE_METADATA_URL"]).unwrap_or_default(),
+            release_url: configured_env_value(&["YONA_UPDATE_RELEASE_URL"]).unwrap_or_default(),
+            version: configured_env_value(&["YONA_UPDATE_VERSION"]).unwrap_or_default(),
         }
     }
 }
@@ -582,6 +650,7 @@ fn build_router_with_app_config(
     let project_default_scope = app_config.project_default_scope;
     let project_default_menus = app_config.project_default_menus;
     let site_name = app_config.site_name;
+    let site_update = app_config.site_update;
     let supported_languages = app_config.supported_languages;
     let translation_proxy = app_config.translation_proxy;
     let session_manager = SessionManager::new(SessionConfig {
@@ -924,8 +993,10 @@ fn build_router_with_app_config(
     let site_unwatch_update_session_manager = session_manager.clone();
     let site_update_download_backend = route_backend.clone();
     let site_update_download_session_manager = session_manager.clone();
+    let site_update_download_config = site_update.clone();
     let site_update_download_file_backend = route_backend.clone();
     let site_update_download_file_session_manager = session_manager.clone();
+    let site_update_download_file_config = site_update.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -959,7 +1030,7 @@ fn build_router_with_app_config(
     let legacy_user_token_backend = route_backend.clone();
     let authenticate_base_path = base_path.clone();
     let authenticate_denied_base_path = base_path.clone();
-    let rest_router = build_rest_router(pilot_service.clone());
+    let rest_router = build_rest_router(pilot_service.clone(), site_update.clone());
 
     let mut base_router = Router::new()
         .route(
@@ -2463,6 +2534,7 @@ fn build_router_with_app_config(
                         headers,
                         site_update_download_session_manager.clone(),
                         site_update_download_backend.clone(),
+                        site_update_download_config.clone(),
                     )
                     .await
                 }
@@ -2476,6 +2548,7 @@ fn build_router_with_app_config(
                         headers,
                         site_update_download_file_session_manager.clone(),
                         site_update_download_file_backend.clone(),
+                        site_update_download_file_config.clone(),
                     )
                     .await
                 }
@@ -12821,6 +12894,7 @@ async fn direct_download_site_update(
     headers: HeaderMap,
     session_manager: SessionManager,
     backend: PilotBackend,
+    site_update: SiteUpdateConfig,
 ) -> Response {
     let service = PilotServiceImpl {
         base_path: String::new(),
@@ -12830,7 +12904,7 @@ async fn direct_download_site_update(
         project_default_scope: "public".to_string(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_redirect() {
+        Ok(_) => match rest_site_update_download_redirect(&site_update) {
             Ok(redirect) => redirect.into_response(),
             Err(error) => error.into_response(),
         },
@@ -12842,6 +12916,7 @@ async fn direct_download_site_update_file(
     headers: HeaderMap,
     session_manager: SessionManager,
     backend: PilotBackend,
+    site_update: SiteUpdateConfig,
 ) -> Response {
     let service = PilotServiceImpl {
         base_path: String::new(),
@@ -12851,7 +12926,7 @@ async fn direct_download_site_update_file(
         project_default_scope: "public".to_string(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_file_response() {
+        Ok(_) => match rest_site_update_download_file_response(&site_update) {
             Ok(response) => response,
             Err(error) => error.into_response(),
         },
@@ -17180,7 +17255,7 @@ impl RestRouteError {
     }
 }
 
-fn build_rest_router(service: PilotServiceImpl) -> Router {
+fn build_rest_router(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
@@ -17466,9 +17541,11 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             "/site/update",
             get({
                 let service = service.clone();
+                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    async move { rest_read_site_update(headers, service).await }
+                    let site_update = site_update.clone();
+                    async move { rest_read_site_update(headers, service, site_update).await }
                 }
             }),
         )
@@ -17476,9 +17553,11 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             "/site/update/download",
             get({
                 let service = service.clone();
+                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    async move { rest_download_site_update(headers, service).await }
+                    let site_update = site_update.clone();
+                    async move { rest_download_site_update(headers, service, site_update).await }
                 }
             }),
         )
@@ -17486,9 +17565,11 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             "/site/update/download-file",
             get({
                 let service = service.clone();
+                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    async move { rest_download_site_update_file(headers, service).await }
+                    let site_update = site_update.clone();
+                    async move { rest_download_site_update_file(headers, service, site_update).await }
                 }
             }),
         )
@@ -21291,25 +21372,28 @@ async fn rest_read_site_diagnostics(
 async fn rest_read_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
 ) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    Ok(Json(rest_site_update_response()))
+    Ok(Json(rest_site_update_response(&site_update)))
 }
 
 async fn rest_download_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
 ) -> Result<Redirect, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    rest_site_update_download_redirect()
+    rest_site_update_download_redirect(&site_update)
 }
 
 async fn rest_download_site_update_file(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
 ) -> Result<Response, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    rest_site_update_download_file_response()
+    rest_site_update_download_file_response(&site_update)
 }
 
 async fn rest_export_site_data(
@@ -22402,18 +22486,11 @@ fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
     }
 }
 
-fn rest_site_update_response() -> RestSiteUpdateResponse {
-    let current_version = std::env::var("YONA_CURRENT_VERSION")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
-    let mut error = std::env::var("YONA_UPDATE_ERROR")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
+fn rest_site_update_response(config: &SiteUpdateConfig) -> RestSiteUpdateResponse {
+    let current_version = config.current_version.clone();
+    let mut error = trimmed_option(Some(&config.error));
     let discovered_update = if error.is_none() {
-        match site_update_metadata_from_env() {
+        match site_update_metadata_from_config(config) {
             Ok(metadata) => metadata,
             Err(metadata_error) => {
                 error = Some(metadata_error);
@@ -22424,11 +22501,8 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
         None
     };
     let version_to_update = if error.is_none() {
-        let configured_version = std::env::var("YONA_UPDATE_LATEST_VERSION")
-            .or_else(|_| std::env::var("YONA_UPDATE_VERSION"))
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty());
+        let configured_version = trimmed_option(Some(&config.latest_version))
+            .or_else(|| trimmed_option(Some(&config.version)));
         configured_version
             .or_else(|| {
                 discovered_update
@@ -22440,10 +22514,7 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
         None
     };
     let release_url = version_to_update.as_ref().map(|version| {
-        std::env::var("YONA_UPDATE_RELEASE_URL")
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
+        trimmed_option(Some(&config.release_url))
             .or_else(|| {
                 discovered_update
                     .as_ref()
@@ -22469,8 +22540,10 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
     }
 }
 
-fn rest_site_update_download_redirect() -> Result<Redirect, RestRouteError> {
-    let response = rest_site_update_response();
+fn rest_site_update_download_redirect(
+    config: &SiteUpdateConfig,
+) -> Result<Redirect, RestRouteError> {
+    let response = rest_site_update_response(config);
     if let Some(error) = response.error {
         return Err(RestRouteError::bad_request(error));
     }
@@ -22488,8 +22561,10 @@ fn rest_site_update_download_redirect() -> Result<Redirect, RestRouteError> {
     Ok(Redirect::to(&release_url))
 }
 
-fn rest_site_update_download_file_response() -> Result<Response, RestRouteError> {
-    let response = rest_site_update_response();
+fn rest_site_update_download_file_response(
+    config: &SiteUpdateConfig,
+) -> Result<Response, RestRouteError> {
+    let response = rest_site_update_response(config);
     if let Some(error) = response.error {
         return Err(RestRouteError::bad_request(error));
     }
@@ -22499,7 +22574,7 @@ fn rest_site_update_download_file_response() -> Result<Response, RestRouteError>
     let release_url = response
         .release_url
         .ok_or_else(|| RestRouteError::not_found("site.update.releaseUrl.notFound"))?;
-    let payload = site_update_download_payload(&release_url)?;
+    let payload = site_update_download_payload(&release_url, config)?;
     let mut response = Bytes::from(payload.bytes).into_response();
     if let Ok(header_value) = HeaderValue::from_str(&payload.content_type) {
         response
@@ -22532,6 +22607,7 @@ struct SiteUpdateDownloadPayload {
 
 fn site_update_download_payload(
     release_url: &str,
+    config: &SiteUpdateConfig,
 ) -> Result<SiteUpdateDownloadPayload, RestRouteError> {
     let release_url = release_url.trim();
     if let Some(path) = release_url.strip_prefix("file://") {
@@ -22554,7 +22630,8 @@ fn site_update_download_payload(
         return site_update_plain_http_get_bytes(release_url).map_err(RestRouteError::bad_request);
     }
     if release_url.starts_with("https://") {
-        return site_update_https_get_bytes(release_url).map_err(RestRouteError::bad_request);
+        return site_update_https_get_bytes(release_url, config)
+            .map_err(RestRouteError::bad_request);
     }
     Err(RestRouteError::bad_request(
         "site.update.download.unsupportedScheme",
@@ -22566,9 +22643,11 @@ struct SiteUpdateMetadata {
     version: String,
 }
 
-fn site_update_metadata_from_env() -> Result<Option<SiteUpdateMetadata>, String> {
-    let Some(location) =
-        configured_env_value(&["YONA_UPDATE_METADATA_URL", "YONA_UPDATE_METADATA_FILE"])
+fn site_update_metadata_from_config(
+    config: &SiteUpdateConfig,
+) -> Result<Option<SiteUpdateMetadata>, String> {
+    let Some(location) = trimmed_option(Some(&config.metadata_url))
+        .or_else(|| trimmed_option(Some(&config.metadata_file)))
     else {
         return Ok(None);
     };
@@ -22710,8 +22789,11 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
     })
 }
 
-fn site_update_https_get_bytes(url: &str) -> Result<SiteUpdateDownloadPayload, String> {
-    let (program, args) = site_update_https_fetch_command(url)?;
+fn site_update_https_get_bytes(
+    url: &str,
+    config: &SiteUpdateConfig,
+) -> Result<SiteUpdateDownloadPayload, String> {
+    let (program, args) = site_update_https_fetch_command(url, config)?;
     let output = Command::new(&program)
         .args(&args)
         .output()
@@ -22731,11 +22813,11 @@ fn site_update_https_get_bytes(url: &str) -> Result<SiteUpdateDownloadPayload, S
     site_update_payload_from_http_response_bytes(url, &output.stdout)
 }
 
-fn site_update_https_fetch_command(url: &str) -> Result<(String, Vec<String>), String> {
-    let configured = std::env::var("YONA_UPDATE_HTTPS_FETCH_COMMAND")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
+fn site_update_https_fetch_command(
+    url: &str,
+    config: &SiteUpdateConfig,
+) -> Result<(String, Vec<String>), String> {
+    let configured = trimmed_option(Some(&config.https_fetch_command));
     if let Some(configured) = configured {
         let (program, mut args) =
             configured_command_parts(&configured, "site.update.download.httpsFetchCommandEmpty")?;
@@ -45938,12 +46020,14 @@ mod tests {
 
     #[test]
     fn site_update_https_fetch_command_preserves_quoted_override() {
-        std::env::set_var(
-            "YONA_UPDATE_HTTPS_FETCH_COMMAND",
-            r#""/opt/Yona Tools/fetch update" --header "X-Test: yes""#,
-        );
-        let (program, args) = site_update_https_fetch_command("https://downloads.example/yona.zip")
-            .expect("fetch command");
+        let config = SiteUpdateConfig {
+            https_fetch_command: r#""/opt/Yona Tools/fetch update" --header "X-Test: yes""#
+                .to_string(),
+            ..SiteUpdateConfig::default()
+        };
+        let (program, args) =
+            site_update_https_fetch_command("https://downloads.example/yona.zip", &config)
+                .expect("fetch command");
         assert_eq!(program, "/opt/Yona Tools/fetch update");
         assert_eq!(
             args,
@@ -45953,7 +46037,6 @@ mod tests {
                 "https://downloads.example/yona.zip".to_string(),
             ]
         );
-        std::env::remove_var("YONA_UPDATE_HTTPS_FETCH_COMMAND");
     }
 
     #[test]
