@@ -1003,6 +1003,8 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["showReview"], false);
     assert_eq!(payload["showMilestone"], false);
     assert_eq!(payload["showBoard"], true);
+    assert_eq!(payload["ownerName"], "admin");
+    assert_eq!(payload["projectName"], "projectYobi");
     assert!(payload.get("logoUrl").is_none());
     assert_eq!(payload["defaultReviewerCount"], 1);
     assert_eq!(payload["isUsingReviewerCount"], false);

@@ -58,6 +58,10 @@
 - The current Rust/React canonical path keeps legacy `settingform`, `members`, and `deleteForm` deep links, but the surrounding implementation uses `/api/v1` REST + file routes rather than Play forms and jQuery modals.
 - Organization board and pull-request listing bodies are no longer placeholder-only routes; they use `/api/v1` aggregation endpoints and React legacy shells. Remaining organization gaps should be tracked in their narrower feature provenance files.
 
+## Route Module Diet Note
+
+- 2026-06-19: REST organization route registration for `/api/v1/organizations`, `/api/v1/organizations/:organization`, `/admin`, `/container`, `/settings`, `/members`, `/enrollments/:userId/accept`, `/enroll`, and `/leave` moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs` alongside the project REST registration it is coupled to. This is a registration-only build/check diet change; organization create/read/update/member/enrollment/leave/delete behavior remains covered by `org_project_contract`.
+
 ## Wave 2B Delivery Note
 
 - Wave 2B now covers organization create, public detail read, settings read/update, home CTA matrix, members admin view, deleteForm admin view, member add/edit/delete, enrollment accept/request/cancel, leave, and delete guards through `/api/v1/organizations/**`, `crates/server`, `crates/persistence`, and `frontend`.

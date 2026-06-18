@@ -89,6 +89,10 @@
 
 - Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URLs and push post-receive side effects resolve through the current owner/project route.
 
+## Route Module Diet Note
+
+- 2026-06-19: REST project and organization route registration for `/api/v1/projects`, `/api/v1/projects/form-options`, `/api/v1/organizations/**`, and `/api/v1/owners/:owner/projects/:project/**` project create/read/update/delete, member, watcher, webhook, transfer, fork, change-vcs, overview, enroll, favorite, and watch endpoints moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`. This is a registration-only build/check diet change; behavior remains covered by `org_project_contract` project/organization CRUD, membership, enrollment, watcher, webhook, transfer, fork, VCS, overview, and directory contracts plus `project_transfer_contract::project_transfer_requests_and_accept_link_follow_legacy_permissions`.
+
 ## R0-3 Delivery Note
 
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, member summary, and workspace favorite/recent linkage in `repo root`.
