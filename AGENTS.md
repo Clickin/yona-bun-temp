@@ -75,7 +75,7 @@
   - 계획 문서: follow-up item
 - 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
 - 변환 완료 전에는 기능 구현에 필요한 최소 구조만 사용하고, 추가 구조 제안은 하지 않는다.
-- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- ...`를 sandbox 밖 `require_escalated`로 실행한다. harness는 Codex sandbox 내부의 실제 cargo 실행을 즉시 거절한다. 전체 cargo 출력은 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/종료와 실패 tail만 남겨 polling token 사용량을 줄인다.
+- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- ...`를 sandbox 밖 `require_escalated`로 실행한다. harness는 Codex sandbox 내부의 실제 cargo 실행을 즉시 거절한다. 전체 cargo 출력은 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 남겨 polling token 사용량을 줄인다.
 - 매 turn 종료 전 변경이 있으면 반드시 turn commit hook을 실행한다: `pnpm agent:turn-commit -- -m "<concise summary>"`.
 - turn commit hook은 `git add -A`, `tools/precommit-verify.mjs`, `git commit`을 같은 경로로 수행한다. hook이 실패하면 최종 응답 전에 blocker를 수정하거나 실패 사유를 보고한다.
 - 변경이 없을 때는 hook이 no-op으로 종료될 수 있으며, 이 경우 최종 응답에 clean 상태를 명시한다.
