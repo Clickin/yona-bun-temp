@@ -1113,6 +1113,23 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             .unwrap(),
         "/yona/owner/projectYobi/post/1"
     );
+    let direct_deleted_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(direct_deleted_detail["comments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|comment| comment["id"] != direct_comment_id));
 
     let deleted = rest(
         app.clone(),

@@ -641,17 +641,6 @@ fn build_router_with_app_config(
     let category_update_session_manager = session_manager.clone();
     let category_delete_backend = route_backend.clone();
     let category_delete_session_manager = session_manager.clone();
-    let board_comment_create_backend = route_backend.clone();
-    let board_comment_create_session_manager = session_manager.clone();
-    let board_comment_create_base_path = base_path.clone();
-    let board_comment_update_backend = route_backend.clone();
-    let board_comment_update_session_manager = session_manager.clone();
-    let board_comment_update_base_path = base_path.clone();
-    let legacy_board_comment_update_backend = route_backend.clone();
-    let legacy_board_comment_update_session_manager = session_manager.clone();
-    let board_comment_delete_backend = route_backend.clone();
-    let board_comment_delete_session_manager = session_manager.clone();
-    let board_comment_delete_base_path = base_path.clone();
     let thread_open_backend = route_backend.clone();
     let thread_open_session_manager = session_manager.clone();
     let thread_close_backend = route_backend.clone();
@@ -1769,88 +1758,6 @@ fn build_router_with_app_config(
                         category_id,
                         category_delete_session_manager.clone(),
                         category_delete_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/post/{number}/comment",
-            post(move |headers: HeaderMap, Path((owner, project, number)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_create_posting_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        form,
-                        board_comment_create_session_manager.clone(),
-                        board_comment_create_backend.clone(),
-                        board_comment_create_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/post/{number}/comment/{comment_id}",
-            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>, Form(form): Form<HashMap<String, String>>| {
-                async move {
-                    direct_update_posting_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        form,
-                        board_comment_update_session_manager.clone(),
-                        board_comment_update_backend.clone(),
-                        board_comment_update_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/{owner}/{project}/post/{number}/comment/{comment_id}",
-            patch(
-                move |headers: HeaderMap,
-                      Path((owner, project, number, comment_id)): Path<(
-                    String,
-                    String,
-                    i64,
-                    i64,
-                )>,
-                      Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_update_posting_comment(
-                            headers,
-                            owner,
-                            project,
-                            number,
-                            comment_id,
-                            body,
-                            legacy_board_comment_update_session_manager.clone(),
-                            legacy_board_comment_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/{owner}/{project}/post/{number}/comment/{comment_id}/delete",
-            delete(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
-                async move {
-                    direct_delete_posting_comment(
-                        headers,
-                        owner,
-                        project,
-                        number,
-                        comment_id,
-                        board_comment_delete_session_manager.clone(),
-                        board_comment_delete_backend.clone(),
-                        board_comment_delete_base_path.clone(),
                     )
                     .await
                 }
@@ -26255,7 +26162,7 @@ fn legacy_external_label_id(value: &serde_json::Value) -> Option<i64> {
         .or_else(|| value.as_str()?.trim().parse::<i64>().ok())
 }
 
-async fn legacy_update_posting_comment(
+pub(crate) async fn legacy_update_posting_comment(
     headers: HeaderMap,
     owner: String,
     project_name: String,
@@ -33713,7 +33620,7 @@ async fn direct_delete_issue_comment(
     }
 }
 
-async fn direct_create_posting_comment(
+pub(crate) async fn direct_create_posting_comment(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -33752,7 +33659,7 @@ async fn direct_create_posting_comment(
     }
 }
 
-async fn direct_update_posting_comment(
+pub(crate) async fn direct_update_posting_comment(
     headers: HeaderMap,
     owner: String,
     project: String,
@@ -33784,7 +33691,7 @@ async fn direct_update_posting_comment(
     }
 }
 
-async fn direct_delete_posting_comment(
+pub(crate) async fn direct_delete_posting_comment(
     headers: HeaderMap,
     owner: String,
     project: String,
