@@ -775,6 +775,7 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
     )
     .await;
     assert_eq!(hidden.status(), StatusCode::OK);
+    assert!(hidden.headers().get(http::header::LOCATION).is_none());
     assert_eq!(response_text(hidden).await, "");
 }
 

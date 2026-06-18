@@ -887,8 +887,6 @@ fn build_router_with_app_config(
     let direct_unwatch_backend = route_backend.clone();
     let direct_unwatch_session_manager = session_manager.clone();
     let direct_unwatch_base_path = base_path.clone();
-    let site_unwatch_update_backend = route_backend.clone();
-    let site_unwatch_update_session_manager = session_manager.clone();
     let site_update_download_backend = route_backend.clone();
     let site_update_download_session_manager = session_manager.clone();
     let site_update_download_config = site_update.clone();
@@ -2397,19 +2395,10 @@ fn build_router_with_app_config(
                 }
             }),
         )
-        .route(
-            "/sites/unwatchUpdate",
-            post(move |headers: HeaderMap| {
-                async move {
-                    direct_unwatch_site_update(
-                        headers,
-                        site_unwatch_update_session_manager.clone(),
-                        site_unwatch_update_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
+        .merge(routes::site_admin_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+        ))
         .route(
             "/sites/update/download",
             get(move |headers: HeaderMap| {
@@ -12145,7 +12134,7 @@ fn legacy_prefers_json(headers: &HeaderMap) -> bool {
         .unwrap_or(false)
 }
 
-async fn direct_unwatch_site_update(
+pub(crate) async fn direct_unwatch_site_update(
     headers: HeaderMap,
     session_manager: SessionManager,
     backend: PilotBackend,
