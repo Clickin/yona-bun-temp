@@ -981,6 +981,7 @@ fn build_router_with_app_config(
     let site_import_backend = route_backend.clone();
     let site_import_session_manager = session_manager.clone();
     let site_import_base_path = base_path.clone();
+    let site_import_max_uploaded_file_size = max_uploaded_file_size;
     let site_diagnostic_shell_backend = route_backend.clone();
     let site_diagnostic_shell_session_manager = session_manager.clone();
     let site_no_avatar_backend = route_backend.clone();
@@ -2436,6 +2437,7 @@ fn build_router_with_app_config(
                         site_import_session_manager.clone(),
                         site_import_backend.clone(),
                         site_import_base_path.clone(),
+                        site_import_max_uploaded_file_size,
                     )
                     .await
                 }
@@ -12455,6 +12457,7 @@ async fn direct_import_site_data(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    max_uploaded_file_size: usize,
 ) -> Response {
     let (form, payload, is_multipart, has_data_file) = direct_site_import_payload(&headers, &body);
     if is_multipart && !has_data_file {
@@ -12468,7 +12471,7 @@ async fn direct_import_site_data(
         backend,
         project_default_scope: "public".to_string(),
     };
-    match rest_import_site_data(headers, &payload, service).await {
+    match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
         Ok(Json(payload)) => {
             if is_multipart {
                 Redirect::to(&base_path_href(&base_path, "/")).into_response()
@@ -21456,6 +21459,7 @@ async fn rest_import_site_data(
     headers: HeaderMap,
     payload: &str,
     service: PilotServiceImpl,
+    max_uploaded_file_size: usize,
 ) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
     let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let payload: RestSiteImportPayload = serde_json::from_str(payload)
@@ -21640,8 +21644,13 @@ async fn rest_import_site_data(
             skipped_milestones += 1;
             continue;
         }
-        let imported_attachments =
-            rest_site_import_attachments(repository, &actor, &milestone.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &milestone.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
         let contents_markdown = rewrite_site_import_file_links(
             &milestone.contents_markdown,
             &imported_attachments.link_rewrites,
@@ -21694,8 +21703,13 @@ async fn rest_import_site_data(
             &post.labels,
         )
         .await?;
-        let imported_attachments =
-            rest_site_import_attachments(repository, &actor, &post.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &post.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
         let body_markdown = rewrite_site_import_file_links(
             &post.body_markdown,
             &imported_attachments.link_rewrites,
@@ -21741,6 +21755,7 @@ async fn rest_import_site_data(
             &post.comments,
             &actor,
             None,
+            max_uploaded_file_size,
         )
         .await?;
         imported_posts += 1;
@@ -21779,8 +21794,13 @@ async fn rest_import_site_data(
             &actor,
         )
         .await?;
-        let imported_attachments =
-            rest_site_import_attachments(repository, &actor, &issue.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &issue.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
         let body_markdown = rewrite_site_import_file_links(
             &issue.body_markdown,
             &imported_attachments.link_rewrites,
@@ -21843,6 +21863,7 @@ async fn rest_import_site_data(
             &issue.comments,
             &actor,
             None,
+            max_uploaded_file_size,
         )
         .await?;
         imported_issues += 1;
@@ -21875,6 +21896,7 @@ async fn rest_site_import_post_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
+    max_uploaded_file_size: usize,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -21884,8 +21906,13 @@ async fn rest_site_import_post_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments =
-            rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &comment.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -21916,6 +21943,7 @@ async fn rest_site_import_post_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
+                max_uploaded_file_size,
             ))
             .await?;
         }
@@ -21931,6 +21959,7 @@ async fn rest_site_import_issue_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
+    max_uploaded_file_size: usize,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -21940,8 +21969,13 @@ async fn rest_site_import_issue_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments =
-            rest_site_import_attachments(repository, &actor, &comment.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &comment.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -21970,6 +22004,7 @@ async fn rest_site_import_issue_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
+                max_uploaded_file_size,
             ))
             .await?;
         }
@@ -22003,6 +22038,7 @@ async fn rest_site_import_attachments(
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
+    max_uploaded_file_size: usize,
 ) -> Result<RestSiteImportedAttachments, RestRouteError> {
     let mut attachment_ids = Vec::new();
     let mut link_rewrites = Vec::new();
@@ -22023,7 +22059,7 @@ async fn rest_site_import_attachments(
                     "site.import.attachment.sizeMismatch",
                 ));
             }
-            if bytes.len() > configured_max_uploaded_file_size() {
+            if bytes.len() > max_uploaded_file_size {
                 return Err(RestRouteError::bad_request(
                     "site.import.attachment.tooLarge",
                 ));

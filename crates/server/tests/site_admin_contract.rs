@@ -50,8 +50,8 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
     (app, app_repo, db)
 }
 
-async fn build_app_with_site_update_config(
-    site_update: SiteUpdateConfig,
+async fn build_app_with_app_config(
+    app_config: AppRuntimeConfig,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -65,13 +65,20 @@ async fn build_app_with_site_update_config(
             public_origin: String::new(),
         },
         app_repo.clone(),
-        AppRuntimeConfig {
-            site_update,
-            ..AppRuntimeConfig::default()
-        },
+        app_config,
     );
 
     (app, app_repo, db)
+}
+
+async fn build_app_with_site_update_config(
+    site_update: SiteUpdateConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_app_config(AppRuntimeConfig {
+        site_update,
+        ..AppRuntimeConfig::default()
+    })
+    .await
 }
 
 async fn response_text(response: Response<Body>) -> String {
@@ -1748,6 +1755,79 @@ async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
         .await
         .expect("read rejected post")
         .is_none());
+    std::env::remove_var("YONA_DATA");
+}
+
+#[tokio::test]
+async fn site_admin_import_respects_configured_max_file_size_without_env_mutation() {
+    let _data_guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
+    let data_dir = tempfile::tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        max_uploaded_file_size: 8,
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable",
+    )
+    .await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "id": 901,
+                "mimeType": "text/plain",
+                "name": "portable-post.txt",
+                "size": 18
+            }],
+            "bodyMarkdown": "post with too-large portable attachment",
+            "ownerName": "member",
+            "projectName": "portable",
+            "title": "Rejected oversized portable attached post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.tooLarge"));
+
+    assert!(repo
+        .read_posting_detail_for_viewer("member", "portable", 1, None)
+        .await
+        .expect("read rejected post")
+        .is_none());
+    assert_eq!(
+        std::env::var("YONA_MAX_FILE_SIZE").ok(),
+        previous_max_file_size,
+        "site import upload limit must come from app config without mutating process env"
+    );
     std::env::remove_var("YONA_DATA");
 }
 
