@@ -490,6 +490,7 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
     }
     assert_eq!(payload["items"][0]["type"], "issue");
     assert_eq!(payload["items"][0]["href"], "/owner/projectYobi/issue/1");
+    assert!(payload["items"][0]["snippets"].as_array().is_some());
     assert_eq!(
         payload["items"][0]["snippets"][0]["highlights"][0]["start"],
         0

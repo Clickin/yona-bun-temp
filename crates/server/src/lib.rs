@@ -65,7 +65,6 @@ use yona_rust_integrations::{
     notification_mail_recipient_limit_from_env, NotificationMailRecipient, OutboundMail,
     OutboundWebhook, WebhookDeliveryOutcome,
 };
-use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
@@ -108,7 +107,7 @@ impl ErrorCode {
 }
 
 #[derive(Clone, Debug)]
-struct ConnectError {
+pub(crate) struct ConnectError {
     code: ErrorCode,
     message: Option<String>,
 }
@@ -14160,14 +14159,14 @@ struct RestErrorPayload {
     status: u16,
 }
 
-struct RestRouteError {
+pub(crate) struct RestRouteError {
     code: Option<&'static str>,
     message: String,
     status: StatusCode,
 }
 
 impl RestRouteError {
-    fn from_connect_error(error: ConnectError) -> Self {
+    pub(crate) fn from_connect_error(error: ConnectError) -> Self {
         let status = error.code.http_status();
         let message = error.message.clone().unwrap_or_else(|| error.to_string());
         Self {
@@ -14177,7 +14176,7 @@ impl RestRouteError {
         }
     }
 
-    fn bad_request(message: impl Into<String>) -> Self {
+    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
         Self {
             code: None,
             message: message.into(),
@@ -14185,7 +14184,7 @@ impl RestRouteError {
         }
     }
 
-    fn not_found(message: impl Into<String>) -> Self {
+    pub(crate) fn not_found(message: impl Into<String>) -> Self {
         Self {
             code: None,
             message: message.into(),
@@ -14193,7 +14192,7 @@ impl RestRouteError {
         }
     }
 
-    fn not_implemented(message: impl Into<String>) -> Self {
+    pub(crate) fn not_implemented(message: impl Into<String>) -> Self {
         Self {
             code: None,
             message: message.into(),
@@ -14941,48 +14940,6 @@ impl RestOrganizationBoardsQuery {
         }
 
         Ok(query)
-    }
-}
-
-pub(crate) struct RestSearchQuery {
-    keyword: String,
-    page_num: u32,
-    search_type: String,
-}
-
-impl RestSearchQuery {
-    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
-        let mut keyword = None;
-        let mut page_num = 1;
-        let mut search_type = None;
-        let raw_query =
-            raw_query.ok_or_else(|| RestRouteError::bad_request("search query is required"))?;
-
-        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
-            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
-            let key = decode_query_component(raw_key);
-            let value = decode_query_component(raw_value);
-            match key.as_str() {
-                "keyword" => keyword = Some(value),
-                "pageNum" => page_num = parse_rest_query_u32(&value)?.max(1),
-                "searchType" => search_type = Some(normalize_identifier(&value)),
-                _ => {}
-            }
-        }
-
-        let keyword = keyword
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-            .ok_or_else(|| RestRouteError::bad_request("search keyword is required"))?;
-        let search_type = search_type
-            .filter(|value| SearchType::from_wire(value).is_some())
-            .ok_or_else(|| RestRouteError::bad_request("invalid search type"))?;
-
-        Ok(Self {
-            keyword,
-            page_num,
-            search_type,
-        })
     }
 }
 
@@ -32926,7 +32883,7 @@ fn parse_rest_query_i64(value: &str) -> Result<i64, RestRouteError> {
         .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
 }
 
-fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
+pub(crate) fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
     if value.trim().is_empty() {
         return Ok(0);
     }
@@ -32935,7 +32892,7 @@ fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
         .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
 }
 
-fn decode_query_component(value: &str) -> String {
+pub(crate) fn decode_query_component(value: &str) -> String {
     let bytes = value.as_bytes();
     let mut decoded = Vec::with_capacity(bytes.len());
     let mut index = 0;
@@ -33471,139 +33428,6 @@ fn rest_project_posting_filter_from_query(
         },
         page_num: query.page_num.max(1),
     }
-}
-
-pub(crate) async fn rest_search_global(
-    headers: HeaderMap,
-    query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    let PilotBackend::Repository(repository) = &backend else {
-        return Err(RestRouteError::not_implemented(
-            "search requires repository backend",
-        ));
-    };
-    let actor_id = session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
-    rest_search_with_input(
-        repository,
-        persistence::SearchRepositoryInput {
-            actor_id,
-            keyword: query.keyword,
-            organization_name: None,
-            owner_name: None,
-            page_num: query.page_num,
-            project_name: None,
-            requested_search_type: query.search_type.clone(),
-            search_type: query.search_type,
-            scope: persistence::SearchScope::Global,
-        },
-    )
-    .await
-}
-
-pub(crate) async fn rest_search_project(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
-        return Err(RestRouteError::bad_request("invalid search project scope"));
-    }
-    if query.search_type == SearchType::Project.as_wire() {
-        return Err(RestRouteError::bad_request(
-            "project search type is not valid in project scope",
-        ));
-    }
-
-    let PilotBackend::Repository(repository) = &backend else {
-        return Err(RestRouteError::not_implemented(
-            "search requires repository backend",
-        ));
-    };
-    let actor_id = session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
-    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    rest_search_with_input(
-        repository,
-        persistence::SearchRepositoryInput {
-            actor_id,
-            keyword: query.keyword,
-            organization_name: None,
-            owner_name: Some(authorization.project.owner_name),
-            page_num: query.page_num,
-            project_name: Some(authorization.project.project_name),
-            requested_search_type: query.search_type.clone(),
-            search_type: query.search_type,
-            scope: persistence::SearchScope::Project,
-        },
-    )
-    .await
-}
-
-pub(crate) async fn rest_search_organization(
-    headers: HeaderMap,
-    organization_name: String,
-    query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    if organization_name.trim().is_empty() {
-        return Err(RestRouteError::bad_request(
-            "invalid organization search scope",
-        ));
-    }
-
-    let PilotBackend::Repository(repository) = &backend else {
-        return Err(RestRouteError::not_implemented(
-            "search requires repository backend",
-        ));
-    };
-    let actor_id = session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
-    let authorization = repository
-        .read_organization_authorization(&organization_name, actor_id)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
-    rest_search_with_input(
-        repository,
-        persistence::SearchRepositoryInput {
-            actor_id,
-            keyword: query.keyword,
-            organization_name: Some(authorization.organization.organization_name),
-            owner_name: None,
-            page_num: query.page_num,
-            project_name: None,
-            requested_search_type: query.search_type.clone(),
-            search_type: query.search_type,
-            scope: persistence::SearchScope::Organization,
-        },
-    )
-    .await
-}
-
-async fn rest_search_with_input(
-    repository: &PilotRepository,
-    input: persistence::SearchRepositoryInput,
-) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    repository
-        .search_app(input)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .map(Json)
-        .ok_or_else(|| RestRouteError::not_found("search scope not found"))
 }
 
 async fn rest_list_project_issues(
@@ -37030,7 +36854,7 @@ async fn build_session_route_payload(
     }
 }
 
-fn internal_error(error: impl ToString) -> ConnectError {
+pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
     ConnectError::new(ErrorCode::Internal, error.to_string())
 }
 
@@ -39024,7 +38848,7 @@ async fn read_issue_access(
     }
 }
 
-async fn require_project_read(
+pub(crate) async fn require_project_read(
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
