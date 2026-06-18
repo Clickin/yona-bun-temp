@@ -359,6 +359,33 @@ impl Default for RuntimeConfig {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AppRuntimeConfig {
+    pub site_name: String,
+}
+
+impl Default for AppRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            site_name: "Yona".to_string(),
+        }
+    }
+}
+
+impl AppRuntimeConfig {
+    pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        Self {
+            site_name: site_name_from_option(config.site_name.as_deref()),
+        }
+    }
+
+    fn from_env() -> Self {
+        Self {
+            site_name: configured_site_name(),
+        }
+    }
+}
+
 pub fn create_router(config: RuntimeConfig) -> Router {
     build_router(config, PilotBackend::Static, AssetMode::None)
 }
@@ -368,6 +395,19 @@ pub fn create_router_with_repository(config: RuntimeConfig, repository: PilotRep
         config,
         PilotBackend::Repository(repository),
         AssetMode::None,
+    )
+}
+
+pub fn create_router_with_repository_and_app_config(
+    config: RuntimeConfig,
+    repository: PilotRepository,
+    app_config: AppRuntimeConfig,
+) -> Router {
+    build_router_with_app_config(
+        config,
+        PilotBackend::Repository(repository),
+        AssetMode::None,
+        app_config,
     )
 }
 
@@ -402,6 +442,20 @@ pub fn create_router_with_repository_and_filesystem_assets(
     )
 }
 
+pub fn create_router_with_repository_and_filesystem_assets_and_app_config(
+    config: RuntimeConfig,
+    repository: PilotRepository,
+    asset_root: PathBuf,
+    app_config: AppRuntimeConfig,
+) -> Router {
+    build_router_with_app_config(
+        config,
+        PilotBackend::Repository(repository),
+        AssetMode::Filesystem(asset_root),
+        app_config,
+    )
+}
+
 pub fn create_router_with_repository_and_embedded_assets(
     config: RuntimeConfig,
     repository: PilotRepository,
@@ -413,10 +467,33 @@ pub fn create_router_with_repository_and_embedded_assets(
     )
 }
 
+pub fn create_router_with_repository_and_embedded_assets_and_app_config(
+    config: RuntimeConfig,
+    repository: PilotRepository,
+    app_config: AppRuntimeConfig,
+) -> Router {
+    build_router_with_app_config(
+        config,
+        PilotBackend::Repository(repository),
+        AssetMode::Embedded,
+        app_config,
+    )
+}
+
 fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode) -> Router {
+    build_router_with_app_config(config, backend, assets, AppRuntimeConfig::from_env())
+}
+
+fn build_router_with_app_config(
+    config: RuntimeConfig,
+    backend: PilotBackend,
+    assets: AssetMode,
+    app_config: AppRuntimeConfig,
+) -> Router {
     let base_path = normalize_base_path(&config.base_path);
     let public_origin = default_public_origin(&config.public_origin);
     let allow_anonymous_access = config.allow_anonymous_access;
+    let site_name = app_config.site_name;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
@@ -450,6 +527,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
     let lost_password_public_origin = public_origin.clone();
+    let lost_password_site_name = site_name.clone();
     let reset_password_backend = route_backend.clone();
     let reset_password_base_path = base_path.clone();
     let legacy_login_page_assets = assets.clone();
@@ -1803,6 +1881,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         lost_password_backend.clone(),
                         lost_password_base_path.clone(),
                         lost_password_public_origin.clone(),
+                        lost_password_site_name.clone(),
                     )
                     .await
                 }
@@ -10329,8 +10408,12 @@ pub fn spawn_notification_mail_scheduler(
 }
 
 fn configured_site_name() -> String {
-    std::env::var("YONA_SITE_NAME")
-        .ok()
+    let value = std::env::var("YONA_SITE_NAME").ok();
+    site_name_from_option(value.as_deref())
+}
+
+fn site_name_from_option(value: Option<&str>) -> String {
+    value
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "Yona".to_string())
@@ -10612,6 +10695,7 @@ fn send_password_reset_mail(
     verification_code: &str,
     public_origin: &str,
     base_path: &str,
+    site_name: &str,
 ) -> Result<(), ConnectError> {
     let reset_url = absolute_app_url(
         public_origin,
@@ -10624,7 +10708,7 @@ fn send_password_reset_mail(
         from: default_smtp_from(),
         html: false,
         reply_to: None,
-        subject: format!("[{}] Password reset request", configured_site_name()),
+        subject: format!("[{}] Password reset request", site_name),
         to: to.to_string(),
     })
     .map_err(internal_error)
@@ -10726,6 +10810,7 @@ async fn direct_request_reset_password_email(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
+    site_name: String,
 ) -> Response {
     let session = session_manager.ensure_anonymous_session(&headers);
     let redirect_path = match &backend {
@@ -10753,6 +10838,7 @@ async fn direct_request_reset_password_email(
                             &code,
                             &public_origin,
                             &base_path,
+                            &site_name,
                         );
                     }
                     "/lostPassword?requested=1"

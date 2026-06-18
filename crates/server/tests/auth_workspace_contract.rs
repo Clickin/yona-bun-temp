@@ -17,8 +17,8 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_app_repository, create_router_with_repository_and_filesystem_assets,
-    RuntimeConfig,
+    create_router_with_repository_and_app_config,
+    create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, RuntimeConfig,
 };
 
 fn auth_env_lock() -> &'static Mutex<()> {
@@ -33,6 +33,17 @@ async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection
 async fn build_auth_router_with_anonymous_access(
     allow_anonymous_access: bool,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_auth_router_with_anonymous_access_and_app_config(
+        allow_anonymous_access,
+        AppRuntimeConfig::default(),
+    )
+    .await
+}
+
+async fn build_auth_router_with_anonymous_access_and_app_config(
+    allow_anonymous_access: bool,
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
@@ -40,13 +51,14 @@ async fn build_auth_router_with_anonymous_access(
     let app_repo = AppRepository::new(db.clone());
 
     (
-        create_router_with_app_repository(
+        create_router_with_repository_and_app_config(
             RuntimeConfig {
                 allow_anonymous_access,
                 base_path: "/yona".to_string(),
                 public_origin: String::new(),
             },
             app_repo.clone(),
+            app_config,
         ),
         app_repo,
         db,
@@ -1484,8 +1496,14 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
-    std::env::set_var("YONA_SITE_NAME", "Yona Test");
-    let (app, repository, db) = build_auth_router().await;
+    let previous_site_name = std::env::var("YONA_SITE_NAME").ok();
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            site_name: "Yona Test".to_string(),
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1585,7 +1603,11 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .await
         .unwrap()
         .is_empty());
-    std::env::remove_var("YONA_SITE_NAME");
+    assert_eq!(
+        std::env::var("YONA_SITE_NAME").ok(),
+        previous_site_name,
+        "site name app config must not mutate process env"
+    );
 }
 
 #[tokio::test]

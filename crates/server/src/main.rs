@@ -5,10 +5,12 @@ use yona_rust_pilot_server::runtime_config::{
     apply_startup_runtime_env, load_startup_config_from_env,
 };
 use yona_rust_pilot_server::{
-    create_router_with_repository, create_router_with_repository_and_embedded_assets,
-    create_router_with_repository_and_filesystem_assets, mailbox_polling_config_from_startup,
-    notification_mail_scheduler_config_from_startup, spawn_mailbox_polling_scheduler,
-    spawn_notification_mail_scheduler, RuntimeConfig,
+    create_router_with_repository_and_app_config,
+    create_router_with_repository_and_embedded_assets_and_app_config,
+    create_router_with_repository_and_filesystem_assets_and_app_config,
+    mailbox_polling_config_from_startup, notification_mail_scheduler_config_from_startup,
+    spawn_mailbox_polling_scheduler, spawn_notification_mail_scheduler, AppRuntimeConfig,
+    RuntimeConfig,
 };
 
 #[tokio::main]
@@ -20,6 +22,7 @@ async fn main() -> anyhow::Result<()> {
     let startup = load_startup_config_from_env()?;
     apply_startup_runtime_env(&startup);
     let config: RuntimeConfig = startup.runtime.clone();
+    let app_config = AppRuntimeConfig::from_startup(&startup);
     let db = sea_orm::Database::connect(&startup.database_url).await?;
     Migrator::ensure_runtime_schema_with_policy(&db, startup.schema_policy).await?;
     if startup.seed_pilot {
@@ -38,11 +41,18 @@ async fn main() -> anyhow::Result<()> {
         mailbox_polling_config_from_startup(&startup),
     );
     let app = if startup.use_embedded_assets {
-        create_router_with_repository_and_embedded_assets(config, repository)
+        create_router_with_repository_and_embedded_assets_and_app_config(
+            config, repository, app_config,
+        )
     } else if let Some(asset_root) = startup.asset_root {
-        create_router_with_repository_and_filesystem_assets(config, repository, asset_root.into())
+        create_router_with_repository_and_filesystem_assets_and_app_config(
+            config,
+            repository,
+            asset_root.into(),
+            app_config,
+        )
     } else {
-        create_router_with_repository(config, repository)
+        create_router_with_repository_and_app_config(config, repository, app_config)
     };
     let listener = tokio::net::TcpListener::bind(&startup.bind_addr).await?;
     axum::serve(listener, app).await?;
