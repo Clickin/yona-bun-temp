@@ -627,8 +627,6 @@ fn build_router_with_app_config(
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
     let smart_http_public_origin = public_origin.clone();
-    let pushed_branch_delete_backend = route_backend.clone();
-    let pushed_branch_delete_session_manager = session_manager.clone();
     let legacy_user_search_backend = route_backend.clone();
     let legacy_user_create_backend = route_backend.clone();
     let legacy_user_create_session_manager = session_manager.clone();
@@ -639,14 +637,6 @@ fn build_router_with_app_config(
     let legacy_translation_backend = route_backend.clone();
     let legacy_translation_session_manager = session_manager.clone();
     let legacy_translation_proxy = translation_proxy.clone();
-    let transfer_accept_backend = route_backend.clone();
-    let transfer_accept_session_manager = session_manager.clone();
-    let transfer_accept_base_path = base_path.clone();
-    let markdown_render_backend = route_backend.clone();
-    let markdown_render_session_manager = session_manager.clone();
-    let markdown_render_base_path = base_path.clone();
-    let project_overview_update_backend = route_backend.clone();
-    let project_overview_update_session_manager = session_manager.clone();
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
@@ -1151,79 +1141,11 @@ fn build_router_with_app_config(
             base_path.clone(),
             max_uploaded_file_size,
         ))
-        .route(
-            "/{owner}/{project}",
-            put(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, body: Bytes| {
-                async move {
-                    direct_update_project_overview(
-                        headers,
-                        owner,
-                        project,
-                        body,
-                        project_overview_update_session_manager.clone(),
-                        project_overview_update_backend.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
         .merge(routes::code_routes(
             session_manager.clone(),
             route_backend.clone(),
             base_path.clone(),
         ))
-        .route(
-            "/{owner}/{project}/pushedBranch/{pushed_branch_id}/delete",
-            delete(
-                move |headers: HeaderMap,
-                      Path((owner, project, pushed_branch_id)): Path<(String, String, i64)>| {
-                    async move {
-                        direct_delete_project_pushed_branch(
-                            headers,
-                            owner,
-                            project,
-                            pushed_branch_id,
-                            pushed_branch_delete_session_manager.clone(),
-                            pushed_branch_delete_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/project/transfer/{transfer_id}/{confirm_key}",
-            get(move |headers: HeaderMap, Path((transfer_id, confirm_key)): Path<(i64, String)>| {
-                async move {
-                    direct_accept_project_transfer(
-                        headers,
-                        transfer_id,
-                        confirm_key,
-                        transfer_accept_session_manager.clone(),
-                        transfer_accept_backend.clone(),
-                        transfer_accept_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/markdown/{owner}/{project}",
-            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Json(body): Json<DirectMarkdownRenderBody>| {
-                async move {
-                    direct_render_markdown(
-                        headers,
-                        owner,
-                        project,
-                        body,
-                        markdown_render_session_manager.clone(),
-                        markdown_render_backend.clone(),
-                        markdown_render_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
         ;
 
     match assets.clone() {
@@ -9729,7 +9651,7 @@ fn site_export_filename_stamp() -> String {
         .unwrap_or_else(|_| "0".to_string())
 }
 
-async fn direct_update_project_overview(
+pub(crate) async fn direct_update_project_overview(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -10341,7 +10263,7 @@ pub(crate) async fn direct_update_pull_request_source_branch(
     }
 }
 
-async fn direct_delete_project_pushed_branch(
+pub(crate) async fn direct_delete_project_pushed_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -10461,7 +10383,7 @@ async fn direct_project_update_allowed(
     }
 }
 
-async fn direct_accept_project_transfer(
+pub(crate) async fn direct_accept_project_transfer(
     headers: HeaderMap,
     transfer_id: i64,
     confirm_key: String,
@@ -11302,7 +11224,7 @@ fn direct_code_raw_missing_redirect(
     Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
 }
 
-async fn direct_render_markdown(
+pub(crate) async fn direct_render_markdown(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -12816,7 +12738,7 @@ struct RestUserIssueSideFilterCounts {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct DirectMarkdownRenderBody {
+pub(crate) struct DirectMarkdownRenderBody {
     body: Option<String>,
     breaks: Option<bool>,
 }

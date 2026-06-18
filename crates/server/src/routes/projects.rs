@@ -1,18 +1,21 @@
 use axum::{
+    body::Bytes,
     extract::{Form, Path, Query},
     http::HeaderMap,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 use std::collections::HashMap;
 
 use crate::{
-    direct_create_project_milestone, direct_delete_project_milestone, direct_toggle_project_watch,
-    direct_update_project_milestone, direct_update_project_milestone_state,
+    direct_accept_project_transfer, direct_create_project_milestone,
+    direct_delete_project_milestone, direct_delete_project_pushed_branch, direct_render_markdown,
+    direct_toggle_project_watch, direct_update_project_milestone,
+    direct_update_project_milestone_state, direct_update_project_overview,
     legacy_external_create_milestones, legacy_external_project_assignable_users,
     legacy_external_watchers, legacy_project_create_labels, legacy_project_title_heads,
-    session::SessionManager, LegacyExternalWatchersQuery, LegacyProjectTitleHeadsQuery,
-    PilotBackend, RestIssueAssignableUsersQuery,
+    session::SessionManager, DirectMarkdownRenderBody, LegacyExternalWatchersQuery,
+    LegacyProjectTitleHeadsQuery, PilotBackend, RestIssueAssignableUsersQuery,
 };
 
 pub(crate) fn routes(
@@ -49,6 +52,16 @@ pub(crate) fn routes(
     let milestone_close_backend = backend.clone();
     let milestone_close_session_manager = session_manager.clone();
     let milestone_close_base_path = base_path.clone();
+    let pushed_branch_delete_backend = backend.clone();
+    let pushed_branch_delete_session_manager = session_manager.clone();
+    let transfer_accept_backend = backend.clone();
+    let transfer_accept_session_manager = session_manager.clone();
+    let transfer_accept_base_path = base_path.clone();
+    let markdown_render_backend = backend.clone();
+    let markdown_render_session_manager = session_manager.clone();
+    let markdown_render_base_path = base_path.clone();
+    let project_overview_update_backend = backend;
+    let project_overview_update_session_manager = session_manager;
 
     Router::new()
         .route(
@@ -287,6 +300,85 @@ pub(crate) fn routes(
                             false,
                             direct_project_unwatch_session_manager.clone(),
                             direct_project_unwatch_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}",
+            put(
+                move |headers: HeaderMap,
+                      Path((owner, project)): Path<(String, String)>,
+                      body: Bytes| {
+                    async move {
+                        direct_update_project_overview(
+                            headers,
+                            owner,
+                            project,
+                            body,
+                            project_overview_update_session_manager.clone(),
+                            project_overview_update_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pushedBranch/{pushed_branch_id}/delete",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner, project, pushed_branch_id)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_delete_project_pushed_branch(
+                            headers,
+                            owner,
+                            project,
+                            pushed_branch_id,
+                            pushed_branch_delete_session_manager.clone(),
+                            pushed_branch_delete_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/project/transfer/{transfer_id}/{confirm_key}",
+            get(
+                move |headers: HeaderMap,
+                      Path((transfer_id, confirm_key)): Path<(i64, String)>| {
+                    async move {
+                        direct_accept_project_transfer(
+                            headers,
+                            transfer_id,
+                            confirm_key,
+                            transfer_accept_session_manager.clone(),
+                            transfer_accept_backend.clone(),
+                            transfer_accept_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/markdown/{owner}/{project}",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project)): Path<(String, String)>,
+                      Json(body): Json<DirectMarkdownRenderBody>| {
+                    async move {
+                        direct_render_markdown(
+                            headers,
+                            owner,
+                            project,
+                            body,
+                            markdown_render_session_manager.clone(),
+                            markdown_render_backend.clone(),
+                            markdown_render_base_path.clone(),
                         )
                         .await
                     }

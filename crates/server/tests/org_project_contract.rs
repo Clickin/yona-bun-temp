@@ -2029,6 +2029,7 @@ async fn update_project_overview_returns_refreshed_project_container() {
     let direct_json: serde_json::Value =
         serde_json::from_str(&response_json(direct_response).await).expect("overview json");
     assert_eq!(direct_json["overview"], "Direct overview update");
+    assert!(direct_json.get("ownerName").is_none());
 
     let container = app
         .oneshot(

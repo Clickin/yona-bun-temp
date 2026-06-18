@@ -233,6 +233,7 @@ async fn legacy_markdown_preview_route_preserves_breaks_flag() {
     let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
     assert_eq!(payload["bodyMarkdown"], "first line\nsecond line");
     assert_eq!(payload["breaks"], true);
+    assert!(payload.get("bodyHtml").is_none());
 }
 
 #[tokio::test]
