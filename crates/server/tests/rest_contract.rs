@@ -1937,18 +1937,20 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .as_str()
         .expect("legacy issue label id")
         .to_string();
-    let legacy_issue_label_update = ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
-            Some(&owner_cookie),
-            Some(&owner_csrf),
-            Some(json!([legacy_issue_label_id])),
-        )
-        .await,
+    let legacy_issue_label_update_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!([legacy_issue_label_id])),
     )
     .await;
+    assert!(legacy_issue_label_update_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    let legacy_issue_label_update = ok_json(legacy_issue_label_update_response).await;
     assert_eq!(legacy_issue_label_update["id"], "owner");
     assert_eq!(legacy_issue_label_update["labels"], 1);
     let legacy_issue_detail_with_label = ok_json(
@@ -1977,18 +1979,20 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_label_update).await;
-    let legacy_issue_weight_up = ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
-            Some(&owner_cookie),
-            Some(&owner_csrf),
-            None,
-        )
-        .await,
+    let legacy_issue_weight_up_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        None,
     )
     .await;
+    assert!(legacy_issue_weight_up_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    let legacy_issue_weight_up = ok_json(legacy_issue_weight_up_response).await;
     assert_eq!(legacy_issue_weight_up["weight"], 1);
     let legacy_issue_weight_down = ok_json(
         rest(

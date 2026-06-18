@@ -735,12 +735,6 @@ fn build_router_with_app_config(
     let pull_request_restore_source_branch_base_path = base_path.clone();
     let pushed_branch_delete_backend = route_backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let legacy_issue_label_backend = route_backend.clone();
-    let legacy_issue_label_session_manager = session_manager.clone();
-    let legacy_issue_weight_up_backend = route_backend.clone();
-    let legacy_issue_weight_up_session_manager = session_manager.clone();
-    let legacy_issue_weight_down_backend = route_backend.clone();
-    let legacy_issue_weight_down_session_manager = session_manager.clone();
     let legacy_issue_content_backend = route_backend.clone();
     let legacy_issue_content_session_manager = session_manager.clone();
     let legacy_issue_detect_change_backend = route_backend.clone();
@@ -949,6 +943,10 @@ fn build_router_with_app_config(
             route_backend.clone(),
             base_path.clone(),
         ))
+        .merge(routes::issue_routes(
+            session_manager.clone(),
+            route_backend.clone(),
+        ))
         .route(
             "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
             post(
@@ -992,67 +990,6 @@ fn build_router_with_app_config(
                             body,
                             legacy_issue_comment_update_session_manager.clone(),
                             legacy_issue_comment_update_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issuelabel/{number}",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>,
-                      Json(body): Json<Vec<serde_json::Value>>| {
-                    async move {
-                        legacy_external_update_issue_labels(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            body,
-                            legacy_issue_label_session_manager.clone(),
-                            legacy_issue_label_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/upvoteWeight",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>| {
-                    async move {
-                        legacy_external_update_issue_weight(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            1,
-                            legacy_issue_weight_up_session_manager.clone(),
-                            legacy_issue_weight_up_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/downvoteWeight",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project_name, number)): Path<(String, String, i64)>| {
-                    async move {
-                        legacy_external_update_issue_weight(
-                            headers,
-                            owner,
-                            project_name,
-                            number,
-                            -1,
-                            legacy_issue_weight_down_session_manager.clone(),
-                            legacy_issue_weight_down_backend.clone(),
                         )
                         .await
                     }

@@ -2,6 +2,7 @@ use axum::Router;
 
 mod auth;
 mod boards;
+mod issues;
 mod messages;
 mod notifications;
 mod projects;
@@ -11,6 +12,7 @@ mod workspace;
 
 pub(crate) use auth::routes as auth_routes;
 pub(crate) use boards::routes as board_routes;
+pub(crate) use issues::routes as issue_routes;
 pub(crate) use notifications::routes as notification_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use search::routes as search_routes;

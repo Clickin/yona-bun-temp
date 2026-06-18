@@ -769,6 +769,34 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     .await;
     assert_eq!(voted_by_author["hasVoted"], true);
 
+    let legacy_weight_up = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_weight_up["weight"], 1);
+
+    let legacy_weight_down = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/downvoteWeight",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_weight_down["weight"], 0);
+
     let watch_forbidden = rest(
         app.clone(),
         Method::POST,
