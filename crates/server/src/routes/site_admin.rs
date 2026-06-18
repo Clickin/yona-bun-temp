@@ -3,23 +3,24 @@ use axum::{
     extract::{Path, Query},
     http::HeaderMap,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
-use std::sync::atomic::Ordering;
+use std::{collections::HashMap, sync::atomic::Ordering};
 
 use crate::{
-    direct_site_user_list_href, escape_html_text, persistence, redirect_to,
-    rest_delete_site_project, rest_read_site_diagnostics, rest_read_site_no_avatar_users,
-    rest_require_site_admin_repository, rest_reset_site_user_password,
+    base_path_href, decode_query_component, direct_site_user_list_href, escape_html_text,
+    headers_with_form_csrf, persistence, redirect_to, rest_delete_site_project,
+    rest_read_site_diagnostics, rest_read_site_mail_list, rest_read_site_no_avatar_users,
+    rest_require_site_admin_repository, rest_reset_site_user_password, rest_send_site_test_mail,
     rest_set_site_user_avatar_from_attachment, rest_site_update_download_file_response,
     rest_site_update_download_redirect, rest_toggle_site_user_account_lock,
     rest_toggle_site_user_admin, rest_toggle_site_user_guest, session::SessionManager,
     AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
-    RestSiteAvatarFromAttachmentBody, RestSiteDiagnosticsResponse, SiteUpdateConfig,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    RestSiteAvatarFromAttachmentBody, RestSiteDiagnosticsResponse, RestSiteMailListBody,
+    RestSiteMailSendBody, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 pub(crate) fn routes(
@@ -59,6 +60,11 @@ pub(crate) fn routes(
     let site_no_avatar_backend = backend.clone();
     let site_set_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = backend.clone();
+    let site_mail_send_session_manager = session_manager.clone();
+    let site_mail_send_backend = backend.clone();
+    let site_mail_send_base_path = base_path.clone();
+    let site_mail_list_session_manager = session_manager.clone();
+    let site_mail_list_backend = backend.clone();
 
     Router::new()
         .route(
@@ -96,6 +102,35 @@ pub(crate) fn routes(
                         body,
                         site_set_avatar_session_manager.clone(),
                         site_set_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/mail",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_send_site_mail(
+                        headers,
+                        body,
+                        site_mail_send_session_manager.clone(),
+                        site_mail_send_backend.clone(),
+                        site_mail_send_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/mailList",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_read_site_mail_list(
+                        headers,
+                        body,
+                        site_mail_list_session_manager.clone(),
+                        site_mail_list_backend.clone(),
                     )
                     .await
                 }
@@ -340,6 +375,98 @@ async fn direct_set_attachment_to_user_avatar(
         Ok(payload) => payload.into_response(),
         Err(error) => error.into_response(),
     }
+}
+
+async fn direct_read_site_mail_list(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let body = direct_site_mail_list_body(&body);
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_read_site_mail_list(headers, body, service).await {
+        Ok(payload) => Json(payload.0.recipients).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_send_site_mail(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let form = direct_site_mail_form(&body);
+    let headers = headers_with_form_csrf(headers, &form);
+    let body = RestSiteMailSendBody {
+        from: form.get("from").cloned().unwrap_or_default(),
+        to: form.get("to").cloned().unwrap_or_default(),
+        subject: form.get("subject").cloned().unwrap_or_default(),
+        body: form.get("body").cloned().unwrap_or_default(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_send_site_test_mail(headers, body, service).await {
+        Ok(_) => {
+            Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+fn direct_site_mail_form(body: &[u8]) -> HashMap<String, String> {
+    if let Ok(body) = serde_json::from_slice::<RestSiteMailSendBody>(body) {
+        return HashMap::from([
+            ("from".to_string(), body.from),
+            ("to".to_string(), body.to),
+            ("subject".to_string(), body.subject),
+            ("body".to_string(), body.body),
+        ]);
+    }
+    let raw = std::str::from_utf8(body).unwrap_or_default();
+    let mut parsed = HashMap::new();
+    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        parsed.insert(decode_query_component(key), decode_query_component(value));
+    }
+    parsed
+}
+
+fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
+    if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
+        return body;
+    }
+    let raw = std::str::from_utf8(body).unwrap_or_default();
+    let mut parsed = RestSiteMailListBody::default();
+    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        let key = decode_query_component(key);
+        let value = decode_query_component(value);
+        if key == "all" {
+            parsed.all = value.trim().eq_ignore_ascii_case("true");
+            if parsed.all {
+                parsed.projects.clear();
+            }
+        } else if !parsed.all && !value.trim().is_empty() {
+            parsed.projects.push(value);
+        }
+    }
+    parsed
 }
 
 async fn direct_unwatch_site_update(

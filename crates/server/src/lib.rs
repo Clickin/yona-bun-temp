@@ -868,11 +868,6 @@ fn build_router_with_app_config(
     let site_import_session_manager = session_manager.clone();
     let site_import_base_path = base_path.clone();
     let site_import_max_uploaded_file_size = max_uploaded_file_size;
-    let site_mail_send_backend = route_backend.clone();
-    let site_mail_send_session_manager = session_manager.clone();
-    let site_mail_send_base_path = base_path.clone();
-    let site_mail_list_backend = route_backend.clone();
-    let site_mail_list_session_manager = session_manager.clone();
     let direct_notification_toggle_backend = route_backend.clone();
     let direct_notification_toggle_session_manager = session_manager.clone();
     let direct_unwatch_backend = route_backend.clone();
@@ -2274,35 +2269,6 @@ fn build_router_with_app_config(
                         site_import_backend.clone(),
                         site_import_base_path.clone(),
                         site_import_max_uploaded_file_size,
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/mail",
-            post(move |headers: HeaderMap, body: Bytes| {
-                async move {
-                    direct_send_site_mail(
-                        headers,
-                        body,
-                        site_mail_send_session_manager.clone(),
-                        site_mail_send_backend.clone(),
-                        site_mail_send_base_path.clone(),
-                    )
-                    .await
-                }
-            }),
-        )
-        .route(
-            "/sites/mailList",
-            post(move |headers: HeaderMap, body: Bytes| {
-                async move {
-                    direct_read_site_mail_list(
-                        headers,
-                        body,
-                        site_mail_list_session_manager.clone(),
-                        site_mail_list_backend.clone(),
                     )
                     .await
                 }
@@ -11699,58 +11665,6 @@ async fn direct_import_site_data(
     }
 }
 
-async fn direct_read_site_mail_list(
-    headers: HeaderMap,
-    body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let body = direct_site_mail_list_body(&body);
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_read_site_mail_list(headers, body, service).await {
-        Ok(Json(payload)) => Json(payload.recipients).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_send_site_mail(
-    headers: HeaderMap,
-    body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let form = direct_site_mail_form(&body);
-    let headers = headers_with_form_csrf(headers, &form);
-    let body = RestSiteMailSendBody {
-        from: form.get("from").cloned().unwrap_or_default(),
-        to: form.get("to").cloned().unwrap_or_default(),
-        subject: form.get("subject").cloned().unwrap_or_default(),
-        body: form.get("body").cloned().unwrap_or_default(),
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_send_site_test_mail(headers, body, service).await {
-        Ok(_) => {
-            Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
-        }
-        Err(error) => error.into_response(),
-    }
-}
-
 #[derive(Deserialize)]
 struct LegacyResourceQuery {
     #[serde(rename = "resource.id")]
@@ -11874,46 +11788,6 @@ fn legacy_prefers_json(headers: &HeaderMap) -> bool {
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
         .unwrap_or(false)
-}
-
-fn direct_site_mail_form(body: &[u8]) -> HashMap<String, String> {
-    if let Ok(body) = serde_json::from_slice::<RestSiteMailSendBody>(body) {
-        return HashMap::from([
-            ("from".to_string(), body.from),
-            ("to".to_string(), body.to),
-            ("subject".to_string(), body.subject),
-            ("body".to_string(), body.body),
-        ]);
-    }
-    let raw = std::str::from_utf8(body).unwrap_or_default();
-    let mut parsed = HashMap::new();
-    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
-        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
-        parsed.insert(decode_query_component(key), decode_query_component(value));
-    }
-    parsed
-}
-
-fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
-    if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
-        return body;
-    }
-    let raw = std::str::from_utf8(body).unwrap_or_default();
-    let mut parsed = RestSiteMailListBody::default();
-    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
-        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
-        let key = decode_query_component(key);
-        let value = decode_query_component(value);
-        if key == "all" {
-            parsed.all = value.trim().eq_ignore_ascii_case("true");
-            if parsed.all {
-                parsed.projects.clear();
-            }
-        } else if !parsed.all && !value.trim().is_empty() {
-            parsed.projects.push(value);
-        }
-    }
-    parsed
 }
 
 fn direct_site_export_response(payload: &RestSiteExportResponse) -> Response {

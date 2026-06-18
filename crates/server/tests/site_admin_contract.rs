@@ -3037,6 +3037,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
         direct_project_recipients,
         json!(["member@example.com", "observer@example.com"])
     );
+    assert!(direct_project_recipients.as_array().is_some());
 }
 
 #[tokio::test]
