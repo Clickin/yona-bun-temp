@@ -45,6 +45,9 @@ pub struct StartupConfig {
     pub smtp_ssl: Option<bool>,
     pub smtp_user: Option<String>,
     pub supported_languages: Option<Vec<String>>,
+    pub translation_api: Option<String>,
+    pub translation_header_key: Option<String>,
+    pub translation_header_value: Option<String>,
     pub update_current_version: Option<String>,
     pub update_error: Option<String>,
     pub update_https_fetch_command: Option<String>,
@@ -246,6 +249,12 @@ pub fn load_startup_config(
     let supported_languages = env_string(&env, "YONA_LANGS")
         .map(|value| split_csv(&value))
         .or(site.langs);
+    let translation_api = env_string(&env, "YONA_TRANSLATION_API")
+        .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_API"));
+    let translation_header_key = env_string(&env, "YONA_TRANSLATION_HEADER_KEY")
+        .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY"));
+    let translation_header_value = env_string(&env, "YONA_TRANSLATION_HEADER_VALUE")
+        .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE"));
     let show_user_email = env_bool(&env, "YONA_SHOW_USER_EMAIL")
         .or(file.show_user_email)
         .or(site.show_user_email);
@@ -383,6 +392,9 @@ pub fn load_startup_config(
         smtp_ssl,
         smtp_user,
         supported_languages,
+        translation_api,
+        translation_header_key,
+        translation_header_value,
         update_current_version,
         update_error,
         update_https_fetch_command,

@@ -14,7 +14,10 @@ use yona_rust_persistence::{
     CreateProjectInput, IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
+    AppRuntimeConfig, RuntimeConfig, TranslationProxyConfig,
+};
 
 mod rest_test_support;
 
@@ -48,6 +51,24 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     (app, app_repo)
 }
 
+fn build_app_with_repository_and_translation_config(
+    repository: AppRepository,
+    translation_proxy: TranslationProxyConfig,
+) -> axum::Router {
+    create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository,
+        AppRuntimeConfig {
+            translation_proxy,
+            ..AppRuntimeConfig::default()
+        },
+    )
+}
+
 async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -62,6 +83,18 @@ async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, Dat
         },
         app_repo.clone(),
     );
+    (app, app_repo, db)
+}
+
+async fn build_app_with_repository_and_db_and_translation_config(
+    translation_proxy: TranslationProxyConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = build_app_with_repository_and_translation_config(app_repo.clone(), translation_proxy);
     (app, app_repo, db)
 }
 
@@ -1167,7 +1200,14 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 
 #[tokio::test]
 async fn rest_project_routes_cover_directory_views_and_mutations() {
-    let (app, repository, db) = build_app_with_repository_and_db().await;
+    let (translation_api, translation_stub_path) =
+        write_legacy_translation_stub_response("Translated **issue**");
+    let (app, repository, db) =
+        build_app_with_repository_and_db_and_translation_config(TranslationProxyConfig {
+            api_url: translation_api,
+            ..TranslationProxyConfig::default()
+        })
+        .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;
@@ -3101,10 +3141,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_toggle).await;
 
-    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
-    std::env::set_var("YONA_TRANSLATION_API", "");
+    let translation_unconfigured_app = build_app_with_repository_and_translation_config(
+        repository.clone(),
+        TranslationProxyConfig::default(),
+    );
     let translation_without_config = rest(
-        app.clone(),
+        translation_unconfigured_app,
         Method::POST,
         "/yona/-_-api/v1/translation",
         Some(&visitor_cookie),
@@ -3125,16 +3167,16 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_text(translation_without_config).await,
         "Precondition Failed"
     );
-    if let Some(value) = previous_translation_api {
-        std::env::set_var("YONA_TRANSLATION_API", value);
-    } else {
-        std::env::remove_var("YONA_TRANSLATION_API");
-    }
 
-    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
-    std::env::set_var("YONA_TRANSLATION_API", "http://127.0.0.1:9/translate");
+    let translation_configured_app = build_app_with_repository_and_translation_config(
+        repository.clone(),
+        TranslationProxyConfig {
+            api_url: "http://127.0.0.1:9/translate".to_string(),
+            ..TranslationProxyConfig::default()
+        },
+    );
     let anonymous_translation = rest(
-        app.clone(),
+        translation_configured_app,
         Method::POST,
         "/yona/-_-api/v1/translation",
         None,
@@ -3148,16 +3190,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_legacy_external_unauthorized(anonymous_translation).await;
-    if let Some(value) = previous_translation_api {
-        std::env::set_var("YONA_TRANSLATION_API", value);
-    } else {
-        std::env::remove_var("YONA_TRANSLATION_API");
-    }
 
-    let previous_translation_api = std::env::var("YONA_TRANSLATION_API").ok();
-    let (translation_api, translation_stub_path) =
-        write_legacy_translation_stub_response("Translated **issue**");
-    std::env::set_var("YONA_TRANSLATION_API", translation_api);
     let translated_issue = ok_json(
         rest(
             app.clone(),
@@ -3185,11 +3218,6 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "Translated **issue**"
     );
     std::fs::remove_file(translation_stub_path).expect("translation stub cleanup");
-    if let Some(value) = previous_translation_api {
-        std::env::set_var("YONA_TRANSLATION_API", value);
-    } else {
-        std::env::remove_var("YONA_TRANSLATION_API");
-    }
 
     let organization = create_organization_rest(
         app.clone(),

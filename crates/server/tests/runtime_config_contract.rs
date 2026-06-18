@@ -401,6 +401,18 @@ draft_time = "30s"
             ),
             ("YONA_LANGS".to_string(), "ja-JP,en-US".to_string()),
             (
+                "YONA_TRANSLATION_API".to_string(),
+                "https://env.example/translate".to_string(),
+            ),
+            (
+                "YONA_TRANSLATION_HEADER_KEY".to_string(),
+                "X-Translate-Key".to_string(),
+            ),
+            (
+                "YONA_TRANSLATION_HEADER_VALUE".to_string(),
+                "env-secret".to_string(),
+            ),
+            (
                 "YONA_PROJECT_DEFAULT_SCOPE".to_string(),
                 "public".to_string(),
             ),
@@ -530,6 +542,18 @@ draft_time = "30s"
     assert_eq!(
         config.supported_languages,
         Some(vec!["ja-JP".to_string(), "en-US".to_string()])
+    );
+    assert_eq!(
+        config.translation_api.as_deref(),
+        Some("https://env.example/translate")
+    );
+    assert_eq!(
+        config.translation_header_key.as_deref(),
+        Some("X-Translate-Key")
+    );
+    assert_eq!(
+        config.translation_header_value.as_deref(),
+        Some("env-secret")
     );
     assert_eq!(config.project_default_scope.as_deref(), Some("public"));
     assert_eq!(

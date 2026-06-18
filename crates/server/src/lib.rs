@@ -365,6 +365,14 @@ pub struct AppRuntimeConfig {
     pub project_default_scope: String,
     pub site_name: String,
     pub supported_languages: Vec<String>,
+    pub translation_proxy: TranslationProxyConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TranslationProxyConfig {
+    pub api_url: String,
+    pub header_key: String,
+    pub header_value: String,
 }
 
 impl Default for AppRuntimeConfig {
@@ -374,6 +382,7 @@ impl Default for AppRuntimeConfig {
             project_default_scope: "public".to_string(),
             site_name: "Yona".to_string(),
             supported_languages: default_supported_languages(),
+            translation_proxy: TranslationProxyConfig::default(),
         }
     }
 }
@@ -391,6 +400,7 @@ impl AppRuntimeConfig {
             supported_languages: supported_languages_from_option(
                 config.supported_languages.as_deref(),
             ),
+            translation_proxy: TranslationProxyConfig::from_startup(config),
         }
     }
 
@@ -400,6 +410,39 @@ impl AppRuntimeConfig {
             project_default_scope: configured_project_default_scope(),
             site_name: configured_site_name(),
             supported_languages: configured_supported_languages(),
+            translation_proxy: TranslationProxyConfig::from_env(),
+        }
+    }
+}
+
+impl TranslationProxyConfig {
+    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        Self {
+            api_url: trimmed_option(config.translation_api.as_deref()).unwrap_or_default(),
+            header_key: trimmed_option(config.translation_header_key.as_deref())
+                .unwrap_or_default(),
+            header_value: trimmed_option(config.translation_header_value.as_deref())
+                .unwrap_or_default(),
+        }
+    }
+
+    fn from_env() -> Self {
+        Self {
+            api_url: configured_env_value(&[
+                "YONA_TRANSLATION_API",
+                "APPLICATION_EXTRAS_TRANSLATION_API",
+            ])
+            .unwrap_or_default(),
+            header_key: configured_env_value(&[
+                "YONA_TRANSLATION_HEADER_KEY",
+                "APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY",
+            ])
+            .unwrap_or_default(),
+            header_value: configured_env_value(&[
+                "YONA_TRANSLATION_HEADER_VALUE",
+                "APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE",
+            ])
+            .unwrap_or_default(),
         }
     }
 }
@@ -540,6 +583,7 @@ fn build_router_with_app_config(
     let project_default_menus = app_config.project_default_menus;
     let site_name = app_config.site_name;
     let supported_languages = app_config.supported_languages;
+    let translation_proxy = app_config.translation_proxy;
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
@@ -843,6 +887,7 @@ fn build_router_with_app_config(
     let legacy_title_heads_session_manager = session_manager.clone();
     let legacy_translation_backend = route_backend.clone();
     let legacy_translation_session_manager = session_manager.clone();
+    let legacy_translation_proxy = translation_proxy.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -1675,6 +1720,7 @@ fn build_router_with_app_config(
                             body,
                             legacy_translation_session_manager.clone(),
                             legacy_translation_backend.clone(),
+                            legacy_translation_proxy.clone(),
                         )
                         .await
                     }
@@ -10578,10 +10624,13 @@ fn configured_site_name() -> String {
 }
 
 fn site_name_from_option(value: Option<&str>) -> String {
+    trimmed_option(value).unwrap_or_else(|| "Yona".to_string())
+}
+
+fn trimmed_option(value: Option<&str>) -> Option<String> {
     value
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "Yona".to_string())
 }
 
 fn configured_project_default_scope() -> String {
@@ -30352,11 +30401,9 @@ async fn legacy_external_translation(
     body: serde_json::Value,
     session_manager: SessionManager,
     backend: PilotBackend,
+    translation_proxy: TranslationProxyConfig,
 ) -> Response {
-    let api_url = std::env::var("YONA_TRANSLATION_API")
-        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_API"))
-        .unwrap_or_default();
-    if api_url.trim().is_empty() {
+    if translation_proxy.api_url.trim().is_empty() {
         return direct_plain_response(StatusCode::PRECONDITION_FAILED, "Precondition Failed");
     }
 
@@ -30377,7 +30424,7 @@ async fn legacy_external_translation(
         Ok(text) => text,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
     };
-    let translated = match legacy_translate_text(&api_url, &text) {
+    let translated = match legacy_translate_text(&translation_proxy, &text) {
         Ok(translated) => translated,
         Err(error) => return RestRouteError::bad_request(error).into_response(),
     };
@@ -30461,16 +30508,10 @@ async fn legacy_translation_source(
     }
 }
 
-fn legacy_translate_text(api_url: &str, text: &str) -> Result<String, String> {
+fn legacy_translate_text(config: &TranslationProxyConfig, text: &str) -> Result<String, String> {
     if text.trim().is_empty() {
         return Ok(String::new());
     }
-    let header_key = std::env::var("YONA_TRANSLATION_HEADER_KEY")
-        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY"))
-        .unwrap_or_default();
-    let header_value = std::env::var("YONA_TRANSLATION_HEADER_VALUE")
-        .or_else(|_| std::env::var("APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE"))
-        .unwrap_or_default();
     let mut command = Command::new("curl");
     command
         .arg("-sS")
@@ -30480,10 +30521,12 @@ fn legacy_translate_text(api_url: &str, text: &str) -> Result<String, String> {
         .arg("Accept: application/json,application/x-www-form-urlencoded,text/html,*/*")
         .arg("-H")
         .arg("Content-Type: application/x-www-form-urlencoded; charset=UTF-8");
-    if !header_key.trim().is_empty() {
-        command
-            .arg("-H")
-            .arg(format!("{}: {}", header_key.trim(), header_value));
+    if !config.header_key.trim().is_empty() {
+        command.arg("-H").arg(format!(
+            "{}: {}",
+            config.header_key.trim(),
+            config.header_value
+        ));
     }
     let output = command
         .arg("--data-urlencode")
@@ -30492,7 +30535,7 @@ fn legacy_translate_text(api_url: &str, text: &str) -> Result<String, String> {
         .arg("target=en")
         .arg("--data-urlencode")
         .arg(format!("text={text}"))
-        .arg(api_url.trim())
+        .arg(config.api_url.trim())
         .output()
         .map_err(|error| format!("translation.fetch.failed: {error}"))?;
     if !output.status.success() {
