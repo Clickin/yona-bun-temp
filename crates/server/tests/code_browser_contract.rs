@@ -795,6 +795,10 @@ async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
         response_json(direct_get(app.clone(), "/owner/projectYobi/code/main/!/", None).await).await;
     assert_eq!(branch_root["type"], "folder");
     assert_eq!(branch_root["path"], "");
+    let branch_root_without_slash =
+        response_json(direct_get(app.clone(), "/owner/projectYobi/code/main/!", None).await).await;
+    assert_eq!(branch_root_without_slash["type"], "folder");
+    assert_eq!(branch_root_without_slash["path"], "");
 
     let src =
         response_json(direct_get(app.clone(), "/owner/projectYobi/code/main/!/src", None).await)
