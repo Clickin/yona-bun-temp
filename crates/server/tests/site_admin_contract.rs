@@ -3158,6 +3158,7 @@ async fn site_admin_mail_options_accept_legacy_style_smtp_password_env_alias() {
 }
 
 #[tokio::test]
+// Guards route-utils-owned SMTP env lookup and sender derivation.
 async fn site_admin_mail_sender_derives_from_legacy_smtp_user_and_domain() {
     let _guard = smtp_env_lock()
         .lock()
@@ -3193,6 +3194,7 @@ async fn site_admin_mail_sender_derives_from_legacy_smtp_user_and_domain() {
 }
 
 #[tokio::test]
+// Guards route-utils-owned SMTP sender fallback through application host env aliases.
 async fn site_admin_mail_sender_uses_application_hostname_when_smtp_domain_is_absent() {
     let _guard = smtp_env_lock()
         .lock()

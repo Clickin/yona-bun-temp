@@ -33,10 +33,10 @@ pub(crate) use routes::{
     build_organization_admin_response, build_organization_container_response,
     build_project_container_response, build_workspace_overview_response, code_branch_error,
     code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
-    current_session_response_from_user, decode_query_component, default_public_origin,
-    delete_project_repository_storage, deserialize_i64_vec_from_strings_or_numbers,
-    deserialize_optional_i64_from_string_or_number, detect_upload_mime_type,
-    direct_project_update_allowed, direct_status_from_connect_error,
+    configured_env_value, current_session_response_from_user, decode_query_component,
+    default_public_origin, default_smtp_from, delete_project_repository_storage,
+    deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
+    detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
     escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
@@ -946,27 +946,6 @@ pub(crate) async fn serve_frontend_page(
     }
 }
 
-fn default_smtp_from() -> String {
-    configured_env_value(&["SMTP_FROM", "YONA_SMTP_FROM"])
-        .or_else(smtp_sender_from_user_and_domain)
-        .unwrap_or_else(|| "noreply@yona.local".to_string())
-}
-
-fn smtp_sender_from_user_and_domain() -> Option<String> {
-    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
-    if user.contains('@') {
-        return Some(user);
-    }
-    let domain = configured_env_value(&["SMTP_DOMAIN", "YONA_SMTP_DOMAIN"])
-        .or_else(application_hostname_from_env)
-        .unwrap_or_else(|| "localhost".to_string());
-    Some(format!("{user}@{domain}"))
-}
-
-fn application_hostname_from_env() -> Option<String> {
-    configured_env_value(&["YONA_APPLICATION_HOSTNAME", "APPLICATION_HOSTNAME"])
-}
-
 fn configured_site_name() -> String {
     let value = std::env::var("YONA_SITE_NAME").ok();
     site_name_from_option(value.as_deref())
@@ -980,15 +959,6 @@ fn trimmed_option(value: Option<&str>) -> Option<String> {
     value
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-}
-
-pub(crate) fn configured_env_value(names: &[&str]) -> Option<String> {
-    names.iter().find_map(|name| {
-        std::env::var(name)
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-    })
 }
 
 fn configured_trimmed_string(name: &str) -> String {
