@@ -581,6 +581,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation`
   and
   `assets_contract::embedded_assets_support_base_path_injection_and_spa_fallback`.
+- 2026-06-20 build/check diet note: shared server state/error types, backend and
+  asset mode enums, browser runtime config, login constants, `yona_data_root`,
+  and repository provisioning lock moved from monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/state.rs`; the root crate
+  still re-exports the crate-internal state boundary for existing route modules.
+  This preserves Connect error/status mapping, CSRF state mutation rejection,
+  `YONA_DATA` repository path lookup, and legacy `/_init` repository
+  reprovisioning covered by
+  `server_core_contract::update_issue_state_requires_bootstrapped_csrf` and
+  `assets_contract::legacy_init_redirects_home_and_recreates_project_repositories`.
 
 ## Wave 0 Exit Snapshot
 

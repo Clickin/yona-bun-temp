@@ -704,6 +704,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
 }
 
 #[tokio::test]
+// Guards state-owned YONA_DATA lookup and repository provisioning lock.
 async fn legacy_init_redirects_home_and_recreates_project_repositories() {
     let _guard = runtime_config_env_lock().lock().unwrap();
     let data_root = tempdir().expect("data root");

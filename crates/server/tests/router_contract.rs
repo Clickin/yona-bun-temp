@@ -348,7 +348,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
 }
 
 #[tokio::test]
-// Guards issue route-owned state helper plus route-utils-owned session and CSRF helpers.
+// Guards state-owned Context/ConnectError through session and CSRF mutation rejection.
 async fn update_issue_state_requires_bootstrapped_csrf() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,
