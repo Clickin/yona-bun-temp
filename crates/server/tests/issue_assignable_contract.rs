@@ -246,7 +246,7 @@ fn display_names(payload: &Value) -> Vec<String> {
 }
 
 #[tokio::test]
-// Guards the issue route-module autocomplete DTO split for project assignable users.
+// Guards the issues/lookups.rs autocomplete adapter split for project assignable users.
 async fn project_assignable_users_blank_query_preserves_legacy_default_rows() {
     let (app, repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -291,7 +291,7 @@ async fn project_assignable_users_blank_query_preserves_legacy_default_rows() {
 
 #[tokio::test]
 async fn issue_assignable_users_blank_query_preserves_legacy_pseudo_rows() {
-    // Guards the issues/legacy_external.rs assignable-users route adapter.
+    // Guards the issues/lookups.rs and issues/legacy_external.rs assignable-users adapters.
     let (app, repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;

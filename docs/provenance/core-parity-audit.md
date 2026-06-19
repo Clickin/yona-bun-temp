@@ -1005,6 +1005,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   project milestone service helpers. This preserves milestone REST CRUD,
   default list query handling, and open/close state mutation behavior covered by
   `rest_contract::rest_milestone_routes_manage_crud_and_state`.
+- 2026-06-20 build/check diet note: issue lookup/autocomplete DTOs and handlers
+  for parent-options, project/issue assignable users, sharable users, mention
+  users, and project issue references moved from
+  `crates/server/src/routes/issues.rs` into
+  `crates/server/src/routes/issues/lookups.rs`; route registration remains in
+  the parent issue route module, and the issue-reference origin resolver remains
+  crate-re-exported for markdown reference expansion. This preserves
+  assignable-user defaults, mention search ACL filtering, and fork-origin issue
+  reference lookup covered by
+  `issue_assignable_contract::issue_assignable_users_blank_query_preserves_legacy_pseudo_rows`,
+  `issue_mention_contract::issue_mention_contract_suggests_contextual_users_and_filters_private_search`,
+  and
+  `issue_reference_autocomplete_contract::issue_reference_autocomplete_contract_searches_readable_origin_for_forks`.
 
 ## Wave 0 Exit Snapshot
 
