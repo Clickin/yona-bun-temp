@@ -830,6 +830,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   property metadata covered by
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
   and `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`.
+- 2026-06-20 build/check diet note: SVN `update-report` response handling
+  moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_update.rs`; REPORT method dispatch
+  remains in the protocol module. This preserves checkout/update materialization,
+  depth transitions, inline deltas, and ra_serf update metadata covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
+  `svn_protocol_contract::svn_protocol_external_client_can_deepen_depth_empty_checkout`,
+  and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
