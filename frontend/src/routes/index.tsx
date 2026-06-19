@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexRouteComponent() {
-  useDocumentTitle("Yona");
   const { runtimeConfig } = useAppRuntime();
+  useDocumentTitle(runtimeConfig.siteName ?? "Yona");
   return <HomePage runtimeConfig={runtimeConfig} />;
 }

@@ -182,6 +182,10 @@ describe("file-route parity harness", () => {
     expect(projectHomeRouteSource).not.toContain("Toggle favorite failed.");
     expect(projectHomeRouteSource).not.toContain("Toggle watch failed.");
     expect(projectHomeRouteSource).not.toContain("Update overview failed.");
+
+    const homeRouteSource = fs.readFileSync(path.resolve(__dirname, "routes/index.tsx"), "utf8");
+    expect(homeRouteSource).toContain('useDocumentTitle(runtimeConfig.siteName ?? "Yona")');
+    expect(homeRouteSource).not.toContain('useDocumentTitle("Yona")');
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
@@ -1871,7 +1875,7 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).not.toContain("Yona Rust Notifications");
     expect(notificationRouteSource).not.toContain("Read notifications failed.");
     expect(notificationRouteSource).toContain("BadRequestPage");
-    expect(notificationRouteSource).toContain('useDocumentTitle("Yona")');
+    expect(notificationRouteSource).toContain('useDocumentTitle(runtimeConfig.siteName ?? "Yona")');
     expect(notificationRouteSource).not.toContain('useDocumentTitle("Notifications")');
     expect(notificationsAliasRouteSource).not.toContain("PlaceholderPage");
     expect(notificationsAliasRouteSource).toContain("NotificationRouteComponent");

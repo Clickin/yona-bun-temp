@@ -1071,7 +1071,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - 2026-06-20 scalar parity note: browser runtime config now injects the
   configured legacy site name as `siteName`, and the notification welcome guide
   renders the legacy `app.welcome <site> - app.description` scalar from that
-  runtime value instead of hard-coding `Yona`. Verification passed with
+  runtime value instead of hard-coding `Yona`. `frontend/src/routes/index.tsx` and
+  `frontend/src/routes/notification/route.tsx` document titles also use the
+  same runtime site name with the legacy `Yona` default, matching
+  `index/notifications.scala.html` use of `utils.Config.getSiteName`.
+  Verification passed with
   `pnpm --dir frontend exec vitest run src/runtime-config.spec.ts src/route-parity.spec.tsx`
   and
   `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test assets_contract embedded_assets_support_base_path_injection_and_spa_fallback`.

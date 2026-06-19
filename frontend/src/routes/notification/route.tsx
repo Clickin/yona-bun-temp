@@ -38,7 +38,7 @@ export function NotificationRouteComponent({
     enabled: canRender,
   });
 
-  useDocumentTitle("Yona");
+  useDocumentTitle(runtimeConfig.siteName ?? "Yona");
 
   React.useEffect(() => {
     if (!notificationsQuery.error) {
