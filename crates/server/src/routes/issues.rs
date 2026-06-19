@@ -34,16 +34,78 @@ use crate::{
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormOptionsResponse,
-    RestDirectIssueFormProject, RestDirectIssueFormQuery, RestIssueAssignableUserItem,
-    RestIssueAssignableUsersQuery, RestIssueAssignableUsersResponse, RestIssueCommentBody,
-    RestIssueDetailResponse, RestIssueMentionUserItem, RestIssueMentionUsersQuery,
-    RestIssueMentionUsersResponse, RestIssueMutationBody, RestIssueParentOption,
+    RestDirectIssueFormProject, RestDirectIssueFormQuery, RestIssueAssignableUsersQuery,
+    RestIssueCommentBody, RestIssueDetailResponse, RestIssueMutationBody, RestIssueParentOption,
     RestIssueParentOptionsQuery, RestIssueParentOptionsResponse, RestIssueStateBody,
     RestIssueWeightResponse, RestMassUpdateIssuesBody, RestOrganizationIssueListResponse,
-    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssueReferenceItem,
-    RestProjectIssueReferencesQuery, RestProjectIssueReferencesResponse, RestProjectIssuesQuery,
+    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssuesQuery,
     RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueAssignableUserItem {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+    pure_name_only: String,
+    r#type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueAssignableUsersResponse {
+    items: Vec<RestIssueAssignableUserItem>,
+    total: u32,
+    truncated: bool,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueMentionUsersQuery {
+    context: String,
+    query: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueMentionUserItem {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+    search_text: String,
+    r#type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueMentionUsersResponse {
+    items: Vec<RestIssueMentionUserItem>,
+    total: u32,
+    truncated: bool,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectIssueReferencesQuery {
+    query: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueReferenceItem {
+    issue_number: i64,
+    state: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueReferencesResponse {
+    items: Vec<RestProjectIssueReferenceItem>,
+    total: u32,
+    truncated: bool,
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -4742,7 +4804,7 @@ fn rest_issue_assignable_users_response(
     }
 }
 
-pub(crate) async fn rest_list_project_assignable_users(
+async fn rest_list_project_assignable_users(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -4784,7 +4846,7 @@ pub(crate) async fn rest_list_project_assignable_users(
     Ok(Json(rest_issue_assignable_users_response(record)))
 }
 
-pub(crate) async fn rest_list_issue_assignable_users(
+async fn rest_list_issue_assignable_users(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -4834,7 +4896,7 @@ pub(crate) async fn rest_list_issue_assignable_users(
     Ok(Json(rest_issue_assignable_users_response(record)))
 }
 
-pub(crate) async fn rest_list_issue_sharable_users(
+async fn rest_list_issue_sharable_users(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -4903,7 +4965,7 @@ fn rest_issue_mention_users_response(
     }
 }
 
-pub(crate) async fn rest_list_issue_mention_users(
+async fn rest_list_issue_mention_users(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -5017,7 +5079,7 @@ pub(crate) async fn resolve_issue_reference_search_project(
     }
 }
 
-pub(crate) async fn rest_list_project_issue_references(
+async fn rest_list_project_issue_references(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,

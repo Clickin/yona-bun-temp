@@ -337,6 +337,7 @@ async fn issue_mention_contract_returns_renderable_mention_metadata_for_existing
 }
 
 #[tokio::test]
+// Guards the issue route-module autocomplete DTO split for mention users.
 async fn issue_mention_contract_suggests_contextual_users_and_filters_private_search() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;

@@ -76,18 +76,28 @@ describe("agent cargo test harness contract", () => {
   it("detects Codex sandbox environments", () => {
     assert.equal(codexSandboxReason({}), null);
     assert.equal(codexSandboxReason({ CODEX_SANDBOX: "seatbelt" }), "CODEX_SANDBOX=seatbelt");
-    assert.equal(
-      codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }),
-      "CODEX_SANDBOX_NETWORK_DISABLED=1",
-    );
+    assert.equal(codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }), null);
   });
 
-  it("continues execution with log-buffered output when a Codex sandbox marker is present", async () => {
+  it("refuses execution when a Codex sandbox marker is present", async () => {
+    const result = await runAgentCargoTest(
+      {
+        ...parseArgs(["sandbox-marker-smoke"]),
+        cargoBin: "/bin/echo",
+      },
+      { CODEX_SANDBOX: "seatbelt" },
+    );
+
+    assert.equal(result.status, 1);
+    assert.equal(result.logPath, null);
+  });
+
+  it("allows intentional sandbox execution when explicitly requested", async () => {
     const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-test-contract-"));
     try {
       const result = await runAgentCargoTest(
         {
-          ...parseArgs(["sandbox-marker-smoke"]),
+          ...parseArgs(["--allow-sandbox", "sandbox-marker-smoke"]),
           cargoBin: "/bin/echo",
           logDir,
         },

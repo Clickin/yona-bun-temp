@@ -246,6 +246,7 @@ fn display_names(payload: &Value) -> Vec<String> {
 }
 
 #[tokio::test]
+// Guards the issue route-module autocomplete DTO split for project assignable users.
 async fn project_assignable_users_blank_query_preserves_legacy_default_rows() {
     let (app, repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

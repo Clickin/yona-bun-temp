@@ -20,8 +20,9 @@
 
 ## 테스트 실행
 
-- Agent가 Rust 테스트를 실행할 때는 `cargo test ...`를 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용한다.
-- `pnpm agent:cargo-test`는 전체 cargo 로그를 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 출력한다. sandbox 밖 실행이 실제로 더 빠르다고 확인된 경우에만 `require_escalated`를 사용한다.
+- Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings` 등 cargo 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, 항상 `require_escalated`로 sandbox 밖에서 실행한다.
+- Agent가 Rust 테스트를 실행할 때는 `cargo test ...`를 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용하되, 이 wrapper도 `require_escalated`로 sandbox 밖에서 실행한다.
+- `pnpm agent:cargo-test`는 전체 cargo 로그를 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 출력한다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
 
 ## 코드 및 문서 배치 규칙
 

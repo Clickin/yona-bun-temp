@@ -230,6 +230,7 @@ async fn set_project_origin(
 }
 
 #[tokio::test]
+// Guards the issue route-module autocomplete DTO split for issue references.
 async fn issue_reference_autocomplete_contract_searches_and_orders_project_issues() {
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

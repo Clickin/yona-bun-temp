@@ -79,9 +79,6 @@ export function codexSandboxReason(env = process.env) {
   if (env.CODEX_SANDBOX) {
     return `CODEX_SANDBOX=${env.CODEX_SANDBOX}`;
   }
-  if (env.CODEX_SANDBOX_NETWORK_DISABLED) {
-    return `CODEX_SANDBOX_NETWORK_DISABLED=${env.CODEX_SANDBOX_NETWORK_DISABLED}`;
-  }
   return null;
 }
 
@@ -111,9 +108,11 @@ function tailLines(path, lineCount) {
 export async function runAgentCargoTest(options, env = process.env) {
   const sandboxReason = codexSandboxReason(env);
   if (!options.allowSandbox && !options.dryRun && sandboxReason) {
-    console.warn(
-      `agent-cargo-test: Codex sandbox marker detected (${sandboxReason}); continuing with log-buffered output.`,
+    console.error(
+      `agent-cargo-test: refusing to run cargo inside Codex sandbox (${sandboxReason}). ` +
+        "Run this command with sandbox escalation/require_escalated, or pass --allow-sandbox only for intentional diagnostics.",
     );
+    return { logPath: null, status: 1 };
   }
 
   const { args, command } = cargoCommand(options);
