@@ -71,11 +71,12 @@ pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use projects::{
     delete_project_repository_storage, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
-    milestone_list_filter_from_request, milestone_mutation_input, organization_container_read,
-    organization_detail_read, organization_settings_read, project_milestone_create,
-    project_milestone_delete, project_milestone_list, project_milestone_read,
-    project_milestone_state_mutation, project_milestone_update, project_webhook_type_label,
-    record_project_webhook_delivery, rest_delete_project_member, rest_project_menu_settings,
+    milestone_list_filter_from_request, milestone_mutation_input, organization_admin_read,
+    organization_container_read, organization_detail_read, organization_members_read,
+    organization_settings_read, project_milestone_create, project_milestone_delete,
+    project_milestone_list, project_milestone_read, project_milestone_state_mutation,
+    project_milestone_update, project_webhook_type_label, record_project_webhook_delivery,
+    rest_delete_project_member, rest_project_menu_settings,
 };
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
