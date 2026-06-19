@@ -905,7 +905,7 @@ async fn legacy_external_hello_matches_global_api_contract() {
 }
 
 #[tokio::test]
-// Guards project-route-owned organization list/create/update/read/member/enroll/leave/delete helpers.
+// Guards projects/organizations.rs list/create/update/read/member/enroll/leave/delete helpers.
 async fn rest_organization_routes_cover_directory_views_and_membership_mutations() {
     let (app, repository) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;

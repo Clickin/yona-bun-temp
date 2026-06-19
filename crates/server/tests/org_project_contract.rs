@@ -2329,6 +2329,7 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
 
 #[tokio::test]
 async fn organization_enrollment_mutations_toggle_guest_request_state() {
+    // Guards projects/organizations.rs enrollment request/cancel helpers.
     let (app, repository) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
@@ -2390,6 +2391,7 @@ async fn organization_enrollment_mutations_toggle_guest_request_state() {
 
 #[tokio::test]
 async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
+    // Guards projects/organizations.rs admin member mutation helpers.
     let (app, repository) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;

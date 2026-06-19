@@ -920,6 +920,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `issue_assignable_contract::issue_assignable_users_blank_query_preserves_legacy_pseudo_rows`,
   and
   `issue_sharer_contract::issue_sharer_contract_shares_unshares_and_keeps_duplicate_single_row`.
+- 2026-06-20 build/check diet note: organization proto helpers, REST DTOs,
+  REST directory/detail/admin/settings/member/enrollment/leave/delete handlers,
+  and organization logo update helper moved from
+  `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/organizations.rs`; route registration
+  remains in the parent project route module. This preserves organization
+  directory/detail/admin/settings/member mutation, enrollment, leave, and delete
+  behavior covered by
+  `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`,
+  `org_project_contract::organization_admin_mutations_add_accept_promote_and_delete_members`,
+  and
+  `org_project_contract::organization_enrollment_mutations_toggle_guest_request_state`.
 
 ## Wave 0 Exit Snapshot
 
