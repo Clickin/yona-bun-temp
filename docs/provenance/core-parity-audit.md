@@ -945,6 +945,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `project_members_contract::project_member_self_leave_private_project_does_not_leak_directory`,
   and
   `project_members_contract::direct_legacy_info_leave_route_removes_current_user_and_redirects_to_profile_projects`.
+- 2026-06-20 build/check diet note: project fork REST DTOs, fork owner-option
+  projection, fork options response, target-owner authorization, and
+  repository-clone fork creation handler moved from
+  `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/forks.rs`; route registration remains in
+  the parent project route module. This preserves fork options, owner
+  selection, bare repository cloning, origin persistence, manager membership,
+  and duplicate-name rejection covered by
+  `project_fork_contract::project_fork_clones_bare_repository_and_records_origin`.
 
 ## Wave 0 Exit Snapshot
 

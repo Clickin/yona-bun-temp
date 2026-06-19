@@ -250,6 +250,9 @@ fn head_commit(repo_path: &Path) -> String {
 }
 
 #[tokio::test]
+// Guards the `routes/projects/forks.rs` ownership boundary: fork options,
+// repository clone, origin persistence, and duplicate-name rejection stay
+// together while route registration remains in the parent project module.
 async fn project_fork_clones_bare_repository_and_records_origin() {
     let _guard = yona_data_env_lock()
         .lock()
