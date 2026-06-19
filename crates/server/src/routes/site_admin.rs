@@ -10,7 +10,7 @@ use axum::{
 use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, DEFAULT_COST};
 use http::HeaderValue;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap, path::Path as StdPath, process::Command, sync::atomic::Ordering,
     time::Duration,
@@ -29,19 +29,413 @@ use crate::{
     require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
     rest_repository, session::SessionManager, site_export_filename_stamp, trimmed_option,
     uploaded_file_path, workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend,
-    PilotServiceImpl, RestProjectDeleteResponse, RestRouteError, RestSiteAvatarFromAttachmentBody,
-    RestSiteDiagnosticsResponse, RestSiteExportAttachmentItem, RestSiteExportCommentItem,
-    RestSiteExportIssueItem, RestSiteExportLabelItem, RestSiteExportMilestoneItem,
-    RestSiteExportPostItem, RestSiteExportProjectLabelItem, RestSiteExportProjectMemberItem,
-    RestSiteExportResponse, RestSiteImportPayload, RestSiteImportResponse, RestSiteIssueItem,
-    RestSiteIssueListResponse, RestSiteIssuesQuery, RestSiteLegacyOkResponse, RestSiteMailListBody,
-    RestSiteMailListResponse, RestSiteMailOptionsResponse, RestSiteMailSendBody,
-    RestSiteNoAvatarUserItem, RestSiteNoAvatarUsersResponse, RestSitePostItem,
-    RestSitePostListResponse, RestSitePostsQuery, RestSiteProjectItem, RestSiteProjectListResponse,
-    RestSiteProjectsQuery, RestSiteUpdateResponse, RestSiteUserItem, RestSiteUserListResponse,
-    RestSiteUserMutationResponse, RestSiteUserPasswordResetResponse, RestSiteUsersQuery,
-    SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteUsersQuery {
+    page: Option<u32>,
+    query: Option<String>,
+    state: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserItem {
+    avatar_url: String,
+    created_at: String,
+    display_name: String,
+    email_address: String,
+    id: i64,
+    is_guest: bool,
+    is_site_admin: bool,
+    last_state_modified_at: String,
+    login_id: String,
+    state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserListResponse {
+    page: u32,
+    page_size: u32,
+    query: String,
+    site_admin_count: u32,
+    state: String,
+    total: u32,
+    total_pages: u32,
+    users: Vec<RestSiteUserItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteNoAvatarUserItem {
+    email: String,
+    login_id: String,
+    name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteNoAvatarUsersResponse {
+    users: Vec<RestSiteNoAvatarUserItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserMutationResponse {
+    user: RestSiteUserItem,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteAvatarFromAttachmentBody {
+    avatar_file_id: i64,
+    email: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteLegacyOkResponse {
+    message: String,
+    status: u16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserPasswordResetResponse {
+    is_success: bool,
+    login_id: String,
+    name: String,
+    new_password: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteProjectsQuery {
+    filter: Option<String>,
+    page: Option<u32>,
+    page_num: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteProjectItem {
+    created_at: String,
+    id: i64,
+    owner_name: String,
+    overview: String,
+    project_logo_url: String,
+    project_name: String,
+    project_scope: String,
+    vcs: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteProjectListResponse {
+    filter: String,
+    page: u32,
+    page_size: u32,
+    projects: Vec<RestSiteProjectItem>,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSitePostsQuery {
+    page: Option<u32>,
+    page_num: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostListResponse {
+    page: u32,
+    page_size: u32,
+    posts: Vec<RestSitePostItem>,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostItem {
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    created_label: String,
+    created_title: String,
+    labels: Vec<RestBoardLabel>,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_logo_url: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+    updated_label: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteIssuesQuery {
+    page: Option<u32>,
+    page_num: Option<u32>,
+    state: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteIssueItem {
+    assignee_label: String,
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    created_label: String,
+    created_title: String,
+    issue_number: String,
+    labels: Vec<RestBoardLabel>,
+    milestone_title: String,
+    owner_name: String,
+    project_logo_url: String,
+    project_name: String,
+    state: String,
+    title: String,
+    updated_label: String,
+    voter_count: u32,
+    watcher_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteIssueListResponse {
+    issues: Vec<RestSiteIssueItem>,
+    page: u32,
+    page_size: u32,
+    state: String,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteDiagnosticsResponse {
+    error_count: u32,
+    errors: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUpdateResponse {
+    current_version: String,
+    error: Option<String>,
+    message: String,
+    release_url: Option<String>,
+    version_to_update: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailOptionsResponse {
+    not_configured_items: Vec<String>,
+    sender: String,
+    sent: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailSendBody {
+    from: String,
+    to: String,
+    subject: String,
+    body: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteMailListBody {
+    all: bool,
+    projects: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailListResponse {
+    recipients: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteExportResponse {
+    format: String,
+    provenance: String,
+    users: Vec<RestSiteUserItem>,
+    projects: Vec<RestSiteProjectItem>,
+    project_members: Vec<RestSiteExportProjectMemberItem>,
+    labels: Vec<RestSiteExportProjectLabelItem>,
+    milestones: Vec<RestSiteExportMilestoneItem>,
+    posts: Vec<RestSiteExportPostItem>,
+    issues: Vec<RestSiteExportIssueItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportPayload {
+    format: String,
+    users: Vec<RestSiteImportUserItem>,
+    projects: Vec<RestSiteImportProjectItem>,
+    project_members: Vec<RestSiteExportProjectMemberItem>,
+    labels: Vec<RestSiteExportProjectLabelItem>,
+    milestones: Vec<RestSiteExportMilestoneItem>,
+    posts: Vec<RestSiteExportPostItem>,
+    issues: Vec<RestSiteExportIssueItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportUserItem {
+    display_name: String,
+    email_address: String,
+    is_site_admin: bool,
+    login_id: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportProjectItem {
+    owner_name: String,
+    overview: String,
+    project_name: String,
+    project_scope: String,
+    #[serde(alias = "projectVcs")]
+    vcs: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportProjectMemberItem {
+    login_id: String,
+    owner_name: String,
+    project_name: String,
+    role: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportProjectLabelItem {
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    #[serde(alias = "labelName")]
+    name: String,
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportMilestoneItem {
+    attachments: Vec<RestSiteExportAttachmentItem>,
+    contents_markdown: String,
+    due_date: String,
+    owner_name: String,
+    project_name: String,
+    state: String,
+    title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportPostItem {
+    author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
+    body_markdown: String,
+    comments: Vec<RestSiteExportCommentItem>,
+    history_markdown: String,
+    labels: Vec<RestSiteExportLabelItem>,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportIssueItem {
+    assignee_login_id: String,
+    author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
+    body_markdown: String,
+    comments: Vec<RestSiteExportCommentItem>,
+    history_markdown: String,
+    issue_number: String,
+    labels: Vec<RestSiteExportLabelItem>,
+    milestone_title: String,
+    owner_name: String,
+    project_name: String,
+    state: String,
+    title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportCommentItem {
+    author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    child_comments: Vec<RestSiteExportCommentItem>,
+    contents_markdown: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportAttachmentItem {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content_base64: Option<String>,
+    id: i64,
+    mime_type: String,
+    name: String,
+    size: i64,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportLabelItem {
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    #[serde(alias = "labelName")]
+    name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportResponse {
+    imported_projects: u32,
+    imported_project_members: u32,
+    imported_issues: u32,
+    imported_labels: u32,
+    imported_milestones: u32,
+    imported_posts: u32,
+    imported_users: u32,
+    skipped_issues: u32,
+    skipped_labels: u32,
+    skipped_milestones: u32,
+    skipped_posts: u32,
+    skipped_projects: u32,
+    skipped_project_members: u32,
+    skipped_users: u32,
+    unsupported_sections: Vec<String>,
+}
 
 pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
     Router::new()
@@ -1096,7 +1490,7 @@ async fn direct_download_site_update_file(
     }
 }
 
-pub(crate) async fn rest_read_site_users(
+async fn rest_read_site_users(
     headers: HeaderMap,
     query: RestSiteUsersQuery,
     service: PilotServiceImpl,
@@ -1119,7 +1513,7 @@ pub(crate) async fn rest_read_site_users(
     ))
 }
 
-pub(crate) async fn rest_read_site_no_avatar_users(
+async fn rest_read_site_no_avatar_users(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteNoAvatarUsersResponse>, RestRouteError> {
@@ -1137,7 +1531,7 @@ pub(crate) async fn rest_read_site_no_avatar_users(
     }))
 }
 
-pub(crate) async fn rest_set_site_user_avatar_from_attachment(
+async fn rest_set_site_user_avatar_from_attachment(
     headers: HeaderMap,
     body: RestSiteAvatarFromAttachmentBody,
     service: PilotServiceImpl,
@@ -1168,7 +1562,7 @@ pub(crate) async fn rest_set_site_user_avatar_from_attachment(
     }
 }
 
-pub(crate) async fn rest_toggle_site_user_admin(
+async fn rest_toggle_site_user_admin(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -1187,7 +1581,7 @@ pub(crate) async fn rest_toggle_site_user_admin(
     }))
 }
 
-pub(crate) async fn rest_toggle_site_user_account_lock(
+async fn rest_toggle_site_user_account_lock(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -1206,7 +1600,7 @@ pub(crate) async fn rest_toggle_site_user_account_lock(
     }))
 }
 
-pub(crate) async fn rest_toggle_site_user_guest(
+async fn rest_toggle_site_user_guest(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -1225,7 +1619,7 @@ pub(crate) async fn rest_toggle_site_user_guest(
     }))
 }
 
-pub(crate) async fn rest_delete_site_user(
+async fn rest_delete_site_user(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -1254,7 +1648,7 @@ pub(crate) async fn rest_delete_site_user(
     }))
 }
 
-pub(crate) async fn rest_reset_site_user_password(
+async fn rest_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
     service: PilotServiceImpl,
@@ -1282,7 +1676,7 @@ pub(crate) async fn rest_reset_site_user_password(
     }))
 }
 
-pub(crate) async fn rest_read_site_projects(
+async fn rest_read_site_projects(
     headers: HeaderMap,
     query: RestSiteProjectsQuery,
     service: PilotServiceImpl,
@@ -1341,7 +1735,7 @@ pub(crate) async fn rest_read_site_projects(
     }))
 }
 
-pub(crate) async fn rest_read_site_posts(
+async fn rest_read_site_posts(
     headers: HeaderMap,
     query: RestSitePostsQuery,
     service: PilotServiceImpl,
@@ -1370,7 +1764,7 @@ pub(crate) async fn rest_read_site_posts(
     }))
 }
 
-pub(crate) async fn rest_read_site_issues(
+async fn rest_read_site_issues(
     headers: HeaderMap,
     query: RestSiteIssuesQuery,
     service: PilotServiceImpl,
@@ -1401,7 +1795,7 @@ pub(crate) async fn rest_read_site_issues(
     }))
 }
 
-pub(crate) async fn rest_read_site_diagnostics(
+async fn rest_read_site_diagnostics(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteDiagnosticsResponse>, RestRouteError> {
@@ -1417,7 +1811,7 @@ pub(crate) async fn rest_read_site_diagnostics(
     }))
 }
 
-pub(crate) async fn rest_read_site_update(
+async fn rest_read_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
@@ -2509,7 +2903,7 @@ async fn rest_export_site_issues(
     Ok(issues)
 }
 
-pub(crate) async fn rest_read_site_mail(
+async fn rest_read_site_mail(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
@@ -2517,7 +2911,7 @@ pub(crate) async fn rest_read_site_mail(
     Ok(Json(rest_site_mail_options(false)))
 }
 
-pub(crate) async fn rest_send_site_test_mail(
+async fn rest_send_site_test_mail(
     headers: HeaderMap,
     body: RestSiteMailSendBody,
     service: PilotServiceImpl,
@@ -2541,7 +2935,7 @@ pub(crate) async fn rest_send_site_test_mail(
     Ok(Json(rest_site_mail_options(true)))
 }
 
-pub(crate) async fn rest_read_site_mail_list(
+async fn rest_read_site_mail_list(
     headers: HeaderMap,
     body: RestSiteMailListBody,
     service: PilotServiceImpl,

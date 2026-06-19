@@ -829,6 +829,7 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
 
 #[tokio::test]
 async fn site_admin_export_download_follows_legacy_site_data_route() {
+    // Guards the site-admin export DTO route-module ownership split.
     let _data_guard = yona_data_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());
@@ -1883,6 +1884,7 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
 
 #[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
+    // Guards the site-admin user DTO route-module ownership split.
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
@@ -2883,6 +2885,7 @@ async fn site_admin_update_download_file_proxies_configured_https_binary() {
 
 #[tokio::test]
 async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
+    // Guards the site-admin mail DTO route-module ownership split.
     let _guard = smtp_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());
