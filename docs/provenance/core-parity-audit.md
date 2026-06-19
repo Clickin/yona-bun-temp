@@ -701,6 +701,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
   `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`,
   and `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`.
+- 2026-06-20 build/check diet note: SVN PROPFIND property selection,
+  supportedlock/supported-report-set/activity-collection/displayname item
+  builders, file ETag synthesis, and dead-property XML name/value rendering
+  moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/propfind.rs`; DAV request dispatch and
+  response layout still own when properties are emitted. This preserves
+  allprop/propname filtering, label-revision PROPFIND metadata, file property
+  responses, and propset dead-property round trips covered by
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata`,
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`.
 
 ## Wave 0 Exit Snapshot
 

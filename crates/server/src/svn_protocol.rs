@@ -19,6 +19,7 @@ mod date;
 mod href;
 mod lock;
 mod path;
+mod propfind;
 mod report_items;
 mod svndiff;
 mod xml;
@@ -405,10 +406,10 @@ fn svn_protocol_revision_provenance(
     request: &str,
 ) -> Option<SvnProtocolRevisionProvenance> {
     let revision = revision?;
-    if !(svn_protocol_propfind_is_propname(request)
-        || svn_protocol_propfind_wants(request, "creationdate")
-        || svn_protocol_propfind_wants(request, "creator-displayname")
-        || svn_protocol_propfind_wants(request, "getlastmodified"))
+    if !(propfind::is_propname(request)
+        || propfind::wants(request, "creationdate")
+        || propfind::wants(request, "creator-displayname")
+        || propfind::wants(request, "getlastmodified"))
     {
         return None;
     }
@@ -445,7 +446,7 @@ fn svn_protocol_propfind_collection_response(
             format!("{href}/")
         }
     });
-    if svn_protocol_propfind_is_propname(request) {
+    if propfind::is_propname(request) {
         let displayname = "        <D:displayname/>\n";
         let supportedlock = "        <D:supportedlock/>\n";
         let version_name = youngest_revision
@@ -512,14 +513,14 @@ fn svn_protocol_propfind_collection_response(
         );
         return response;
     }
-    let version_name = (svn_protocol_propfind_wants(request, "version-name")
-        || svn_protocol_propfind_wants(request, "allprop"))
+    let version_name = (propfind::wants(request, "version-name")
+        || propfind::wants(request, "allprop"))
     .then_some(youngest_revision)
     .flatten()
     .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
     .unwrap_or_default();
-    let repository_uuid = (svn_protocol_propfind_wants(request, "repository-uuid")
-        || svn_protocol_propfind_wants(request, "allprop"))
+    let repository_uuid = (propfind::wants(request, "repository-uuid")
+        || propfind::wants(request, "allprop"))
     .then_some(repository_uuid)
     .flatten()
     .map(|uuid| {
@@ -529,8 +530,8 @@ fn svn_protocol_propfind_collection_response(
         )
     })
     .unwrap_or_default();
-    let checked_in = (svn_protocol_propfind_wants(request, "checked-in")
-        || svn_protocol_propfind_wants(request, "allprop"))
+    let checked_in = (propfind::wants(request, "checked-in")
+        || propfind::wants(request, "allprop"))
     .then_some(checked_in_href)
     .flatten()
     .map(|href| {
@@ -540,10 +541,10 @@ fn svn_protocol_propfind_collection_response(
         )
     })
     .unwrap_or_default();
-    let version_controlled_configuration = (svn_protocol_propfind_wants(
+    let version_controlled_configuration = (propfind::wants(
         request,
         "version-controlled-configuration",
-    ) || svn_protocol_propfind_wants(request, "allprop"))
+    ) || propfind::wants(request, "allprop"))
     .then_some(vcc_href)
     .flatten()
         .map(|href| {
@@ -553,8 +554,8 @@ fn svn_protocol_propfind_collection_response(
             )
         })
         .unwrap_or_default();
-    let baseline_collection = (svn_protocol_propfind_wants(request, "baseline-collection")
-        || svn_protocol_propfind_wants(request, "allprop"))
+    let baseline_collection = (propfind::wants(request, "baseline-collection")
+        || propfind::wants(request, "allprop"))
     .then_some(baseline_collection_href.as_deref())
     .flatten()
     .map(|href| {
@@ -565,14 +566,14 @@ fn svn_protocol_propfind_collection_response(
     })
     .unwrap_or_default();
     let baseline_relative_path =
-        if vcc_href.is_some() && svn_protocol_propfind_wants(request, "baseline-relative-path") {
+        if vcc_href.is_some() && propfind::wants(request, "baseline-relative-path") {
             "        <S:baseline-relative-path></S:baseline-relative-path>\n"
         } else {
             ""
         };
     let activity_collection_set =
-        svn_protocol_activity_collection_set_item(activity_collection_href, request);
-    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+        propfind::activity_collection_set_item(activity_collection_href, request);
+    let creationdate = propfind::wants(request, "creationdate")
         .then_some(
             provenance
                 .map(|metadata| metadata.creationdate.as_str())
@@ -586,7 +587,7 @@ fn svn_protocol_propfind_collection_response(
             )
         })
         .unwrap_or_default();
-    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+    let creator_displayname = propfind::wants(request, "creator-displayname")
         .then_some(
             provenance
                 .map(|metadata| metadata.creator_displayname.as_str())
@@ -600,7 +601,7 @@ fn svn_protocol_propfind_collection_response(
             )
         })
         .unwrap_or_default();
-    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+    let getlastmodified = propfind::wants(request, "getlastmodified")
         .then_some(
             provenance
                 .map(|metadata| metadata.getlastmodified.as_str())
@@ -615,16 +616,16 @@ fn svn_protocol_propfind_collection_response(
         })
         .unwrap_or_default();
     let resourcetype = if request.trim().is_empty()
-        || svn_protocol_propfind_wants(request, "resourcetype")
-        || svn_protocol_propfind_wants(request, "allprop")
+        || propfind::wants(request, "resourcetype")
+        || propfind::wants(request, "allprop")
     {
         "        <D:resourcetype><D:collection/></D:resourcetype>\n"
     } else {
         ""
     };
-    let displayname = svn_protocol_displayname_item(href, request);
-    let supportedlock = svn_protocol_supportedlock_item(request);
-    let supported_report_set = svn_protocol_supported_report_set_item(request);
+    let displayname = propfind::displayname_item(href, request);
+    let supportedlock = propfind::supportedlock_item(request);
+    let supported_report_set = propfind::supported_report_set_item(request);
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
@@ -691,12 +692,12 @@ fn svn_protocol_baseline_propfind_response(
     }
     let href = format!("{}/!svn/bln/{revision}", href::project(route));
     let baseline_collection = format!("{}/!svn/bc/{revision}", href::project(route));
-    let wants_creation_metadata = svn_protocol_propfind_is_propname(request)
-        || svn_protocol_propfind_wants(request, "creationdate")
-        || svn_protocol_propfind_wants(request, "creator-displayname")
-        || svn_protocol_propfind_wants(request, "getlastmodified");
-    let repository_uuid = if svn_protocol_propfind_is_propname(request)
-        || svn_protocol_propfind_wants(request, "repository-uuid")
+    let wants_creation_metadata = propfind::is_propname(request)
+        || propfind::wants(request, "creationdate")
+        || propfind::wants(request, "creator-displayname")
+        || propfind::wants(request, "getlastmodified");
+    let repository_uuid = if propfind::is_propname(request)
+        || propfind::wants(request, "repository-uuid")
     {
         match yona_rust_vcs::svn_repository_uuid(repo_path) {
             Ok(uuid) => Some(uuid),
@@ -728,26 +729,26 @@ fn svn_protocol_baseline_propfind_response(
     } else {
         None
     };
-    let prop_items = if svn_protocol_propfind_is_propname(request) {
+    let prop_items = if propfind::is_propname(request) {
         "        <D:resourcetype/>\n        <D:displayname/>\n        <D:supportedlock/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <D:getlastmodified/>\n        <D:supported-report-set/>\n        <S:repository-uuid/>\n".to_string()
     } else {
-        let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
+        let resourcetype = propfind::wants(request, "resourcetype")
             .then_some("        <D:resourcetype><D:baseline/></D:resourcetype>\n")
             .unwrap_or_default();
-        let displayname = svn_protocol_displayname_item(&href, request);
-        let supportedlock = svn_protocol_supportedlock_item(request);
-        let version_name = svn_protocol_propfind_wants(request, "version-name")
+        let displayname = propfind::displayname_item(&href, request);
+        let supportedlock = propfind::supportedlock_item(request);
+        let version_name = propfind::wants(request, "version-name")
             .then_some(format!(
                 "        <D:version-name>{revision}</D:version-name>\n"
             ))
             .unwrap_or_default();
-        let baseline_collection_item = svn_protocol_propfind_wants(request, "baseline-collection")
+        let baseline_collection_item = propfind::wants(request, "baseline-collection")
             .then_some(format!(
                 "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
                 xml_escape(&baseline_collection)
             ))
             .unwrap_or_default();
-        let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+        let creationdate = propfind::wants(request, "creationdate")
             .then_some(
                 log_entry
                     .as_ref()
@@ -762,7 +763,7 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
-        let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+        let creator_displayname = propfind::wants(request, "creator-displayname")
             .then_some(
                 log_entry
                     .as_ref()
@@ -777,7 +778,7 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
-        let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+        let getlastmodified = propfind::wants(request, "getlastmodified")
             .then_some(
                 log_entry
                     .as_ref()
@@ -792,7 +793,7 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
-        let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
+        let repository_uuid = propfind::wants(request, "repository-uuid")
             .then_some(repository_uuid.as_deref())
             .flatten()
             .map(|uuid| {
@@ -802,7 +803,7 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
-        let supported_report_set = svn_protocol_supported_report_set_item(request);
+        let supported_report_set = propfind::supported_report_set_item(request);
         format!(
             "{resourcetype}{displayname}{supportedlock}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{getlastmodified}{repository_uuid}{supported_report_set}"
         )
@@ -1156,7 +1157,7 @@ fn svn_protocol_propfind_collection_item(
     provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> String {
-    if svn_protocol_propfind_is_propname(request) {
+    if propfind::is_propname(request) {
         let displayname = "        <D:displayname/>\n";
         let supportedlock = "        <D:supportedlock/>\n";
         let version_name = version_revision
@@ -1208,8 +1209,8 @@ fn svn_protocol_propfind_collection_item(
     }
     let checked_in = version_revision
         .filter(|_| {
-            svn_protocol_propfind_wants(request, "checked-in")
-                || svn_protocol_propfind_wants(request, "version-controlled-configuration")
+            propfind::wants(request, "checked-in")
+                || propfind::wants(request, "version-controlled-configuration")
         })
         .map(|revision| {
             format!(
@@ -1220,8 +1221,8 @@ fn svn_protocol_propfind_collection_item(
         .unwrap_or_default();
     let baseline_collection = version_revision
         .filter(|_| {
-            svn_protocol_propfind_wants(request, "baseline-collection")
-                || svn_protocol_propfind_wants(request, "version-controlled-configuration")
+            propfind::wants(request, "baseline-collection")
+                || propfind::wants(request, "version-controlled-configuration")
         })
         .map(|revision| {
             format!(
@@ -1232,14 +1233,14 @@ fn svn_protocol_propfind_collection_item(
         .unwrap_or_default();
     let version_name = version_revision
         .filter(|_| {
-            svn_protocol_propfind_wants(request, "version-name")
-                || svn_protocol_propfind_wants(request, "version-controlled-configuration")
+            propfind::wants(request, "version-name")
+                || propfind::wants(request, "version-controlled-configuration")
         })
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
     let vcc_href = format!("{}/!svn/vcc/default", href::project(route));
     let repository_uuid = repository_uuid
-        .filter(|_| svn_protocol_propfind_wants(request, "repository-uuid"))
+        .filter(|_| propfind::wants(request, "repository-uuid"))
         .map(|uuid| {
             format!(
                 "        <S:repository-uuid>{}</S:repository-uuid>\n",
@@ -1256,20 +1257,20 @@ fn svn_protocol_propfind_collection_item(
             xml_escape(baseline_relative_path)
         )
     };
-    let baseline_relative_path = if svn_protocol_propfind_wants(request, "baseline-relative-path") {
+    let baseline_relative_path = if propfind::wants(request, "baseline-relative-path") {
         baseline_relative_path
     } else {
         String::new()
     };
-    let resourcetype = if svn_protocol_propfind_wants(request, "resourcetype") {
+    let resourcetype = if propfind::wants(request, "resourcetype") {
         "        <D:resourcetype><D:collection/></D:resourcetype>\n"
     } else {
         ""
     };
-    let displayname = svn_protocol_displayname_item(href, request);
-    let supportedlock = svn_protocol_supportedlock_item(request);
-    let supported_report_set = svn_protocol_supported_report_set_item(request);
-    let version_controlled_configuration = if svn_protocol_propfind_wants(
+    let displayname = propfind::displayname_item(href, request);
+    let supportedlock = propfind::supportedlock_item(request);
+    let supported_report_set = propfind::supported_report_set_item(request);
+    let version_controlled_configuration = if propfind::wants(
         request,
         "version-controlled-configuration",
     ) {
@@ -1280,7 +1281,7 @@ fn svn_protocol_propfind_collection_item(
     } else {
         String::new()
     };
-    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+    let creationdate = propfind::wants(request, "creationdate")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1290,7 +1291,7 @@ fn svn_protocol_propfind_collection_item(
             )
         })
         .unwrap_or_default();
-    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+    let creator_displayname = propfind::wants(request, "creator-displayname")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1300,7 +1301,7 @@ fn svn_protocol_propfind_collection_item(
             )
         })
         .unwrap_or_default();
-    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+    let getlastmodified = propfind::wants(request, "getlastmodified")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1338,7 +1339,7 @@ fn svn_protocol_propfind_file_item(
     provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> String {
-    if svn_protocol_propfind_is_propname(request) {
+    if propfind::is_propname(request) {
         let content_length = content_length
             .is_some()
             .then_some("        <D:getcontentlength/>\n")
@@ -1346,7 +1347,7 @@ fn svn_protocol_propfind_file_item(
         let displayname = "        <D:displayname/>\n";
         let supportedlock = "        <D:supportedlock/>\n";
         let content_type = "        <D:getcontenttype/>\n";
-        let etag = svn_protocol_file_etag(version_revision, baseline_relative_path)
+        let etag = propfind::file_etag(version_revision, baseline_relative_path)
             .is_some()
             .then_some("        <D:getetag/>\n")
             .unwrap_or_default();
@@ -1383,7 +1384,7 @@ fn svn_protocol_propfind_file_item(
             .then_some("        <D:getlastmodified/>\n")
             .unwrap_or_default();
         let supported_report_set = "        <D:supported-report-set/>\n";
-        let property_items = svn_protocol_property_name_items(properties);
+        let property_items = propfind::property_name_items(properties);
         return format!(
             r#"  <D:response>
     <D:href>{}</D:href>
@@ -1399,31 +1400,31 @@ fn svn_protocol_propfind_file_item(
             xml_escape(href)
         );
     }
-    let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
+    let resourcetype = propfind::wants(request, "resourcetype")
         .then_some("        <D:resourcetype/>\n")
         .unwrap_or_default();
-    let displayname = svn_protocol_displayname_item(href, request);
-    let supportedlock = svn_protocol_supportedlock_item(request);
-    let content_length = svn_protocol_propfind_wants(request, "getcontentlength")
+    let displayname = propfind::displayname_item(href, request);
+    let supportedlock = propfind::supportedlock_item(request);
+    let content_length = propfind::wants(request, "getcontentlength")
         .then_some(content_length)
         .flatten()
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
         .unwrap_or_default();
-    let content_type = svn_protocol_propfind_wants(request, "getcontenttype")
+    let content_type = propfind::wants(request, "getcontenttype")
         .then_some("        <D:getcontenttype>application/octet-stream</D:getcontenttype>\n")
         .unwrap_or_default();
-    let etag = svn_protocol_propfind_wants(request, "getetag")
-        .then(|| svn_protocol_file_etag(version_revision, baseline_relative_path))
+    let etag = propfind::wants(request, "getetag")
+        .then(|| propfind::file_etag(version_revision, baseline_relative_path))
         .flatten()
         .map(|etag| format!("        <D:getetag>{}</D:getetag>\n", xml_escape(&etag)))
         .unwrap_or_default();
-    let wants_vcc = svn_protocol_propfind_wants(request, "version-controlled-configuration");
-    let version_name = (svn_protocol_propfind_wants(request, "version-name") || wants_vcc)
+    let wants_vcc = propfind::wants(request, "version-controlled-configuration");
+    let version_name = (propfind::wants(request, "version-name") || wants_vcc)
         .then_some(version_revision)
         .flatten()
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
-    let checked_in = (svn_protocol_propfind_wants(request, "checked-in") || wants_vcc)
+    let checked_in = (propfind::wants(request, "checked-in") || wants_vcc)
         .then_some(version_href)
         .flatten()
         .map(|href| {
@@ -1433,8 +1434,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let baseline_collection = (svn_protocol_propfind_wants(request, "baseline-collection")
-        || wants_vcc)
+    let baseline_collection = (propfind::wants(request, "baseline-collection") || wants_vcc)
         .then_some(version_revision)
         .flatten()
         .map(|revision| {
@@ -1444,7 +1444,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let baseline_relative_path = svn_protocol_propfind_wants(request, "baseline-relative-path")
+    let baseline_relative_path = propfind::wants(request, "baseline-relative-path")
         .then_some(baseline_relative_path)
         .flatten()
         .map(|path| {
@@ -1455,7 +1455,7 @@ fn svn_protocol_propfind_file_item(
         })
         .unwrap_or_default();
     let vcc_href = format!("{}/!svn/vcc/default", href::project(route));
-    let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
+    let repository_uuid = propfind::wants(request, "repository-uuid")
         .then_some(repository_uuid)
         .flatten()
         .map(|uuid| {
@@ -1465,7 +1465,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+    let creationdate = propfind::wants(request, "creationdate")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1475,7 +1475,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+    let creator_displayname = propfind::wants(request, "creator-displayname")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1485,7 +1485,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+    let getlastmodified = propfind::wants(request, "getlastmodified")
         .then_some(provenance)
         .flatten()
         .map(|metadata| {
@@ -1503,8 +1503,8 @@ fn svn_protocol_propfind_file_item(
     } else {
         String::new()
     };
-    let property_items = svn_protocol_property_items_for_request(properties, request);
-    let supported_report_set = svn_protocol_supported_report_set_item(request);
+    let property_items = propfind::property_items_for_request(properties, request);
+    let supported_report_set = propfind::supported_report_set_item(request);
     let deadprop_count = if property_items.is_empty() {
         String::new()
     } else {
@@ -1526,179 +1526,6 @@ fn svn_protocol_propfind_file_item(
 "#,
         xml_escape(href)
     )
-}
-
-fn svn_protocol_supportedlock_item(request: &str) -> String {
-    if !svn_protocol_propfind_wants(request, "supportedlock") {
-        return String::new();
-    }
-    "        <D:supportedlock>\n    <D:lockentry>\n      <D:lockscope><D:exclusive/></D:lockscope>\n      <D:locktype><D:write/></D:locktype>\n    </D:lockentry>\n  </D:supportedlock>\n".to_string()
-}
-
-fn svn_protocol_supported_report_set_item(request: &str) -> String {
-    if !svn_protocol_propfind_wants(request, "supported-report-set") {
-        return String::new();
-    }
-    let report_names = [
-        "log-report",
-        "dated-rev-report",
-        "update-report",
-        "replay-report",
-        "file-revs-report",
-        "mergeinfo-report",
-        "get-deleted-rev-report",
-        "list-report",
-        "inherited-props-report",
-        "get-locks-report",
-        "get-location-segments-report",
-        "get-locations-report",
-    ];
-    let reports = report_names
-        .iter()
-        .map(|name| {
-            format!(
-                r#"          <D:supported-report><D:report><S:{name}/></D:report></D:supported-report>
-"#
-            )
-        })
-        .collect::<String>();
-    format!(
-        r#"        <D:supported-report-set>
-{reports}        </D:supported-report-set>
-"#
-    )
-}
-
-fn svn_protocol_activity_collection_set_item(
-    activity_collection_href: Option<&str>,
-    request: &str,
-) -> String {
-    if !svn_protocol_propfind_wants(request, "activity-collection-set") {
-        return String::new();
-    }
-    let Some(href) = activity_collection_href else {
-        return String::new();
-    };
-    format!(
-        "        <D:activity-collection-set><D:href>{}</D:href></D:activity-collection-set>\n",
-        xml_escape(href)
-    )
-}
-
-fn svn_protocol_displayname_item(href: &str, request: &str) -> String {
-    if !svn_protocol_propfind_wants(request, "displayname") {
-        return String::new();
-    }
-    let displayname = href
-        .trim_end_matches('/')
-        .rsplit('/')
-        .find(|segment| !segment.is_empty())
-        .unwrap_or_default();
-    if displayname.is_empty() {
-        String::new()
-    } else {
-        format!(
-            "        <D:displayname>{}</D:displayname>\n",
-            xml_escape(displayname)
-        )
-    }
-}
-
-fn svn_protocol_file_etag(
-    revision: Option<i64>,
-    baseline_relative_path: Option<&str>,
-) -> Option<String> {
-    let revision = revision?;
-    let path = baseline_relative_path?.trim_matches('/');
-    (!path.is_empty()).then(|| format!("\"{revision}:{path}\""))
-}
-
-fn svn_protocol_property_items(properties: &[yona_rust_vcs::SvnProperty]) -> String {
-    properties
-        .iter()
-        .filter_map(|property| {
-            let (prefix, name) = svn_protocol_property_xml_name(&property.name)?;
-            Some(format!(
-                "        <{prefix}:{name}>{}</{prefix}:{name}>\n",
-                xml_escape(&property.value)
-            ))
-        })
-        .collect()
-}
-
-fn svn_protocol_property_items_for_request(
-    properties: &[yona_rust_vcs::SvnProperty],
-    request: &str,
-) -> String {
-    if svn_protocol_propfind_is_propname(request) {
-        return svn_protocol_property_name_items(properties);
-    }
-    if svn_protocol_propfind_wants(request, "allprop") {
-        return svn_protocol_property_items(properties);
-    }
-    properties
-        .iter()
-        .filter(|property| svn_protocol_propfind_wants(request, property.name.as_str()))
-        .filter_map(|property| {
-            let (prefix, name) = svn_protocol_property_xml_name(&property.name)?;
-            Some(format!(
-                "        <{prefix}:{name}>{}</{prefix}:{name}>\n",
-                xml_escape(&property.value)
-            ))
-        })
-        .collect()
-}
-
-fn svn_protocol_property_name_items(properties: &[yona_rust_vcs::SvnProperty]) -> String {
-    properties
-        .iter()
-        .filter_map(|property| {
-            let (prefix, name) = svn_protocol_property_xml_name(&property.name)?;
-            Some(format!("        <{prefix}:{name}/>\n"))
-        })
-        .collect()
-}
-
-fn svn_protocol_property_xml_name(name: &str) -> Option<(&'static str, String)> {
-    let clean = name.trim();
-    if clean.is_empty() {
-        return None;
-    }
-    if let Some(rest) = clean.strip_prefix("svn:") {
-        if svn_protocol_xml_local_name(rest) {
-            return Some(("SVN", rest.to_string()));
-        }
-        return None;
-    }
-    if svn_protocol_xml_local_name(clean) {
-        return Some(("C", clean.to_string()));
-    }
-    None
-}
-
-fn svn_protocol_xml_local_name(name: &str) -> bool {
-    let mut chars = name.chars();
-    let Some(first) = chars.next() else {
-        return false;
-    };
-    if !(first.is_ascii_alphabetic() || first == '_') {
-        return false;
-    }
-    chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'))
-}
-
-fn svn_protocol_propfind_wants(request: &str, property_name: &str) -> bool {
-    let request = request.trim();
-    request.is_empty()
-        || request.contains("<D:allprop")
-        || request.contains("<allprop")
-        || request.contains(&format!(":{property_name}"))
-        || request.contains(&format!("<{property_name}"))
-}
-
-fn svn_protocol_propfind_is_propname(request: &str) -> bool {
-    let request = request.trim();
-    request.contains("<D:propname") || request.contains("<propname")
 }
 
 fn svn_protocol_status_response(status: StatusCode) -> Response {

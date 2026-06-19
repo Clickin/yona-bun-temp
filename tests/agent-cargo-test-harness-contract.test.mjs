@@ -58,6 +58,7 @@ describe("agent cargo test harness contract", () => {
     assert.equal(parseArgs(["--", "--cargo-bin", "/opt/cargo", "--dry-run"]).cargoBin, "/opt/cargo");
     assert.equal(parseArgs(["--", "--tail-lines", "0"]).tailLines, 0);
     assert.equal(parseArgs(["--", "--allow-sandbox"]).allowSandbox, true);
+    assert.equal(parseArgs(["--", "--outside-sandbox"]).outsideSandbox, true);
     assert.equal(parseArgs(["--", "--dry-run", "-p", "server"]).dryRun, true);
     assert.deepEqual(parseArgs(["--", "--dry-run", "-p", "server"]).cargoArgs, ["-p", "server"]);
   });
@@ -105,6 +106,24 @@ describe("agent cargo test harness contract", () => {
           logDir,
         },
         { CODEX_SANDBOX: "seatbelt" },
+      );
+
+      assert.equal(result.status, 0);
+    } finally {
+      rmSync(logDir, { force: true, recursive: true });
+    }
+  });
+
+  it("allows escalated invocations to assert that inherited Codex markers are stale", async () => {
+    const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-test-contract-"));
+    try {
+      const result = await runAgentCargoTest(
+        {
+          ...parseArgs(["--outside-sandbox", "sandbox-marker-smoke"]),
+          cargoBin: "/bin/echo",
+          logDir,
+        },
+        { CODEX_SANDBOX_NETWORK_DISABLED: "1" },
       );
 
       assert.equal(result.status, 0);

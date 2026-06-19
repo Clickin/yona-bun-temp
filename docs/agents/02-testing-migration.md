@@ -42,7 +42,7 @@
 - failing Red test가 먼저 존재해야 한다.
 - Green 구현 후 target layer별 테스트가 통과해야 한다.
 - Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings`, `cargo fmt` 등 cargo/rustc/rustfmt 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc/rustfmt는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, cargo를 시작하는 tool invocation 전체를 항상 `require_escalated`로 sandbox 밖에서 실행한다.
-- 일반 cargo 검증은 `pnpm agent:cargo -- <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다.
-- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용하되, 이 wrapper를 호출하는 tool invocation도 `require_escalated`로 sandbox 밖에서 실행한다. harness는 긴 cargo 출력을 `.agent/cargo-test-logs/` 로그 파일에 남기고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 남긴다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
+- 일반 cargo 검증은 `pnpm agent:cargo -- --outside-sandbox <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. `--outside-sandbox`는 escalated tool call에서만 쓰는 명시적 assertion이며, sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다.
+- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- --outside-sandbox ...`를 사용하되, 이 wrapper를 호출하는 tool invocation도 `require_escalated`로 sandbox 밖에서 실행한다. harness는 긴 cargo 출력을 `.agent/cargo-test-logs/` 로그 파일에 남기고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 남긴다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
 - legacy source가 없는 경우에만 spec-derived test를 단독 근거로 사용할 수 있다.
 - `legacy와 동일`이라는 완료 주장은 Feature Parity Evidence 없이는 인정하지 않는다.

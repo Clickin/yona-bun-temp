@@ -76,8 +76,8 @@
 - 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
 - 변환 완료 전에는 기능 구현에 필요한 최소 구조만 사용하고, 추가 구조 제안은 하지 않는다.
 - Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings`, `cargo fmt` 등 cargo/rustc/rustfmt 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc/rustfmt는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, cargo를 시작하는 tool invocation 전체를 항상 `require_escalated`로 sandbox 밖에서 실행한다.
-- Agent가 일반 cargo 검증을 실행할 때는 `pnpm agent:cargo -- <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다.
-- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- ...`를 사용하되, 이 wrapper를 호출하는 tool invocation도 `require_escalated`로 sandbox 밖에서 실행한다. 전체 cargo 출력은 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 남긴다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
+- Agent가 일반 cargo 검증을 실행할 때는 `pnpm agent:cargo -- --outside-sandbox <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. `--outside-sandbox`는 escalated tool call에서만 쓰는 명시적 assertion이며, sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다.
+- Agent가 Rust `cargo test`를 실행할 때는 직접 `cargo test ...`를 호출하지 않고 `pnpm agent:cargo-test -- --outside-sandbox ...`를 사용하되, 이 wrapper를 호출하는 tool invocation도 `require_escalated`로 sandbox 밖에서 실행한다. 전체 cargo 출력은 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 남긴다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
 - 매 turn 종료 전 변경이 있으면 반드시 turn commit hook을 `require_escalated`로 실행한다: `pnpm agent:turn-commit -- -m "<concise summary>"`.
 - turn commit hook은 `git add -A`, `tools/precommit-verify.mjs`, `git commit`을 같은 경로로 수행한다. hook이 실패하면 최종 응답 전에 blocker를 수정하거나 실패 사유를 보고한다.
 - 변경이 없을 때는 hook이 no-op으로 종료될 수 있으며, 이 경우 최종 응답에 clean 상태를 명시한다.
