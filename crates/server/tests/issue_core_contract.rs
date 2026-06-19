@@ -217,6 +217,8 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     .await;
     assert_eq!(detail["title"], "Markdown issue");
     assert_eq!(detail["issueNumber"], "1");
+    assert_eq!(detail["ownerName"], "owner");
+    assert_eq!(detail["projectName"], "projectYobi");
     let issue_author_avatar_url = detail["authorAvatarUrl"]
         .as_str()
         .expect("issue detail author avatar url");
