@@ -52,7 +52,8 @@ pub(crate) use issues::{
     resolve_issue_reference_search_project,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_read_direct_issue_form_options,
-    visible_user_issue_items, RestProjectIssuesQuery,
+    visible_user_issue_items, RestDirectIssueFormQuery, RestProjectIssuesQuery,
+    RestUserIssuesQuery,
 };
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::rest_routes as notification_rest_routes;

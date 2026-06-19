@@ -1007,7 +1007,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
 }
 
 #[tokio::test]
-// Guards the issue route-module DTO split for direct issue form options.
+// Guards the issue-owned direct issue form query DTO and options response.
 async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;

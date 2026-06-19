@@ -10,7 +10,10 @@ use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
-use super::utils::{legacy_external_random_storage_token, legacy_external_user_statistics_result};
+use super::{
+    utils::{legacy_external_random_storage_token, legacy_external_user_statistics_result},
+    RestDirectIssueFormQuery, RestUserIssuesQuery,
+};
 use crate::generated::yona::pilot::v1::{
     WorkspaceIssueItem, WorkspaceMemberProjectItem, WorkspaceProfile, WorkspacePullRequestItem,
 };
@@ -23,8 +26,8 @@ use crate::{
     require_authenticated_user, require_session, rest_json_response, rest_list_user_issues,
     rest_read_direct_issue_form_options, session::SessionManager, user_issue_filter_name,
     visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record, ConnectError,
-    Context, PilotBackend, PilotRepository, PilotServiceImpl, RestDirectIssueFormQuery,
-    RestRouteError, RestUserIssuesQuery, TranslationProxyConfig,
+    Context, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
+    TranslationProxyConfig,
 };
 
 #[derive(Serialize)]

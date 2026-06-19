@@ -32,9 +32,31 @@ use crate::{
     rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
     visible_projects_for_organization, ConnectError, Context, ErrorCode, MarkdownIssueReference,
     MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, RestDirectIssueFormQuery, RestIssueAssignableUsersQuery,
-    RestRouteError, RestUserIssuesQuery,
+    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
 };
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestUserIssuesQuery {
+    filter: String,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    page_size: u32,
+    query: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestDirectIssueFormQuery {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    comment_id: Option<i64>,
+    mine: bool,
+}
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]

@@ -1369,29 +1369,6 @@ fn site_export_filename_stamp() -> String {
         .unwrap_or_else(|_| "0".to_string())
 }
 
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestUserIssuesQuery {
-    filter: String,
-    order_by: String,
-    order_dir: String,
-    page_num: u32,
-    page_size: u32,
-    query: String,
-    state: String,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestDirectIssueFormQuery {
-    #[serde(
-        default,
-        deserialize_with = "deserialize_optional_i64_from_string_or_number"
-    )]
-    comment_id: Option<i64>,
-    mine: bool,
-}
-
 #[derive(Clone)]
 pub(crate) struct PilotServiceImpl {
     auth_ui: AuthUiConfig,
