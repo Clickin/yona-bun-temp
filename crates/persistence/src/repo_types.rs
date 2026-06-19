@@ -58,6 +58,12 @@ pub struct SiteNoAvatarUserRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachmentProjectResourceRecord {
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SiteUserDeleteResult {
     Deleted(SiteUserRecord),
     NotFound,

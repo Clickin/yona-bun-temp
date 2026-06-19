@@ -1370,6 +1370,119 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         "replacement-issue-body-attachment.png"
     );
 
+    let public_issue_file_read = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{replacement_issue_file_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(public_issue_file_read.status(), StatusCode::OK);
+
+    let private_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("private attachment ACL".to_string()),
+            project_name: "privateYobi".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    repository
+        .add_project_membership(private_project.id, owner_id, "manager")
+        .await
+        .unwrap();
+    let private_issue_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "private-issue-attachment.png",
+    )
+    .await;
+    let private_issue = repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "privateYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![private_issue_file_id],
+                body_markdown: "private issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: Vec::new(),
+                milestone_id: None,
+                parent_issue_id: None,
+                title: "Private issue with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("private issue");
+
+    let other_private_issue_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType=ISSUE_POST&containerId={}",
+                    private_issue.id
+                ))
+                .header(http::header::COOKIE, &other_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        other_private_issue_file_list.status(),
+        StatusCode::FORBIDDEN
+    );
+
+    let other_private_issue_file_read = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{private_issue_file_id}"))
+                .header(http::header::COOKIE, &other_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        other_private_issue_file_read.status(),
+        StatusCode::FORBIDDEN
+    );
+
+    let owner_private_issue_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType=ISSUE_POST&containerId={}",
+                    private_issue.id
+                ))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(owner_private_issue_file_list.status(), StatusCode::OK);
+
     let issue_comment_file_id = upload_image_file(
         app.clone(),
         &cookie_header,

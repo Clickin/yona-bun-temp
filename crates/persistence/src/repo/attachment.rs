@@ -88,6 +88,102 @@ impl AppRepository {
             .collect())
     }
 
+    pub async fn read_attachment_project_resource(
+        &self,
+        container_type: &str,
+        container_id: i64,
+    ) -> Result<Option<AttachmentProjectResourceRecord>, DbErr> {
+        let normalized = container_type.trim().to_ascii_uppercase();
+        let project_id = match normalized.as_str() {
+            PROJECT_ATTACHMENT_CONTAINER => Some(container_id),
+            ISSUE_ATTACHMENT_CONTAINER | RUST_ISSUE_ATTACHMENT_CONTAINER => {
+                issue::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                    .and_then(|row| row.project_id)
+            }
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER => issue_comment::Entity::find_by_id(container_id)
+                .one(&self.db)
+                .await?
+                .map(|row| row.project_id),
+            BOARD_POST_ATTACHMENT_CONTAINER => posting::Entity::find_by_id(container_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.project_id),
+            BOARD_COMMENT_ATTACHMENT_CONTAINER | RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER => {
+                posting_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                    .map(|row| row.project_id)
+            }
+            MILESTONE_ATTACHMENT_CONTAINER => milestone::Entity::find_by_id(container_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.project_id),
+            PULL_REQUEST_ATTACHMENT_CONTAINER => pull_request::Entity::find_by_id(container_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.to_project_id),
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = review_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(thread_id) = comment.thread_id else {
+                    return Ok(None);
+                };
+                let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                if thread.project_id.is_some() {
+                    thread.project_id
+                } else if let Some(pull_request_id) = thread.pull_request_id {
+                    pull_request::Entity::find_by_id(pull_request_id)
+                        .one(&self.db)
+                        .await?
+                        .and_then(|row| row.to_project_id)
+                } else {
+                    None
+                }
+            }
+            "COMMENT_THREAD" => {
+                let Some(thread) = comment_thread::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                if thread.project_id.is_some() {
+                    thread.project_id
+                } else if let Some(pull_request_id) = thread.pull_request_id {
+                    pull_request::Entity::find_by_id(pull_request_id)
+                        .one(&self.db)
+                        .await?
+                        .and_then(|row| row.to_project_id)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        let Some(project_id) = project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(AttachmentProjectResourceRecord {
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+        }))
+    }
+
     pub async fn list_user_attachments(
         &self,
         owner_login_id: &str,

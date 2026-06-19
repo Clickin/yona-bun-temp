@@ -154,6 +154,64 @@ fn attachment_upload_response(
     }
 }
 
+async fn project_attachment_read_allowed(
+    repository: &crate::persistence::PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<bool, ()> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(|_| ())?
+        .ok_or(())?;
+    project_read_allowed(&authorization, actor_id.is_none()).map_err(|_| ())
+}
+
+async fn attachment_container_read_allowed(
+    repository: &crate::persistence::PilotRepository,
+    container_type: &str,
+    container_id: i64,
+    actor_id: Option<i64>,
+) -> Result<bool, ()> {
+    match container_type.trim().to_ascii_uppercase().as_str() {
+        "USER" => Ok(actor_id == Some(container_id)),
+        "USER_AVATAR" | "ORGANIZATION" => Ok(true),
+        "PROJECT" => {
+            let Some(project) = repository
+                .read_project_by_id(container_id)
+                .await
+                .map_err(|_| ())?
+            else {
+                return Ok(false);
+            };
+            project_attachment_read_allowed(
+                repository,
+                &project.owner_name,
+                &project.project_name,
+                actor_id,
+            )
+            .await
+        }
+        _ => {
+            let Some(resource) = repository
+                .read_attachment_project_resource(container_type, container_id)
+                .await
+                .map_err(|_| ())?
+            else {
+                return Ok(false);
+            };
+            project_attachment_read_allowed(
+                repository,
+                &resource.owner_name,
+                &resource.project_name,
+                actor_id,
+            )
+            .await
+        }
+    }
+}
+
 pub(crate) async fn list_uploaded_files(
     headers: HeaderMap,
     query: AttachmentListQuery,
@@ -181,6 +239,18 @@ pub(crate) async fn list_uploaded_files(
         .and_then(|value| value.parse::<i64>().ok());
     let attachments = if !container_type.trim().is_empty() {
         if let Some(container_id) = container_id {
+            match attachment_container_read_allowed(
+                repository,
+                container_type.trim(),
+                container_id,
+                Some(actor.id),
+            )
+            .await
+            {
+                Ok(true) => {}
+                Ok(false) => return StatusCode::FORBIDDEN.into_response(),
+                Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
             match repository
                 .list_attachments_by_container(container_type.trim(), container_id)
                 .await
@@ -315,41 +385,20 @@ pub(crate) async fn get_uploaded_file(
     };
     let is_avatar = attachment.container_type == "USER_AVATAR";
     if !is_avatar {
-        if attachment.container_type == "ORGANIZATION" {
-            // Legacy organization logos are public wherever the organization header/list renders.
-        } else if attachment.container_type == "PROJECT" {
-            let actor_id = session_manager
-                .read_session_from_headers(&headers)
-                .and_then(|session| session.user_id);
-            let allowed = match repository.read_project_by_id(attachment.container_id).await {
-                Ok(Some(project)) => match repository
-                    .read_project_authorization(
-                        &project.owner_name,
-                        &project.project_name,
-                        actor_id,
-                    )
-                    .await
-                {
-                    Ok(Some(authorization)) => {
-                        project_read_allowed(&authorization, actor_id.is_none()).unwrap_or(false)
-                    }
-                    _ => false,
-                },
-                _ => false,
-            };
-            if !allowed {
-                return StatusCode::FORBIDDEN.into_response();
-            }
-        } else {
-            let Some(session) = session_manager.read_session_from_headers(&headers) else {
-                return StatusCode::FORBIDDEN.into_response();
-            };
-            let Some(user_id) = session.user_id else {
-                return StatusCode::FORBIDDEN.into_response();
-            };
-            if attachment.container_type != "USER" || attachment.container_id != user_id {
-                return StatusCode::FORBIDDEN.into_response();
-            }
+        let actor_id = session_manager
+            .read_session_from_headers(&headers)
+            .and_then(|session| session.user_id);
+        match attachment_container_read_allowed(
+            repository,
+            &attachment.container_type,
+            attachment.container_id,
+            actor_id,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return StatusCode::FORBIDDEN.into_response(),
+            Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }
     let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
