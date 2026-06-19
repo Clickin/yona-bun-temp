@@ -1181,6 +1181,114 @@ pub(crate) async fn project_detail_read(
     ))
 }
 
+pub(crate) async fn project_create(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<CreateProjectRequestView<'static>>,
+) -> Result<(ProjectDetail, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    let request_scope = request.project_scope.trim();
+    let default_scope;
+    let scope_value = if request_scope.is_empty() {
+        default_scope = service.project_default_scope.clone();
+        default_scope.as_str()
+    } else {
+        request_scope
+    };
+    let scope = map_project_scope(scope_value)?;
+    if !is_valid_project_name(request.project_name) || request.overview.len() > 255 {
+        return Err(ConnectError::invalid_argument("invalid project request"));
+    }
+    if repository
+        .project_identifier_exists(request.owner_name, request.project_name)
+        .await
+        .map_err(internal_error)?
+    {
+        return Err(ConnectError::already_exists("project.name.duplicate"));
+    }
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))?;
+
+    let organization = repository
+        .read_organization_authorization(request.owner_name, Some(user_id))
+        .await
+        .map_err(internal_error)?;
+    let created = if let Some(organization) = organization {
+        if !can_create_organization_project(organization.viewer.is_organization_admin) {
+            return Err(ConnectError::permission_denied(
+                "organization project creation is not allowed",
+            ));
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: Some(organization.organization.id),
+                owner_name: organization.organization.organization_name,
+                overview: Some(request.overview.trim().to_string()),
+                project_name: request.project_name.trim().to_string(),
+                project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+    } else {
+        if !can_create_personal_project(Some(&actor.login_id), request.owner_name) {
+            return Err(ConnectError::invalid_argument("project owner is invalid"));
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: None,
+                owner_name: request.owner_name.trim().to_string(),
+                overview: Some(request.overview.trim().to_string()),
+                project_name: request.project_name.trim().to_string(),
+                project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+    };
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), created.id);
+    {
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| internal_error("repository provisioning lock poisoned"))?;
+        yona_rust_vcs::create_bare_repository(&repo_path).map_err(code_browser_error)?;
+    }
+    repository
+        .add_project_membership(created.id, user_id, "manager")
+        .await
+        .map_err(internal_error)?;
+    let authorization = repository
+        .read_project_authorization(&created.owner_name, &created.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    Ok((
+        project_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &authorization,
+            true,
+            false,
+        )
+        .await?,
+        ctx,
+    ))
+}
+
 pub(crate) async fn project_settings_read(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -2883,8 +2991,7 @@ pub(crate) async fn rest_create_project(
         ..Default::default()
     };
     let request = rest_owned_view::<CreateProjectRequestView<'static>>(&request)?;
-    let (mut payload, ctx) = service
-        .create_project(Context::new(headers.clone()), request)
+    let (mut payload, ctx) = project_create(&service, Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     if requested_vcs == "Subversion" {

@@ -468,6 +468,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   directly, preserving read ACL, recent-project visit recording, update/settings
   authorization, enrollment CTA flags, and project container projection behavior
   covered by `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
+- 2026-06-20 build/check diet note: project create RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/projects.rs`; the service method remains a
+  compatibility delegate while the REST project create handler calls the project
+  route-owned helper directly, preserving scope defaults, name validation,
+  duplicate checks, personal/organization owner authorization, bare repository
+  provisioning, manager membership creation, and created project detail
+  projection behavior covered by
+  `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
 
 ## Wave 0 Exit Snapshot
 

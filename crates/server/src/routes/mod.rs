@@ -76,11 +76,11 @@ pub(crate) use projects::{
     organization_detail_read, organization_enroll, organization_enroll_cancel,
     organization_enrollment_accept, organization_leave, organization_member_add,
     organization_member_delete, organization_member_role_update, organization_members_read,
-    organization_settings_read, organization_update, project_container_read, project_detail_read,
-    project_milestone_create, project_milestone_delete, project_milestone_list,
-    project_milestone_read, project_milestone_state_mutation, project_milestone_update,
-    project_settings_read, project_webhook_type_label, record_project_webhook_delivery,
-    rest_delete_project_member, rest_project_menu_settings,
+    organization_settings_read, organization_update, project_container_read, project_create,
+    project_detail_read, project_milestone_create, project_milestone_delete,
+    project_milestone_list, project_milestone_read, project_milestone_state_mutation,
+    project_milestone_update, project_settings_read, project_webhook_type_label,
+    record_project_webhook_delivery, rest_delete_project_member, rest_project_menu_settings,
 };
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
