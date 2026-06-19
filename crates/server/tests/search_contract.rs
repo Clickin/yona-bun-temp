@@ -3608,6 +3608,7 @@ async fn organization_review_search_matches_legacy_group_scope_and_visibility() 
 }
 
 #[tokio::test]
+// Guards search route reuse of the route-utils-owned query component decoder.
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");

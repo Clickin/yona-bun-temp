@@ -7,7 +7,7 @@ use bcrypt::{hash, DEFAULT_COST};
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
@@ -1432,6 +1432,106 @@ pub(crate) async fn legacy_external_authenticated_user_id(
     Err(ConnectError::unauthenticated(
         "missing authenticated session",
     ))
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RestStringOrNumber {
+    String(String),
+    Signed(i64),
+    Unsigned(u64),
+}
+
+fn parse_rest_i64(value: RestStringOrNumber) -> Result<i64, String> {
+    match value {
+        RestStringOrNumber::String(value) => value
+            .trim()
+            .parse::<i64>()
+            .map_err(|_| format!("invalid integer value: {value}")),
+        RestStringOrNumber::Signed(value) => Ok(value),
+        RestStringOrNumber::Unsigned(value) => {
+            i64::try_from(value).map_err(|_| format!("integer is too large: {value}"))
+        }
+    }
+}
+
+pub(crate) fn deserialize_optional_i64_from_string_or_number<'de, D>(
+    deserializer: D,
+) -> Result<Option<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<RestStringOrNumber>::deserialize(deserializer)?;
+    match value {
+        Some(RestStringOrNumber::String(value)) if value.trim().is_empty() => Ok(None),
+        Some(value) => parse_rest_i64(value)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+        None => Ok(None),
+    }
+}
+
+pub(crate) fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
+    deserializer: D,
+) -> Result<Vec<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let values = Vec::<RestStringOrNumber>::deserialize(deserializer)?;
+    values
+        .into_iter()
+        .map(parse_rest_i64)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(serde::de::Error::custom)
+}
+
+pub(crate) fn parse_rest_query_i64(value: &str) -> Result<i64, RestRouteError> {
+    if value.trim().is_empty() {
+        return Ok(0);
+    }
+    value
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
+}
+
+pub(crate) fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
+    if value.trim().is_empty() {
+        return Ok(0);
+    }
+    value
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
+}
+
+pub(crate) fn decode_query_component(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => {
+                decoded.push(b' ');
+                index += 1;
+            }
+            b'%' if index + 2 < bytes.len() => {
+                let high = (bytes[index + 1] as char).to_digit(16);
+                let low = (bytes[index + 2] as char).to_digit(16);
+                if let (Some(high), Some(low)) = (high, low) {
+                    decoded.push(((high << 4) | low) as u8);
+                    index += 3;
+                } else {
+                    decoded.push(bytes[index]);
+                    index += 1;
+                }
+            }
+            byte => {
+                decoded.push(byte);
+                index += 1;
+            }
+        }
+    }
+
+    String::from_utf8_lossy(&decoded).into_owned()
 }
 
 pub(crate) fn accepts_legacy_json(headers: &HeaderMap) -> bool {

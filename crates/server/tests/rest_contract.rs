@@ -464,7 +464,7 @@ async fn rest_issue_create_update_persists_legacy_due_date() {
 
 #[tokio::test]
 async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
-    // Guards issue route-owned list filter helper, response projections, and row payloads.
+    // Guards route-utils-owned REST string/number parsing plus issue list filters and row payloads.
     let (app, _, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;

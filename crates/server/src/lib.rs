@@ -31,11 +31,12 @@ pub(crate) use routes::{
     accepts_legacy_json, base_path_href, build_organization_admin_response,
     build_organization_container_response, build_project_container_response,
     build_workspace_overview_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown,
-    delete_project_repository_storage, detect_upload_mime_type, direct_project_update_allowed,
-    direct_status_from_connect_error, direct_toggle_workspace_notification,
-    dispatch_issue_webhooks, dispatch_pull_request_webhooks, escape_html_attr, escape_html_text,
-    filter_workspace_issue_items_by_read_acl_for_viewer,
+    code_file_record_is_renderable_markdown, code_path_is_markdown, decode_query_component,
+    delete_project_repository_storage, deserialize_i64_vec_from_strings_or_numbers,
+    deserialize_optional_i64_from_string_or_number, detect_upload_mime_type,
+    direct_project_update_allowed, direct_status_from_connect_error,
+    direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
+    escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
     format_project_date_label, gravatar_url, headers_with_form_csrf, issue_attachment_from_record,
@@ -57,13 +58,13 @@ pub(crate) use routes::{
     organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
     organization_issue_list_item_to_proto, organization_logo_url,
     organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, posting_can_create, posting_can_update, project_code_menu_visible,
-    project_detail_from_record, project_detail_with_logo_from_record,
-    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
-    project_milestone_summary_from_record, project_resource_create_allowed,
-    project_webhook_type_label, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
-    require_project_resource_create, resolve_issue_reference_search_project,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32, posting_can_create,
+    posting_can_update, project_code_menu_visible, project_detail_from_record,
+    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
+    project_member_summary_from_record, project_milestone_summary_from_record,
+    project_resource_create_allowed, project_webhook_type_label, read_issue_access,
+    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
+    redirect_to, require_project_resource_create, resolve_issue_reference_search_project,
     rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
@@ -93,7 +94,7 @@ use buffa::view::{MessageView, OwnedView};
 use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
 use http::{HeaderValue, StatusCode};
 use runtime_config::normalize_base_path;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::{
     collections::HashMap,
@@ -1556,106 +1557,6 @@ pub(crate) async fn rest_require_project_code_read(
         return Err(RestRouteError::from_connect_error(error));
     }
     Ok(authorization)
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum RestStringOrNumber {
-    String(String),
-    Signed(i64),
-    Unsigned(u64),
-}
-
-fn parse_rest_i64(value: RestStringOrNumber) -> Result<i64, String> {
-    match value {
-        RestStringOrNumber::String(value) => value
-            .trim()
-            .parse::<i64>()
-            .map_err(|_| format!("invalid integer value: {value}")),
-        RestStringOrNumber::Signed(value) => Ok(value),
-        RestStringOrNumber::Unsigned(value) => {
-            i64::try_from(value).map_err(|_| format!("integer is too large: {value}"))
-        }
-    }
-}
-
-pub(crate) fn deserialize_optional_i64_from_string_or_number<'de, D>(
-    deserializer: D,
-) -> Result<Option<i64>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let value = Option::<RestStringOrNumber>::deserialize(deserializer)?;
-    match value {
-        Some(RestStringOrNumber::String(value)) if value.trim().is_empty() => Ok(None),
-        Some(value) => parse_rest_i64(value)
-            .map(Some)
-            .map_err(serde::de::Error::custom),
-        None => Ok(None),
-    }
-}
-
-pub(crate) fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
-    deserializer: D,
-) -> Result<Vec<i64>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let values = Vec::<RestStringOrNumber>::deserialize(deserializer)?;
-    values
-        .into_iter()
-        .map(parse_rest_i64)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(serde::de::Error::custom)
-}
-
-fn parse_rest_query_i64(value: &str) -> Result<i64, RestRouteError> {
-    if value.trim().is_empty() {
-        return Ok(0);
-    }
-    value
-        .parse()
-        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
-}
-
-pub(crate) fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
-    if value.trim().is_empty() {
-        return Ok(0);
-    }
-    value
-        .parse()
-        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
-}
-
-pub(crate) fn decode_query_component(value: &str) -> String {
-    let bytes = value.as_bytes();
-    let mut decoded = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        match bytes[index] {
-            b'+' => {
-                decoded.push(b' ');
-                index += 1;
-            }
-            b'%' if index + 2 < bytes.len() => {
-                let high = (bytes[index + 1] as char).to_digit(16);
-                let low = (bytes[index + 2] as char).to_digit(16);
-                if let (Some(high), Some(low)) = (high, low) {
-                    decoded.push(((high << 4) | low) as u8);
-                    index += 3;
-                } else {
-                    decoded.push(bytes[index]);
-                    index += 1;
-                }
-            }
-            byte => {
-                decoded.push(byte);
-                index += 1;
-            }
-        }
-    }
-
-    String::from_utf8_lossy(&decoded).into_owned()
 }
 
 #[derive(Default, Deserialize)]
