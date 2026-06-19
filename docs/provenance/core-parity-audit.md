@@ -626,6 +626,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   fallback routes. This preserves embedded runtime config injection and SPA
   fallback behavior covered by
   `assets_contract::embedded_assets_support_base_path_injection_and_spa_fallback`.
+- 2026-06-20 build/check diet note: SVN svndiff encode/decode helpers moved
+  from monolithic `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/svndiff.rs`; SVN request dispatch and DAV
+  response shaping remain in `svn_protocol.rs`. This preserves SVN commit
+  delta application, diff reporting, and update report txdelta behavior covered
+  by `svn_protocol_contract::svn_protocol_external_client_can_commit_file_update`,
+  `svn_protocol_contract::svn_protocol_external_client_can_diff_public_file`,
+  and
+  `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`.
 
 ## Wave 0 Exit Snapshot
 
