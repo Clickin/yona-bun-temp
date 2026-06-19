@@ -620,6 +620,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `assets_contract::legacy_init_redirects_home_and_recreates_project_repositories`,
   the site-admin fetch command lib unit test, and
   `notification_contract::notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mutation`.
+- 2026-06-20 build/check diet note: the generated embedded asset include module
+  moved from `crates/server/src/lib.rs` into `crates/server/src/assets.rs`, so
+  embedded asset lookup is owned by the same module that mounts asset and SPA
+  fallback routes. This preserves embedded runtime config injection and SPA
+  fallback behavior covered by
+  `assets_contract::embedded_assets_support_base_path_injection_and_spa_fallback`.
 
 ## Wave 0 Exit Snapshot
 

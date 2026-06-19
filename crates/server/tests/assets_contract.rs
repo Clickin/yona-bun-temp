@@ -1,8 +1,8 @@
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
-// Guards asset/runtime helper ownership while server root forwarding is
-// replaced with owning-module imports.
+// Guards asset/runtime helper ownership while server root forwarding and
+// embedded asset lookup move into the owning asset module.
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;

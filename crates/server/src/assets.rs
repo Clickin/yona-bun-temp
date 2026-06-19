@@ -10,10 +10,11 @@ use crate::excel_export::{
     direct_review_excel_route_from_request,
 };
 use crate::smart_http::{direct_smart_http_request, route_from_path as smart_http_route_from_path};
-use crate::{
-    embedded_assets, session::SessionManager, svn_protocol, AssetMode, BrowserRuntimeConfig,
-    PilotBackend,
-};
+use crate::{session::SessionManager, svn_protocol, AssetMode, BrowserRuntimeConfig, PilotBackend};
+
+mod embedded_assets {
+    include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
+}
 
 pub(crate) fn apply_asset_routes(
     mut base_router: Router,

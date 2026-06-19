@@ -139,7 +139,3 @@ pub(crate) use smart_http::{
 };
 
 pub use yona_rust_pilot_protocol as generated;
-
-pub mod embedded_assets {
-    include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
-}
