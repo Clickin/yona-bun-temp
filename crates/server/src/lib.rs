@@ -29,9 +29,9 @@ pub use notification_mail::{
 };
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
-    append_response_headers, attach_session_headers, auth_session_read, auth_sign_out,
-    auth_social_providers_from_option, auth_ui_capabilities_from_config, base_path_href,
-    build_organization_admin_response, build_organization_container_response,
+    append_response_headers, attach_session_headers, auth_session_read, auth_sign_in_with_password,
+    auth_sign_out, auth_social_providers_from_option, auth_ui_capabilities_from_config,
+    base_path_href, build_organization_admin_response, build_organization_container_response,
     build_project_container_response, build_workspace_overview_response, code_branch_error,
     code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
     configured_auth_social_providers, configured_bool_env, configured_env_value,
@@ -1056,55 +1056,10 @@ impl PilotServiceImpl {
 
     async fn sign_in_with_password(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         request: OwnedView<SignInWithPasswordRequestView<'static>>,
     ) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "auth requires repository backend",
-            ));
-        };
-
-        let identifier = normalize_identifier(request.identifier);
-        if identifier.is_empty() || request.password.is_empty() {
-            return Err(ConnectError::invalid_argument(
-                LEGACY_LOGIN_REQUIRED_MESSAGE,
-            ));
-        }
-
-        let Some(user) = repository
-            .find_user_by_identifier(&identifier)
-            .await
-            .map_err(internal_error)?
-        else {
-            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
-        };
-
-        let verified = verify(&request.password, &user.password_hash).map_err(internal_error)?;
-        if !verified {
-            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
-        }
-        if confirmation_session_required_from_config(&self.auth_ui) && !user.is_confirmed {
-            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
-        }
-
-        let authenticated_session = self.session_manager.create_authenticated_session(
-            Some(&session.token),
-            user.id,
-            request.remember_me,
-        );
-        attach_session_headers(&mut ctx, &self.session_manager, &authenticated_session);
-
-        let default_landing_path = repository
-            .read_default_landing_path(user.id)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            current_session_response_from_user(&user, default_landing_path),
-            ctx,
-        ))
+        auth_sign_in_with_password(self, ctx, request).await
     }
 
     async fn register_with_password(

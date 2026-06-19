@@ -5,7 +5,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -17,7 +18,8 @@ use crate::{
     resolve_current_session_response, rest_json_response, rest_owned_view,
     rest_read_current_session, send_password_reset_mail, serve_frontend_page,
     session::SessionManager, AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context,
-    PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
+    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 #[derive(Deserialize)]
@@ -132,8 +134,7 @@ pub(crate) async fn rest_sign_in_with_password(
         ..Default::default()
     };
     let request = rest_owned_view::<SignInWithPasswordRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .sign_in_with_password(Context::new(headers), request)
+    let (payload, ctx) = auth_sign_in_with_password(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -197,6 +198,59 @@ pub(crate) async fn auth_session_read(
         .read_session_from_headers(&ctx.headers);
     let response = resolve_current_session_response(&service.backend, session.as_ref()).await?;
     Ok((response, ctx))
+}
+
+pub(crate) async fn auth_sign_in_with_password(
+    service: &PilotServiceImpl,
+    mut ctx: Context,
+    request: OwnedView<SignInWithPasswordRequestView<'static>>,
+) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "auth requires repository backend",
+        ));
+    };
+
+    let identifier = normalize_identifier(request.identifier);
+    if identifier.is_empty() || request.password.is_empty() {
+        return Err(ConnectError::invalid_argument(
+            LEGACY_LOGIN_REQUIRED_MESSAGE,
+        ));
+    }
+
+    let Some(user) = repository
+        .find_user_by_identifier(&identifier)
+        .await
+        .map_err(crate::internal_error)?
+    else {
+        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    };
+
+    let verified = verify(&request.password, &user.password_hash).map_err(crate::internal_error)?;
+    if !verified {
+        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    }
+    if crate::confirmation_session_required_from_config(&service.auth_ui) && !user.is_confirmed {
+        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    }
+
+    let authenticated_session = service.session_manager.create_authenticated_session(
+        Some(&session.token),
+        user.id,
+        request.remember_me,
+    );
+    attach_session_headers(&mut ctx, &service.session_manager, &authenticated_session);
+
+    let default_landing_path = repository
+        .read_default_landing_path(user.id)
+        .await
+        .map_err(crate::internal_error)?;
+    Ok((
+        crate::current_session_response_from_user(&user, default_landing_path),
+        ctx,
+    ))
 }
 
 pub(crate) async fn auth_sign_out(

@@ -358,6 +358,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   attachment behavior covered by
   `auth_workspace_contract::rest_auth_routes_round_trip_with_shared_session_and_error_envelope`
   and `server_core_contract::read_current_session_works_over_connect_json`.
+- 2026-06-20 build/check diet note: sign-in RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/auth.rs`, preserving CSRF-gated credential
+  validation, confirmation-required rejection, remember-me session replacement,
+  default landing path projection, and response-header attachment behavior
+  covered by
+  `auth_workspace_contract::rest_auth_routes_round_trip_with_shared_session_and_error_envelope`
+  and `auth_workspace_contract::register_sign_in_sign_out_and_current_session_round_trip`.
 
 ## Wave 0 Exit Snapshot
 

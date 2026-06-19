@@ -518,7 +518,7 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
 }
 
 #[tokio::test]
-// Guards auth route-owned session/sign-out helpers plus auth capability, identifier, and error adapters.
+// Guards auth route-owned session/sign-in/sign-out helpers plus auth capability, identifier, and error adapters.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
@@ -1046,6 +1046,7 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
 }
 
 #[tokio::test]
+// Guards the auth route-owned sign-in helper through the proto adapter.
 async fn register_sign_in_sign_out_and_current_session_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
