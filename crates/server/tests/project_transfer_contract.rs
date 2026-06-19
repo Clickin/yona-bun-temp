@@ -174,9 +174,11 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 }
 
 #[tokio::test]
-// Guards project transfer mail reuse of the route-utils-owned mail and absolute app URL helpers.
+// Guards the `routes/projects/transfers.rs` ownership boundary: transfer form,
+// request mail, direct accept link, recipient authorization, and alias
+// preservation stay together while route registration remains in the parent
+// project module.
 async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
-    // Guards direct project transfer accept handler while project route ownership is split.
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");

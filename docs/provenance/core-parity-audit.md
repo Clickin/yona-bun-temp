@@ -954,6 +954,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   selection, bare repository cloning, origin persistence, manager membership,
   and duplicate-name rejection covered by
   `project_fork_contract::project_fork_clones_bare_repository_and_records_origin`.
+- 2026-06-20 build/check diet note: project transfer REST DTOs, transfer
+  response projection, transfer request/mail handler, and direct accept-link
+  handler moved from `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/transfers.rs`; route registration remains
+  in the parent project route module, and the shared project-update guard stays
+  parent-owned for webhooks/change-vcs reuse. This preserves transfer form
+  authorization, transfer request validation, mail outbox payload, accept-link
+  recipient authorization, moved project alias behavior, and transfer row
+  acceptance covered by
+  `project_transfer_contract::project_transfer_requests_and_accept_link_follow_legacy_permissions`.
 
 ## Wave 0 Exit Snapshot
 

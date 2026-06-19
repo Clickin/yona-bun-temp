@@ -45,6 +45,7 @@ mod forks;
 mod members;
 mod milestones;
 mod organizations;
+mod transfers;
 mod webhooks;
 
 use forks::{rest_fork_project, rest_read_project_fork_options, RestProjectForkBody};
@@ -78,6 +79,10 @@ use organizations::{
     rest_read_organization_detail, rest_read_organization_members, rest_read_organization_settings,
     rest_update_organization, rest_update_organization_member_role, RestOrganizationBody,
     RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
+};
+use transfers::{
+    direct_accept_project_transfer, rest_read_project_transfer, rest_request_project_transfer,
+    RestProjectTransferBody,
 };
 pub(crate) use webhooks::{
     dispatch_issue_webhooks, dispatch_pull_request_webhooks, project_webhook_type_label,
@@ -918,72 +923,6 @@ async fn direct_delete_project_pushed_branch(
     }
 }
 
-async fn direct_accept_project_transfer(
-    headers: HeaderMap,
-    transfer_id: i64,
-    confirm_key: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    let session = match require_session(&session_manager, &headers) {
-        Ok(session) => session,
-        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let Some(actor_id) = session.user_id else {
-        return StatusCode::UNAUTHORIZED.into_response();
-    };
-    let transfer = match repository.read_valid_project_transfer(transfer_id).await {
-        Ok(Some(transfer)) => transfer,
-        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if transfer.confirm_key != confirm_key {
-        return StatusCode::BAD_REQUEST.into_response();
-    }
-    let actor = match repository.find_user_by_id(actor_id).await {
-        Ok(Some(actor)) => actor,
-        Ok(None) => return StatusCode::UNAUTHORIZED.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-
-    let mut allowed = actor.is_site_admin;
-    match repository
-        .find_user_by_login_id(&transfer.destination)
-        .await
-    {
-        Ok(Some(destination_user)) => {
-            allowed = allowed || destination_user.id == actor.id;
-        }
-        Ok(None) => match repository
-            .read_organization_authorization(&transfer.destination, Some(actor.id))
-            .await
-        {
-            Ok(Some(authorization)) => {
-                allowed = allowed || authorization.viewer.is_organization_admin;
-            }
-            Ok(None) => {}
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        },
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-    if !allowed {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-
-    match repository.accept_project_transfer(transfer.id).await {
-        Ok(Some(project)) => redirect_to(
-            &base_path,
-            &format!("/{}/{}", project.owner_name, project.project_name),
-        ),
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
-
 async fn direct_render_markdown(
     headers: HeaderMap,
     owner_name: String,
@@ -1253,32 +1192,6 @@ struct RestProjectWatchersResponse {
     project_name: String,
     total_count: u32,
     watchers: Vec<RestProjectWatcher>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RestProjectTransferBody {
-    destination: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestProjectTransferResponse {
-    owner_name: String,
-    project_name: String,
-    viewer_can_transfer: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    destination: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    new_project_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    redirect_path: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    transfer_id: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    confirm_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    accept_path: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -1997,144 +1910,6 @@ async fn rest_require_project_update(
         ));
     }
     Ok(authorization)
-}
-
-fn rest_project_transfer_response(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    transfer: Option<&persistence::ProjectTransferRecord>,
-) -> Result<RestProjectTransferResponse, RestRouteError> {
-    let viewer_can_transfer =
-        project_update_allowed(authorization).map_err(RestRouteError::from_connect_error)?;
-    Ok(RestProjectTransferResponse {
-        owner_name: authorization.project.owner_name.clone(),
-        project_name: authorization.project.project_name.clone(),
-        viewer_can_transfer,
-        destination: transfer.map(|transfer| transfer.destination.clone()),
-        new_project_name: transfer.map(|transfer| transfer.new_project_name.clone()),
-        redirect_path: transfer.map(|_| {
-            format!(
-                "/{}/{}",
-                authorization.project.owner_name, authorization.project.project_name
-            )
-        }),
-        transfer_id: transfer.map(|transfer| transfer.id),
-        confirm_key: transfer.map(|transfer| transfer.confirm_key.clone()),
-        accept_path: transfer
-            .map(|transfer| format!("/project/transfer/{}/{}", transfer.id, transfer.confirm_key)),
-    })
-}
-
-pub(crate) async fn rest_read_project_transfer(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    service: PilotServiceImpl,
-) -> Result<Response, RestRouteError> {
-    let actor_id = service
-        .session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &service.backend else {
-        return Err(RestRouteError::not_implemented(
-            "project transfer requires repository backend",
-        ));
-    };
-    let authorization =
-        rest_require_project_update(repository, &owner_name, &project_name, actor_id).await?;
-    Ok(Json(rest_project_transfer_response(&authorization, None)?).into_response())
-}
-
-pub(crate) async fn rest_request_project_transfer(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    body: RestProjectTransferBody,
-    service: PilotServiceImpl,
-) -> Result<Response, RestRouteError> {
-    let session = require_session(&service.session_manager, &headers)
-        .map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&service.session_manager, &headers, &session)
-        .map_err(RestRouteError::from_connect_error)?;
-    let actor_id = session.user_id.ok_or_else(|| {
-        RestRouteError::from_connect_error(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ))
-    })?;
-    let PilotBackend::Repository(repository) = &service.backend else {
-        return Err(RestRouteError::not_implemented(
-            "project transfer requires repository backend",
-        ));
-    };
-    let authorization =
-        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
-    let destination = body.destination.trim().to_string();
-    if destination.is_empty() {
-        return Err(RestRouteError::bad_request(
-            "project.transfer.owner.required",
-        ));
-    }
-    if destination.eq_ignore_ascii_case(&authorization.project.owner_name) {
-        return Err(RestRouteError::bad_request("project.transfer.sameOwner"));
-    }
-    let destination_exists = repository
-        .find_user_by_login_id(&destination)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .is_some()
-        || repository
-            .read_organization_by_name(&destination)
-            .await
-            .map_err(internal_error)
-            .map_err(RestRouteError::from_connect_error)?
-            .is_some();
-    if !destination_exists {
-        return Err(RestRouteError::bad_request(
-            "project.transfer.owner.notFound",
-        ));
-    }
-    let new_project_name = repository
-        .next_project_transfer_name(&destination, &authorization.project.project_name)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    let transfer = repository
-        .request_project_transfer(persistence::ProjectTransferRequestInput {
-            destination,
-            new_project_name,
-            project_id: authorization.project.id,
-            sender_id: actor_id,
-        })
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    let sender = repository
-        .find_user_by_id(actor_id)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| {
-            RestRouteError::from_connect_error(ConnectError::unauthenticated(
-                "missing transfer sender",
-            ))
-        })?;
-    send_project_transfer_request_mail(
-        repository,
-        &authorization,
-        &transfer,
-        &sender,
-        &service.public_origin,
-        &service.base_path,
-    )
-    .await
-    .map_err(internal_error)
-    .map_err(RestRouteError::from_connect_error)?;
-
-    Ok(Json(rest_project_transfer_response(
-        &authorization,
-        Some(&transfer),
-    )?)
-    .into_response())
 }
 
 fn rest_next_project_vcs(current: &str) -> String {
