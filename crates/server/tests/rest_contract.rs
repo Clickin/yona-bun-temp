@@ -4740,7 +4740,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
 }
 
 #[tokio::test]
-// Guards workspace overview projection ownership in the workspace route module.
+// Guards workspace reuse of the route-utils-owned current-session projection.
 async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     let (app, repository, db) = build_app_with_repository_and_db().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;

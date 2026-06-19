@@ -28,11 +28,11 @@ pub use notification_mail::{
     NotificationMailSchedulerConfig,
 };
 pub(crate) use routes::{
-    accepts_legacy_json, append_response_headers, base_path_href,
-    build_organization_admin_response, build_organization_container_response,
+    accepts_legacy_json, anonymous_current_session_response, append_response_headers,
+    base_path_href, build_organization_admin_response, build_organization_container_response,
     build_project_container_response, build_workspace_overview_response, code_branch_error,
     code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
-    decode_query_component, delete_project_repository_storage,
+    current_session_response_from_user, decode_query_component, delete_project_repository_storage,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
@@ -64,9 +64,9 @@ pub(crate) use routes::{
     project_member_summary_from_record, project_milestone_summary_from_record,
     project_resource_create_allowed, project_webhook_type_label, read_issue_access,
     read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
-    redirect_to, require_project_resource_create, resolve_issue_reference_search_project,
-    rest_actor_id, rest_board_label_from_record, rest_commit_thread_from_record,
-    rest_delete_project_member,
+    redirect_to, require_project_resource_create, resolve_current_session_response,
+    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
+    rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -131,7 +131,7 @@ use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
-    ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
+    ProjectScope,
 };
 use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_vcs::ProjectHistoryCommitRecord;
@@ -1784,66 +1784,6 @@ const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
 
 fn normalize_identifier(value: &str) -> String {
     value.trim().to_ascii_lowercase()
-}
-
-fn current_session_response_from_user(
-    user: &persistence::AppUserRecord,
-    default_landing_path: Option<String>,
-) -> ReadCurrentSessionResponse {
-    ReadCurrentSessionResponse {
-        actor_id: user.id,
-        default_landing_path: default_landing_path
-            .unwrap_or_else(|| DEFAULT_LANDING_FALLBACK_PATH.to_string()),
-        email_address: user.email_address.clone(),
-        is_anonymous: false,
-        is_confirmed: user.is_confirmed,
-        is_site_admin: user.is_site_admin,
-        login_id: user.login_id.clone(),
-        user_label: user.display_name.clone(),
-        ..Default::default()
-    }
-}
-
-fn anonymous_current_session_response() -> ReadCurrentSessionResponse {
-    ReadCurrentSessionResponse {
-        is_anonymous: true,
-        default_landing_path: DEFAULT_LANDING_FALLBACK_PATH.to_string(),
-        ..Default::default()
-    }
-}
-
-pub(crate) async fn resolve_current_session_response(
-    backend: &PilotBackend,
-    session: Option<&session::Session>,
-) -> Result<ReadCurrentSessionResponse, ConnectError> {
-    let Some(session) = session else {
-        return Ok(anonymous_current_session_response());
-    };
-
-    let Some(user_id) = session.user_id else {
-        return Ok(anonymous_current_session_response());
-    };
-
-    match backend {
-        PilotBackend::Repository(repository) => {
-            let Some(user) = repository
-                .find_user_by_id(user_id)
-                .await
-                .map_err(internal_error)?
-            else {
-                return Ok(anonymous_current_session_response());
-            };
-            let default_landing_path = repository
-                .read_default_landing_path(user_id)
-                .await
-                .map_err(internal_error)?;
-            Ok(current_session_response_from_user(
-                &user,
-                default_landing_path,
-            ))
-        }
-        PilotBackend::Static => Ok(anonymous_current_session_response()),
-    }
 }
 
 pub(crate) fn internal_error(error: impl ToString) -> ConnectError {

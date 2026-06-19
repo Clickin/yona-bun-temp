@@ -19,7 +19,7 @@ use crate::{
         OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
         OrganizationIssueListItem, OrganizationMemberSummary, OrganizationProjectCard,
         OrganizationRoleOption, ProjectContainer, ProjectDetail, ProjectIssueListItem,
-        ProjectMemberSummary, ProjectMilestoneSummary,
+        ProjectMemberSummary, ProjectMilestoneSummary, ReadCurrentSessionResponse,
     },
     internal_error, normalize_identifier, persistence, project_read_allowed,
     project_update_allowed, require_project_read, require_session, require_valid_csrf,
@@ -28,6 +28,7 @@ use crate::{
 };
 use yona_rust_domain::{
     can_create_organization_project, can_request_project_enrollment, can_update_organization,
+    DEFAULT_LANDING_FALLBACK_PATH,
 };
 
 #[derive(Serialize)]
@@ -167,7 +168,7 @@ pub(crate) async fn rest_read_current_session(
     backend: PilotBackend,
 ) -> Result<Response, RestRouteError> {
     let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = crate::resolve_current_session_response(&backend, Some(&session))
+    let payload = resolve_current_session_response(&backend, Some(&session))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let mut response = Json(payload).into_response();
@@ -182,6 +183,66 @@ pub(crate) async fn rest_read_current_session(
         );
     }
     Ok(response)
+}
+
+pub(crate) fn current_session_response_from_user(
+    user: &persistence::AppUserRecord,
+    default_landing_path: Option<String>,
+) -> ReadCurrentSessionResponse {
+    ReadCurrentSessionResponse {
+        actor_id: user.id,
+        default_landing_path: default_landing_path
+            .unwrap_or_else(|| DEFAULT_LANDING_FALLBACK_PATH.to_string()),
+        email_address: user.email_address.clone(),
+        is_anonymous: false,
+        is_confirmed: user.is_confirmed,
+        is_site_admin: user.is_site_admin,
+        login_id: user.login_id.clone(),
+        user_label: user.display_name.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn anonymous_current_session_response() -> ReadCurrentSessionResponse {
+    ReadCurrentSessionResponse {
+        is_anonymous: true,
+        default_landing_path: DEFAULT_LANDING_FALLBACK_PATH.to_string(),
+        ..Default::default()
+    }
+}
+
+pub(crate) async fn resolve_current_session_response(
+    backend: &PilotBackend,
+    session: Option<&Session>,
+) -> Result<ReadCurrentSessionResponse, ConnectError> {
+    let Some(session) = session else {
+        return Ok(anonymous_current_session_response());
+    };
+
+    let Some(user_id) = session.user_id else {
+        return Ok(anonymous_current_session_response());
+    };
+
+    match backend {
+        PilotBackend::Repository(repository) => {
+            let Some(user) = repository
+                .find_user_by_id(user_id)
+                .await
+                .map_err(internal_error)?
+            else {
+                return Ok(anonymous_current_session_response());
+            };
+            let default_landing_path = repository
+                .read_default_landing_path(user_id)
+                .await
+                .map_err(internal_error)?;
+            Ok(current_session_response_from_user(
+                &user,
+                default_landing_path,
+            ))
+        }
+        PilotBackend::Static => Ok(anonymous_current_session_response()),
+    }
 }
 
 pub(crate) fn rest_not_found_response() -> Response {
