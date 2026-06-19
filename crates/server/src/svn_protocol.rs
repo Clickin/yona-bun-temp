@@ -24,6 +24,7 @@ mod report_filters;
 mod report_items;
 mod svndiff;
 mod update;
+mod write;
 mod xml;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -2386,7 +2387,7 @@ fn svn_protocol_put_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let contents = match svn_protocol_put_contents(repo_path, &path, body) {
+    let contents = match write::put_contents(repo_path, &path, body) {
         Ok(contents) => contents,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -2405,12 +2406,7 @@ fn svn_protocol_put_response(
             } else {
                 StatusCode::CREATED
             };
-            let mut response = status.into_response();
-            add_svn_dav_headers(&mut response);
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
-            response
+            write::revision_response(status, revision)
         }
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -2459,14 +2455,7 @@ fn svn_protocol_copy_response(
         &destination_path,
         &message,
     ) {
-        Ok(revision) => {
-            let mut response = StatusCode::CREATED.into_response();
-            add_svn_dav_headers(&mut response);
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
-            response
-        }
+        Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
@@ -2508,14 +2497,7 @@ fn svn_protocol_move_response(
         actor.login_id
     );
     match yona_rust_vcs::svn_move_path(repo_path, &source_path, &destination_path, &message) {
-        Ok(revision) => {
-            let mut response = StatusCode::CREATED.into_response();
-            add_svn_dav_headers(&mut response);
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
-            response
-        }
+        Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
@@ -2542,14 +2524,7 @@ fn svn_protocol_mkcol_response(
     }
     let message = format!("Create {path} through WebDAV by {}", actor.login_id);
     match yona_rust_vcs::svn_make_collection(repo_path, &path, &message) {
-        Ok(revision) => {
-            let mut response = StatusCode::CREATED.into_response();
-            add_svn_dav_headers(&mut response);
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
-            response
-        }
+        Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "MKCOL"),
@@ -2609,9 +2584,7 @@ fn svn_protocol_proppatch_response(
                 http::header::CONTENT_TYPE,
                 HeaderValue::from_static("application/xml; charset=utf-8"),
             );
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
+            write::insert_revision_header(&mut response, revision);
             response
         }
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -2638,36 +2611,13 @@ fn svn_protocol_delete_response(
     }
     let message = format!("Delete {path} through WebDAV by {}", actor.login_id);
     match yona_rust_vcs::svn_delete_path(repo_path, &path, &message) {
-        Ok(revision) => {
-            let mut response = StatusCode::NO_CONTENT.into_response();
-            add_svn_dav_headers(&mut response);
-            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-                response.headers_mut().insert("svn-revision", value);
-            }
-            response
-        }
+        Ok(revision) => write::revision_response(StatusCode::NO_CONTENT, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "DELETE"),
         Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
         Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
     }
-}
-
-fn svn_protocol_put_contents(
-    repo_path: &StdPath,
-    path: &str,
-    body: &Bytes,
-) -> Result<Bytes, VcsError> {
-    if !body.starts_with(b"SVN\0") {
-        return Ok(body.clone());
-    }
-    let source = match yona_rust_vcs::svn_cat_file(repo_path, None, path) {
-        Ok(bytes) => bytes,
-        Err(VcsError::NotFound) => Vec::new(),
-        Err(error) => return Err(error),
-    };
-    svndiff::apply_svndiff0(&source, body).map(Bytes::from)
 }
 
 fn svn_protocol_lock_response(

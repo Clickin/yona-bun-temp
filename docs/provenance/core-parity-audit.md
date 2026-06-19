@@ -751,6 +751,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   checkout working-resource mapping, PUT through working resources, and MERGE
   checked-in metadata covered by
   `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`.
+- 2026-06-20 build/check diet note: SVN write success `svn-revision`
+  response/header construction and PUT svndiff body decoding moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/write.rs`; PUT/COPY/MOVE/MKCOL/PROPPATCH/
+  DELETE authorization, path validation, VCS mutation calls, and error mapping
+  remain in the protocol module. This preserves direct write mutation revision
+  headers, PROPPATCH multistatus revision metadata, and direct URL copy/move
+  behavior covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`,
+  `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_move_direct_url`.
 
 ## Wave 0 Exit Snapshot
 
