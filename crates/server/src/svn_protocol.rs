@@ -16,6 +16,7 @@ use crate::{
 use yona_rust_vcs::VcsError;
 
 mod date;
+mod href;
 mod lock;
 mod path;
 mod report_items;
@@ -278,7 +279,7 @@ fn svn_protocol_options_response(
     youngest_revision: Option<i64>,
     repository_uuid: Option<String>,
 ) -> Response {
-    let activity_collection = format!("{}/!svn/act/", svn_protocol_project_href(route));
+    let activity_collection = format!("{}/!svn/act/", href::project(route));
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:options-response xmlns:D="DAV:">
@@ -347,10 +348,10 @@ fn svn_protocol_root_propfind_response(
     repository_uuid: Option<String>,
     request: &str,
 ) -> Response {
-    let href = svn_protocol_project_href(route);
-    let checked_in_href = youngest_revision
-        .map(|revision| format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route)));
-    let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
+    let href = href::project(route);
+    let checked_in_href =
+        youngest_revision.map(|revision| format!("{}/!svn/bln/{revision}", href::project(route)));
+    let vcc_href = format!("{}/!svn/vcc/default", href::project(route));
     let activity_collection_href = format!("{href}/!svn/act/");
     svn_protocol_propfind_collection_response(
         &href,
@@ -371,15 +372,14 @@ fn svn_protocol_collection_propfind_response(
     repository_uuid: Option<String>,
     request: &str,
 ) -> Response {
-    let href = format!("{}/{}", svn_protocol_project_href(route), route.svn_path);
+    let href = format!("{}/{}", href::project(route), route.svn_path);
     let checked_in_href = if route.svn_path == "!svn/vcc/default" {
-        youngest_revision
-            .map(|revision| format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route)))
+        youngest_revision.map(|revision| format!("{}/!svn/bln/{revision}", href::project(route)))
     } else {
         None
     };
     let activity_collection_href = (route.svn_path == "!svn/vcc/default")
-        .then(|| format!("{}/!svn/act/", svn_protocol_project_href(route)));
+        .then(|| format!("{}/!svn/act/", href::project(route)));
     svn_protocol_propfind_collection_response(
         &href,
         youngest_revision,
@@ -689,8 +689,8 @@ fn svn_protocol_baseline_propfind_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     }
-    let href = format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route));
-    let baseline_collection = format!("{}/!svn/bc/{revision}", svn_protocol_project_href(route));
+    let href = format!("{}/!svn/bln/{revision}", href::project(route));
+    let baseline_collection = format!("{}/!svn/bc/{revision}", href::project(route));
     let wants_creation_metadata = svn_protocol_propfind_is_propname(request)
         || svn_protocol_propfind_wants(request, "creationdate")
         || svn_protocol_propfind_wants(request, "creator-displayname")
@@ -896,7 +896,7 @@ fn svn_protocol_file_propfind_response(
     };
     let href = format!(
         "{}/{}",
-        svn_protocol_project_href(route),
+        href::project(route),
         route.svn_path.trim_matches('/')
     );
     let version_revision = match revision {
@@ -913,7 +913,7 @@ fn svn_protocol_file_propfind_response(
     let version_href = version_revision.map(|revision| {
         format!(
             "{}/!svn/ver/{}/{}",
-            svn_protocol_project_href(route),
+            href::project(route),
             revision,
             path.trim_matches('/')
         )
@@ -1033,7 +1033,7 @@ fn svn_protocol_propfind_tree_response(
     request: &str,
 ) -> Response {
     let mut responses = String::new();
-    let collection_href = svn_protocol_propfind_tree_href(route, &tree.path, true);
+    let collection_href = href::propfind_tree(route, &tree.path, true);
     responses.push_str(&svn_protocol_propfind_collection_item(
         route,
         &collection_href,
@@ -1056,7 +1056,7 @@ fn svn_protocol_propfind_tree_response(
     }
     if include_children {
         for entry in &tree.entries {
-            let href = svn_protocol_propfind_tree_href(route, &entry.path, entry.is_dir);
+            let href = href::propfind_tree(route, &entry.path, entry.is_dir);
             if entry.is_dir {
                 responses.push_str(&svn_protocol_propfind_collection_item(
                     route,
@@ -1071,7 +1071,7 @@ fn svn_protocol_propfind_tree_response(
                 let version_href = version_revision.map(|revision| {
                     format!(
                         "{}/!svn/ver/{}/{}",
-                        svn_protocol_project_href(route),
+                        href::project(route),
                         revision,
                         entry.path.trim_matches('/')
                     )
@@ -1214,7 +1214,7 @@ fn svn_protocol_propfind_collection_item(
         .map(|revision| {
             format!(
                 "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
-                xml_escape(&svn_protocol_version_href(route, revision, path))
+                xml_escape(&href::version(route, revision, path))
             )
         })
         .unwrap_or_default();
@@ -1226,7 +1226,7 @@ fn svn_protocol_propfind_collection_item(
         .map(|revision| {
             format!(
                 "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
-                xml_escape(&svn_protocol_baseline_collection_href(route, revision, ""))
+                xml_escape(&href::baseline_collection(route, revision, ""))
             )
         })
         .unwrap_or_default();
@@ -1237,7 +1237,7 @@ fn svn_protocol_propfind_collection_item(
         })
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
-    let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
+    let vcc_href = format!("{}/!svn/vcc/default", href::project(route));
     let repository_uuid = repository_uuid
         .filter(|_| svn_protocol_propfind_wants(request, "repository-uuid"))
         .map(|uuid| {
@@ -1440,7 +1440,7 @@ fn svn_protocol_propfind_file_item(
         .map(|revision| {
             format!(
                 "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
-                xml_escape(&svn_protocol_baseline_collection_href(route, revision, ""))
+                xml_escape(&href::baseline_collection(route, revision, ""))
             )
         })
         .unwrap_or_default();
@@ -1454,7 +1454,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
+    let vcc_href = format!("{}/!svn/vcc/default", href::project(route));
     let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
         .then_some(repository_uuid)
         .flatten()
@@ -1511,7 +1511,7 @@ fn svn_protocol_propfind_file_item(
         "        <SD:deadprop-count>1</SD:deadprop-count>\n".to_string()
     };
     let lock_discovery = lock
-        .map(|(route, lock)| lock::discovery_item(&svn_protocol_project_href(route), lock))
+        .map(|(route, lock)| lock::discovery_item(&href::project(route), lock))
         .unwrap_or_default();
     format!(
         r#"  <D:response>
@@ -1687,65 +1687,6 @@ fn svn_protocol_xml_local_name(name: &str) -> bool {
     chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'))
 }
 
-fn svn_protocol_href(route: &SvnProtocolRoute, path: &str, collection: bool) -> String {
-    let clean_path = path.trim_matches('/');
-    let suffix = if clean_path.is_empty() {
-        String::new()
-    } else if collection {
-        format!("/{clean_path}/")
-    } else {
-        format!("/{clean_path}")
-    };
-    format!("{}{}", svn_protocol_project_href(route), suffix)
-}
-
-fn svn_protocol_propfind_tree_href(
-    route: &SvnProtocolRoute,
-    path: &str,
-    collection: bool,
-) -> String {
-    let trimmed = route.svn_path.trim_matches('/');
-    let version_prefix = trimmed
-        .strip_prefix("!svn/ver/")
-        .and_then(|rest| rest.split('/').next())
-        .and_then(|revision| revision.parse::<i64>().ok())
-        .map(|revision| ("ver", revision));
-    let baseline_prefix = trimmed
-        .strip_prefix("!svn/bc/")
-        .and_then(|rest| rest.split('/').next())
-        .and_then(|revision| revision.parse::<i64>().ok())
-        .map(|revision| ("bc", revision));
-    if let Some((kind, revision)) = version_prefix.or(baseline_prefix) {
-        let path = path.trim_matches('/');
-        let suffix = if path.is_empty() {
-            String::new()
-        } else if collection {
-            format!("/{path}/")
-        } else {
-            format!("/{path}")
-        };
-        return format!(
-            "{}/!svn/{kind}/{revision}{suffix}",
-            svn_protocol_project_href(route)
-        );
-    }
-    if trimmed.starts_with("!svn/vcc/default/") {
-        let path = path.trim_matches('/');
-        let suffix = if path.is_empty() {
-            String::new()
-        } else if collection {
-            format!("/{path}/")
-        } else {
-            format!("/{path}")
-        };
-        return format!(
-            "{}/!svn/vcc/default{suffix}",
-            svn_protocol_project_href(route)
-        );
-    }
-    svn_protocol_href(route, path, collection)
-}
-
 fn svn_protocol_propfind_wants(request: &str, property_name: &str) -> bool {
     let request = request.trim();
     request.is_empty()
@@ -1758,41 +1699,6 @@ fn svn_protocol_propfind_wants(request: &str, property_name: &str) -> bool {
 fn svn_protocol_propfind_is_propname(request: &str) -> bool {
     let request = request.trim();
     request.contains("<D:propname") || request.contains("<propname")
-}
-
-fn svn_protocol_repo_relative_request_path(
-    route: &SvnProtocolRoute,
-    requested_path: &str,
-) -> String {
-    let mut path = requested_path.trim();
-    if let Some(origin) = &route.request_origin {
-        if let Some(stripped) = path.strip_prefix(origin) {
-            path = stripped;
-        }
-    }
-    let project_path = base_path_href(
-        &route.base_path,
-        &format!("/svn/{}/{}", route.owner_name, route.project_name),
-    );
-    if path == project_path || path == format!("{project_path}/") {
-        return String::new();
-    }
-    if let Some(stripped) = path.strip_prefix(&format!("{project_path}/")) {
-        return stripped.trim_matches('/').to_string();
-    }
-    path.trim_matches('/').to_string()
-}
-
-fn svn_protocol_project_href(route: &SvnProtocolRoute) -> String {
-    let path = base_path_href(
-        &route.base_path,
-        &format!("/svn/{}/{}", route.owner_name, route.project_name),
-    );
-    if let Some(origin) = &route.request_origin {
-        format!("{origin}{path}")
-    } else {
-        path
-    }
 }
 
 fn svn_protocol_status_response(status: StatusCode) -> Response {
@@ -1983,7 +1889,7 @@ fn svn_protocol_update_report_response(
     } else {
         xml::text(request, "dst-path").or_else(|| xml::text(request, "src-path"))
     }
-    .map(|path| svn_protocol_repo_relative_request_path(route, &path))
+    .map(|path| href::repo_relative_request_path(route, &path))
     .unwrap_or_default();
     let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
@@ -2119,12 +2025,12 @@ fn svn_protocol_update_report_response(
 {}{indent}</S:{directory_element}>
 "#,
                     xml_escape(name),
-                    xml_escape(&svn_protocol_baseline_collection_href(
+                    xml_escape(&href::baseline_collection(
                         route,
                         target_revision,
                         entry.path.trim_matches('/')
                     )),
-                    xml_escape(&svn_protocol_version_href(
+                    xml_escape(&href::version(
                         route,
                         target_revision,
                         entry.path.trim_matches('/')
@@ -2189,7 +2095,7 @@ fn svn_protocol_update_report_response(
         } else {
             ""
         },
-        svn_protocol_version_href(route, target_revision, &update_path),
+        href::version(route, target_revision, &update_path),
         svn_protocol_update_entry_props(&revision_log, 2)
     );
     let mut response = (StatusCode::OK, body).into_response();
@@ -2642,7 +2548,7 @@ fn svn_protocol_checkout_response(route: &SvnProtocolRoute, body: &Bytes) -> Res
         };
     let mut location = format!(
         "{}/!svn/wrk/{}",
-        svn_protocol_project_href(route),
+        href::project(route),
         xml_escape(&activity_id)
     );
     if !working_path.is_empty() {
@@ -2716,8 +2622,8 @@ fn svn_protocol_merge_response(
         merge_path.is_empty() || path == merge_path || path.starts_with(&format!("{merge_path}/"))
     }) {
         let path = changed_path.path.trim_matches('/');
-        let href = svn_protocol_merge_href(&project_href, path, changed_path.is_dir);
-        let checked_in_href = svn_protocol_merge_version_href(&project_href, revision, path);
+        let href = href::merge(&project_href, path, changed_path.is_dir);
+        let checked_in_href = href::merge_version(&project_href, revision, path);
         let resourcetype = if changed_path.is_dir {
             "<D:resourcetype><D:collection/></D:resourcetype>"
         } else {
@@ -2740,8 +2646,8 @@ fn svn_protocol_merge_response(
         ));
     }
     if updated_responses.is_empty() {
-        let href = svn_protocol_merge_href(&project_href, &merge_path, true);
-        let checked_in_href = svn_protocol_merge_version_href(&project_href, revision, &merge_path);
+        let href = href::merge(&project_href, &merge_path, true);
+        let checked_in_href = href::merge_version(&project_href, revision, &merge_path);
         updated_responses.push_str(&format!(
             "    <D:response>\n\
       <D:href>{}</D:href>\n\
@@ -2992,7 +2898,7 @@ fn svn_protocol_proppatch_response(
     if path::working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
         let mut response = (
             StatusCode::MULTI_STATUS,
-            report_items::proppatch_multistatus(&svn_protocol_href(route, "", false), &[]),
+            report_items::proppatch_multistatus(&href::resource(route, "", false), &[]),
         )
             .into_response();
         add_svn_dav_headers(&mut response);
@@ -3018,10 +2924,7 @@ fn svn_protocol_proppatch_response(
         Ok(revision) => {
             let mut response = (
                 StatusCode::MULTI_STATUS,
-                report_items::proppatch_multistatus(
-                    &svn_protocol_href(route, &path, false),
-                    &patches,
-                ),
+                report_items::proppatch_multistatus(&href::resource(route, &path, false), &patches),
             )
                 .into_response();
             add_svn_dav_headers(&mut response);
@@ -3127,7 +3030,7 @@ fn svn_protocol_lock_response(
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
-    let body = lock::discovery_body(&svn_protocol_project_href(route), &lock);
+    let body = lock::discovery_body(&href::project(route), &lock);
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
     response.headers_mut().insert(
@@ -3463,12 +3366,8 @@ fn svn_protocol_update_entries_recursive(
 {}{indent}</S:{directory_element}>
 "#,
                 xml_escape(&name),
-                xml_escape(&svn_protocol_baseline_collection_href(
-                    route,
-                    revision,
-                    &child_path
-                )),
-                xml_escape(&svn_protocol_version_href(route, revision, &child_path)),
+                xml_escape(&href::baseline_collection(route, revision, &child_path)),
+                xml_escape(&href::version(route, revision, &child_path)),
                 svn_protocol_update_entry_props(revision_log, indent_level + 1),
                 nested
             ));
@@ -3530,8 +3429,7 @@ fn svn_protocol_update_file_entry(
     } else {
         revision
     };
-    let version_href =
-        svn_protocol_version_href(route, checked_in_revision, entry.path.trim_matches('/'));
+    let version_href = href::version(route, checked_in_revision, entry.path.trim_matches('/'));
     let file_element = if start_empty { "add-file" } else { "open-file" };
     let revision_attribute = if start_empty {
         String::new()
@@ -3611,55 +3509,6 @@ fn svn_protocol_update_entry_props(
         ));
     }
     props
-}
-
-fn svn_protocol_version_href(route: &SvnProtocolRoute, revision: i64, path: &str) -> String {
-    let path = path.trim_matches('/');
-    if path.is_empty() {
-        format!("{}/!svn/ver/{revision}/", svn_protocol_project_href(route))
-    } else {
-        format!(
-            "{}/!svn/ver/{revision}/{path}",
-            svn_protocol_project_href(route)
-        )
-    }
-}
-
-fn svn_protocol_merge_href(project_href: &str, path: &str, collection: bool) -> String {
-    let path = path.trim_matches('/');
-    if path.is_empty() {
-        return format!("{project_href}/");
-    }
-    if collection {
-        format!("{project_href}/{path}/")
-    } else {
-        format!("{project_href}/{path}")
-    }
-}
-
-fn svn_protocol_merge_version_href(project_href: &str, revision: i64, path: &str) -> String {
-    let path = path.trim_matches('/');
-    if path.is_empty() {
-        format!("{project_href}/!svn/ver/{revision}/")
-    } else {
-        format!("{project_href}/!svn/ver/{revision}/{path}")
-    }
-}
-
-fn svn_protocol_baseline_collection_href(
-    route: &SvnProtocolRoute,
-    revision: i64,
-    path: &str,
-) -> String {
-    let path = path.trim_matches('/');
-    if path.is_empty() {
-        format!("{}/!svn/bc/{revision}/", svn_protocol_project_href(route))
-    } else {
-        format!(
-            "{}/!svn/bc/{revision}/{path}",
-            svn_protocol_project_href(route)
-        )
-    }
 }
 
 fn svn_protocol_update_depth(request: &str) -> String {

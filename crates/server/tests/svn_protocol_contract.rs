@@ -3,8 +3,8 @@ use base64::{engine::general_purpose, Engine as _};
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 
-// Guards SVN protocol path, delta, date, XML/property, lock, and report item
-// behavior while focused helpers move out of the request dispatch module.
+// Guards SVN protocol href, path, delta, date, XML/property, lock, and report
+// item behavior while focused helpers move out of the request dispatch module.
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
 use std::path::Path;

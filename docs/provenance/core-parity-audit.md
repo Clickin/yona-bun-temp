@@ -689,6 +689,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`,
   `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`,
   and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN project/resource/propfind/version/
+  baseline/merge href helpers and repo-relative request path normalization
+  moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/href.rs`; DAV request dispatch and response
+  bodies still own when those hrefs are emitted. This preserves PROPFIND
+  DeltaV href metadata, update-report checked-in/version hrefs,
+  checkout/merge choreography hrefs, and direct URL copy destination handling
+  covered by
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata`,
+  `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
+  `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`.
 
 ## Wave 0 Exit Snapshot
 

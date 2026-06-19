@@ -48,7 +48,7 @@ pub(crate) fn destination_file_lookup(
     route: &SvnProtocolRoute,
     destination: &str,
 ) -> Option<(Option<i64>, String)> {
-    let svn_path = super::svn_protocol_repo_relative_request_path(route, destination);
+    let svn_path = super::href::repo_relative_request_path(route, destination);
     let destination_route = SvnProtocolRoute {
         base_path: route.base_path.clone(),
         request_origin: route.request_origin.clone(),
