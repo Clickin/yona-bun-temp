@@ -1919,6 +1919,7 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     assert_eq!(active["state"], "ACTIVE");
     assert_eq!(active["query"], "mem");
     assert_eq!(active["page"], 1);
+    assert_eq!(active["pageSize"], 30);
     assert_eq!(active["users"].as_array().unwrap().len(), 1);
     assert_eq!(login_ids(&active), vec!["member".to_string()]);
     assert_eq!(user(&active, "member")["isSiteAdmin"], false);

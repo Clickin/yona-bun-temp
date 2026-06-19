@@ -7,27 +7,40 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
+use base64::{engine::general_purpose, Engine as _};
+use bcrypt::{hash, DEFAULT_COST};
 use http::HeaderValue;
 use serde::Deserialize;
-use std::{collections::HashMap, sync::atomic::Ordering};
+use std::{
+    collections::HashMap, path::Path as StdPath, process::Command, sync::atomic::Ordering,
+    time::Duration,
+};
+use yona_rust_domain::ProjectScope;
+use yona_rust_integrations::{deliver, OutboundMail};
 
+use crate::persistence::PilotRepository;
 use crate::{
-    base_path_href, decode_query_component, direct_site_user_list_href, escape_html_text,
-    headers_with_form_csrf, persistence, redirect_to, rest_delete_site_project,
-    rest_delete_site_user, rest_download_site_update, rest_download_site_update_file,
-    rest_export_site_data, rest_import_site_data, rest_read_site_diagnostics,
-    rest_read_site_issues, rest_read_site_mail, rest_read_site_mail_list,
-    rest_read_site_no_avatar_users, rest_read_site_posts, rest_read_site_projects,
-    rest_read_site_update, rest_read_site_users, rest_require_site_admin_repository,
-    rest_reset_site_user_password, rest_send_site_test_mail,
-    rest_set_site_user_avatar_from_attachment, rest_site_update_download_file_response,
-    rest_site_update_download_redirect, rest_toggle_site_user_account_lock,
-    rest_toggle_site_user_admin, rest_toggle_site_user_guest, session::SessionManager,
-    site_export_filename_stamp, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
-    RestRouteError, RestSiteAvatarFromAttachmentBody, RestSiteDiagnosticsResponse,
-    RestSiteExportResponse, RestSiteIssuesQuery, RestSiteMailListBody, RestSiteMailSendBody,
-    RestSitePostsQuery, RestSiteProjectsQuery, RestSiteUsersQuery, SiteUpdateConfig,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    base_path_href, configured_command_parts, configured_env_value, decode_query_component,
+    default_smtp_from, delete_project_repository_storage, detect_upload_mime_type,
+    direct_site_user_list_href, escape_html_text, gravatar_url, headers_with_form_csrf,
+    internal_error, legacy_content_disposition_filename, map_project_scope, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, parse_milestone_due_date, persistence,
+    project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
+    require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
+    rest_repository, session::SessionManager, site_export_filename_stamp, trimmed_option,
+    uploaded_file_path, workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend,
+    PilotServiceImpl, RestProjectDeleteResponse, RestRouteError, RestSiteAvatarFromAttachmentBody,
+    RestSiteDiagnosticsResponse, RestSiteExportAttachmentItem, RestSiteExportCommentItem,
+    RestSiteExportIssueItem, RestSiteExportLabelItem, RestSiteExportMilestoneItem,
+    RestSiteExportPostItem, RestSiteExportProjectLabelItem, RestSiteExportProjectMemberItem,
+    RestSiteExportResponse, RestSiteImportPayload, RestSiteImportResponse, RestSiteIssueItem,
+    RestSiteIssueListResponse, RestSiteIssuesQuery, RestSiteLegacyOkResponse, RestSiteMailListBody,
+    RestSiteMailListResponse, RestSiteMailOptionsResponse, RestSiteMailSendBody,
+    RestSiteNoAvatarUserItem, RestSiteNoAvatarUsersResponse, RestSitePostItem,
+    RestSitePostListResponse, RestSitePostsQuery, RestSiteProjectItem, RestSiteProjectListResponse,
+    RestSiteProjectsQuery, RestSiteUpdateResponse, RestSiteUserItem, RestSiteUserListResponse,
+    RestSiteUserMutationResponse, RestSiteUserPasswordResetResponse, RestSiteUsersQuery,
+    SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
@@ -1081,4 +1094,2432 @@ async fn direct_download_site_update_file(
         },
         Err(error) => error.into_response(),
     }
+}
+
+pub(crate) async fn rest_read_site_users(
+    headers: HeaderMap,
+    query: RestSiteUsersQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let state = rest_site_user_state(query.state)?;
+    let record = repository
+        .list_site_users(persistence::SiteUserListFilter {
+            page: query.page.unwrap_or(1).max(1),
+            query: query.query.unwrap_or_default(),
+            state,
+        })
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(
+        rest_site_user_list_from_record(&repository, &service.base_path, record)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+pub(crate) async fn rest_read_site_no_avatar_users(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteNoAvatarUsersResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let users = repository
+        .list_site_no_avatar_users()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSiteNoAvatarUsersResponse {
+        users: users
+            .into_iter()
+            .map(rest_site_no_avatar_user_from_record)
+            .collect(),
+    }))
+}
+
+pub(crate) async fn rest_set_site_user_avatar_from_attachment(
+    headers: HeaderMap,
+    body: RestSiteAvatarFromAttachmentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteLegacyOkResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    if body.avatar_file_id <= 0 {
+        return Err(RestRouteError::bad_request("avatarFileId is required"));
+    }
+    if body.email.trim().is_empty() {
+        return Err(RestRouteError::bad_request("email is required"));
+    }
+
+    match repository
+        .set_user_avatar_from_attachment_by_email(&body.email, body.avatar_file_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        persistence::SiteUserAvatarFromAttachmentResult::Applied
+        | persistence::SiteUserAvatarFromAttachmentResult::Ignored => {
+            Ok(Json(rest_site_legacy_ok_response()))
+        }
+        persistence::SiteUserAvatarFromAttachmentResult::AttachmentNotFound => {
+            Err(RestRouteError::not_found("attachment not found"))
+        }
+        persistence::SiteUserAvatarFromAttachmentResult::UserNotFound => {
+            Err(RestRouteError::not_found("user not found"))
+        }
+    }
+}
+
+pub(crate) async fn rest_toggle_site_user_admin(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_admin_role(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    }))
+}
+
+pub(crate) async fn rest_toggle_site_user_account_lock(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_user_account_lock(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    }))
+}
+
+pub(crate) async fn rest_toggle_site_user_guest(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_user_guest_mode(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    }))
+}
+
+pub(crate) async fn rest_delete_site_user(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = match repository
+        .delete_site_user(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        persistence::SiteUserDeleteResult::Deleted(user) => user,
+        persistence::SiteUserDeleteResult::NotFound => {
+            return Err(RestRouteError::not_found("user not found"));
+        }
+        persistence::SiteUserDeleteResult::OnlyManager => {
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("site.userList.deleteAlert"),
+            ));
+        }
+    };
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(&repository, &service.base_path, user)
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+    }))
+}
+
+pub(crate) async fn rest_reset_site_user_password(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserPasswordResetResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .filter(|user| normalize_identifier(&user.login_id) != "anonymous")
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+    let new_password = random_site_admin_password();
+    let password_hash = hash(&new_password, DEFAULT_COST)
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    repository
+        .update_password_hash_for_user(user.id, &password_hash)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSiteUserPasswordResetResponse {
+        is_success: true,
+        login_id: user.login_id,
+        name: user.display_name,
+        new_password,
+    }))
+}
+
+pub(crate) async fn rest_read_site_projects(
+    headers: HeaderMap,
+    query: RestSiteProjectsQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteProjectListResponse>, RestRouteError> {
+    const SITE_PROJECT_PAGE_SIZE: usize = 30;
+
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let filter = query.filter.unwrap_or_default().trim().to_string();
+    let normalized_filter = normalize_identifier(&filter);
+    let page = query.page.or(query.page_num).unwrap_or(1).max(1);
+    let mut projects = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .into_iter()
+        .filter(|project| {
+            normalized_filter.is_empty()
+                || normalize_identifier(&project.project_name).contains(&normalized_filter)
+        })
+        .collect::<Vec<_>>();
+    projects.sort_by(|left, right| {
+        right
+            .created_date
+            .cmp(&left.created_date)
+            .then_with(|| left.owner_name.cmp(&right.owner_name))
+            .then_with(|| left.project_name.cmp(&right.project_name))
+    });
+
+    let total = projects.len();
+    let offset = ((page - 1) as usize).saturating_mul(SITE_PROJECT_PAGE_SIZE);
+    let mut page_projects = Vec::new();
+    for project in projects
+        .into_iter()
+        .skip(offset)
+        .take(SITE_PROJECT_PAGE_SIZE)
+    {
+        page_projects.push(
+            rest_site_project_from_record(&repository, &service.base_path, project)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+    let total_pages = if total == 0 {
+        0
+    } else {
+        total.div_ceil(SITE_PROJECT_PAGE_SIZE)
+    };
+
+    Ok(Json(RestSiteProjectListResponse {
+        filter,
+        page,
+        page_size: SITE_PROJECT_PAGE_SIZE as u32,
+        projects: page_projects,
+        total: total as u32,
+        total_pages: total_pages as u32,
+    }))
+}
+
+pub(crate) async fn rest_read_site_posts(
+    headers: HeaderMap,
+    query: RestSitePostsQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSitePostListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let record = repository
+        .list_site_postings(query.page.or(query.page_num).unwrap_or(1))
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    let mut posts = Vec::new();
+    for post in &record.posts {
+        posts.push(
+            rest_site_post_from_record(&repository, &service.base_path, post)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+
+    Ok(Json(RestSitePostListResponse {
+        page: record.page,
+        page_size: record.page_size,
+        posts,
+        total: record.total,
+        total_pages: record.total_pages,
+    }))
+}
+
+pub(crate) async fn rest_read_site_issues(
+    headers: HeaderMap,
+    query: RestSiteIssuesQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteIssueListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let state = rest_site_issue_state(query.state)?;
+    let record = repository
+        .list_site_issues(&state, query.page.or(query.page_num).unwrap_or(1))
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    let mut issues = Vec::new();
+    for issue in &record.issues {
+        issues.push(
+            rest_site_issue_from_record(&repository, &service.base_path, issue)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+
+    Ok(Json(RestSiteIssueListResponse {
+        issues,
+        page: record.page,
+        page_size: record.page_size,
+        state: record.state,
+        total: record.total,
+        total_pages: record.total_pages,
+    }))
+}
+
+pub(crate) async fn rest_read_site_diagnostics(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteDiagnosticsResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let errors = repository
+        .site_diagnostic_errors()
+        .await
+        .map_err(|error| RestRouteError::internal(format!("Failed to diagnose: {error}")))?;
+
+    Ok(Json(RestSiteDiagnosticsResponse {
+        error_count: errors.len() as u32,
+        errors,
+    }))
+}
+
+pub(crate) async fn rest_read_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    Ok(Json(rest_site_update_response(&site_update)))
+}
+
+pub(crate) async fn rest_download_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+) -> Result<Redirect, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    rest_site_update_download_redirect(&site_update)
+}
+
+pub(crate) async fn rest_download_site_update_file(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+) -> Result<Response, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    rest_site_update_download_file_response(&site_update)
+}
+
+async fn rest_export_site_data(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<RestSiteExportResponse, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let users = rest_export_site_users(repository, &service.base_path).await?;
+    let project_records = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let mut projects = Vec::new();
+    let mut milestone_project_refs = Vec::new();
+    for project in project_records {
+        milestone_project_refs.push((project.owner_name.clone(), project.project_name.clone()));
+        projects.push(
+            rest_site_project_from_record(repository, &service.base_path, project)
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
+    let labels = rest_export_site_labels(repository, &milestone_project_refs).await?;
+    let milestones = rest_export_site_milestones(repository, &milestone_project_refs).await?;
+    let project_members =
+        rest_export_site_project_members(repository, &milestone_project_refs).await?;
+    let posts = rest_export_site_posts(repository).await?;
+    let issues = rest_export_site_issues(repository).await?;
+
+    Ok(RestSiteExportResponse {
+        format: "yobi-data".to_string(),
+        provenance: "rust-app-runtime".to_string(),
+        users,
+        projects,
+        project_members,
+        labels,
+        milestones,
+        posts,
+        issues,
+    })
+}
+
+async fn rest_import_site_data(
+    headers: HeaderMap,
+    payload: &str,
+    service: PilotServiceImpl,
+    max_uploaded_file_size: usize,
+) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let payload: RestSiteImportPayload = serde_json::from_str(payload)
+        .map_err(|_| RestRouteError::bad_request("invalid site data import payload"))?;
+    if payload.format.trim() != "yobi-data" {
+        return Err(RestRouteError::bad_request(
+            "unsupported site data import format",
+        ));
+    }
+
+    let mut imported_users = 0;
+    let mut skipped_users = 0;
+    for user in payload.users {
+        let login_id = user.login_id.trim();
+        let email_address = user.email_address.trim();
+        if login_id.is_empty()
+            || repository
+                .find_user_by_login_id(login_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_some()
+        {
+            skipped_users += 1;
+            continue;
+        }
+        let imported_password_hash = hash(
+            format!(
+                "imported-user-disabled:{login_id}:{}",
+                site_export_filename_stamp()
+            ),
+            DEFAULT_COST,
+        )
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        repository
+            .create_user(persistence::CreateUserInput {
+                display_name: user.display_name.trim().to_string(),
+                email_address: email_address.to_string(),
+                is_confirmed: !user.state.trim().eq_ignore_ascii_case("LOCKED"),
+                is_site_admin: user.is_site_admin,
+                login_id: login_id.to_string(),
+                password_hash: imported_password_hash,
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_users += 1;
+    }
+
+    let mut imported_projects = 0;
+    let mut skipped_projects = 0;
+    for project in payload.projects {
+        let owner_name = project.owner_name.trim();
+        let project_name = project.project_name.trim();
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || repository
+                .find_user_by_login_id(owner_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_some()
+        {
+            skipped_projects += 1;
+            continue;
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: None,
+                owner_name: owner_name.to_string(),
+                overview: Some(project.overview.trim().to_string()),
+                project_name: project_name.to_string(),
+                project_scope: normalize_site_import_project_scope(&project.project_scope)
+                    .map_err(RestRouteError::from_connect_error)?,
+                vcs: normalize_site_import_project_vcs(&project.vcs),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_projects += 1;
+    }
+
+    let mut imported_project_members = 0;
+    let mut skipped_project_members = 0;
+    for member in payload.project_members {
+        let owner_name = member.owner_name.trim();
+        let project_name = member.project_name.trim();
+        let login_id = member.login_id.trim();
+        let role = normalize_site_import_project_member_role(&member.role);
+        let Some(project) = repository
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            skipped_project_members += 1;
+            continue;
+        };
+        let Some(user) = repository
+            .find_user_by_login_id(login_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            skipped_project_members += 1;
+            continue;
+        };
+        repository
+            .add_project_membership(project.id, user.id, &role)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_project_members += 1;
+    }
+
+    let mut imported_labels = 0;
+    let mut skipped_labels = 0;
+    for label in payload.labels {
+        let owner_name = label.owner_name.trim();
+        let project_name = label.project_name.trim();
+        let label_name = label.name.trim();
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || label_name.is_empty()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+        {
+            skipped_labels += 1;
+            continue;
+        }
+        let label_color = if label.color.trim().is_empty() {
+            "#999999".to_string()
+        } else {
+            normalize_issue_label_color(label.color.trim())
+                .map_err(RestRouteError::from_connect_error)?
+        };
+        let category_name = if label.category_name.trim().is_empty() {
+            "Imported"
+        } else {
+            label.category_name.trim()
+        };
+        match repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: label.category_is_exclusive,
+                category_name: category_name.to_string(),
+                label_color,
+                label_name: label_name.to_string(),
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            Some((_record, true)) => imported_labels += 1,
+            Some((_record, false)) => skipped_labels += 1,
+            None => skipped_labels += 1,
+        }
+    }
+
+    let mut imported_milestones = 0;
+    let mut skipped_milestones = 0;
+    for milestone in payload.milestones {
+        let owner_name = milestone.owner_name.trim();
+        let project_name = milestone.project_name.trim();
+        let title = milestone.title.trim();
+        let Some(actor) = rest_site_import_actor(repository, "", owner_name).await? else {
+            skipped_milestones += 1;
+            continue;
+        };
+        if title.is_empty()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+            || repository
+                .project_milestone_title_exists(owner_name, project_name, title, None)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            skipped_milestones += 1;
+            continue;
+        }
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &milestone.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
+        let contents_markdown = rewrite_site_import_file_links(
+            &milestone.contents_markdown,
+            &imported_attachments.link_rewrites,
+        );
+        if repository
+            .create_project_milestone(persistence::MilestoneMutationInput {
+                actor_id: Some(actor.id),
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
+                due_date: parse_milestone_due_date(&milestone.due_date)
+                    .map_err(RestRouteError::from_connect_error)?,
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                state: normalize_milestone_state(&milestone.state)
+                    .map_err(RestRouteError::from_connect_error)?,
+                title: title.to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some()
+        {
+            imported_milestones += 1;
+        } else {
+            skipped_milestones += 1;
+        }
+    }
+
+    let mut imported_posts = 0;
+    let mut skipped_posts = 0;
+    for post in payload.posts {
+        let Some(actor) =
+            rest_site_import_actor(repository, &post.author_login_id, &post.owner_name).await?
+        else {
+            skipped_posts += 1;
+            continue;
+        };
+        if repository
+            .read_project_by_owner_and_name(&post.owner_name, &post.project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_none()
+        {
+            skipped_posts += 1;
+            continue;
+        }
+        let label_ids = rest_site_import_label_ids(
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            &post.labels,
+        )
+        .await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &post.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
+        let body_markdown = rewrite_site_import_file_links(
+            &post.body_markdown,
+            &imported_attachments.link_rewrites,
+        );
+        let created = repository
+            .create_posting(persistence::CreatePostingInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                owner_name: post.owner_name.trim().to_string(),
+                project_name: post.project_name.trim().to_string(),
+                values: persistence::PostingMutationInput {
+                    attachment_ids: imported_attachments.ids,
+                    body_markdown,
+                    label_ids,
+                    notice: post.notice,
+                    readme: post.readme,
+                    title: post.title,
+                },
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let Some(created) = created else {
+            skipped_posts += 1;
+            continue;
+        };
+        if !post.history_markdown.trim().is_empty() {
+            repository
+                .restore_posting_history(
+                    &post.owner_name,
+                    &post.project_name,
+                    created.post_number,
+                    &post.history_markdown,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        rest_site_import_post_comments(
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            created.post_number,
+            &post.comments,
+            &actor,
+            None,
+            max_uploaded_file_size,
+        )
+        .await?;
+        imported_posts += 1;
+    }
+
+    let mut imported_issues = 0;
+    let mut skipped_issues = 0;
+    for issue in payload.issues {
+        let Some(actor) =
+            rest_site_import_actor(repository, &issue.author_login_id, &issue.owner_name).await?
+        else {
+            skipped_issues += 1;
+            continue;
+        };
+        if repository
+            .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_none()
+        {
+            skipped_issues += 1;
+            continue;
+        }
+        let label_ids = rest_site_import_label_ids(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            &issue.labels,
+        )
+        .await?;
+        let milestone_id = rest_site_import_milestone_id(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            &issue.milestone_title,
+            &actor,
+        )
+        .await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &issue.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
+        let body_markdown = rewrite_site_import_file_links(
+            &issue.body_markdown,
+            &imported_attachments.link_rewrites,
+        );
+        let created = repository
+            .create_issue(persistence::CreateIssueInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                owner_name: issue.owner_name.trim().to_string(),
+                project_name: issue.project_name.trim().to_string(),
+                values: persistence::IssueMutationInput {
+                    assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
+                    attachment_ids: imported_attachments.ids,
+                    body_markdown,
+                    due_date: None,
+                    is_draft: false,
+                    is_publish: false,
+                    label_ids,
+                    milestone_id,
+                    parent_issue_id: None,
+                    title: issue.title,
+                },
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let Some(created) = created else {
+            skipped_issues += 1;
+            continue;
+        };
+        if !issue.history_markdown.trim().is_empty() {
+            repository
+                .restore_issue_history(
+                    &issue.owner_name,
+                    &issue.project_name,
+                    created.issue_number,
+                    &issue.history_markdown,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        if issue.state.trim().eq_ignore_ascii_case("closed") {
+            repository
+                .update_issue_state_as_actor(
+                    &created.owner_name,
+                    &created.project_name,
+                    created.issue_number,
+                    "closed",
+                    actor.id,
+                    &actor.login_id,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        rest_site_import_issue_comments(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            created.issue_number,
+            &issue.comments,
+            &actor,
+            None,
+            max_uploaded_file_size,
+        )
+        .await?;
+        imported_issues += 1;
+    }
+
+    Ok(Json(RestSiteImportResponse {
+        imported_issues,
+        imported_labels,
+        imported_milestones,
+        imported_posts,
+        imported_projects,
+        imported_project_members,
+        imported_users,
+        skipped_issues,
+        skipped_labels,
+        skipped_milestones,
+        skipped_posts,
+        skipped_projects,
+        skipped_project_members,
+        skipped_users,
+        unsupported_sections: Vec::new(),
+    }))
+}
+
+async fn rest_site_import_post_comments(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    post_number: i64,
+    comments: &[RestSiteExportCommentItem],
+    fallback_actor: &persistence::AppUserRecord,
+    parent_comment_id: Option<i64>,
+    max_uploaded_file_size: usize,
+) -> Result<(), RestRouteError> {
+    for comment in comments {
+        let contents_markdown = comment.contents_markdown.trim();
+        if contents_markdown.is_empty() {
+            continue;
+        }
+        let actor =
+            rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
+                .await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &comment.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
+        let contents_markdown =
+            rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
+        let detail = repository
+            .create_posting_comment(persistence::CreatePostingCommentInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                attachment_actor_id: None,
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
+                created_at: None,
+                owner_name: owner_name.trim().to_string(),
+                parent_comment_id,
+                post_number,
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        if let Some(created_comment_id) = detail
+            .as_ref()
+            .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
+        {
+            Box::pin(rest_site_import_post_comments(
+                repository,
+                owner_name,
+                project_name,
+                post_number,
+                &comment.child_comments,
+                &actor,
+                Some(created_comment_id),
+                max_uploaded_file_size,
+            ))
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn rest_site_import_issue_comments(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: i64,
+    comments: &[RestSiteExportCommentItem],
+    fallback_actor: &persistence::AppUserRecord,
+    parent_comment_id: Option<i64>,
+    max_uploaded_file_size: usize,
+) -> Result<(), RestRouteError> {
+    for comment in comments {
+        let contents_markdown = comment.contents_markdown.trim();
+        if contents_markdown.is_empty() {
+            continue;
+        }
+        let actor =
+            rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
+                .await?;
+        let imported_attachments = rest_site_import_attachments(
+            repository,
+            &actor,
+            &comment.attachments,
+            max_uploaded_file_size,
+        )
+        .await?;
+        let contents_markdown =
+            rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
+        let detail = repository
+            .create_issue_comment(persistence::CreateIssueCommentInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                attachment_ids: imported_attachments.ids,
+                contents_markdown,
+                issue_number,
+                owner_name: owner_name.trim().to_string(),
+                parent_comment_id,
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        if let Some(created_comment_id) = detail
+            .as_ref()
+            .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
+        {
+            Box::pin(rest_site_import_issue_comments(
+                repository,
+                owner_name,
+                project_name,
+                issue_number,
+                &comment.child_comments,
+                &actor,
+                Some(created_comment_id),
+                max_uploaded_file_size,
+            ))
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn rest_site_import_comment_actor(
+    repository: &PilotRepository,
+    preferred_login_id: &str,
+    fallback_actor: &persistence::AppUserRecord,
+) -> Result<persistence::AppUserRecord, RestRouteError> {
+    if !preferred_login_id.trim().is_empty() {
+        if let Some(user) = repository
+            .find_user_by_login_id(preferred_login_id.trim())
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            return Ok(user);
+        }
+    }
+    Ok(fallback_actor.clone())
+}
+
+struct RestSiteImportedAttachments {
+    ids: Vec<i64>,
+    link_rewrites: Vec<(i64, i64)>,
+}
+
+async fn rest_site_import_attachments(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    attachments: &[RestSiteExportAttachmentItem],
+    max_uploaded_file_size: usize,
+) -> Result<RestSiteImportedAttachments, RestRouteError> {
+    let mut attachment_ids = Vec::new();
+    let mut link_rewrites = Vec::new();
+    for attachment in attachments {
+        if let Some(content_base64) = attachment
+            .content_base64
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            let bytes = general_purpose::STANDARD
+                .decode(content_base64)
+                .map_err(|_| {
+                    RestRouteError::bad_request("site.import.attachment.invalidContent")
+                })?;
+            if attachment.size >= 0 && attachment.size != bytes.len() as i64 {
+                return Err(RestRouteError::bad_request(
+                    "site.import.attachment.sizeMismatch",
+                ));
+            }
+            if bytes.len() > max_uploaded_file_size {
+                return Err(RestRouteError::bad_request(
+                    "site.import.attachment.tooLarge",
+                ));
+            }
+            let file_name = attachment
+                .name
+                .trim()
+                .is_empty()
+                .then(|| "attachment.bin".to_string())
+                .unwrap_or_else(|| attachment.name.trim().to_string());
+            let mime_type = attachment
+                .mime_type
+                .trim()
+                .is_empty()
+                .then(|| detect_upload_mime_type(&file_name, None, &bytes))
+                .unwrap_or_else(|| attachment.mime_type.trim().to_string());
+            let hash = random_storage_token();
+            let path = uploaded_file_path(&hash);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            }
+            std::fs::write(&path, &bytes)
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            let created = repository
+                .create_user_attachment_upload(
+                    actor.id,
+                    &actor.login_id,
+                    &file_name,
+                    &mime_type,
+                    bytes.len() as i64,
+                    &hash,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            attachment_ids.push(created.id);
+            if attachment.id > 0 && attachment.id != created.id {
+                link_rewrites.push((attachment.id, created.id));
+            }
+            continue;
+        }
+
+        if attachment.id > 0 {
+            attachment_ids.push(attachment.id);
+        }
+    }
+    Ok(RestSiteImportedAttachments {
+        ids: attachment_ids,
+        link_rewrites,
+    })
+}
+
+fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> String {
+    if rewrites.is_empty() || !markdown.contains("/files/") {
+        return markdown.to_string();
+    }
+    let rewrite_map = rewrites
+        .iter()
+        .copied()
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let bytes = markdown.as_bytes();
+    let mut rewritten = String::with_capacity(markdown.len());
+    let mut index = 0;
+    while let Some(relative_start) = markdown[index..].find("/files/") {
+        let start = index + relative_start;
+        rewritten.push_str(&markdown[index..start]);
+        let number_start = start + "/files/".len();
+        let mut number_end = number_start;
+        while number_end < bytes.len() && bytes[number_end].is_ascii_digit() {
+            number_end += 1;
+        }
+        if number_end == number_start {
+            rewritten.push_str("/files/");
+            index = number_start;
+            continue;
+        }
+        let old_id = markdown[number_start..number_end].parse::<i64>().ok();
+        if let Some(new_id) = old_id.and_then(|id| rewrite_map.get(&id)) {
+            rewritten.push_str("/files/");
+            rewritten.push_str(&new_id.to_string());
+        } else {
+            rewritten.push_str(&markdown[start..number_end]);
+        }
+        index = number_end;
+    }
+    rewritten.push_str(&markdown[index..]);
+    rewritten
+}
+
+async fn rest_site_import_label_ids(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    labels: &[RestSiteExportLabelItem],
+) -> Result<Vec<i64>, RestRouteError> {
+    let mut label_ids = Vec::new();
+    for label in labels {
+        let label_name = label.name.trim();
+        if label_name.is_empty() {
+            continue;
+        }
+        let category_name = if label.category_name.trim().is_empty() {
+            "Imported"
+        } else {
+            label.category_name.trim()
+        };
+        let label_color = if label.color.trim().is_empty() {
+            "#999999".to_string()
+        } else {
+            normalize_issue_label_color(label.color.trim())
+                .map_err(RestRouteError::from_connect_error)?
+        };
+        let Some((record, _created)) = repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: label.category_is_exclusive,
+                category_name: category_name.to_string(),
+                label_color,
+                label_name: label_name.to_string(),
+                owner_name: owner_name.trim().to_string(),
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            continue;
+        };
+        label_ids.push(record.id);
+    }
+    Ok(label_ids)
+}
+
+async fn rest_site_import_milestone_id(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    milestone_title: &str,
+    actor: &persistence::AppUserRecord,
+) -> Result<Option<i64>, RestRouteError> {
+    let title = milestone_title.trim();
+    if title.is_empty() {
+        return Ok(None);
+    }
+    let milestones = repository
+        .list_project_milestones(
+            owner_name,
+            project_name,
+            persistence::MilestoneListFilter {
+                order_by: String::new(),
+                order_dir: String::new(),
+                state: String::new(),
+            },
+        )
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    if let Some(existing) = milestones.iter().find(|milestone| milestone.title == title) {
+        return Ok(Some(existing.id));
+    }
+    let created = repository
+        .create_project_milestone(persistence::MilestoneMutationInput {
+            actor_id: Some(actor.id),
+            attachment_ids: Vec::new(),
+            contents_markdown: String::new(),
+            due_date: None,
+            owner_name: owner_name.trim().to_string(),
+            project_name: project_name.trim().to_string(),
+            state: "open".to_string(),
+            title: title.to_string(),
+        })
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    Ok(created.map(|milestone| milestone.id))
+}
+
+async fn rest_site_import_actor(
+    repository: &PilotRepository,
+    preferred_login_id: &str,
+    owner_name: &str,
+) -> Result<Option<persistence::AppUserRecord>, RestRouteError> {
+    for candidate in [preferred_login_id.trim(), owner_name.trim()] {
+        if candidate.is_empty() {
+            continue;
+        }
+        if let Some(user) = repository
+            .find_user_by_login_id(candidate)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            return Ok(Some(user));
+        }
+    }
+    Ok(None)
+}
+
+fn normalize_site_import_project_scope(value: &str) -> Result<String, ConnectError> {
+    let trimmed = value.trim();
+    let scope = if trimmed.is_empty() {
+        ProjectScope::Public
+    } else {
+        map_project_scope(trimmed)?
+    };
+    Ok(scope.as_str().to_string())
+}
+
+fn normalize_site_import_project_vcs(value: &str) -> String {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "svn" | "subversion" => "Subversion".to_string(),
+        _ => "GIT".to_string(),
+    }
+}
+
+fn normalize_site_import_project_member_role(value: &str) -> String {
+    if value.trim().eq_ignore_ascii_case("manager") {
+        "manager".to_string()
+    } else {
+        "member".to_string()
+    }
+}
+
+async fn rest_export_site_users(
+    repository: &PilotRepository,
+    base_path: &str,
+) -> Result<Vec<RestSiteUserItem>, RestRouteError> {
+    let mut users_by_id = HashMap::new();
+    for state in ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"] {
+        let mut page = 1;
+        loop {
+            let record = repository
+                .list_site_users(persistence::SiteUserListFilter {
+                    page,
+                    query: String::new(),
+                    state: state.to_string(),
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            for user in record.users {
+                if !users_by_id.contains_key(&user.id) {
+                    let rest_user = rest_site_user_from_record(repository, base_path, user)
+                        .await
+                        .map_err(RestRouteError::from_connect_error)?;
+                    users_by_id.insert(rest_user.id, rest_user);
+                }
+            }
+            if record.total_pages == 0 || page >= record.total_pages {
+                break;
+            }
+            page += 1;
+        }
+    }
+    let mut users = users_by_id.into_values().collect::<Vec<_>>();
+    users.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+    Ok(users)
+}
+
+async fn rest_export_site_milestones(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportMilestoneItem>, RestRouteError> {
+    let mut milestones = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .list_project_milestones(
+                owner_name,
+                project_name,
+                persistence::MilestoneListFilter {
+                    order_by: "dueDate".to_string(),
+                    order_dir: "asc".to_string(),
+                    state: "all".to_string(),
+                },
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for record in records {
+            milestones.push(rest_site_export_milestone_from_record(
+                owner_name,
+                project_name,
+                &record,
+            ));
+        }
+    }
+    Ok(milestones)
+}
+
+async fn rest_export_site_labels(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportProjectLabelItem>, RestRouteError> {
+    let mut labels = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .list_project_labels(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for record in records {
+            labels.push(rest_site_export_project_label_from_record(
+                owner_name,
+                project_name,
+                &record,
+            ));
+        }
+    }
+    Ok(labels)
+}
+
+async fn rest_export_site_project_members(
+    repository: &PilotRepository,
+    project_refs: &[(String, String)],
+) -> Result<Vec<RestSiteExportProjectMemberItem>, RestRouteError> {
+    let mut project_members = Vec::new();
+    for (owner_name, project_name) in project_refs {
+        let records = repository
+            .read_project_members(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for member in records.members {
+            project_members.push(RestSiteExportProjectMemberItem {
+                login_id: member.login_id,
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                role: normalize_site_import_project_member_role(&member.role),
+            });
+        }
+    }
+    Ok(project_members)
+}
+
+fn rest_site_export_project_label_from_record(
+    owner_name: &str,
+    project_name: &str,
+    label: &persistence::IssueLabelRecord,
+) -> RestSiteExportProjectLabelItem {
+    RestSiteExportProjectLabelItem {
+        category_is_exclusive: label.category_is_exclusive,
+        category_name: label.category_name.clone(),
+        color: label.color.clone(),
+        name: label.name.clone(),
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+    }
+}
+
+fn rest_site_export_milestone_from_record(
+    owner_name: &str,
+    project_name: &str,
+    milestone: &persistence::IssueMilestoneRecord,
+) -> RestSiteExportMilestoneItem {
+    RestSiteExportMilestoneItem {
+        attachments: milestone
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        contents_markdown: milestone.contents_markdown.clone(),
+        due_date: milestone.due_date_label.clone(),
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+        state: milestone.state.clone(),
+        title: milestone.title.clone(),
+    }
+}
+
+async fn rest_export_site_posts(
+    repository: &PilotRepository,
+) -> Result<Vec<RestSiteExportPostItem>, RestRouteError> {
+    let mut posts = Vec::new();
+    let mut page = 1;
+    loop {
+        let record = repository
+            .list_site_postings(page)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        for post in record.posts {
+            let post_number = post.post_number;
+            let detail = repository
+                .read_posting_detail_for_viewer(
+                    &post.owner_name,
+                    &post.project_name,
+                    post_number,
+                    None,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .ok_or_else(|| RestRouteError::internal("site export post disappeared"))?;
+            posts.push(rest_site_export_post_from_record(&detail));
+        }
+        if record.total_pages == 0 || page >= record.total_pages {
+            break;
+        }
+        page += 1;
+    }
+    Ok(posts)
+}
+
+async fn rest_export_site_issues(
+    repository: &PilotRepository,
+) -> Result<Vec<RestSiteExportIssueItem>, RestRouteError> {
+    let mut issues = Vec::new();
+    for state in ["open", "closed"] {
+        let mut page = 1;
+        loop {
+            let record = repository
+                .list_site_issues(state, page)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            for issue in record.issues {
+                let detail = repository
+                    .read_issue_detail(&issue.owner_name, &issue.project_name, issue.issue_number)
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?
+                    .ok_or_else(|| RestRouteError::internal("site export issue disappeared"))?;
+                issues.push(rest_site_export_issue_from_record(&detail));
+            }
+            if record.total_pages == 0 || page >= record.total_pages {
+                break;
+            }
+            page += 1;
+        }
+    }
+    Ok(issues)
+}
+
+pub(crate) async fn rest_read_site_mail(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    Ok(Json(rest_site_mail_options(false)))
+}
+
+pub(crate) async fn rest_send_site_test_mail(
+    headers: HeaderMap,
+    body: RestSiteMailSendBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, true).await?;
+    let from = required_site_mail_field(body.from, "from")?;
+    let to = required_site_mail_field(body.to, "to")?;
+    let subject = required_site_mail_field(body.subject, "subject")?;
+    let body = required_site_mail_field(body.body, "body")?;
+    deliver(OutboundMail {
+        bcc: Vec::new(),
+        body,
+        from,
+        html: false,
+        reply_to: None,
+        subject,
+        to,
+    })
+    .map_err(RestRouteError::internal)?;
+
+    Ok(Json(rest_site_mail_options(true)))
+}
+
+pub(crate) async fn rest_read_site_mail_list(
+    headers: HeaderMap,
+    body: RestSiteMailListBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let recipients = if body.all {
+        repository
+            .list_site_mail_recipients()
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+    } else {
+        rest_site_mail_recipients_for_projects(repository, &body.projects).await?
+    };
+
+    Ok(Json(RestSiteMailListResponse { recipients }))
+}
+
+fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
+    RestSiteMailOptionsResponse {
+        not_configured_items: site_mail_not_configured_items(),
+        sender: default_smtp_from(),
+        sent,
+    }
+}
+
+fn rest_site_update_response(config: &SiteUpdateConfig) -> RestSiteUpdateResponse {
+    let current_version = config.current_version.clone();
+    let mut error = trimmed_option(Some(&config.error));
+    let discovered_update = if error.is_none() {
+        match site_update_metadata_from_config(config) {
+            Ok(metadata) => metadata,
+            Err(metadata_error) => {
+                error = Some(metadata_error);
+                None
+            }
+        }
+    } else {
+        None
+    };
+    let version_to_update = if error.is_none() {
+        let configured_version = trimmed_option(Some(&config.latest_version))
+            .or_else(|| trimmed_option(Some(&config.version)));
+        configured_version
+            .or_else(|| {
+                discovered_update
+                    .as_ref()
+                    .map(|metadata| metadata.version.clone())
+            })
+            .filter(|value| !site_update_versions_equal(value, &current_version))
+    } else {
+        None
+    };
+    let release_url = version_to_update.as_ref().map(|version| {
+        trimmed_option(Some(&config.release_url))
+            .or_else(|| {
+                discovered_update
+                    .as_ref()
+                    .and_then(|metadata| metadata.release_url.clone())
+            })
+            .unwrap_or_else(|| {
+                format!("https://github.com/yona-projects/yona/releases/tag/{version}")
+            })
+    });
+    let message = if version_to_update.is_some() {
+        "site.update.isAvailable"
+    } else {
+        "site.update.isNotNecessary"
+    }
+    .to_string();
+
+    RestSiteUpdateResponse {
+        current_version,
+        error,
+        message,
+        release_url,
+        version_to_update,
+    }
+}
+
+fn rest_site_update_download_redirect(
+    config: &SiteUpdateConfig,
+) -> Result<Redirect, RestRouteError> {
+    let response = rest_site_update_response(config);
+    if let Some(error) = response.error {
+        return Err(RestRouteError::bad_request(error));
+    }
+    if response.version_to_update.is_none() {
+        return Err(RestRouteError::not_found("site.update.isNotNecessary"));
+    }
+    let release_url = response
+        .release_url
+        .ok_or_else(|| RestRouteError::not_found("site.update.releaseUrl.notFound"))?;
+    if !site_update_release_url_is_redirectable(&release_url) {
+        return Err(RestRouteError::bad_request(
+            "site.update.download.invalidUrl",
+        ));
+    }
+    Ok(Redirect::to(&release_url))
+}
+
+fn rest_site_update_download_file_response(
+    config: &SiteUpdateConfig,
+) -> Result<Response, RestRouteError> {
+    let response = rest_site_update_response(config);
+    if let Some(error) = response.error {
+        return Err(RestRouteError::bad_request(error));
+    }
+    if response.version_to_update.is_none() {
+        return Err(RestRouteError::not_found("site.update.isNotNecessary"));
+    }
+    let release_url = response
+        .release_url
+        .ok_or_else(|| RestRouteError::not_found("site.update.releaseUrl.notFound"))?;
+    let payload = site_update_download_payload(&release_url, config)?;
+    let mut response = Bytes::from(payload.bytes).into_response();
+    if let Ok(header_value) = HeaderValue::from_str(&payload.content_type) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_TYPE, header_value);
+    }
+    let disposition = format!(
+        "attachment; {}",
+        legacy_content_disposition_filename(&payload.file_name)
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    Ok(response)
+}
+
+fn site_update_release_url_is_redirectable(release_url: &str) -> bool {
+    let normalized = release_url.trim().to_ascii_lowercase();
+    (normalized.starts_with("https://") || normalized.starts_with("http://"))
+        && !release_url.chars().any(|ch| ch == '\r' || ch == '\n')
+}
+
+struct SiteUpdateDownloadPayload {
+    bytes: Vec<u8>,
+    content_type: String,
+    file_name: String,
+}
+
+fn site_update_download_payload(
+    release_url: &str,
+    config: &SiteUpdateConfig,
+) -> Result<SiteUpdateDownloadPayload, RestRouteError> {
+    let release_url = release_url.trim();
+    if let Some(path) = release_url.strip_prefix("file://") {
+        let bytes = std::fs::read(path).map_err(|error| {
+            RestRouteError::bad_request(format!("site.update.download.readFailed: {error}"))
+        })?;
+        let file_name = StdPath::new(path)
+            .file_name()
+            .and_then(|value| value.to_str())
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or("yona-update.bin")
+            .to_string();
+        return Ok(SiteUpdateDownloadPayload {
+            bytes,
+            content_type: "application/octet-stream".to_string(),
+            file_name,
+        });
+    }
+    if release_url.starts_with("http://") {
+        return site_update_plain_http_get_bytes(release_url).map_err(RestRouteError::bad_request);
+    }
+    if release_url.starts_with("https://") {
+        return site_update_https_get_bytes(release_url, config)
+            .map_err(RestRouteError::bad_request);
+    }
+    Err(RestRouteError::bad_request(
+        "site.update.download.unsupportedScheme",
+    ))
+}
+
+struct SiteUpdateMetadata {
+    release_url: Option<String>,
+    version: String,
+}
+
+fn site_update_metadata_from_config(
+    config: &SiteUpdateConfig,
+) -> Result<Option<SiteUpdateMetadata>, String> {
+    let Some(location) = trimmed_option(Some(&config.metadata_url))
+        .or_else(|| trimmed_option(Some(&config.metadata_file)))
+    else {
+        return Ok(None);
+    };
+    let payload = site_update_metadata_payload(&location)?;
+    let value: serde_json::Value = serde_json::from_str(&payload)
+        .map_err(|error| format!("site.update.metadata.invalidJson: {error}"))?;
+    let version = site_update_metadata_field(
+        &value,
+        &[
+            "version",
+            "latestVersion",
+            "latest_version",
+            "tagName",
+            "tag_name",
+            "name",
+        ],
+    )
+    .ok_or_else(|| "site.update.metadata.missingVersion".to_string())?;
+    let release_url = site_update_metadata_field(
+        &value,
+        &[
+            "releaseUrl",
+            "release_url",
+            "htmlUrl",
+            "html_url",
+            "downloadUrl",
+            "download_url",
+        ],
+    );
+    Ok(Some(SiteUpdateMetadata {
+        release_url,
+        version,
+    }))
+}
+
+fn site_update_metadata_payload(location: &str) -> Result<String, String> {
+    let location = location.trim();
+    if location.is_empty() {
+        return Err("site.update.metadata.emptyLocation".to_string());
+    }
+    if let Some(path) = location.strip_prefix("file://") {
+        return std::fs::read_to_string(path)
+            .map_err(|error| format!("site.update.metadata.readFailed: {error}"));
+    }
+    if location.starts_with("http://") {
+        return site_update_plain_http_get(location);
+    }
+    if location.contains("://") {
+        return Err("site.update.metadata.unsupportedScheme".to_string());
+    }
+    std::fs::read_to_string(location)
+        .map_err(|error| format!("site.update.metadata.readFailed: {error}"))
+}
+
+fn site_update_metadata_field(value: &serde_json::Value, names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        value
+            .get(*name)
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToString::to_string)
+    })
+}
+
+fn site_update_versions_equal(left: &str, right: &str) -> bool {
+    left.trim().trim_start_matches(['v', 'V']) == right.trim().trim_start_matches(['v', 'V'])
+}
+
+struct SiteUpdatePlainHttpUrl {
+    host: String,
+    path: String,
+    port: u16,
+}
+
+fn site_update_plain_http_get(url: &str) -> Result<String, String> {
+    let payload = site_update_plain_http_get_bytes(url)?;
+    String::from_utf8(payload.bytes)
+        .map_err(|error| format!("site.update.metadata.invalidUtf8: {error}"))
+}
+
+fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPayload, String> {
+    let parsed = site_update_parse_plain_http_url(url)?;
+    let address = std::net::ToSocketAddrs::to_socket_addrs(&(parsed.host.as_str(), parsed.port))
+        .map_err(|error| format!("site.update.metadata.resolveFailed: {error}"))?
+        .next()
+        .ok_or_else(|| "site.update.metadata.resolveFailed: no address".to_string())?;
+    let mut stream = std::net::TcpStream::connect_timeout(&address, Duration::from_secs(5))
+        .map_err(|error| format!("site.update.metadata.connectFailed: {error}"))?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
+    let request = format!(
+        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yona-Rust-Update-Checker\r\nAccept: */*\r\nConnection: close\r\n\r\n",
+        parsed.path, parsed.host
+    );
+    std::io::Write::write_all(&mut stream, request.as_bytes())
+        .map_err(|error| format!("site.update.metadata.writeFailed: {error}"))?;
+    let mut response = Vec::new();
+    std::io::Read::read_to_end(&mut stream, &mut response)
+        .map_err(|error| format!("site.update.metadata.readFailed: {error}"))?;
+    let header_end = response
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
+    let (head, body) = response.split_at(header_end);
+    let head = String::from_utf8_lossy(head);
+    let status_line = head.lines().next().unwrap_or_default();
+    if !status_line.contains(" 2") {
+        return Err(format!(
+            "site.update.metadata.httpStatus: {}",
+            status_line.trim()
+        ));
+    }
+    let body = site_update_http_body_bytes(&head, &body[4..])?;
+    let content_type = head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .find_map(|(name, value)| {
+            name.eq_ignore_ascii_case("content-type")
+                .then(|| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let file_name = parsed
+        .path
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("yona-update.bin")
+        .to_string();
+    Ok(SiteUpdateDownloadPayload {
+        bytes: body,
+        content_type,
+        file_name,
+    })
+}
+
+fn site_update_https_get_bytes(
+    url: &str,
+    config: &SiteUpdateConfig,
+) -> Result<SiteUpdateDownloadPayload, String> {
+    let (program, args) = site_update_https_fetch_command(url, config)?;
+    let output = Command::new(&program)
+        .args(&args)
+        .output()
+        .map_err(|error| format!("site.update.download.httpsFetchFailed: {error}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let reason = stderr.trim();
+        return Err(if reason.is_empty() {
+            format!(
+                "site.update.download.httpsFetchFailed: exit status {}",
+                output.status
+            )
+        } else {
+            format!("site.update.download.httpsFetchFailed: {reason}")
+        });
+    }
+    site_update_payload_from_http_response_bytes(url, &output.stdout)
+}
+
+fn site_update_https_fetch_command(
+    url: &str,
+    config: &SiteUpdateConfig,
+) -> Result<(String, Vec<String>), String> {
+    let configured = trimmed_option(Some(&config.https_fetch_command));
+    if let Some(configured) = configured {
+        let (program, mut args) =
+            configured_command_parts(&configured, "site.update.download.httpsFetchCommandEmpty")?;
+        args.push(url.to_string());
+        return Ok((program, args));
+    }
+    Ok((
+        "curl".to_string(),
+        [
+            "--fail",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--max-time",
+            "30",
+            "--dump-header",
+            "-",
+            "--output",
+            "-",
+            url,
+        ]
+        .into_iter()
+        .map(ToString::to_string)
+        .collect(),
+    ))
+}
+
+fn site_update_payload_from_http_response_bytes(
+    url: &str,
+    response: &[u8],
+) -> Result<SiteUpdateDownloadPayload, String> {
+    let header_end = response
+        .windows(4)
+        .rposition(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
+    let (head, body) = response.split_at(header_end);
+    let head = String::from_utf8_lossy(head);
+    let status_line = head
+        .lines()
+        .filter(|line| line.starts_with("HTTP/"))
+        .next_back()
+        .unwrap_or_default();
+    if !status_line.contains(" 2") {
+        return Err(format!(
+            "site.update.metadata.httpStatus: {}",
+            status_line.trim()
+        ));
+    }
+    let body = site_update_http_body_bytes(&head, &body[4..])?;
+    let content_type = head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .rev()
+        .find_map(|(name, value)| {
+            name.eq_ignore_ascii_case("content-type")
+                .then(|| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let file_name = url
+        .split('?')
+        .next()
+        .unwrap_or(url)
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("yona-update.bin")
+        .to_string();
+    Ok(SiteUpdateDownloadPayload {
+        bytes: body,
+        content_type,
+        file_name,
+    })
+}
+
+fn site_update_http_body_bytes(head: &str, body: &[u8]) -> Result<Vec<u8>, String> {
+    if head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .any(|(name, value)| {
+            name.eq_ignore_ascii_case("transfer-encoding")
+                && value
+                    .split(',')
+                    .any(|encoding| encoding.trim().eq_ignore_ascii_case("chunked"))
+        })
+    {
+        return site_update_decode_chunked_body(body);
+    }
+    Ok(body.to_vec())
+}
+
+fn site_update_decode_chunked_body(body: &[u8]) -> Result<Vec<u8>, String> {
+    let mut offset = 0;
+    let mut decoded = Vec::new();
+    loop {
+        let size_end = body[offset..]
+            .windows(2)
+            .position(|window| window == b"\r\n")
+            .map(|position| offset + position)
+            .ok_or_else(|| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        let size_line = std::str::from_utf8(&body[offset..size_end])
+            .map_err(|error| format!("site.update.metadata.invalidChunkedResponse: {error}"))?;
+        let size_hex = size_line
+            .split_once(';')
+            .map(|(size, _)| size)
+            .unwrap_or(size_line)
+            .trim();
+        let size = usize::from_str_radix(size_hex, 16)
+            .map_err(|_| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        offset = size_end + 2;
+        if size == 0 {
+            return Ok(decoded);
+        }
+        let chunk_end = offset
+            .checked_add(size)
+            .ok_or_else(|| "site.update.metadata.invalidChunkedResponse".to_string())?;
+        if chunk_end + 2 > body.len() || &body[chunk_end..chunk_end + 2] != b"\r\n" {
+            return Err("site.update.metadata.invalidChunkedResponse".to_string());
+        }
+        decoded.extend_from_slice(&body[offset..chunk_end]);
+        offset = chunk_end + 2;
+    }
+}
+
+fn site_update_parse_plain_http_url(url: &str) -> Result<SiteUpdatePlainHttpUrl, String> {
+    let without_scheme = url
+        .strip_prefix("http://")
+        .ok_or_else(|| "site.update.metadata.unsupportedScheme".to_string())?;
+    let (authority, raw_path) = without_scheme
+        .split_once('/')
+        .unwrap_or((without_scheme, ""));
+    if authority.is_empty() || authority.contains('@') {
+        return Err("site.update.metadata.invalidHost".to_string());
+    }
+    let (host, port) = if let Some((host, port)) = authority.rsplit_once(':') {
+        let port = port
+            .parse::<u16>()
+            .map_err(|_| "site.update.metadata.invalidPort".to_string())?;
+        (host.to_string(), port)
+    } else {
+        (authority.to_string(), 80)
+    };
+    if host.trim().is_empty() {
+        return Err("site.update.metadata.invalidHost".to_string());
+    }
+    let path = if raw_path.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{raw_path}")
+    };
+    Ok(SiteUpdatePlainHttpUrl { host, path, port })
+}
+
+fn site_mail_not_configured_items() -> Vec<String> {
+    [
+        ("smtp.host", &["SMTP_HOST", "YONA_SMTP_HOST"][..]),
+        ("smtp.user", &["SMTP_USER", "YONA_SMTP_USER"][..]),
+        (
+            "smtp.password",
+            &["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"][..],
+        ),
+    ]
+    .into_iter()
+    .filter(|(_, names)| configured_env_value(names).is_none())
+    .map(|(label, _)| label.to_string())
+    .collect()
+}
+
+fn required_site_mail_field(value: String, name: &str) -> Result<String, RestRouteError> {
+    let trimmed = value.trim().to_string();
+    if trimmed.is_empty() {
+        return Err(RestRouteError::bad_request(format!("{name} is required")));
+    }
+    Ok(trimmed)
+}
+
+async fn rest_site_mail_recipients_for_projects(
+    repository: &PilotRepository,
+    projects: &[String],
+) -> Result<Vec<String>, RestRouteError> {
+    let mut recipients = Vec::new();
+    for project_label in projects {
+        let project_label = project_label.trim();
+        if project_label.is_empty() {
+            continue;
+        }
+        let Some(project) = rest_find_site_mail_project(repository, project_label).await? else {
+            continue;
+        };
+        recipients.extend(
+            repository
+                .list_project_member_users(project.id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .into_iter()
+                .map(|user| user.email_address.trim().to_string())
+                .filter(|email| !email.is_empty()),
+        );
+    }
+    recipients.sort();
+    recipients.dedup();
+    Ok(recipients)
+}
+
+async fn rest_find_site_mail_project(
+    repository: &PilotRepository,
+    project_label: &str,
+) -> Result<Option<persistence::ProjectRecord>, RestRouteError> {
+    if let Some((owner_name, project_name)) = project_label.split_once('/') {
+        return repository
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+    }
+    let normalized = normalize_identifier(project_label);
+    let project = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .into_iter()
+        .find(|project| normalize_identifier(&project.project_name) == normalized);
+    Ok(project)
+}
+
+pub(crate) async fn rest_delete_site_project(
+    headers: HeaderMap,
+    project_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectDeleteResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let project = repository
+        .read_project_by_id(project_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    repository
+        .delete_project_by_owner_and_name(&project.owner_name, &project.project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    delete_project_repository_storage(project.id)?;
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/sites/projectList".to_string(),
+    }))
+}
+
+async fn rest_require_site_admin_repository<'a>(
+    service: &'a PilotServiceImpl,
+    headers: &HeaderMap,
+    validate_csrf: bool,
+) -> Result<&'a PilotRepository, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    if validate_csrf {
+        require_valid_csrf(&service.session_manager, headers, &session)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+    let repository = rest_repository(service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("site admin is required"),
+        ));
+    }
+    Ok(repository)
+}
+
+fn rest_site_user_state(state: Option<String>) -> Result<String, RestRouteError> {
+    let normalized = state
+        .as_deref()
+        .map(normalize_identifier)
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let normalized = if normalized.is_empty() {
+        "ACTIVE".to_string()
+    } else {
+        normalized
+    };
+    match normalized.as_str() {
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" => Ok(normalized),
+        _ => Err(RestRouteError::bad_request("invalid site user state")),
+    }
+}
+
+fn rest_site_issue_state(state: Option<String>) -> Result<String, RestRouteError> {
+    let normalized = state
+        .as_deref()
+        .map(normalize_identifier)
+        .unwrap_or_default();
+    let normalized = if normalized.is_empty() {
+        "open".to_string()
+    } else {
+        normalized
+    };
+    match normalized.as_str() {
+        "open" | "closed" => Ok(normalized),
+        _ => Err(RestRouteError::bad_request("invalid site issue state")),
+    }
+}
+
+async fn rest_site_user_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: persistence::SiteUserRecord,
+) -> Result<RestSiteUserItem, ConnectError> {
+    let avatar_url =
+        workspace_avatar_url(repository, record.id, &record.email_address, base_path).await?;
+    Ok(RestSiteUserItem {
+        avatar_url,
+        created_at: record
+            .created_at
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        display_name: record.display_name,
+        email_address: record.email_address,
+        id: record.id,
+        is_guest: record.is_guest,
+        is_site_admin: record.is_site_admin,
+        last_state_modified_at: record
+            .last_state_modified_at
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        login_id: record.login_id,
+        state: record.state,
+    })
+}
+
+async fn rest_site_user_list_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: persistence::SiteUserListRecord,
+) -> Result<RestSiteUserListResponse, ConnectError> {
+    let mut users = Vec::new();
+    for user in record.users {
+        users.push(rest_site_user_from_record(repository, base_path, user).await?);
+    }
+
+    Ok(RestSiteUserListResponse {
+        page: record.page,
+        page_size: record.page_size,
+        query: record.query,
+        site_admin_count: record.site_admin_count,
+        state: record.state,
+        total: record.total,
+        total_pages: record.total_pages,
+        users,
+    })
+}
+
+fn rest_site_no_avatar_user_from_record(
+    record: persistence::SiteNoAvatarUserRecord,
+) -> RestSiteNoAvatarUserItem {
+    RestSiteNoAvatarUserItem {
+        email: record.email,
+        login_id: record.login_id,
+        name: record.name,
+    }
+}
+
+fn rest_site_legacy_ok_response() -> RestSiteLegacyOkResponse {
+    RestSiteLegacyOkResponse {
+        message: "OK".to_string(),
+        status: 200,
+    }
+}
+
+fn empty_string_as_none(value: &str) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
+
+async fn rest_site_project_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: persistence::ProjectRecord,
+) -> Result<RestSiteProjectItem, ConnectError> {
+    let project_logo_url = project_logo_url(repository, base_path, record.id).await?;
+    Ok(RestSiteProjectItem {
+        created_at: record
+            .created_date
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        id: record.id,
+        owner_name: record.owner_name,
+        overview: record.overview.unwrap_or_default(),
+        project_logo_url,
+        project_name: record.project_name,
+        project_scope: record.project_scope,
+        vcs: record.vcs,
+    })
+}
+
+fn rest_site_export_post_from_record(
+    record: &persistence::PostingRecord,
+) -> RestSiteExportPostItem {
+    RestSiteExportPostItem {
+        author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        body_markdown: record.body_markdown.clone(),
+        comments: rest_site_export_post_comments_from_records(&record.comments),
+        history_markdown: record.history_markdown.clone(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_site_export_label_from_record)
+            .collect(),
+        notice: record.notice,
+        owner_name: record.owner_name.clone(),
+        post_number: record.post_number.to_string(),
+        project_name: record.project_name.clone(),
+        readme: record.readme,
+        title: record.title.clone(),
+    }
+}
+
+fn rest_site_export_issue_from_record(
+    record: &persistence::IssueRecord,
+) -> RestSiteExportIssueItem {
+    RestSiteExportIssueItem {
+        assignee_login_id: record.assignee_login_id.clone(),
+        author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        body_markdown: record.body_markdown.clone(),
+        comments: rest_site_export_issue_comments_from_records(&record.comments),
+        history_markdown: record.history_markdown.clone(),
+        issue_number: record.issue_number.to_string(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_site_export_label_from_record)
+            .collect(),
+        milestone_title: record.milestone_title.clone(),
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+    }
+}
+
+fn rest_site_export_post_comment_from_record(
+    record: &persistence::PostingCommentRecord,
+    child_comments: Vec<RestSiteExportCommentItem>,
+) -> RestSiteExportCommentItem {
+    RestSiteExportCommentItem {
+        author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        child_comments,
+        contents_markdown: record.contents_markdown.clone(),
+    }
+}
+
+fn rest_site_export_issue_comment_from_record(
+    record: &persistence::IssueCommentRecord,
+    child_comments: Vec<RestSiteExportCommentItem>,
+) -> RestSiteExportCommentItem {
+    RestSiteExportCommentItem {
+        author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
+        child_comments,
+        contents_markdown: record.contents_markdown.clone(),
+    }
+}
+
+fn rest_site_export_post_comments_from_records(
+    records: &[persistence::PostingCommentRecord],
+) -> Vec<RestSiteExportCommentItem> {
+    records
+        .iter()
+        .filter(|record| record.parent_comment_id.is_none())
+        .map(|record| rest_site_export_post_comment_tree(record, records))
+        .collect()
+}
+
+fn rest_site_export_post_comment_tree(
+    record: &persistence::PostingCommentRecord,
+    records: &[persistence::PostingCommentRecord],
+) -> RestSiteExportCommentItem {
+    let children = records
+        .iter()
+        .filter(|child| child.parent_comment_id == Some(record.id))
+        .map(|child| rest_site_export_post_comment_tree(child, records))
+        .collect();
+    rest_site_export_post_comment_from_record(record, children)
+}
+
+fn rest_site_export_issue_comments_from_records(
+    records: &[persistence::IssueCommentRecord],
+) -> Vec<RestSiteExportCommentItem> {
+    records
+        .iter()
+        .filter(|record| record.parent_comment_id.is_none())
+        .map(|record| rest_site_export_issue_comment_tree(record, records))
+        .collect()
+}
+
+fn rest_site_export_issue_comment_tree(
+    record: &persistence::IssueCommentRecord,
+    records: &[persistence::IssueCommentRecord],
+) -> RestSiteExportCommentItem {
+    let children = records
+        .iter()
+        .filter(|child| child.parent_comment_id == Some(record.id))
+        .map(|child| rest_site_export_issue_comment_tree(child, records))
+        .collect();
+    rest_site_export_issue_comment_from_record(record, children)
+}
+
+fn rest_site_export_attachment_from_record(
+    record: &persistence::IssueAttachmentRecord,
+) -> RestSiteExportAttachmentItem {
+    RestSiteExportAttachmentItem {
+        content_base64: rest_site_export_attachment_content_base64(record),
+        id: record.id,
+        mime_type: record.mime_type.clone(),
+        name: record.name.clone(),
+        size: record.size,
+    }
+}
+
+fn rest_site_export_attachment_content_base64(
+    record: &persistence::IssueAttachmentRecord,
+) -> Option<String> {
+    let hash = record.hash.trim();
+    if hash.is_empty() {
+        return None;
+    }
+    std::fs::read(uploaded_file_path(hash))
+        .ok()
+        .map(|bytes| general_purpose::STANDARD.encode(bytes))
+}
+
+fn rest_site_export_label_from_record(
+    record: &persistence::IssueLabelRecord,
+) -> RestSiteExportLabelItem {
+    RestSiteExportLabelItem {
+        category_is_exclusive: record.category_is_exclusive,
+        category_name: record.category_name.clone(),
+        color: record.color.clone(),
+        name: record.name.clone(),
+    }
+}
+
+async fn rest_site_post_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: &persistence::ProjectPostingListItemRecord,
+) -> Result<RestSitePostItem, ConnectError> {
+    Ok(RestSitePostItem {
+        author_avatar_url: gravatar_url(&record.author_email_address),
+        author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
+        comment_count: record.comment_count,
+        created_label: record.created_label.clone(),
+        created_title: record.created_title.clone(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        notice: record.notice,
+        owner_name: record.owner_name.clone(),
+        post_number: record.post_number.to_string(),
+        project_logo_url: project_logo_url(repository, base_path, record.project_id).await?,
+        project_name: record.project_name.clone(),
+        readme: record.readme,
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+    })
+}
+
+async fn rest_site_issue_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: &persistence::ProjectIssueListItemRecord,
+) -> Result<RestSiteIssueItem, ConnectError> {
+    Ok(RestSiteIssueItem {
+        assignee_label: record.assignee_label.clone(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
+        author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
+        comment_count: record.comment_count,
+        created_label: record.created_label.clone(),
+        created_title: record.created_title.clone(),
+        issue_number: record.issue_number.to_string(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        milestone_title: record.milestone_title.clone(),
+        owner_name: record.owner_name.clone(),
+        project_logo_url: project_logo_url(repository, base_path, record.project_id).await?,
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+        voter_count: record.voter_count,
+        watcher_count: record.watcher_count,
+    })
 }
