@@ -1039,6 +1039,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   mutation, direct legacy review-thread aliases, and webhook/event side effects
   covered by
   `pull_request_mutation_contract::pull_request_interaction_surface_mutates_state_review_comments_threads_and_events`.
+- 2026-06-20 build/check diet note: legacy external board posting JSON body
+  parsers, import/content/comment/label handlers, legacy comment update handler,
+  and legacy posting payload projection helpers moved from
+  `crates/server/src/routes/boards.rs` into
+  `crates/server/src/routes/boards/legacy_external.rs`; direct and REST board
+  route registration remains in the parent module. This preserves legacy board
+  post import, imported-author creation, content conflict handling, comment
+  creation/update, attachment assignment, and label update behavior covered by
+  `board_contract::legacy_external_board_post_create_and_content_routes_follow_legacy_json_shape`.
 
 ## Wave 0 Exit Snapshot
 

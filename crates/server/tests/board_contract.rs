@@ -242,7 +242,7 @@ fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, 
 
 #[tokio::test]
 async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json_shape() {
-    // Guards route-owned legacy external board import/content/comment/label handlers.
+    // Guards routes/boards/legacy_external.rs import/content/comment/label handlers.
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
