@@ -1964,7 +1964,7 @@ async fn rest_project_container_includes_legacy_project_home_commit_history_rows
 }
 
 #[tokio::test]
-// Guards project overview REST/direct route ownership in the projects route module.
+// Guards project route-owned overview update helper through REST/direct routes.
 async fn update_project_overview_returns_refreshed_project_container() {
     let app = build_app().await;
 
@@ -2051,7 +2051,7 @@ async fn update_project_overview_returns_refreshed_project_container() {
 
 #[tokio::test]
 async fn toggle_project_watch_returns_refreshed_project_container() {
-    // Guards REST and direct project watch aliases while project route ownership is split.
+    // Guards project route-owned watch toggle helper through REST and direct aliases.
     let app = build_app().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;

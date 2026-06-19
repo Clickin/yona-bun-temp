@@ -477,6 +477,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   provisioning, manager membership creation, and created project detail
   projection behavior covered by
   `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
+- 2026-06-20 build/check diet note: project overview update and project watch
+  toggle RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`;
+  service methods remain compatibility delegates while REST/direct project
+  overview and watch handlers call the project route-owned helpers directly,
+  preserving CSRF/session checks, project update/read authorization, overview
+  persistence, watch-state persistence, and refreshed project container
+  projection behavior covered by
+  `org_project_contract::update_project_overview_returns_refreshed_project_container`
+  and `org_project_contract::toggle_project_watch_returns_refreshed_project_container`.
 
 ## Wave 0 Exit Snapshot
 

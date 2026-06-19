@@ -86,15 +86,15 @@ pub(crate) use routes::{
     project_label_delete, project_label_update, project_labels_list, project_logo_url,
     project_member_summary_from_record, project_milestone_create, project_milestone_delete,
     project_milestone_list, project_milestone_read, project_milestone_state_mutation,
-    project_milestone_summary_from_record, project_milestone_update, project_read_allowed,
-    project_resource_create_allowed, project_settings_read, project_update_allowed,
-    project_webhook_type_label, random_site_admin_password, random_storage_token,
-    read_issue_access, read_posting_access, read_posting_comment_create_access,
-    record_project_webhook_delivery, redirect_to, require_authenticated_user,
-    require_project_authorization, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, resolve_current_session_response,
-    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
-    rest_commit_thread_from_record, rest_delete_project_member,
+    project_milestone_summary_from_record, project_milestone_update, project_overview_update,
+    project_read_allowed, project_resource_create_allowed, project_settings_read,
+    project_update_allowed, project_watch_toggle, project_webhook_type_label,
+    random_site_admin_password, random_storage_token, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
+    require_authenticated_user, require_project_authorization, require_project_read,
+    require_project_resource_create, require_session, require_valid_csrf,
+    resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
+    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -1340,62 +1340,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateProjectOverviewRequestView<'static>>,
     ) -> Result<(ProjectContainer, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        if request.overview.len() > 255 {
-            return Err(ConnectError::invalid_argument("invalid project request"));
-        }
-
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "project update is not allowed",
-            ));
-        }
-
-        repository
-            .update_project(persistence::UpdateProjectInput {
-                current_owner_name: authorization.project.owner_name.clone(),
-                current_project_name: authorization.project.project_name.clone(),
-                overview: Some(request.overview.trim().to_string()),
-                project_name: authorization.project.project_name.clone(),
-                project_scope: authorization.project.project_scope.clone(),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-
-        let refreshed = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-
-        Ok((
-            build_project_container_response(
-                repository,
-                &self.public_origin,
-                &self.base_path,
-                &refreshed,
-                Some(user_id),
-            )
-            .await?,
-            ctx,
-        ))
+        project_overview_update(self, ctx, request).await
     }
 
     async fn toggle_project_watch(
@@ -1403,51 +1348,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ToggleProjectWatchRequestView<'static>>,
     ) -> Result<(ProjectContainer, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        if !project_read_allowed(&authorization, false)? {
-            return Err(ConnectError::permission_denied(
-                "project read is not allowed",
-            ));
-        }
-
-        repository
-            .set_project_watch(user_id, authorization.project.id, request.watching)
-            .await
-            .map_err(internal_error)?;
-
-        let refreshed = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-
-        Ok((
-            build_project_container_response(
-                repository,
-                &self.public_origin,
-                &self.base_path,
-                &refreshed,
-                Some(user_id),
-            )
-            .await?,
-            ctx,
-        ))
+        project_watch_toggle(self, ctx, request).await
     }
 
     async fn update_project(

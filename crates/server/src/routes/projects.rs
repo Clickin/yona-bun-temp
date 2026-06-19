@@ -1392,6 +1392,121 @@ pub(crate) async fn project_container_read(
     ))
 }
 
+pub(crate) async fn project_overview_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateProjectOverviewRequestView<'static>>,
+) -> Result<(ProjectContainer, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    if request.overview.len() > 255 {
+        return Err(ConnectError::invalid_argument("invalid project request"));
+    }
+
+    let authorization = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    if !project_update_allowed(&authorization)? {
+        return Err(ConnectError::permission_denied(
+            "project update is not allowed",
+        ));
+    }
+
+    repository
+        .update_project(persistence::UpdateProjectInput {
+            current_owner_name: authorization.project.owner_name.clone(),
+            current_project_name: authorization.project.project_name.clone(),
+            overview: Some(request.overview.trim().to_string()),
+            project_name: authorization.project.project_name.clone(),
+            project_scope: authorization.project.project_scope.clone(),
+        })
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+    let refreshed = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+    Ok((
+        build_project_container_response(
+            repository,
+            &service.public_origin,
+            &service.base_path,
+            &refreshed,
+            Some(user_id),
+        )
+        .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_watch_toggle(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ToggleProjectWatchRequestView<'static>>,
+) -> Result<(ProjectContainer, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    if !project_read_allowed(&authorization, false)? {
+        return Err(ConnectError::permission_denied(
+            "project read is not allowed",
+        ));
+    }
+
+    repository
+        .set_project_watch(user_id, authorization.project.id, request.watching)
+        .await
+        .map_err(internal_error)?;
+
+    let refreshed = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+    Ok((
+        build_project_container_response(
+            repository,
+            &service.public_origin,
+            &service.base_path,
+            &refreshed,
+            Some(user_id),
+        )
+        .await?,
+        ctx,
+    ))
+}
+
 pub(crate) async fn project_milestone_create(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -5232,8 +5347,7 @@ async fn rest_update_project_overview(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateProjectOverviewRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .update_project_overview(Context::new(headers), request)
+    let (payload, ctx) = project_overview_update(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -5385,8 +5499,7 @@ pub(crate) async fn rest_toggle_project_watch(
         ..Default::default()
     };
     let request = rest_owned_view::<ToggleProjectWatchRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .toggle_project_watch(Context::new(headers), request)
+    let (payload, ctx) = project_watch_toggle(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
