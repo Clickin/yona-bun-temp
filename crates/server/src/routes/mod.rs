@@ -2,8 +2,8 @@ use axum::{routing::any, Router};
 
 use crate::session::SessionManager;
 use crate::{
-    rest_not_found_response, AssetMode, AuthUiConfig, BrowserRuntimeConfig, PilotBackend,
-    PilotServiceImpl, SiteUpdateConfig, TranslationProxyConfig,
+    AssetMode, AuthUiConfig, BrowserRuntimeConfig, PilotBackend, PilotServiceImpl,
+    SiteUpdateConfig, TranslationProxyConfig,
 };
 
 mod auth;
@@ -76,15 +76,16 @@ pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
-    accepts_legacy_json, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response, code_branch_error,
-    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
-    decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
-    deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
-    direct_status_from_connect_error, escape_html_attr, escape_html_text, form_bool, form_value,
-    format_project_date_label, gravatar_url, headers_with_form_csrf,
-    issue_label_category_from_record, issue_label_css, issue_label_from_record,
-    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    accepts_legacy_json, append_response_headers, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, code_branch_error, code_browser_error,
+    code_file_record_is_renderable_markdown, code_path_is_markdown, decode_query_component,
+    deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
+    direct_project_update_allowed, direct_status_from_connect_error, escape_html_attr,
+    escape_html_text, form_bool, form_value, format_project_date_label, gravatar_url,
+    headers_with_form_csrf, issue_label_category_from_record, issue_label_css,
+    issue_label_from_record, legacy_content_update_body_from_value,
+    legacy_external_api_auth_error_response, legacy_external_api_hello,
     legacy_external_api_token_from_headers, legacy_external_attachment_result,
     legacy_external_authenticated_user_id, legacy_external_date_string,
     legacy_external_parse_datetime, legacy_external_post_author,
@@ -99,9 +100,12 @@ pub(crate) use utils::{
     project_code_menu_visible, project_detail_from_record, project_detail_with_logo_from_record,
     project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
     project_milestone_summary_from_record, project_resource_create_allowed, redirect_to,
-    require_project_resource_create, rest_board_label_from_record, user_issue_filter_name,
-    user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
-    ProjectCreatableResource, RestBoardLabel,
+    require_project_resource_create, rest_actor_id, rest_board_label_from_record,
+    rest_json_response, rest_not_found_response, rest_owned_view, rest_read_current_session,
+    rest_repository, rest_require_project_code_read, user_issue_filter_name, user_issue_state,
+    visible_code_projects_for_organization, visible_projects_for_organization,
+    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
+    RestProjectDeleteResponse, RestRouteError,
 };
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;

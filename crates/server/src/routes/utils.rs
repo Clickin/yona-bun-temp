@@ -4,6 +4,7 @@ use axum::{
     Json,
 };
 use bcrypt::{hash, DEFAULT_COST};
+use buffa::view::{MessageView, OwnedView};
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
@@ -21,13 +22,212 @@ use crate::{
         ProjectMemberSummary, ProjectMilestoneSummary,
     },
     internal_error, normalize_identifier, persistence, project_read_allowed,
-    project_update_allowed, require_session, require_valid_csrf,
+    project_update_allowed, require_project_read, require_session, require_valid_csrf,
     session::{Session, SessionManager},
-    ConnectError, ErrorCode, PilotRepository, RestRouteError,
+    ConnectError, Context, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_request_project_enrollment, can_update_organization,
 };
+
+#[derive(Serialize)]
+struct RestErrorEnvelope {
+    error: RestErrorPayload,
+}
+
+#[derive(Serialize)]
+struct RestErrorPayload {
+    code: &'static str,
+    message: String,
+    status: u16,
+}
+
+pub(crate) struct RestRouteError {
+    code: Option<&'static str>,
+    message: String,
+    status: StatusCode,
+}
+
+impl RestRouteError {
+    pub(crate) fn from_connect_error(error: ConnectError) -> Self {
+        let status = error.code.http_status();
+        let message = error.message.clone().unwrap_or_else(|| error.to_string());
+        Self {
+            code: None,
+            message,
+            status,
+        }
+    }
+
+    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
+        Self {
+            code: None,
+            message: message.into(),
+            status: StatusCode::BAD_REQUEST,
+        }
+    }
+
+    pub(crate) fn not_found(message: impl Into<String>) -> Self {
+        Self {
+            code: None,
+            message: message.into(),
+            status: StatusCode::NOT_FOUND,
+        }
+    }
+
+    pub(crate) fn not_implemented(message: impl Into<String>) -> Self {
+        Self {
+            code: None,
+            message: message.into(),
+            status: StatusCode::NOT_IMPLEMENTED,
+        }
+    }
+
+    pub(crate) fn forbidden_code(code: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            code: Some(code),
+            message: message.into(),
+            status: StatusCode::FORBIDDEN,
+        }
+    }
+
+    pub(crate) fn internal(message: impl Into<String>) -> Self {
+        Self {
+            code: None,
+            message: message.into(),
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+impl IntoResponse for RestRouteError {
+    fn into_response(self) -> Response {
+        let code = self.code.unwrap_or(match self.status {
+            StatusCode::BAD_REQUEST => "bad_request",
+            StatusCode::UNAUTHORIZED => "unauthorized",
+            StatusCode::FORBIDDEN => "forbidden",
+            StatusCode::NOT_FOUND => "not_found",
+            StatusCode::CONFLICT => "already_exists",
+            StatusCode::NOT_IMPLEMENTED => "not_implemented",
+            _ => "internal_error",
+        });
+        (
+            self.status,
+            Json(RestErrorEnvelope {
+                error: RestErrorPayload {
+                    code,
+                    message: self.message,
+                    status: self.status.as_u16(),
+                },
+            }),
+        )
+            .into_response()
+    }
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestIssueAssignableUsersQuery {
+    pub(crate) query: String,
+    #[serde(rename = "type")]
+    pub(crate) search_type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestProjectDeleteResponse {
+    pub(crate) ok: bool,
+    pub(crate) redirect_path: String,
+}
+
+pub(crate) fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
+where
+    V: MessageView<'static>,
+{
+    OwnedView::<V>::from_owned(message).map_err(|error| {
+        RestRouteError::internal(format!("failed to encode REST request: {error}"))
+    })
+}
+
+pub(crate) fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap) {
+    for (name, value) in source {
+        target.append(name, value.clone());
+    }
+}
+
+pub(crate) fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
+    let mut response = Json(payload).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
+}
+
+pub(crate) async fn rest_read_current_session(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Response, RestRouteError> {
+    let session = session_manager.ensure_anonymous_session(&headers);
+    let payload = crate::resolve_current_session_response(&backend, Some(&session))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let mut response = Json(payload).into_response();
+    response.headers_mut().insert(
+        "X-CSRF-Token",
+        session.csrf_token.parse().expect("csrf token header"),
+    );
+    for cookie in session_manager.build_set_cookie_headers(&session) {
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            cookie.parse().expect("set-cookie header"),
+        );
+    }
+    Ok(response)
+}
+
+pub(crate) fn rest_not_found_response() -> Response {
+    RestRouteError::not_found("REST endpoint not found.").into_response()
+}
+
+pub(crate) async fn legacy_external_api_hello() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "message": "I'm alive!",
+        "ok": true,
+    }))
+}
+
+pub(crate) fn rest_repository(
+    service: &PilotServiceImpl,
+) -> Result<&PilotRepository, RestRouteError> {
+    match &service.backend {
+        PilotBackend::Repository(repository) => Ok(repository),
+        PilotBackend::Static => Err(RestRouteError::not_implemented(
+            "pull request reads require repository backend",
+        )),
+    }
+}
+
+pub(crate) fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> Option<i64> {
+    service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id)
+}
+
+pub(crate) async fn rest_require_project_code_read(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let authorization = require_project_read(repository, owner_name, project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_code_menu_visible(&authorization, true) {
+        let error = ConnectError::permission_denied("project code access is not allowed");
+        return Err(RestRouteError::from_connect_error(error));
+    }
+    Ok(authorization)
+}
 
 pub(crate) fn legacy_external_random_storage_token() -> String {
     use base64::Engine;

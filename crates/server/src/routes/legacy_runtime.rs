@@ -143,12 +143,7 @@ pub(crate) async fn direct_legacy_migration_json_disabled(
         .into_response();
     }
 
-    RestRouteError {
-        code: Some("forbidden"),
-        message: "error.forbidden.or.not.allowed".to_string(),
-        status: StatusCode::FORBIDDEN,
-    }
-    .into_response()
+    RestRouteError::forbidden_code("forbidden", "error.forbidden.or.not.allowed").into_response()
 }
 
 pub(crate) async fn direct_import_project(

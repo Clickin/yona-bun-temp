@@ -502,6 +502,7 @@ async fn legacy_migration_requires_login_when_anonymous_access_is_disabled() {
 }
 
 #[tokio::test]
+// Guards the route-utils-owned custom forbidden REST error constructor.
 async fn legacy_migration_export_paths_stay_disabled_json_surface() {
     let (app, _, _) = build_app_with_repository().await;
     let cookie_header = register_user(app.clone(), "migration-exporter").await;

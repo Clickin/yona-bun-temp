@@ -859,6 +859,7 @@ async fn rest_session_route_coexists_with_bootstrap_and_rpc() {
 }
 
 #[tokio::test]
+// Guards the route-utils-owned REST error envelope adapter.
 async fn unknown_rest_route_returns_shared_json_error_envelope() {
     let response = build_router()
         .oneshot(
@@ -881,6 +882,7 @@ async fn unknown_rest_route_returns_shared_json_error_envelope() {
 }
 
 #[tokio::test]
+// Guards the route-utils-owned legacy external hello handler.
 async fn legacy_external_hello_matches_global_api_contract() {
     let response = build_router()
         .oneshot(

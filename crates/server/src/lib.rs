@@ -28,13 +28,13 @@ pub use notification_mail::{
     NotificationMailSchedulerConfig,
 };
 pub(crate) use routes::{
-    accepts_legacy_json, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response,
-    build_workspace_overview_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown, decode_query_component,
-    delete_project_repository_storage, deserialize_i64_vec_from_strings_or_numbers,
-    deserialize_optional_i64_from_string_or_number, detect_upload_mime_type,
-    direct_project_update_allowed, direct_status_from_connect_error,
+    accepts_legacy_json, append_response_headers, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, build_workspace_overview_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
+    decode_query_component, delete_project_repository_storage,
+    deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
+    detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
     escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
@@ -46,34 +46,37 @@ pub(crate) use routes::{
     issue_label_css, issue_label_from_record, issue_list_filter_from_request,
     issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
     legacy_content_disposition_filename, legacy_content_update_body_from_value,
-    legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
-    legacy_external_assignable_users_result, legacy_external_attachment_result,
-    legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
-    legacy_external_parse_datetime, legacy_external_post_author,
-    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
-    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, milestone_list_filter_from_request, milestone_mutation_input,
-    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
-    organization_admin_member_from_record, organization_detail_from_record,
-    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url,
-    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32, posting_can_create,
-    posting_can_update, project_code_menu_visible, project_detail_from_record,
+    legacy_external_api_auth_error_response, legacy_external_api_hello,
+    legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
+    legacy_external_attachment_result, legacy_external_authenticated_user_id,
+    legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
+    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
+    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value,
+    milestone_list_filter_from_request, milestone_mutation_input, normalize_issue_label_color,
+    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
+    organization_detail_from_record, organization_detail_with_logo_from_record,
+    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
+    organization_logo_url, organization_member_summary_from_record, organization_role_options,
+    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    posting_can_create, posting_can_update, project_code_menu_visible, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
     project_resource_create_allowed, project_webhook_type_label, read_issue_access,
     read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
     redirect_to, require_project_resource_create, resolve_issue_reference_search_project,
-    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
-    rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
-    rest_project_issue_filter_from_query, rest_project_menu_settings,
-    rest_read_direct_issue_form_options, rest_review_thread_filter,
-    rest_update_commit_discussion_thread_state, uploaded_file_path, user_issue_filter_name,
-    user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
-    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record,
-    ProjectCreatableResource, RestBoardLabel, RestProjectIssuesQuery, RestReviewThread,
-    RestReviewThreadListQuery,
+    rest_actor_id, rest_board_label_from_record, rest_commit_thread_from_record,
+    rest_delete_project_member,
+    rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
+    rest_list_user_issues, rest_not_found_response, rest_owned_view,
+    rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
+    rest_read_direct_issue_form_options, rest_repository, rest_require_project_code_read,
+    rest_review_thread_filter, rest_update_commit_discussion_thread_state, uploaded_file_path,
+    user_issue_filter_name, user_issue_state, visible_code_projects_for_organization,
+    visible_projects_for_organization, visible_user_issue_items, workspace_avatar_url,
+    workspace_profile_from_record, ProjectCreatableResource, RestBoardLabel,
+    RestIssueAssignableUsersQuery, RestProjectDeleteResponse, RestProjectIssuesQuery,
+    RestReviewThread, RestReviewThreadListQuery, RestRouteError,
 };
 pub mod runtime_config;
 mod server_config;
@@ -86,11 +89,11 @@ use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{delete, get, post, put};
+use axum::Router;
 use axum::{extract::Path, http::Method};
-use axum::{Json, Router};
 use base64::Engine as _;
 use bcrypt::{hash, verify, DEFAULT_COST};
-use buffa::view::{MessageView, OwnedView};
+use buffa::view::OwnedView;
 use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
 use http::{HeaderValue, StatusCode};
 use runtime_config::normalize_base_path;
@@ -1364,199 +1367,6 @@ fn site_export_filename_stamp() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .map(|duration| duration.as_secs().to_string())
         .unwrap_or_else(|_| "0".to_string())
-}
-
-#[derive(Serialize)]
-struct RestErrorEnvelope {
-    error: RestErrorPayload,
-}
-
-#[derive(Serialize)]
-struct RestErrorPayload {
-    code: &'static str,
-    message: String,
-    status: u16,
-}
-
-pub(crate) struct RestRouteError {
-    code: Option<&'static str>,
-    message: String,
-    status: StatusCode,
-}
-
-impl RestRouteError {
-    pub(crate) fn from_connect_error(error: ConnectError) -> Self {
-        let status = error.code.http_status();
-        let message = error.message.clone().unwrap_or_else(|| error.to_string());
-        Self {
-            code: None,
-            message,
-            status,
-        }
-    }
-
-    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
-        Self {
-            code: None,
-            message: message.into(),
-            status: StatusCode::BAD_REQUEST,
-        }
-    }
-
-    pub(crate) fn not_found(message: impl Into<String>) -> Self {
-        Self {
-            code: None,
-            message: message.into(),
-            status: StatusCode::NOT_FOUND,
-        }
-    }
-
-    pub(crate) fn not_implemented(message: impl Into<String>) -> Self {
-        Self {
-            code: None,
-            message: message.into(),
-            status: StatusCode::NOT_IMPLEMENTED,
-        }
-    }
-}
-
-impl IntoResponse for RestRouteError {
-    fn into_response(self) -> Response {
-        let code = self.code.unwrap_or(match self.status {
-            StatusCode::BAD_REQUEST => "bad_request",
-            StatusCode::UNAUTHORIZED => "unauthorized",
-            StatusCode::FORBIDDEN => "forbidden",
-            StatusCode::NOT_FOUND => "not_found",
-            StatusCode::CONFLICT => "already_exists",
-            StatusCode::NOT_IMPLEMENTED => "not_implemented",
-            _ => "internal_error",
-        });
-        (
-            self.status,
-            Json(RestErrorEnvelope {
-                error: RestErrorPayload {
-                    code,
-                    message: self.message,
-                    status: self.status.as_u16(),
-                },
-            }),
-        )
-            .into_response()
-    }
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestIssueAssignableUsersQuery {
-    query: String,
-    #[serde(rename = "type")]
-    search_type: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestProjectDeleteResponse {
-    ok: bool,
-    redirect_path: String,
-}
-
-impl RestRouteError {
-    fn internal(message: impl Into<String>) -> Self {
-        Self {
-            code: None,
-            message: message.into(),
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-}
-
-pub(crate) fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
-where
-    V: MessageView<'static>,
-{
-    OwnedView::<V>::from_owned(message).map_err(|error| {
-        RestRouteError::internal(format!("failed to encode REST request: {error}"))
-    })
-}
-
-fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap) {
-    for (name, value) in source {
-        target.append(name, value.clone());
-    }
-}
-
-pub(crate) fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
-    let mut response = Json(payload).into_response();
-    append_response_headers(response.headers_mut(), &ctx.response_headers);
-    response
-}
-
-pub(crate) async fn rest_read_current_session(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Result<Response, RestRouteError> {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = resolve_current_session_response(&backend, Some(&session))
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    let mut response = Json(payload).into_response();
-    response.headers_mut().insert(
-        "X-CSRF-Token",
-        session.csrf_token.parse().expect("csrf token header"),
-    );
-    for cookie in session_manager.build_set_cookie_headers(&session) {
-        response.headers_mut().append(
-            axum::http::header::SET_COOKIE,
-            cookie.parse().expect("set-cookie header"),
-        );
-    }
-    Ok(response)
-}
-
-pub(crate) fn rest_not_found_response() -> Response {
-    RestRouteError::not_found("REST endpoint not found.").into_response()
-}
-
-pub(crate) async fn legacy_external_api_hello() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "message": "I'm alive!",
-        "ok": true,
-    }))
-}
-
-pub(crate) fn rest_repository(
-    service: &PilotServiceImpl,
-) -> Result<&PilotRepository, RestRouteError> {
-    match &service.backend {
-        PilotBackend::Repository(repository) => Ok(repository),
-        PilotBackend::Static => Err(RestRouteError::not_implemented(
-            "pull request reads require repository backend",
-        )),
-    }
-}
-
-fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> Option<i64> {
-    service
-        .session_manager
-        .read_session_from_headers(headers)
-        .and_then(|session| session.user_id)
-}
-
-pub(crate) async fn rest_require_project_code_read(
-    repository: &PilotRepository,
-    owner_name: &str,
-    project_name: &str,
-    actor_id: Option<i64>,
-) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
-    let authorization = require_project_read(repository, owner_name, project_name, actor_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    if !project_code_menu_visible(&authorization, true) {
-        let error = ConnectError::permission_denied("project code access is not allowed");
-        return Err(RestRouteError::from_connect_error(error));
-    }
-    Ok(authorization)
 }
 
 #[derive(Default, Deserialize)]
