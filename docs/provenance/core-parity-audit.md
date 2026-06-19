@@ -802,6 +802,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
   and
   `svn_protocol_contract::svn_protocol_external_client_can_blame_public_file`.
+- 2026-06-20 build/check diet note: SVN `replay-report` response handling
+  moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_replay.rs`; REPORT method dispatch
+  remains in the protocol module. This preserves ra_serf editor operation
+  replay metadata covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
