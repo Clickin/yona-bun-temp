@@ -22,15 +22,15 @@ use crate::persistence::PilotRepository;
 use crate::{
     base_path_href, configured_command_parts, configured_env_value, decode_query_component,
     default_smtp_from, delete_project_repository_storage, detect_upload_mime_type,
-    direct_site_user_list_href, escape_html_text, gravatar_url, headers_with_form_csrf,
-    internal_error, legacy_content_disposition_filename, map_project_scope, normalize_identifier,
-    normalize_issue_label_color, normalize_milestone_state, parse_milestone_due_date, persistence,
-    project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
-    require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
-    rest_repository, session::SessionManager, site_export_filename_stamp, trimmed_option,
-    uploaded_file_path, workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend,
-    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    escape_html_text, gravatar_url, headers_with_form_csrf, internal_error,
+    legacy_content_disposition_filename, map_project_scope, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, parse_milestone_due_date,
+    percent_encode_uri_component, persistence, project_logo_url, random_site_admin_password,
+    random_storage_token, redirect_to, require_authenticated_user, require_session,
+    require_valid_csrf, rest_board_label_from_record, rest_repository, session::SessionManager,
+    site_export_filename_stamp, trimmed_option, uploaded_file_path, workspace_avatar_url,
+    AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl, RestBoardLabel,
+    RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 #[derive(Default, Deserialize)]
@@ -39,6 +39,21 @@ struct RestSiteUsersQuery {
     page: Option<u32>,
     query: Option<String>,
     state: Option<String>,
+}
+
+fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
+    let mut params = Vec::new();
+    if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {
+        params.push(format!("state={}", percent_encode_uri_component(state)));
+    }
+    if let Some(query) = query.map(str::trim).filter(|query| !query.is_empty()) {
+        params.push(format!("query={}", percent_encode_uri_component(query)));
+    }
+    if params.is_empty() {
+        "/sites/userList".to_string()
+    } else {
+        format!("/sites/userList?{}", params.join("&"))
+    }
 }
 
 #[derive(Serialize)]

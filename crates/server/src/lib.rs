@@ -916,7 +916,7 @@ pub(crate) async fn serve_frontend_page(
     }
 }
 
-fn percent_encode_uri_component(value: &str) -> String {
+pub(crate) fn percent_encode_uri_component(value: &str) -> String {
     let mut encoded = String::with_capacity(value.len());
     for byte in value.bytes() {
         if uri_component_unescaped(byte) {
@@ -1340,21 +1340,6 @@ fn site_export_filename_stamp() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .map(|duration| duration.as_secs().to_string())
         .unwrap_or_else(|_| "0".to_string())
-}
-
-fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
-    let mut params = Vec::new();
-    if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {
-        params.push(format!("state={}", percent_encode_uri_component(state)));
-    }
-    if let Some(query) = query.map(str::trim).filter(|query| !query.is_empty()) {
-        params.push(format!("query={}", percent_encode_uri_component(query)));
-    }
-    if params.is_empty() {
-        "/sites/userList".to_string()
-    } else {
-        format!("/sites/userList?{}", params.join("&"))
-    }
 }
 
 async fn direct_project_update_allowed(
