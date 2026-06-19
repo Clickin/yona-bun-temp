@@ -73,6 +73,18 @@ pub(crate) fn absolute_app_url(public_origin: &str, base_path: &str, path: &str)
     format!("{public_origin}{}", base_path_href(base_path, path))
 }
 
+pub(crate) fn default_public_origin(configured: &str) -> String {
+    let candidate = if configured.trim().is_empty() {
+        std::env::var("YONA_PUBLIC_ORIGIN")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| "http://localhost:3001".to_string())
+    } else {
+        configured.trim().to_string()
+    };
+    candidate.trim_end_matches('/').to_string()
+}
+
 #[derive(Serialize)]
 struct RestErrorEnvelope {
     error: RestErrorPayload,

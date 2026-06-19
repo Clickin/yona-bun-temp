@@ -33,9 +33,10 @@ pub(crate) use routes::{
     build_organization_admin_response, build_organization_container_response,
     build_project_container_response, build_workspace_overview_response, code_branch_error,
     code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
-    current_session_response_from_user, decode_query_component, delete_project_repository_storage,
-    deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
-    detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
+    current_session_response_from_user, decode_query_component, default_public_origin,
+    delete_project_repository_storage, deserialize_i64_vec_from_strings_or_numbers,
+    deserialize_optional_i64_from_string_or_number, detect_upload_mime_type,
+    direct_project_update_allowed, direct_status_from_connect_error,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
     escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
@@ -943,18 +944,6 @@ pub(crate) async fn serve_frontend_page(
         AssetMode::Embedded => serve_embedded_fallback(method, browser_runtime).await,
         AssetMode::None => StatusCode::NOT_FOUND.into_response(),
     }
-}
-
-fn default_public_origin(configured: &str) -> String {
-    let candidate = if configured.trim().is_empty() {
-        std::env::var("YONA_PUBLIC_ORIGIN")
-            .ok()
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "http://localhost:3001".to_string())
-    } else {
-        configured.trim().to_string()
-    };
-    candidate.trim_end_matches('/').to_string()
 }
 
 fn default_smtp_from() -> String {
