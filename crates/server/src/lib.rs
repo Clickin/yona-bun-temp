@@ -32,8 +32,9 @@ pub(crate) use routes::{
     build_organization_container_response, build_project_container_response,
     build_workspace_overview_response, code_branch_error, code_browser_error,
     code_file_record_is_renderable_markdown, code_path_is_markdown,
-    delete_project_repository_storage, detect_upload_mime_type,
-    direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
+    delete_project_repository_storage, detect_upload_mime_type, direct_project_update_allowed,
+    direct_status_from_connect_error, direct_toggle_workspace_notification,
+    dispatch_issue_webhooks, dispatch_pull_request_webhooks,
     filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
@@ -50,16 +51,16 @@ pub(crate) use routes::{
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
     legacy_issue_update_body_from_value, legacy_json_find_value, normalize_issue_label_color,
-    optional_i64_string, organization_admin_member_from_record, organization_detail_from_record,
-    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url,
-    organization_member_summary_from_record, organization_role_options, posting_can_create,
-    posting_can_update, project_code_menu_visible, project_detail_from_record,
-    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
-    project_member_summary_from_record, project_milestone_summary_from_record,
-    project_webhook_type_label, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery,
-    resolve_issue_reference_search_project, rest_board_label_from_record,
+    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
+    organization_detail_from_record, organization_detail_with_logo_from_record,
+    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
+    organization_logo_url, organization_member_summary_from_record, organization_role_options,
+    parse_attachment_ids, parse_milestone_due_date, posting_can_create, posting_can_update,
+    project_code_menu_visible, project_detail_from_record, project_detail_with_logo_from_record,
+    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
+    project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
+    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
+    redirect_to, resolve_issue_reference_search_project, rest_board_label_from_record,
     rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
@@ -88,7 +89,6 @@ use buffa::view::{MessageView, OwnedView};
 use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
 use http::{HeaderValue, StatusCode};
 use runtime_config::normalize_base_path;
-use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::{
@@ -1361,62 +1361,6 @@ fn site_export_filename_stamp() -> String {
         .unwrap_or_else(|_| "0".to_string())
 }
 
-async fn direct_project_update_allowed(
-    headers: &HeaderMap,
-    owner: &str,
-    project: &str,
-    session_manager: &SessionManager,
-    repository: &PilotRepository,
-    check_csrf: bool,
-) -> Result<session::Session, Response> {
-    let session = match require_session(session_manager, headers) {
-        Ok(session) => session,
-        Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
-    };
-    if check_csrf && require_valid_csrf(session_manager, headers, &session).is_err() {
-        return Err(StatusCode::FORBIDDEN.into_response());
-    }
-    let Some(user_id) = session.user_id else {
-        return Err(StatusCode::UNAUTHORIZED.into_response());
-    };
-    let authorization = match repository
-        .read_project_authorization(owner, project, Some(user_id))
-        .await
-    {
-        Ok(Some(authorization)) => authorization,
-        Ok(None) => return Err(StatusCode::NOT_FOUND.into_response()),
-        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
-    };
-    match project_update_allowed(&authorization) {
-        Ok(true) => Ok(session),
-        Ok(false) => Err(StatusCode::FORBIDDEN.into_response()),
-        Err(_) => Err(StatusCode::BAD_REQUEST.into_response()),
-    }
-}
-
-pub(crate) fn redirect_to(base_path: &str, path: &str) -> Response {
-    Redirect::to(&base_path_href(base_path, path)).into_response()
-}
-
-pub(crate) fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
-    let message = error.to_string().to_ascii_lowercase();
-    if message.contains("missing authenticated") {
-        StatusCode::UNAUTHORIZED
-    } else if message.contains("not found") {
-        StatusCode::NOT_FOUND
-    } else if message.contains("permission")
-        || message.contains("forbidden")
-        || message.contains("not allowed")
-        || message.contains("invalid csrf")
-    {
-        StatusCode::FORBIDDEN
-    } else if message.contains("invalid") || message.contains("required") {
-        StatusCode::BAD_REQUEST
-    } else {
-        StatusCode::INTERNAL_SERVER_ERROR
-    }
-}
-
 #[derive(Serialize)]
 struct RestErrorEnvelope {
     error: RestErrorPayload,
@@ -1731,34 +1675,6 @@ pub(crate) struct RestDirectIssueFormQuery {
     )]
     comment_id: Option<i64>,
     mine: bool,
-}
-
-fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {
-    let normalized = value.trim().to_ascii_lowercase();
-    match normalized.as_str() {
-        "" => Ok("open".to_string()),
-        "open" => Ok("open".to_string()),
-        "closed" => Ok("closed".to_string()),
-        _ => Err(ConnectError::invalid_argument("invalid milestone state")),
-    }
-}
-
-pub(crate) fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectError> {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return Ok(None);
-    }
-    DateTime::parse_from_str(&format!("{trimmed} 23:59:59.999"), "%Y-%m-%d %H:%M:%S%.3f")
-        .map(Some)
-        .map_err(|_| ConnectError::invalid_argument("invalid milestone due date"))
-}
-
-pub(crate) fn parse_attachment_ids(value: &str) -> Vec<i64> {
-    value
-        .split(',')
-        .filter_map(|item| item.trim().parse::<i64>().ok())
-        .filter(|item| *item > 0)
-        .collect()
 }
 
 #[derive(Clone)]

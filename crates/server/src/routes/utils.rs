@@ -1,6 +1,6 @@
 use axum::{
     http::{HeaderMap, HeaderValue, StatusCode},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     Json,
 };
 use bcrypt::{hash, DEFAULT_COST};
@@ -21,8 +21,8 @@ use crate::{
         ProjectMemberSummary, ProjectMilestoneSummary,
     },
     internal_error, normalize_identifier, persistence, project_read_allowed,
-    project_update_allowed, require_valid_csrf,
-    session::SessionManager,
+    project_update_allowed, require_session, require_valid_csrf,
+    session::{Session, SessionManager},
     ConnectError, ErrorCode, PilotRepository, RestRouteError,
 };
 use yona_rust_domain::{
@@ -825,6 +825,90 @@ pub(crate) fn base_path_href(base_path: &str, path: &str) -> String {
     } else {
         format!("{base_path}{path}")
     }
+}
+
+pub(crate) async fn direct_project_update_allowed(
+    headers: &HeaderMap,
+    owner: &str,
+    project: &str,
+    session_manager: &SessionManager,
+    repository: &PilotRepository,
+    check_csrf: bool,
+) -> Result<Session, Response> {
+    let session = match require_session(session_manager, headers) {
+        Ok(session) => session,
+        Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
+    };
+    if check_csrf && require_valid_csrf(session_manager, headers, &session).is_err() {
+        return Err(StatusCode::FORBIDDEN.into_response());
+    }
+    let Some(user_id) = session.user_id else {
+        return Err(StatusCode::UNAUTHORIZED.into_response());
+    };
+    let authorization = match repository
+        .read_project_authorization(owner, project, Some(user_id))
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return Err(StatusCode::NOT_FOUND.into_response()),
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+    };
+    match project_update_allowed(&authorization) {
+        Ok(true) => Ok(session),
+        Ok(false) => Err(StatusCode::FORBIDDEN.into_response()),
+        Err(_) => Err(StatusCode::BAD_REQUEST.into_response()),
+    }
+}
+
+pub(crate) fn redirect_to(base_path: &str, path: &str) -> Response {
+    Redirect::to(&base_path_href(base_path, path)).into_response()
+}
+
+pub(crate) fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
+    let message = error.to_string().to_ascii_lowercase();
+    if message.contains("missing authenticated") {
+        StatusCode::UNAUTHORIZED
+    } else if message.contains("not found") {
+        StatusCode::NOT_FOUND
+    } else if message.contains("permission")
+        || message.contains("forbidden")
+        || message.contains("not allowed")
+        || message.contains("invalid csrf")
+    {
+        StatusCode::FORBIDDEN
+    } else if message.contains("invalid") || message.contains("required") {
+        StatusCode::BAD_REQUEST
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR
+    }
+}
+
+pub(crate) fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {
+    let normalized = value.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "" => Ok("open".to_string()),
+        "open" => Ok("open".to_string()),
+        "closed" => Ok("closed".to_string()),
+        _ => Err(ConnectError::invalid_argument("invalid milestone state")),
+    }
+}
+
+pub(crate) fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectError> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+    DateTime::parse_from_str(&format!("{trimmed} 23:59:59.999"), "%Y-%m-%d %H:%M:%S%.3f")
+        .map(Some)
+        .map_err(|_| ConnectError::invalid_argument("invalid milestone due date"))
+}
+
+pub(crate) fn parse_attachment_ids(value: &str) -> Vec<i64> {
+    value
+        .split(',')
+        .filter_map(|item| item.trim().parse::<i64>().ok())
+        .filter(|item| *item > 0)
+        .collect()
 }
 
 pub(crate) fn gravatar_url(email_address: &str) -> String {

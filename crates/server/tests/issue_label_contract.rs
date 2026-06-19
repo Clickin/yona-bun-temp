@@ -270,6 +270,7 @@ async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
 
 #[tokio::test]
 async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() {
+    // Guards route-utils-owned direct project update guard for label form routes.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_public_project(app.clone(), &cookie, &csrf).await;
