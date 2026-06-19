@@ -627,6 +627,7 @@ async fn issue_list_format_xls_exports_filtered_issues_from_legacy_route() {
     );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(text.starts_with('\u{feff}'));
     assert!(text.contains("Number\tTitle\tState\tAuthor"));
     assert!(text.contains("Open export issue"));
     assert!(!text.contains("Closed export issue"));

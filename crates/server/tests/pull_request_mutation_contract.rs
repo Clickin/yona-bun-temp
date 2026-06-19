@@ -1476,6 +1476,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .unwrap()
         .to_bytes();
     let review_export_text = String::from_utf8(review_export_body.to_vec()).unwrap();
+    assert!(review_export_text.starts_with('\u{feff}'));
     assert!(review_export_text.contains("Thread\tState\tAuthor\tPath"));
     assert!(review_export_text.contains("Review comment body"));
     assert!(review_export_text.contains("topic-head"));
