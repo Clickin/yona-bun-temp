@@ -985,6 +985,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `org_project_contract::rest_project_container_includes_dashboard_open_issue_counts_by_label`,
   and
   `org_project_contract::rest_project_container_includes_legacy_project_home_history_rows`.
+- 2026-06-20 build/check diet note: project participation proto helpers, REST
+  adapters, and direct watch aliases for enroll/cancel-enroll/favorite/
+  recent-visit/watch moved from `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/participation.rs`; parent route
+  registration imports only the REST/direct adapters, while the service
+  re-export boundary still exposes the same proto-compatible helpers. This
+  preserves project enrollment request/cancel, favorite toggle, recent project
+  visit recording, watch toggle, direct watch aliases, and workspace recent
+  project reuse covered by
+  `org_project_contract::project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip`,
+  `org_project_contract::toggle_project_watch_returns_refreshed_project_container`,
+  and `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects`.
 
 ## Wave 0 Exit Snapshot
 

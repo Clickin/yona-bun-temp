@@ -1115,7 +1115,8 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
 }
 
 #[tokio::test]
-// Guards project-route-owned enrollment, favorite, recent-visit helpers through proto-compatible routes.
+// Guards projects/participation.rs enrollment, favorite, and recent-visit
+// helpers through proto-compatible routes.
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let (app, repository) = build_app_with_repository().await;
 
@@ -2063,8 +2064,9 @@ async fn update_project_overview_returns_refreshed_project_container() {
 }
 
 #[tokio::test]
+// Guards projects/participation.rs watch toggle helper through REST and direct
+// aliases.
 async fn toggle_project_watch_returns_refreshed_project_container() {
-    // Guards project route-owned watch toggle helper through REST and direct aliases.
     let app = build_app().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
