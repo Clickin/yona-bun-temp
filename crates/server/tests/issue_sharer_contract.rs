@@ -706,7 +706,7 @@ async fn issue_sharer_contract_records_timeline_and_notification_only_on_changed
 }
 
 #[tokio::test]
-// Guards the issue route-owned sharer mutation helper used by REST share/unshare routes.
+// Guards the issues/meta.rs sharer mutation helper used by REST share/unshare routes.
 async fn issue_sharer_contract_shares_unshares_and_keeps_duplicate_single_row() {
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
