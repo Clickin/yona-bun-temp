@@ -50,14 +50,14 @@ pub(crate) use routes::{
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
     format_project_date_label, gravatar_url, headers_with_form_csrf, internal_error,
     issue_assignment_mutation, issue_attachment_from_record, issue_can_mutate,
-    issue_comment_participation_mutation, issue_detail_response_from_access,
+    issue_comment_participation_mutation, issue_detail_read, issue_detail_response_from_access,
     issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_favorite_toggle,
     issue_label_category_from_record, issue_label_css, issue_label_from_record,
     issue_list_filter_from_request, issue_milestone_from_record,
     issue_milestone_from_record_with_issue_references, issue_participation_mutation,
-    legacy_content_disposition_filename, legacy_content_update_body_from_value,
+    issue_state_update, legacy_content_disposition_filename, legacy_content_update_body_from_value,
     legacy_external_api_auth_error_response, legacy_external_api_hello,
     legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
@@ -1432,38 +1432,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ReadIssueDetailRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        if request.owner_name.trim().is_empty()
-            || request.project_name.trim().is_empty()
-            || request.issue_number <= 0
-        {
-            return Err(ConnectError::invalid_argument(
-                "invalid pilot issue detail request",
-            ));
-        }
-
-        if let PilotBackend::Repository(repository) = &self.backend {
-            let session = self.session_manager.read_session_from_headers(&ctx.headers);
-            let actor_id = session.as_ref().and_then(|session| session.user_id);
-            let access = read_issue_access(
-                repository,
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-                actor_id,
-            )
-            .await?;
-            return Ok((
-                issue_detail_response_from_access(&access, actor_id, &self.base_path),
-                ctx,
-            ));
-        } else if request.owner_name != "pilot"
-            || request.project_name != "yona"
-            || request.issue_number != 1
-        {
-            return Err(ConnectError::not_found("pilot issue not found"));
-        }
-
-        Ok((pilot_issue_response("open"), ctx))
+        issue_detail_read(self, ctx, request).await
     }
 
     async fn update_issue_state(
@@ -1471,75 +1440,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateIssueStateRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-
-        if request.issue_number <= 0 || !matches!(request.state, "open" | "closed") {
-            return Err(ConnectError::invalid_argument(
-                "invalid pilot issue state request",
-            ));
-        }
-
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-
-        if let PilotBackend::Repository(repository) = &self.backend {
-            let actor = require_authenticated_user(repository, session.user_id).await?;
-            let authorization = require_project_read(
-                repository,
-                request.owner_name,
-                request.project_name,
-                session.user_id,
-            )
-            .await?;
-            let existing = repository
-                .read_issue_detail(
-                    request.owner_name,
-                    request.project_name,
-                    request.issue_number,
-                )
-                .await
-                .map_err(internal_error)?
-                .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-            if !issue_can_mutate(&authorization, &existing, &actor) {
-                return Err(ConnectError::permission_denied(
-                    "issue state update is not allowed",
-                ));
-            }
-            let issue = repository
-                .update_issue_state_as_actor(
-                    request.owner_name,
-                    request.project_name,
-                    request.issue_number,
-                    request.state,
-                    actor.id,
-                    &actor.login_id,
-                )
-                .await
-                .map_err(internal_error)?;
-
-            return issue
-                .map(|issue| {
-                    (
-                        issue_detail_response_from_record(
-                            &issue,
-                            true,
-                            true,
-                            session.user_id,
-                            &self.base_path,
-                        ),
-                        ctx,
-                    )
-                })
-                .ok_or_else(|| ConnectError::not_found("pilot issue not found"));
-        }
-
-        if request.owner_name != "pilot"
-            || request.project_name != "yona"
-            || request.issue_number != 1
-        {
-            return Err(ConnectError::not_found("pilot issue not found"));
-        }
-
-        Ok((pilot_issue_response(request.state), ctx))
+        issue_state_update(self, ctx, request).await
     }
 
     async fn watch_issue(
@@ -1724,17 +1625,6 @@ impl PilotServiceImpl {
         request: OwnedView<MilestoneStateMutationRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
         project_milestone_state_mutation(self, ctx, request, "closed").await
-    }
-}
-
-fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
-    ReadIssueDetailResponse {
-        owner_name: "pilot".to_string(),
-        project_name: "yona".to_string(),
-        issue_number: 1,
-        title: "Pilot issue".to_string(),
-        state: state.to_string(),
-        ..Default::default()
     }
 }
 

@@ -306,6 +306,7 @@ async fn list_organizations_works_over_connect_json() {
 }
 
 #[tokio::test]
+// Guards issue route-owned detail helper and no-repository pilot fallback status mapping.
 async fn read_issue_detail_applies_the_go_pilot_status_contract() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,
@@ -346,7 +347,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
 }
 
 #[tokio::test]
-// Guards route-utils-owned session and CSRF helpers used by legacy mutation routes.
+// Guards issue route-owned state helper plus route-utils-owned session and CSRF helpers.
 async fn update_issue_state_requires_bootstrapped_csrf() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,

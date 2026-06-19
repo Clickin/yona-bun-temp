@@ -431,6 +431,132 @@ pub(crate) async fn project_issues_list(
     ))
 }
 
+pub(crate) async fn issue_detail_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadIssueDetailRequestView<'static>>,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    if request.owner_name.trim().is_empty()
+        || request.project_name.trim().is_empty()
+        || request.issue_number <= 0
+    {
+        return Err(ConnectError::invalid_argument(
+            "invalid pilot issue detail request",
+        ));
+    }
+
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let session = service
+            .session_manager
+            .read_session_from_headers(&ctx.headers);
+        let actor_id = session.as_ref().and_then(|session| session.user_id);
+        let access = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            actor_id,
+        )
+        .await?;
+        return Ok((
+            issue_detail_response_from_access(&access, actor_id, &service.base_path),
+            ctx,
+        ));
+    } else if request.owner_name != "pilot"
+        || request.project_name != "yona"
+        || request.issue_number != 1
+    {
+        return Err(ConnectError::not_found("pilot issue not found"));
+    }
+
+    Ok((pilot_issue_response("open"), ctx))
+}
+
+pub(crate) async fn issue_state_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateIssueStateRequestView<'static>>,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+
+    if request.issue_number <= 0 || !matches!(request.state, "open" | "closed") {
+        return Err(ConnectError::invalid_argument(
+            "invalid pilot issue state request",
+        ));
+    }
+
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &existing, &actor) {
+            return Err(ConnectError::permission_denied(
+                "issue state update is not allowed",
+            ));
+        }
+        let issue = repository
+            .update_issue_state_as_actor(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+                request.state,
+                actor.id,
+                &actor.login_id,
+            )
+            .await
+            .map_err(internal_error)?;
+
+        return issue
+            .map(|issue| {
+                (
+                    issue_detail_response_from_record(
+                        &issue,
+                        true,
+                        true,
+                        session.user_id,
+                        &service.base_path,
+                    ),
+                    ctx,
+                )
+            })
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"));
+    }
+
+    if request.owner_name != "pilot" || request.project_name != "yona" || request.issue_number != 1
+    {
+        return Err(ConnectError::not_found("pilot issue not found"));
+    }
+
+    Ok((pilot_issue_response(request.state), ctx))
+}
+
+fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
+    ReadIssueDetailResponse {
+        owner_name: "pilot".to_string(),
+        project_name: "yona".to_string(),
+        issue_number: 1,
+        title: "Pilot issue".to_string(),
+        state: state.to_string(),
+        ..Default::default()
+    }
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueStateBody {

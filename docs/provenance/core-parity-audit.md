@@ -526,6 +526,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   shape covered by
   `rest_contract::rest_project_issue_list_exposes_legacy_row_payload_fields`
   and `organization_issue_contract::organization_issue_list_contract_respects_visible_projects_and_counts`.
+- 2026-06-20 build/check diet note: issue detail read and issue state update
+  RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/issues.rs`; service
+  methods remain compatibility delegates while the issue route module owns the
+  detail projection, state mutation authorization, CSRF/session checks, and
+  no-repository pilot fallback response beside the REST/direct issue handlers.
+  This preserves proto detail/status behavior covered by
+  `server_core_contract::read_issue_detail_applies_the_go_pilot_status_contract`,
+  `server_core_contract::update_issue_state_requires_bootstrapped_csrf`, and
+  `issue_core_contract::issue_core_contract_creates_reads_updates_and_deletes_over_rest`.
 
 ## Wave 0 Exit Snapshot
 
