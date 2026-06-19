@@ -2048,6 +2048,7 @@ async fn update_project_overview_returns_refreshed_project_container() {
 
 #[tokio::test]
 async fn toggle_project_watch_returns_refreshed_project_container() {
+    // Guards REST and direct project watch aliases while project route ownership is split.
     let app = build_app().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;

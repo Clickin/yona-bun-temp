@@ -48,9 +48,9 @@ pub(crate) use routes::{
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
     rest_read_direct_issue_form_options, rest_restore_pull_request_source_branch,
-    rest_review_thread_filter, rest_toggle_project_watch,
-    rest_update_commit_discussion_thread_state, rest_update_pull_request_thread_state,
-    uploaded_file_path, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
+    rest_review_thread_filter, rest_update_commit_discussion_thread_state,
+    rest_update_pull_request_thread_state, uploaded_file_path, RestProjectIssuesQuery,
+    RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -1337,28 +1337,6 @@ async fn send_project_transfer_request_mail(
     Ok(())
 }
 
-async fn direct_toggle_project_watch(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    watching: bool,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
-        Ok(_) => StatusCode::OK.into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
 fn site_export_filename_stamp() -> String {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -1504,46 +1482,6 @@ pub(crate) async fn direct_update_pull_request_source_branch(
     }
 }
 
-pub(crate) async fn direct_delete_project_pushed_branch(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    pushed_branch_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner_name,
-        &project_name,
-        &session_manager,
-        &repository,
-        true,
-    )
-    .await
-    {
-        return response;
-    }
-    let project = match repository
-        .read_project_by_owner_and_name(&owner_name, &project_name)
-        .await
-    {
-        Ok(Some(project)) => project,
-        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    match repository
-        .delete_project_pushed_branch_by_id(project.id, pushed_branch_id)
-        .await
-    {
-        Ok(_) => StatusCode::OK.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
-
 fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
     let mut params = Vec::new();
     if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {
@@ -1592,72 +1530,6 @@ async fn direct_project_update_allowed(
     }
 }
 
-pub(crate) async fn direct_accept_project_transfer(
-    headers: HeaderMap,
-    transfer_id: i64,
-    confirm_key: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    let session = match require_session(&session_manager, &headers) {
-        Ok(session) => session,
-        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    let Some(actor_id) = session.user_id else {
-        return StatusCode::UNAUTHORIZED.into_response();
-    };
-    let transfer = match repository.read_valid_project_transfer(transfer_id).await {
-        Ok(Some(transfer)) => transfer,
-        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if transfer.confirm_key != confirm_key {
-        return StatusCode::BAD_REQUEST.into_response();
-    }
-    let actor = match repository.find_user_by_id(actor_id).await {
-        Ok(Some(actor)) => actor,
-        Ok(None) => return StatusCode::UNAUTHORIZED.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-
-    let mut allowed = actor.is_site_admin;
-    match repository
-        .find_user_by_login_id(&transfer.destination)
-        .await
-    {
-        Ok(Some(destination_user)) => {
-            allowed = allowed || destination_user.id == actor.id;
-        }
-        Ok(None) => match repository
-            .read_organization_authorization(&transfer.destination, Some(actor.id))
-            .await
-        {
-            Ok(Some(authorization)) => {
-                allowed = allowed || authorization.viewer.is_organization_admin;
-            }
-            Ok(None) => {}
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        },
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-    if !allowed {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-
-    match repository.accept_project_transfer(transfer.id).await {
-        Ok(Some(project)) => redirect_to(
-            &base_path,
-            &format!("/{}/{}", project.owner_name, project.project_name),
-        ),
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
-
 pub(crate) fn redirect_to(base_path: &str, path: &str) -> Response {
     Redirect::to(&base_path_href(base_path, path)).into_response()
 }
@@ -1679,34 +1551,6 @@ pub(crate) fn direct_status_from_connect_error(error: ConnectError) -> StatusCod
     } else {
         StatusCode::INTERNAL_SERVER_ERROR
     }
-}
-
-pub(crate) async fn direct_render_markdown(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    body: DirectMarkdownRenderBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    _base_path: String,
-) -> Response {
-    let markdown = body.body.as_deref().unwrap_or_default();
-    if let PilotBackend::Repository(repository) = &backend {
-        let actor_id = session_manager
-            .read_session_from_headers(&headers)
-            .and_then(|session| session.user_id);
-        if let Err(error) =
-            require_project_read(repository, &owner_name, &project_name, actor_id).await
-        {
-            return direct_status_from_connect_error(error).into_response();
-        }
-    }
-
-    Json(DirectMarkdownRenderResponse {
-        body_markdown: markdown.to_string(),
-        breaks: body.breaks.unwrap_or(true),
-    })
-    .into_response()
 }
 
 #[derive(Serialize)]
@@ -1949,20 +1793,6 @@ struct RestUserIssueSideFilterCounts {
     favorite: u32,
     mentioned: u32,
     shared: u32,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DirectMarkdownRenderBody {
-    body: Option<String>,
-    breaks: Option<bool>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DirectMarkdownRenderResponse {
-    body_markdown: String,
-    breaks: bool,
 }
 
 impl RestRouteError {

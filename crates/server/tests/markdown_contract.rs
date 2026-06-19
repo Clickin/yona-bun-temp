@@ -213,6 +213,7 @@ async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
 
 #[tokio::test]
 async fn legacy_markdown_preview_route_preserves_breaks_flag() {
+    // Guards direct project markdown preview handler while project route ownership is split.
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;

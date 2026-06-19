@@ -13,9 +13,8 @@ use crate::generated::yona::pilot::v1::*;
 use crate::routes::utils::gravatar_url;
 use crate::{
     absolute_app_url, accepts_legacy_json, base_path_href, build_project_container_response,
-    code_browser_error, code_file_record_is_renderable_markdown, direct_accept_project_transfer,
-    direct_delete_project_pushed_branch, direct_project_update_allowed, direct_render_markdown,
-    direct_toggle_project_watch, form_value, format_project_date_label, internal_error,
+    code_browser_error, code_file_record_is_renderable_markdown, direct_project_update_allowed,
+    direct_status_from_connect_error, form_value, format_project_date_label, internal_error,
     legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
     legacy_external_authenticated_user_id, legacy_external_create_milestones,
     legacy_external_watchers, legacy_json_find_value, map_project_scope,
@@ -28,10 +27,9 @@ use crate::{
     rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
     rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context,
-    DirectMarkdownRenderBody, LegacyExternalWatchersQuery, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
-    RestIssueAssignableUsersQuery, RestMentionReferenceMetadata, RestProjectDeleteResponse,
-    RestRouteError,
+    LegacyExternalWatchersQuery, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, ProjectHistoryCommitRecord, RestIssueAssignableUsersQuery,
+    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, can_update_organization,
@@ -39,6 +37,176 @@ use yona_rust_domain::{
 };
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
 use yona_rust_vcs::VcsError;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectMarkdownRenderBody {
+    body: Option<String>,
+    breaks: Option<bool>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectMarkdownRenderResponse {
+    body_markdown: String,
+    breaks: bool,
+}
+
+async fn direct_toggle_project_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    watching: bool,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_project_pushed_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pushed_branch_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner_name,
+        &project_name,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let project = match repository
+        .read_project_by_owner_and_name(&owner_name, &project_name)
+        .await
+    {
+        Ok(Some(project)) => project,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    match repository
+        .delete_project_pushed_branch_by_id(project.id, pushed_branch_id)
+        .await
+    {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_accept_project_transfer(
+    headers: HeaderMap,
+    transfer_id: i64,
+    confirm_key: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match require_session(&session_manager, &headers) {
+        Ok(session) => session,
+        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    let Some(actor_id) = session.user_id else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let transfer = match repository.read_valid_project_transfer(transfer_id).await {
+        Ok(Some(transfer)) => transfer,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    if transfer.confirm_key != confirm_key {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => return StatusCode::UNAUTHORIZED.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
+    let mut allowed = actor.is_site_admin;
+    match repository
+        .find_user_by_login_id(&transfer.destination)
+        .await
+    {
+        Ok(Some(destination_user)) => {
+            allowed = allowed || destination_user.id == actor.id;
+        }
+        Ok(None) => match repository
+            .read_organization_authorization(&transfer.destination, Some(actor.id))
+            .await
+        {
+            Ok(Some(authorization)) => {
+                allowed = allowed || authorization.viewer.is_organization_admin;
+            }
+            Ok(None) => {}
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        },
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+    if !allowed {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+
+    match repository.accept_project_transfer(transfer.id).await {
+        Ok(Some(project)) => redirect_to(
+            &base_path,
+            &format!("/{}/{}", project.owner_name, project.project_name),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_render_markdown(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: DirectMarkdownRenderBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    _base_path: String,
+) -> Response {
+    let markdown = body.body.as_deref().unwrap_or_default();
+    if let PilotBackend::Repository(repository) = &backend {
+        let actor_id = session_manager
+            .read_session_from_headers(&headers)
+            .and_then(|session| session.user_id);
+        if let Err(error) =
+            require_project_read(repository, &owner_name, &project_name, actor_id).await
+        {
+            return direct_status_from_connect_error(error).into_response();
+        }
+    }
+
+    Json(DirectMarkdownRenderResponse {
+        body_markdown: markdown.to_string(),
+        breaks: body.breaks.unwrap_or(true),
+    })
+    .into_response()
+}
 
 fn direct_milestone_input_from_form(
     owner: &str,
