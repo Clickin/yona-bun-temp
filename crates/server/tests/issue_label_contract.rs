@@ -10,6 +10,7 @@ use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 
+// Covers the route-module split in crates/server/src/routes/issues/labels.rs.
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
