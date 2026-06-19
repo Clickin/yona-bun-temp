@@ -1029,6 +1029,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `site_admin_contract::site_admin_update_download_file_proxies_configured_plain_http_binary`
   and the module unit
   `site_update_https_fetch_command_preserves_quoted_override`.
+- 2026-06-20 build/check diet note: pull-request review comment DTO, REST
+  create/update/delete handlers, review-thread open/close handler, and legacy
+  direct review-thread state alias moved from
+  `crates/server/src/routes/pull_requests.rs` into
+  `crates/server/src/routes/pull_requests/review_comments.rs`; route
+  registration and PR detail/list projections remain in the parent module. This
+  preserves review comment creation, edit/delete authorization, thread state
+  mutation, direct legacy review-thread aliases, and webhook/event side effects
+  covered by
+  `pull_request_mutation_contract::pull_request_interaction_surface_mutates_state_review_comments_threads_and_events`.
 
 ## Wave 0 Exit Snapshot
 
