@@ -752,6 +752,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(list["totalCount"], 1);
     assert_eq!(list["items"].as_array().unwrap().len(), 1);
     assert_eq!(list["items"][0]["postNumber"], "1");
+    assert_eq!(list["items"][0]["projectName"], "projectYobi");
     assert_eq!(list["items"][0]["title"], "Project README");
     assert!(list["items"][0]["authorAvatarUrl"]
         .as_str()
