@@ -42,14 +42,12 @@ pub(crate) use routes::{
     legacy_json_find_value, normalize_issue_label_color, posting_can_create, posting_can_update,
     project_webhook_type_label, read_issue_access, read_posting_access,
     read_posting_comment_create_access, record_project_webhook_delivery,
-    resolve_issue_reference_search_project, rest_accept_pull_request,
-    rest_commit_thread_from_record, rest_delete_project_member,
-    rest_delete_pull_request_source_branch,
+    resolve_issue_reference_search_project, rest_commit_thread_from_record,
+    rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
-    rest_read_direct_issue_form_options, rest_restore_pull_request_source_branch,
-    rest_review_thread_filter, rest_update_commit_discussion_thread_state,
-    rest_update_pull_request_thread_state, uploaded_file_path, RestProjectIssuesQuery,
+    rest_read_direct_issue_form_options, rest_review_thread_filter,
+    rest_update_commit_discussion_thread_state, uploaded_file_path, RestProjectIssuesQuery,
     RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
@@ -1390,98 +1388,6 @@ async fn direct_legacy_leave_project(
     )
 }
 
-pub(crate) async fn direct_accept_pull_request(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    pull_request_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-) -> Response {
-    let redirect_path = format!(
-        "/{}/{}/pullRequest/{}",
-        owner_name, project_name, pull_request_number
-    );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin,
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_accept_pull_request(
-        headers,
-        owner_name,
-        project_name,
-        pull_request_number,
-        service,
-    )
-    .await
-    {
-        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
-        Err(error) => error.into_response(),
-    }
-}
-
-#[derive(Clone, Copy)]
-pub(crate) enum PullRequestSourceBranchAction {
-    Delete,
-    Restore,
-}
-
-pub(crate) async fn direct_update_pull_request_source_branch(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    pull_request_number: i64,
-    action: PullRequestSourceBranchAction,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let redirect_path = format!(
-        "/{}/{}/pullRequest/{}",
-        owner_name, project_name, pull_request_number
-    );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    let result = match action {
-        PullRequestSourceBranchAction::Delete => {
-            rest_delete_pull_request_source_branch(
-                headers,
-                owner_name,
-                project_name,
-                pull_request_number,
-                service,
-            )
-            .await
-        }
-        PullRequestSourceBranchAction::Restore => {
-            rest_restore_pull_request_source_branch(
-                headers,
-                owner_name,
-                project_name,
-                pull_request_number,
-                service,
-            )
-            .await
-        }
-    };
-    match result {
-        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
-        Err(error) => error.into_response(),
-    }
-}
-
 fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
     let mut params = Vec::new();
     if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {
@@ -2815,67 +2721,6 @@ pub(crate) struct RestDirectIssueFormQuery {
     )]
     comment_id: Option<i64>,
     mine: bool,
-}
-
-pub(crate) async fn direct_update_review_thread_state(
-    headers: HeaderMap,
-    thread_id: i64,
-    next_state: &str,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let repository = match &backend {
-        PilotBackend::Repository(repository) => repository,
-        PilotBackend::Static => {
-            return RestRouteError::not_implemented("review thread requires repository backend")
-                .into_response();
-        }
-    };
-    let context = match repository.read_review_thread_route_context(thread_id).await {
-        Ok(Some(context)) => context,
-        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    let result = if let Some(pull_request_number) = context.pull_request_number {
-        rest_update_pull_request_thread_state(
-            headers,
-            context.owner_name,
-            context.project_name,
-            pull_request_number,
-            context.thread_id,
-            next_state.to_string(),
-            service,
-        )
-        .await
-        .map(|_| ())
-    } else if !context.commit_id.trim().is_empty() {
-        rest_update_commit_discussion_thread_state(
-            headers,
-            context.owner_name,
-            context.project_name,
-            context.commit_id,
-            context.thread_id,
-            next_state.to_string(),
-            service,
-        )
-        .await
-        .map(|_| ())
-    } else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-
-    match result {
-        Ok(()) => StatusCode::OK.into_response(),
-        Err(error) => error.into_response(),
-    }
 }
 
 fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {

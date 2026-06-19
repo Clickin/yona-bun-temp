@@ -1,6 +1,7 @@
 use axum::{
     extract::{Path, Query},
-    http::HeaderMap,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
 };
@@ -10,20 +11,172 @@ use yona_rust_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::generated::yona::pilot::v1::IssueAttachment;
 use crate::{
-    code_browser_error, decode_query_component, direct_accept_pull_request,
-    direct_update_pull_request_source_branch, direct_update_review_thread_state,
-    dispatch_pull_request_webhooks, gravatar_url, internal_error, issue_attachment_from_record,
-    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    parse_rest_query_i64, parse_rest_query_u32, persistence, project_code_menu_visible,
-    project_read_allowed, project_update_allowed, require_authenticated_user,
-    require_project_resource_create, require_session, require_valid_csrf, rest_actor_id,
-    rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    rest_repository, rest_require_project_code_read, session::SessionManager,
-    visible_code_projects_for_organization, yona_data_root, ConnectError, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, PullRequestSourceBranchAction, RestIssueReferenceMetadata,
+    code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
+    internal_error, issue_attachment_from_record, markdown_issue_references_for_project,
+    markdown_mention_references, normalize_identifier, parse_rest_query_i64, parse_rest_query_u32,
+    persistence, project_code_menu_visible, project_read_allowed, project_update_allowed,
+    redirect_to, require_authenticated_user, require_project_resource_create, require_session,
+    require_valid_csrf, rest_actor_id, rest_issue_reference_metadata_from_resolved,
+    rest_mention_reference_metadata_from_resolved, rest_repository, rest_require_project_code_read,
+    rest_update_commit_discussion_thread_state, session::SessionManager,
+    visible_code_projects_for_organization, yona_data_root, AuthUiConfig, ConnectError,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
 };
+
+#[derive(Clone, Copy)]
+enum PullRequestSourceBranchAction {
+    Delete,
+    Restore,
+}
+
+async fn direct_accept_pull_request(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let redirect_path = format!(
+        "/{}/{}/pullRequest/{}",
+        owner_name, project_name, pull_request_number
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_accept_pull_request(
+        headers,
+        owner_name,
+        project_name,
+        pull_request_number,
+        service,
+    )
+    .await
+    {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_pull_request_source_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    action: PullRequestSourceBranchAction,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let redirect_path = format!(
+        "/{}/{}/pullRequest/{}",
+        owner_name, project_name, pull_request_number
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    let result = match action {
+        PullRequestSourceBranchAction::Delete => {
+            rest_delete_pull_request_source_branch(
+                headers,
+                owner_name,
+                project_name,
+                pull_request_number,
+                service,
+            )
+            .await
+        }
+        PullRequestSourceBranchAction::Restore => {
+            rest_restore_pull_request_source_branch(
+                headers,
+                owner_name,
+                project_name,
+                pull_request_number,
+                service,
+            )
+            .await
+        }
+    };
+    match result {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_review_thread_state(
+    headers: HeaderMap,
+    thread_id: i64,
+    next_state: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let repository = match &backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("review thread requires repository backend")
+                .into_response();
+        }
+    };
+    let context = match repository.read_review_thread_route_context(thread_id).await {
+        Ok(Some(context)) => context,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    let result = if let Some(pull_request_number) = context.pull_request_number {
+        rest_update_pull_request_thread_state(
+            headers,
+            context.owner_name,
+            context.project_name,
+            pull_request_number,
+            context.thread_id,
+            next_state.to_string(),
+            service,
+        )
+        .await
+        .map(|_| ())
+    } else if !context.commit_id.trim().is_empty() {
+        rest_update_commit_discussion_thread_state(
+            headers,
+            context.owner_name,
+            context.project_name,
+            context.commit_id,
+            context.thread_id,
+            next_state.to_string(),
+            service,
+        )
+        .await
+        .map(|_| ())
+    } else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+
+    match result {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
