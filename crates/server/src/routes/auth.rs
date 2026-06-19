@@ -1,22 +1,24 @@
 use axum::{
     extract::{Form, Path, Query},
     http::{HeaderMap, Method},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::{get, post},
     Json, Router,
 };
+use bcrypt::{hash, DEFAULT_COST};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::generated::yona::pilot::v1::*;
 use crate::{
-    direct_authenticate_provider_denied, direct_legacy_login, direct_legacy_logout,
-    direct_legacy_signup, direct_legacy_user_email_validation, direct_legacy_user_name_validation,
-    direct_request_reset_password_email, direct_reset_password,
-    direct_unsupported_authenticate_provider, rest_read_auth_ui_capabilities,
-    rest_read_current_session, rest_register_with_password, rest_sign_in_with_password,
-    rest_sign_out, rest_verify_user, serve_frontend_page, session::SessionManager, AssetMode,
-    AuthUiConfig, BrowserRuntimeConfig, DirectUserEmailValidationQuery,
-    DirectUserNameValidationQuery, PilotBackend, PilotServiceImpl, RestRegisterRequest,
-    RestSignInRequest, RestVerifyUserRequest,
+    append_response_headers, attach_session_headers, auth_ui_capabilities_from_config,
+    base_path_href, headers_with_form_csrf, normalize_identifier, percent_encode_uri_component,
+    rest_owned_view, rest_read_auth_ui_capabilities, rest_read_current_session,
+    rest_register_with_password, rest_sign_in_with_password, rest_sign_out, rest_verify_user,
+    send_password_reset_mail, serve_frontend_page, session::SessionManager, AssetMode,
+    AuthUiConfig, BrowserRuntimeConfig, Context, PilotBackend, PilotServiceImpl,
+    RestRegisterRequest, RestRouteError, RestSignInRequest, RestVerifyUserRequest,
+    LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
@@ -82,6 +84,449 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> R
                 }
             }),
         )
+}
+
+pub(crate) async fn direct_request_reset_password_email(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+    site_name: String,
+) -> Response {
+    let session = session_manager.ensure_anonymous_session(&headers);
+    let redirect_path = match &backend {
+        PilotBackend::Repository(repository) => {
+            let login_id =
+                normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
+            let email_address = normalize_identifier(
+                form.get("emailAddress")
+                    .map(String::as_str)
+                    .unwrap_or_default(),
+            );
+            match repository
+                .find_user_by_login_id(&login_id)
+                .await
+                .ok()
+                .flatten()
+            {
+                Some(user) if normalize_identifier(&user.email_address) == email_address => {
+                    if let Ok(code) = repository
+                        .create_password_reset_verification_for_user(user.id, &user.login_id)
+                        .await
+                    {
+                        let _ = send_password_reset_mail(
+                            &user.email_address,
+                            &code,
+                            &public_origin,
+                            &base_path,
+                            &site_name,
+                        );
+                    }
+                    "/lostPassword?requested=1"
+                }
+                _ => "/lostPassword?error=invalid",
+            }
+        }
+        _ => "/lostPassword?error=unsupported",
+    };
+
+    let mut response = Redirect::to(&base_path_href(&base_path, redirect_path)).into_response();
+    for cookie in session_manager.build_set_cookie_headers(&session) {
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            cookie.parse().expect("set-cookie header"),
+        );
+    }
+    response
+}
+
+pub(crate) async fn direct_reset_password(
+    form: HashMap<String, String>,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let hash_string = form.get("hashString").cloned().unwrap_or_default();
+    let password = form.get("password").cloned().unwrap_or_default();
+    let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
+
+    if password.len() < LEGACY_MIN_PASSWORD_LENGTH || password != retyped_password {
+        let query = if hash_string.is_empty() {
+            "/resetPassword?error=invalid".to_string()
+        } else {
+            format!("/resetPassword?error=invalid&s={hash_string}")
+        };
+        return Redirect::to(&base_path_href(&base_path, &query)).into_response();
+    }
+
+    let redirect_path = match &backend {
+        PilotBackend::Repository(repository) => {
+            match repository
+                .find_valid_password_reset_user_id(&hash_string)
+                .await
+            {
+                Ok(Some(user_id)) => match hash(&password, DEFAULT_COST) {
+                    Ok(password_hash) => {
+                        if repository
+                            .update_password_hash_for_user(user_id, &password_hash)
+                            .await
+                            .is_ok()
+                        {
+                            let _ = repository
+                                .delete_password_reset_verification(&hash_string)
+                                .await;
+                            "/users/loginform?password=reset".to_string()
+                        } else {
+                            format!("/resetPassword?error=invalid&s={hash_string}")
+                        }
+                    }
+                    Err(_) => format!("/resetPassword?error=invalid&s={hash_string}"),
+                },
+                _ => format!("/resetPassword?error=invalid&s={hash_string}"),
+            }
+        }
+        _ => "/resetPassword?error=unsupported".to_string(),
+    };
+
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+fn legacy_form_checkbox_checked(form: &HashMap<String, String>, key: &str) -> bool {
+    form.get(key)
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on" | "checked"
+            )
+        })
+        .unwrap_or(false)
+}
+
+fn has_absolute_url_scheme(value: &str) -> bool {
+    let Some(index) = value.find("://") else {
+        return false;
+    };
+    let scheme = &value[..index];
+    let mut chars = scheme.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_ascii_alphabetic()
+        && chars.all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '+' | '.' | '-')
+        })
+}
+
+fn safe_legacy_auth_redirect_path(value: Option<&String>) -> Option<String> {
+    let trimmed = value?.trim();
+    if trimmed.is_empty()
+        || !trimmed.starts_with('/')
+        || trimmed.starts_with("//")
+        || has_absolute_url_scheme(trimmed)
+    {
+        return None;
+    }
+    Some(trimmed.to_string())
+}
+
+fn post_auth_landing_path(redirect_path: Option<&String>, default_landing_path: &str) -> String {
+    safe_legacy_auth_redirect_path(redirect_path).unwrap_or_else(|| {
+        let trimmed = default_landing_path.trim();
+        if trimmed.is_empty() {
+            "/me".to_string()
+        } else {
+            trimmed.to_string()
+        }
+    })
+}
+
+fn redirect_with_context_headers(base_path: &str, path: &str, ctx: &Context) -> Response {
+    let mut response = Redirect::to(&base_path_href(base_path, path)).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
+}
+
+pub(crate) async fn direct_legacy_login(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let request = SignInWithPasswordRequest {
+        identifier: form
+            .get("loginIdOrEmail")
+            .or_else(|| form.get("loginId"))
+            .cloned()
+            .unwrap_or_default(),
+        password: form.get("password").cloned().unwrap_or_default(),
+        remember_me: legacy_form_checkbox_checked(&form, "rememberMe"),
+        ..Default::default()
+    };
+    let request = match rest_owned_view::<SignInWithPasswordRequestView<'static>>(&request) {
+        Ok(request) => request,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match service
+        .sign_in_with_password(
+            Context::new(headers_with_form_csrf(headers, &form)),
+            request,
+        )
+        .await
+    {
+        Ok((payload, ctx)) => {
+            let redirect_path = post_auth_landing_path(
+                form.get("redirectUrl").or_else(|| form.get("redirect")),
+                &payload.default_landing_path,
+            );
+            redirect_with_context_headers(&base_path, &redirect_path, &ctx)
+        }
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
+}
+
+pub(crate) async fn direct_legacy_signup(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let request = RegisterWithPasswordRequest {
+        email_address: form
+            .get("email")
+            .or_else(|| form.get("emailAddress"))
+            .cloned()
+            .unwrap_or_default(),
+        login_id: form.get("loginId").cloned().unwrap_or_default(),
+        name: form.get("name").cloned().unwrap_or_default(),
+        password: form.get("password").cloned().unwrap_or_default(),
+        retyped_password: form.get("retypedPassword").cloned().unwrap_or_default(),
+        ..Default::default()
+    };
+    let request = match rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request) {
+        Ok(request) => request,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match service
+        .register_with_password(
+            Context::new(headers_with_form_csrf(headers, &form)),
+            request,
+        )
+        .await
+    {
+        Ok((payload, ctx)) => {
+            let capabilities = auth_ui_capabilities_from_config(&service.auth_ui);
+            let redirect_path = if payload.is_anonymous {
+                if capabilities.signup_require_confirm {
+                    "/users/loginform?signup=requested"
+                } else if capabilities.email_verification_enabled {
+                    "/users/loginform?verify=sent"
+                } else {
+                    "/users/loginform"
+                }
+            } else {
+                payload.default_landing_path.trim()
+            };
+            let redirect_path = if redirect_path.is_empty() {
+                "/me"
+            } else {
+                redirect_path
+            };
+            redirect_with_context_headers(&base_path, redirect_path, &ctx)
+        }
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
+}
+
+pub(crate) async fn direct_unsupported_authenticate_provider(
+    provider: String,
+    base_path: String,
+) -> Response {
+    let provider = provider.trim();
+    let redirect_path = if provider.is_empty() {
+        "/users/loginform?error=unsupported".to_string()
+    } else {
+        format!(
+            "/users/loginform?error=unsupported&provider={}",
+            percent_encode_uri_component(provider)
+        )
+    };
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+pub(crate) async fn direct_authenticate_provider_denied(
+    provider: String,
+    base_path: String,
+) -> Response {
+    let provider = provider.trim();
+    let redirect_path = if provider.is_empty() {
+        "/users/loginform?error=oauthDenied".to_string()
+    } else {
+        format!(
+            "/users/loginform?error=oauthDenied&provider={}",
+            percent_encode_uri_component(provider)
+        )
+    };
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
+    "-_-api",
+    "assets",
+    "authenticate",
+    "categories",
+    "comments",
+    "favicon.ico",
+    "files",
+    "info",
+    "labels",
+    "logout",
+    "lostPassword",
+    "markdown",
+    "messages.js",
+    "migration",
+    "new",
+    "noti",
+    "notification",
+    "notifications",
+    "organizations",
+    "orgs",
+    "project",
+    "projectform",
+    "projects",
+    "resetPassword",
+    "restricted",
+    "search",
+    "sites",
+    "svn",
+    "threads",
+    "unwatch",
+    "user",
+    "users",
+    "verify",
+    "watch",
+];
+
+#[derive(Deserialize)]
+pub(crate) struct DirectUserNameValidationQuery {
+    name: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirectUserNameValidationResponse {
+    #[serde(rename = "isExist")]
+    is_exist: bool,
+    #[serde(rename = "isReserved")]
+    is_reserved: bool,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct DirectUserEmailValidationQuery {
+    email: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirectUserEmailValidationResponse {
+    #[serde(rename = "isExist")]
+    is_exist: bool,
+}
+
+pub(crate) async fn direct_legacy_user_name_validation(
+    query: DirectUserNameValidationQuery,
+    backend: PilotBackend,
+) -> Response {
+    let name = query.name.unwrap_or_default();
+    let is_reserved = is_legacy_reserved_user_name(&name);
+    let PilotBackend::Repository(repository) = backend else {
+        return RestRouteError::not_implemented("signup validation requires repository backend")
+            .into_response();
+    };
+
+    let user_exists = match repository.user_login_id_exists(&name).await {
+        Ok(exists) => exists,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let organization_exists = if user_exists {
+        false
+    } else {
+        match repository.organization_name_exists(&name).await {
+            Ok(exists) => exists,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+    };
+
+    Json(DirectUserNameValidationResponse {
+        is_exist: user_exists || organization_exists,
+        is_reserved,
+    })
+    .into_response()
+}
+
+pub(crate) async fn direct_legacy_user_email_validation(
+    query: DirectUserEmailValidationQuery,
+    backend: PilotBackend,
+) -> Response {
+    let email = query.email.unwrap_or_default();
+    let PilotBackend::Repository(repository) = backend else {
+        return RestRouteError::not_implemented("signup validation requires repository backend")
+            .into_response();
+    };
+    let is_exist = match repository.user_email_exists(&email).await {
+        Ok(exists) => exists,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    Json(DirectUserEmailValidationResponse { is_exist }).into_response()
+}
+
+fn is_legacy_reserved_user_name(name: &str) -> bool {
+    let normalized = normalize_identifier(name);
+    LEGACY_RESERVED_USER_NAMES
+        .iter()
+        .any(|reserved| normalize_identifier(reserved) == normalized)
+}
+
+pub(crate) async fn direct_legacy_logout(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    base_path: String,
+) -> Response {
+    let redirect_target = headers
+        .get(http::header::REFERER)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| base_path_href(&base_path, "/"));
+    let previous_token = session_manager
+        .read_session_from_headers(&headers)
+        .map(|session| session.token);
+    let anonymous_session = session_manager.create_anonymous_session(previous_token.as_deref());
+
+    let mut ctx = Context::new(headers);
+    attach_session_headers(&mut ctx, &session_manager, &anonymous_session);
+    let mut response = Redirect::to(&redirect_target).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
 }
 
 pub(crate) fn routes(

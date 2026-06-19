@@ -1,5 +1,5 @@
 use axum::{
-    http::{HeaderMap, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
@@ -7,6 +7,7 @@ use bcrypt::{hash, DEFAULT_COST};
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
+use std::collections::HashMap;
 
 use crate::{
     persistence, require_valid_csrf, session::SessionManager, ConnectError, ErrorCode,
@@ -107,6 +108,25 @@ pub(crate) fn legacy_external_api_auth_error_response(error: ConnectError) -> Re
             .into_response();
     }
     RestRouteError::from_connect_error(error).into_response()
+}
+
+pub(crate) fn headers_with_form_csrf(
+    mut headers: HeaderMap,
+    form: &HashMap<String, String>,
+) -> HeaderMap {
+    if headers.contains_key("x-csrf-token") {
+        return headers;
+    }
+    let Some(csrf_token) = form.get("csrfToken").map(|value| value.trim()) else {
+        return headers;
+    };
+    if csrf_token.is_empty() {
+        return headers;
+    }
+    if let Ok(value) = HeaderValue::from_str(csrf_token) {
+        headers.insert("x-csrf-token", value);
+    }
+    headers
 }
 
 #[derive(Clone, Debug)]

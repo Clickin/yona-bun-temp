@@ -1498,6 +1498,7 @@ async fn direct_legacy_signup_validators_report_used_reserved_and_email_state() 
     assert_eq!(used_organization.status(), StatusCode::OK);
     let used_organization_json = response_text(used_organization).await;
     assert!(used_organization_json.contains("\"isExist\":true"));
+    assert!(used_organization_json.contains("\"isReserved\":false"));
 
     let reserved_name = app
         .clone()
