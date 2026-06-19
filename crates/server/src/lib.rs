@@ -30,14 +30,16 @@ pub use notification_mail::{
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
     append_response_headers, attach_session_headers, auth_social_providers_from_option,
-    base_path_href, build_organization_admin_response, build_organization_container_response,
-    build_project_container_response, build_workspace_overview_response, code_branch_error,
-    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
+    auth_ui_capabilities_from_config, base_path_href, build_organization_admin_response,
+    build_organization_container_response, build_project_container_response,
+    build_workspace_overview_response, code_branch_error, code_browser_error,
+    code_file_record_is_renderable_markdown, code_path_is_markdown,
     configured_auth_social_providers, configured_bool_env, configured_env_value,
     configured_max_uploaded_file_size, configured_project_default_menus,
     configured_project_default_scope, configured_site_name, configured_supported_languages,
-    configured_trimmed_string, current_session_response_from_user, decode_query_component,
-    default_project_menu_keys, default_public_origin, default_smtp_from,
+    configured_trimmed_string, confirmation_session_required,
+    confirmation_session_required_from_config, current_session_response_from_user,
+    decode_query_component, default_project_menu_keys, default_public_origin, default_smtp_from,
     default_supported_languages, delete_project_repository_storage,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
@@ -45,8 +47,9 @@ pub(crate) use routes::{
     escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
-    format_project_date_label, gravatar_url, headers_with_form_csrf, issue_attachment_from_record,
-    issue_can_mutate, issue_detail_response_from_access, issue_detail_response_from_record,
+    format_project_date_label, gravatar_url, headers_with_form_csrf, internal_error,
+    issue_attachment_from_record, issue_can_mutate, issue_detail_response_from_access,
+    issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_category_from_record,
     issue_label_css, issue_label_from_record, issue_list_filter_from_request,
@@ -72,12 +75,14 @@ pub(crate) use routes::{
     project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
-    project_resource_create_allowed, project_webhook_type_label, random_site_admin_password,
-    random_storage_token, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
-    require_project_resource_create, require_session, require_valid_csrf,
-    resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
-    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
+    project_read_allowed, project_resource_create_allowed, project_update_allowed,
+    project_webhook_type_label, random_site_admin_password, random_storage_token,
+    read_issue_access, read_posting_access, read_posting_comment_create_access,
+    record_project_webhook_delivery, redirect_to, require_authenticated_user,
+    require_project_authorization, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, resolve_current_session_response,
+    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
+    rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -88,10 +93,10 @@ pub(crate) use routes::{
     site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
     uploaded_file_path, user_issue_filter_name, user_issue_state,
     visible_code_projects_for_organization, visible_projects_for_organization,
-    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record,
-    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
-    RestProjectDeleteResponse, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
-    RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
+    visible_user_issue_items, workspace_avatar_url, workspace_invalid_argument,
+    workspace_profile_from_record, ProjectCreatableResource, RestBoardLabel,
+    RestIssueAssignableUsersQuery, RestProjectDeleteResponse, RestProjectIssuesQuery,
+    RestReviewThread, RestReviewThreadListQuery, RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub mod runtime_config;
 mod server_config;
@@ -143,7 +148,6 @@ use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
-    ProjectScope,
 };
 use yona_rust_vcs::ProjectHistoryCommitRecord;
 
@@ -1354,146 +1358,9 @@ impl BrowserRuntimeConfig {
     }
 }
 
-pub(crate) fn auth_ui_capabilities_from_config(
-    config: &AuthUiConfig,
-) -> ReadAuthUiCapabilitiesResponse {
-    ReadAuthUiCapabilitiesResponse {
-        email_verification_enabled: config.email_verification_enabled,
-        enabled_social_providers: config.enabled_social_providers.clone(),
-        login_id_placeholder: config.login_id_placeholder.clone(),
-        password_placeholder: config.password_placeholder.clone(),
-        signup_require_confirm: config.signup_require_confirm,
-        social_login_only: config.social_login_only,
-        ..Default::default()
-    }
-}
-
-fn confirmation_session_required() -> bool {
-    confirmation_session_required_from_config(&AuthUiConfig::from_env())
-}
-
-fn confirmation_session_required_from_config(config: &AuthUiConfig) -> bool {
-    config.signup_require_confirm || config.email_verification_enabled
-}
-
 const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
 const LEGACY_LOGIN_REQUIRED_MESSAGE: &str = "user.login.required";
 const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
-
-pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
-    ConnectError::new(ErrorCode::Internal, error.to_string())
-}
-
-fn workspace_invalid_argument(message: impl Into<String>) -> ConnectError {
-    ConnectError::invalid_argument(message.into())
-}
-
-pub(crate) fn project_read_allowed(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    is_anonymous: bool,
-) -> Result<bool, ConnectError> {
-    Ok(authorize_project_access(
-        &ProjectAccessFacts {
-            is_anonymous,
-            is_guest: authorization.viewer.is_guest,
-            is_organization_admin: authorization.viewer.is_organization_admin,
-            is_organization_member: authorization.viewer.is_organization_member,
-            is_project_manager: authorization.viewer.is_project_manager,
-            is_project_member: authorization.viewer.is_project_member,
-            is_site_admin: authorization.viewer.is_site_admin,
-            project_scope: map_project_scope(&authorization.project.project_scope)?,
-        },
-        ProjectOperation::Read,
-    )
-    .allowed)
-}
-
-pub(crate) fn project_update_allowed(
-    authorization: &persistence::ProjectAuthorizationRecord,
-) -> Result<bool, ConnectError> {
-    Ok(authorize_project_access(
-        &ProjectAccessFacts {
-            is_anonymous: false,
-            is_guest: authorization.viewer.is_guest,
-            is_organization_admin: authorization.viewer.is_organization_admin,
-            is_organization_member: authorization.viewer.is_organization_member,
-            is_project_manager: authorization.viewer.is_project_manager,
-            is_project_member: authorization.viewer.is_project_member,
-            is_site_admin: authorization.viewer.is_site_admin,
-            project_scope: map_project_scope(&authorization.project.project_scope)?,
-        },
-        ProjectOperation::Update,
-    )
-    .allowed)
-}
-
-fn project_facts(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    is_anonymous: bool,
-) -> Result<ProjectAccessFacts, ConnectError> {
-    Ok(ProjectAccessFacts {
-        is_anonymous,
-        is_guest: authorization.viewer.is_guest,
-        is_organization_admin: authorization.viewer.is_organization_admin,
-        is_organization_member: authorization.viewer.is_organization_member,
-        is_project_manager: authorization.viewer.is_project_manager,
-        is_project_member: authorization.viewer.is_project_member,
-        is_site_admin: authorization.viewer.is_site_admin,
-        project_scope: map_project_scope(&authorization.project.project_scope)?,
-    })
-}
-
-pub(crate) async fn require_project_read(
-    repository: &PilotRepository,
-    owner_name: &str,
-    project_name: &str,
-    actor_id: Option<i64>,
-) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
-    let authorization =
-        require_project_authorization(repository, owner_name, project_name, actor_id).await?;
-    let allowed = authorize_project_access(
-        &project_facts(&authorization, actor_id.is_none())?,
-        ProjectOperation::Read,
-    )
-    .allowed;
-    if allowed {
-        Ok(authorization)
-    } else {
-        Err(ConnectError::permission_denied(
-            "project read is not allowed",
-        ))
-    }
-}
-
-async fn require_project_authorization(
-    repository: &PilotRepository,
-    owner_name: &str,
-    project_name: &str,
-    actor_id: Option<i64>,
-) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
-    let authorization = repository
-        .read_project_authorization(owner_name, project_name, actor_id)
-        .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    Ok(authorization)
-}
-
-async fn require_authenticated_user(
-    repository: &PilotRepository,
-    user_id: Option<i64>,
-) -> Result<persistence::AppUserRecord, ConnectError> {
-    let Some(user_id) = user_id else {
-        return Err(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ));
-    };
-    repository
-        .find_user_by_id(user_id)
-        .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))
-}
 
 impl PilotServiceImpl {
     async fn read_current_session(

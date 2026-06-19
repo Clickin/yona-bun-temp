@@ -710,7 +710,7 @@ async fn project_issue_list_filters_unassigned_issues_by_legacy_assignee_id_zero
 
 #[tokio::test]
 async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
-    // Guards route-utils-owned project resource create authorization for issue routes.
+    // Guards route-utils-owned authenticated-user and project resource-create authorization for issue routes.
     let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;

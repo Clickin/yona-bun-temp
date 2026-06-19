@@ -4251,6 +4251,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
 
 #[tokio::test]
 async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
+    // Guards route-utils-owned project read authorization helper for REST project access.
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (visitor_csrf, visitor_cookie) = register_user(app.clone(), "visitor").await;

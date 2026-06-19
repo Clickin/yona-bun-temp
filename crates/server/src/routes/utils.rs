@@ -19,16 +19,18 @@ use crate::{
         OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
         OrganizationIssueListItem, OrganizationMemberSummary, OrganizationProjectCard,
         OrganizationRoleOption, ProjectContainer, ProjectDetail, ProjectIssueListItem,
-        ProjectMemberSummary, ProjectMilestoneSummary, ReadCurrentSessionResponse,
+        ProjectMemberSummary, ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse,
+        ReadCurrentSessionResponse,
     },
-    internal_error, persistence, project_read_allowed, project_update_allowed,
-    require_project_read,
+    persistence,
     session::{Session, SessionManager},
-    ConnectError, Context, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl,
+    AuthUiConfig, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
+    PilotServiceImpl,
 };
 use yona_rust_domain::{
-    can_create_organization_project, can_request_project_enrollment, can_update_organization,
-    ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
+    authorize_project_access, can_create_organization_project, can_request_project_enrollment,
+    can_update_organization, ProjectAccessFacts, ProjectOperation, ProjectScope,
+    DEFAULT_LANDING_FALLBACK_PATH,
 };
 
 pub(crate) fn normalize_identifier(value: &str) -> String {
@@ -38,6 +40,143 @@ pub(crate) fn normalize_identifier(value: &str) -> String {
 pub(crate) fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
     ProjectScope::try_from(value)
         .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
+}
+
+pub(crate) fn auth_ui_capabilities_from_config(
+    config: &AuthUiConfig,
+) -> ReadAuthUiCapabilitiesResponse {
+    ReadAuthUiCapabilitiesResponse {
+        email_verification_enabled: config.email_verification_enabled,
+        enabled_social_providers: config.enabled_social_providers.clone(),
+        login_id_placeholder: config.login_id_placeholder.clone(),
+        password_placeholder: config.password_placeholder.clone(),
+        signup_require_confirm: config.signup_require_confirm,
+        social_login_only: config.social_login_only,
+        ..Default::default()
+    }
+}
+
+pub(crate) fn confirmation_session_required() -> bool {
+    confirmation_session_required_from_config(&AuthUiConfig::from_env())
+}
+
+pub(crate) fn confirmation_session_required_from_config(config: &AuthUiConfig) -> bool {
+    config.signup_require_confirm || config.email_verification_enabled
+}
+
+pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
+    ConnectError::new(ErrorCode::Internal, error.to_string())
+}
+
+pub(crate) fn workspace_invalid_argument(message: impl Into<String>) -> ConnectError {
+    ConnectError::invalid_argument(message.into())
+}
+
+pub(crate) fn project_read_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    is_anonymous: bool,
+) -> Result<bool, ConnectError> {
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous,
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Read,
+    )
+    .allowed)
+}
+
+pub(crate) fn project_update_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> Result<bool, ConnectError> {
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Update,
+    )
+    .allowed)
+}
+
+fn project_facts(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    is_anonymous: bool,
+) -> Result<ProjectAccessFacts, ConnectError> {
+    Ok(ProjectAccessFacts {
+        is_anonymous,
+        is_guest: authorization.viewer.is_guest,
+        is_organization_admin: authorization.viewer.is_organization_admin,
+        is_organization_member: authorization.viewer.is_organization_member,
+        is_project_manager: authorization.viewer.is_project_manager,
+        is_project_member: authorization.viewer.is_project_member,
+        is_site_admin: authorization.viewer.is_site_admin,
+        project_scope: map_project_scope(&authorization.project.project_scope)?,
+    })
+}
+
+pub(crate) async fn require_project_read(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let authorization =
+        require_project_authorization(repository, owner_name, project_name, actor_id).await?;
+    let allowed = authorize_project_access(
+        &project_facts(&authorization, actor_id.is_none())?,
+        ProjectOperation::Read,
+    )
+    .allowed;
+    if allowed {
+        Ok(authorization)
+    } else {
+        Err(ConnectError::permission_denied(
+            "project read is not allowed",
+        ))
+    }
+}
+
+pub(crate) async fn require_project_authorization(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    Ok(authorization)
+}
+
+pub(crate) async fn require_authenticated_user(
+    repository: &PilotRepository,
+    user_id: Option<i64>,
+) -> Result<persistence::AppUserRecord, ConnectError> {
+    let Some(user_id) = user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))
 }
 
 pub(crate) fn percent_encode_uri_component(value: &str) -> String {
