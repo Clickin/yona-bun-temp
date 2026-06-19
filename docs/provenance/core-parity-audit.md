@@ -875,6 +875,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   remain in the protocol module. This preserves executable-backed file content,
   HEAD body suppression, and file content headers covered by
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN REPORT dispatch moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_response.rs`; HTTP method dispatch,
+  authorization, body collection, and shared DAV/status helpers remain in the
+  protocol module. This preserves report classification and delegation covered
+  by `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
+  and
+  `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`.
 
 ## Wave 0 Exit Snapshot
 

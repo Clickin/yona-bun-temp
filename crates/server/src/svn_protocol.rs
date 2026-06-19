@@ -1,9 +1,7 @@
-use axum::body::Bytes;
 use axum::extract::Request;
 use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode};
 use http_body_util::BodyExt;
-use std::path::Path as StdPath;
 
 use crate::session::SessionManager;
 use crate::{
@@ -30,6 +28,7 @@ mod report_log;
 mod report_mergeinfo;
 mod report_misc;
 mod report_replay;
+mod report_response;
 mod report_revisions;
 mod report_update;
 mod svndiff;
@@ -256,7 +255,7 @@ pub(crate) async fn direct_request(
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
-        return svn_protocol_report_response(&repo_path, &route, &body_bytes);
+        return report_response::report(&repo_path, &route, &body_bytes);
     }
     if method == "LOCK" {
         let body_bytes = match body.collect().await {
@@ -277,51 +276,6 @@ fn svn_protocol_status_response(status: StatusCode) -> Response {
     let mut response = status.into_response();
     add_svn_dav_headers(&mut response);
     response
-}
-
-fn svn_protocol_report_response(
-    repo_path: &StdPath,
-    route: &SvnProtocolRoute,
-    body: &Bytes,
-) -> Response {
-    let request = String::from_utf8_lossy(body);
-    if request.contains("log-report") {
-        return report_log::log(repo_path, route, &request);
-    }
-    if request.contains("dated-rev-report") {
-        return report_revisions::dated_rev(repo_path, route, &request);
-    }
-    if request.contains("update-report") {
-        return report_update::update(repo_path, route, &request);
-    }
-    if request.contains("replay-report") {
-        return report_replay::replay(repo_path, route, &request);
-    }
-    if request.contains("file-revs-report") {
-        return report_file_revs::file_revs(repo_path, route, &request);
-    }
-    if request.contains("mergeinfo-report") {
-        return report_mergeinfo::mergeinfo(repo_path, route, &request);
-    }
-    if request.contains("get-deleted-rev-report") {
-        return report_revisions::deleted_rev(repo_path, route, &request);
-    }
-    if request.contains("list-report") {
-        return report_list::list(repo_path, route, &request);
-    }
-    if request.contains("inherited-props-report") {
-        return report_misc::inherited_props(repo_path, route, &request);
-    }
-    if request.contains("get-locks-report") {
-        return report_misc::get_locks(repo_path, route);
-    }
-    if request.contains("get-location-segments") {
-        return report_locations::location_segments(repo_path, route, &request);
-    }
-    if request.contains("get-locations") {
-        return report_locations::locations(repo_path, route, &request);
-    }
-    svn_protocol_not_implemented_response(route, "REPORT")
 }
 
 fn add_svn_dav_headers(response: &mut Response) {
