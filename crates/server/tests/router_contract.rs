@@ -345,6 +345,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
 }
 
 #[tokio::test]
+// Guards route-utils-owned session and CSRF helpers used by legacy mutation routes.
 async fn update_issue_state_requires_bootstrapped_csrf() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,

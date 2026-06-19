@@ -22,7 +22,7 @@ use crate::{
         ProjectMemberSummary, ProjectMilestoneSummary, ReadCurrentSessionResponse,
     },
     internal_error, normalize_identifier, persistence, project_read_allowed,
-    project_update_allowed, require_project_read, require_session, require_valid_csrf,
+    project_update_allowed, require_project_read,
     session::{Session, SessionManager},
     ConnectError, Context, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl,
 };
@@ -242,6 +242,44 @@ pub(crate) async fn resolve_current_session_response(
             ))
         }
         PilotBackend::Static => Ok(anonymous_current_session_response()),
+    }
+}
+
+pub(crate) fn require_session(
+    session_manager: &SessionManager,
+    headers: &HeaderMap,
+) -> Result<Session, ConnectError> {
+    session_manager
+        .read_session_from_headers(headers)
+        .ok_or_else(|| ConnectError::unauthenticated("missing pilot session"))
+}
+
+pub(crate) fn require_valid_csrf(
+    session_manager: &SessionManager,
+    headers: &HeaderMap,
+    session: &Session,
+) -> Result<(), ConnectError> {
+    if session_manager.validate_csrf(headers, session) {
+        Ok(())
+    } else {
+        Err(ConnectError::permission_denied("invalid csrf token"))
+    }
+}
+
+pub(crate) fn attach_session_headers(
+    ctx: &mut Context,
+    session_manager: &SessionManager,
+    session: &Session,
+) {
+    ctx.response_headers.insert(
+        "x-csrf-token",
+        HeaderValue::from_str(&session.csrf_token).expect("csrf header"),
+    );
+    for cookie in session_manager.build_set_cookie_headers(session) {
+        ctx.response_headers.append(
+            axum::http::header::SET_COOKIE,
+            HeaderValue::from_str(&cookie).expect("set-cookie header"),
+        );
     }
 }
 

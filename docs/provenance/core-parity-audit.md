@@ -176,6 +176,8 @@ REST adapter diet note: REST error envelope types, shared JSON/current-session r
 
 Current-session projection diet note: current-session response projection helpers moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/utils.rs` on 2026-06-19. Auth, workspace overview, REST session, and root service paths reuse the route-utils-owned projection boundary; behavior remains covered by auth REST round-trip, session bootstrap, and workspace overview tests.
 
+Session guard diet note: shared session lookup, CSRF validation, and session response-header attachment helpers moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/utils.rs` on 2026-06-19. Root service methods and route modules reuse the route-utils-owned session guard boundary; behavior remains covered by auth REST round-trip, bootstrapped CSRF mutation, and legacy issue comment vote route tests.
+
 Auth session payload diet note: `/api/auth/session` bootstrap response DTOs and payload builder moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/auth.rs` on 2026-06-19. The auth route now owns the bootstrap JSON shape locally while reusing the shared current-session projection helper; behavior remains covered by session bootstrap and auth REST round-trip tests.
 
 Project REST dependency diet note: `crates/server/src/routes/projects.rs` no longer imports the root crate wildcard after the handler-body move. The module now relies on explicit root imports for the remaining compatibility DTOs and route bridges, preserving the same project/organization REST surfaces while reducing hidden route-module dependencies.

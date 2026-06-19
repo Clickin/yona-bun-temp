@@ -29,9 +29,10 @@ pub use notification_mail::{
 };
 pub(crate) use routes::{
     accepts_legacy_json, anonymous_current_session_response, append_response_headers,
-    base_path_href, build_organization_admin_response, build_organization_container_response,
-    build_project_container_response, build_workspace_overview_response, code_branch_error,
-    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
+    attach_session_headers, base_path_href, build_organization_admin_response,
+    build_organization_container_response, build_project_container_response,
+    build_workspace_overview_response, code_branch_error, code_browser_error,
+    code_file_record_is_renderable_markdown, code_path_is_markdown,
     current_session_response_from_user, decode_query_component, delete_project_repository_storage,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
@@ -64,9 +65,9 @@ pub(crate) use routes::{
     project_member_summary_from_record, project_milestone_summary_from_record,
     project_resource_create_allowed, project_webhook_type_label, read_issue_access,
     read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
-    redirect_to, require_project_resource_create, resolve_current_session_response,
-    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
-    rest_commit_thread_from_record, rest_delete_project_member,
+    redirect_to, require_project_resource_create, require_session, require_valid_csrf,
+    resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
+    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -94,8 +95,7 @@ use axum::{extract::Path, http::Method};
 use base64::Engine as _;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
-use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
-use http::{HeaderValue, StatusCode};
+use http::StatusCode;
 use runtime_config::normalize_base_path;
 use serde::{Deserialize, Serialize};
 use session::{SessionConfig, SessionManager};
@@ -1788,44 +1788,6 @@ fn normalize_identifier(value: &str) -> String {
 
 pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
     ConnectError::new(ErrorCode::Internal, error.to_string())
-}
-
-fn require_session<'a>(
-    session_manager: &SessionManager,
-    headers: &'a HeaderMap,
-) -> Result<session::Session, ConnectError> {
-    session_manager
-        .read_session_from_headers(headers)
-        .ok_or_else(|| ConnectError::unauthenticated("missing pilot session"))
-}
-
-fn require_valid_csrf(
-    session_manager: &SessionManager,
-    headers: &HeaderMap,
-    session: &session::Session,
-) -> Result<(), ConnectError> {
-    if session_manager.validate_csrf(headers, session) {
-        Ok(())
-    } else {
-        Err(ConnectError::permission_denied("invalid csrf token"))
-    }
-}
-
-fn attach_session_headers(
-    ctx: &mut Context,
-    session_manager: &SessionManager,
-    session: &session::Session,
-) {
-    ctx.response_headers.insert(
-        "x-csrf-token",
-        HeaderValue::from_str(&session.csrf_token).expect("csrf header"),
-    );
-    for cookie in session_manager.build_set_cookie_headers(session) {
-        ctx.response_headers.append(
-            SET_COOKIE,
-            HeaderValue::from_str(&cookie).expect("set-cookie header"),
-        );
-    }
 }
 
 fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
