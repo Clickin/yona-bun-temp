@@ -987,6 +987,7 @@ async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
 }
 
 #[tokio::test]
+// Guards the PR route-module DTO and mapper split across mutation/review-comment flows.
 async fn pull_request_interaction_surface_mutates_state_review_comments_threads_and_events() {
     let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("data");

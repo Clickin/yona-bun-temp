@@ -62,9 +62,10 @@ pub(crate) use projects::{
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
 pub(crate) use pull_requests::{
-    rest_accept_pull_request, rest_delete_pull_request_source_branch,
-    rest_restore_pull_request_source_branch, rest_review_thread_filter,
-    rest_update_pull_request_thread_state,
+    rest_accept_pull_request, rest_commit_thread_from_record,
+    rest_delete_pull_request_source_branch, rest_restore_pull_request_source_branch,
+    rest_review_thread_filter, rest_update_pull_request_thread_state, RestReviewThread,
+    RestReviewThreadListQuery,
 };
 pub(crate) use search::routes as search_routes;
 pub(crate) use site_admin::rest_routes as site_admin_rest_routes;

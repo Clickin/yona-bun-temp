@@ -591,6 +591,7 @@ async fn seed_pull_request_detail_rows(
 }
 
 #[tokio::test]
+// Guards the PR route-module DTO and mapper split across list/detail/changes/review JSON.
 async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_aggregate() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
