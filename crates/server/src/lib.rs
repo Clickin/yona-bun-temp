@@ -75,7 +75,8 @@ pub(crate) use routes::{
     percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
-    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
+    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_label_create,
+    project_label_delete, project_label_update, project_labels_list, project_logo_url,
     project_member_summary_from_record, project_milestone_state_mutation,
     project_milestone_summary_from_record, project_read_allowed, project_resource_create_allowed,
     project_update_allowed, project_webhook_type_label, random_site_admin_password,
@@ -3647,33 +3648,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ListProjectLabelsRequestView<'static>>,
     ) -> Result<(ListProjectLabelsResponse, Context), ConnectError> {
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let session = self.session_manager.read_session_from_headers(&ctx.headers);
-        require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.as_ref().and_then(|session| session.user_id),
-        )
-        .await?;
-        let labels = repository
-            .list_project_labels(request.owner_name, request.project_name)
-            .await
-            .map_err(internal_error)?
-            .iter()
-            .map(issue_label_from_record)
-            .collect();
-        Ok((
-            ListProjectLabelsResponse {
-                labels,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_labels_list(self, ctx, request).await
     }
 
     async fn list_project_label_categories(
@@ -3715,49 +3690,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<CreateProjectLabelRequestView<'static>>,
     ) -> Result<(ProjectLabelMutationResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue label requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "issue label create is not allowed",
-            ));
-        }
-        let color = normalize_issue_label_color(request.label_color)?;
-        let Some((label, created)) = repository
-            .create_project_label(persistence::CreateProjectLabelInput {
-                category_is_exclusive: request.category_is_exclusive,
-                category_name: request.category_name.trim().to_string(),
-                label_color: color,
-                label_name: request.label_name.trim().to_string(),
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-            })
-            .await
-            .map_err(internal_error)?
-        else {
-            return Err(ConnectError::not_found("project not found"));
-        };
-        Ok((
-            ProjectLabelMutationResponse {
-                created,
-                label: Some(issue_label_from_record(&label)).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_label_create(self, ctx, request).await
     }
 
     async fn update_project_label(
@@ -3765,49 +3698,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateProjectLabelRequestView<'static>>,
     ) -> Result<(ProjectLabelMutationResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue label requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "issue label update is not allowed",
-            ));
-        }
-        let color = normalize_issue_label_color(request.label_color)?;
-        let Some(label) = repository
-            .update_project_label(persistence::UpdateProjectLabelInput {
-                category_id: request.category_id,
-                label_color: color,
-                label_id: request.label_id,
-                label_name: request.label_name.trim().to_string(),
-                owner_name: request.owner_name.to_string(),
-                project_name: request.project_name.to_string(),
-            })
-            .await
-            .map_err(|error| ConnectError::invalid_argument(error.to_string()))?
-        else {
-            return Err(ConnectError::not_found("issue label not found"));
-        };
-        Ok((
-            ProjectLabelMutationResponse {
-                created: false,
-                label: Some(issue_label_from_record(&label)).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_label_update(self, ctx, request).await
     }
 
     async fn delete_project_label(
@@ -3815,40 +3706,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<DeleteProjectLabelRequestView<'static>>,
     ) -> Result<(ProjectLabelDeleteResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue label requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "issue label delete is not allowed",
-            ));
-        }
-        let ok = repository
-            .delete_project_label(request.owner_name, request.project_name, request.label_id)
-            .await
-            .map_err(internal_error)?;
-        if !ok {
-            return Err(ConnectError::not_found("issue label not found"));
-        }
-        Ok((
-            ProjectLabelDeleteResponse {
-                ok,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_label_delete(self, ctx, request).await
     }
 
     async fn create_project_label_category(
