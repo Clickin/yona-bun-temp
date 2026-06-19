@@ -411,11 +411,39 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
             .and_then(|value| value.to_str().ok()),
         Some("text/css")
     );
+    let css_etag = css_response
+        .headers()
+        .get(http::header::ETAG)
+        .and_then(|value| value.to_str().ok())
+        .expect("legacy label css etag")
+        .to_string();
     let css = response_text(css_response).await;
     assert!(css.contains(".issue-label[data-label-id=\""));
     assert!(css.contains("box-shadow: inset 2px 0 0px #111111;"));
     assert!(css.contains("background-color: #111111;"));
     assert!(css.contains("color: white;"));
+
+    let not_modified_css_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/issue/labels.css")
+                .header(http::header::IF_NONE_MATCH, css_etag.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(not_modified_css_response.status(), StatusCode::NOT_MODIFIED);
+    assert_eq!(
+        not_modified_css_response
+            .headers()
+            .get(http::header::ETAG)
+            .and_then(|value| value.to_str().ok()),
+        Some(css_etag.as_str())
+    );
+    assert!(response_text(not_modified_css_response).await.is_empty());
 
     let duplicate_response = app
         .clone()

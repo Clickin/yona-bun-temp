@@ -158,11 +158,42 @@ pub(crate) async fn direct_issue_label_css(
         return StatusCode::FORBIDDEN.into_response();
     }
     match repository.list_project_labels(&owner, &project).await {
-        Ok(labels) => (
-            [(http::header::CONTENT_TYPE, "text/css")],
-            issue_label_css(&labels),
-        )
-            .into_response(),
+        Ok(labels) => {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            for label in &labels {
+                std::hash::Hash::hash(&label.id, &mut hasher);
+                std::hash::Hash::hash(&label.name, &mut hasher);
+                std::hash::Hash::hash(&label.color, &mut hasher);
+                std::hash::Hash::hash(&label.category_id, &mut hasher);
+                std::hash::Hash::hash(&label.category_name, &mut hasher);
+                std::hash::Hash::hash(&label.category_is_exclusive, &mut hasher);
+            }
+            let etag = format!("\"{}\"", std::hash::Hasher::finish(&hasher));
+            if headers
+                .get(http::header::IF_NONE_MATCH)
+                .and_then(|value| value.to_str().ok())
+                == Some(etag.as_str())
+            {
+                let mut response = StatusCode::NOT_MODIFIED.into_response();
+                if let Ok(header_value) = http::HeaderValue::from_str(&etag) {
+                    response
+                        .headers_mut()
+                        .insert(http::header::ETAG, header_value);
+                }
+                return response;
+            }
+            let mut response = (
+                [(http::header::CONTENT_TYPE, "text/css")],
+                issue_label_css(&labels),
+            )
+                .into_response();
+            if let Ok(header_value) = http::HeaderValue::from_str(&etag) {
+                response
+                    .headers_mut()
+                    .insert(http::header::ETAG, header_value);
+            }
+            response
+        }
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
 }
