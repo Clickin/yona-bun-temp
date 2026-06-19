@@ -53,6 +53,11 @@ pub(crate) use notifications::rest_routes as notification_rest_routes;
 pub(crate) use notifications::routes as notification_routes;
 pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
+pub(crate) use projects::{
+    delete_project_repository_storage, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
+    project_webhook_type_label, record_project_webhook_delivery, rest_delete_project_member,
+    rest_toggle_project_watch, rest_update_project_overview,
+};
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
 pub(crate) use pull_requests::{

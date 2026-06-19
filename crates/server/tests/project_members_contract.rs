@@ -220,6 +220,7 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     .await;
     assert_eq!(initial["ownerName"], "owner");
     assert_eq!(initial["projectName"], "projectYobi");
+    assert_eq!(initial["members"].as_array().unwrap().len(), 1);
     assert_eq!(initial["roleOptions"][0]["role"], "manager");
     assert_eq!(initial["roleOptions"][1]["role"], "member");
     assert_eq!(member(&initial, "owner")["role"], "manager");

@@ -9,36 +9,2827 @@ use axum::{
 use serde::Deserialize;
 use std::collections::HashMap;
 
+use crate::generated::yona::pilot::v1::*;
+use crate::*;
 use crate::{
-    accepts_legacy_json, direct_accept_project_transfer, direct_create_project_milestone,
-    direct_delete_project_milestone, direct_delete_project_pushed_branch, direct_render_markdown,
-    direct_toggle_project_watch, direct_update_project_milestone,
-    direct_update_project_milestone_state, direct_update_project_overview,
+    accepts_legacy_json, base_path_href, direct_accept_project_transfer,
+    direct_create_project_milestone, direct_delete_project_milestone,
+    direct_delete_project_pushed_branch, direct_render_markdown, direct_toggle_project_watch,
+    direct_update_project_milestone, direct_update_project_milestone_state,
+    direct_update_project_overview, format_project_date_label, internal_error,
     legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
     legacy_external_authenticated_user_id, legacy_external_create_milestones,
     legacy_external_watchers, legacy_json_find_value, normalize_issue_label_color, persistence,
-    project_update_allowed, require_project_read, rest_accept_organization_enrollment,
-    rest_add_organization_member, rest_add_project_member, rest_cancel_enroll_organization,
-    rest_cancel_enroll_project, rest_change_project_vcs, rest_create_organization,
-    rest_create_project, rest_create_project_webhook, rest_delete_organization,
-    rest_delete_organization_member, rest_delete_project, rest_delete_project_member,
-    rest_delete_project_webhook, rest_enroll_organization, rest_enroll_project, rest_fork_project,
-    rest_leave_organization, rest_list_organizations, rest_list_projects,
-    rest_project_create_form_options, rest_read_organization_admin,
-    rest_read_organization_container, rest_read_organization_detail,
-    rest_read_organization_members, rest_read_organization_settings, rest_read_project_change_vcs,
-    rest_read_project_container, rest_read_project_detail, rest_read_project_fork_options,
-    rest_read_project_members, rest_read_project_settings, rest_read_project_transfer,
-    rest_read_project_watchers, rest_read_project_webhooks, rest_request_project_transfer,
-    rest_toggle_favorite_project, rest_toggle_project_watch, rest_update_organization,
-    rest_update_organization_member_role, rest_update_project, rest_update_project_member_role,
-    rest_update_project_overview, session::SessionManager, ConnectError, DirectMarkdownRenderBody,
-    LegacyExternalWatchersQuery, PilotBackend, PilotServiceImpl, RestIssueAssignableUsersQuery,
+    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
+    project_read_allowed, project_update_allowed, repository_provisioning_lock, require_session,
+    require_valid_csrf, rest_json_response, rest_owned_view, rest_repository,
+    rest_require_project_code_read, session::SessionManager, yona_data_root, ConnectError, Context,
+    DirectMarkdownRenderBody, GitPushCommitRecord, LegacyExternalWatchersQuery, PilotBackend,
+    PilotRepository, PilotServiceImpl, ProjectHistoryCommitRecord, RestIssueAssignableUsersQuery,
     RestOrganizationBody, RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
     RestProjectCreateBody, RestProjectCreateFormOptionsQuery, RestProjectForkBody,
     RestProjectMemberBody, RestProjectMemberRoleBody, RestProjectOverviewBody,
-    RestProjectTransferBody, RestProjectUpdateBody, RestProjectWebhookBody, RestRouteError,
+    RestProjectReviewerSettings, RestProjectTransferBody, RestProjectUpdateBody,
+    RestProjectWebhookBody, RestRouteError,
 };
+use yona_rust_domain::{
+    can_create_organization_project, can_create_personal_project, can_update_organization,
+    is_valid_project_name,
+};
+use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
+
+async fn rest_reject_legacy_guest_prohibited_user(
+    headers: &HeaderMap,
+    service: &PilotServiceImpl,
+) -> Result<(), RestRouteError> {
+    let Some(user_id) = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id)
+    else {
+        return Ok(());
+    };
+    let repository = rest_repository(service)?;
+    let user = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ))
+        })?;
+    if user.is_guest {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("guest users cannot access this route"),
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) async fn rest_list_projects(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let records = repository
+            .list_projects()
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+        let mut items = Vec::with_capacity(records.len());
+        for project in records {
+            items.push(RestProjectDirectoryItem {
+                created_label: format_project_date_label(project.created_date),
+                last_pushed_label: format_project_date_label(project.last_pushed_date),
+                logo_url: project_logo_url(repository, &service.base_path, project.id)
+                    .await
+                    .map_err(RestRouteError::from_connect_error)?,
+                member_count: repository
+                    .count_project_members(project.id)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?,
+                overview: project.overview.unwrap_or_default(),
+                owner_name: project.owner_name,
+                project_name: project.project_name,
+                project_scope: project.project_scope,
+                watch_count: repository
+                    .count_project_watchers(project.id)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?,
+            });
+        }
+        return Ok(rest_json_response(
+            RestProjectDirectoryResponse { items },
+            Context::new(headers),
+        ));
+    }
+
+    let request = ListProjectsRequest::default();
+    let request = rest_owned_view::<ListProjectsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_projects(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_list_organizations(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
+    let request = ListOrganizationsRequest::default();
+    let request = rest_owned_view::<ListOrganizationsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_organizations(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_create_organization(
+    headers: HeaderMap,
+    body: RestOrganizationBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateOrganizationRequest {
+        description: body.description,
+        organization_name: body.organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_organization_detail(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationDetailRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationDetailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_detail(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_organization_admin(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationAdminRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationAdminRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_admin(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_organization_container(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationContainerRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationContainerRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_container(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_organization_settings(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationSettingsRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationSettingsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_settings(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_organization_members(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationMembersRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationMembersRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_members(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_update_organization(
+    headers: HeaderMap,
+    current_organization_name: String,
+    body: RestOrganizationBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let logo_attachment_id = body.logo_attachment_id;
+    let request = UpdateOrganizationRequest {
+        current_organization_name,
+        description: body.description,
+        organization_name: body.organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateOrganizationRequestView<'static>>(&request)?;
+    let (mut payload, ctx) = service
+        .update_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if let Some(logo_attachment_id) = logo_attachment_id.filter(|attachment_id| *attachment_id > 0)
+    {
+        payload.logo_url = rest_update_organization_logo_attachment(
+            &service,
+            &ctx.headers,
+            &payload.organization_name,
+            logo_attachment_id,
+        )
+        .await?;
+    }
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_organization_logo_attachment(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    organization_name: &str,
+    attachment_id: i64,
+) -> Result<String, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("organization logo requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(organization_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("organization update is not allowed"),
+        ));
+    }
+    let attachment = repository
+        .read_attachment_by_id(attachment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("attachment not found"))?;
+    if !attachment.mime_type.starts_with("image/") || attachment.size > 5 * 1024 * 1024 {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("organization logo must be an image no larger than 5MB"),
+        ));
+    }
+    repository
+        .set_organization_logo_attachment(authorization.organization.id, attachment_id, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "organization logo attachment is not owned by the actor",
+            ))
+        })?;
+    Ok(base_path_href(
+        &service.base_path,
+        &format!("/files/{attachment_id}"),
+    ))
+}
+
+pub(crate) async fn rest_add_organization_member(
+    headers: HeaderMap,
+    organization_name: String,
+    body: RestOrganizationMemberBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = AddOrganizationMemberRequest {
+        login_id: body.login_id,
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AddOrganizationMemberRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .add_organization_member(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_update_organization_member_role(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    body: RestOrganizationMemberRoleBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateOrganizationMemberRoleRequest {
+        organization_name,
+        role: body.role,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateOrganizationMemberRoleRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_organization_member_role(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_delete_organization_member(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteOrganizationMemberRequest {
+        organization_name,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteOrganizationMemberRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_organization_member(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_accept_organization_enrollment(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = AcceptOrganizationEnrollmentRequest {
+        organization_name,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AcceptOrganizationEnrollmentRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .accept_organization_enrollment(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_enroll_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = EnrollOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<EnrollOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .enroll_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_cancel_enroll_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CancelEnrollOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CancelEnrollOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .cancel_enroll_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_leave_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = LeaveOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<LeaveOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .leave_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_delete_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_create_project(
+    headers: HeaderMap,
+    owner_name: String,
+    body: RestProjectCreateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let menu_settings = body.menu_settings();
+    let requested_vcs = body.normalized_vcs()?;
+    if requested_vcs == "Subversion" {
+        yona_rust_vcs::ensure_svnadmin_available()
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+    let request = CreateProjectRequest {
+        owner_name,
+        overview: body.overview,
+        project_name: body.project_name,
+        project_scope: body.project_scope,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectRequestView<'static>>(&request)?;
+    let (mut payload, ctx) = service
+        .create_project(Context::new(headers.clone()), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if requested_vcs == "Subversion" {
+        let session = require_session(&service.session_manager, &headers)
+            .map_err(RestRouteError::from_connect_error)?;
+        let actor_id = session.user_id.ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated session",
+            ))
+        })?;
+        let PilotBackend::Repository(repository) = &service.backend else {
+            return Err(RestRouteError::not_implemented(
+                "project creation requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_project_authorization(&payload.owner_name, &payload.project_name, Some(actor_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+        let changed = repository
+            .change_project_vcs(authorization.project.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+        reset_project_repository_storage(changed.id, &changed.vcs)?;
+        let mut changed_authorization = authorization;
+        changed_authorization.project = changed;
+        payload = project_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &changed_authorization,
+            project_update_allowed(&changed_authorization)
+                .map_err(RestRouteError::from_connect_error)?,
+            false,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    }
+    if let Some(menu_settings) = menu_settings {
+        rest_update_project_menu_settings(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            menu_settings,
+        )
+        .await?;
+    }
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_project_create_form_options(
+    headers: HeaderMap,
+    query: RestProjectCreateFormOptionsQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project create form options require repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ))
+        })?;
+
+    let mut owner_names = Vec::new();
+    owner_names.push((actor.login_id.clone(), false));
+    let organizations = repository
+        .list_organizations()
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    for organization in organizations {
+        let Some(authorization) = repository
+            .read_organization_authorization(&organization.organization_name, Some(actor_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if can_create_organization_project(authorization.viewer.is_organization_admin) {
+            owner_names.push((authorization.organization.organization_name, true));
+        }
+    }
+
+    let requested_owner = query.owner.unwrap_or_default();
+    let selected_owner_name = owner_names
+        .iter()
+        .find(|(owner_name, _)| {
+            normalize_identifier(owner_name) == normalize_identifier(&requested_owner)
+        })
+        .map(|(owner_name, _)| owner_name.clone())
+        .unwrap_or_else(|| actor.login_id.clone());
+    let owner_options = owner_names
+        .into_iter()
+        .map(|(owner_name, organization)| RestProjectCreateOwnerOption {
+            selected: normalize_identifier(&owner_name)
+                == normalize_identifier(&selected_owner_name),
+            owner_name,
+            organization,
+        })
+        .collect();
+
+    Ok(Json(RestProjectCreateFormOptionsResponse {
+        owner_options,
+        selected_owner_name,
+    })
+    .into_response())
+}
+
+pub(crate) async fn rest_read_project_detail(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectDetailRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectDetailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_detail(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_project_container(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectContainerRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectContainerRequestView<'static>>(&request)?;
+    let context = Context::new(headers.clone());
+    let (payload, ctx) = service
+        .read_project_container(context, request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let readme_file = rest_project_readme_file(&service, &headers, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let dashboard = rest_project_home_dashboard(&service, &headers, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let history = rest_project_home_history(&service, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(
+        RestProjectContainerResponse {
+            container: payload,
+            dashboard,
+            history,
+            readme_file,
+        },
+        ctx,
+    ))
+}
+
+async fn rest_project_home_dashboard(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    container: &ProjectContainer,
+) -> Result<RestProjectDashboard, ConnectError> {
+    if !container.show_issue {
+        return Ok(RestProjectDashboard::default());
+    }
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(RestProjectDashboard::default());
+    };
+    let authorization = repository
+        .read_project_authorization(&container.owner_name, &container.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let assignees = repository
+        .list_project_dashboard_assignees(authorization.project.id)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|assignee| RestProjectDashboardAssignee {
+            avatar_url: gravatar_url(&assignee.email_address),
+            login_id: assignee.login_id,
+            open_issue_count: assignee.open_issue_count,
+            user_id: assignee.user_id,
+            user_label: assignee.user_label,
+        })
+        .collect();
+    let labels = repository
+        .list_project_dashboard_labels(authorization.project.id)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|label| RestProjectDashboardLabel {
+            category_id: label.category_id,
+            category_is_exclusive: label.category_is_exclusive,
+            category_name: label.category_name,
+            color: label.color,
+            id: label.id,
+            name: label.name,
+            open_issue_count: label.open_issue_count,
+        })
+        .collect();
+    let unassigned_open_issue_count = repository
+        .count_unassigned_open_issues_for_project(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    Ok(RestProjectDashboard {
+        assignees,
+        labels,
+        unassigned_open_issue_count,
+    })
+}
+
+async fn rest_project_home_history(
+    service: &PilotServiceImpl,
+    container: &ProjectContainer,
+) -> Result<RestProjectHistory, ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(RestProjectHistory::default());
+    };
+    let mut items: Vec<RestProjectHistoryItem> = repository
+        .list_project_home_history_items(&container.owner_name, &container.project_name)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|item| RestProjectHistoryItem {
+            actor_avatar_url: gravatar_url(&item.actor_email_address),
+            actor_name: item.actor_name,
+            actor_url: if item.actor_login_id.trim().is_empty() {
+                "#".to_string()
+            } else {
+                base_path_href(&service.base_path, &format!("/{}", item.actor_login_id))
+            },
+            created_label: item.created_label,
+            item_type: item.item_type,
+            short_title: item.short_title,
+            sort_key: item
+                .created_at
+                .map(|value| value.and_utc().timestamp())
+                .unwrap_or_default(),
+            title: item.title,
+            url: base_path_href(&service.base_path, &item.url_path),
+        })
+        .collect();
+    if let Some(project) = repository
+        .read_project_by_owner_and_name(&container.owner_name, &container.project_name)
+        .await
+        .map_err(internal_error)?
+    {
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+        for commit in yona_rust_vcs::read_project_history_commits(&repo_path, 10)
+            .map_err(code_browser_error)?
+        {
+            items.push(rest_project_history_item_from_commit(
+                &service.base_path,
+                &container.owner_name,
+                &container.project_name,
+                commit,
+            ));
+        }
+    }
+    items.sort_by(|left, right| {
+        right
+            .sort_key
+            .cmp(&left.sort_key)
+            .then(right.url.cmp(&left.url))
+    });
+    Ok(RestProjectHistory { items })
+}
+
+fn rest_project_history_item_from_commit(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    commit: ProjectHistoryCommitRecord,
+) -> RestProjectHistoryItem {
+    RestProjectHistoryItem {
+        actor_avatar_url: gravatar_url(&commit.author_email),
+        actor_name: if commit.author_name.trim().is_empty() {
+            commit.author_email.clone()
+        } else {
+            commit.author_name
+        },
+        actor_url: "#".to_string(),
+        created_label: commit.author_date,
+        item_type: "commit".to_string(),
+        short_title: commit.commit_short_id,
+        sort_key: commit.author_timestamp,
+        title: commit.short_message,
+        url: base_path_href(
+            base_path,
+            &format!("/{owner_name}/{project_name}/commit/{}", commit.commit_id),
+        ),
+    }
+}
+
+async fn rest_project_readme_file(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    container: &ProjectContainer,
+) -> Result<Option<RestProjectReadmeFile>, ConnectError> {
+    if !container.show_code {
+        return Ok(None);
+    }
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(None);
+    };
+    let authorization = repository
+        .read_project_authorization(&container.owner_name, &container.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let mut readme = project_readme_file_from_git(
+        &repo_path,
+        &service.base_path,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )?;
+    if let Some(readme) = readme.as_mut() {
+        readme.mention_references =
+            markdown_mention_references(repository, &[readme.body_markdown.as_str()])
+                .await?
+                .iter()
+                .map(rest_mention_reference_metadata_from_resolved)
+                .collect();
+    }
+    Ok(readme)
+}
+
+pub(crate) async fn rest_read_project_settings(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectSettingsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectSettingsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_settings(Context::new(headers.clone()), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&payload.owner_name, &payload.project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let payload = build_project_settings_container_response(
+        repository,
+        &service.public_origin,
+        &service.base_path,
+        &authorization,
+        actor_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let max_reviewer_count = repository
+        .count_project_members(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .max(1);
+    let payload =
+        project_settings_container_json(payload, &authorization.project, max_reviewer_count)
+            .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_read_project_members(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project members require repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    let payload = build_project_member_directory_response(repository, &authorization, None)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(payload).into_response())
+}
+
+pub(crate) async fn rest_add_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectMemberBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project members require repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    let login_id = body.login_id.trim();
+    if login_id.is_empty() {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project.members.addMember"),
+        ));
+    }
+    let target_user = repository
+        .find_user_by_login_id(login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::invalid_argument(
+                "project.member.notExist",
+            ))
+        })?;
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if directory
+        .members
+        .iter()
+        .any(|member| member.user_id == target_user.id)
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project.member.alreadyMember"),
+        ));
+    }
+
+    repository
+        .add_project_membership(authorization.project.id, target_user.id, "member")
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .delete_project_enrollment_request(authorization.project.id, target_user.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .create_project_member_accept_notification(
+            authorization.project.id,
+            actor_id,
+            target_user.id,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let refreshed = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    let payload = build_project_member_directory_response(repository, &refreshed, None)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(payload).into_response())
+}
+
+pub(crate) async fn rest_update_project_member_role(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    body: RestProjectMemberRoleBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project members require repository backend",
+        ));
+    };
+    let role = normalize_identifier(&body.role);
+    if !matches!(role.as_str(), "manager" | "member") {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project member role is invalid"),
+        ));
+    }
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let Some(current_member) = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == user_id)
+    else {
+        return Err(RestRouteError::from_connect_error(ConnectError::not_found(
+            "project member not found",
+        )));
+    };
+    if project_member_is_owner(&authorization.project, current_member) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project.member.ownerMustBeAManager"),
+        ));
+    }
+
+    repository
+        .add_project_membership(authorization.project.id, user_id, &role)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let refreshed = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    let payload = build_project_member_directory_response(repository, &refreshed, None)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(payload).into_response())
+}
+
+pub(crate) async fn rest_delete_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project members require repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    let can_update =
+        project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)?;
+    if !can_update && actor_id != user_id {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let current_member = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == user_id);
+    if let Some(current_member) = current_member {
+        if project_member_is_owner(&authorization.project, current_member) {
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project.member.ownerCannotLeave"),
+            ));
+        }
+        repository
+            .delete_project_membership(authorization.project.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    let self_leave_redirect = if actor_id == user_id {
+        let refreshed = repository
+            .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| {
+                RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+            })?;
+        if project_read_allowed(&refreshed, false).map_err(RestRouteError::from_connect_error)? {
+            Some((format!("/{owner_name}/{project_name}"), true))
+        } else {
+            Some(("/".to_string(), false))
+        }
+    } else {
+        None
+    };
+    let refreshed = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if let Some((redirect_path, false)) = self_leave_redirect {
+        return Ok(Json(RestProjectMemberDirectoryResponse {
+            enrollment_requests: Vec::new(),
+            members: Vec::new(),
+            owner_name: refreshed.project.owner_name,
+            project_name: refreshed.project.project_name,
+            redirect_path: Some(redirect_path),
+            role_options: project_member_role_options(),
+            viewer_can_update: false,
+        })
+        .into_response());
+    }
+    let redirect_path = self_leave_redirect
+        .map(|(redirect_path, _)| redirect_path)
+        .or_else(|| Some(format!("/{owner_name}/{project_name}/members")));
+    let payload = build_project_member_directory_response(repository, &refreshed, redirect_path)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(payload).into_response())
+}
+
+pub(crate) async fn rest_read_project_watchers(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project watchers require repository backend",
+        ));
+    };
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let watcher_list = repository
+        .list_project_watchers(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let mut watchers = Vec::new();
+    for watcher in watcher_list.watchers {
+        let Some(watcher_authorization) = repository
+            .read_project_authorization(&owner_name, &project_name, Some(watcher.user_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if !project_read_allowed(&watcher_authorization, false)
+            .map_err(RestRouteError::from_connect_error)?
+        {
+            continue;
+        }
+        watchers.push(RestProjectWatcher {
+            avatar_url: gravatar_url(&watcher.email_address),
+            login_id: watcher.login_id,
+            user_id: watcher.user_id,
+            user_label: watcher.user_label,
+        });
+    }
+
+    Ok(Json(RestProjectWatchersResponse {
+        owner_name,
+        project_name,
+        total_count: watchers.len() as u32,
+        watchers,
+    })
+    .into_response())
+}
+
+fn project_webhook_type_options() -> Vec<&'static str> {
+    vec!["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"]
+}
+
+fn project_webhook_type_code(value: &str) -> Result<i16, RestRouteError> {
+    match value.trim() {
+        "SIMPLE" => Ok(0),
+        "DETAIL_SLACK" => Ok(1),
+        "DETAIL_HANGOUT_CHAT" => Ok(2),
+        "JSON" => Ok(3),
+        _ => Err(RestRouteError::bad_request("invalid webhook type")),
+    }
+}
+
+pub(crate) fn project_webhook_type_label(value: i16) -> String {
+    match value {
+        1 => "DETAIL_SLACK",
+        2 => "DETAIL_HANGOUT_CHAT",
+        3 => "JSON",
+        _ => "SIMPLE",
+    }
+    .to_string()
+}
+
+fn rest_project_webhook_from_record(
+    record: persistence::ProjectWebhookRecord,
+) -> RestProjectWebhook {
+    RestProjectWebhook {
+        git_push: record.git_push,
+        id: record.id,
+        payload_url: record.payload_url,
+        secret: record.secret,
+        webhook_type: project_webhook_type_label(record.webhook_type),
+    }
+}
+
+fn rest_project_webhook_delivery_from_record(
+    record: persistence::ProjectWebhookDeliveryRecord,
+) -> RestProjectWebhookDelivery {
+    RestProjectWebhookDelivery {
+        created_label: format_project_date_label(record.created_at),
+        error_message: record.error_message,
+        event_type: record.event_type,
+        id: record.id,
+        payload_url: record.payload_url,
+        request_body: record.request_body,
+        response_body: record.response_body,
+        status: record.status,
+        webhook_id: record.webhook_id,
+        webhook_type: record.webhook_type,
+    }
+}
+
+fn build_project_webhooks_response(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    webhooks: persistence::ProjectWebhookListRecord,
+    deliveries: Vec<persistence::ProjectWebhookDeliveryRecord>,
+) -> Result<RestProjectWebhooksResponse, RestRouteError> {
+    Ok(RestProjectWebhooksResponse {
+        deliveries: deliveries
+            .into_iter()
+            .map(rest_project_webhook_delivery_from_record)
+            .collect(),
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        viewer_can_update: project_update_allowed(authorization)
+            .map_err(RestRouteError::from_connect_error)?,
+        webhook_types: project_webhook_type_options(),
+        webhooks: webhooks
+            .webhooks
+            .into_iter()
+            .map(rest_project_webhook_from_record)
+            .collect(),
+    })
+}
+
+fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
+    match event_type {
+        "NEW_COMMENT" => "notification.type.new.comment",
+        "NEW_ISSUE" => "notification.type.new.issue",
+        "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
+        "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
+        "PULL_REQUEST_MERGED" => "pullRequest.event.message.merged",
+        _ => event_type,
+    }
+}
+
+fn legacy_pull_request_review_key(reviewed: bool) -> &'static str {
+    if reviewed {
+        "notification.pullrequest.reviewed"
+    } else {
+        "notification.pullrequest.unreviewed"
+    }
+}
+
+fn legacy_webhook_link(url: &str, label: &str, escape_label: bool) -> String {
+    let label = if escape_label {
+        label.replace('>', "&gt;")
+    } else {
+        label.to_string()
+    };
+    format!(" <{url}|{label}>")
+}
+
+fn legacy_hangout_thread_json(thread_name: Option<&str>) -> serde_json::Value {
+    match thread_name {
+        Some(name) if !name.trim().is_empty() => serde_json::json!({ "name": name }),
+        _ => serde_json::json!({}),
+    }
+}
+
+fn webhook_response_thread_name(response_body: &str) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(response_body).ok()?;
+    match value.get("thread")?.get("name")? {
+        serde_json::Value::String(name) => Some(name.clone()),
+        serde_json::Value::Number(number) => Some(number.to_string()),
+        serde_json::Value::Bool(value) => Some(value.to_string()),
+        _ => None,
+    }
+}
+
+async fn read_existing_webhook_thread_name(
+    repository: &PilotRepository,
+    webhook_id: i64,
+    resource_type: &str,
+    resource_id: &str,
+) -> Option<String> {
+    repository
+        .read_webhook_thread(webhook_id, resource_type, resource_id)
+        .await
+        .ok()
+        .flatten()
+        .map(|record| record.thread_id)
+}
+
+async fn persist_hangout_webhook_thread_from_delivery(
+    repository: &PilotRepository,
+    webhook_id: i64,
+    resource_type: &str,
+    resource_id: &str,
+    existing_thread_name: Option<&str>,
+    delivery: Result<WebhookDeliveryOutcome, String>,
+) {
+    if existing_thread_name.is_some() {
+        return;
+    }
+    let Ok(outcome) = delivery else {
+        return;
+    };
+    let Some(response_body) = outcome.response_body else {
+        return;
+    };
+    let Some(thread_id) = webhook_response_thread_name(&response_body) else {
+        return;
+    };
+    let _ = repository
+        .create_webhook_thread(persistence::CreateWebhookThreadInput {
+            resource_id: resource_id.to_string(),
+            resource_type: resource_type.to_string(),
+            thread_id,
+            webhook_id,
+        })
+        .await;
+}
+
+pub(crate) async fn record_project_webhook_delivery(
+    repository: &PilotRepository,
+    webhook: &persistence::ProjectWebhookRecord,
+    event_type: &str,
+    webhook_type: &str,
+    request_body: &str,
+    delivery: &Result<WebhookDeliveryOutcome, String>,
+) {
+    let (status, response_body, error_message) = match delivery {
+        Ok(outcome) => (
+            "SUCCESS".to_string(),
+            outcome.response_body.clone(),
+            None::<String>,
+        ),
+        Err(error) => ("FAILURE".to_string(), None, Some(error.clone())),
+    };
+    let _ = repository
+        .create_webhook_delivery(persistence::CreateWebhookDeliveryInput {
+            error_message,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url.clone(),
+            request_body: request_body.to_string(),
+            response_body,
+            status,
+            webhook_id: webhook.id,
+            webhook_type: webhook_type.to_string(),
+        })
+        .await;
+}
+
+fn issue_webhook_payload(
+    webhook: &persistence::ProjectWebhookRecord,
+    issue: &persistence::IssueRecord,
+    request_message: &str,
+    detail_markdown: &str,
+    thread_name: Option<&str>,
+) -> String {
+    match webhook.webhook_type {
+        1 => {
+            let mut fields = Vec::new();
+            if !issue.milestone_title.trim().is_empty() {
+                fields.push(serde_json::json!({
+                    "title": "notification.type.milestone.changed",
+                    "value": issue.milestone_title,
+                    "short": true,
+                }));
+            }
+            fields.push(serde_json::json!({
+                "title": "",
+                "value": issue.assignee_label,
+                "short": true,
+            }));
+            fields.push(serde_json::json!({
+                "title": "issue.state",
+                "value": issue.state,
+                "short": true,
+            }));
+            serde_json::json!({
+                "text": request_message,
+                "attachments": [{
+                    "text": detail_markdown,
+                    "fields": fields,
+                    "color": "",
+                }],
+            })
+            .to_string()
+        }
+        2 => serde_json::json!({
+            "text": request_message,
+            "thread": legacy_hangout_thread_json(thread_name),
+        })
+        .to_string(),
+        _ => serde_json::json!({
+            "text": request_message,
+        })
+        .to_string(),
+    }
+}
+
+pub(crate) async fn dispatch_issue_webhooks(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    actor: &persistence::AppUserRecord,
+    event_type: &str,
+    detail_markdown: &str,
+    target_fragment: Option<&str>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(Some(project)) = repository
+        .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
+        .await
+    else {
+        return;
+    };
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+
+    let mut path = format!(
+        "/{}/{}/issue/{}",
+        issue.owner_name, issue.project_name, issue.issue_number
+    );
+    if let Some(fragment) = target_fragment {
+        path.push_str(fragment);
+    }
+    let url = absolute_app_url(public_origin, base_path, &path);
+    let target_label = format!("#{}: {}", issue.issue_number, issue.title);
+    let resource_id = issue.id.to_string();
+
+    for webhook in webhooks.webhooks {
+        if webhook.webhook_type == 3 {
+            continue;
+        }
+        let thread_name = if webhook.webhook_type == 2 {
+            read_existing_webhook_thread_name(repository, webhook.id, "ISSUE_POST", &resource_id)
+                .await
+        } else {
+            None
+        };
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let request_message = format!(
+            "[{}] {} {}{}",
+            project.project_name,
+            actor.display_name,
+            legacy_webhook_event_key(event_type),
+            legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1)
+        );
+        let body = issue_webhook_payload(
+            &webhook,
+            issue,
+            &request_message,
+            detail_markdown,
+            thread_name.as_deref(),
+        );
+        let request_body = body.clone();
+        let delivery = deliver_webhook(OutboundWebhook {
+            body,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
+            webhook_type,
+        });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            event_type,
+            &project_webhook_type_label(webhook.webhook_type),
+            &request_body,
+            &delivery,
+        )
+        .await;
+        if webhook.webhook_type == 2 {
+            persist_hangout_webhook_thread_from_delivery(
+                repository,
+                webhook.id,
+                "ISSUE_POST",
+                &resource_id,
+                thread_name.as_deref(),
+                delivery,
+            )
+            .await;
+        }
+    }
+}
+
+fn pull_request_webhook_payload(
+    webhook: &persistence::ProjectWebhookRecord,
+    pull_request: &persistence::PullRequestDetailRecord,
+    request_message: &str,
+    detail_markdown: &str,
+    thread_name: Option<&str>,
+) -> String {
+    match webhook.webhook_type {
+        1 => serde_json::json!({
+            "text": request_message,
+            "attachments": [{
+                "text": detail_markdown,
+                "fields": [
+                    {
+                        "title": "pullRequest.sender",
+                        "value": pull_request.contributor.user_label,
+                        "short": false,
+                    },
+                    {
+                        "title": "pullRequest.from",
+                        "value": pull_request.from_branch,
+                        "short": true,
+                    },
+                    {
+                        "title": "pullRequest.to",
+                        "value": pull_request.to_branch,
+                        "short": true,
+                    },
+                ],
+                "color": "",
+            }],
+        })
+        .to_string(),
+        2 => serde_json::json!({
+            "text": request_message,
+            "thread": legacy_hangout_thread_json(thread_name),
+        })
+        .to_string(),
+        _ => serde_json::json!({
+            "text": request_message,
+        })
+        .to_string(),
+    }
+}
+
+pub(crate) async fn dispatch_pull_request_webhooks(
+    repository: &PilotRepository,
+    pull_request: &persistence::PullRequestDetailRecord,
+    actor: &persistence::AppUserRecord,
+    event_type: &str,
+    detail_markdown: &str,
+    target_fragment: Option<&str>,
+    reviewed: Option<bool>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(Some(project)) = repository
+        .read_project_by_owner_and_name(&pull_request.owner_name, &pull_request.project_name)
+        .await
+    else {
+        return;
+    };
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+
+    let mut path = format!(
+        "/{}/{}/pullRequest/{}",
+        pull_request.owner_name, pull_request.project_name, pull_request.pull_request_number
+    );
+    if let Some(fragment) = target_fragment {
+        path.push_str(fragment);
+    }
+    let url = absolute_app_url(public_origin, base_path, &path);
+    let target_label = format!(
+        "#{}: {}",
+        pull_request.pull_request_number, pull_request.title
+    );
+    let resource_id = pull_request.id.to_string();
+
+    for webhook in webhooks.webhooks {
+        if webhook.webhook_type == 3 {
+            continue;
+        }
+        let thread_name = if webhook.webhook_type == 2 {
+            read_existing_webhook_thread_name(repository, webhook.id, "PULL_REQUEST", &resource_id)
+                .await
+        } else {
+            None
+        };
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let link = legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1);
+        let request_message = if event_type == "PULL_REQUEST_REVIEW_STATE_CHANGED" {
+            format!(
+                "[{}] {} {}{}",
+                project.project_name,
+                legacy_pull_request_review_key(reviewed.unwrap_or(true)),
+                actor.display_name,
+                link
+            )
+        } else {
+            format!(
+                "[{}] {} {}{}",
+                project.project_name,
+                actor.display_name,
+                legacy_webhook_event_key(event_type),
+                link
+            )
+        };
+        let body = pull_request_webhook_payload(
+            &webhook,
+            pull_request,
+            &request_message,
+            detail_markdown,
+            thread_name.as_deref(),
+        );
+        let request_body = body.clone();
+        let delivery = deliver_webhook(OutboundWebhook {
+            body,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
+            webhook_type,
+        });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            event_type,
+            &project_webhook_type_label(webhook.webhook_type),
+            &request_body,
+            &delivery,
+        )
+        .await;
+        if webhook.webhook_type == 2 {
+            persist_hangout_webhook_thread_from_delivery(
+                repository,
+                webhook.id,
+                "PULL_REQUEST",
+                &resource_id,
+                thread_name.as_deref(),
+                delivery,
+            )
+            .await;
+        }
+    }
+}
+
+async fn rest_require_project_update(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let authorization = require_project_read(repository, owner_name, project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+    Ok(authorization)
+}
+
+pub(crate) async fn rest_read_project_webhooks(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project webhooks require repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, actor_id).await?;
+    let webhooks = repository
+        .list_project_webhooks(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
+}
+
+pub(crate) async fn rest_create_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectWebhookBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project webhooks require repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
+    let payload_url = body.payload_url.trim().to_string();
+    let secret = body.secret.trim().to_string();
+    if payload_url.is_empty() {
+        return Err(RestRouteError::bad_request(
+            "project.webhook.payloadUrl.empty",
+        ));
+    }
+    if payload_url.len() > 2000 {
+        return Err(RestRouteError::bad_request(
+            "project.webhook.payloadUrl.maxLength",
+        ));
+    }
+    if secret.len() > 250 {
+        return Err(RestRouteError::bad_request(
+            "project.webhook.secret.maxLength",
+        ));
+    }
+    let webhook_type = project_webhook_type_code(&body.webhook_type)?;
+    let webhooks = repository
+        .create_project_webhook(persistence::CreateProjectWebhookInput {
+            git_push: body.git_push,
+            payload_url,
+            project_id: authorization.project.id,
+            secret,
+            webhook_type,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
+}
+
+pub(crate) async fn rest_delete_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    webhook_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project webhooks require repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
+    let Some(webhooks) = repository
+        .delete_project_webhook(authorization.project.id, webhook_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    else {
+        return Err(RestRouteError::not_found("project webhook not found"));
+    };
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
+}
+
+fn rest_project_transfer_response(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    transfer: Option<&persistence::ProjectTransferRecord>,
+) -> Result<RestProjectTransferResponse, RestRouteError> {
+    let viewer_can_transfer =
+        project_update_allowed(authorization).map_err(RestRouteError::from_connect_error)?;
+    Ok(RestProjectTransferResponse {
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        viewer_can_transfer,
+        destination: transfer.map(|transfer| transfer.destination.clone()),
+        new_project_name: transfer.map(|transfer| transfer.new_project_name.clone()),
+        redirect_path: transfer.map(|_| {
+            format!(
+                "/{}/{}",
+                authorization.project.owner_name, authorization.project.project_name
+            )
+        }),
+        transfer_id: transfer.map(|transfer| transfer.id),
+        confirm_key: transfer.map(|transfer| transfer.confirm_key.clone()),
+        accept_path: transfer
+            .map(|transfer| format!("/project/transfer/{}/{}", transfer.id, transfer.confirm_key)),
+    })
+}
+
+pub(crate) async fn rest_read_project_transfer(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project transfer requires repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, actor_id).await?;
+    Ok(Json(rest_project_transfer_response(&authorization, None)?).into_response())
+}
+
+pub(crate) async fn rest_request_project_transfer(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectTransferBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project transfer requires repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
+    let destination = body.destination.trim().to_string();
+    if destination.is_empty() {
+        return Err(RestRouteError::bad_request(
+            "project.transfer.owner.required",
+        ));
+    }
+    if destination.eq_ignore_ascii_case(&authorization.project.owner_name) {
+        return Err(RestRouteError::bad_request("project.transfer.sameOwner"));
+    }
+    let destination_exists = repository
+        .find_user_by_login_id(&destination)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .is_some()
+        || repository
+            .read_organization_by_name(&destination)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .is_some();
+    if !destination_exists {
+        return Err(RestRouteError::bad_request(
+            "project.transfer.owner.notFound",
+        ));
+    }
+    let new_project_name = repository
+        .next_project_transfer_name(&destination, &authorization.project.project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let transfer = repository
+        .request_project_transfer(persistence::ProjectTransferRequestInput {
+            destination,
+            new_project_name,
+            project_id: authorization.project.id,
+            sender_id: actor_id,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let sender = repository
+        .find_user_by_id(actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing transfer sender",
+            ))
+        })?;
+    send_project_transfer_request_mail(
+        repository,
+        &authorization,
+        &transfer,
+        &sender,
+        &service.public_origin,
+        &service.base_path,
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(rest_project_transfer_response(
+        &authorization,
+        Some(&transfer),
+    )?)
+    .into_response())
+}
+
+async fn rest_project_fork_owner_options(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    selected_owner_name: &str,
+) -> Result<Vec<RestProjectForkOwnerOption>, RestRouteError> {
+    let mut options = vec![RestProjectForkOwnerOption {
+        organization: false,
+        owner_name: actor.login_id.clone(),
+        selected: actor.login_id.eq_ignore_ascii_case(selected_owner_name),
+    }];
+    for organization in repository
+        .list_organizations()
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        let Some(authorization) = repository
+            .read_organization_authorization(&organization.organization_name, Some(actor.id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if can_create_organization_project(authorization.viewer.is_organization_admin) {
+            let owner_name = authorization.organization.organization_name;
+            let selected = owner_name.eq_ignore_ascii_case(selected_owner_name);
+            options.push(RestProjectForkOwnerOption {
+                organization: true,
+                owner_name,
+                selected,
+            });
+        }
+    }
+    if !options.iter().any(|option| option.selected) {
+        if let Some(first) = options.first_mut() {
+            first.selected = true;
+        }
+    }
+    Ok(options)
+}
+
+async fn rest_project_fork_options_response(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor: &persistence::AppUserRecord,
+    selected_owner_name: &str,
+    selected_project_name: &str,
+    selected_project_scope: &str,
+) -> Result<RestProjectForkOptionsResponse, RestRouteError> {
+    let owner_options =
+        rest_project_fork_owner_options(repository, actor, selected_owner_name).await?;
+    let existing_forks = repository
+        .list_project_forks(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|project| RestProjectForkSummary {
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+        })
+        .collect();
+    Ok(RestProjectForkOptionsResponse {
+        can_fork: authorization.project.vcs.eq_ignore_ascii_case("GIT")
+            && !owner_options.is_empty(),
+        existing_forks,
+        owner_options,
+        selected: RestProjectForkSelected {
+            owner_name: selected_owner_name.to_string(),
+            project_name: selected_project_name.to_string(),
+            project_scope: selected_project_scope.to_string(),
+        },
+        source: RestProjectForkSource {
+            is_forked: authorization.project.original_project_id.is_some(),
+            overview: authorization.project.overview.clone().unwrap_or_default(),
+            owner_name: authorization.project.owner_name.clone(),
+            project_name: authorization.project.project_name.clone(),
+            project_scope: authorization.project.project_scope.clone(),
+            vcs: authorization.project.vcs.clone(),
+        },
+    })
+}
+
+async fn rest_project_fork_target_organization_id(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    target_owner_name: &str,
+) -> Result<Option<i64>, RestRouteError> {
+    if can_create_personal_project(Some(&actor.login_id), target_owner_name) {
+        return Ok(None);
+    }
+    let authorization = repository
+        .read_organization_authorization(target_owner_name, Some(actor.id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::bad_request("project.fork.owner.notFound"))?;
+    if !can_create_organization_project(authorization.viewer.is_organization_admin) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project fork owner is not allowed"),
+        ));
+    }
+    Ok(Some(authorization.organization.id))
+}
+
+pub(crate) async fn rest_read_project_fork_options(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project fork requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, Some(actor_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, Some(actor_id))
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(
+        rest_project_fork_options_response(
+            repository,
+            &authorization,
+            &actor,
+            &actor.login_id,
+            &authorization.project.project_name,
+            &authorization.project.project_scope,
+        )
+        .await?,
+    )
+    .into_response())
+}
+
+pub(crate) async fn rest_fork_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectForkBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project fork requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, Some(actor_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        Some(actor_id),
+        ProjectCreatableResource::Fork,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return Err(RestRouteError::bad_request("project.fork.gitOnly"));
+    }
+    let target_owner_name = body
+        .owner
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&actor.login_id)
+        .to_string();
+    let target_project_name = body
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&authorization.project.project_name)
+        .to_string();
+    let target_scope_value = body
+        .project_scope
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&authorization.project.project_scope);
+    let target_scope = map_project_scope(target_scope_value)
+        .map_err(RestRouteError::from_connect_error)?
+        .as_str()
+        .to_string();
+    if !is_valid_project_name(&target_project_name) {
+        return Err(RestRouteError::bad_request("project.name.invalid"));
+    }
+    let target_organization_id =
+        rest_project_fork_target_organization_id(repository, &actor, &target_owner_name).await?;
+    if repository
+        .project_identifier_exists(&target_owner_name, &target_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::already_exists("project.name.duplicate"),
+        ));
+    }
+
+    let fork = repository
+        .create_fork_project(persistence::CreateForkProjectInput {
+            organization_id: target_organization_id,
+            original_project_id: authorization.project.id,
+            owner_name: target_owner_name.clone(),
+            overview: authorization.project.overview.clone(),
+            project_name: target_project_name.clone(),
+            project_scope: target_scope.clone(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let source_menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .set_project_menu_settings(fork.id, source_menu_settings)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let source_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let fork_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), fork.id);
+    let clone_result = {
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| internal_error("repository provisioning lock poisoned"))
+            .map_err(RestRouteError::from_connect_error)?;
+        yona_rust_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
+    };
+    if let Err(error) = clone_result {
+        let _ = repository
+            .delete_project_by_owner_and_name(&fork.owner_name, &fork.project_name)
+            .await;
+        let _ = yona_rust_vcs::delete_repository(&fork_repo_path);
+        return Err(RestRouteError::from_connect_error(code_browser_error(
+            error,
+        )));
+    }
+    repository
+        .add_project_membership(fork.id, actor_id, "manager")
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let fork_authorization = repository
+        .read_project_authorization(&fork.owner_name, &fork.project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let project = project_detail_from_record(
+        &fork_authorization,
+        project_update_allowed(&fork_authorization).map_err(RestRouteError::from_connect_error)?,
+        false,
+    );
+    Ok(Json(RestProjectForkResponse {
+        ok: true,
+        redirect_path: format!("/{}/{}", fork.owner_name, fork.project_name),
+        project,
+    })
+    .into_response())
+}
+
+fn rest_next_project_vcs(current: &str) -> String {
+    if current == "GIT" {
+        "Subversion".to_string()
+    } else {
+        "GIT".to_string()
+    }
+}
+
+fn rest_project_change_vcs_response(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    redirect_path: Option<String>,
+) -> Result<RestProjectChangeVcsResponse, RestRouteError> {
+    let viewer_can_change =
+        project_update_allowed(authorization).map_err(RestRouteError::from_connect_error)?;
+    Ok(RestProjectChangeVcsResponse {
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        current_vcs: authorization.project.vcs.clone(),
+        next_vcs: rest_next_project_vcs(&authorization.project.vcs),
+        viewer_can_change,
+        redirect_path,
+    })
+}
+
+pub(crate) fn delete_project_repository_storage(project_id: i64) -> Result<(), RestRouteError> {
+    let data_root = yona_data_root();
+    let git_repo_path = yona_rust_vcs::repository_path(&data_root, project_id);
+    let svn_repo_path = yona_rust_vcs::svn_repository_path(&data_root, project_id);
+    let _guard = repository_provisioning_lock()
+        .lock()
+        .map_err(|_| internal_error("repository provisioning lock poisoned"))
+        .map_err(RestRouteError::from_connect_error)?;
+    yona_rust_vcs::delete_repository(&git_repo_path)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    yona_rust_vcs::delete_repository(&svn_repo_path)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+fn reset_project_repository_storage(project_id: i64, vcs: &str) -> Result<(), RestRouteError> {
+    delete_project_repository_storage(project_id)?;
+    let _guard = repository_provisioning_lock()
+        .lock()
+        .map_err(|_| internal_error("repository provisioning lock poisoned"))
+        .map_err(RestRouteError::from_connect_error)?;
+    let repo_path = yona_rust_vcs::repository_path_for_vcs(&yona_data_root(), project_id, vcs);
+    if vcs == "Subversion" {
+        return yona_rust_vcs::create_svn_repository(&repo_path)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error);
+    }
+    yona_rust_vcs::create_bare_repository(&repo_path)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+pub(crate) async fn rest_read_project_change_vcs(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project change VCS requires repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, actor_id).await?;
+    Ok(Json(rest_project_change_vcs_response(&authorization, None)?).into_response())
+}
+
+pub(crate) async fn rest_change_project_vcs(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project change VCS requires repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
+    let next_vcs = rest_next_project_vcs(&authorization.project.vcs);
+    if next_vcs == "Subversion" {
+        yona_rust_vcs::ensure_svnadmin_available()
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+    let changed = repository
+        .change_project_vcs(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    reset_project_repository_storage(changed.id, &changed.vcs)?;
+    let mut changed_authorization = authorization;
+    changed_authorization.project = changed;
+    Ok(Json(rest_project_change_vcs_response(
+        &changed_authorization,
+        Some(format!("/{owner_name}/{project_name}")),
+    )?)
+    .into_response())
+}
+
+pub(crate) async fn rest_update_project(
+    headers: HeaderMap,
+    current_owner_name: String,
+    current_project_name: String,
+    body: RestProjectUpdateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let menu_settings = body.menu_settings();
+    let reviewer_settings = body.reviewer_settings();
+    let logo_attachment_id = body.logo_attachment_id;
+    let owner_name = current_owner_name.clone();
+    let request = UpdateProjectRequest {
+        current_owner_name,
+        current_project_name,
+        owner_name,
+        overview: body.overview,
+        project_name: body.project_name,
+        project_scope: body.project_scope,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectRequestView<'static>>(&request)?;
+    let (mut payload, ctx) = service
+        .update_project(Context::new(headers.clone()), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if let Some(menu_settings) = menu_settings {
+        rest_update_project_menu_settings(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            menu_settings,
+        )
+        .await?;
+    }
+    if let Some(reviewer_settings) = reviewer_settings {
+        rest_update_project_reviewer_settings(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            reviewer_settings,
+        )
+        .await?;
+    }
+    if let Some(logo_attachment_id) = logo_attachment_id.filter(|attachment_id| *attachment_id > 0)
+    {
+        payload.logo_url = rest_update_project_logo_attachment(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            logo_attachment_id,
+        )
+        .await?;
+    }
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_logo_attachment(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    attachment_id: i64,
+) -> Result<String, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("project logo requires repository backend"),
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, owner_name, project_name, Some(actor_id)).await?;
+    let attachment = repository
+        .read_attachment_by_id(attachment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("attachment not found"))?;
+    if !attachment.mime_type.starts_with("image/") || attachment.size > 5 * 1024 * 1024 {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project logo must be an image no larger than 5MB"),
+        ));
+    }
+    repository
+        .set_project_logo_attachment(authorization.project.id, attachment_id, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "project logo attachment is not owned by the actor",
+            ))
+        })?;
+    Ok(base_path_href(
+        &service.base_path,
+        &format!("/files/{attachment_id}"),
+    ))
+}
+
+async fn rest_update_project_menu_settings(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    menu_settings: persistence::ProjectMenuSettingsRecord,
+) -> Result<(), RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    repository
+        .set_project_menu_settings(authorization.project.id, menu_settings)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+async fn rest_update_project_reviewer_settings(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    reviewer_settings: RestProjectReviewerSettings,
+) -> Result<(), RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    let default_reviewer_count = reviewer_settings
+        .default_reviewer_count
+        .unwrap_or(authorization.project.default_reviewer_count)
+        .max(1);
+    let is_using_reviewer_count = reviewer_settings
+        .is_using_reviewer_count
+        .unwrap_or(authorization.project.is_using_reviewer_count);
+    repository
+        .set_project_reviewer_settings(
+            authorization.project.id,
+            default_reviewer_count,
+            is_using_reviewer_count,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+pub(crate) async fn rest_update_project_overview(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectOverviewBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectOverviewRequest {
+        owner_name,
+        overview: body.overview,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectOverviewRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_overview(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_delete_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project delete requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project delete is not allowed"),
+        ));
+    }
+    let project_id = authorization.project.id;
+
+    repository
+        .delete_project_by_owner_and_name(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    delete_project_repository_storage(project_id)?;
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/".to_string(),
+    })
+    .into_response())
+}
+
+pub(crate) async fn rest_enroll_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = EnrollProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<EnrollProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .enroll_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_cancel_enroll_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CancelEnrollProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CancelEnrollProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .cancel_enroll_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_toggle_favorite_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleFavoriteProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ToggleFavoriteProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_favorite_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_toggle_project_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    watching: bool,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleProjectWatchRequest {
+        owner_name,
+        project_name,
+        watching,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ToggleProjectWatchRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_project_watch(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()

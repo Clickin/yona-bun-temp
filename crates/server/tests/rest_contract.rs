@@ -1477,6 +1477,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(listed["items"].as_array().unwrap().len(), 1);
+    assert_eq!(listed["items"][0]["ownerName"], "owner");
     assert_eq!(listed["items"][0]["projectName"], "projectYobi");
 
     let detail = ok_json(
@@ -1505,6 +1506,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
+    assert_eq!(container["ownerName"], "owner");
     assert_eq!(container["projectName"], "projectYobi");
 
     let forbidden_settings = rest(
@@ -1552,6 +1554,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
+    assert_eq!(settings["ownerName"], "owner");
     assert_eq!(settings["projectName"], "projectYobi");
 
     let members = ok_json(
