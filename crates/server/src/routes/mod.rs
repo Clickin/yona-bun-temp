@@ -75,9 +75,10 @@ pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
-    accepts_legacy_json, base_path_href, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown, form_bool, form_value,
-    format_project_date_label, gravatar_url, headers_with_form_csrf,
+    accepts_legacy_json, base_path_href, build_organization_admin_response,
+    build_organization_container_response, build_project_container_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown, form_bool,
+    form_value, format_project_date_label, gravatar_url, headers_with_form_csrf,
     issue_label_category_from_record, issue_label_css, issue_label_from_record,
     legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
     legacy_external_api_token_from_headers, legacy_external_attachment_result,
@@ -93,7 +94,8 @@ pub(crate) use utils::{
     project_detail_from_record, project_detail_with_logo_from_record,
     project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
     project_milestone_summary_from_record, rest_board_label_from_record, user_issue_filter_name,
-    user_issue_state, RestBoardLabel,
+    user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
+    RestBoardLabel,
 };
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;

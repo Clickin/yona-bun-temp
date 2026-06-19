@@ -12,15 +12,21 @@ use std::collections::HashMap;
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
+    absolute_app_url,
     generated::yona::pilot::v1::{
-        IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationDetail,
-        OrganizationEnrollmentRequestSummary, OrganizationIssueListItem, OrganizationMemberSummary,
-        OrganizationRoleOption, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
-        ProjectMilestoneSummary,
+        IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
+        OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
+        OrganizationIssueListItem, OrganizationMemberSummary, OrganizationProjectCard,
+        OrganizationRoleOption, ProjectContainer, ProjectDetail, ProjectIssueListItem,
+        ProjectMemberSummary, ProjectMilestoneSummary,
     },
-    internal_error, normalize_identifier, persistence, require_valid_csrf,
+    internal_error, normalize_identifier, persistence, project_read_allowed,
+    project_update_allowed, require_valid_csrf,
     session::SessionManager,
     ConnectError, ErrorCode, PilotRepository, RestRouteError,
+};
+use yona_rust_domain::{
+    can_create_organization_project, can_request_project_enrollment, can_update_organization,
 };
 
 pub(crate) fn legacy_external_random_storage_token() -> String {
@@ -402,6 +408,415 @@ pub(crate) fn project_milestone_summary_from_record(
         title: record.title.clone(),
         ..Default::default()
     }
+}
+
+async fn resolve_project_origin(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+) -> Result<(String, String), ConnectError> {
+    let Some(origin_project_id) = project.original_project_id else {
+        return Ok((String::new(), String::new()));
+    };
+    let Some(origin_project) = repository
+        .read_project_by_id(origin_project_id)
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok((String::new(), String::new()));
+    };
+    Ok((origin_project.owner_name, origin_project.project_name))
+}
+
+pub(crate) async fn build_organization_container_response(
+    repository: &PilotRepository,
+    base_path: &str,
+    authorization: &persistence::OrganizationAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<OrganizationContainer, ConnectError> {
+    let can_view_roster = authorization.viewer.is_organization_member
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_site_admin;
+    let viewer_can_update = can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    );
+    let viewer_can_create_project =
+        can_create_organization_project(authorization.viewer.is_organization_admin)
+            || authorization.viewer.is_site_admin;
+
+    let directory = if can_view_roster {
+        Some(
+            repository
+                .read_organization_members(&authorization.organization.organization_name)
+                .await
+                .map_err(internal_error)?,
+        )
+    } else {
+        None
+    };
+    let admin_count = directory
+        .as_ref()
+        .map(|directory| {
+            directory
+                .members
+                .iter()
+                .filter(|member| member.role == "org_admin")
+                .count()
+        })
+        .unwrap_or(0);
+    let viewer_can_enroll = actor_id.is_some()
+        && authorization.viewer.is_guest
+        && !authorization.viewer.is_organization_admin
+        && !authorization.viewer.is_organization_member
+        && !authorization.viewer.is_site_admin;
+    let viewer_can_leave = actor_id.is_some()
+        && (authorization.viewer.is_organization_member
+            || authorization.viewer.is_organization_admin)
+        && (!authorization.viewer.is_organization_admin || admin_count > 1);
+
+    let projects = repository
+        .list_projects_for_organization(authorization.organization.id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if !project_read_allowed(&project_authorization, actor_id.is_none())? {
+            continue;
+        }
+        let (origin_owner_name, origin_project_name) =
+            resolve_project_origin(repository, &project_authorization.project).await?;
+        let is_watching = if let Some(user_id) = actor_id {
+            repository
+                .is_watching_project(user_id, project_authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            false
+        };
+        visible_projects.push(OrganizationProjectCard {
+            created_label: format_project_date_label(project_authorization.project.created_date),
+            is_watching,
+            last_pushed_label: format_project_date_label(
+                project_authorization.project.last_pushed_date,
+            ),
+            logo_url: project_logo_url(repository, base_path, project_authorization.project.id)
+                .await?,
+            member_count: repository
+                .count_project_members(project_authorization.project.id)
+                .await
+                .map_err(internal_error)?,
+            origin_owner_name,
+            origin_project_name,
+            overview: project_authorization
+                .project
+                .overview
+                .clone()
+                .unwrap_or_default(),
+            owner_name: project_authorization.project.owner_name.clone(),
+            project_name: project_authorization.project.project_name.clone(),
+            project_scope: project_authorization.project.project_scope.clone(),
+            watch_count: repository
+                .count_project_watchers(project_authorization.project.id)
+                .await
+                .map_err(internal_error)?,
+            ..Default::default()
+        });
+    }
+
+    let admin_members = directory
+        .as_ref()
+        .map(|directory| {
+            directory
+                .members
+                .iter()
+                .filter(|member| member.role == "org_admin")
+                .map(organization_member_summary_from_record)
+                .collect()
+        })
+        .unwrap_or_default();
+    let member_members = directory
+        .as_ref()
+        .map(|directory| {
+            directory
+                .members
+                .iter()
+                .filter(|member| member.role != "org_admin")
+                .map(organization_member_summary_from_record)
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok(OrganizationContainer {
+        admin_members,
+        description: authorization
+            .organization
+            .description
+            .clone()
+            .unwrap_or_default(),
+        enrollment_requested: authorization.enrollment_requested,
+        logo_url: organization_logo_url(repository, base_path, authorization.organization.id)
+            .await?,
+        member_members,
+        organization_name: authorization.organization.organization_name.clone(),
+        viewer_can_create_project,
+        viewer_can_enroll,
+        viewer_can_leave,
+        viewer_can_update,
+        visible_projects,
+        ..Default::default()
+    })
+}
+
+pub(crate) async fn visible_projects_for_organization(
+    repository: &PilotRepository,
+    organization_id: i64,
+    actor_id: Option<i64>,
+) -> Result<Vec<persistence::ProjectRecord>, ConnectError> {
+    let projects = repository
+        .list_projects_for_organization(organization_id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if project_read_allowed(&project_authorization, actor_id.is_none())? {
+            visible_projects.push(project_authorization.project);
+        }
+    }
+    Ok(visible_projects)
+}
+
+pub(crate) async fn visible_code_projects_for_organization(
+    repository: &PilotRepository,
+    organization_id: i64,
+    actor_id: Option<i64>,
+) -> Result<Vec<persistence::ProjectRecord>, ConnectError> {
+    let projects = repository
+        .list_projects_for_organization(organization_id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if project_read_allowed(&project_authorization, actor_id.is_none())?
+            && project_code_menu_visible(&project_authorization, true)
+        {
+            visible_projects.push(project_authorization.project);
+        }
+    }
+    Ok(visible_projects)
+}
+
+pub(crate) async fn build_organization_admin_response(
+    repository: &PilotRepository,
+    authorization: &persistence::OrganizationAuthorizationRecord,
+) -> Result<OrganizationAdminView, ConnectError> {
+    let directory = repository
+        .read_organization_members(&authorization.organization.organization_name)
+        .await
+        .map_err(internal_error)?;
+    let delete_allowed = repository
+        .list_projects_for_organization(authorization.organization.id)
+        .await
+        .map_err(internal_error)?
+        .is_empty();
+
+    Ok(OrganizationAdminView {
+        delete_allowed,
+        enrollment_requests: directory
+            .enrollment_requests
+            .iter()
+            .map(organization_enrollment_request_summary_from_record)
+            .collect(),
+        members: directory
+            .members
+            .iter()
+            .map(organization_admin_member_from_record)
+            .collect(),
+        organization_name: authorization.organization.organization_name.clone(),
+        role_options: organization_role_options(),
+        viewer_can_update: can_update_organization(
+            authorization.viewer.is_organization_admin,
+            authorization.viewer.is_site_admin,
+        ),
+        ..Default::default()
+    })
+}
+
+pub(crate) async fn build_project_container_response(
+    repository: &PilotRepository,
+    public_origin: &str,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<ProjectContainer, ConnectError> {
+    let viewer_can_update = if actor_id.is_some() {
+        project_update_allowed(authorization)?
+    } else {
+        false
+    };
+    let viewer_can_enroll = can_request_project_enrollment(
+        actor_id.is_some(),
+        authorization.viewer.is_guest,
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_organization_member,
+        authorization.viewer.is_project_manager,
+        authorization.viewer.is_project_member,
+        authorization.viewer.is_site_admin,
+    );
+    let viewer_can_watch = actor_id.is_some() && project_read_allowed(authorization, false)?;
+    let member_count = repository
+        .count_project_members(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let watch_count = repository
+        .count_project_watchers(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let show_code = project_code_menu_visible(authorization, menu_settings.code);
+    let show_pull_request = show_code && menu_settings.pull_request;
+    let show_review = show_code && menu_settings.review;
+    let show_issue = menu_settings.issue;
+    let show_milestone = menu_settings.milestone;
+    let show_board = menu_settings.board;
+    let show_admin = viewer_can_update;
+    let is_watching = if let Some(user_id) = actor_id {
+        repository
+            .is_watching_project(user_id, authorization.project.id)
+            .await
+            .map_err(internal_error)?
+    } else {
+        false
+    };
+    let project_directory = repository
+        .read_project_members(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(internal_error)?;
+    let members = project_directory
+        .members
+        .iter()
+        .map(project_member_summary_from_record)
+        .collect();
+    let current_milestone = if show_milestone {
+        repository
+            .read_current_milestone_for_project(authorization.project.id)
+            .await
+            .map_err(internal_error)?
+            .map(|record| project_milestone_summary_from_record(&record))
+            .into()
+    } else {
+        None.into()
+    };
+    let (origin_owner_name, origin_project_name) =
+        resolve_project_origin(repository, &authorization.project).await?;
+
+    Ok(ProjectContainer {
+        background_url: String::new(),
+        board_count: if show_board {
+            repository
+                .count_project_boards(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        clone_url: if show_code {
+            absolute_app_url(
+                public_origin,
+                base_path,
+                &format!(
+                    "/{}/{}.git",
+                    authorization.project.owner_name, authorization.project.project_name
+                ),
+            )
+        } else {
+            String::new()
+        },
+        code_member_only: authorization.project.is_code_accessible_member_only,
+        current_milestone,
+        default_tab: "readme".to_string(),
+        enrollment_requested: authorization.enrollment_requested,
+        is_favorited: authorization.is_favorited,
+        is_forked: authorization.project.original_project_id.is_some(),
+        is_watching,
+        logo_url: project_logo_url(repository, base_path, authorization.project.id).await?,
+        member_count,
+        members,
+        open_issue_count: if show_issue {
+            repository
+                .count_open_issues_for_project(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        open_pull_request_count: if show_pull_request {
+            repository
+                .count_open_pull_requests_for_project(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        organization_name: authorization
+            .project
+            .organization_name
+            .clone()
+            .unwrap_or_default(),
+        origin_owner_name,
+        origin_project_name,
+        overview: authorization.project.overview.clone().unwrap_or_default(),
+        overview_editable: viewer_can_update,
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        project_scope: authorization.project.project_scope.clone(),
+        review_count: if show_review {
+            repository
+                .count_project_reviews(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        show_admin,
+        show_board,
+        show_code,
+        show_issue,
+        show_milestone,
+        show_pull_request,
+        show_review,
+        viewer_can_enroll,
+        viewer_can_update,
+        viewer_can_watch,
+        watch_count,
+        ..Default::default()
+    })
 }
 
 pub(crate) fn base_path_href(base_path: &str, path: &str) -> String {
