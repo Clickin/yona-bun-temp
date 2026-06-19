@@ -786,6 +786,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   dispatch remains in the protocol module. This preserves revision-date lookup
   and deleted-revision discovery covered by
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN `log-report` response handling moved
+  from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_log.rs`; REPORT method dispatch
+  remains in the protocol module. This preserves log metadata, changed-path
+  filtering, and verbose SVN client log behavior covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
+  and
+  `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`.
 
 ## Wave 0 Exit Snapshot
 

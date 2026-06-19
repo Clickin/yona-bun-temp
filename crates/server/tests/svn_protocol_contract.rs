@@ -5,8 +5,9 @@ use http_body_util::BodyExt;
 
 // Guards SVN protocol OPTIONS, activity/merge choreography, write mutation,
 // href, path, PROPFIND property/item rendering, update-report, REPORT
-// filtering/location/revision responses, delta, date, XML, lock, and report
-// item behavior while focused helpers move out of the request dispatch module.
+// filtering/location/revision/log responses, delta, date, XML, lock, and
+// report item behavior while focused helpers move out of the request dispatch
+// module.
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
 use std::path::Path;
