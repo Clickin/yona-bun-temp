@@ -2679,7 +2679,7 @@ async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_passwo
 }
 
 #[tokio::test]
-// Guards workspace overview projection helpers owned by the workspace route module.
+// Guards workspace route-owned overview helpers through REST workspace settings routes.
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
@@ -3332,6 +3332,7 @@ async fn update_profile_replaces_existing_avatar_attachment() {
 }
 
 #[tokio::test]
+// Guards workspace route-owned overview/default-landing helpers through proto adapters.
 async fn workspace_overview_reads_and_updates_default_landing() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

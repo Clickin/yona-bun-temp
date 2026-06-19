@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
+use buffa::view::OwnedView;
 use http::header::SET_COOKIE;
 use std::collections::HashMap;
 
@@ -19,8 +20,9 @@ use crate::{
     base_path_href, escape_html_attr, escape_html_text, gravatar_url, headers_with_form_csrf,
     internal_error, legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
     normalize_default_landing_path, normalize_identifier, read_issue_access, redirect_to,
-    require_authenticated_user, resolve_current_session_response, rest_json_response,
-    rest_owned_view, send_workspace_email_validation_mail,
+    require_authenticated_user, require_session, require_valid_csrf,
+    resolve_current_session_response, rest_json_response, rest_owned_view,
+    send_workspace_email_validation_mail,
     session::{self, SessionManager},
     AuthUiConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
     WorkspaceIssueItem,
@@ -461,6 +463,56 @@ pub(crate) async fn build_workspace_overview_response(
         watched_projects,
         ..Default::default()
     })
+}
+
+pub(crate) async fn workspace_overview_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "workspace requires repository backend",
+        ));
+    };
+    Ok((
+        build_workspace_overview_response(repository, &session, &service.base_path).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn workspace_default_landing_path_set(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<SetDefaultLandingPathRequestView<'static>>,
+) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "workspace requires repository backend",
+        ));
+    };
+
+    let Some(path) = normalize_default_landing_path(Some(&request.path)) else {
+        return Err(ConnectError::invalid_argument(
+            "invalid default landing path",
+        ));
+    };
+    repository
+        .set_default_landing_path(user_id, Some(path))
+        .await
+        .map_err(internal_error)?;
+
+    Ok((
+        build_workspace_overview_response(repository, &session, &service.base_path).await?,
+        ctx,
+    ))
 }
 
 async fn direct_legacy_leave_project(
@@ -2109,8 +2161,8 @@ pub(crate) async fn rest_read_workspace_overview(
 ) -> Result<Response, RestRouteError> {
     let request = ReadWorkspaceOverviewRequest::default();
     let request = rest_owned_view::<ReadWorkspaceOverviewRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_workspace_overview(Context::new(headers), request)
+    let _request = request;
+    let (payload, ctx) = workspace_overview_read(&service, Context::new(headers))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2167,10 +2219,10 @@ pub(crate) async fn rest_set_default_landing_path(
         ..Default::default()
     };
     let request = rest_owned_view::<SetDefaultLandingPathRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .set_default_landing_path(Context::new(headers), request)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let (payload, ctx) =
+        workspace_default_landing_path_set(&service, Context::new(headers), request)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
 }
 

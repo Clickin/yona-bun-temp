@@ -383,6 +383,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`,
   and
   `auth_workspace_contract::register_with_email_verification_creates_signup_verification_and_mail_delivery`.
+- 2026-06-20 build/check diet note: workspace overview read and default-landing
+  update RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/workspace.rs`,
+  preserving authenticated workspace overview projection, default landing path
+  validation/update, CSRF enforcement, and refreshed overview response behavior
+  covered by
+  `auth_workspace_contract::workspace_overview_reads_and_updates_default_landing`
+  and
+  `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`.
 
 ## Wave 0 Exit Snapshot
 

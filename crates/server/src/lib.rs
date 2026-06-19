@@ -100,10 +100,11 @@ pub(crate) use routes::{
     site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
     uploaded_file_path, user_issue_filter_name, user_issue_state,
     visible_code_projects_for_organization, visible_projects_for_organization,
-    visible_user_issue_items, workspace_avatar_url, workspace_invalid_argument,
-    workspace_profile_from_record, ProjectCreatableResource, RestBoardLabel,
-    RestIssueAssignableUsersQuery, RestProjectDeleteResponse, RestProjectIssuesQuery,
-    RestReviewThread, RestReviewThreadListQuery, RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
+    visible_user_issue_items, workspace_avatar_url, workspace_default_landing_path_set,
+    workspace_invalid_argument, workspace_overview_read, workspace_profile_from_record,
+    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
+    RestProjectDeleteResponse, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
+    RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub mod runtime_config;
 mod server_config;
@@ -1092,16 +1093,7 @@ impl PilotServiceImpl {
         ctx: Context,
         _request: OwnedView<ReadWorkspaceOverviewRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_overview_read(self, ctx).await
     }
 
     async fn set_default_landing_path(
@@ -1109,33 +1101,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<SetDefaultLandingPathRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-
-        let Some(path) = normalize_default_landing_path(Some(&request.path)) else {
-            return Err(ConnectError::invalid_argument(
-                "invalid default landing path",
-            ));
-        };
-        repository
-            .set_default_landing_path(user_id, Some(path))
-            .await
-            .map_err(internal_error)?;
-
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_default_landing_path_set(self, ctx, request).await
     }
 
     async fn update_profile(
