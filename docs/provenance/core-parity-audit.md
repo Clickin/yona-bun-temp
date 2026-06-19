@@ -150,6 +150,8 @@ Legacy external issue utility diet note: legacy external issue API handler bodie
 
 Site admin route module diet note: REST site-admin route registration plus the user/project/post/issue/diagnostics/update/mail/export/import handler bodies and site-admin mapping helpers moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/site_admin.rs` on 2026-06-19. This is a route-module ownership build/check diet change; behavior remains covered by `site_admin_contract`.
 
+Issue label route module diet note: direct issue label/category/copy/CSS handler bodies for `/:owner/:project/issue/labels*`, `/:owner/:project/copyLabels`, and `/:owner/:project/issue/label/categories*` moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/issues.rs` on 2026-06-19, while shared form/color/CSS helpers moved into `crates/server/src/routes/utils.rs`. This is a route-module ownership build/check diet change; behavior remains covered by `issue_label_contract`.
+
 ## Phase 4E Review Comment Attachment Note
 
 PR review comment attachment readback now follows the legacy `partial_comment_thread.scala.html` and `code/partial_nonrange_codecomment_thread.scala.html` behavior: ranged and non-ranged review comment shells render `.attachments[data-attachments]` from `AttachmentApp.getFileList(comment.asResource().getType().toString(), comment.id.toString())`, using the legacy `REVIEW_COMMENT` container metadata in the REST comment payload.

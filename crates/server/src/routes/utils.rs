@@ -129,6 +129,62 @@ pub(crate) fn headers_with_form_csrf(
     headers
 }
 
+pub(crate) fn form_value<'a>(form: &'a HashMap<String, String>, keys: &[&str]) -> &'a str {
+    keys.iter()
+        .find_map(|key| form.get(*key).map(String::as_str))
+        .unwrap_or("")
+}
+
+pub(crate) fn form_bool(form: &HashMap<String, String>, keys: &[&str]) -> bool {
+    matches!(
+        form_value(form, keys).trim().to_ascii_lowercase().as_str(),
+        "true" | "1" | "on" | "yes"
+    )
+}
+
+pub(crate) fn normalize_issue_label_color(value: &str) -> Result<String, ConnectError> {
+    let trimmed = value.trim().trim_start_matches('#');
+    let expanded = match trimmed.len() {
+        3 if trimmed.chars().all(|item| item.is_ascii_hexdigit()) => trimmed
+            .chars()
+            .flat_map(|item| [item, item])
+            .collect::<String>(),
+        6 if trimmed.chars().all(|item| item.is_ascii_hexdigit()) => trimmed.to_string(),
+        _ => return Err(ConnectError::invalid_argument("invalid issue label color")),
+    };
+    Ok(format!("#{}", expanded.to_ascii_lowercase()))
+}
+
+fn issue_label_text_color(background: &str) -> &'static str {
+    let normalized =
+        normalize_issue_label_color(background).unwrap_or_else(|_| "#ffffff".to_string());
+    let hex = normalized.trim_start_matches('#');
+    let red = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255) as f64;
+    let green = u8::from_str_radix(&hex[2..4], 16).unwrap_or(255) as f64;
+    let blue = u8::from_str_radix(&hex[4..6], 16).unwrap_or(255) as f64;
+    let color_space = (red * 0.21) + (green * 0.72) + (blue * 0.07);
+    if color_space > 192.0 {
+        "dimgray"
+    } else {
+        "white"
+    }
+}
+
+pub(crate) fn issue_label_css(labels: &[persistence::IssueLabelRecord]) -> String {
+    labels
+        .iter()
+        .map(|label| {
+            let color = normalize_issue_label_color(&label.color)
+                .unwrap_or_else(|_| "#ffffff".to_string());
+            let text_color = issue_label_text_color(&color);
+            format!(
+                ".issue-label[data-label-id=\"{}\"]{{\n    box-shadow: inset 2px 0 0px {};\n    -webkit-box-shadow: inset 2px 0 0px {};\n    -moz-box-shadow: inset 2px 0 0px {};\n}}\n.issue-label.active[data-label-id=\"{}\"]{{\n    background-color: {};\n    color: {};\n}}\n",
+                label.id, color, color, color, label.id, color, text_color
+            )
+        })
+        .collect()
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct LegacyBoardContentUpdateBody {
     pub(crate) content: String,

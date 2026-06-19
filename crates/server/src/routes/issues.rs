@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, Query, RawQuery},
     http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
@@ -18,20 +18,18 @@ use super::utils::{
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
-    absolute_app_url, direct_copy_issue_labels, direct_create_issue_comment,
-    direct_create_issue_label, direct_create_issue_label_category, direct_delete_issue_comment,
-    direct_delete_issue_label, direct_delete_issue_label_category, direct_issue_comment_vote,
-    direct_issue_label_css, direct_list_issue_label_categories, direct_list_issue_labels,
-    direct_update_issue_comment, direct_update_issue_label, direct_update_issue_label_category,
-    dispatch_issue_webhooks, internal_error,
+    absolute_app_url, direct_create_issue_comment, direct_delete_issue_comment,
+    direct_issue_comment_vote, direct_project_update_allowed, direct_update_issue_comment,
+    dispatch_issue_webhooks, form_bool, form_value, internal_error,
     issue_detail_response_from_record_with_repository_issue_references,
-    issue_detail_response_from_record_with_sharer_flags, markdown_issue_references_for_project,
-    markdown_mention_references, normalize_identifier, persistence, project_read_allowed,
-    require_authenticated_user, require_project_authorization, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf, rest_assign_issue,
-    rest_copy_project_labels, rest_create_project_label, rest_create_project_label_category,
-    rest_create_project_milestone, rest_delete_project_label, rest_delete_project_label_category,
-    rest_delete_project_milestone, rest_issue_comment_participation,
+    issue_detail_response_from_record_with_sharer_flags, issue_label_css,
+    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
+    normalize_issue_label_color, persistence, project_read_allowed, require_authenticated_user,
+    require_project_authorization, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, rest_assign_issue, rest_copy_project_labels,
+    rest_create_project_label, rest_create_project_label_category, rest_create_project_milestone,
+    rest_delete_project_label, rest_delete_project_label_category, rest_delete_project_milestone,
+    rest_issue_comment_participation,
     rest_issue_detail_response_from_record_with_sharer_flags_and_references,
     rest_issue_list_item_from_record, rest_issue_mutation_input_from_body,
     rest_issue_participation, rest_issue_reference_metadata_from_resolved,
@@ -57,6 +55,418 @@ use crate::{
     RestProjectLabelUpdateBody, RestProjectMilestoneBody, RestProjectMilestoneStateBody,
     RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
+
+fn direct_json_label(label: &persistence::IssueLabelRecord) -> serde_json::Value {
+    serde_json::json!({
+        "id": label.id.to_string(),
+        "name": label.name,
+        "color": label.color,
+        "category": label.category_name,
+        "categoryId": label.category_id.unwrap_or_default().to_string(),
+        "categoryIsExclusive": label.category_is_exclusive,
+    })
+}
+
+fn direct_json_category(category: &persistence::IssueLabelCategoryRecord) -> serde_json::Value {
+    serde_json::json!({
+        "id": category.id.to_string(),
+        "name": category.name,
+        "isExclusive": category.is_exclusive.to_string(),
+    })
+}
+
+pub(crate) async fn direct_list_issue_labels(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository.list_project_labels(&owner, &project).await {
+        Ok(labels) => {
+            Json(labels.iter().map(direct_json_label).collect::<Vec<_>>()).into_response()
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) async fn direct_create_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let label_name = form_value(&form, &["labelName", "name"]).trim();
+    let category_name = form_value(&form, &["categoryName", "category"]).trim();
+    let color = match normalize_issue_label_color(form_value(&form, &["labelColor", "color"])) {
+        Ok(color) => color,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    if label_name.is_empty() || category_name.is_empty() {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    match repository
+        .create_project_label(persistence::CreateProjectLabelInput {
+            category_is_exclusive: form_bool(&form, &["categoryIsExclusive", "isExclusive"]),
+            category_name: category_name.to_string(),
+            label_color: color,
+            label_name: label_name.to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some((label, true))) => {
+            (StatusCode::CREATED, Json(direct_json_label(&label))).into_response()
+        }
+        Ok(Some((_label, false))) => StatusCode::NO_CONTENT.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) async fn direct_issue_label_css(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository.list_project_labels(&owner, &project).await {
+        Ok(labels) => (
+            [(http::header::CONTENT_TYPE, "text/css")],
+            issue_label_css(&labels),
+        )
+            .into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) async fn direct_update_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let category_id = form_value(&form, &["category.id", "categoryId"])
+        .parse::<i64>()
+        .unwrap_or_default();
+    let color = match normalize_issue_label_color(form_value(&form, &["color", "labelColor"])) {
+        Ok(color) => color,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    match repository
+        .update_project_label(persistence::UpdateProjectLabelInput {
+            category_id,
+            label_color: color,
+            label_id,
+            label_name: form_value(&form, &["name", "labelName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some(_)) => StatusCode::OK.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+pub(crate) async fn direct_delete_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if form_value(&form, &["_method"]).to_ascii_lowercase() != "delete" {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_label(&owner, &project, label_id)
+        .await
+    {
+        Ok(true) => StatusCode::OK.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) async fn direct_copy_issue_labels(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let redirect_response = || {
+        Redirect::to(&base_path_href(
+            &base_path,
+            &format!("/{owner}/{project}/issue/labelsform"),
+        ))
+        .into_response()
+    };
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+    let from_owner = form_value(&form, &["owner", "fromOwnerName"]).trim();
+    let from_project = form_value(&form, &["projectName", "fromProjectName"]).trim();
+    if from_owner.is_empty() || from_project.is_empty() {
+        return redirect_response();
+    }
+    if require_project_read(&repository, from_owner, from_project, session.user_id)
+        .await
+        .is_ok()
+    {
+        if repository
+            .copy_project_labels(from_owner, from_project, &owner, &project)
+            .await
+            .is_err()
+        {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    }
+    redirect_response()
+}
+
+pub(crate) async fn direct_list_issue_label_categories(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository
+        .list_project_label_categories(&owner, &project)
+        .await
+    {
+        Ok(categories) => Json(
+            categories
+                .iter()
+                .map(direct_json_category)
+                .collect::<Vec<_>>(),
+        )
+        .into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) async fn direct_create_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .create_project_label_category(persistence::CreateProjectLabelCategoryInput {
+            category_is_exclusive: form_bool(&form, &["isExclusive", "categoryIsExclusive"]),
+            category_name: form_value(&form, &["name", "categoryName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some((category, true))) => {
+            (StatusCode::CREATED, Json(direct_json_category(&category))).into_response()
+        }
+        Ok(Some((_category, false))) => StatusCode::NO_CONTENT.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+pub(crate) async fn direct_update_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .update_project_label_category(persistence::UpdateProjectLabelCategoryInput {
+            category_id,
+            category_is_exclusive: form_bool(&form, &["isExclusive", "categoryIsExclusive"]),
+            category_name: form_value(&form, &["name", "categoryName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some(_)) => StatusCode::OK.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+pub(crate) async fn direct_delete_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_label_category(&owner, &project, category_id)
+        .await
+    {
+        Ok(true) => StatusCode::OK.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     let session_manager = service.session_manager.clone();

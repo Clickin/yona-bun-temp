@@ -410,6 +410,7 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
     );
     let css = response_text(css_response).await;
     assert!(css.contains(".issue-label[data-label-id=\""));
+    assert!(css.contains("box-shadow: inset 2px 0 0px #111111;"));
     assert!(css.contains("background-color: #111111;"));
     assert!(css.contains("color: white;"));
 
