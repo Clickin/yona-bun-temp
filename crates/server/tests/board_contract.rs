@@ -330,7 +330,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
 }
 
 #[tokio::test]
-// Guards the board route-module DTO split for README/online-commit posting.
+// Guards the board route-module body DTO and adapter split for README/online-commit posting.
 async fn board_readme_posting_commits_git_readme_file() {
     let _guard = yona_data_env_lock()
         .lock()
@@ -623,7 +623,7 @@ async fn board_postform_online_commit_updates_issue_template_and_code_files() {
 }
 
 #[tokio::test]
-// Guards the board route-module DTO, mapper, and direct comment helper split.
+// Guards the board route-module DTO, mapper, body adapter, and direct comment helper split.
 async fn board_contract_manages_project_posts_comments_watch_and_notifications() {
     let _guard = yona_data_env_lock()
         .lock()

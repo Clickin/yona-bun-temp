@@ -10,20 +10,20 @@ use std::collections::HashMap;
 use yona_rust_vcs::VcsError;
 
 use crate::{
-    code_browser_error, decode_query_component, direct_post_comment_body, gravatar_url,
-    headers_with_form_csrf, internal_error, legacy_external_create_board_posting_comment,
-    legacy_external_create_board_postings, legacy_external_update_board_posting_content,
-    legacy_external_update_board_posting_labels, legacy_update_posting_comment,
-    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    optional_i64_string, parse_rest_query_i64, parse_rest_query_u32, persistence,
-    project_resource_create_allowed, project_update_allowed, redirect_to,
-    require_authenticated_user, require_project_read, require_project_resource_create,
+    code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
+    form_value, gravatar_url, headers_with_form_csrf, internal_error,
+    legacy_external_create_board_posting_comment, legacy_external_create_board_postings,
+    legacy_external_update_board_posting_content, legacy_external_update_board_posting_labels,
+    legacy_update_posting_comment, markdown_issue_references_for_project,
+    markdown_mention_references, normalize_identifier, optional_i64_string, parse_rest_query_i64,
+    parse_rest_query_u32, persistence, project_resource_create_allowed, project_update_allowed,
+    redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    rest_post_mutation_input_from_body, session::SessionManager, visible_projects_for_organization,
-    yona_data_root, ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
-    PilotRepository, ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
-    RestMentionReferenceMetadata, RestPostCommentBody, RestPostMutationBody, RestRouteError,
+    session::SessionManager, visible_projects_for_organization, yona_data_root, ConnectError,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
+    RestMentionReferenceMetadata, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -34,6 +34,43 @@ struct RestProjectPostsQuery {
     order_by: String,
     order_dir: String,
     page_num: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestPostMutationBody {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    attachment_ids: Vec<i64>,
+    body_markdown: String,
+    branch: String,
+    edit: bool,
+    issue_template: bool,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    label_ids: Vec<i64>,
+    line_ending: String,
+    new_file_name: String,
+    notice: bool,
+    path: String,
+    readme: bool,
+    title: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestPostCommentBody {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+    parent_comment_id: Option<i64>,
 }
 
 impl RestProjectPostsQuery {
@@ -1111,6 +1148,63 @@ fn rest_post_detail_response_from_record_with_references(
         },
         watcher_count: posting.watcher_count,
     }
+}
+
+fn rest_post_mutation_input_from_body(
+    body: RestPostMutationBody,
+) -> persistence::PostingMutationInput {
+    persistence::PostingMutationInput {
+        attachment_ids: body.attachment_ids,
+        body_markdown: body.body_markdown,
+        label_ids: body.label_ids,
+        notice: body.notice,
+        readme: body.readme,
+        title: body.title.trim().to_string(),
+    }
+}
+
+fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBody {
+    RestPostCommentBody {
+        attachment_ids: direct_post_comment_attachment_ids(form),
+        contents_markdown: direct_post_comment_contents(form),
+        parent_comment_id: form
+            .get("parentCommentId")
+            .and_then(|value| value.parse::<i64>().ok()),
+    }
+}
+
+fn direct_post_comment_contents(form: &HashMap<String, String>) -> String {
+    form_value(
+        form,
+        &[
+            "contents",
+            "contentsMarkdown",
+            "contents_markdown",
+            "body",
+            "comment",
+        ],
+    )
+    .trim()
+    .to_string()
+}
+
+fn direct_post_comment_attachment_ids(form: &HashMap<String, String>) -> Vec<i64> {
+    parse_post_attachment_ids(form_value(
+        form,
+        &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
+    ))
+}
+
+fn parse_post_attachment_ids(value: &str) -> Vec<i64> {
+    value
+        .split(',')
+        .filter_map(|part| {
+            let part = part.trim();
+            (!part.is_empty())
+                .then(|| part.parse::<i64>().ok())
+                .flatten()
+        })
+        .collect()
 }
 
 async fn direct_create_posting_comment(

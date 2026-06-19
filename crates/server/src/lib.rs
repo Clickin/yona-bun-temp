@@ -2966,7 +2966,7 @@ where
     }
 }
 
-fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
+pub(crate) fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
     deserializer: D,
 ) -> Result<Vec<i64>, D::Error>
 where
@@ -3242,43 +3242,6 @@ pub(crate) struct RestIssueCommentBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestPostMutationBody {
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    attachment_ids: Vec<i64>,
-    body_markdown: String,
-    branch: String,
-    edit: bool,
-    issue_template: bool,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    label_ids: Vec<i64>,
-    line_ending: String,
-    new_file_name: String,
-    notice: bool,
-    path: String,
-    readme: bool,
-    title: String,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestPostCommentBody {
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    attachment_ids: Vec<i64>,
-    contents_markdown: String,
-    parent_comment_id: Option<i64>,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
 struct RestMassUpdateIssuesBody {
     #[serde(
         default,
@@ -3341,19 +3304,6 @@ fn rest_project_issue_filter_from_query(
     }
 }
 
-fn rest_post_mutation_input_from_body(
-    body: RestPostMutationBody,
-) -> persistence::PostingMutationInput {
-    persistence::PostingMutationInput {
-        attachment_ids: body.attachment_ids,
-        body_markdown: body.body_markdown,
-        label_ids: body.label_ids,
-        notice: body.notice,
-        readme: body.readme,
-        title: body.title.trim().to_string(),
-    }
-}
-
 fn direct_comment_contents(form: &HashMap<String, String>) -> String {
     form_value(
         form,
@@ -3378,16 +3328,6 @@ fn direct_comment_attachment_ids(form: &HashMap<String, String>) -> Vec<i64> {
 
 fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueCommentBody {
     RestIssueCommentBody {
-        attachment_ids: direct_comment_attachment_ids(form),
-        contents_markdown: direct_comment_contents(form),
-        parent_comment_id: form
-            .get("parentCommentId")
-            .and_then(|value| value.parse::<i64>().ok()),
-    }
-}
-
-fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBody {
-    RestPostCommentBody {
         attachment_ids: direct_comment_attachment_ids(form),
         contents_markdown: direct_comment_contents(form),
         parent_comment_id: form
