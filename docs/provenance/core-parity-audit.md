@@ -713,6 +713,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`,
   and `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`.
+- 2026-06-20 build/check diet note: SVN update-report depth parsing,
+  start-empty/base revision parsing, recursive entry traversal, entry property
+  XML, file entry XML, inline text-delta encoding, and md5 checksum helpers
+  moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/update.rs`; REPORT control flow and VCS error
+  mapping remain in the protocol module. This preserves remote update
+  materialization, depth-empty checkout deepening, and revision-targeted update
+  behavior covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
+  `svn_protocol_contract::svn_protocol_external_client_can_deepen_depth_empty_checkout`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_update_to_older_revision_and_back_to_head`.
 
 ## Wave 0 Exit Snapshot
 

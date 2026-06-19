@@ -1,10 +1,8 @@
 use axum::body::Bytes;
 use axum::extract::Request;
 use axum::response::{IntoResponse, Response};
-use base64::{engine::general_purpose, Engine as _};
 use http::{HeaderMap, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
-use md5::{Digest, Md5};
 use std::path::Path as StdPath;
 
 use crate::session::SessionManager;
@@ -22,6 +20,7 @@ mod path;
 mod propfind;
 mod report_items;
 mod svndiff;
+mod update;
 mod xml;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1722,10 +1721,10 @@ fn svn_protocol_update_report_response(
         .map(|(_, path)| path)
         .unwrap_or_default();
     let update_path = path::join_report_path(&base_path, &requested_path);
-    let depth = svn_protocol_update_depth(request);
-    let start_empty = svn_protocol_update_start_empty(request);
-    let base_revision = svn_protocol_update_entry_revision(request).unwrap_or(target_revision);
-    let inline_text_deltas = svn_protocol_update_inline_text_deltas(request);
+    let depth = update::depth(request);
+    let start_empty = update::start_empty(request);
+    let base_revision = update::entry_revision(request).unwrap_or(target_revision);
+    let inline_text_deltas = update::inline_text_deltas(request);
     let recursive = depth.eq_ignore_ascii_case("infinity") || depth.eq_ignore_ascii_case("unknown");
     let tree_result = if recursive {
         yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
@@ -1785,7 +1784,7 @@ fn svn_protocol_update_report_response(
             }
         };
     let entries = if recursive {
-        svn_protocol_update_entries_recursive(
+        update::entries_recursive(
             route,
             &tree.entries,
             &base_entries,
@@ -1807,7 +1806,7 @@ fn svn_protocol_update_report_response(
             .collect::<std::collections::BTreeSet<_>>();
         for entry in base_entries
             .iter()
-            .filter(|entry| svn_protocol_update_depth_includes(entry, &depth))
+            .filter(|entry| update::depth_includes(entry, &depth))
             .filter(|entry| !target_paths.contains(entry.path.trim_matches('/')))
         {
             let name = entry
@@ -1825,7 +1824,7 @@ fn svn_protocol_update_report_response(
         for entry in tree
             .entries
             .iter()
-            .filter(|entry| svn_protocol_update_depth_includes(entry, &depth))
+            .filter(|entry| update::depth_includes(entry, &depth))
         {
             let name = entry
                 .path
@@ -1862,7 +1861,7 @@ fn svn_protocol_update_report_response(
                         target_revision,
                         entry.path.trim_matches('/')
                     )),
-                    svn_protocol_update_entry_props(&revision_log, 3)
+                    update::entry_props(&revision_log, 3)
                 ));
             } else {
                 let inline_delta = if inline_text_deltas {
@@ -1889,7 +1888,7 @@ fn svn_protocol_update_report_response(
                 } else {
                     None
                 };
-                entries.push_str(&svn_protocol_update_file_entry(
+                entries.push_str(&update::file_entry(
                     route,
                     entry,
                     target_revision,
@@ -1923,7 +1922,7 @@ fn svn_protocol_update_report_response(
             ""
         },
         href::version(route, target_revision, &update_path),
-        svn_protocol_update_entry_props(&revision_log, 2)
+        update::entry_props(&revision_log, 2)
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -3090,283 +3089,6 @@ fn svn_protocol_log_path_included(changed_path: &str, filter_path: &str) -> bool
     changed_path == filter_path
         || changed_path.starts_with(&format!("{filter_path}/"))
         || filter_path.starts_with(&format!("{changed_path}/"))
-}
-
-fn svn_protocol_update_depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth: &str) -> bool {
-    match depth.to_ascii_lowercase().as_str() {
-        "empty" => false,
-        "files" => !entry.is_dir,
-        _ => true,
-    }
-}
-
-fn svn_protocol_update_entries_recursive(
-    route: &SvnProtocolRoute,
-    entries: &[yona_rust_vcs::SvnTreeEntry],
-    base_entries: &[yona_rust_vcs::SvnTreeEntry],
-    parent_path: &str,
-    revision: i64,
-    base_revision: i64,
-    revision_log: &yona_rust_vcs::SvnLogEntry,
-    indent_level: usize,
-    start_empty: bool,
-    repo_path: &StdPath,
-    inline_text_deltas: bool,
-) -> String {
-    let parent_path = parent_path.trim_matches('/');
-    let child_names = entries
-        .iter()
-        .filter_map(|entry| svn_protocol_immediate_child_name(parent_path, &entry.path))
-        .chain(
-            base_entries
-                .iter()
-                .filter_map(|entry| svn_protocol_immediate_child_name(parent_path, &entry.path)),
-        )
-        .collect::<std::collections::BTreeSet<_>>();
-    let mut output = String::new();
-    for name in child_names {
-        let child_path = if parent_path.is_empty() {
-            name.clone()
-        } else {
-            format!("{parent_path}/{name}")
-        };
-        let child_entry = entries
-            .iter()
-            .find(|entry| entry.path.trim_matches('/') == child_path);
-        let is_dir = child_entry.map(|entry| entry.is_dir).unwrap_or_else(|| {
-            entries.iter().any(|entry| {
-                entry
-                    .path
-                    .trim_matches('/')
-                    .starts_with(&format!("{child_path}/"))
-            })
-        });
-        let base_child_exists = base_entries
-            .iter()
-            .any(|entry| entry.path.trim_matches('/') == child_path);
-        let target_child_exists = child_entry.is_some()
-            || entries.iter().any(|entry| {
-                entry
-                    .path
-                    .trim_matches('/')
-                    .starts_with(&format!("{child_path}/"))
-            });
-        if base_child_exists && !target_child_exists {
-            let indent = "  ".repeat(indent_level);
-            output.push_str(&format!(
-                r#"{indent}<S:delete-entry name="{}" rev="{base_revision}"/>
-"#,
-                xml_escape(&name)
-            ));
-            continue;
-        }
-        if is_dir {
-            let indent = "  ".repeat(indent_level);
-            let child_indent = "  ".repeat(indent_level + 1);
-            let nested = svn_protocol_update_entries_recursive(
-                route,
-                entries,
-                base_entries,
-                &child_path,
-                revision,
-                base_revision,
-                revision_log,
-                indent_level + 1,
-                start_empty,
-                repo_path,
-                inline_text_deltas,
-            );
-            let directory_element = if start_empty {
-                "add-directory"
-            } else {
-                "open-directory"
-            };
-            let revision_attribute = if start_empty {
-                String::new()
-            } else {
-                format!(r#" rev="{base_revision}""#)
-            };
-            output.push_str(&format!(
-                r#"{indent}<S:{directory_element} name="{}"{revision_attribute} bc-url="{}">
-{child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
-{}
-{}{indent}</S:{directory_element}>
-"#,
-                xml_escape(&name),
-                xml_escape(&href::baseline_collection(route, revision, &child_path)),
-                xml_escape(&href::version(route, revision, &child_path)),
-                svn_protocol_update_entry_props(revision_log, indent_level + 1),
-                nested
-            ));
-        } else if let Some(entry) = child_entry {
-            let inline_delta = if inline_text_deltas {
-                yona_rust_vcs::svn_cat_file(repo_path, Some(revision), entry.path.trim_matches('/'))
-                    .ok()
-            } else {
-                None
-            };
-            output.push_str(&svn_protocol_update_file_entry(
-                route,
-                entry,
-                revision,
-                base_revision,
-                revision_log,
-                indent_level,
-                start_empty,
-                inline_delta.as_deref(),
-            ));
-        }
-    }
-    output
-}
-
-fn svn_protocol_immediate_child_name(parent_path: &str, path: &str) -> Option<String> {
-    let path = path.trim_matches('/');
-    if path.is_empty() || path == parent_path {
-        return None;
-    }
-    let relative = if parent_path.is_empty() {
-        path
-    } else {
-        path.strip_prefix(&format!("{parent_path}/"))?
-    };
-    relative.split('/').next().map(str::to_string)
-}
-
-fn svn_protocol_update_file_entry(
-    route: &SvnProtocolRoute,
-    entry: &yona_rust_vcs::SvnTreeEntry,
-    revision: i64,
-    base_revision: i64,
-    revision_log: &yona_rust_vcs::SvnLogEntry,
-    indent_level: usize,
-    start_empty: bool,
-    inline_delta: Option<&[u8]>,
-) -> String {
-    let indent = "  ".repeat(indent_level);
-    let child_indent = "  ".repeat(indent_level + 1);
-    let name = entry
-        .path
-        .trim_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or(entry.path.as_str());
-    let checked_in_revision = if inline_delta.is_some() && !start_empty {
-        base_revision
-    } else {
-        revision
-    };
-    let version_href = href::version(route, checked_in_revision, entry.path.trim_matches('/'));
-    let file_element = if start_empty { "add-file" } else { "open-file" };
-    let revision_attribute = if start_empty {
-        String::new()
-    } else {
-        format!(r#" rev="{base_revision}""#)
-    };
-    let inline_props = if let Some(contents) = inline_delta {
-        format!(
-            r#"{child_indent}<S:prop><V:md5-checksum xmlns:V="{}">{}</V:md5-checksum></S:prop>
-"#,
-            "http://subversion.tigris.org/xmlns/dav/",
-            svn_protocol_md5_hex(contents)
-        )
-    } else {
-        String::new()
-    };
-    let file_text = if let Some(contents) = inline_delta {
-        format!(
-            r#"{child_indent}<S:txdelta>{}</S:txdelta>
-"#,
-            general_purpose::STANDARD.encode(svndiff::svndiff0_fulltext(contents))
-        )
-    } else {
-        format!("{child_indent}<S:fetch-file/>\n")
-    };
-    format!(
-        r#"{indent}<S:{file_element} name="{}"{revision_attribute}>
-{child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
-{}
-{inline_props}
-{child_indent}<S:baseline-relative-path>{}</S:baseline-relative-path>
-{file_text}
-{indent}</S:{file_element}>
-"#,
-        xml_escape(name),
-        xml_escape(&version_href),
-        svn_protocol_update_entry_props(revision_log, indent_level + 1),
-        xml_escape(entry.path.trim_matches('/'))
-    )
-}
-
-fn svn_protocol_md5_hex(contents: &[u8]) -> String {
-    let mut hasher = Md5::new();
-    hasher.update(contents);
-    format!("{:x}", hasher.finalize())
-}
-
-fn svn_protocol_update_inline_text_deltas(request: &str) -> bool {
-    request.contains("<S:dst-path>")
-        && !xml::text(request, "text-deltas")
-            .as_deref()
-            .is_some_and(|value| value.eq_ignore_ascii_case("no"))
-}
-
-fn svn_protocol_update_entry_props(
-    revision_log: &yona_rust_vcs::SvnLogEntry,
-    indent_level: usize,
-) -> String {
-    let indent = "  ".repeat(indent_level);
-    let mut props = format!(
-        r#"{indent}<S:set-prop name="svn:entry:committed-rev">{}</S:set-prop>
-"#,
-        revision_log.revision
-    );
-    if !revision_log.date.is_empty() {
-        props.push_str(&format!(
-            r#"{indent}<S:set-prop name="svn:entry:committed-date">{}</S:set-prop>
-"#,
-            xml_escape(&date::committed_date(&revision_log.date))
-        ));
-    }
-    if !revision_log.author.is_empty() {
-        props.push_str(&format!(
-            r#"{indent}<S:set-prop name="svn:entry:last-author">{}</S:set-prop>
-"#,
-            xml_escape(&revision_log.author)
-        ));
-    }
-    props
-}
-
-fn svn_protocol_update_depth(request: &str) -> String {
-    if let Some(depth) = xml::text(request, "depth") {
-        return depth;
-    }
-    if xml::text(request, "recursive")
-        .as_deref()
-        .is_some_and(|value| value.eq_ignore_ascii_case("no"))
-    {
-        return "files".to_string();
-    }
-    "infinity".to_string()
-}
-
-fn svn_protocol_update_start_empty(request: &str) -> bool {
-    if !request.contains("<S:entry") {
-        return true;
-    }
-    request.contains("start-empty=\"true\"") || request.contains("start-empty='true'")
-}
-
-fn svn_protocol_update_entry_revision(request: &str) -> Option<i64> {
-    let entry_start = request.find("<S:entry")?;
-    let entry_end = request[entry_start..].find('>')? + entry_start;
-    let entry = &request[entry_start..entry_end];
-    ["rev=\"", "rev='"].iter().find_map(|marker| {
-        let value = entry.split_once(marker)?.1;
-        let quote = if *marker == "rev=\"" { '"' } else { '\'' };
-        value.split_once(quote)?.0.parse::<i64>().ok()
-    })
 }
 
 fn svn_protocol_replay_operation(
