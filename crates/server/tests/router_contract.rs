@@ -88,6 +88,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> String {
 }
 
 #[tokio::test]
+// Guards asset-owned legacy API root fallback to the application index.
 async fn legacy_external_api_roots_fall_back_to_application_index() {
     let asset_root = std::env::temp_dir().join(format!(
         "yona-legacy-api-index-{}-{}",

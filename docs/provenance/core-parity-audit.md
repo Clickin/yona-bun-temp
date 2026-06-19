@@ -536,6 +536,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `server_core_contract::read_issue_detail_applies_the_go_pilot_status_contract`,
   `server_core_contract::update_issue_state_requires_bootstrapped_csrf`, and
   `issue_core_contract::issue_core_contract_creates_reads_updates_and_deletes_over_rest`.
+- 2026-06-20 build/check diet note: filesystem/embedded asset fallback,
+  Smart HTTP/SVN fallback dispatch, Excel export fallback dispatch, and
+  `serve_frontend_page` moved from monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/assets.rs`; asset route assembly now owns the full fallback
+  chain it invokes while route modules keep using the root re-exported frontend
+  page helper. This preserves runtime config injection, base-path SPA fallback,
+  legacy API index fallback, and Smart HTTP/SVN/Excel fallback dispatch covered
+  by `assets_contract` and `server_core_contract`.
 
 ## Wave 0 Exit Snapshot
 

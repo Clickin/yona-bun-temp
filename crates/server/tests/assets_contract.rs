@@ -184,6 +184,7 @@ async fn upload_image_file(
 }
 
 #[tokio::test]
+// Guards asset-owned filesystem fallback, runtime injection, and base-path SPA routing.
 async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let temp = tempdir().expect("tempdir");
     let asset_root = temp.path();
@@ -295,6 +296,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 }
 
 #[tokio::test]
+// Guards asset-owned embedded fallback, runtime injection, and base-path SPA routing.
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     // Guards route-utils-owned runtime config parsers for project scope, languages, and email visibility.
     let _guard = runtime_config_env_lock().lock().unwrap();

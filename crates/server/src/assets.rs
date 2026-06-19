@@ -6,9 +6,10 @@ use axum::{extract::Path as AxumPath, routing::get, Router};
 use http::Method;
 
 use crate::{
-    embedded_assets, serve_embedded_or_smart_http_fallback,
-    serve_filesystem_or_smart_http_fallback, session::SessionManager, smart_http_or_not_found,
-    AssetMode, BrowserRuntimeConfig, PilotBackend,
+    direct_issue_excel_export, direct_issue_excel_route_from_request, direct_review_excel_export,
+    direct_review_excel_route_from_request, direct_smart_http_request, embedded_assets,
+    session::SessionManager, smart_http_route_from_path, svn_protocol, AssetMode,
+    BrowserRuntimeConfig, PilotBackend,
 };
 
 pub(crate) fn apply_asset_routes(
@@ -221,6 +222,190 @@ pub(crate) fn mount_base_path(
             .nest(&base_path, base_router)
     } else {
         Router::new().nest(&base_path, base_router)
+    }
+}
+
+pub(crate) async fn serve_filesystem_or_smart_http_fallback(
+    request: Request,
+    asset_root: PathBuf,
+    browser_runtime: BrowserRuntimeConfig,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let method = request.method().clone();
+    if let Some(route) = direct_issue_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if let Some(route) = direct_review_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
+        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+    }
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
+    }
+    serve_filesystem_fallback(asset_root, method, browser_runtime).await
+}
+
+pub(crate) async fn serve_embedded_or_smart_http_fallback(
+    request: Request,
+    browser_runtime: BrowserRuntimeConfig,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let method = request.method().clone();
+    if let Some(route) = direct_issue_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if let Some(route) = direct_review_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
+        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+    }
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
+    }
+    serve_embedded_fallback(method, browser_runtime).await
+}
+
+pub(crate) async fn smart_http_or_not_found(
+    request: Request,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    if let Some(route) = direct_issue_excel_route_from_request(
+        request.method(),
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if let Some(route) = direct_review_excel_route_from_request(
+        request.method(),
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
+        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+    }
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
+    }
+    axum::http::StatusCode::NOT_FOUND.into_response()
+}
+
+pub(crate) async fn serve_frontend_page(
+    assets: AssetMode,
+    method: Method,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Response {
+    match assets {
+        AssetMode::Filesystem(asset_root) => {
+            serve_filesystem_fallback(asset_root, method, browser_runtime).await
+        }
+        AssetMode::Embedded => serve_embedded_fallback(method, browser_runtime).await,
+        AssetMode::None => axum::http::StatusCode::NOT_FOUND.into_response(),
     }
 }
 
