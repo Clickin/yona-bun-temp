@@ -837,6 +837,7 @@ async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
 
 #[tokio::test]
 async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links() {
+    // Guards shared code route utility handling for renderable Markdown paths.
     let _guard = yona_data_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());

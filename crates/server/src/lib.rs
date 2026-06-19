@@ -28,7 +28,8 @@ pub use notification_mail::{
     NotificationMailSchedulerConfig,
 };
 pub(crate) use routes::{
-    accepts_legacy_json, base_path_href, build_workspace_overview_response,
+    accepts_legacy_json, base_path_href, build_workspace_overview_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
     delete_project_repository_storage, detect_upload_mime_type,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
     filter_workspace_issue_items_by_read_acl_for_viewer,
@@ -48,10 +49,11 @@ pub(crate) use routes::{
     organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
     organization_issue_list_item_to_proto, organization_logo_url,
     organization_member_summary_from_record, organization_role_options, posting_can_create,
-    posting_can_update, project_detail_from_record, project_detail_with_logo_from_record,
-    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
-    project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
-    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
+    posting_can_update, project_code_menu_visible, project_detail_from_record,
+    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
+    project_member_summary_from_record, project_milestone_summary_from_record,
+    project_webhook_type_label, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery,
     resolve_issue_reference_search_project, rest_board_label_from_record,
     rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
@@ -118,7 +120,7 @@ use yona_rust_domain::{
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 use yona_rust_integrations::{deliver, OutboundMail};
-use yona_rust_vcs::{CodeFileRecord, ProjectHistoryCommitRecord, VcsError};
+use yona_rust_vcs::ProjectHistoryCommitRecord;
 
 pub use yona_rust_pilot_protocol as generated;
 
@@ -3188,18 +3190,6 @@ async fn resolve_project_origin(
         return Ok((String::new(), String::new()));
     };
     Ok((origin_project.owner_name, origin_project.project_name))
-}
-
-fn project_code_menu_visible(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    show_code: bool,
-) -> bool {
-    show_code
-        && (!authorization.project.is_code_accessible_member_only
-            || authorization.viewer.is_project_member
-            || authorization.viewer.is_project_manager
-            || authorization.viewer.is_organization_admin
-            || authorization.viewer.is_site_admin)
 }
 
 async fn build_organization_container_response(
@@ -6973,63 +6963,6 @@ fn rest_issue_list_item_from_record(
         watcher_count: item.watcher_count,
         weight: item.weight,
     }
-}
-
-fn code_browser_error(error: VcsError) -> ConnectError {
-    match error {
-        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
-        VcsError::SvnAdminUnavailable => {
-            ConnectError::unimplemented("svnadmin executable is unavailable")
-        }
-        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
-        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
-            ConnectError::invalid_argument(error.to_string())
-        }
-        VcsError::NotFound => ConnectError::not_found("repository path not found"),
-        VcsError::GitTimedOut
-        | VcsError::GitFailed(_)
-        | VcsError::SvnAdminFailed(_)
-        | VcsError::SvnFailed(_)
-        | VcsError::SvnLookFailed(_)
-        | VcsError::SvnLookUnavailable
-        | VcsError::FilesystemFailed(_) => internal_error(error),
-    }
-}
-
-fn code_branch_error(error: VcsError) -> ConnectError {
-    match error {
-        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
-        VcsError::SvnAdminUnavailable => {
-            ConnectError::unimplemented("svnadmin executable is unavailable")
-        }
-        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
-        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
-            ConnectError::invalid_argument(error.to_string())
-        }
-        VcsError::NotFound => ConnectError::not_found("branch not found"),
-        VcsError::GitTimedOut
-        | VcsError::GitFailed(_)
-        | VcsError::SvnAdminFailed(_)
-        | VcsError::SvnFailed(_)
-        | VcsError::SvnLookFailed(_)
-        | VcsError::SvnLookUnavailable
-        | VcsError::FilesystemFailed(_) => internal_error(error),
-    }
-}
-
-fn code_file_record_is_renderable_markdown(file: &CodeFileRecord) -> bool {
-    !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
-}
-
-fn code_path_is_markdown(path: &str) -> bool {
-    let extension = path
-        .rsplit_once('.')
-        .map(|(_, extension)| extension.to_ascii_lowercase())
-        .unwrap_or_default();
-    matches!(
-        extension.as_str(),
-        "markdown" | "mdown" | "mkdn" | "mkd" | "md" | "mdwn"
-    )
 }
 
 #[cfg(test)]

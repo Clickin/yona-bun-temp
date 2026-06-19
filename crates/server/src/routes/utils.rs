@@ -9,6 +9,7 @@ use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::Serialize;
 use std::collections::HashMap;
+use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
     generated::yona::pilot::v1::{
@@ -195,6 +196,75 @@ pub(crate) fn organization_role_options() -> Vec<OrganizationRoleOption> {
             ..Default::default()
         },
     ]
+}
+
+pub(crate) fn project_code_menu_visible(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    show_code: bool,
+) -> bool {
+    show_code
+        && (!authorization.project.is_code_accessible_member_only
+            || authorization.viewer.is_project_member
+            || authorization.viewer.is_project_manager
+            || authorization.viewer.is_organization_admin
+            || authorization.viewer.is_site_admin)
+}
+
+pub(crate) fn code_browser_error(error: VcsError) -> ConnectError {
+    match error {
+        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::SvnAdminUnavailable => {
+            ConnectError::unimplemented("svnadmin executable is unavailable")
+        }
+        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
+        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
+            ConnectError::invalid_argument(error.to_string())
+        }
+        VcsError::NotFound => ConnectError::not_found("repository path not found"),
+        VcsError::GitTimedOut
+        | VcsError::GitFailed(_)
+        | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnFailed(_)
+        | VcsError::SvnLookFailed(_)
+        | VcsError::SvnLookUnavailable
+        | VcsError::FilesystemFailed(_) => internal_error(error),
+    }
+}
+
+pub(crate) fn code_branch_error(error: VcsError) -> ConnectError {
+    match error {
+        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::SvnAdminUnavailable => {
+            ConnectError::unimplemented("svnadmin executable is unavailable")
+        }
+        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
+        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
+            ConnectError::invalid_argument(error.to_string())
+        }
+        VcsError::NotFound => ConnectError::not_found("branch not found"),
+        VcsError::GitTimedOut
+        | VcsError::GitFailed(_)
+        | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnFailed(_)
+        | VcsError::SvnLookFailed(_)
+        | VcsError::SvnLookUnavailable
+        | VcsError::FilesystemFailed(_) => internal_error(error),
+    }
+}
+
+pub(crate) fn code_file_record_is_renderable_markdown(file: &CodeFileRecord) -> bool {
+    !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
+}
+
+pub(crate) fn code_path_is_markdown(path: &str) -> bool {
+    let extension = path
+        .rsplit_once('.')
+        .map(|(_, extension)| extension.to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        extension.as_str(),
+        "markdown" | "mdown" | "mkdn" | "mkd" | "md" | "mdwn"
+    )
 }
 
 pub(crate) fn user_issue_filter_name(value: &str) -> Result<String, ConnectError> {
