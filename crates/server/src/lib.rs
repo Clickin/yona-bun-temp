@@ -69,13 +69,14 @@ pub(crate) use routes::{
     milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
     organization_admin_member_from_record, organization_admin_read, organization_container_read,
-    organization_detail_from_record, organization_detail_read,
+    organization_create, organization_detail_from_record, organization_detail_read,
     organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
     organization_issue_list_item_to_proto, organization_logo_url,
     organization_member_summary_from_record, organization_members_read, organization_role_options,
-    organization_settings_read, parse_attachment_ids, parse_milestone_due_date,
-    parse_rest_query_i64, parse_rest_query_u32, percent_encode_uri_component, posting_can_create,
-    posting_can_update, project_code_menu_visible, project_default_menus_from_option,
+    organization_settings_read, organization_update, parse_attachment_ids,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    percent_encode_uri_component, posting_can_create, posting_can_update,
+    project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto,
     project_label_categories_list, project_label_category_create, project_label_category_delete,
@@ -157,8 +158,8 @@ pub(crate) use smart_http::{
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
-    can_request_project_enrollment, can_update_organization, is_valid_organization_name,
-    is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
+    can_request_project_enrollment, can_update_organization, is_valid_project_name,
+    normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
 };
 use yona_rust_vcs::ProjectHistoryCommitRecord;
 
@@ -1181,68 +1182,10 @@ impl PilotServiceImpl {
 
     async fn create_organization(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         request: OwnedView<CreateOrganizationRequestView<'static>>,
     ) -> Result<(OrganizationDetail, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "organization requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        if actor.is_guest {
-            return Err(ConnectError::permission_denied(
-                "guest users cannot create organizations",
-            ));
-        }
-
-        if !is_valid_organization_name(request.organization_name) || request.description.len() > 255
-        {
-            return Err(ConnectError::invalid_argument(
-                "invalid organization request",
-            ));
-        }
-        if repository
-            .organization_name_exists(request.organization_name)
-            .await
-            .map_err(internal_error)?
-            || repository
-                .user_login_id_exists(request.organization_name)
-                .await
-                .map_err(internal_error)?
-        {
-            return Err(ConnectError::already_exists("organization.name.duplicate"));
-        }
-
-        let organization = repository
-            .create_organization(persistence::CreateOrganizationInput {
-                description: Some(request.description.trim().to_string()),
-                organization_name: request.organization_name.trim().to_string(),
-            })
-            .await
-            .map_err(internal_error)?;
-        repository
-            .add_organization_membership(organization.id, actor.id, "org_admin")
-            .await
-            .map_err(internal_error)?;
-        attach_session_headers(&mut ctx, &self.session_manager, &session);
-
-        Ok((
-            organization_detail_with_logo_from_record(
-                repository,
-                &self.base_path,
-                &persistence::OrganizationRecord {
-                    id: organization.id,
-                    organization_name: organization.organization_name,
-                    description: organization.description,
-                },
-                true,
-            )
-            .await?,
-            ctx,
-        ))
+        organization_create(self, ctx, request).await
     }
 
     async fn read_organization_detail(
@@ -1290,76 +1233,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateOrganizationRequestView<'static>>,
     ) -> Result<(OrganizationDetail, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "organization requires repository backend",
-            ));
-        };
-        if !is_valid_organization_name(request.organization_name) || request.description.len() > 255
-        {
-            return Err(ConnectError::invalid_argument(
-                "invalid organization request",
-            ));
-        }
-
-        let authorization = repository
-            .read_organization_authorization(request.current_organization_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        if !can_update_organization(
-            authorization.viewer.is_organization_admin,
-            authorization.viewer.is_site_admin,
-        ) {
-            return Err(ConnectError::permission_denied(
-                "organization update is not allowed",
-            ));
-        }
-
-        if normalize_identifier(request.current_organization_name)
-            != normalize_identifier(request.organization_name)
-            && (repository
-                .organization_name_exists(request.organization_name)
-                .await
-                .map_err(internal_error)?
-                || repository
-                    .user_login_id_exists(request.organization_name)
-                    .await
-                    .map_err(internal_error)?)
-        {
-            return Err(ConnectError::already_exists("organization.name.duplicate"));
-        }
-
-        let updated = repository
-            .update_organization(persistence::UpdateOrganizationInput {
-                current_organization_name: request.current_organization_name.trim().to_string(),
-                description: Some(request.description.trim().to_string()),
-                organization_name: request.organization_name.trim().to_string(),
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((
-            organization_detail_with_logo_from_record(
-                repository,
-                &self.base_path,
-                &persistence::OrganizationRecord {
-                    id: updated.id,
-                    organization_name: updated.organization_name,
-                    description: updated.description,
-                },
-                true,
-            )
-            .await?,
-            ctx,
-        ))
+        organization_update(self, ctx, request).await
     }
 
     async fn add_organization_member(
