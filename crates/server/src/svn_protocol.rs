@@ -18,6 +18,7 @@ use yona_rust_vcs::VcsError;
 
 mod date;
 mod svndiff;
+mod xml;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct SvnProtocolRoute {
@@ -1858,10 +1859,9 @@ fn svn_protocol_log_report_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let start_revision =
-        svn_protocol_xml_i64(request, "start-revision").unwrap_or(youngest_revision);
-    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(start_revision);
-    let limit = svn_protocol_xml_i64(request, "limit")
+    let start_revision = xml::i64(request, "start-revision").unwrap_or(youngest_revision);
+    let end_revision = xml::i64(request, "end-revision").unwrap_or(start_revision);
+    let limit = xml::i64(request, "limit")
         .and_then(|value| usize::try_from(value).ok())
         .unwrap_or(0);
     let entries =
@@ -1879,7 +1879,7 @@ fn svn_protocol_log_report_response(
             }
         };
     let include_changed_paths = request.contains("discover-changed-paths");
-    let path_filter = svn_protocol_xml_text(request, "path")
+    let path_filter = xml::text(request, "path")
         .map(|path| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
     let items = entries
@@ -1925,7 +1925,7 @@ fn svn_protocol_dated_rev_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let Some(creation_date) = svn_protocol_xml_text(request, "creationdate") else {
+    let Some(creation_date) = xml::text(request, "creationdate") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let revision = match yona_rust_vcs::svn_revision_at_or_before(repo_path, &creation_date) {
@@ -1961,8 +1961,8 @@ fn svn_protocol_update_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let target_revision = svn_protocol_xml_i64(request, "target-revision")
-        .or_else(|| svn_protocol_xml_i64(request, "revision"));
+    let target_revision =
+        xml::i64(request, "target-revision").or_else(|| xml::i64(request, "revision"));
     let target_revision = match target_revision {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
@@ -1977,10 +1977,9 @@ fn svn_protocol_update_report_response(
         },
     };
     let requested_path = if request.contains("<S:update-target>") {
-        svn_protocol_xml_text(request, "src-path")
+        xml::text(request, "src-path")
     } else {
-        svn_protocol_xml_text(request, "dst-path")
-            .or_else(|| svn_protocol_xml_text(request, "src-path"))
+        xml::text(request, "dst-path").or_else(|| xml::text(request, "src-path"))
     }
     .map(|path| svn_protocol_repo_relative_request_path(route, &path))
     .unwrap_or_default();
@@ -2215,9 +2214,9 @@ fn svn_protocol_file_revs_report_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let start_revision = svn_protocol_xml_i64(request, "start-revision").unwrap_or(0);
-    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(youngest_revision);
-    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let start_revision = xml::i64(request, "start-revision").unwrap_or(0);
+    let end_revision = xml::i64(request, "end-revision").unwrap_or(youngest_revision);
+    let requested_path = xml::text(request, "path").unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -2273,7 +2272,7 @@ fn svn_protocol_replay_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let revision = match svn_protocol_xml_i64(request, "revision")
+    let revision = match xml::i64(request, "revision")
         .or_else(|| svn_protocol_file_lookup_for_route(route).and_then(|(revision, _)| revision))
     {
         Some(revision) => revision,
@@ -2288,8 +2287,8 @@ fn svn_protocol_replay_report_response(
             }
         },
     };
-    let low_water_mark = svn_protocol_xml_i64(request, "low-water-mark").unwrap_or(0);
-    let include_path = svn_protocol_xml_text(request, "include-path")
+    let low_water_mark = xml::i64(request, "low-water-mark").unwrap_or(0);
+    let include_path = xml::text(request, "include-path")
         .map(|path| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
     let base_path = svn_protocol_file_lookup_for_route(route)
@@ -2334,7 +2333,7 @@ fn svn_protocol_mergeinfo_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let revision = match svn_protocol_xml_i64(request, "revision") {
+    let revision = match xml::i64(request, "revision") {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
@@ -2350,7 +2349,7 @@ fn svn_protocol_mergeinfo_report_response(
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let requested_paths = svn_protocol_xml_sections(request, "path");
+    let requested_paths = xml::sections(request, "path");
     let requested_paths = if requested_paths.is_empty() {
         vec![base_path.as_str()]
     } else {
@@ -2403,13 +2402,13 @@ fn svn_protocol_get_deleted_rev_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let Some(requested_path) = svn_protocol_xml_text(request, "path") else {
+    let Some(requested_path) = xml::text(request, "path") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let Some(peg_revision) = svn_protocol_xml_i64(request, "peg-revision") else {
+    let Some(peg_revision) = xml::i64(request, "peg-revision") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let end_revision = match svn_protocol_xml_i64(request, "end-revision") {
+    let end_revision = match xml::i64(request, "end-revision") {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
@@ -2462,7 +2461,7 @@ fn svn_protocol_list_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let revision = match svn_protocol_xml_i64(request, "revision") {
+    let revision = match xml::i64(request, "revision") {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
@@ -2475,7 +2474,7 @@ fn svn_protocol_list_report_response(
             }
         },
     };
-    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let requested_path = xml::text(request, "path").unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -2571,7 +2570,7 @@ fn svn_protocol_inherited_props_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let revision = match svn_protocol_xml_i64(request, "revision") {
+    let revision = match xml::i64(request, "revision") {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
@@ -2584,7 +2583,7 @@ fn svn_protocol_inherited_props_report_response(
             }
         },
     };
-    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let requested_path = xml::text(request, "path").unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -2627,7 +2626,7 @@ fn svn_protocol_mkactivity_response(route: &SvnProtocolRoute) -> Response {
 
 fn svn_protocol_checkout_response(route: &SvnProtocolRoute, body: &Bytes) -> Response {
     let request = String::from_utf8_lossy(body);
-    let Some(activity_href) = svn_protocol_xml_text(&request, "href") else {
+    let Some(activity_href) = xml::text(&request, "href") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let Some(activity_id) = svn_protocol_activity_id(&activity_href) else {
@@ -2664,7 +2663,7 @@ fn svn_protocol_merge_response(
     body: &Bytes,
 ) -> Response {
     let request = String::from_utf8_lossy(body);
-    let Some(activity_href) = svn_protocol_xml_text(&request, "href") else {
+    let Some(activity_href) = xml::text(&request, "href") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if svn_protocol_activity_id(&activity_href).is_none() {
@@ -3008,7 +3007,7 @@ fn svn_protocol_proppatch_response(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
     let request = String::from_utf8_lossy(body);
-    let patches = match svn_protocol_property_patches(&request) {
+    let patches = match xml::property_patches(&request) {
         Some(patches) if !patches.is_empty() => patches,
         _ => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
     };
@@ -3102,8 +3101,8 @@ fn svn_protocol_lock_response(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let request = String::from_utf8_lossy(body);
-    let comment = svn_protocol_xml_text(&request, "comment")
-        .or_else(|| svn_protocol_xml_text(&request, "owner"))
+    let comment = xml::text(&request, "comment")
+        .or_else(|| xml::text(&request, "owner"))
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "Yona WebDAV lock".to_string());
     let token = svn_protocol_new_lock_token();
@@ -3171,10 +3170,10 @@ fn svn_protocol_get_locations_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let Some(location_revision) = svn_protocol_xml_i64(request, "location-revision") else {
+    let Some(location_revision) = xml::i64(request, "location-revision") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let requested_path = xml::text(request, "path").unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -3221,11 +3220,11 @@ fn svn_protocol_get_location_segments_report_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let Some(start_revision) = svn_protocol_xml_i64(request, "start-revision") else {
+    let Some(start_revision) = xml::i64(request, "start-revision") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(start_revision);
-    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let end_revision = xml::i64(request, "end-revision").unwrap_or(start_revision);
+    let requested_path = xml::text(request, "path").unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -3682,7 +3681,7 @@ fn svn_protocol_md5_hex(contents: &[u8]) -> String {
 
 fn svn_protocol_update_inline_text_deltas(request: &str) -> bool {
     request.contains("<S:dst-path>")
-        && !svn_protocol_xml_text(request, "text-deltas")
+        && !xml::text(request, "text-deltas")
             .as_deref()
             .is_some_and(|value| value.eq_ignore_ascii_case("no"))
 }
@@ -3764,10 +3763,10 @@ fn svn_protocol_baseline_collection_href(
 }
 
 fn svn_protocol_update_depth(request: &str) -> String {
-    if let Some(depth) = svn_protocol_xml_text(request, "depth") {
+    if let Some(depth) = xml::text(request, "depth") {
         return depth;
     }
-    if svn_protocol_xml_text(request, "recursive")
+    if xml::text(request, "recursive")
         .as_deref()
         .is_some_and(|value| value.eq_ignore_ascii_case("no"))
     {
@@ -3899,31 +3898,6 @@ fn svn_protocol_inherited_props_item(item: &yona_rust_vcs::SvnInheritedPropertyS
         .collect()
 }
 
-fn svn_protocol_xml_i64(xml: &str, tag: &str) -> Option<i64> {
-    svn_protocol_xml_text(xml, tag)?.parse::<i64>().ok()
-}
-
-fn svn_protocol_xml_text(xml: &str, tag: &str) -> Option<String> {
-    let start = xml
-        .find(&format!("<S:{tag}>"))
-        .or_else(|| xml.find(&format!("<D:{tag}>")))
-        .or_else(|| xml.find(&format!("<{tag}>")))?;
-    let value_start = xml[start..].find('>')? + start + 1;
-    let end = xml[value_start..].find('<')? + value_start;
-    Some(xml[value_start..end].trim().to_string())
-}
-
-fn svn_protocol_property_patches(request: &str) -> Option<Vec<yona_rust_vcs::SvnPropertyPatch>> {
-    let mut patches = Vec::new();
-    for section in svn_protocol_xml_sections(request, "set") {
-        patches.extend(svn_protocol_property_elements(section, true));
-    }
-    for section in svn_protocol_xml_sections(request, "remove") {
-        patches.extend(svn_protocol_property_elements(section, false));
-    }
-    Some(patches)
-}
-
 fn svn_protocol_proppatch_multistatus(
     route: &SvnProtocolRoute,
     path: &str,
@@ -3948,112 +3922,6 @@ fn svn_protocol_proppatch_multistatus(
 </D:multistatus>"#,
         xml_escape(&href)
     )
-}
-
-fn svn_protocol_xml_sections<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
-    let mut sections = Vec::new();
-    let mut rest = xml;
-    loop {
-        let Some(open_start) = svn_protocol_find_xml_tag(rest, tag) else {
-            break;
-        };
-        let after_open = &rest[open_start..];
-        let Some(open_end) = after_open.find('>') else {
-            break;
-        };
-        let content_start = open_start + open_end + 1;
-        let Some(close_start_relative) =
-            svn_protocol_find_xml_close_tag(&rest[content_start..], tag)
-        else {
-            break;
-        };
-        let content_end = content_start + close_start_relative;
-        sections.push(&rest[content_start..content_end]);
-        rest = &rest[content_end..];
-    }
-    sections
-}
-
-fn svn_protocol_find_xml_tag(xml: &str, tag: &str) -> Option<usize> {
-    xml.find(&format!("<S:{tag}"))
-        .or_else(|| xml.find(&format!("<s:{tag}")))
-        .or_else(|| xml.find(&format!("<D:{tag}")))
-        .or_else(|| xml.find(&format!("<d:{tag}")))
-        .or_else(|| xml.find(&format!("<{tag}")))
-}
-
-fn svn_protocol_find_xml_close_tag(xml: &str, tag: &str) -> Option<usize> {
-    xml.find(&format!("</S:{tag}>"))
-        .or_else(|| xml.find(&format!("</s:{tag}>")))
-        .or_else(|| xml.find(&format!("</D:{tag}>")))
-        .or_else(|| xml.find(&format!("</d:{tag}>")))
-        .or_else(|| xml.find(&format!("</{tag}>")))
-}
-
-fn svn_protocol_property_elements(
-    section: &str,
-    set_value: bool,
-) -> Vec<yona_rust_vcs::SvnPropertyPatch> {
-    let prop_body = svn_protocol_xml_sections(section, "prop")
-        .into_iter()
-        .next()
-        .unwrap_or(section);
-    let mut patches = Vec::new();
-    let mut rest = prop_body;
-    while let Some(open_start) = rest.find('<') {
-        rest = &rest[open_start + 1..];
-        if rest.starts_with('/') || rest.starts_with('!') || rest.starts_with('?') {
-            continue;
-        }
-        let Some(open_end) = rest.find('>') else {
-            break;
-        };
-        let raw_name = rest[..open_end]
-            .split_whitespace()
-            .next()
-            .unwrap_or_default()
-            .trim_end_matches('/');
-        let Some(name) = svn_protocol_property_name(raw_name) else {
-            rest = &rest[open_end + 1..];
-            continue;
-        };
-        if set_value {
-            let close_tag = format!("</{raw_name}>");
-            let value_start = open_end + 1;
-            let value = rest[value_start..]
-                .find(&close_tag)
-                .map(|end| rest[value_start..value_start + end].to_string())
-                .unwrap_or_default();
-            patches.push(yona_rust_vcs::SvnPropertyPatch {
-                name,
-                value: Some(value),
-            });
-        } else {
-            patches.push(yona_rust_vcs::SvnPropertyPatch { name, value: None });
-        }
-        rest = &rest[open_end + 1..];
-    }
-    patches
-}
-
-fn svn_protocol_property_name(raw_name: &str) -> Option<String> {
-    let raw_name = raw_name.trim();
-    if raw_name.is_empty() {
-        return None;
-    }
-    let local_name = raw_name
-        .strip_prefix("C:")
-        .or_else(|| raw_name.strip_prefix("c:"))
-        .or_else(|| raw_name.strip_prefix("S:"))
-        .or_else(|| raw_name.strip_prefix("s:"))
-        .or_else(|| raw_name.strip_prefix("D:"))
-        .or_else(|| raw_name.strip_prefix("d:"))
-        .unwrap_or(raw_name);
-    if local_name.eq_ignore_ascii_case("prop") || local_name.eq_ignore_ascii_case("propertyupdate")
-    {
-        return None;
-    }
-    Some(local_name.to_string())
 }
 
 fn svn_protocol_new_lock_token() -> String {

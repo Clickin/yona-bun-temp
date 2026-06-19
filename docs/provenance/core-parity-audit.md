@@ -644,6 +644,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`,
   `svn_protocol_contract::svn_protocol_external_client_can_info_public_project`,
   and `svn_protocol_contract::svn_protocol_external_client_can_read_mergeinfo`.
+- 2026-06-20 build/check diet note: SVN XML text/int/section parsing and
+  PROPPATCH property-patch parsing helpers moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/xml.rs`; request dispatch and DAV response
+  shaping remain in the protocol module while XML request parsing is isolated.
+  This preserves property set commits, lock/unlock request handling, and
+  mergeinfo report parsing covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`,
+  `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_read_mergeinfo`.
+  Compile/check timing evidence for this split uses tool-level unsandboxed
+  execution only; cargo or pnpm wrapper commands run inside the agent sandbox
+  remain excluded from timing comparisons.
 
 ## Wave 0 Exit Snapshot
 
