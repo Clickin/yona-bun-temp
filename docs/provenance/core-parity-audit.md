@@ -572,6 +572,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   covered by `server_core_contract::read_current_session_works_over_connect_json`
   and
   `auth_workspace_contract::register_sign_in_sign_out_and_current_session_round_trip`.
+- 2026-06-20 build/check diet note: runtime/app config structs and startup/env
+  projection helpers moved from monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/app_config.rs`; the root crate re-exports the same public
+  config API while config ownership now sits beside router/bootstrap assembly.
+  This preserves auth UI runtime projection, env-isolated auth capability
+  behavior, and browser runtime injection covered by
+  `auth_workspace_contract::read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation`
+  and
+  `assets_contract::embedded_assets_support_base_path_injection_and_spa_fallback`.
 
 ## Wave 0 Exit Snapshot
 

@@ -338,6 +338,7 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
 }
 
 #[tokio::test]
+// Guards app-config-owned auth UI projection without process-env fallback.
 async fn read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation() {
     let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
     let previous_email_verification = std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").ok();
