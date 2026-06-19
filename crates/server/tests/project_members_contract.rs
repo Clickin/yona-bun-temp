@@ -226,6 +226,11 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     assert_eq!(member(&initial, "owner")["role"], "manager");
     assert_eq!(member(&initial, "owner")["userId"], owner_id);
     assert_eq!(member(&initial, "owner")["isOwner"], true);
+    assert_eq!(initial["viewerCanUpdate"], true);
+    assert!(member(&initial, "owner")["avatarUrl"]
+        .as_str()
+        .unwrap()
+        .starts_with("https://www.gravatar.com/avatar/"));
 
     let added = ok_json(
         rest(
