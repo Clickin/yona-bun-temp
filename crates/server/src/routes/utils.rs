@@ -7,6 +7,7 @@ use bcrypt::{hash, DEFAULT_COST};
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
+use serde::Serialize;
 use std::collections::HashMap;
 
 use crate::{
@@ -34,6 +35,34 @@ pub(crate) fn legacy_external_user_statistics_result(
         "posting": record.posting,
         "postingComment": record.posting_comment,
     })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestBoardLabel {
+    category_id: String,
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    id: String,
+    name: String,
+}
+
+pub(crate) fn optional_i64_string(value: Option<i64>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
+}
+
+pub(crate) fn rest_board_label_from_record(
+    label: &persistence::IssueLabelRecord,
+) -> RestBoardLabel {
+    RestBoardLabel {
+        category_id: optional_i64_string(label.category_id),
+        category_is_exclusive: label.category_is_exclusive,
+        category_name: label.category_name.clone(),
+        color: label.color.clone(),
+        id: label.id.to_string(),
+        name: label.name.clone(),
+    }
 }
 
 pub(crate) fn base_path_href(base_path: &str, path: &str) -> String {

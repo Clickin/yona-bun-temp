@@ -623,7 +623,7 @@ async fn board_postform_online_commit_updates_issue_template_and_code_files() {
 }
 
 #[tokio::test]
-// Guards the board route-module DTO, mapper, body adapter, and direct comment helper split.
+// Guards the board route-module DTO, shared label mapper, body adapter, and direct comment helper split.
 async fn board_contract_manages_project_posts_comments_watch_and_notifications() {
     let _guard = yona_data_env_lock()
         .lock()

@@ -1883,7 +1883,7 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
 }
 
 #[tokio::test]
-// Guards the site-admin user-list redirect helper and shared users route-module boundary.
+// Guards the site-admin shared label mapper, user-list redirect helper, and users boundary.
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     // Guards site-admin user surfaces that still share the users route-module boundary.
     let (app, repo, db) = build_app_with_repository().await;

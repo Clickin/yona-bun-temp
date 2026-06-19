@@ -78,7 +78,8 @@ pub(crate) use utils::{
     legacy_external_date_string, legacy_external_parse_datetime, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, normalize_issue_label_color,
+    legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
+    rest_board_label_from_record, RestBoardLabel,
 };
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;

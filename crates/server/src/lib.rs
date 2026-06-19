@@ -42,16 +42,16 @@ pub(crate) use routes::{
     legacy_external_parse_datetime, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, normalize_issue_label_color, posting_can_create, posting_can_update,
-    project_webhook_type_label, read_issue_access, read_posting_access,
+    legacy_json_find_value, normalize_issue_label_color, optional_i64_string, posting_can_create,
+    posting_can_update, project_webhook_type_label, read_issue_access, read_posting_access,
     read_posting_comment_create_access, record_project_webhook_delivery,
-    resolve_issue_reference_search_project, rest_commit_thread_from_record,
-    rest_delete_project_member,
+    resolve_issue_reference_search_project, rest_board_label_from_record,
+    rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
     rest_read_direct_issue_form_options, rest_review_thread_filter,
     rest_update_commit_discussion_thread_state, uploaded_file_path, workspace_avatar_url,
-    workspace_profile_from_record, RestProjectIssuesQuery, RestReviewThread,
+    workspace_profile_from_record, RestBoardLabel, RestProjectIssuesQuery, RestReviewThread,
     RestReviewThreadListQuery,
 };
 pub mod runtime_config;
@@ -1479,17 +1479,6 @@ impl IntoResponse for RestRouteError {
         )
             .into_response()
     }
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RestBoardLabel {
-    category_id: String,
-    category_is_exclusive: bool,
-    category_name: String,
-    color: String,
-    id: String,
-    name: String,
 }
 
 #[derive(Default, Deserialize)]
@@ -3902,21 +3891,6 @@ async fn require_authenticated_user(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))
-}
-
-fn optional_i64_string(value: Option<i64>) -> String {
-    value.map(|value| value.to_string()).unwrap_or_default()
-}
-
-fn rest_board_label_from_record(label: &persistence::IssueLabelRecord) -> RestBoardLabel {
-    RestBoardLabel {
-        category_id: optional_i64_string(label.category_id),
-        category_is_exclusive: label.category_is_exclusive,
-        category_name: label.category_name.clone(),
-        color: label.color.clone(),
-        id: label.id.to_string(),
-        name: label.name.clone(),
-    }
 }
 
 fn issue_detail_response_from_record(
