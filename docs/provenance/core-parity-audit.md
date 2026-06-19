@@ -908,6 +908,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `milestone_contract::milestone_rpc_manages_crud_state_sorting_and_linked_issues`,
   `milestone_contract::milestone_legacy_mutation_routes_preserve_redirects`,
   and `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
+- 2026-06-20 build/check diet note: legacy external issue API handlers and
+  helpers moved from `crates/server/src/routes/issues.rs` into
+  `crates/server/src/routes/issues/legacy_external.rs`; route registration
+  remains in the parent issue route module, and the parent re-export boundary
+  keeps shared legacy label-id and assignable-user result helpers available to
+  board/project legacy APIs. This preserves legacy external issue
+  comment/read/update/content/detect-change/weight, assignable-users, and
+  share/unshare behavior covered by
+  `issue_core_contract::issue_core_contract_creates_reads_updates_and_deletes_over_rest`,
+  `issue_assignable_contract::issue_assignable_users_blank_query_preserves_legacy_pseudo_rows`,
+  and
+  `issue_sharer_contract::issue_sharer_contract_shares_unshares_and_keeps_duplicate_single_row`.
 
 ## Wave 0 Exit Snapshot
 
