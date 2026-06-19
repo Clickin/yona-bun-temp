@@ -549,6 +549,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
 
     assert_eq!(root["ownerName"], "owner");
     assert_eq!(root["projectName"], "projectYobi");
+    assert_eq!(root["path"], "");
     assert_eq!(root["selectedBranch"], "main");
     assert!(!json_bool(&root, "noHead"));
     assert!(root["branches"]
