@@ -779,6 +779,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   dispatch remains in the protocol module. This preserves checkout/merge
   choreography location discovery covered by
   `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`.
+- 2026-06-20 build/check diet note: SVN `dated-rev-report` and
+  `get-deleted-rev-report` response handling moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_revisions.rs`; REPORT method
+  dispatch remains in the protocol module. This preserves revision-date lookup
+  and deleted-revision discovery covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
