@@ -31,9 +31,10 @@ pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
     append_response_headers, attach_session_headers, auth_session_read, auth_sign_in_with_password,
     auth_sign_out, auth_social_providers_from_option, auth_ui_capabilities_from_config,
-    base_path_href, build_organization_admin_response, build_organization_container_response,
-    build_project_container_response, build_workspace_overview_response, code_branch_error,
-    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
+    auth_verify_user, base_path_href, build_organization_admin_response,
+    build_organization_container_response, build_project_container_response,
+    build_workspace_overview_response, code_branch_error, code_browser_error,
+    code_file_record_is_renderable_markdown, code_path_is_markdown,
     configured_auth_social_providers, configured_bool_env, configured_env_value,
     configured_max_uploaded_file_size, configured_project_default_menus,
     configured_project_default_scope, configured_site_name, configured_supported_languages,
@@ -1157,33 +1158,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<VerifyUserRequestView<'static>>,
     ) -> Result<(VerifyUserResponse, Context), ConnectError> {
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "auth requires repository backend",
-            ));
-        };
-        let Some(user_id) = repository
-            .find_valid_signup_verification_user_id(request.login_id, request.verification_code)
-            .await
-            .map_err(internal_error)?
-        else {
-            return Err(ConnectError::not_found("Invalid verification"));
-        };
-        let user = repository
-            .mark_user_confirmed(user_id)
-            .await
-            .map_err(internal_error)?;
-        repository
-            .delete_signup_verification(request.verification_code)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            VerifyUserResponse {
-                login_id: user.login_id,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        auth_verify_user(self, ctx, request).await
     }
 
     async fn sign_out(

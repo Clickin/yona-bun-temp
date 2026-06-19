@@ -172,8 +172,7 @@ pub(crate) async fn rest_verify_user(
         ..Default::default()
     };
     let request = rest_owned_view::<VerifyUserRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .verify_user(Context::new(headers), request)
+    let (payload, ctx) = auth_verify_user(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -266,6 +265,40 @@ pub(crate) async fn auth_sign_out(
     attach_session_headers(&mut ctx, &service.session_manager, &anonymous_session);
 
     Ok((anonymous_current_session_response(), ctx))
+}
+
+pub(crate) async fn auth_verify_user(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<VerifyUserRequestView<'static>>,
+) -> Result<(VerifyUserResponse, Context), ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "auth requires repository backend",
+        ));
+    };
+    let Some(user_id) = repository
+        .find_valid_signup_verification_user_id(request.login_id, request.verification_code)
+        .await
+        .map_err(crate::internal_error)?
+    else {
+        return Err(ConnectError::not_found("Invalid verification"));
+    };
+    let user = repository
+        .mark_user_confirmed(user_id)
+        .await
+        .map_err(crate::internal_error)?;
+    repository
+        .delete_signup_verification(request.verification_code)
+        .await
+        .map_err(crate::internal_error)?;
+    Ok((
+        VerifyUserResponse {
+            login_id: user.login_id,
+            ..Default::default()
+        },
+        ctx,
+    ))
 }
 
 pub(crate) async fn direct_request_reset_password_email(

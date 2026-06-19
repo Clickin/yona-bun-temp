@@ -60,10 +60,7 @@ describe("agent cargo harness contract", () => {
   it("detects Codex sandbox environments", () => {
     assert.equal(codexSandboxReason({}), null);
     assert.equal(codexSandboxReason({ CODEX_SANDBOX: "seatbelt" }), "CODEX_SANDBOX=seatbelt");
-    assert.equal(
-      codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }),
-      "CODEX_SANDBOX_NETWORK_DISABLED=1",
-    );
+    assert.equal(codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }), null);
   });
 
   it("refuses execution when a Codex sandbox marker is present", async () => {

@@ -366,6 +366,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   covered by
   `auth_workspace_contract::rest_auth_routes_round_trip_with_shared_session_and_error_envelope`
   and `auth_workspace_contract::register_sign_in_sign_out_and_current_session_round_trip`.
+- 2026-06-20 build/check diet note: verify-user RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/auth.rs`, preserving signup verification lookup,
+  invalid/expired verification rejection, user confirmation, verification-row
+  cleanup, and returned login id behavior covered by
+  `auth_workspace_contract::rest_verify_user_confirms_pending_signup` and
+  `auth_workspace_contract::verify_user_activates_pending_account_and_rejects_invalid_or_expired_links`.
 
 ## Wave 0 Exit Snapshot
 

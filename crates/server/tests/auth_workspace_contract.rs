@@ -891,13 +891,22 @@ async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
 }
 
 #[tokio::test]
+// Guards the auth route-owned verify helper through REST verification.
 async fn rest_verify_user_confirms_pending_signup() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
 
-    let (app, _, db) = build_auth_router().await;
+    let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                email_verification_enabled: true,
+                ..AuthUiConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .clone()
@@ -937,8 +946,6 @@ async fn rest_verify_user_confirms_pending_signup() {
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
 
     assert_eq!(verify.status(), StatusCode::OK);
     let verify_json = response_text(verify).await;
@@ -1841,11 +1848,21 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
 }
 
 #[tokio::test]
+// Guards the auth route-owned verify helper through the proto adapter.
 async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_links() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
-    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
-    let (app, repository, db) = build_auth_router().await;
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                email_verification_enabled: true,
+                ..AuthUiConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1967,7 +1984,6 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         )
         .await
         .unwrap();
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     assert_eq!(expired_response.status(), StatusCode::NOT_FOUND);
 }
 

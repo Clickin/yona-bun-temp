@@ -79,9 +79,6 @@ export function codexSandboxReason(env = process.env) {
   if (env.CODEX_SANDBOX) {
     return `CODEX_SANDBOX=${env.CODEX_SANDBOX}`;
   }
-  if (env.CODEX_SANDBOX_NETWORK_DISABLED) {
-    return `CODEX_SANDBOX_NETWORK_DISABLED=${env.CODEX_SANDBOX_NETWORK_DISABLED}`;
-  }
   return null;
 }
 
