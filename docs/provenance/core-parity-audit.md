@@ -487,6 +487,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   projection behavior covered by
   `org_project_contract::update_project_overview_returns_refreshed_project_container`
   and `org_project_contract::toggle_project_watch_returns_refreshed_project_container`.
+- 2026-06-20 build/check diet note: project update RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/projects.rs`; the service method remains a
+  compatibility delegate while the REST project update handler calls the
+  project route-owned helper directly before menu, reviewer, and logo
+  post-processing. This preserves CSRF/session checks, name/scope validation,
+  duplicate detection, project update authorization, and updated detail
+  projection behavior covered by
+  `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
 
 ## Wave 0 Exit Snapshot
 

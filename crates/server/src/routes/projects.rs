@@ -1455,6 +1455,97 @@ pub(crate) async fn project_overview_update(
     ))
 }
 
+pub(crate) async fn project_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateProjectRequestView<'static>>,
+) -> Result<(ProjectDetail, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    if !is_valid_project_name(request.project_name) || request.overview.len() > 255 {
+        return Err(ConnectError::invalid_argument("invalid project request"));
+    }
+    let authorization = repository
+        .read_project_authorization(
+            request.current_owner_name,
+            request.current_project_name,
+            Some(user_id),
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let can_update = authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Update,
+    )
+    .allowed;
+    if !can_update {
+        return Err(ConnectError::permission_denied(
+            "project update is not allowed",
+        ));
+    }
+    if normalize_identifier(request.current_owner_name) != normalize_identifier(request.owner_name)
+    {
+        return Err(ConnectError::invalid_argument(
+            "project owner change is not supported in this packet",
+        ));
+    }
+    if (normalize_identifier(request.current_owner_name)
+        != normalize_identifier(request.owner_name)
+        || normalize_identifier(request.current_project_name)
+            != normalize_identifier(request.project_name))
+        && repository
+            .project_identifier_exists(request.owner_name, request.project_name)
+            .await
+            .map_err(internal_error)?
+    {
+        return Err(ConnectError::already_exists("project.name.duplicate"));
+    }
+
+    repository
+        .update_project(persistence::UpdateProjectInput {
+            current_owner_name: request.current_owner_name.trim().to_string(),
+            current_project_name: request.current_project_name.trim().to_string(),
+            overview: Some(request.overview.trim().to_string()),
+            project_name: request.project_name.trim().to_string(),
+            project_scope: map_project_scope(request.project_scope)?
+                .as_str()
+                .to_string(),
+        })
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let updated = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    Ok((
+        project_detail_with_logo_from_record(repository, &service.base_path, &updated, true, false)
+            .await?,
+        ctx,
+    ))
+}
+
 pub(crate) async fn project_watch_toggle(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -5154,8 +5245,7 @@ pub(crate) async fn rest_update_project(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateProjectRequestView<'static>>(&request)?;
-    let (mut payload, ctx) = service
-        .update_project(Context::new(headers.clone()), request)
+    let (mut payload, ctx) = project_update(&service, Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     if let Some(menu_settings) = menu_settings {

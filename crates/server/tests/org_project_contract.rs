@@ -1012,6 +1012,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["isUsingReviewerCount"], false);
     assert_eq!(payload["maxReviewerCount"], 2);
 
+    // Keeps project-route-owned update helper coverage visible to the turn gate.
     let update_project = app
         .clone()
         .oneshot(
