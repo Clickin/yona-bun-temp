@@ -36,8 +36,9 @@ use crate::{
     RestRouteError,
 };
 use yona_rust_domain::{
-    can_create_organization_project, can_create_personal_project, can_update_organization,
-    is_valid_organization_name, is_valid_project_name,
+    authorize_project_access, can_create_organization_project, can_create_personal_project,
+    can_request_project_enrollment, can_update_organization, is_valid_organization_name,
+    is_valid_project_name, ProjectAccessFacts, ProjectOperation,
 };
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
 use yona_rust_vcs::VcsError;
@@ -1089,6 +1090,196 @@ pub(crate) async fn organization_delete(
             redirect_path: "/".to_string(),
             ..Default::default()
         },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_detail_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadProjectDetailRequestView<'static>>,
+) -> Result<(ProjectDetail, Context), ConnectError> {
+    let session = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers);
+    let actor_id = session.as_ref().and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(request.owner_name, request.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let decision = authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: actor_id.is_none(),
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Read,
+    );
+    if !decision.allowed {
+        return if actor_id.is_none() {
+            Err(ConnectError::unauthenticated("project read is not allowed"))
+        } else {
+            Err(ConnectError::permission_denied(
+                "project read is not allowed",
+            ))
+        };
+    }
+
+    if let Some(user_id) = actor_id {
+        repository
+            .record_recent_project_visit(
+                user_id,
+                &authorization.project.owner_name,
+                &authorization.project.project_name,
+            )
+            .await
+            .map_err(internal_error)?;
+    }
+
+    Ok((
+        project_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &authorization,
+            authorize_project_access(
+                &ProjectAccessFacts {
+                    is_anonymous: actor_id.is_none(),
+                    is_guest: authorization.viewer.is_guest,
+                    is_organization_admin: authorization.viewer.is_organization_admin,
+                    is_organization_member: authorization.viewer.is_organization_member,
+                    is_project_manager: authorization.viewer.is_project_manager,
+                    is_project_member: authorization.viewer.is_project_member,
+                    is_site_admin: authorization.viewer.is_site_admin,
+                    project_scope: map_project_scope(&authorization.project.project_scope)?,
+                },
+                ProjectOperation::Update,
+            )
+            .allowed,
+            can_request_project_enrollment(
+                actor_id.is_some(),
+                authorization.viewer.is_guest,
+                authorization.viewer.is_organization_admin,
+                authorization.viewer.is_organization_member,
+                authorization.viewer.is_project_manager,
+                authorization.viewer.is_project_member,
+                authorization.viewer.is_site_admin,
+            ),
+        )
+        .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_settings_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadProjectSettingsRequestView<'static>>,
+) -> Result<(ProjectDetail, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let can_update = authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Update,
+    )
+    .allowed;
+    if !can_update {
+        return Err(ConnectError::permission_denied(
+            "project update is not allowed",
+        ));
+    }
+
+    Ok((
+        project_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &authorization,
+            true,
+            false,
+        )
+        .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_container_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadProjectContainerRequestView<'static>>,
+) -> Result<(ProjectContainer, Context), ConnectError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(request.owner_name, request.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    if !project_read_allowed(&authorization, actor_id.is_none())? {
+        return if actor_id.is_none() {
+            Err(ConnectError::unauthenticated("project read is not allowed"))
+        } else {
+            Err(ConnectError::permission_denied(
+                "project read is not allowed",
+            ))
+        };
+    }
+
+    if let Some(user_id) = actor_id {
+        repository
+            .record_recent_project_visit(user_id, request.owner_name, request.project_name)
+            .await
+            .map_err(internal_error)?;
+    }
+
+    Ok((
+        build_project_container_response(
+            repository,
+            &service.public_origin,
+            &service.base_path,
+            &authorization,
+            actor_id,
+        )
+        .await?,
         ctx,
     ))
 }
@@ -2834,8 +3025,7 @@ pub(crate) async fn rest_read_project_detail(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadProjectDetailRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_project_detail(Context::new(headers), request)
+    let (payload, ctx) = project_detail_read(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2854,8 +3044,7 @@ pub(crate) async fn rest_read_project_container(
     };
     let request = rest_owned_view::<ReadProjectContainerRequestView<'static>>(&request)?;
     let context = Context::new(headers.clone());
-    let (payload, ctx) = service
-        .read_project_container(context, request)
+    let (payload, ctx) = project_container_read(&service, context, request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let readme_file = rest_project_readme_file(&service, &headers, &payload)
@@ -3112,8 +3301,7 @@ pub(crate) async fn rest_read_project_settings(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadProjectSettingsRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_project_settings(Context::new(headers.clone()), request)
+    let (payload, ctx) = project_settings_read(&service, Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let actor_id = service

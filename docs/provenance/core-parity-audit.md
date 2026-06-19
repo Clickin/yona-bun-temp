@@ -460,6 +460,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   protection, member leave redirects, empty-organization delete checks, and
   redirect/container projection behavior covered by
   `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
+- 2026-06-20 build/check diet note: project detail, settings, and container
+  read RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`;
+  service methods remain compatibility delegates while REST project
+  detail/settings/container handlers call the project route-owned helpers
+  directly, preserving read ACL, recent-project visit recording, update/settings
+  authorization, enrollment CTA flags, and project container projection behavior
+  covered by `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
 
 ## Wave 0 Exit Snapshot
 
