@@ -16,6 +16,7 @@ use yona_rust_vcs::VcsError;
 mod date;
 mod href;
 mod lock;
+mod options;
 mod path;
 mod propfind;
 mod report_filters;
@@ -99,12 +100,7 @@ pub(crate) async fn direct_request(
     if method == "OPTIONS" {
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
-        return svn_protocol_options_response(
-            &repo_path,
-            &route,
-            youngest_revision,
-            repository_uuid,
-        );
+        return options::response(&repo_path, &route, youngest_revision, repository_uuid);
     }
     if method == "PROPFIND" && route.svn_path.is_empty() {
         let body_bytes = match body.collect().await {
@@ -272,74 +268,6 @@ pub(crate) async fn direct_request(
         );
     }
     svn_protocol_not_implemented_response(&route, &method)
-}
-
-fn svn_protocol_options_response(
-    repo_path: &StdPath,
-    route: &SvnProtocolRoute,
-    youngest_revision: Option<i64>,
-    repository_uuid: Option<String>,
-) -> Response {
-    let activity_collection = format!("{}/!svn/act/", href::project(route));
-    let body = format!(
-        r#"<?xml version="1.0" encoding="utf-8"?>
-<D:options-response xmlns:D="DAV:">
-  <D:activity-collection-set>
-    <D:href>{}</D:href>
-  </D:activity-collection-set>
-</D:options-response>"#,
-        xml_escape(&activity_collection)
-    );
-    let mut response = (StatusCode::OK, body).into_response();
-    response
-        .headers_mut()
-        .insert("dav", HeaderValue::from_static("1,2"));
-    response
-        .headers_mut()
-        .insert("ms-author-via", HeaderValue::from_static("DAV"));
-    response.headers_mut().insert(
-        http::header::ALLOW,
-        HeaderValue::from_static(
-            "OPTIONS, GET, HEAD, POST, PUT, COPY, MOVE, DELETE, MKCOL, MKACTIVITY, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
-        ),
-    );
-    response.headers_mut().insert(
-        http::header::CONTENT_TYPE,
-        HeaderValue::from_static("application/xml; charset=utf-8"),
-    );
-    if let Some(revision) = youngest_revision {
-        if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
-            response.headers_mut().insert("svn-youngest-rev", value);
-        }
-    }
-    if let Some(uuid) = repository_uuid {
-        if let Ok(value) = HeaderValue::from_str(&uuid) {
-            response.headers_mut().insert("svn-repository-uuid", value);
-        }
-    }
-    response
-        .headers_mut()
-        .insert("svn-repository-mergeinfo", HeaderValue::from_static("yes"));
-    if svn_protocol_options_targets_file(repo_path, route) {
-        // Subversion expects this HTTP-v2 header to be a server-relative URI;
-        // absolute URLs trip VisualSVN 1.14 direct-file property commands.
-        let repository_root_uri = base_path_href(
-            &route.base_path,
-            &format!("/svn/{}/{}", route.owner_name, route.project_name),
-        );
-        if let Ok(value) = HeaderValue::from_str(&repository_root_uri) {
-            response.headers_mut().insert("svn-repository-root", value);
-        }
-    }
-    response
-}
-
-fn svn_protocol_options_targets_file(repo_path: &StdPath, route: &SvnProtocolRoute) -> bool {
-    let path = route.svn_path.trim_matches('/');
-    if path.is_empty() || path.starts_with("!svn/") {
-        return false;
-    }
-    yona_rust_vcs::svn_cat_file(repo_path, None, path).is_ok()
 }
 
 fn svn_protocol_root_propfind_response(
