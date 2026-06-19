@@ -115,6 +115,186 @@ fn application_hostname_from_env() -> Option<String> {
     configured_env_value(&["YONA_APPLICATION_HOSTNAME", "APPLICATION_HOSTNAME"])
 }
 
+pub(crate) fn configured_site_name() -> String {
+    let value = std::env::var("YONA_SITE_NAME").ok();
+    site_name_from_option(value.as_deref())
+}
+
+pub(crate) fn site_name_from_option(value: Option<&str>) -> String {
+    trimmed_option(value).unwrap_or_else(|| "Yona".to_string())
+}
+
+pub(crate) fn trimmed_option(value: Option<&str>) -> Option<String> {
+    value
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+pub(crate) fn configured_trimmed_string(name: &str) -> String {
+    let value = std::env::var(name).ok();
+    trimmed_option(value.as_deref()).unwrap_or_default()
+}
+
+pub(crate) fn configured_auth_social_providers() -> Vec<String> {
+    let value = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
+    auth_social_providers_from_csv(value.as_deref())
+}
+
+pub(crate) fn auth_social_providers_from_option(values: Option<&[String]>) -> Vec<String> {
+    values
+        .map(|values| values.join(","))
+        .map(|value| auth_social_providers_from_csv(Some(&value)))
+        .unwrap_or_default()
+}
+
+fn auth_social_providers_from_csv(value: Option<&str>) -> Vec<String> {
+    value
+        .unwrap_or_default()
+        .split(',')
+        .map(|provider| provider.trim().to_ascii_lowercase())
+        .filter(|provider| !provider.is_empty())
+        .collect()
+}
+
+pub(crate) fn configured_project_default_scope() -> String {
+    let value = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
+    project_default_scope_from_option(value.as_deref())
+}
+
+pub(crate) fn project_default_scope_from_option(value: Option<&str>) -> String {
+    value
+        .map(normalize_identifier)
+        .filter(|value| matches!(value.as_str(), "public" | "protected" | "private"))
+        .unwrap_or_else(|| "public".to_string())
+}
+
+pub(crate) fn configured_project_default_menus() -> Vec<String> {
+    let value = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
+    project_default_menus_from_csv(value.as_deref())
+}
+
+pub(crate) fn project_default_menus_from_option(values: Option<&[String]>) -> Vec<String> {
+    values
+        .map(|values| values.join(","))
+        .map(|value| project_default_menus_from_csv(Some(&value)))
+        .unwrap_or_else(default_project_menu_keys)
+}
+
+fn project_default_menus_from_csv(value: Option<&str>) -> Vec<String> {
+    let menus = value
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(normalized_project_default_menu_key)
+        .collect::<Vec<_>>();
+    (!menus.is_empty())
+        .then_some(menus)
+        .unwrap_or_else(default_project_menu_keys)
+}
+
+fn normalized_project_default_menu_key(value: &str) -> Option<String> {
+    match normalize_project_default_menu_config_key(value).as_str() {
+        "board" => Some("board".to_string()),
+        "code" => Some("code".to_string()),
+        "issue" => Some("issue".to_string()),
+        "milestone" => Some("milestone".to_string()),
+        "pullrequest" => Some("pullRequest".to_string()),
+        "review" => Some("review".to_string()),
+        _ => None,
+    }
+}
+
+pub(crate) fn default_project_menu_keys() -> Vec<String> {
+    vec![
+        "code".to_string(),
+        "issue".to_string(),
+        "pullRequest".to_string(),
+        "review".to_string(),
+        "milestone".to_string(),
+        "board".to_string(),
+    ]
+}
+
+fn normalize_project_default_menu_config_key(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| !ch.is_whitespace() && *ch != '_' && *ch != '-')
+        .collect::<String>()
+        .to_ascii_lowercase()
+}
+
+pub(crate) fn configured_supported_languages() -> Vec<String> {
+    let value = std::env::var("YONA_LANGS").ok();
+    supported_languages_from_csv(value.as_deref())
+}
+
+pub(crate) fn supported_languages_from_option(values: Option<&[String]>) -> Vec<String> {
+    let languages = values
+        .unwrap_or_default()
+        .iter()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    (!languages.is_empty())
+        .then_some(languages)
+        .unwrap_or_else(default_supported_languages)
+}
+
+fn supported_languages_from_csv(value: Option<&str>) -> Vec<String> {
+    let languages = value
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    (!languages.is_empty())
+        .then_some(languages)
+        .unwrap_or_else(default_supported_languages)
+}
+
+pub(crate) fn default_supported_languages() -> Vec<String> {
+    vec![
+        "en-US".to_string(),
+        "ko-KR".to_string(),
+        "ja-JP".to_string(),
+        "ru-RU".to_string(),
+        "uz-UZ".to_string(),
+    ]
+}
+
+pub(crate) fn configured_bool_env(names: &[&str], default: bool) -> bool {
+    names
+        .iter()
+        .find_map(|name| {
+            std::env::var(name).ok().and_then(|value| {
+                match value.trim().to_ascii_lowercase().as_str() {
+                    "1" | "true" | "yes" | "on" => Some(true),
+                    "0" | "false" | "no" | "off" => Some(false),
+                    _ => None,
+                }
+            })
+        })
+        .unwrap_or(default)
+}
+
+pub(crate) const LEGACY_DEFAULT_MAX_FILE_SIZE: usize = 2_147_483_454;
+
+pub(crate) fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
+    value
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
+}
+
+pub(crate) fn max_uploaded_file_size_from_option(value: Option<usize>) -> usize {
+    value.unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
+}
+
+pub(crate) fn configured_max_uploaded_file_size() -> usize {
+    let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
+    max_uploaded_file_size_from_env_value(env_value.as_deref())
+}
+
 #[derive(Serialize)]
 struct RestErrorEnvelope {
     error: RestErrorPayload,

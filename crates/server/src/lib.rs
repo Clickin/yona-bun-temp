@@ -29,12 +29,16 @@ pub use notification_mail::{
 };
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
-    append_response_headers, attach_session_headers, base_path_href,
-    build_organization_admin_response, build_organization_container_response,
+    append_response_headers, attach_session_headers, auth_social_providers_from_option,
+    base_path_href, build_organization_admin_response, build_organization_container_response,
     build_project_container_response, build_workspace_overview_response, code_branch_error,
     code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
-    configured_env_value, current_session_response_from_user, decode_query_component,
-    default_public_origin, default_smtp_from, delete_project_repository_storage,
+    configured_auth_social_providers, configured_bool_env, configured_env_value,
+    configured_max_uploaded_file_size, configured_project_default_menus,
+    configured_project_default_scope, configured_site_name, configured_supported_languages,
+    configured_trimmed_string, current_session_response_from_user, decode_query_component,
+    default_project_menu_keys, default_public_origin, default_smtp_from,
+    default_supported_languages, delete_project_repository_storage,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
     direct_toggle_workspace_notification, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
@@ -55,6 +59,7 @@ pub(crate) use routes::{
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
     legacy_issue_update_body_from_value, legacy_json_find_value, map_project_scope,
+    max_uploaded_file_size_from_env_value, max_uploaded_file_size_from_option,
     milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
     organization_admin_member_from_record, organization_detail_from_record,
@@ -63,24 +68,27 @@ pub(crate) use routes::{
     organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
     parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
     percent_encode_uri_component, posting_can_create, posting_can_update,
-    project_code_menu_visible, project_detail_from_record, project_detail_with_logo_from_record,
-    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
-    project_milestone_summary_from_record, project_resource_create_allowed,
-    project_webhook_type_label, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
-    require_project_resource_create, require_session, require_valid_csrf,
+    project_code_menu_visible, project_default_menus_from_option,
+    project_default_scope_from_option, project_detail_from_record,
+    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
+    project_member_summary_from_record, project_milestone_summary_from_record,
+    project_resource_create_allowed, project_webhook_type_label, read_issue_access,
+    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
+    redirect_to, require_project_resource_create, require_session, require_valid_csrf,
     resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
     rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
     rest_read_direct_issue_form_options, rest_repository, rest_require_project_code_read,
-    rest_review_thread_filter, rest_update_commit_discussion_thread_state, uploaded_file_path,
-    user_issue_filter_name, user_issue_state, visible_code_projects_for_organization,
-    visible_projects_for_organization, visible_user_issue_items, workspace_avatar_url,
-    workspace_profile_from_record, ProjectCreatableResource, RestBoardLabel,
-    RestIssueAssignableUsersQuery, RestProjectDeleteResponse, RestProjectIssuesQuery,
-    RestReviewThread, RestReviewThreadListQuery, RestRouteError,
+    rest_review_thread_filter, rest_update_commit_discussion_thread_state, site_name_from_option,
+    site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
+    uploaded_file_path, user_issue_filter_name, user_issue_state,
+    visible_code_projects_for_organization, visible_projects_for_organization,
+    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record,
+    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
+    RestProjectDeleteResponse, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
+    RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub mod runtime_config;
 mod server_config;
@@ -946,169 +954,6 @@ pub(crate) async fn serve_frontend_page(
     }
 }
 
-fn configured_site_name() -> String {
-    let value = std::env::var("YONA_SITE_NAME").ok();
-    site_name_from_option(value.as_deref())
-}
-
-fn site_name_from_option(value: Option<&str>) -> String {
-    trimmed_option(value).unwrap_or_else(|| "Yona".to_string())
-}
-
-fn trimmed_option(value: Option<&str>) -> Option<String> {
-    value
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-}
-
-fn configured_trimmed_string(name: &str) -> String {
-    let value = std::env::var(name).ok();
-    trimmed_option(value.as_deref()).unwrap_or_default()
-}
-
-fn configured_auth_social_providers() -> Vec<String> {
-    let value = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
-    auth_social_providers_from_csv(value.as_deref())
-}
-
-fn auth_social_providers_from_option(values: Option<&[String]>) -> Vec<String> {
-    values
-        .map(|values| values.join(","))
-        .map(|value| auth_social_providers_from_csv(Some(&value)))
-        .unwrap_or_default()
-}
-
-fn auth_social_providers_from_csv(value: Option<&str>) -> Vec<String> {
-    value
-        .unwrap_or_default()
-        .split(',')
-        .map(|provider| provider.trim().to_ascii_lowercase())
-        .filter(|provider| !provider.is_empty())
-        .collect()
-}
-
-fn configured_project_default_scope() -> String {
-    let value = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
-    project_default_scope_from_option(value.as_deref())
-}
-
-fn project_default_scope_from_option(value: Option<&str>) -> String {
-    value
-        .map(normalize_identifier)
-        .filter(|value| matches!(value.as_str(), "public" | "protected" | "private"))
-        .unwrap_or_else(|| "public".to_string())
-}
-
-fn configured_project_default_menus() -> Vec<String> {
-    let value = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
-    project_default_menus_from_csv(value.as_deref())
-}
-
-fn project_default_menus_from_option(values: Option<&[String]>) -> Vec<String> {
-    values
-        .map(|values| values.join(","))
-        .map(|value| project_default_menus_from_csv(Some(&value)))
-        .unwrap_or_else(default_project_menu_keys)
-}
-
-fn project_default_menus_from_csv(value: Option<&str>) -> Vec<String> {
-    let menus = value
-        .unwrap_or_default()
-        .split(',')
-        .filter_map(normalized_project_default_menu_key)
-        .collect::<Vec<_>>();
-    (!menus.is_empty())
-        .then_some(menus)
-        .unwrap_or_else(default_project_menu_keys)
-}
-
-fn normalized_project_default_menu_key(value: &str) -> Option<String> {
-    match normalize_project_default_menu_config_key(value).as_str() {
-        "board" => Some("board".to_string()),
-        "code" => Some("code".to_string()),
-        "issue" => Some("issue".to_string()),
-        "milestone" => Some("milestone".to_string()),
-        "pullrequest" => Some("pullRequest".to_string()),
-        "review" => Some("review".to_string()),
-        _ => None,
-    }
-}
-
-fn default_project_menu_keys() -> Vec<String> {
-    vec![
-        "code".to_string(),
-        "issue".to_string(),
-        "pullRequest".to_string(),
-        "review".to_string(),
-        "milestone".to_string(),
-        "board".to_string(),
-    ]
-}
-
-fn normalize_project_default_menu_config_key(value: &str) -> String {
-    value
-        .chars()
-        .filter(|ch| !ch.is_whitespace() && *ch != '_' && *ch != '-')
-        .collect::<String>()
-        .to_ascii_lowercase()
-}
-
-fn configured_supported_languages() -> Vec<String> {
-    let value = std::env::var("YONA_LANGS").ok();
-    supported_languages_from_csv(value.as_deref())
-}
-
-fn supported_languages_from_option(values: Option<&[String]>) -> Vec<String> {
-    let languages = values
-        .unwrap_or_default()
-        .iter()
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .collect::<Vec<_>>();
-    (!languages.is_empty())
-        .then_some(languages)
-        .unwrap_or_else(default_supported_languages)
-}
-
-fn supported_languages_from_csv(value: Option<&str>) -> Vec<String> {
-    let languages = value
-        .unwrap_or_default()
-        .split(',')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .collect::<Vec<_>>();
-    (!languages.is_empty())
-        .then_some(languages)
-        .unwrap_or_else(default_supported_languages)
-}
-
-fn default_supported_languages() -> Vec<String> {
-    vec![
-        "en-US".to_string(),
-        "ko-KR".to_string(),
-        "ja-JP".to_string(),
-        "ru-RU".to_string(),
-        "uz-UZ".to_string(),
-    ]
-}
-
-fn configured_bool_env(names: &[&str], default: bool) -> bool {
-    names
-        .iter()
-        .find_map(|name| {
-            std::env::var(name).ok().and_then(|value| {
-                match value.trim().to_ascii_lowercase().as_str() {
-                    "1" | "true" | "yes" | "on" => Some(true),
-                    "0" | "false" | "no" | "off" => Some(false),
-                    _ => None,
-                }
-            })
-        })
-        .unwrap_or(default)
-}
-
 pub(crate) fn yona_data_root() -> PathBuf {
     std::env::var("YONA_DATA")
         .ok()
@@ -1120,23 +965,6 @@ pub(crate) fn yona_data_root() -> PathBuf {
 fn repository_provisioning_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
-}
-
-const LEGACY_DEFAULT_MAX_FILE_SIZE: usize = 2_147_483_454;
-
-fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
-    value
-        .and_then(|value| value.trim().parse::<usize>().ok())
-        .unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
-}
-
-fn max_uploaded_file_size_from_option(value: Option<usize>) -> usize {
-    value.unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
-}
-
-fn configured_max_uploaded_file_size() -> usize {
-    let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
-    max_uploaded_file_size_from_env_value(env_value.as_deref())
 }
 
 pub(crate) fn random_storage_token() -> String {

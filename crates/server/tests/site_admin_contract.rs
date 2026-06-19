@@ -2836,6 +2836,7 @@ async fn site_admin_update_download_file_decodes_plain_http_chunked_binary() {
 
 #[tokio::test]
 async fn site_admin_update_download_file_proxies_configured_https_binary() {
+    // Guards site-admin-owned HTTPS update fetch command parsing used by the download proxy.
     let fake_curl_dir = tempfile::tempdir().expect("fake curl tempdir");
     let fake_curl = fake_curl_dir.path().join("fake-curl.sh");
     std::fs::write(

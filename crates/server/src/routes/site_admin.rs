@@ -3303,7 +3303,7 @@ fn site_update_https_get_bytes(
     site_update_payload_from_http_response_bytes(url, &output.stdout)
 }
 
-fn site_update_https_fetch_command(
+pub(crate) fn site_update_https_fetch_command(
     url: &str,
     config: &SiteUpdateConfig,
 ) -> Result<(String, Vec<String>), String> {

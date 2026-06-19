@@ -636,6 +636,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
 
 #[tokio::test]
 async fn create_project_uses_configured_default_scope_when_request_omits_scope() {
+    // Guards route-utils-owned project default scope config parsing.
     let _guard = yona_data_env_lock().lock().unwrap();
     let previous_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let app = build_app_with_repository_and_app_config(AppRuntimeConfig {
@@ -677,6 +678,7 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
 
 #[tokio::test]
 async fn create_project_uses_configured_default_menus_for_new_project_container() {
+    // Guards route-utils-owned project default menu config parsing.
     let _guard = yona_data_env_lock().lock().unwrap();
     let previous_default_menus = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
     let (app, app_repo) = build_app_with_repository_and_configs(

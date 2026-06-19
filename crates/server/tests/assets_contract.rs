@@ -296,6 +296,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 
 #[tokio::test]
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
+    // Guards route-utils-owned runtime config parsers for project scope, languages, and email visibility.
     let _guard = runtime_config_env_lock().lock().unwrap();
     let previous_project_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let previous_langs = std::env::var("YONA_LANGS").ok();

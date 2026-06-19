@@ -74,16 +74,21 @@ pub(crate) use pull_requests::{
 pub(crate) use search::routes as search_routes;
 pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
+pub(crate) use site_admin::site_update_https_fetch_command;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
-    append_response_headers, attach_session_headers, base_path_href,
-    build_organization_admin_response, build_organization_container_response,
+    append_response_headers, attach_session_headers, auth_social_providers_from_option,
+    base_path_href, build_organization_admin_response, build_organization_container_response,
     build_project_container_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown, configured_env_value,
-    current_session_response_from_user, decode_query_component, default_public_origin,
-    default_smtp_from, deserialize_i64_vec_from_strings_or_numbers,
+    code_file_record_is_renderable_markdown, code_path_is_markdown,
+    configured_auth_social_providers, configured_bool_env, configured_env_value,
+    configured_max_uploaded_file_size, configured_project_default_menus,
+    configured_project_default_scope, configured_site_name, configured_supported_languages,
+    configured_trimmed_string, current_session_response_from_user, decode_query_component,
+    default_project_menu_keys, default_public_origin, default_smtp_from,
+    default_supported_languages, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
     direct_status_from_connect_error, escape_html_attr, escape_html_text, form_bool, form_value,
     format_project_date_label, gravatar_url, headers_with_form_csrf,
@@ -94,22 +99,25 @@ pub(crate) use utils::{
     legacy_external_date_string, legacy_external_parse_datetime, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, map_project_scope, normalize_identifier, normalize_issue_label_color,
+    legacy_json_find_value, map_project_scope, max_uploaded_file_size_from_env_value,
+    max_uploaded_file_size_from_option, normalize_identifier, normalize_issue_label_color,
     normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
     organization_detail_from_record, organization_detail_with_logo_from_record,
     organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
     organization_logo_url, organization_member_summary_from_record, organization_role_options,
     parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
-    percent_encode_uri_component, project_code_menu_visible, project_detail_from_record,
+    percent_encode_uri_component, project_code_menu_visible, project_default_menus_from_option,
+    project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
     project_resource_create_allowed, redirect_to, require_project_resource_create, require_session,
     require_valid_csrf, resolve_current_session_response, rest_actor_id,
     rest_board_label_from_record, rest_json_response, rest_not_found_response, rest_owned_view,
     rest_read_current_session, rest_repository, rest_require_project_code_read,
-    user_issue_filter_name, user_issue_state, visible_code_projects_for_organization,
-    visible_projects_for_organization, ProjectCreatableResource, RestBoardLabel,
-    RestIssueAssignableUsersQuery, RestProjectDeleteResponse, RestRouteError,
+    site_name_from_option, supported_languages_from_option, trimmed_option, user_issue_filter_name,
+    user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
+    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
+    RestProjectDeleteResponse, RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
