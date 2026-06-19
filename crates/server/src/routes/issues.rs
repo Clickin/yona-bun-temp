@@ -2837,6 +2837,45 @@ pub(crate) async fn issue_comment_participation_mutation(
     ))
 }
 
+pub(crate) async fn issue_favorite_toggle(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<IssueParticipationRequestView<'static>>,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id).await?;
+    let access = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        Some(actor.id),
+    )
+    .await?;
+    repository
+        .toggle_favorite_issue(access.issue.id, actor.id)
+        .await
+        .map_err(internal_error)?;
+    let updated = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        Some(actor.id),
+    )
+    .await?;
+    Ok((
+        issue_detail_response_from_access(&updated, Some(actor.id), &service.base_path),
+        ctx,
+    ))
+}
+
 async fn rest_toggle_favorite_issue(
     headers: HeaderMap,
     owner_name: String,

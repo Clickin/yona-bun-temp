@@ -201,6 +201,7 @@ async fn create_issue(
 }
 
 #[tokio::test]
+// Guards the issue route-owned favorite toggle helper used by the proto adapter.
 async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues() {
     let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

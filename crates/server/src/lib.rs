@@ -51,25 +51,26 @@ pub(crate) use routes::{
     issue_attachment_from_record, issue_can_mutate, issue_comment_participation_mutation,
     issue_detail_response_from_access, issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
-    issue_detail_response_from_record_with_sharer_flags, issue_label_category_from_record,
-    issue_label_css, issue_label_from_record, issue_list_filter_from_request,
-    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
-    issue_participation_mutation, legacy_content_disposition_filename,
-    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
-    legacy_external_api_hello, legacy_external_api_token_from_headers,
-    legacy_external_assignable_users_result, legacy_external_attachment_result,
-    legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
-    legacy_external_parse_datetime, legacy_external_post_author,
-    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
-    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, map_project_scope, max_uploaded_file_size_from_env_value,
-    max_uploaded_file_size_from_option, milestone_list_filter_from_request,
-    milestone_mutation_input, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
-    organization_logo_url, organization_member_summary_from_record, organization_role_options,
-    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    issue_detail_response_from_record_with_sharer_flags, issue_favorite_toggle,
+    issue_label_category_from_record, issue_label_css, issue_label_from_record,
+    issue_list_filter_from_request, issue_milestone_from_record,
+    issue_milestone_from_record_with_issue_references, issue_participation_mutation,
+    legacy_content_disposition_filename, legacy_content_update_body_from_value,
+    legacy_external_api_auth_error_response, legacy_external_api_hello,
+    legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
+    legacy_external_attachment_result, legacy_external_authenticated_user_id,
+    legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
+    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
+    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value, map_project_scope,
+    max_uploaded_file_size_from_env_value, max_uploaded_file_size_from_option,
+    milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
+    organization_admin_member_from_record, organization_detail_from_record,
+    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url,
+    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
     percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
@@ -3755,38 +3756,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            Some(actor.id),
-        )
-        .await?;
-        repository
-            .toggle_favorite_issue(access.issue.id, actor.id)
-            .await
-            .map_err(internal_error)?;
-        let updated = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            Some(actor.id),
-        )
-        .await?;
-        Ok((
-            issue_detail_response_from_access(&updated, Some(actor.id), &self.base_path),
-            ctx,
-        ))
+        issue_favorite_toggle(self, ctx, request).await
     }
 
     async fn assign_issue(

@@ -310,6 +310,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - Project/organization PR list rows now expose `closedCommentThreadCount` with
   `commentThreadCount` so the legacy closed/total review progress badge can be
   rendered without inferring closed state on the client.
+- 2026-06-19 build/check diet note: issue favorite toggle mutation logic moved
+  from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/issues.rs`, preserving the same proto/REST issue
+  favorite detail refresh behavior covered by
+  `user_issue_favorite_contract::favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues`
+  and `rest_contract::rest_issue_meta_routes_manage_participation_assignment_sharing_and_comment_votes`.
 
 ## Wave 0 Exit Snapshot
 
