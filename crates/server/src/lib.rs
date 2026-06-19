@@ -81,6 +81,7 @@ pub(crate) use routes::{
     project_code_menu_visible, project_container_read, project_create,
     project_default_menus_from_option, project_default_scope_from_option,
     project_detail_from_record, project_detail_read, project_detail_with_logo_from_record,
+    project_enroll, project_enroll_cancel, project_favorite_toggle,
     project_issue_list_item_to_proto, project_label_categories_list, project_label_category_create,
     project_label_category_delete, project_label_category_update, project_label_create,
     project_label_delete, project_label_update, project_labels_list, project_logo_url,
@@ -90,11 +91,12 @@ pub(crate) use routes::{
     project_read_allowed, project_resource_create_allowed, project_settings_read, project_update,
     project_update_allowed, project_watch_toggle, project_webhook_type_label,
     random_site_admin_password, random_storage_token, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
-    require_authenticated_user, require_project_authorization, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf,
-    resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
-    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
+    read_posting_comment_create_access, recent_project_visit_record,
+    record_project_webhook_delivery, redirect_to, require_authenticated_user,
+    require_project_authorization, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, resolve_current_session_response,
+    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
+    rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -1364,47 +1366,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<EnrollProjectRequestView<'static>>,
     ) -> Result<(EnrollmentMutationResult, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        if !can_request_project_enrollment(
-            true,
-            authorization.viewer.is_guest,
-            authorization.viewer.is_organization_admin,
-            authorization.viewer.is_organization_member,
-            authorization.viewer.is_project_manager,
-            authorization.viewer.is_project_member,
-            authorization.viewer.is_site_admin,
-        ) {
-            return Err(ConnectError::invalid_argument(
-                "Project enrollment is only available to guests.",
-            ));
-        }
-        repository
-            .create_project_enrollment_request(authorization.project.id, user_id)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            EnrollmentMutationResult {
-                ok: true,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_enroll(self, ctx, request).await
     }
 
     async fn cancel_enroll_project(
@@ -1412,47 +1374,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<CancelEnrollProjectRequestView<'static>>,
     ) -> Result<(EnrollmentMutationResult, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        if !can_request_project_enrollment(
-            true,
-            authorization.viewer.is_guest,
-            authorization.viewer.is_organization_admin,
-            authorization.viewer.is_organization_member,
-            authorization.viewer.is_project_manager,
-            authorization.viewer.is_project_member,
-            authorization.viewer.is_site_admin,
-        ) {
-            return Err(ConnectError::invalid_argument(
-                "Project enrollment is only available to guests.",
-            ));
-        }
-        repository
-            .delete_project_enrollment_request(authorization.project.id, user_id)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            EnrollmentMutationResult {
-                ok: true,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_enroll_cancel(self, ctx, request).await
     }
 
     async fn toggle_favorite_project(
@@ -1460,55 +1382,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ToggleFavoriteProjectRequestView<'static>>,
     ) -> Result<(ToggleFavoriteProjectResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let can_read = authorize_project_access(
-            &ProjectAccessFacts {
-                is_anonymous: false,
-                is_guest: authorization.viewer.is_guest,
-                is_organization_admin: authorization.viewer.is_organization_admin,
-                is_organization_member: authorization.viewer.is_organization_member,
-                is_project_manager: authorization.viewer.is_project_manager,
-                is_project_member: authorization.viewer.is_project_member,
-                is_site_admin: authorization.viewer.is_site_admin,
-                project_scope: map_project_scope(&authorization.project.project_scope)?,
-            },
-            ProjectOperation::Read,
-        )
-        .allowed;
-        if !can_read {
-            return Err(ConnectError::permission_denied(
-                "project read is not allowed",
-            ));
-        }
-        let result = repository
-            .toggle_favorite_project(user_id, request.owner_name, request.project_name)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            ToggleFavoriteProjectResponse {
-                favorited: result.favorited,
-                owner_name: result.owner_name,
-                project_name: result.project_name,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_favorite_toggle(self, ctx, request).await
     }
 
     async fn record_recent_project_visit(
@@ -1516,54 +1390,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<RecordRecentProjectVisitRequestView<'static>>,
     ) -> Result<(RecordRecentProjectVisitResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "project requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let can_read = authorize_project_access(
-            &ProjectAccessFacts {
-                is_anonymous: false,
-                is_guest: authorization.viewer.is_guest,
-                is_organization_admin: authorization.viewer.is_organization_admin,
-                is_organization_member: authorization.viewer.is_organization_member,
-                is_project_manager: authorization.viewer.is_project_manager,
-                is_project_member: authorization.viewer.is_project_member,
-                is_site_admin: authorization.viewer.is_site_admin,
-                project_scope: map_project_scope(&authorization.project.project_scope)?,
-            },
-            ProjectOperation::Read,
-        )
-        .allowed;
-        if !can_read {
-            return Err(ConnectError::permission_denied(
-                "project read is not allowed",
-            ));
-        }
-        let result = repository
-            .record_recent_project_visit(user_id, request.owner_name, request.project_name)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            RecordRecentProjectVisitResponse {
-                owner_name: result.owner_name,
-                project_name: result.project_name,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        recent_project_visit_record(self, ctx, request).await
     }
 
     async fn list_projects(

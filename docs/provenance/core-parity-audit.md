@@ -496,6 +496,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   duplicate detection, project update authorization, and updated detail
   projection behavior covered by
   `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
+- 2026-06-20 build/check diet note: project enroll/cancel-enroll, project
+  favorite toggle, and recent-project visit RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/projects.rs`; service methods remain compatibility
+  delegates while REST project enroll/favorite handlers call the route-owned
+  helpers directly. This preserves guest-only enrollment checks, enrollment
+  request creation/removal, project read ACL for favorites/recent visits,
+  favorite-state persistence, and workspace recent/favorite projections covered
+  by
+  `org_project_contract::project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip`
+  and `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects`.
 
 ## Wave 0 Exit Snapshot
 
