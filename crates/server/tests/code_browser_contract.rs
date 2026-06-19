@@ -1059,7 +1059,7 @@ async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
 }
 
 #[tokio::test]
-// Guards shared review-thread direct aliases across PR and code route modules.
+// Guards route-utils-owned project resource create authorization for commit comments.
 async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo() {
     let _guard = yona_data_env_lock()
         .lock()

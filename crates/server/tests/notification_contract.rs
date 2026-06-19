@@ -697,7 +697,7 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
 
 #[tokio::test]
 async fn notification_contract_direct_notification_route_returns_legacy_partial_fragment() {
-    // Guards the legacy `/notification` route-module ownership split.
+    // Guards route-utils-owned HTML escaping used by legacy notification fragments.
     let (app, _repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;

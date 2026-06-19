@@ -1178,6 +1178,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
 
 #[tokio::test]
 async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users() {
+    // Guards route-utils-owned project resource create authorization for board routes.
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");

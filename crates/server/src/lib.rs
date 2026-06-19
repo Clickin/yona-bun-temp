@@ -34,7 +34,7 @@ pub(crate) use routes::{
     code_file_record_is_renderable_markdown, code_path_is_markdown,
     delete_project_repository_storage, detect_upload_mime_type, direct_project_update_allowed,
     direct_status_from_connect_error, direct_toggle_workspace_notification,
-    dispatch_issue_webhooks, dispatch_pull_request_webhooks,
+    dispatch_issue_webhooks, dispatch_pull_request_webhooks, escape_html_attr, escape_html_text,
     filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
@@ -60,17 +60,19 @@ pub(crate) use routes::{
     parse_milestone_due_date, posting_can_create, posting_can_update, project_code_menu_visible,
     project_detail_from_record, project_detail_with_logo_from_record,
     project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
-    project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
-    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
-    redirect_to, resolve_issue_reference_search_project, rest_board_label_from_record,
-    rest_commit_thread_from_record, rest_delete_project_member,
+    project_milestone_summary_from_record, project_resource_create_allowed,
+    project_webhook_type_label, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
+    require_project_resource_create, resolve_issue_reference_search_project,
+    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
     rest_read_direct_issue_form_options, rest_review_thread_filter,
     rest_update_commit_discussion_thread_state, uploaded_file_path, user_issue_filter_name,
     user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
-    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record, RestBoardLabel,
-    RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
+    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record,
+    ProjectCreatableResource, RestBoardLabel, RestProjectIssuesQuery, RestReviewThread,
+    RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -2308,98 +2310,6 @@ pub(crate) fn project_update_allowed(
         ProjectOperation::Update,
     )
     .allowed)
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ProjectCreatableResource {
-    BoardPost,
-    CommitComment,
-    Fork,
-    IssueComment,
-    IssuePost,
-    NonIssueComment,
-    ReviewComment,
-}
-
-fn project_group_member_create_allowed(
-    authorization: &persistence::ProjectAuthorizationRecord,
-) -> bool {
-    authorization.project.organization_id.is_some()
-        && authorization.viewer.is_organization_member
-        && matches!(
-            normalize_identifier(&authorization.project.project_scope).as_str(),
-            "public" | "protected"
-        )
-}
-
-fn project_member_or_admin_create_allowed(
-    authorization: &persistence::ProjectAuthorizationRecord,
-) -> bool {
-    authorization.viewer.is_site_admin
-        || authorization.viewer.is_organization_admin
-        || authorization.viewer.is_project_manager
-        || authorization.viewer.is_project_member
-}
-
-fn project_resource_create_allowed(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    resource_type: ProjectCreatableResource,
-) -> bool {
-    if project_member_or_admin_create_allowed(authorization)
-        || project_group_member_create_allowed(authorization)
-    {
-        return true;
-    }
-    normalize_identifier(&authorization.project.project_scope) == "public"
-        && matches!(
-            resource_type,
-            ProjectCreatableResource::BoardPost
-                | ProjectCreatableResource::CommitComment
-                | ProjectCreatableResource::Fork
-                | ProjectCreatableResource::IssueComment
-                | ProjectCreatableResource::IssuePost
-                | ProjectCreatableResource::NonIssueComment
-                | ProjectCreatableResource::ReviewComment
-        )
-}
-
-async fn require_project_resource_create(
-    repository: &PilotRepository,
-    owner_name: &str,
-    project_name: &str,
-    actor_id: Option<i64>,
-    resource_type: ProjectCreatableResource,
-) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
-    let Some(actor_id) = actor_id else {
-        return Err(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ));
-    };
-    let authorization = repository
-        .read_project_authorization(owner_name, project_name, Some(actor_id))
-        .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    if project_resource_create_allowed(&authorization, resource_type) {
-        Ok(authorization)
-    } else {
-        Err(ConnectError::permission_denied(
-            "project resource create is not allowed",
-        ))
-    }
-}
-
-fn escape_html_text(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-}
-
-fn escape_html_attr(value: &str) -> String {
-    escape_html_text(value)
-        .replace('"', "&quot;")
-        .replace('\'', "&#x27;")
 }
 
 fn project_facts(

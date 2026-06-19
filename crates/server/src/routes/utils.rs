@@ -911,6 +911,98 @@ pub(crate) fn parse_attachment_ids(value: &str) -> Vec<i64> {
         .collect()
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ProjectCreatableResource {
+    BoardPost,
+    CommitComment,
+    Fork,
+    IssueComment,
+    IssuePost,
+    NonIssueComment,
+    ReviewComment,
+}
+
+fn project_group_member_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> bool {
+    authorization.project.organization_id.is_some()
+        && authorization.viewer.is_organization_member
+        && matches!(
+            normalize_identifier(&authorization.project.project_scope).as_str(),
+            "public" | "protected"
+        )
+}
+
+fn project_member_or_admin_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> bool {
+    authorization.viewer.is_site_admin
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_project_manager
+        || authorization.viewer.is_project_member
+}
+
+pub(crate) fn project_resource_create_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    resource_type: ProjectCreatableResource,
+) -> bool {
+    if project_member_or_admin_create_allowed(authorization)
+        || project_group_member_create_allowed(authorization)
+    {
+        return true;
+    }
+    normalize_identifier(&authorization.project.project_scope) == "public"
+        && matches!(
+            resource_type,
+            ProjectCreatableResource::BoardPost
+                | ProjectCreatableResource::CommitComment
+                | ProjectCreatableResource::Fork
+                | ProjectCreatableResource::IssueComment
+                | ProjectCreatableResource::IssuePost
+                | ProjectCreatableResource::NonIssueComment
+                | ProjectCreatableResource::ReviewComment
+        )
+}
+
+pub(crate) async fn require_project_resource_create(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+    resource_type: ProjectCreatableResource,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let Some(actor_id) = actor_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    if project_resource_create_allowed(&authorization, resource_type) {
+        Ok(authorization)
+    } else {
+        Err(ConnectError::permission_denied(
+            "project resource create is not allowed",
+        ))
+    }
+}
+
+pub(crate) fn escape_html_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+pub(crate) fn escape_html_attr(value: &str) -> String {
+    escape_html_text(value)
+        .replace('"', "&quot;")
+        .replace('\'', "&#x27;")
+}
+
 pub(crate) fn gravatar_url(email_address: &str) -> String {
     let normalized = email_address.trim().to_ascii_lowercase();
     let mut hasher = Md5::new();
