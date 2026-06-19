@@ -512,6 +512,7 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
 }
 
 #[tokio::test]
+// Guards the auth REST DTO and handler ownership split into the auth route module.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

@@ -13,13 +13,35 @@ use crate::generated::yona::pilot::v1::*;
 use crate::{
     append_response_headers, attach_session_headers, auth_ui_capabilities_from_config,
     base_path_href, headers_with_form_csrf, normalize_identifier, percent_encode_uri_component,
-    rest_owned_view, rest_read_auth_ui_capabilities, rest_read_current_session,
-    rest_register_with_password, rest_sign_in_with_password, rest_sign_out, rest_verify_user,
-    send_password_reset_mail, serve_frontend_page, session::SessionManager, AssetMode,
-    AuthUiConfig, BrowserRuntimeConfig, Context, PilotBackend, PilotServiceImpl,
-    RestRegisterRequest, RestRouteError, RestSignInRequest, RestVerifyUserRequest,
-    LEGACY_MIN_PASSWORD_LENGTH,
+    rest_json_response, rest_owned_view, rest_read_current_session, send_password_reset_mail,
+    serve_frontend_page, session::SessionManager, AssetMode, AuthUiConfig, BrowserRuntimeConfig,
+    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestSignInRequest {
+    identifier: String,
+    password: String,
+    remember_me: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestRegisterRequest {
+    email_address: String,
+    login_id: String,
+    name: String,
+    password: String,
+    retyped_password: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestVerifyUserRequest {
+    login_id: String,
+    verification_code: String,
+}
 
 pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
     Router::new()
@@ -84,6 +106,87 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> R
                 }
             }),
         )
+}
+
+pub(crate) async fn rest_read_auth_ui_capabilities(
+    headers: HeaderMap,
+    auth_ui: AuthUiConfig,
+) -> Result<Response, RestRouteError> {
+    let request = ReadAuthUiCapabilitiesRequest::default();
+    let _request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
+    let payload = auth_ui_capabilities_from_config(&auth_ui);
+    Ok(rest_json_response(payload, Context::new(headers)))
+}
+
+pub(crate) async fn rest_sign_in_with_password(
+    headers: HeaderMap,
+    input: RestSignInRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SignInWithPasswordRequest {
+        identifier: input.identifier,
+        password: input.password,
+        remember_me: input.remember_me,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<SignInWithPasswordRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .sign_in_with_password(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_register_with_password(
+    headers: HeaderMap,
+    input: RestRegisterRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = RegisterWithPasswordRequest {
+        email_address: input.email_address,
+        login_id: input.login_id,
+        name: input.name,
+        password: input.password,
+        retyped_password: input.retyped_password,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .register_with_password(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_verify_user(
+    headers: HeaderMap,
+    input: RestVerifyUserRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = VerifyUserRequest {
+        login_id: input.login_id,
+        verification_code: input.verification_code,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<VerifyUserRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .verify_user(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_sign_out(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SignOutRequest::default();
+    let request = rest_owned_view::<SignOutRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .sign_out(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
 }
 
 pub(crate) async fn direct_request_reset_password_email(
