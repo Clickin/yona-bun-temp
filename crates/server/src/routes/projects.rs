@@ -14,18 +14,19 @@ use std::{collections::HashMap, path::Path as StdPath};
 use crate::generated::yona::pilot::v1::*;
 use crate::routes::utils::gravatar_url;
 use crate::{
-    absolute_app_url, accepts_legacy_json, base_path_href, build_project_container_response,
-    code_browser_error, code_file_record_is_renderable_markdown, direct_project_update_allowed,
-    direct_status_from_connect_error, form_value, format_project_date_label, internal_error,
-    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
-    legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
-    legacy_external_authenticated_user_id, legacy_json_find_value, map_project_scope,
-    markdown_mention_references, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, parse_attachment_ids, parse_milestone_due_date, persistence,
-    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
-    project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
-    require_authenticated_user, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, rest_json_response,
+    absolute_app_url, accepts_legacy_json, base_path_href, build_organization_container_response,
+    build_project_container_response, code_browser_error, code_file_record_is_renderable_markdown,
+    direct_project_update_allowed, direct_status_from_connect_error, form_value,
+    format_project_date_label, internal_error, issue_milestone_from_record,
+    issue_milestone_from_record_with_issue_references, legacy_external_api_auth_error_response,
+    legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
+    legacy_json_find_value, map_project_scope, markdown_mention_references, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state,
+    organization_detail_with_logo_from_record, parse_attachment_ids, parse_milestone_due_date,
+    persistence, project_detail_from_record, project_detail_with_logo_from_record,
+    project_logo_url, project_read_allowed, project_update_allowed, redirect_to,
+    repository_provisioning_lock, require_authenticated_user, require_project_read,
+    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
     rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
     rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
@@ -244,6 +245,135 @@ pub(crate) async fn project_milestone_read(
             milestone: Some(milestone).into(),
             ..Default::default()
         },
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_detail_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadOrganizationDetailRequestView<'static>>,
+) -> Result<(OrganizationDetail, Context), ConnectError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, actor_id)
+        .await
+        .map_err(internal_error)?;
+    if let Some(authorization) = authorization {
+        return Ok((
+            organization_detail_with_logo_from_record(
+                repository,
+                &service.base_path,
+                &authorization.organization,
+                can_update_organization(
+                    authorization.viewer.is_organization_admin,
+                    authorization.viewer.is_site_admin,
+                ),
+            )
+            .await?,
+            ctx,
+        ));
+    }
+
+    let organization = repository
+        .read_organization_by_name(request.organization_name)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    Ok((
+        organization_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &persistence::OrganizationRecord {
+                id: organization.id,
+                organization_name: organization.organization_name,
+                description: organization.description,
+            },
+            false,
+        )
+        .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_settings_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadOrganizationSettingsRequestView<'static>>,
+) -> Result<(OrganizationDetail, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(ConnectError::permission_denied(
+            "organization update is not allowed",
+        ));
+    }
+
+    Ok((
+        organization_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &authorization.organization,
+            true,
+        )
+        .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_container_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ReadOrganizationContainerRequestView<'static>>,
+) -> Result<(OrganizationContainer, Context), ConnectError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+
+    Ok((
+        build_organization_container_response(
+            repository,
+            &service.base_path,
+            &authorization,
+            actor_id,
+        )
+        .await?,
         ctx,
     ))
 }
@@ -1528,8 +1658,7 @@ pub(crate) async fn rest_read_organization_detail(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadOrganizationDetailRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_organization_detail(Context::new(headers), request)
+    let (payload, ctx) = organization_detail_read(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -1562,8 +1691,7 @@ pub(crate) async fn rest_read_organization_container(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadOrganizationContainerRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_organization_container(Context::new(headers), request)
+    let (payload, ctx) = organization_container_read(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -1579,8 +1707,7 @@ pub(crate) async fn rest_read_organization_settings(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadOrganizationSettingsRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_organization_settings(Context::new(headers), request)
+    let (payload, ctx) = organization_settings_read(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))

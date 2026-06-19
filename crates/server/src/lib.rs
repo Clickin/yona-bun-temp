@@ -68,11 +68,12 @@ pub(crate) use routes::{
     max_uploaded_file_size_from_env_value, max_uploaded_file_size_from_option,
     milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
-    organization_admin_member_from_record, organization_detail_from_record,
+    organization_admin_member_from_record, organization_container_read,
+    organization_detail_from_record, organization_detail_read,
     organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
     organization_issue_list_item_to_proto, organization_logo_url,
-    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    organization_member_summary_from_record, organization_role_options, organization_settings_read,
+    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
     percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
@@ -1249,54 +1250,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ReadOrganizationDetailRequestView<'static>>,
     ) -> Result<(OrganizationDetail, Context), ConnectError> {
-        let actor_id = self
-            .session_manager
-            .read_session_from_headers(&ctx.headers)
-            .and_then(|session| session.user_id);
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "organization requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_organization_authorization(request.organization_name, actor_id)
-            .await
-            .map_err(internal_error)?;
-        if let Some(authorization) = authorization {
-            return Ok((
-                organization_detail_with_logo_from_record(
-                    repository,
-                    &self.base_path,
-                    &authorization.organization,
-                    can_update_organization(
-                        authorization.viewer.is_organization_admin,
-                        authorization.viewer.is_site_admin,
-                    ),
-                )
-                .await?,
-                ctx,
-            ));
-        }
-
-        let organization = repository
-            .read_organization_by_name(request.organization_name)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((
-            organization_detail_with_logo_from_record(
-                repository,
-                &self.base_path,
-                &persistence::OrganizationRecord {
-                    id: organization.id,
-                    organization_name: organization.organization_name,
-                    description: organization.description,
-                },
-                false,
-            )
-            .await?,
-            ctx,
-        ))
+        organization_detail_read(self, ctx, request).await
     }
 
     async fn read_organization_settings(
@@ -1304,41 +1258,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ReadOrganizationSettingsRequestView<'static>>,
     ) -> Result<(OrganizationDetail, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "organization requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_organization_authorization(request.organization_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        if !can_update_organization(
-            authorization.viewer.is_organization_admin,
-            authorization.viewer.is_site_admin,
-        ) {
-            return Err(ConnectError::permission_denied(
-                "organization update is not allowed",
-            ));
-        }
-
-        Ok((
-            organization_detail_with_logo_from_record(
-                repository,
-                &self.base_path,
-                &authorization.organization,
-                true,
-            )
-            .await?,
-            ctx,
-        ))
+        organization_settings_read(self, ctx, request).await
     }
 
     async fn read_organization_members(
@@ -1443,31 +1363,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ReadOrganizationContainerRequestView<'static>>,
     ) -> Result<(OrganizationContainer, Context), ConnectError> {
-        let actor_id = self
-            .session_manager
-            .read_session_from_headers(&ctx.headers)
-            .and_then(|session| session.user_id);
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "organization requires repository backend",
-            ));
-        };
-        let authorization = repository
-            .read_organization_authorization(request.organization_name, actor_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-
-        Ok((
-            build_organization_container_response(
-                repository,
-                &self.base_path,
-                &authorization,
-                actor_id,
-            )
-            .await?,
-            ctx,
-        ))
+        organization_container_read(self, ctx, request).await
     }
 
     async fn update_organization(

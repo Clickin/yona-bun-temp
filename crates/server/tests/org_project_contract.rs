@@ -1252,6 +1252,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
 }
 
 #[tokio::test]
+// Guards project-route-owned organization container read helpers.
 async fn organization_container_contract_returns_project_cards_and_gated_rosters() {
     let app = build_app().await;
 

@@ -420,6 +420,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`
   and
   `auth_workspace_contract::direct_email_validation_send_and_confirm_routes_round_trip`.
+- 2026-06-20 build/check diet note: organization detail, settings, and
+  container read RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`;
+  service methods remain compatibility delegates while REST organization read
+  handlers call the project route-owned helpers directly, preserving
+  organization detail/settings/container behavior covered by
+  `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
 
 ## Wave 0 Exit Snapshot
 
