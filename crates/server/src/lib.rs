@@ -79,10 +79,11 @@ pub(crate) use routes::{
     project_label_categories_list, project_label_category_create, project_label_category_delete,
     project_label_category_update, project_label_create, project_label_delete,
     project_label_update, project_labels_list, project_logo_url,
-    project_member_summary_from_record, project_milestone_state_mutation,
-    project_milestone_summary_from_record, project_read_allowed, project_resource_create_allowed,
-    project_update_allowed, project_webhook_type_label, random_site_admin_password,
-    random_storage_token, read_issue_access, read_posting_access,
+    project_member_summary_from_record, project_milestone_create, project_milestone_delete,
+    project_milestone_list, project_milestone_read, project_milestone_state_mutation,
+    project_milestone_summary_from_record, project_milestone_update, project_read_allowed,
+    project_resource_create_allowed, project_update_allowed, project_webhook_type_label,
+    random_site_admin_password, random_storage_token, read_issue_access, read_posting_access,
     read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
     require_authenticated_user, require_project_authorization, require_project_read,
     require_project_resource_create, require_session, require_valid_csrf,
@@ -3714,39 +3715,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ListProjectMilestonesRequestView<'static>>,
     ) -> Result<(ListProjectMilestonesResponse, Context), ConnectError> {
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let session = self.session_manager.read_session_from_headers(&ctx.headers);
-        let actor_id = session.as_ref().and_then(|session| session.user_id);
-        require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            actor_id,
-        )
-        .await?;
-        let records = repository
-            .list_project_milestones(
-                request.owner_name,
-                request.project_name,
-                milestone_list_filter_from_request(&request),
-            )
-            .await
-            .map_err(internal_error)?;
-        let milestones = records
-            .iter()
-            .map(|record| issue_milestone_from_record(record, &self.base_path))
-            .collect();
-        Ok((
-            ListProjectMilestonesResponse {
-                milestones,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_milestone_list(self, ctx, request).await
     }
 
     async fn read_project_milestone(
@@ -3754,46 +3723,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ReadProjectMilestoneRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "milestone requires repository backend",
-            ));
-        };
-        let session = self.session_manager.read_session_from_headers(&ctx.headers);
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.as_ref().and_then(|session| session.user_id),
-        )
-        .await?;
-        let viewer_can_update = project_update_allowed(&authorization).unwrap_or(false);
-        let milestone = repository
-            .read_project_milestone(
-                request.owner_name,
-                request.project_name,
-                request.milestone_id,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            repository,
-            &authorization,
-            session.as_ref().and_then(|session| session.user_id),
-            &milestone,
-            &self.base_path,
-        )
-        .await?;
-        milestone.viewer_can_update = viewer_can_update;
-        milestone.viewer_can_delete = viewer_can_update;
-        Ok((
-            ProjectMilestoneMutationResponse {
-                milestone: Some(milestone).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_milestone_read(self, ctx, request).await
     }
 
     async fn create_project_milestone(
@@ -3801,72 +3731,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<CreateProjectMilestoneRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "milestone requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "milestone create is not allowed",
-            ));
-        }
-        let input = milestone_mutation_input(
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-            request.title,
-            request.contents_markdown,
-            request.due_date,
-            request.state,
-            &request.attachment_ids,
-        )?;
-        if repository
-            .project_milestone_title_exists(
-                request.owner_name,
-                request.project_name,
-                &input.title,
-                None,
-            )
-            .await
-            .map_err(internal_error)?
-        {
-            return Err(ConnectError::invalid_argument(
-                "milestone title is duplicated",
-            ));
-        }
-        let milestone = repository
-            .create_project_milestone(input)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            repository,
-            &authorization,
-            session.user_id,
-            &milestone,
-            &self.base_path,
-        )
-        .await?;
-        milestone.viewer_can_update = true;
-        milestone.viewer_can_delete = true;
-        Ok((
-            ProjectMilestoneMutationResponse {
-                milestone: Some(milestone).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_milestone_create(self, ctx, request).await
     }
 
     async fn update_project_milestone(
@@ -3874,75 +3739,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateProjectMilestoneRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "milestone requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "milestone update is not allowed",
-            ));
-        }
-        let input = milestone_mutation_input(
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-            request.title,
-            request.contents_markdown,
-            request.due_date,
-            request.state,
-            &request.attachment_ids,
-        )?;
-        if repository
-            .project_milestone_title_exists(
-                request.owner_name,
-                request.project_name,
-                &input.title,
-                Some(request.milestone_id),
-            )
-            .await
-            .map_err(internal_error)?
-        {
-            return Err(ConnectError::invalid_argument(
-                "milestone title is duplicated",
-            ));
-        }
-        let milestone = repository
-            .update_project_milestone(persistence::UpdateMilestoneInput {
-                milestone_id: request.milestone_id,
-                values: input,
-            })
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            repository,
-            &authorization,
-            session.user_id,
-            &milestone,
-            &self.base_path,
-        )
-        .await?;
-        milestone.viewer_can_update = true;
-        milestone.viewer_can_delete = true;
-        Ok((
-            ProjectMilestoneMutationResponse {
-                milestone: Some(milestone).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_milestone_update(self, ctx, request).await
     }
 
     async fn delete_project_milestone(
@@ -3950,44 +3747,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<DeleteProjectMilestoneRequestView<'static>>,
     ) -> Result<(ProjectMilestoneDeleteResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "milestone requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "milestone delete is not allowed",
-            ));
-        }
-        let ok = repository
-            .delete_project_milestone(
-                request.owner_name,
-                request.project_name,
-                request.milestone_id,
-            )
-            .await
-            .map_err(internal_error)?;
-        if !ok {
-            return Err(ConnectError::not_found("milestone not found"));
-        }
-        Ok((
-            ProjectMilestoneDeleteResponse {
-                ok,
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_milestone_delete(self, ctx, request).await
     }
 
     async fn open_project_milestone(

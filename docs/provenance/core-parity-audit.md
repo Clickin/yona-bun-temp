@@ -343,6 +343,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   updates, update error mapping, and delete behavior covered by
   `issue_label_contract::issue_label_rpc_manages_labels_categories_and_cleanup`
   and `rest_contract::rest_label_routes_manage_labels_and_categories`.
+- 2026-06-20 build/check diet note: project milestone list/read/create/update/delete
+  RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`,
+  preserving milestone list filters, read/update permissions, title duplication
+  checks, due-date/input normalization, issue-reference projection, state reuse,
+  and delete behavior covered by
+  `milestone_contract::milestone_rpc_manages_crud_state_sorting_and_linked_issues`
+  and `rest_contract::rest_milestone_routes_manage_crud_and_state`.
 
 ## Wave 0 Exit Snapshot
 
