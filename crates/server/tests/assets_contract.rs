@@ -954,6 +954,7 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         )
         .await
         .unwrap();
+    assert_eq!(ranged_text_file.status(), StatusCode::OK);
     assert_eq!(
         ranged_text_file
             .headers()

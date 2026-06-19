@@ -39,6 +39,9 @@ pub(crate) use code::routes as code_routes;
 #[cfg(debug_assertions)]
 pub(crate) use debug::routes as debug_routes;
 pub(crate) use files::routes as file_routes;
+pub(crate) use files::{
+    detect_upload_mime_type, legacy_content_disposition_filename, uploaded_file_path,
+};
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
