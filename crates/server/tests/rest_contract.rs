@@ -4736,6 +4736,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
 }
 
 #[tokio::test]
+// Guards workspace overview projection ownership in the workspace route module.
 async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     let (app, repository, db) = build_app_with_repository_and_db().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
@@ -5105,7 +5106,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
 }
 
 #[tokio::test]
-// Guards public user profile route-module ownership in the users route module.
+// Guards public user profile reuse of workspace-owned projection helpers.
 async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     let (app, repository) = build_app_with_repository().await;
     let (_owner_csrf, _owner_cookie) = register_user(app.clone(), "owner").await;

@@ -80,9 +80,15 @@ pub(crate) use utils::{
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
     legacy_json_find_value, normalize_issue_label_color,
 };
-pub(crate) use workspace::direct_toggle_workspace_notification;
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
+pub(crate) use workspace::{
+    build_workspace_overview_response, direct_toggle_workspace_notification,
+    filter_workspace_issue_items_by_read_acl_for_viewer,
+    filter_workspace_member_projects_by_read_acl_for_viewer,
+    filter_workspace_pull_request_items_by_read_acl_for_viewer, workspace_avatar_url,
+    workspace_profile_from_record,
+};
 
 pub(crate) fn rest_api_routes(
     service: PilotServiceImpl,

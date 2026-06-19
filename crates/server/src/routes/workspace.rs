@@ -16,13 +16,14 @@ use yona_rust_domain::{
 use crate::generated::yona::pilot::v1::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    base_path_href, escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl,
-    headers_with_form_csrf, legacy_external_api_auth_error_response,
-    legacy_external_authenticated_user_id, normalize_default_landing_path, normalize_identifier,
-    read_issue_access, redirect_to, require_authenticated_user, rest_json_response,
-    rest_owned_view, send_workspace_email_validation_mail, session::SessionManager, AuthUiConfig,
-    ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError, WorkspaceIssueItem,
-    WORKSPACE_DAYS_AGO,
+    base_path_href, escape_html_attr, escape_html_text, gravatar_url, headers_with_form_csrf,
+    internal_error, legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
+    normalize_default_landing_path, normalize_identifier, read_issue_access, redirect_to,
+    require_authenticated_user, resolve_current_session_response, rest_json_response,
+    rest_owned_view, send_workspace_email_validation_mail,
+    session::{self, SessionManager},
+    AuthUiConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
+    WorkspaceIssueItem,
 };
 
 use super::rest_delete_project_member;
@@ -41,6 +42,425 @@ struct DirectDefaultLoginPageResponse {
 fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
     ProjectScope::try_from(value)
         .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
+}
+
+pub(crate) const WORKSPACE_DAYS_AGO: u32 = 14;
+
+fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> ProjectListItem {
+    ProjectListItem {
+        owner_name: item.owner_name.clone(),
+        project_name: item.project_name.clone(),
+        overview: String::new(),
+        project_scope: String::new(),
+        ..Default::default()
+    }
+}
+
+fn workspace_member_project_item_from_record(
+    item: &persistence::WorkspaceMemberProjectRecord,
+) -> WorkspaceMemberProjectItem {
+    WorkspaceMemberProjectItem {
+        created_label: item.created_label.clone(),
+        last_pushed_label: item.last_pushed_label.clone(),
+        member_count: item.member_count,
+        owner_name: item.owner_name.clone(),
+        project_name: item.project_name.clone(),
+        overview: item.overview.clone(),
+        project_scope: item.project_scope.clone(),
+        watch_count: item.watch_count,
+        ..Default::default()
+    }
+}
+
+fn workspace_email_from_record(record: &persistence::WorkspaceEmailRecord) -> WorkspaceEmail {
+    WorkspaceEmail {
+        email_address: record.email_address.clone(),
+        id: record.id.clone(),
+        valid: record.valid,
+        ..Default::default()
+    }
+}
+
+fn workspace_notification_from_record(
+    record: &persistence::WorkspaceNotificationPreferenceRecord,
+) -> WorkspaceNotificationPreference {
+    WorkspaceNotificationPreference {
+        enabled: record.enabled,
+        event_type: record.event_type.clone(),
+        label: record.label.clone(),
+        ..Default::default()
+    }
+}
+
+fn watched_project_notifications_from_record(
+    record: &persistence::WatchedProjectNotificationsRecord,
+) -> WatchedProjectNotifications {
+    WatchedProjectNotifications {
+        notifications: record
+            .notifications
+            .iter()
+            .map(workspace_notification_from_record)
+            .collect(),
+        owner_name: record.owner_name.clone(),
+        project_id: record.project_id.clone(),
+        project_name: record.project_name.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn workspace_profile_from_record(
+    record: &persistence::WorkspaceProfileRecord,
+    avatar_url: String,
+) -> WorkspaceProfile {
+    WorkspaceProfile {
+        avatar_url,
+        connected_social_providers: record.connected_social_providers.clone(),
+        display_name: record.display_name.clone(),
+        english_name: record.english_name.clone(),
+        is_blocked: record.is_blocked,
+        is_guest: record.is_guest,
+        is_site_admin: record.is_site_admin,
+        login_id: record.login_id.clone(),
+        primary_email_address: record.primary_email_address.clone(),
+        since_label: record.since_label.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) async fn workspace_avatar_url(
+    repository: &PilotRepository,
+    user_id: i64,
+    email_address: &str,
+    base_path: &str,
+) -> Result<String, ConnectError> {
+    if let Some(attachment) = repository
+        .read_avatar_attachment_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+    {
+        return Ok(base_path_href(
+            base_path,
+            &format!("/files/{}", attachment.id),
+        ));
+    }
+    Ok(gravatar_url(email_address))
+}
+
+fn workspace_issue_item_from_record(
+    record: &persistence::WorkspaceIssueListItemRecord,
+) -> WorkspaceIssueItem {
+    WorkspaceIssueItem {
+        assignee_label: record.assignee_label.clone(),
+        author_label: record.author_label.clone(),
+        comment_count: record.comment_count,
+        issue_number: record.issue_number,
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn workspace_pull_request_item_from_record(
+    record: &persistence::WorkspacePullRequestListItemRecord,
+) -> WorkspacePullRequestItem {
+    WorkspacePullRequestItem {
+        comment_count: record.comment_count,
+        contributor_label: record.contributor_label.clone(),
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        pull_request_number: record.pull_request_number,
+        receiver_label: record.receiver_label.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+        ..Default::default()
+    }
+}
+
+async fn load_workspace_project_lists(
+    repository: &PilotRepository,
+    user_id: i64,
+) -> Result<(Vec<ProjectListItem>, Vec<ProjectListItem>), ConnectError> {
+    let favorite_projects = repository
+        .list_favorite_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(workspace_project_item_from_entry)
+        .collect();
+    let recent_projects = repository
+        .list_recent_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(workspace_project_item_from_entry)
+        .collect();
+
+    Ok((favorite_projects, recent_projects))
+}
+
+async fn load_workspace_settings_data(
+    repository: &PilotRepository,
+    user_id: i64,
+) -> Result<
+    (
+        String,
+        Vec<WorkspaceEmail>,
+        Vec<WatchedProjectNotifications>,
+    ),
+    ConnectError,
+> {
+    let api_token = repository
+        .read_api_token_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .unwrap_or_default();
+    let emails = repository
+        .list_workspace_emails_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(workspace_email_from_record)
+        .collect();
+    let watched_projects = repository
+        .list_watched_project_notifications_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(watched_project_notifications_from_record)
+        .collect();
+
+    Ok((api_token, emails, watched_projects))
+}
+
+async fn load_workspace_dashboard_data(
+    repository: &PilotRepository,
+    user_id: i64,
+    base_path: &str,
+) -> Result<
+    (
+        Option<WorkspaceProfile>,
+        Vec<WorkspaceIssueItem>,
+        Vec<WorkspacePullRequestItem>,
+        Vec<WorkspaceMemberProjectItem>,
+    ),
+    ConnectError,
+> {
+    let days_ago = u64::from(WORKSPACE_DAYS_AGO);
+    let profile = match repository
+        .read_workspace_profile_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+    {
+        Some(record) => Some(workspace_profile_from_record(
+            &record,
+            workspace_avatar_url(
+                repository,
+                user_id,
+                &record.primary_email_address,
+                base_path,
+            )
+            .await?,
+        )),
+        None => None,
+    };
+    let issue_items = filter_workspace_issue_items_by_read_acl(
+        repository,
+        user_id,
+        repository
+            .list_recent_workspace_issues_for_user(user_id, days_ago)
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    let pull_request_items = filter_workspace_pull_request_items_by_read_acl(
+        repository,
+        user_id,
+        repository
+            .list_recent_workspace_pull_requests_for_user(user_id, days_ago)
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    let member_projects = repository
+        .list_member_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let member_projects =
+        filter_workspace_member_projects_by_read_acl(repository, user_id, member_projects).await?;
+
+    Ok((profile, issue_items, pull_request_items, member_projects))
+}
+
+pub(crate) async fn filter_workspace_issue_items_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspaceIssueListItemRecord>,
+) -> Result<Vec<WorkspaceIssueItem>, ConnectError> {
+    filter_workspace_issue_items_by_read_acl_for_viewer(repository, Some(user_id), items).await
+}
+
+pub(crate) async fn filter_workspace_issue_items_by_read_acl_for_viewer(
+    repository: &PilotRepository,
+    viewer_id: Option<i64>,
+    items: Vec<persistence::WorkspaceIssueListItemRecord>,
+) -> Result<Vec<WorkspaceIssueItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed_for_viewer(
+            repository,
+            viewer_id,
+            &item.owner_name,
+            &item.project_name,
+        )
+        .await?
+        {
+            visible.push(workspace_issue_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn filter_workspace_pull_request_items_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspacePullRequestListItemRecord>,
+) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
+    filter_workspace_pull_request_items_by_read_acl_for_viewer(repository, Some(user_id), items)
+        .await
+}
+
+pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
+    repository: &PilotRepository,
+    viewer_id: Option<i64>,
+    items: Vec<persistence::WorkspacePullRequestListItemRecord>,
+) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed_for_viewer(
+            repository,
+            viewer_id,
+            &item.owner_name,
+            &item.project_name,
+        )
+        .await?
+        {
+            visible.push(workspace_pull_request_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn filter_workspace_member_projects_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspaceMemberProjectRecord>,
+) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
+    filter_workspace_member_projects_by_read_acl_for_viewer(repository, Some(user_id), items).await
+}
+
+pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
+    repository: &PilotRepository,
+    viewer_id: Option<i64>,
+    items: Vec<persistence::WorkspaceMemberProjectRecord>,
+) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed_for_viewer(
+            repository,
+            viewer_id,
+            &item.owner_name,
+            &item.project_name,
+        )
+        .await?
+        {
+            visible.push(workspace_member_project_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn workspace_project_read_allowed_for_viewer(
+    repository: &PilotRepository,
+    viewer_id: Option<i64>,
+    owner_name: &str,
+    project_name: &str,
+) -> Result<bool, ConnectError> {
+    let Some(authorization) = repository
+        .read_project_authorization(owner_name, project_name, viewer_id)
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok(false);
+    };
+
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: viewer_id.is_none(),
+            is_guest: authorization.viewer.is_guest,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Read,
+    )
+    .allowed)
+}
+
+pub(crate) async fn build_workspace_overview_response(
+    repository: &PilotRepository,
+    session: &session::Session,
+    base_path: &str,
+) -> Result<ReadWorkspaceOverviewResponse, ConnectError> {
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let response = resolve_current_session_response(
+        &PilotBackend::Repository(repository.clone()),
+        Some(session),
+    )
+    .await?;
+    if response.is_anonymous {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    }
+    let (favorite_projects, recent_projects) =
+        load_workspace_project_lists(repository, user_id).await?;
+    let (api_token, emails, watched_projects) =
+        load_workspace_settings_data(repository, user_id).await?;
+    let (profile, issue_items, pull_request_items, member_projects) =
+        load_workspace_dashboard_data(repository, user_id, base_path).await?;
+
+    Ok(ReadWorkspaceOverviewResponse {
+        api_token,
+        days_ago: WORKSPACE_DAYS_AGO,
+        default_landing_path: response.default_landing_path.clone(),
+        emails,
+        favorite_projects,
+        issue_items,
+        member_projects,
+        profile: profile.into(),
+        pull_request_items,
+        recent_projects,
+        session: Some(response).into(),
+        watched_projects,
+        ..Default::default()
+    })
 }
 
 async fn direct_legacy_leave_project(
