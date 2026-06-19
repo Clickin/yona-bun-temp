@@ -807,6 +807,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         .iter()
         .any(|item| item["loginId"] == "owner"));
     assert_eq!(open_list["items"][0]["title"], "Open read surface");
+    assert_eq!(open_list["items"][0]["projectName"], "projectYobi");
     assert_eq!(open_list["items"][0]["pullRequestNumber"], 1);
     assert_eq!(open_list["items"][0]["closedCommentThreadCount"], 0);
     assert_eq!(
