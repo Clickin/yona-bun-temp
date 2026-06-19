@@ -47,6 +47,7 @@ fn notification_contract_mail_links_add_noreferrer_like_legacy() {
         "<a href=/unquoted/link>unquoted relative link</a>",
         "<A HREF=\"http://outside.example/case\">case external link</A>",
         "<a href=\"http://yobi.io/%ag\">malformed link</a>",
+        "<a href=\"mailto:team@yobi.io\">mail link</a>",
     );
 
     let rendered = notification_mail_add_noreferrer_to_external_links(html, "http://yobi.io");
@@ -66,6 +67,7 @@ fn notification_contract_mail_links_add_noreferrer_like_legacy() {
             && rendered.contains("rel=\" noreferrer\"")
     );
     assert!(rendered.contains("<a href=\"http://yobi.io/%ag\" rel=\" noreferrer\">"));
+    assert!(rendered.contains("<a href=\"mailto:team@yobi.io\">mail link</a>"));
 }
 
 #[test]
@@ -677,7 +679,10 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
     assert_eq!(payload["hasMore"], false);
     let items = payload["items"].as_array().unwrap();
     assert_eq!(items.len(), 1);
-    assert!(items[0]["targetHref"].as_str().unwrap().starts_with("/yona/"));
+    assert!(items[0]["targetHref"]
+        .as_str()
+        .unwrap()
+        .starts_with("/yona/"));
     assert_eq!(items[0]["eventType"], "ISSUE_SHARER_CHANGED");
     assert_eq!(items[0]["actor"]["loginId"], "owner");
     assert_eq!(items[0]["message"], "Issue is shared with guest");
