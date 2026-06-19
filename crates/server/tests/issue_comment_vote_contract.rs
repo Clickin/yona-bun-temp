@@ -531,6 +531,7 @@ async fn issue_comment_vote_contract_allows_direct_share_and_denies_inherited_sh
 
 #[tokio::test]
 async fn issue_comment_vote_legacy_post_routes_redirect_and_preserve_unvote_policy() {
+    // Guards direct legacy issue-comment vote/unvote handlers while route ownership is split.
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;

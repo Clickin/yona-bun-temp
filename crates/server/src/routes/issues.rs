@@ -20,26 +20,25 @@ use super::utils::{
 use crate::generated::yona::pilot::v1::*;
 use crate::{
     absolute_app_url, deserialize_i64_vec_from_strings_or_numbers,
-    deserialize_optional_i64_from_string_or_number, direct_create_issue_comment,
-    direct_delete_issue_comment, direct_issue_comment_vote, direct_project_update_allowed,
-    direct_update_issue_comment, dispatch_issue_webhooks, form_bool, form_value, internal_error,
+    deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
+    direct_status_from_connect_error, dispatch_issue_webhooks, form_bool, form_value,
+    headers_with_form_csrf, internal_error,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_css,
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    normalize_issue_label_color, persistence, project_read_allowed, require_authenticated_user,
-    require_project_authorization, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf,
+    normalize_issue_label_color, parse_attachment_ids, persistence, project_read_allowed,
+    redirect_to, require_authenticated_user, require_project_authorization, require_project_read,
+    require_project_resource_create, require_session, require_valid_csrf,
     rest_issue_detail_response_from_record_with_sharer_flags_and_references,
     rest_issue_list_item_from_record, rest_issue_mutation_input_from_body, rest_json_response,
     rest_owned_view, rest_project_issue_filter_from_query, session::SessionManager,
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
-    RestIssueAssignableUsersQuery, RestIssueCommentBody, RestIssueDetailResponse,
-    RestIssueMutationBody, RestIssueStateBody, RestIssueWeightResponse,
-    RestOrganizationIssueListResponse, RestOrganizationIssuesQuery, RestProjectIssueListResponse,
-    RestProjectIssuesQuery, RestRouteError, RestUserIssueListResponse,
-    RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueMutationBody,
+    RestIssueStateBody, RestIssueWeightResponse, RestOrganizationIssueListResponse,
+    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssuesQuery,
+    RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
 
 #[derive(Default, Deserialize)]
@@ -90,6 +89,226 @@ struct RestMassUpdateIssuesBody {
     )]
     remove_label_ids: Vec<i64>,
     state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueCommentBody {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+    parent_comment_id: Option<i64>,
+}
+
+fn direct_comment_contents(form: &HashMap<String, String>) -> String {
+    form_value(
+        form,
+        &[
+            "contents",
+            "contentsMarkdown",
+            "contents_markdown",
+            "body",
+            "comment",
+        ],
+    )
+    .trim()
+    .to_string()
+}
+
+fn direct_comment_attachment_ids(form: &HashMap<String, String>) -> Vec<i64> {
+    parse_attachment_ids(form_value(
+        form,
+        &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
+    ))
+}
+
+fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueCommentBody {
+    RestIssueCommentBody {
+        attachment_ids: direct_comment_attachment_ids(form),
+        contents_markdown: direct_comment_contents(form),
+        parent_comment_id: form
+            .get("parentCommentId")
+            .and_then(|value| value.parse::<i64>().ok()),
+    }
+}
+
+async fn direct_create_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    match rest_create_issue_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        direct_issue_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+        public_origin,
+    )
+    .await
+    {
+        Ok(Json(detail)) => {
+            let fragment = detail
+                .detail
+                .comments
+                .iter()
+                .max_by_key(|comment| comment.id)
+                .map(|comment| format!("#comment-{}", comment.id))
+                .unwrap_or_default();
+            redirect_to(
+                &base_path,
+                &format!("/{owner}/{project}/issue/{issue_number}{fragment}"),
+            )
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_update_issue_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        comment_id,
+        direct_issue_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_delete_issue_comment(
+        headers,
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        comment_id,
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/issue/{issue_number}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_issue_comment_vote(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    action: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match session_manager.read_session_from_headers(&headers) {
+        Some(session) if session.user_id.is_some() => session,
+        _ => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let actor = match require_authenticated_user(&repository, session.user_id).await {
+        Ok(actor) => actor,
+        Err(error) => return direct_status_from_connect_error(error).into_response(),
+    };
+    let access = match read_issue_access(
+        &repository,
+        &owner,
+        &project,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err(error) => return direct_status_from_connect_error(error).into_response(),
+    };
+    if !access.viewer_can_comment() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if !access
+        .issue
+        .comments
+        .iter()
+        .any(|comment| comment.id == comment_id)
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+
+    match action {
+        "vote" => {
+            if repository
+                .vote_issue_comment(comment_id, actor.id)
+                .await
+                .is_err()
+            {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+        "unvote" => match repository.unvote_issue_comment(comment_id, actor.id).await {
+            Ok(true) => {}
+            Ok(false) => return StatusCode::NOT_FOUND.into_response(),
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        },
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    }
+
+    redirect_to(
+        &base_path,
+        &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
+    )
 }
 
 #[derive(Serialize)]

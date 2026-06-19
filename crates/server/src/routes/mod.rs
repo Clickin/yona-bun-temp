@@ -45,9 +45,8 @@ pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
     issue_can_mutate, issue_detail_response_from_access, legacy_external_assignable_users_result,
     legacy_external_label_id, read_issue_access, resolve_issue_reference_search_project,
-    rest_create_issue_comment, rest_delete_issue_comment,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
-    rest_read_direct_issue_form_options, rest_update_issue_comment,
+    rest_read_direct_issue_form_options,
 };
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::rest_routes as notification_rest_routes;

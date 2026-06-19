@@ -43,14 +43,13 @@ pub(crate) use routes::{
     project_webhook_type_label, read_issue_access, read_posting_access,
     read_posting_comment_create_access, record_project_webhook_delivery,
     resolve_issue_reference_search_project, rest_accept_pull_request,
-    rest_commit_thread_from_record, rest_create_issue_comment, rest_delete_issue_comment,
-    rest_delete_project_member, rest_delete_pull_request_source_branch,
+    rest_commit_thread_from_record, rest_delete_project_member,
+    rest_delete_pull_request_source_branch,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_menu_settings, rest_read_direct_issue_form_options,
     rest_restore_pull_request_source_branch, rest_review_thread_filter, rest_toggle_project_watch,
-    rest_update_commit_discussion_thread_state, rest_update_issue_comment,
-    rest_update_pull_request_thread_state, uploaded_file_path, RestReviewThread,
-    RestReviewThreadListQuery,
+    rest_update_commit_discussion_thread_state, rest_update_pull_request_thread_state,
+    uploaded_file_path, RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -1658,11 +1657,11 @@ pub(crate) async fn direct_accept_project_transfer(
     }
 }
 
-fn redirect_to(base_path: &str, path: &str) -> Response {
+pub(crate) fn redirect_to(base_path: &str, path: &str) -> Response {
     Redirect::to(&base_path_href(base_path, path)).into_response()
 }
 
-fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
+pub(crate) fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
     let message = error.to_string().to_ascii_lowercase();
     if message.contains("missing authenticated") {
         StatusCode::UNAUTHORIZED
@@ -3127,18 +3126,6 @@ pub(crate) struct RestIssueStateBody {
     state: String,
 }
 
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestIssueCommentBody {
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    attachment_ids: Vec<i64>,
-    contents_markdown: String,
-    parent_comment_id: Option<i64>,
-}
-
 fn rest_issue_mutation_input_from_body(
     body: RestIssueMutationBody,
 ) -> Result<persistence::IssueMutationInput, ConnectError> {
@@ -3171,38 +3158,6 @@ fn rest_project_issue_filter_from_query(
         milestone_id: query.milestone_id.filter(|value| *value > 0),
         page_num: query.page_num.max(1),
         state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
-    }
-}
-
-fn direct_comment_contents(form: &HashMap<String, String>) -> String {
-    form_value(
-        form,
-        &[
-            "contents",
-            "contentsMarkdown",
-            "contents_markdown",
-            "body",
-            "comment",
-        ],
-    )
-    .trim()
-    .to_string()
-}
-
-fn direct_comment_attachment_ids(form: &HashMap<String, String>) -> Vec<i64> {
-    parse_attachment_ids(form_value(
-        form,
-        &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
-    ))
-}
-
-fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueCommentBody {
-    RestIssueCommentBody {
-        attachment_ids: direct_comment_attachment_ids(form),
-        contents_markdown: direct_comment_contents(form),
-        parent_comment_id: form
-            .get("parentCommentId")
-            .and_then(|value| value.parse::<i64>().ok()),
     }
 }
 
@@ -3267,182 +3222,6 @@ pub(crate) async fn direct_update_review_thread_state(
     }
 }
 
-async fn direct_create_issue_comment(
-    headers: HeaderMap,
-    owner: String,
-    project: String,
-    issue_number: i64,
-    form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-) -> Response {
-    match rest_create_issue_comment(
-        headers_with_form_csrf(headers, &form),
-        owner.clone(),
-        project.clone(),
-        issue_number,
-        direct_issue_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
-        public_origin,
-    )
-    .await
-    {
-        Ok(Json(detail)) => {
-            let fragment = detail
-                .detail
-                .comments
-                .iter()
-                .max_by_key(|comment| comment.id)
-                .map(|comment| format!("#comment-{}", comment.id))
-                .unwrap_or_default();
-            redirect_to(
-                &base_path,
-                &format!("/{owner}/{project}/issue/{issue_number}{fragment}"),
-            )
-        }
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_update_issue_comment(
-    headers: HeaderMap,
-    owner: String,
-    project: String,
-    issue_number: i64,
-    comment_id: i64,
-    form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    match rest_update_issue_comment(
-        headers_with_form_csrf(headers, &form),
-        owner.clone(),
-        project.clone(),
-        issue_number,
-        comment_id,
-        direct_issue_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
-    )
-    .await
-    {
-        Ok(_) => redirect_to(
-            &base_path,
-            &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
-        ),
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_delete_issue_comment(
-    headers: HeaderMap,
-    owner: String,
-    project: String,
-    issue_number: i64,
-    comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    match rest_delete_issue_comment(
-        headers,
-        owner.clone(),
-        project.clone(),
-        issue_number,
-        comment_id,
-        session_manager,
-        backend,
-        base_path.clone(),
-    )
-    .await
-    {
-        Ok(_) => redirect_to(
-            &base_path,
-            &format!("/{owner}/{project}/issue/{issue_number}"),
-        ),
-        Err(error) => error.into_response(),
-    }
-}
-
-async fn direct_issue_comment_vote(
-    headers: HeaderMap,
-    owner: String,
-    project: String,
-    issue_number: i64,
-    comment_id: i64,
-    action: &str,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    let session = match session_manager.read_session_from_headers(&headers) {
-        Some(session) if session.user_id.is_some() => session,
-        _ => return StatusCode::UNAUTHORIZED.into_response(),
-    };
-    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    let actor = match require_authenticated_user(&repository, session.user_id).await {
-        Ok(actor) => actor,
-        Err(error) => return direct_status_from_connect_error(error).into_response(),
-    };
-    let access = match read_issue_access(
-        &repository,
-        &owner,
-        &project,
-        issue_number,
-        Some(actor.id),
-    )
-    .await
-    {
-        Ok(access) => access,
-        Err(error) => return direct_status_from_connect_error(error).into_response(),
-    };
-    if !access.viewer_can_comment() {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    if !access
-        .issue
-        .comments
-        .iter()
-        .any(|comment| comment.id == comment_id)
-    {
-        return StatusCode::NOT_FOUND.into_response();
-    }
-
-    match action {
-        "vote" => {
-            if repository
-                .vote_issue_comment(comment_id, actor.id)
-                .await
-                .is_err()
-            {
-                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-            }
-        }
-        "unvote" => match repository.unvote_issue_comment(comment_id, actor.id).await {
-            Ok(true) => {}
-            Ok(false) => return StatusCode::NOT_FOUND.into_response(),
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        },
-        _ => return StatusCode::BAD_REQUEST.into_response(),
-    }
-
-    redirect_to(
-        &base_path,
-        &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
-    )
-}
-
 fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {
     let normalized = value.trim().to_ascii_lowercase();
     match normalized.as_str() {
@@ -3463,7 +3242,7 @@ fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectErro
         .map_err(|_| ConnectError::invalid_argument("invalid milestone due date"))
 }
 
-fn parse_attachment_ids(value: &str) -> Vec<i64> {
+pub(crate) fn parse_attachment_ids(value: &str) -> Vec<i64> {
     value
         .split(',')
         .filter_map(|item| item.trim().parse::<i64>().ok())
