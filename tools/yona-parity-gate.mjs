@@ -131,6 +131,7 @@ const DOMAIN_BUCKETS = [
     status: "partial",
     implementationPatterns: [
       /^crates\/server\/src\/lib\.rs$/i,
+      /^crates\/server\/src\/markdown\.rs$/i,
       /^frontend\/src\/routes\/-markdown-renderer\.tsx$/i,
       /^frontend\/src\/routes\/-syntax-highlighting\.tsx$/i,
     ],

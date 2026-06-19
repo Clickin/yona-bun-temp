@@ -201,6 +201,13 @@ async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
         payload["bodyMarkdown"],
         "Hello @owner #1 owner/projectYobi#1 http://example.com\n<script>alert(1)</script>"
     );
+    assert!(
+        payload["bodyMarkdown"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("@owner #1 owner/projectYobi#1"),
+        "markdown preview should preserve legacy mention and issue-reference source tokens"
+    );
     assert_eq!(payload["breaks"], true);
 }
 
