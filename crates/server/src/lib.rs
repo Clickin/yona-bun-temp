@@ -45,8 +45,9 @@ pub(crate) use routes::{
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
     legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
     organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_logo_url, posting_can_create, posting_can_update, project_detail_from_record,
-    project_detail_with_logo_from_record, project_logo_url, project_member_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url, posting_can_create,
+    posting_can_update, project_detail_from_record, project_detail_with_logo_from_record,
+    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
     project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
     read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
     resolve_issue_reference_search_project, rest_board_label_from_record,
@@ -7784,28 +7785,6 @@ fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
     }
 }
 
-fn project_issue_list_item_to_proto(
-    item: persistence::ProjectIssueListItemRecord,
-) -> ProjectIssueListItem {
-    ProjectIssueListItem {
-        assignee_label: item.assignee_label,
-        author_label: item.author_label,
-        comment_count: item.comment_count,
-        issue_number: item.issue_number,
-        labels: item.labels.iter().map(issue_label_from_record).collect(),
-        milestone_id: item.milestone_id.unwrap_or_default(),
-        milestone_title: item.milestone_title,
-        owner_name: item.owner_name,
-        project_name: item.project_name,
-        state: item.state,
-        title: item.title,
-        updated_label: item.updated_label,
-        voter_count: item.voter_count,
-        watcher_count: item.watcher_count,
-        ..Default::default()
-    }
-}
-
 fn rest_issue_list_item_from_record(
     item: persistence::ProjectIssueListItemRecord,
 ) -> RestIssueListItem {
@@ -7907,28 +7886,6 @@ fn code_path_is_markdown(path: &str) -> bool {
         extension.as_str(),
         "markdown" | "mdown" | "mkdn" | "mkd" | "md" | "mdwn"
     )
-}
-
-fn organization_issue_list_item_to_proto(
-    item: persistence::ProjectIssueListItemRecord,
-) -> OrganizationIssueListItem {
-    OrganizationIssueListItem {
-        assignee_label: item.assignee_label,
-        author_label: item.author_label,
-        comment_count: item.comment_count,
-        issue_number: item.issue_number,
-        labels: item.labels.iter().map(issue_label_from_record).collect(),
-        milestone_id: item.milestone_id.unwrap_or_default(),
-        milestone_title: item.milestone_title,
-        owner_name: item.owner_name,
-        project_name: item.project_name,
-        state: item.state,
-        title: item.title,
-        updated_label: item.updated_label,
-        voter_count: item.voter_count,
-        watcher_count: item.watcher_count,
-        ..Default::default()
-    }
 }
 
 #[cfg(test)]

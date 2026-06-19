@@ -81,8 +81,9 @@ pub(crate) use utils::{
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
     legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
     organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_logo_url, project_detail_from_record, project_detail_with_logo_from_record,
-    project_logo_url, project_member_summary_from_record, project_milestone_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url, project_detail_from_record,
+    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
+    project_member_summary_from_record, project_milestone_summary_from_record,
     rest_board_label_from_record, user_issue_filter_name, user_issue_state, RestBoardLabel,
 };
 pub(crate) use workspace::rest_routes as workspace_rest_routes;

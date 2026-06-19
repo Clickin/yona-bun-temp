@@ -12,8 +12,8 @@ use std::collections::HashMap;
 
 use crate::{
     generated::yona::pilot::v1::{
-        IssueLabel, IssueLabelCategory, OrganizationDetail, ProjectDetail, ProjectMemberSummary,
-        ProjectMilestoneSummary,
+        IssueLabel, IssueLabelCategory, OrganizationDetail, OrganizationIssueListItem,
+        ProjectDetail, ProjectIssueListItem, ProjectMemberSummary, ProjectMilestoneSummary,
     },
     internal_error, normalize_identifier, persistence, require_valid_csrf,
     session::SessionManager,
@@ -89,6 +89,50 @@ pub(crate) fn issue_label_category_from_record(
         id: record.id,
         is_exclusive: record.is_exclusive,
         name: record.name.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn project_issue_list_item_to_proto(
+    item: persistence::ProjectIssueListItemRecord,
+) -> ProjectIssueListItem {
+    ProjectIssueListItem {
+        assignee_label: item.assignee_label,
+        author_label: item.author_label,
+        comment_count: item.comment_count,
+        issue_number: item.issue_number,
+        labels: item.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        project_name: item.project_name,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
+        ..Default::default()
+    }
+}
+
+pub(crate) fn organization_issue_list_item_to_proto(
+    item: persistence::ProjectIssueListItemRecord,
+) -> OrganizationIssueListItem {
+    OrganizationIssueListItem {
+        assignee_label: item.assignee_label,
+        author_label: item.author_label,
+        comment_count: item.comment_count,
+        issue_number: item.issue_number,
+        labels: item.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        project_name: item.project_name,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
         ..Default::default()
     }
 }
