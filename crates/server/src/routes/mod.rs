@@ -46,6 +46,7 @@ pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
+pub(crate) use workspace::direct_toggle_workspace_notification;
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
 

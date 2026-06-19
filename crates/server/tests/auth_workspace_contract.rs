@@ -2712,6 +2712,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .unwrap();
     assert_eq!(workspace_overview.status(), StatusCode::OK);
     let workspace_overview_json = response_text(workspace_overview).await;
+    assert!(workspace_overview_json.contains("\"loginId\":\"door\""));
     assert!(workspace_overview_json.contains("\"defaultLandingPath\":\"/me\""));
 
     let empty_profile_name = app
