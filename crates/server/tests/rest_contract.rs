@@ -902,7 +902,7 @@ async fn legacy_external_hello_matches_global_api_contract() {
 }
 
 #[tokio::test]
-// Guards project-route-owned organization create/update/read/member/enroll/leave/delete helpers.
+// Guards project-route-owned organization list/create/update/read/member/enroll/leave/delete helpers.
 async fn rest_organization_routes_cover_directory_views_and_membership_mutations() {
     let (app, repository) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;
@@ -1206,7 +1206,7 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 }
 
 #[tokio::test]
-// Guards project-route-owned create/read/settings/container/update helpers plus route-utils-owned project container, scope mapper, update guard, and parser helpers.
+// Guards project-route-owned list/create/read/settings/container/update helpers plus route-utils-owned project container, scope mapper, update guard, and parser helpers.
 async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (translation_api, translation_stub_path) =
         write_legacy_translation_stub_response("Translated **issue**");

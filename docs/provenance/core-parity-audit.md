@@ -507,6 +507,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   by
   `org_project_contract::project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip`
   and `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects`.
+- 2026-06-20 build/check diet note: project and organization list RPC logic
+  moved from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/projects.rs`; service methods remain compatibility
+  delegates while REST organization list and non-repository project-list
+  fallback call the route-owned helpers directly. This preserves project and
+  organization directory list projection, logo URL mapping, and no-repository
+  pilot fallback behavior covered by
+  `rest_contract::rest_project_routes_cover_directory_views_and_mutations` and
+  `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
 
 ## Wave 0 Exit Snapshot
 

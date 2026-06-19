@@ -73,24 +73,26 @@ pub(crate) use routes::{
     organization_detail_read, organization_detail_with_logo_from_record, organization_enroll,
     organization_enroll_cancel, organization_enrollment_accept,
     organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
-    organization_leave, organization_logo_url, organization_member_add, organization_member_delete,
-    organization_member_role_update, organization_member_summary_from_record,
-    organization_members_read, organization_role_options, organization_settings_read,
-    organization_update, parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64,
-    parse_rest_query_u32, percent_encode_uri_component, posting_can_create, posting_can_update,
+    organization_leave, organization_list, organization_logo_url, organization_member_add,
+    organization_member_delete, organization_member_role_update,
+    organization_member_summary_from_record, organization_members_read, organization_role_options,
+    organization_settings_read, organization_update, parse_attachment_ids,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_container_read, project_create,
     project_default_menus_from_option, project_default_scope_from_option,
     project_detail_from_record, project_detail_read, project_detail_with_logo_from_record,
     project_enroll, project_enroll_cancel, project_favorite_toggle,
     project_issue_list_item_to_proto, project_label_categories_list, project_label_category_create,
     project_label_category_delete, project_label_category_update, project_label_create,
-    project_label_delete, project_label_update, project_labels_list, project_logo_url,
-    project_member_summary_from_record, project_milestone_create, project_milestone_delete,
-    project_milestone_list, project_milestone_read, project_milestone_state_mutation,
-    project_milestone_summary_from_record, project_milestone_update, project_overview_update,
-    project_read_allowed, project_resource_create_allowed, project_settings_read, project_update,
-    project_update_allowed, project_watch_toggle, project_webhook_type_label,
-    random_site_admin_password, random_storage_token, read_issue_access, read_posting_access,
+    project_label_delete, project_label_update, project_labels_list, project_list,
+    project_logo_url, project_member_summary_from_record, project_milestone_create,
+    project_milestone_delete, project_milestone_list, project_milestone_read,
+    project_milestone_state_mutation, project_milestone_summary_from_record,
+    project_milestone_update, project_overview_update, project_read_allowed,
+    project_resource_create_allowed, project_settings_read, project_update, project_update_allowed,
+    project_watch_toggle, project_webhook_type_label, random_site_admin_password,
+    random_storage_token, read_issue_access, read_posting_access,
     read_posting_comment_create_access, recent_project_visit_record,
     record_project_webhook_delivery, redirect_to, require_authenticated_user,
     require_project_authorization, require_project_read, require_project_resource_create,
@@ -1396,90 +1398,17 @@ impl PilotServiceImpl {
     async fn list_projects(
         &self,
         ctx: Context,
-        _request: OwnedView<ListProjectsRequestView<'static>>,
+        request: OwnedView<ListProjectsRequestView<'static>>,
     ) -> Result<(ListProjectsResponse, Context), ConnectError> {
-        if let PilotBackend::Repository(repository) = &self.backend {
-            let records = repository
-                .list_projects()
-                .await
-                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
-            let mut items = Vec::with_capacity(records.len());
-            for item in records {
-                items.push(ProjectListItem {
-                    logo_url: project_logo_url(repository, &self.base_path, item.id).await?,
-                    owner_name: item.owner_name,
-                    project_name: item.project_name,
-                    overview: item.overview.unwrap_or_default(),
-                    project_scope: item.project_scope,
-                    ..Default::default()
-                });
-            }
-
-            return Ok((
-                ListProjectsResponse {
-                    items,
-                    ..Default::default()
-                },
-                ctx,
-            ));
-        }
-
-        Ok((
-            ListProjectsResponse {
-                items: vec![ProjectListItem {
-                    owner_name: "pilot".to_string(),
-                    project_name: "yona".to_string(),
-                    overview: "Pilot projects list is using the browser-safe route tree."
-                        .to_string(),
-                    project_scope: "public".to_string(),
-                    ..Default::default()
-                }],
-                ..Default::default()
-            },
-            ctx,
-        ))
+        project_list(self, ctx, request).await
     }
 
     async fn list_organizations(
         &self,
         ctx: Context,
-        _request: OwnedView<ListOrganizationsRequestView<'static>>,
+        request: OwnedView<ListOrganizationsRequestView<'static>>,
     ) -> Result<(ListOrganizationsResponse, Context), ConnectError> {
-        if let PilotBackend::Repository(repository) = &self.backend {
-            let records = repository
-                .list_organizations()
-                .await
-                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
-            let mut items = Vec::with_capacity(records.len());
-            for item in records {
-                items.push(OrganizationListItem {
-                    organization_name: item.organization_name,
-                    description: item.description.unwrap_or_default(),
-                    logo_url: organization_logo_url(repository, &self.base_path, item.id).await?,
-                    ..Default::default()
-                });
-            }
-
-            return Ok((
-                ListOrganizationsResponse {
-                    items,
-                    ..Default::default()
-                },
-                ctx,
-            ));
-        }
-
-        Ok((
-            ListOrganizationsResponse {
-                items: vec![OrganizationListItem {
-                    organization_name: "pilot".to_string(),
-                    description: "Pilot organization directory route foundation".to_string(),
-                    ..Default::default()
-                }],
-                ..Default::default()
-            },
-            ctx,
-        ))
+        organization_list(self, ctx, request).await
     }
 
     async fn list_organization_issues(

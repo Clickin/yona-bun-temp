@@ -753,6 +753,7 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
 }
 
 #[tokio::test]
+// Guards project-route-owned project/organization list helpers through public directory REST routes.
 async fn public_directory_lists_project_and_organization_logo_urls() {
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;

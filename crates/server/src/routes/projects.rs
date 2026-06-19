@@ -23,13 +23,13 @@ use crate::{
     legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
     legacy_json_find_value, map_project_scope, markdown_mention_references, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state,
-    organization_detail_with_logo_from_record, parse_attachment_ids, parse_milestone_due_date,
-    persistence, project_detail_from_record, project_detail_with_logo_from_record,
-    project_logo_url, project_read_allowed, project_update_allowed, redirect_to,
-    repository_provisioning_lock, require_authenticated_user, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
-    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
-    rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    organization_detail_with_logo_from_record, organization_logo_url, parse_attachment_ids,
+    parse_milestone_due_date, persistence, project_detail_from_record,
+    project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
+    project_update_allowed, redirect_to, repository_provisioning_lock, require_authenticated_user,
+    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
+    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
+    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
     RestIssueAssignableUsersQuery, RestMentionReferenceMetadata, RestProjectDeleteResponse,
@@ -1285,6 +1285,91 @@ pub(crate) async fn project_create(
             false,
         )
         .await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_list(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    _request: OwnedView<ListProjectsRequestView<'static>>,
+) -> Result<(ListProjectsResponse, Context), ConnectError> {
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let records = repository.list_projects().await.map_err(internal_error)?;
+        let mut items = Vec::with_capacity(records.len());
+        for item in records {
+            items.push(ProjectListItem {
+                logo_url: project_logo_url(repository, &service.base_path, item.id).await?,
+                owner_name: item.owner_name,
+                project_name: item.project_name,
+                overview: item.overview.unwrap_or_default(),
+                project_scope: item.project_scope,
+                ..Default::default()
+            });
+        }
+
+        return Ok((
+            ListProjectsResponse {
+                items,
+                ..Default::default()
+            },
+            ctx,
+        ));
+    }
+
+    Ok((
+        ListProjectsResponse {
+            items: vec![ProjectListItem {
+                owner_name: "pilot".to_string(),
+                project_name: "yona".to_string(),
+                overview: "Pilot projects list is using the browser-safe route tree.".to_string(),
+                project_scope: "public".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_list(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    _request: OwnedView<ListOrganizationsRequestView<'static>>,
+) -> Result<(ListOrganizationsResponse, Context), ConnectError> {
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let records = repository
+            .list_organizations()
+            .await
+            .map_err(internal_error)?;
+        let mut items = Vec::with_capacity(records.len());
+        for item in records {
+            items.push(OrganizationListItem {
+                organization_name: item.organization_name,
+                description: item.description.unwrap_or_default(),
+                logo_url: organization_logo_url(repository, &service.base_path, item.id).await?,
+                ..Default::default()
+            });
+        }
+
+        return Ok((
+            ListOrganizationsResponse {
+                items,
+                ..Default::default()
+            },
+            ctx,
+        ));
+    }
+
+    Ok((
+        ListOrganizationsResponse {
+            items: vec![OrganizationListItem {
+                organization_name: "pilot".to_string(),
+                description: "Pilot organization directory route foundation".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
         ctx,
     ))
 }
@@ -3036,8 +3121,7 @@ pub(crate) async fn rest_list_projects(
 
     let request = ListProjectsRequest::default();
     let request = rest_owned_view::<ListProjectsRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .list_projects(Context::new(headers), request)
+    let (payload, ctx) = project_list(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -3050,8 +3134,7 @@ pub(crate) async fn rest_list_organizations(
     rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
     let request = ListOrganizationsRequest::default();
     let request = rest_owned_view::<ListOrganizationsRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .list_organizations(Context::new(headers), request)
+    let (payload, ctx) = organization_list(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
