@@ -2876,6 +2876,130 @@ pub(crate) async fn issue_favorite_toggle(
     ))
 }
 
+pub(crate) async fn issue_sharer_mutation(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<IssueShareRequestView<'static>>,
+    action: &str,
+    target_type: &str,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    if request.owner_name.trim().is_empty()
+        || request.project_name.trim().is_empty()
+        || request.issue_number <= 0
+        || request.login_id.trim().is_empty()
+    {
+        return Err(ConnectError::invalid_argument(
+            "invalid issue sharer request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue sharer requires repository backend",
+        ));
+    };
+    let access = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        session.user_id,
+    )
+    .await?;
+    if !access.viewer_can_manage() {
+        return Err(ConnectError::permission_denied(
+            "issue sharer update is not allowed",
+        ));
+    }
+    let actor = access.actor.as_ref().expect("authenticated issue actor");
+    let normalized_target_type = target_type.trim().to_ascii_lowercase();
+    let target_users = if normalized_target_type == "project" {
+        let project_id = request
+            .login_id
+            .parse::<i64>()
+            .map_err(|_| ConnectError::not_found("issue sharer project not found"))?;
+        repository
+            .read_public_project_by_id(project_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("issue sharer project not found"))?;
+        repository
+            .list_project_member_users(project_id)
+            .await
+            .map_err(internal_error)?
+    } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
+        vec![repository
+            .find_user_by_login_id(request.login_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
+    } else {
+        return Err(ConnectError::invalid_argument(
+            "unsupported issue sharer target type",
+        ));
+    };
+
+    for target in target_users {
+        let changed = match action {
+            "share" => repository
+                .add_issue_sharer(access.issue.id, target.id, &target.login_id)
+                .await
+                .map_err(internal_error)?,
+            "unshare" => repository
+                .remove_issue_sharer(access.issue.id, target.id)
+                .await
+                .map_err(internal_error)?,
+            _ => {
+                return Err(ConnectError::invalid_argument(
+                    "invalid issue sharer action",
+                ));
+            }
+        };
+        if changed {
+            repository
+                .record_issue_sharer_changed(
+                    access.issue.id,
+                    actor.id,
+                    &actor.login_id,
+                    target.id,
+                    &target.login_id,
+                    action,
+                )
+                .await
+                .map_err(internal_error)?;
+        }
+    }
+    let updated = repository
+        .read_issue_detail(
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+    let share_status = match session.user_id {
+        Some(user_id) => repository
+            .read_issue_share_status(updated.id, user_id)
+            .await
+            .map_err(internal_error)?,
+        None => persistence::IssueShareStatus::default(),
+    };
+    Ok((
+        issue_detail_response_from_record_with_sharer_flags(
+            &updated,
+            true,
+            true,
+            share_status.direct,
+            share_status.inherited_from_parent,
+            session.user_id,
+            &service.base_path,
+        ),
+        ctx,
+    ))
+}
+
 async fn rest_toggle_favorite_issue(
     headers: HeaderMap,
     owner_name: String,
@@ -2963,10 +3087,15 @@ async fn rest_share_issue(
         ..Default::default()
     };
     let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .issue_sharer_mutation(Context::new(headers), request, "share", &body.target_type)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let (payload, ctx) = issue_sharer_mutation(
+        &service,
+        Context::new(headers),
+        request,
+        "share",
+        &body.target_type,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     let payload = rest_refreshed_issue_detail(
         &refresh_headers,
         &refresh_owner_name,
@@ -2999,15 +3128,15 @@ async fn rest_unshare_issue(
         ..Default::default()
     };
     let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .issue_sharer_mutation(
-            Context::new(headers),
-            request,
-            "unshare",
-            &query.target_type,
-        )
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let (payload, ctx) = issue_sharer_mutation(
+        &service,
+        Context::new(headers),
+        request,
+        "unshare",
+        &query.target_type,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     let payload = rest_refreshed_issue_detail(
         &refresh_headers,
         &refresh_owner_name,

@@ -316,6 +316,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   favorite detail refresh behavior covered by
   `user_issue_favorite_contract::favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues`
   and `rest_contract::rest_issue_meta_routes_manage_participation_assignment_sharing_and_comment_votes`.
+- 2026-06-19 build/check diet note: issue sharer mutation logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/issues.rs`, preserving REST share/unshare validation,
+  user/project target expansion, timeline recording, and refreshed issue detail
+  behavior covered by
+  `issue_sharer_contract::issue_sharer_contract_shares_unshares_and_keeps_duplicate_single_row`
+  and `rest_contract::rest_issue_meta_routes_manage_participation_assignment_sharing_and_comment_votes`.
 
 ## Wave 0 Exit Snapshot
 

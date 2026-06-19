@@ -60,17 +60,17 @@ pub(crate) use routes::{
     legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
-    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
-    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, map_project_scope,
-    max_uploaded_file_size_from_env_value, max_uploaded_file_size_from_option,
-    milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
-    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
-    organization_admin_member_from_record, organization_detail_from_record,
-    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url,
-    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
+    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
+    legacy_json_find_value, map_project_scope, max_uploaded_file_size_from_env_value,
+    max_uploaded_file_size_from_option, milestone_list_filter_from_request,
+    milestone_mutation_input, normalize_identifier, normalize_issue_label_color,
+    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
+    organization_detail_from_record, organization_detail_with_logo_from_record,
+    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
+    organization_logo_url, organization_member_summary_from_record, organization_role_options,
+    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
     percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
@@ -980,132 +980,6 @@ pub(crate) struct PilotServiceImpl {
     session_manager: SessionManager,
     backend: PilotBackend,
     project_default_scope: String,
-}
-
-impl PilotServiceImpl {
-    async fn issue_sharer_mutation(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueShareRequestView<'static>>,
-        action: &str,
-        target_type: &str,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.owner_name.trim().is_empty()
-            || request.project_name.trim().is_empty()
-            || request.issue_number <= 0
-            || request.login_id.trim().is_empty()
-        {
-            return Err(ConnectError::invalid_argument(
-                "invalid issue sharer request",
-            ));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue sharer requires repository backend",
-            ));
-        };
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            session.user_id,
-        )
-        .await?;
-        if !access.viewer_can_manage() {
-            return Err(ConnectError::permission_denied(
-                "issue sharer update is not allowed",
-            ));
-        }
-        let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let normalized_target_type = target_type.trim().to_ascii_lowercase();
-        let target_users = if normalized_target_type == "project" {
-            let project_id = request
-                .login_id
-                .parse::<i64>()
-                .map_err(|_| ConnectError::not_found("issue sharer project not found"))?;
-            repository
-                .read_public_project_by_id(project_id)
-                .await
-                .map_err(internal_error)?
-                .ok_or_else(|| ConnectError::not_found("issue sharer project not found"))?;
-            repository
-                .list_project_member_users(project_id)
-                .await
-                .map_err(internal_error)?
-        } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
-            vec![repository
-                .find_user_by_login_id(request.login_id)
-                .await
-                .map_err(internal_error)?
-                .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
-        } else {
-            return Err(ConnectError::invalid_argument(
-                "unsupported issue sharer target type",
-            ));
-        };
-
-        for target in target_users {
-            let changed = match action {
-                "share" => repository
-                    .add_issue_sharer(access.issue.id, target.id, &target.login_id)
-                    .await
-                    .map_err(internal_error)?,
-                "unshare" => repository
-                    .remove_issue_sharer(access.issue.id, target.id)
-                    .await
-                    .map_err(internal_error)?,
-                _ => {
-                    return Err(ConnectError::invalid_argument(
-                        "invalid issue sharer action",
-                    ));
-                }
-            };
-            if changed {
-                repository
-                    .record_issue_sharer_changed(
-                        access.issue.id,
-                        actor.id,
-                        &actor.login_id,
-                        target.id,
-                        &target.login_id,
-                        action,
-                    )
-                    .await
-                    .map_err(internal_error)?;
-            }
-        }
-        let updated = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        let share_status = match session.user_id {
-            Some(user_id) => repository
-                .read_issue_share_status(updated.id, user_id)
-                .await
-                .map_err(internal_error)?,
-            None => persistence::IssueShareStatus::default(),
-        };
-        Ok((
-            issue_detail_response_from_record_with_sharer_flags(
-                &updated,
-                true,
-                true,
-                share_status.direct,
-                share_status.inherited_from_parent,
-                session.user_id,
-                &self.base_path,
-            ),
-            ctx,
-        ))
-    }
 }
 
 #[derive(Clone)]
