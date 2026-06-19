@@ -2491,6 +2491,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
 
 #[tokio::test]
 async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
+    // Guards the legacy sidebar/usermenu HTML boundary now owned by routes/workspace/sidebar.rs.
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");

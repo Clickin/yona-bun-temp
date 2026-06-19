@@ -1058,6 +1058,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `user_issue_favorite_contract::favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues`,
   with project and organization favorite routes remaining on the same moved
   legacy favorites boundary.
+- 2026-06-20 build/check diet note: legacy direct user sidebar and
+  `usermenuTabContentList` handlers plus their HTML render helpers moved from
+  `crates/server/src/routes/workspace.rs` into
+  `crates/server/src/routes/workspace/sidebar.rs`; parent workspace route
+  registration remains unchanged. This preserves the framed sidebar shell,
+  authenticated user menu tabs, anonymous sidebar shell, asset URLs, and iframe
+  path/hash behavior covered by
+  `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_legacy_fragment`
+  and
+  `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`.
 
 ## Wave 0 Exit Snapshot
 
