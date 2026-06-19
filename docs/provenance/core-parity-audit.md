@@ -997,6 +997,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `org_project_contract::project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip`,
   `org_project_contract::toggle_project_watch_returns_refreshed_project_container`,
   and `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects`.
+- 2026-06-20 build/check diet note: project milestone REST adapter DTOs and
+  list/read/create/update/delete/state route handlers moved from
+  `crates/server/src/routes/issues.rs` into
+  `crates/server/src/routes/issues/milestones.rs`; route registration remains
+  in the parent issue route module, and adapters continue delegating to the
+  project milestone service helpers. This preserves milestone REST CRUD,
+  default list query handling, and open/close state mutation behavior covered by
+  `rest_contract::rest_milestone_routes_manage_crud_and_state`.
 
 ## Wave 0 Exit Snapshot
 

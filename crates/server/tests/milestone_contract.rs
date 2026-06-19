@@ -148,6 +148,8 @@ fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, 
 
 #[tokio::test]
 // Guards projects/milestones.rs RPC helpers and issue-owned milestone projections.
+// Companion REST adapter coverage for issues/milestones.rs lives in
+// rest_contract::rest_milestone_routes_manage_crud_and_state.
 async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
