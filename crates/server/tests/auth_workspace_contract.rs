@@ -1821,7 +1821,19 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
     // Guards route-utils-owned workspace email validation mail helper and confirmation URL.
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
-    let (app, repository, db) = build_auth_router().await;
+    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            smtp: SmtpRuntimeConfig {
+                from: "workspace-sender@example.com".to_string(),
+                ..SmtpRuntimeConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1886,10 +1898,18 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         Some("/yona/user/editform/emails?validation=sent")
     );
     let outbox = snapshot_test_outbox();
+    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
+    restore_env_var("SMTP_FROM", previous_smtp_from);
     assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "workspace-sender@example.com");
     assert_eq!(outbox[0].to, "pending@example.com");
     assert!(outbox[0].subject.contains("Validation"));
     assert!(outbox[0].body.contains("/user/email/confirm/"));
+    assert_eq!(
+        smtp_from_after_request.as_deref(),
+        Some("request-time@example.com"),
+        "SMTP runtime config must not mutate process env"
+    );
 
     let email_after_send = email::Entity::find_by_id(email_before.id)
         .one(&db)

@@ -232,6 +232,7 @@ pub(crate) fn app_routes(
             backend.clone(),
             base_path.clone(),
             public_origin.clone(),
+            smtp.clone(),
         ))
         .merge(user_routes(
             session_manager.clone(),

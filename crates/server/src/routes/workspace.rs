@@ -1045,6 +1045,7 @@ pub(crate) fn routes(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
+    smtp: SmtpRuntimeConfig,
 ) -> Router {
     let reset_visited_session_manager = session_manager.clone();
     let reset_visited_backend = backend.clone();
@@ -1081,6 +1082,7 @@ pub(crate) fn routes(
     let send_validation_backend = backend.clone();
     let send_validation_base_path = base_path.clone();
     let send_validation_public_origin = public_origin.clone();
+    let send_validation_default_from = smtp.default_from();
     let confirm_email_session_manager = session_manager.clone();
     let confirm_email_backend = backend.clone();
     let confirm_email_base_path = base_path.clone();
@@ -1320,6 +1322,7 @@ pub(crate) fn routes(
                             send_validation_backend.clone(),
                             send_validation_base_path.clone(),
                             send_validation_public_origin.clone(),
+                            send_validation_default_from.clone(),
                         )
                         .await
                     }
@@ -1727,6 +1730,7 @@ async fn direct_send_workspace_email_validation(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
+    default_from: String,
 ) -> Response {
     let login_redirect = base_path_href(
         &base_path,
@@ -1756,9 +1760,6 @@ async fn direct_send_workspace_email_validation(
         ))
         .into_response();
     };
-    let smtp = SmtpRuntimeConfig::from_env();
-    let default_from = smtp.default_from();
-
     let redirect_path = match &backend {
         PilotBackend::Repository(repository) => {
             if repository
@@ -1776,7 +1777,7 @@ async fn direct_send_workspace_email_validation(
                         &token,
                         &public_origin,
                         &base_path,
-                        &default_from,
+                        default_from.as_str(),
                     );
                 }
                 "/user/editform/emails?validation=sent"
