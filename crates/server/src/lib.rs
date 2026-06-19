@@ -42,9 +42,12 @@ pub(crate) use routes::{
     legacy_external_parse_datetime, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, normalize_issue_label_color, optional_i64_string, posting_can_create,
-    posting_can_update, project_webhook_type_label, read_issue_access, read_posting_access,
-    read_posting_comment_create_access, record_project_webhook_delivery,
+    legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
+    organization_detail_from_record, organization_detail_with_logo_from_record,
+    organization_logo_url, posting_can_create, posting_can_update, project_detail_from_record,
+    project_detail_with_logo_from_record, project_logo_url, project_member_summary_from_record,
+    project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
+    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
     resolve_issue_reference_search_project, rest_board_label_from_record,
     rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
@@ -3275,91 +3278,6 @@ fn workspace_invalid_argument(message: impl Into<String>) -> ConnectError {
     ConnectError::invalid_argument(message.into())
 }
 
-fn organization_detail_from_record(
-    record: &persistence::OrganizationRecord,
-    viewer_can_update: bool,
-) -> OrganizationDetail {
-    OrganizationDetail {
-        organization_name: record.organization_name.clone(),
-        description: record.description.clone().unwrap_or_default(),
-        viewer_can_update,
-        ..Default::default()
-    }
-}
-
-async fn organization_logo_url(
-    repository: &PilotRepository,
-    base_path: &str,
-    organization_id: i64,
-) -> Result<String, ConnectError> {
-    Ok(repository
-        .read_organization_logo_attachment(organization_id)
-        .await
-        .map_err(internal_error)?
-        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
-        .unwrap_or_default())
-}
-
-async fn organization_detail_with_logo_from_record(
-    repository: &PilotRepository,
-    base_path: &str,
-    record: &persistence::OrganizationRecord,
-    viewer_can_update: bool,
-) -> Result<OrganizationDetail, ConnectError> {
-    let mut detail = organization_detail_from_record(record, viewer_can_update);
-    detail.logo_url = organization_logo_url(repository, base_path, record.id).await?;
-    Ok(detail)
-}
-
-fn project_detail_from_record(
-    authorization: &persistence::ProjectAuthorizationRecord,
-    viewer_can_update: bool,
-    viewer_can_enroll: bool,
-) -> ProjectDetail {
-    ProjectDetail {
-        owner_name: authorization.project.owner_name.clone(),
-        project_name: authorization.project.project_name.clone(),
-        organization_name: authorization
-            .project
-            .organization_name
-            .clone()
-            .unwrap_or_default(),
-        overview: authorization.project.overview.clone().unwrap_or_default(),
-        project_scope: authorization.project.project_scope.clone(),
-        viewer_can_update,
-        viewer_can_enroll,
-        enrollment_requested: authorization.enrollment_requested,
-        is_favorited: authorization.is_favorited,
-        ..Default::default()
-    }
-}
-
-async fn project_logo_url(
-    repository: &PilotRepository,
-    base_path: &str,
-    project_id: i64,
-) -> Result<String, ConnectError> {
-    Ok(repository
-        .read_project_logo_attachment(project_id)
-        .await
-        .map_err(internal_error)?
-        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
-        .unwrap_or_default())
-}
-
-async fn project_detail_with_logo_from_record(
-    repository: &PilotRepository,
-    base_path: &str,
-    authorization: &persistence::ProjectAuthorizationRecord,
-    viewer_can_update: bool,
-    viewer_can_enroll: bool,
-) -> Result<ProjectDetail, ConnectError> {
-    let mut detail =
-        project_detail_from_record(authorization, viewer_can_update, viewer_can_enroll);
-    detail.logo_url = project_logo_url(repository, base_path, authorization.project.id).await?;
-    Ok(detail)
-}
-
 pub(crate) fn project_read_allowed(
     authorization: &persistence::ProjectAuthorizationRecord,
     is_anonymous: bool,
@@ -4210,32 +4128,6 @@ fn organization_role_options() -> Vec<OrganizationRoleOption> {
             ..Default::default()
         },
     ]
-}
-
-fn project_member_summary_from_record(
-    record: &persistence::ProjectMemberRecord,
-) -> ProjectMemberSummary {
-    ProjectMemberSummary {
-        avatar_url: gravatar_url(&record.email_address),
-        login_id: record.login_id.clone(),
-        role: record.role.clone(),
-        user_label: record.user_label.clone(),
-        ..Default::default()
-    }
-}
-
-fn project_milestone_summary_from_record(
-    record: &persistence::ProjectMilestoneSummaryRecord,
-) -> ProjectMilestoneSummary {
-    ProjectMilestoneSummary {
-        closed_issue_count: record.closed_issue_count,
-        completion_percent: record.completion_percent,
-        due_date_label: record.due_date_label.clone(),
-        id: record.id,
-        open_issue_count: record.open_issue_count,
-        title: record.title.clone(),
-        ..Default::default()
-    }
 }
 
 async fn resolve_project_origin(

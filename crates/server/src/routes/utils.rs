@@ -11,8 +11,12 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 use crate::{
-    persistence, require_valid_csrf, session::SessionManager, ConnectError, ErrorCode,
-    PilotRepository, RestRouteError,
+    generated::yona::pilot::v1::{
+        OrganizationDetail, ProjectDetail, ProjectMemberSummary, ProjectMilestoneSummary,
+    },
+    internal_error, persistence, require_valid_csrf,
+    session::SessionManager,
+    ConnectError, ErrorCode, PilotRepository, RestRouteError,
 };
 
 pub(crate) fn legacy_external_random_storage_token() -> String {
@@ -62,6 +66,117 @@ pub(crate) fn rest_board_label_from_record(
         color: label.color.clone(),
         id: label.id.to_string(),
         name: label.name.clone(),
+    }
+}
+
+pub(crate) fn organization_detail_from_record(
+    record: &persistence::OrganizationRecord,
+    viewer_can_update: bool,
+) -> OrganizationDetail {
+    OrganizationDetail {
+        organization_name: record.organization_name.clone(),
+        description: record.description.clone().unwrap_or_default(),
+        viewer_can_update,
+        ..Default::default()
+    }
+}
+
+pub(crate) async fn organization_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    organization_id: i64,
+) -> Result<String, ConnectError> {
+    Ok(repository
+        .read_organization_logo_attachment(organization_id)
+        .await
+        .map_err(internal_error)?
+        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
+        .unwrap_or_default())
+}
+
+pub(crate) async fn organization_detail_with_logo_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: &persistence::OrganizationRecord,
+    viewer_can_update: bool,
+) -> Result<OrganizationDetail, ConnectError> {
+    let mut detail = organization_detail_from_record(record, viewer_can_update);
+    detail.logo_url = organization_logo_url(repository, base_path, record.id).await?;
+    Ok(detail)
+}
+
+pub(crate) fn project_detail_from_record(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    viewer_can_update: bool,
+    viewer_can_enroll: bool,
+) -> ProjectDetail {
+    ProjectDetail {
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        organization_name: authorization
+            .project
+            .organization_name
+            .clone()
+            .unwrap_or_default(),
+        overview: authorization.project.overview.clone().unwrap_or_default(),
+        project_scope: authorization.project.project_scope.clone(),
+        viewer_can_update,
+        viewer_can_enroll,
+        enrollment_requested: authorization.enrollment_requested,
+        is_favorited: authorization.is_favorited,
+        ..Default::default()
+    }
+}
+
+pub(crate) async fn project_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    project_id: i64,
+) -> Result<String, ConnectError> {
+    Ok(repository
+        .read_project_logo_attachment(project_id)
+        .await
+        .map_err(internal_error)?
+        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
+        .unwrap_or_default())
+}
+
+pub(crate) async fn project_detail_with_logo_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    viewer_can_update: bool,
+    viewer_can_enroll: bool,
+) -> Result<ProjectDetail, ConnectError> {
+    let mut detail =
+        project_detail_from_record(authorization, viewer_can_update, viewer_can_enroll);
+    detail.logo_url = project_logo_url(repository, base_path, authorization.project.id).await?;
+    Ok(detail)
+}
+
+pub(crate) fn project_member_summary_from_record(
+    record: &persistence::ProjectMemberRecord,
+) -> ProjectMemberSummary {
+    ProjectMemberSummary {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        role: record.role.clone(),
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn project_milestone_summary_from_record(
+    record: &persistence::ProjectMilestoneSummaryRecord,
+) -> ProjectMilestoneSummary {
+    ProjectMilestoneSummary {
+        closed_issue_count: record.closed_issue_count,
+        completion_percent: record.completion_percent,
+        due_date_label: record.due_date_label.clone(),
+        id: record.id,
+        open_issue_count: record.open_issue_count,
+        title: record.title.clone(),
+        ..Default::default()
     }
 }
 
