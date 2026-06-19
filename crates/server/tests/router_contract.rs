@@ -214,7 +214,7 @@ async fn session_bootstrap_issues_cookies_and_csrf_header() {
 }
 
 #[tokio::test]
-// Guards the auth route-owned current-session helper through the Connect JSON adapter.
+// Guards the service-owned `_pilot` current-session delegate and auth route helper.
 async fn read_current_session_works_over_connect_json() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,

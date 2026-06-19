@@ -1061,7 +1061,7 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
 }
 
 #[tokio::test]
-// Guards auth route-owned register/sign-in/sign-out helpers through proto adapters.
+// Guards service-owned `_pilot` auth delegates and route-owned auth helpers.
 async fn register_sign_in_sign_out_and_current_session_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

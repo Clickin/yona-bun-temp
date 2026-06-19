@@ -563,6 +563,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   runtime injection, and filesystem asset SPA fallback behavior covered by
   `server_core_contract::session_bootstrap_issues_cookies_and_csrf_header` and
   `assets_contract::filesystem_assets_support_base_path_injection_and_spa_fallback`.
+- 2026-06-20 build/check diet note: the remaining `PilotServiceImpl` `_pilot`
+  adapter delegate impl moved from monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/service.rs`; service methods remain thin compatibility
+  delegates to route-owned auth/workspace/project/issue helpers and are
+  explicitly crate-visible for the debug `_pilot` dispatcher. This preserves
+  Connect-style current-session, register, sign-in, and sign-out behavior
+  covered by `server_core_contract::read_current_session_works_over_connect_json`
+  and
+  `auth_workspace_contract::register_sign_in_sign_out_and_current_session_round_trip`.
 
 ## Wave 0 Exit Snapshot
 
