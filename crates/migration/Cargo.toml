@@ -10,17 +10,14 @@ default = ["sqlite"]
 sqlite = [
     "sea-orm/sqlx-sqlite",
     "sea-orm-migration/sqlx-sqlite",
-    "yona-rust-persistence/sqlite",
 ]
 postgres = [
     "sea-orm/sqlx-postgres",
     "sea-orm-migration/sqlx-postgres",
-    "yona-rust-persistence/postgres",
 ]
 mysql = [
     "sea-orm/sqlx-mysql",
     "sea-orm-migration/sqlx-mysql",
-    "yona-rust-persistence/mysql",
 ]
 db-matrix = ["sqlite", "postgres", "mysql"]
 
@@ -30,7 +27,7 @@ sea-orm.workspace = true
 sea-orm-migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-yona-rust-persistence = { path = "../persistence" }
+yona-rust-persistence-entities = { path = "../persistence-entities" }
 
 [dev-dependencies]
 tempfile.workspace = true

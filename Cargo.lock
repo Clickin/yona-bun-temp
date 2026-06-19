@@ -4399,7 +4399,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
- "yona-rust-persistence",
+ "yona-rust-persistence-entities",
 ]
 
 [[package]]

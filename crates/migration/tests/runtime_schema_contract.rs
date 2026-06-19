@@ -1,7 +1,7 @@
 use sea_orm::{ConnectionTrait, Database, DbBackend, EntityTrait, Schema, Statement};
 use sea_orm_migration::{prelude::SchemaManager, seaql_migrations};
 use serde::Deserialize;
-use yona_rust_persistence::play_evolutions;
+use yona_rust_persistence_entities::play_evolutions;
 use yona_rust_pilot_migration::{
     entity_schema, optional_legacy_table_names, required_runtime_table_names, Migrator,
     RuntimeSchemaPolicy,
