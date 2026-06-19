@@ -12,9 +12,10 @@ use std::collections::HashMap;
 
 use crate::{
     generated::yona::pilot::v1::{
-        OrganizationDetail, ProjectDetail, ProjectMemberSummary, ProjectMilestoneSummary,
+        IssueLabel, IssueLabelCategory, OrganizationDetail, ProjectDetail, ProjectMemberSummary,
+        ProjectMilestoneSummary,
     },
-    internal_error, persistence, require_valid_csrf,
+    internal_error, normalize_identifier, persistence, require_valid_csrf,
     session::SessionManager,
     ConnectError, ErrorCode, PilotRepository, RestRouteError,
 };
@@ -66,6 +67,55 @@ pub(crate) fn rest_board_label_from_record(
         color: label.color.clone(),
         id: label.id.to_string(),
         name: label.name.clone(),
+    }
+}
+
+pub(crate) fn issue_label_from_record(record: &persistence::IssueLabelRecord) -> IssueLabel {
+    IssueLabel {
+        category_id: record.category_id.unwrap_or_default(),
+        category_is_exclusive: record.category_is_exclusive,
+        category_name: record.category_name.clone(),
+        color: record.color.clone(),
+        id: record.id,
+        name: record.name.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn issue_label_category_from_record(
+    record: &persistence::IssueLabelCategoryRecord,
+) -> IssueLabelCategory {
+    IssueLabelCategory {
+        id: record.id,
+        is_exclusive: record.is_exclusive,
+        name: record.name.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn user_issue_filter_name(value: &str) -> Result<String, ConnectError> {
+    let normalized = normalize_identifier(value);
+    let resolved = if normalized.is_empty() {
+        "assigned".to_string()
+    } else {
+        normalized
+    };
+    match resolved.as_str() {
+        "assigned" | "authored" | "commented" | "mentioned" | "shared" | "favorite" => Ok(resolved),
+        _ => Err(ConnectError::invalid_argument("invalid user issue filter")),
+    }
+}
+
+pub(crate) fn user_issue_state(value: &str) -> Result<String, ConnectError> {
+    let normalized = normalize_identifier(value);
+    let resolved = if normalized.is_empty() {
+        "open".to_string()
+    } else {
+        normalized
+    };
+    match resolved.as_str() {
+        "open" | "closed" => Ok(resolved),
+        _ => Err(ConnectError::invalid_argument("invalid user issue state")),
     }
 }
 

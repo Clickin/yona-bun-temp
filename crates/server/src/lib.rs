@@ -35,7 +35,8 @@ pub(crate) use routes::{
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
     gravatar_url, headers_with_form_csrf, issue_can_mutate, issue_detail_response_from_access,
-    issue_label_css, legacy_content_disposition_filename, legacy_content_update_body_from_value,
+    issue_label_category_from_record, issue_label_css, issue_label_from_record,
+    legacy_content_disposition_filename, legacy_content_update_body_from_value,
     legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
     legacy_external_assignable_users_result, legacy_external_attachment_result,
     legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
@@ -53,9 +54,9 @@ pub(crate) use routes::{
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_project_menu_settings,
     rest_read_direct_issue_form_options, rest_review_thread_filter,
-    rest_update_commit_discussion_thread_state, uploaded_file_path, workspace_avatar_url,
-    workspace_profile_from_record, RestBoardLabel, RestProjectIssuesQuery, RestReviewThread,
-    RestReviewThreadListQuery,
+    rest_update_commit_discussion_thread_state, uploaded_file_path, user_issue_filter_name,
+    user_issue_state, workspace_avatar_url, workspace_profile_from_record, RestBoardLabel,
+    RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -3355,29 +3356,6 @@ fn escape_html_attr(value: &str) -> String {
         .replace('\'', "&#x27;")
 }
 
-fn issue_label_from_record(record: &persistence::IssueLabelRecord) -> IssueLabel {
-    IssueLabel {
-        category_id: record.category_id.unwrap_or_default(),
-        category_is_exclusive: record.category_is_exclusive,
-        category_name: record.category_name.clone(),
-        color: record.color.clone(),
-        id: record.id,
-        name: record.name.clone(),
-        ..Default::default()
-    }
-}
-
-fn issue_label_category_from_record(
-    record: &persistence::IssueLabelCategoryRecord,
-) -> IssueLabelCategory {
-    IssueLabelCategory {
-        id: record.id,
-        is_exclusive: record.is_exclusive,
-        name: record.name.clone(),
-        ..Default::default()
-    }
-}
-
 fn issue_attachment_from_record(
     record: &persistence::IssueAttachmentRecord,
     base_path: &str,
@@ -3585,32 +3563,6 @@ fn issue_list_filter_from_request(
         milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
         page_num: request.page_num.max(1),
         state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
-    }
-}
-
-fn user_issue_filter_name(value: &str) -> Result<String, ConnectError> {
-    let normalized = normalize_identifier(value);
-    let resolved = if normalized.is_empty() {
-        "assigned".to_string()
-    } else {
-        normalized
-    };
-    match resolved.as_str() {
-        "assigned" | "authored" | "commented" | "mentioned" | "shared" | "favorite" => Ok(resolved),
-        _ => Err(ConnectError::invalid_argument("invalid user issue filter")),
-    }
-}
-
-fn user_issue_state(value: &str) -> Result<String, ConnectError> {
-    let normalized = normalize_identifier(value);
-    let resolved = if normalized.is_empty() {
-        "open".to_string()
-    } else {
-        normalized
-    };
-    match resolved.as_str() {
-        "open" | "closed" => Ok(resolved),
-        _ => Err(ConnectError::invalid_argument("invalid user issue state")),
     }
 }
 
