@@ -762,6 +762,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`,
   `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`,
   and `svn_protocol_contract::svn_protocol_external_client_can_move_direct_url`.
+- 2026-06-20 build/check diet note: SVN PROPFIND collection/file
+  `<D:response>` item rendering and revision-provenance payload shape moved
+  from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/propfind_items.rs`; PROPFIND dispatch and
+  multistatus response assembly remain in the protocol module. This preserves
+  root/default VCC DeltaV metadata, Label revision metadata, and executable
+  file PROPFIND/GET behavior covered by
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata`,
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
+  and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
