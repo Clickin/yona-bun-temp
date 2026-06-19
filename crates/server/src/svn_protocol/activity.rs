@@ -1,8 +1,96 @@
+use axum::body::Bytes;
+use axum::response::{IntoResponse, Response};
+use http::{HeaderValue, StatusCode};
+use std::path::Path as StdPath;
+
 use crate::base_path_href;
+use crate::{internal_error, RestRouteError};
+use yona_rust_vcs::VcsError;
 
-use super::{href, path, xml_escape, SvnProtocolRoute};
+use super::{
+    add_svn_dav_headers, href, path, svn_protocol_not_implemented_response,
+    svn_protocol_status_response, xml, xml_escape, SvnProtocolRoute,
+};
 
-pub(crate) fn checkout_location(route: &SvnProtocolRoute, activity_id: &str) -> Option<String> {
+pub(super) fn mkactivity(route: &SvnProtocolRoute) -> Response {
+    if path::activity_id(&route.svn_path).is_none() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    svn_protocol_status_response(StatusCode::CREATED)
+}
+
+pub(super) fn checkout(route: &SvnProtocolRoute, body: &Bytes) -> Response {
+    let request = String::from_utf8_lossy(body);
+    let Some(activity_href) = xml::text(&request, "href") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(activity_id) = path::activity_id(&activity_href) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(location) = checkout_location(route, &activity_id) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let mut response = svn_protocol_status_response(StatusCode::CREATED);
+    if let Ok(value) = HeaderValue::from_str(&location) {
+        response.headers_mut().insert(http::header::LOCATION, value);
+    }
+    response
+}
+
+pub(super) fn merge(repo_path: &StdPath, route: &SvnProtocolRoute, body: &Bytes) -> Response {
+    let request = String::from_utf8_lossy(body);
+    let Some(activity_href) = xml::text(&request, "href") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if path::activity_id(&activity_href).is_none() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        Ok(revision) => revision,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "MERGE");
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
+    let merge_path = path::file_lookup_for_route(route)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
+        Ok(paths) => paths,
+        Err(VcsError::NotFound) => Vec::new(),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "MERGE");
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
+    let updated_responses = merge_updated_responses(route, revision, &merge_path, &changed_paths);
+    let body = format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\
+<D:merge-response xmlns:D=\"DAV:\" xmlns:S=\"svn:\">\n\
+  <D:updated-set>\n\
+{updated_responses}\
+  </D:updated-set>\n\
+</D:merge-response>\n"
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+        response.headers_mut().insert("svn-revision", value);
+    }
+    response
+}
+
+fn checkout_location(route: &SvnProtocolRoute, activity_id: &str) -> Option<String> {
     let working_path =
         if route.svn_path == "!svn/vcc/default" || route.svn_path.starts_with("!svn/bln/") {
             String::new()
@@ -22,7 +110,7 @@ pub(crate) fn checkout_location(route: &SvnProtocolRoute, activity_id: &str) -> 
     Some(location)
 }
 
-pub(crate) fn merge_updated_responses(
+fn merge_updated_responses(
     route: &SvnProtocolRoute,
     revision: i64,
     merge_path: &str,

@@ -861,6 +861,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`,
   `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`,
   and `svn_protocol_contract::svn_protocol_external_client_can_move_direct_url`.
+- 2026-06-20 build/check diet note: SVN MKACTIVITY/CHECKOUT/MERGE response
+  handling moved from `crates/server/src/svn_protocol.rs` into the existing
+  `crates/server/src/svn_protocol/activity.rs`; method dispatch, GET/HEAD,
+  REPORT dispatch, and shared DAV/status helpers remain in the protocol module.
+  This preserves activity creation, checkout working-resource mapping, and
+  MERGE checked-in metadata covered by
+  `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`.
 
 ## Wave 0 Exit Snapshot
 
