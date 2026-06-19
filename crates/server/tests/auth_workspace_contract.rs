@@ -2679,7 +2679,7 @@ async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_passwo
 }
 
 #[tokio::test]
-// Guards workspace route-owned settings helpers through REST and proto routes.
+// Guards workspace route-owned settings/password helpers through REST and proto routes.
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

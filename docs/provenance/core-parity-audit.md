@@ -411,6 +411,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`
   and
   `auth_workspace_contract::toggle_workspace_notification_preserves_missing_forbidden_and_unwatched_statuses`.
+- 2026-06-20 build/check diet note: workspace password-change RPC logic moved
+  from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/workspace.rs`, preserving login-id confirmation,
+  old-password verification, new-password validation, bcrypt password hash
+  update, anonymous session replacement, response-header attachment, and direct
+  form redirect behavior covered by
+  `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`
+  and
+  `auth_workspace_contract::direct_email_validation_send_and_confirm_routes_round_trip`.
 
 ## Wave 0 Exit Snapshot
 

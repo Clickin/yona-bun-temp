@@ -103,11 +103,11 @@ pub(crate) use routes::{
     visible_user_issue_items, workspace_api_token_reset, workspace_avatar_url,
     workspace_default_landing_path_set, workspace_email_add, workspace_email_delete,
     workspace_email_validation_send, workspace_invalid_argument, workspace_main_email_set,
-    workspace_notification_toggle, workspace_overview_read, workspace_profile_from_record,
-    workspace_profile_update, workspace_visited_projects_reset, ProjectCreatableResource,
-    RestBoardLabel, RestIssueAssignableUsersQuery, RestProjectDeleteResponse,
-    RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery, RestRouteError,
-    LEGACY_DEFAULT_MAX_FILE_SIZE,
+    workspace_notification_toggle, workspace_overview_read, workspace_password_change,
+    workspace_profile_from_record, workspace_profile_update, workspace_visited_projects_reset,
+    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
+    RestProjectDeleteResponse, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
+    RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub mod runtime_config;
 mod server_config;
@@ -122,7 +122,6 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use axum::{extract::Path, http::Method};
-use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
 use http::StatusCode;
 use runtime_config::normalize_base_path;
@@ -1117,49 +1116,10 @@ impl PilotServiceImpl {
 
     async fn change_password(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         request: OwnedView<ChangePasswordRequestView<'static>>,
     ) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        let user = repository
-            .find_user_by_id(user_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::unauthenticated("missing authenticated session"))?;
-        if normalize_identifier(&request.login_id) != user.login_id {
-            return Err(workspace_invalid_argument("user.wrongloginId.alert"));
-        }
-        if !verify(&request.old_password, &user.password_hash).map_err(internal_error)? {
-            return Err(workspace_invalid_argument("user.wrongPassword.alert"));
-        }
-        if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
-            return Err(workspace_invalid_argument("validation.tooShortPassword"));
-        }
-        if request.password != request.retyped_password {
-            return Err(workspace_invalid_argument("validation.passwordMismatch"));
-        }
-        let password_hash = hash(&request.password, DEFAULT_COST).map_err(internal_error)?;
-        repository
-            .update_password_hash_for_user(user_id, &password_hash)
-            .await
-            .map_err(internal_error)?;
-
-        let anonymous_session = self
-            .session_manager
-            .create_anonymous_session(Some(&session.token));
-        attach_session_headers(&mut ctx, &self.session_manager, &anonymous_session);
-        Ok((anonymous_current_session_response(), ctx))
+        workspace_password_change(self, ctx, request).await
     }
 
     async fn reset_visited_projects(

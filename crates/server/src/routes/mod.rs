@@ -145,8 +145,8 @@ pub(crate) use workspace::{
     filter_workspace_pull_request_items_by_read_acl_for_viewer, workspace_api_token_reset,
     workspace_avatar_url, workspace_default_landing_path_set, workspace_email_add,
     workspace_email_delete, workspace_email_validation_send, workspace_main_email_set,
-    workspace_notification_toggle, workspace_overview_read, workspace_profile_from_record,
-    workspace_profile_update, workspace_visited_projects_reset,
+    workspace_notification_toggle, workspace_overview_read, workspace_password_change,
+    workspace_profile_from_record, workspace_profile_update, workspace_visited_projects_reset,
 };
 
 pub(crate) fn rest_api_routes(

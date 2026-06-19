@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
+use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
 use http::header::SET_COOKIE;
 use std::collections::HashMap;
@@ -17,15 +18,16 @@ use yona_rust_domain::{
 use crate::generated::yona::pilot::v1::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    base_path_href, escape_html_attr, escape_html_text, gravatar_url, headers_with_form_csrf,
-    internal_error, legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
+    anonymous_current_session_response, attach_session_headers, base_path_href, escape_html_attr,
+    escape_html_text, gravatar_url, headers_with_form_csrf, internal_error,
+    legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
     normalize_default_landing_path, normalize_identifier, read_issue_access, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
     send_workspace_email_validation_mail,
     session::{self, SessionManager},
     workspace_invalid_argument, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, WorkspaceIssueItem,
+    PilotServiceImpl, RestRouteError, WorkspaceIssueItem, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -563,6 +565,53 @@ pub(crate) async fn workspace_profile_update(
         build_workspace_overview_response(repository, &session, &service.base_path).await?,
         ctx,
     ))
+}
+
+pub(crate) async fn workspace_password_change(
+    service: &PilotServiceImpl,
+    mut ctx: Context,
+    request: OwnedView<ChangePasswordRequestView<'static>>,
+) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "workspace requires repository backend",
+        ));
+    };
+    let user = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::unauthenticated("missing authenticated session"))?;
+    if normalize_identifier(&request.login_id) != user.login_id {
+        return Err(workspace_invalid_argument("user.wrongloginId.alert"));
+    }
+    if !verify(&request.old_password, &user.password_hash).map_err(internal_error)? {
+        return Err(workspace_invalid_argument("user.wrongPassword.alert"));
+    }
+    if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
+        return Err(workspace_invalid_argument("validation.tooShortPassword"));
+    }
+    if request.password != request.retyped_password {
+        return Err(workspace_invalid_argument("validation.passwordMismatch"));
+    }
+    let password_hash = hash(&request.password, DEFAULT_COST).map_err(internal_error)?;
+    repository
+        .update_password_hash_for_user(user_id, &password_hash)
+        .await
+        .map_err(internal_error)?;
+
+    let anonymous_session = service
+        .session_manager
+        .create_anonymous_session(Some(&session.token));
+    attach_session_headers(&mut ctx, &service.session_manager, &anonymous_session);
+    Ok((anonymous_current_session_response(), ctx))
 }
 
 pub(crate) async fn workspace_visited_projects_reset(
@@ -2544,8 +2593,7 @@ pub(crate) async fn rest_change_password(
         ..Default::default()
     };
     let request = rest_owned_view::<ChangePasswordRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .change_password(Context::new(headers), request)
+    let (payload, ctx) = workspace_password_change(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
