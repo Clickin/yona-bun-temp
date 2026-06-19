@@ -75,3 +75,7 @@ Route modules should expose route builders or tightly scoped handlers. They shou
 - Every extraction has focused contract coverage or preserves an existing contract test.
 - `cargo check` and the affected `pnpm agent:cargo-test -- ...` target pass before committing.
 - No legacy route, label, UX flow, or REST compatibility behavior changes as part of this refactor.
+
+## Verification Log
+
+- 2026-06-19: moved notification REST query/response DTOs and `rest_list_notifications` from `crates/server/src/lib.rs` into `crates/server/src/routes/notifications.rs`, reducing `lib.rs` from 12,912 to 12,812 lines. `cargo check --locked --offline -p yona-rust-pilot-server --lib` passed in 4m08.09s; `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test notification_contract notification_contract_lists_current_user_notifications_with_paging` passed in 56.1s; `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test notification_contract notification_contract_direct_notification_route_returns_legacy_partial_fragment` passed in 1.4s.

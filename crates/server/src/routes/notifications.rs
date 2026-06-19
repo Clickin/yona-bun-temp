@@ -4,15 +4,14 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     base_path_href, direct_toggle_workspace_notification, escape_html_attr, escape_html_text,
-    format_project_date_label, persistence, redirect_to, require_project_read,
-    rest_list_notifications, session::SessionManager, PilotBackend, RestNotificationsQuery,
-    RestRouteError,
+    format_project_date_label, internal_error, persistence, redirect_to, require_project_read,
+    require_session, session::SessionManager, ConnectError, PilotBackend, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -29,6 +28,43 @@ struct LegacyResourceQuery {
     resource_id: Option<String>,
     #[serde(rename = "resource.type")]
     resource_type: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestNotificationsQuery {
+    from: u32,
+    size: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationActor {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationItem {
+    actor: RestNotificationActor,
+    created_at: String,
+    created_label: String,
+    event_type: String,
+    id: String,
+    message: String,
+    target_href: String,
+    target_title: String,
+    type_icon: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationsResponse {
+    has_more: bool,
+    items: Vec<RestNotificationItem>,
+    total: u32,
 }
 
 pub(crate) fn routes(
@@ -122,6 +158,69 @@ pub(crate) fn rest_routes(
             }
         }),
     )
+}
+
+fn rest_notifications_response(
+    record: persistence::NotificationListRecord,
+    base_path: &str,
+) -> RestNotificationsResponse {
+    RestNotificationsResponse {
+        has_more: record.has_more,
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestNotificationItem {
+                actor: RestNotificationActor {
+                    avatar_url: item.actor.avatar_url,
+                    display_name: item.actor.display_name,
+                    login_id: item.actor.login_id,
+                },
+                created_at: item
+                    .created
+                    .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+                    .unwrap_or_default(),
+                created_label: format_project_date_label(item.created),
+                event_type: item.event_type,
+                id: item.id.to_string(),
+                message: item.message,
+                target_href: if item.target_path.is_empty() {
+                    String::new()
+                } else {
+                    base_path_href(base_path, &item.target_path)
+                },
+                target_title: item.target_title,
+                type_icon: item.type_icon,
+            })
+            .collect(),
+        total: record.total,
+    }
+}
+
+async fn rest_list_notifications(
+    headers: HeaderMap,
+    query: RestNotificationsQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<RestNotificationsResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "notifications require repository backend",
+        ));
+    };
+    let record = repository
+        .list_notifications_for_user(user_id, query.from, query.size)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_notifications_response(record, &base_path)))
 }
 
 async fn direct_notification_partial(
