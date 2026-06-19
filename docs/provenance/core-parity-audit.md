@@ -1018,6 +1018,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `issue_mention_contract::issue_mention_contract_suggests_contextual_users_and_filters_private_search`,
   and
   `issue_reference_autocomplete_contract::issue_reference_autocomplete_contract_searches_readable_origin_for_forks`.
+- 2026-06-20 build/check diet note: site-admin update status, download
+  redirect, download-file proxy, metadata discovery, plain HTTP/chunked
+  decoding, HTTPS fetch command construction, and the related unit test moved
+  from `crates/server/src/routes/site_admin.rs` into
+  `crates/server/src/routes/site_admin/update.rs`; REST/direct route
+  registration remains in the parent site-admin route module. This preserves
+  legacy update availability branches, app-owned download redirects, configured
+  plain HTTP binary proxying, and HTTPS fetch command parsing covered by
+  `site_admin_contract::site_admin_update_download_file_proxies_configured_plain_http_binary`
+  and the module unit
+  `site_update_https_fetch_command_preserves_quoted_override`.
 
 ## Wave 0 Exit Snapshot
 
