@@ -88,3 +88,26 @@ pub(crate) fn split_configured_command(command: &str) -> Result<Vec<String>, Str
 
     Ok(parts)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn configured_commands_preserve_quoted_programs_and_arguments() {
+        let (program, args) = configured_command_parts(
+            r#""/opt/Yona Tools/fetch mailbox" --mode "unseen only" 'folder name'"#,
+            "empty",
+        )
+        .expect("configured command");
+        assert_eq!(program, "/opt/Yona Tools/fetch mailbox");
+        assert_eq!(args, vec!["--mode", "unseen only", "folder name"]);
+
+        assert_eq!(
+            split_configured_command(r#"runner escaped\ value "two words""#)
+                .expect("escaped command"),
+            vec!["runner", "escaped value", "two words"]
+        );
+        assert!(split_configured_command(r#""unterminated"#).is_err());
+    }
+}

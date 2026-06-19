@@ -591,6 +591,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   reprovisioning covered by
   `server_core_contract::update_issue_state_requires_bootstrapped_csrf` and
   `assets_contract::legacy_init_redirects_home_and_recreates_project_repositories`.
+- 2026-06-20 build/check diet note: root-local server unit tests moved from
+  monolithic `crates/server/src/lib.rs` into their owning modules:
+  `server_config.rs`, `markdown.rs`, `routes/utils.rs`, and
+  `routes/site_admin.rs`. This preserves command parsing, markdown mention
+  boundary parsing, legacy upload-size defaults, and site-update fetch command
+  construction while keeping the root module as declarations/re-exports only;
+  the moved behavior is covered by the corresponding lib unit tests.
 
 ## Wave 0 Exit Snapshot
 

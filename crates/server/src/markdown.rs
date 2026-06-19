@@ -396,3 +396,24 @@ fn markdown_local_dot_path(target: &str) -> Option<&str> {
     }
     (!local_path.is_empty()).then_some(local_path)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn markdown_mention_tokens_follow_legacy_boundaries() {
+        assert_eq!(
+            markdown_mention_tokens("@testOwner @testOwner/testProject @nforge @nforge/yobi"),
+            vec![
+                "nforge".to_string(),
+                "nforge/yobi".to_string(),
+                "testOwner".to_string(),
+                "testOwner/testProject".to_string(),
+            ]
+        );
+        assert!(
+            markdown_mention_tokens("mail@example.com owner/@ignored path/@ignored").is_empty()
+        );
+    }
+}

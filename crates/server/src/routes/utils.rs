@@ -2413,3 +2413,25 @@ pub(crate) fn accepts_legacy_json(headers: &HeaderMap) -> bool {
         )
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn max_uploaded_file_size_uses_legacy_default_and_env_override() {
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(None),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(Some("")),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+        assert_eq!(max_uploaded_file_size_from_env_value(Some("4096")), 4096);
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(Some("not-a-number")),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+    }
+}

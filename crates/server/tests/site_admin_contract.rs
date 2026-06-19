@@ -1,6 +1,9 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards site-admin update helper ownership while root-local lib tests move to
+// module-local server coverage.
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     Set,

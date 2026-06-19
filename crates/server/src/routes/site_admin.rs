@@ -3932,3 +3932,29 @@ async fn rest_site_issue_from_record(
         watcher_count: record.watcher_count,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn site_update_https_fetch_command_preserves_quoted_override() {
+        let config = SiteUpdateConfig {
+            https_fetch_command: r#""/opt/Yona Tools/fetch update" --header "X-Test: yes""#
+                .to_string(),
+            ..SiteUpdateConfig::default()
+        };
+        let (program, args) =
+            site_update_https_fetch_command("https://downloads.example/yona.zip", &config)
+                .expect("fetch command");
+        assert_eq!(program, "/opt/Yona Tools/fetch update");
+        assert_eq!(
+            args,
+            vec![
+                "--header".to_string(),
+                "X-Test: yes".to_string(),
+                "https://downloads.example/yona.zip".to_string(),
+            ]
+        );
+    }
+}

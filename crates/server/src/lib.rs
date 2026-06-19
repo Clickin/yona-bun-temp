@@ -161,8 +161,6 @@ pub use router::{
     create_router_with_repository_and_filesystem_assets,
     create_router_with_repository_and_filesystem_assets_and_app_config,
 };
-#[cfg(test)]
-pub(crate) use server_config::split_configured_command;
 pub(crate) use server_config::{
     configured_command_parts, parse_legacy_bool, parse_legacy_duration_ms,
 };
@@ -182,81 +180,4 @@ pub use yona_rust_pilot_protocol as generated;
 
 pub mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn max_uploaded_file_size_uses_legacy_default_and_env_override() {
-        assert_eq!(
-            max_uploaded_file_size_from_env_value(None),
-            LEGACY_DEFAULT_MAX_FILE_SIZE
-        );
-        assert_eq!(
-            max_uploaded_file_size_from_env_value(Some("")),
-            LEGACY_DEFAULT_MAX_FILE_SIZE
-        );
-        assert_eq!(max_uploaded_file_size_from_env_value(Some("4096")), 4096);
-        assert_eq!(
-            max_uploaded_file_size_from_env_value(Some("not-a-number")),
-            LEGACY_DEFAULT_MAX_FILE_SIZE
-        );
-    }
-
-    #[test]
-    fn configured_commands_preserve_quoted_programs_and_arguments() {
-        let (program, args) = configured_command_parts(
-            r#""/opt/Yona Tools/fetch mailbox" --mode "unseen only" 'folder name'"#,
-            "empty",
-        )
-        .expect("configured command");
-        assert_eq!(program, "/opt/Yona Tools/fetch mailbox");
-        assert_eq!(args, vec!["--mode", "unseen only", "folder name"]);
-
-        assert_eq!(
-            split_configured_command(r#"runner escaped\ value "two words""#)
-                .expect("escaped command"),
-            vec!["runner", "escaped value", "two words"]
-        );
-        assert!(split_configured_command(r#""unterminated"#).is_err());
-    }
-
-    #[test]
-    fn site_update_https_fetch_command_preserves_quoted_override() {
-        let config = SiteUpdateConfig {
-            https_fetch_command: r#""/opt/Yona Tools/fetch update" --header "X-Test: yes""#
-                .to_string(),
-            ..SiteUpdateConfig::default()
-        };
-        let (program, args) =
-            site_update_https_fetch_command("https://downloads.example/yona.zip", &config)
-                .expect("fetch command");
-        assert_eq!(program, "/opt/Yona Tools/fetch update");
-        assert_eq!(
-            args,
-            vec![
-                "--header".to_string(),
-                "X-Test: yes".to_string(),
-                "https://downloads.example/yona.zip".to_string(),
-            ]
-        );
-    }
-
-    #[test]
-    fn markdown_mention_tokens_follow_legacy_boundaries() {
-        assert_eq!(
-            markdown_mention_tokens("@testOwner @testOwner/testProject @nforge @nforge/yobi"),
-            vec![
-                "nforge".to_string(),
-                "nforge/yobi".to_string(),
-                "testOwner".to_string(),
-                "testOwner/testProject".to_string(),
-            ]
-        );
-        assert!(
-            markdown_mention_tokens("mail@example.com owner/@ignored path/@ignored").is_empty()
-        );
-    }
 }

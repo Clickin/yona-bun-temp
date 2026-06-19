@@ -1,6 +1,8 @@
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
+// Guards asset/upload helper ownership while root-local lib tests move to
+// module-local server coverage.
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
