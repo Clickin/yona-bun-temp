@@ -5544,7 +5544,7 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
 }
 
 #[tokio::test]
-// Guards issue route-owned label CRUD helpers through the REST label surface.
+// Guards issue route-owned label/category helpers through the REST label surface.
 async fn rest_label_routes_manage_labels_and_categories() {
     let (app, repository, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

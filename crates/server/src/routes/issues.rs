@@ -23,17 +23,18 @@ use crate::{
     absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
     direct_status_from_connect_error, dispatch_issue_webhooks, form_bool, form_value,
-    headers_with_form_csrf, internal_error, issue_label_css, issue_label_from_record,
-    issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
-    markdown_mention_references, mention_reference_metadata_from_resolved, normalize_identifier,
-    normalize_issue_label_color, parse_attachment_ids, parse_milestone_due_date,
-    parse_rest_query_i64, parse_rest_query_u32, persistence, project_read_allowed,
-    project_update_allowed, redirect_to, require_authenticated_user, require_project_authorization,
-    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    rest_json_response, rest_owned_view, session::SessionManager, user_issue_filter_name,
-    user_issue_state, visible_projects_for_organization, ConnectError, Context, ErrorCode,
-    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
+    headers_with_form_csrf, internal_error, issue_label_category_from_record, issue_label_css,
+    issue_label_from_record, issue_reference_metadata_from_resolved,
+    markdown_issue_references_for_project, markdown_mention_references,
+    mention_reference_metadata_from_resolved, normalize_identifier, normalize_issue_label_color,
+    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    persistence, project_read_allowed, project_update_allowed, redirect_to,
+    require_authenticated_user, require_project_authorization, require_project_read,
+    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
+    rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
+    visible_projects_for_organization, ConnectError, Context, ErrorCode, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -3218,6 +3219,182 @@ pub(crate) async fn project_label_delete(
         .map_err(internal_error)?;
     if !ok {
         return Err(ConnectError::not_found("issue label not found"));
+    }
+    Ok((
+        ProjectLabelDeleteResponse {
+            ok,
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_label_categories_list(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ListProjectLabelsRequestView<'static>>,
+) -> Result<(ListProjectLabelCategoriesResponse, Context), ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue label requires repository backend",
+        ));
+    };
+    let session = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers);
+    require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.as_ref().and_then(|session| session.user_id),
+    )
+    .await?;
+    let categories = repository
+        .list_project_label_categories(request.owner_name, request.project_name)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(issue_label_category_from_record)
+        .collect();
+    Ok((
+        ListProjectLabelCategoriesResponse {
+            categories,
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_label_category_create(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<CreateProjectLabelCategoryRequestView<'static>>,
+) -> Result<(ProjectLabelCategoryMutationResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue label requires repository backend",
+        ));
+    };
+    require_authenticated_user(repository, session.user_id).await?;
+    let authorization = require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.user_id,
+    )
+    .await?;
+    if !project_update_allowed(&authorization)? {
+        return Err(ConnectError::permission_denied(
+            "issue label category create is not allowed",
+        ));
+    }
+    let Some((category, created)) = repository
+        .create_project_label_category(persistence::CreateProjectLabelCategoryInput {
+            category_is_exclusive: request.category_is_exclusive,
+            category_name: request.category_name.trim().to_string(),
+            owner_name: request.owner_name.to_string(),
+            project_name: request.project_name.to_string(),
+        })
+        .await
+        .map_err(internal_error)?
+    else {
+        return Err(ConnectError::not_found("project not found"));
+    };
+    Ok((
+        ProjectLabelCategoryMutationResponse {
+            category: Some(issue_label_category_from_record(&category)).into(),
+            created,
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_label_category_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateProjectLabelCategoryRequestView<'static>>,
+) -> Result<(ProjectLabelCategoryMutationResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue label requires repository backend",
+        ));
+    };
+    require_authenticated_user(repository, session.user_id).await?;
+    let authorization = require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.user_id,
+    )
+    .await?;
+    if !project_update_allowed(&authorization)? {
+        return Err(ConnectError::permission_denied(
+            "issue label category update is not allowed",
+        ));
+    }
+    let Some(category) = repository
+        .update_project_label_category(persistence::UpdateProjectLabelCategoryInput {
+            category_id: request.category_id,
+            category_is_exclusive: request.category_is_exclusive,
+            category_name: request.category_name.trim().to_string(),
+            owner_name: request.owner_name.to_string(),
+            project_name: request.project_name.to_string(),
+        })
+        .await
+        .map_err(|error| ConnectError::invalid_argument(error.to_string()))?
+    else {
+        return Err(ConnectError::not_found("issue label category not found"));
+    };
+    Ok((
+        ProjectLabelCategoryMutationResponse {
+            category: Some(issue_label_category_from_record(&category)).into(),
+            created: false,
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_label_category_delete(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<DeleteProjectLabelCategoryRequestView<'static>>,
+) -> Result<(ProjectLabelDeleteResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue label requires repository backend",
+        ));
+    };
+    require_authenticated_user(repository, session.user_id).await?;
+    let authorization = require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.user_id,
+    )
+    .await?;
+    if !project_update_allowed(&authorization)? {
+        return Err(ConnectError::permission_denied(
+            "issue label category delete is not allowed",
+        ));
+    }
+    let ok = repository
+        .delete_project_label_category(
+            request.owner_name,
+            request.project_name,
+            request.category_id,
+        )
+        .await
+        .map_err(internal_error)?;
+    if !ok {
+        return Err(ConnectError::not_found("issue label category not found"));
     }
     Ok((
         ProjectLabelDeleteResponse {

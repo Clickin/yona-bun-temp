@@ -336,6 +336,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   category binding, duplicate/update error mapping, and delete behavior covered
   by `issue_label_contract::issue_label_rpc_manages_labels_categories_and_cleanup`
   and `rest_contract::rest_label_routes_manage_labels_and_categories`.
+- 2026-06-20 build/check diet note: project label category list/create/update/delete
+  RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/issues.rs`,
+  preserving category read ACL, project-update authorization, exclusive flag
+  updates, update error mapping, and delete behavior covered by
+  `issue_label_contract::issue_label_rpc_manages_labels_categories_and_cleanup`
+  and `rest_contract::rest_label_routes_manage_labels_and_categories`.
 
 ## Wave 0 Exit Snapshot
 
