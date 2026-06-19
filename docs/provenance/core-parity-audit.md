@@ -554,6 +554,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest`
   and
   `server_core_contract::legacy_migration_requires_login_when_anonymous_access_is_disabled`.
+- 2026-06-20 build/check diet note: public router constructors and top-level
+  router assembly moved from monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/router.rs`; the root crate re-exports the same constructor
+  API while `router.rs` owns app route assembly, asset mounting, session manager
+  creation, browser runtime injection, and anonymous-access middleware
+  installation. This preserves session bootstrap, CSRF header issuance, base-path
+  runtime injection, and filesystem asset SPA fallback behavior covered by
+  `server_core_contract::session_bootstrap_issues_cookies_and_csrf_header` and
+  `assets_contract::filesystem_assets_support_base_path_injection_and_spa_fallback`.
 
 ## Wave 0 Exit Snapshot
 
