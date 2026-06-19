@@ -1099,6 +1099,7 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
 
 #[tokio::test]
 async fn file_upload_respects_configured_max_file_size_without_env_mutation() {
+    // Guards route-utils-owned upload storage token generation after helper extraction.
     let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
     let (app, _, _) = build_auth_router_with_app_config(AppRuntimeConfig {
         max_uploaded_file_size: 8,

@@ -72,16 +72,19 @@ pub(crate) use routes::{
     project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
-    project_resource_create_allowed, project_webhook_type_label, read_issue_access,
-    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
-    redirect_to, require_project_resource_create, require_session, require_valid_csrf,
+    project_resource_create_allowed, project_webhook_type_label, random_site_admin_password,
+    random_storage_token, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
+    require_project_resource_create, require_session, require_valid_csrf,
     resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
     rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
     rest_read_direct_issue_form_options, rest_repository, rest_require_project_code_read,
-    rest_review_thread_filter, rest_update_commit_discussion_thread_state, site_name_from_option,
+    rest_review_thread_filter, rest_update_commit_discussion_thread_state,
+    send_password_reset_mail, send_project_transfer_request_mail, send_signup_verification_mail,
+    send_workspace_email_validation_mail, site_export_filename_stamp, site_name_from_option,
     site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
     uploaded_file_path, user_issue_filter_name, user_issue_state,
     visible_code_projects_for_organization, visible_projects_for_organization,
@@ -103,7 +106,6 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use axum::{extract::Path, http::Method};
-use base64::Engine as _;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
 use http::StatusCode;
@@ -114,7 +116,6 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{atomic::AtomicBool, Mutex, OnceLock},
-    time::SystemTime,
     vec,
 };
 
@@ -144,7 +145,6 @@ use yona_rust_domain::{
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
     ProjectScope,
 };
-use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_vcs::ProjectHistoryCommitRecord;
 
 pub use yona_rust_pilot_protocol as generated;
@@ -965,163 +965,6 @@ pub(crate) fn yona_data_root() -> PathBuf {
 fn repository_provisioning_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
-}
-
-pub(crate) fn random_storage_token() -> String {
-    use base64::Engine;
-    use rand::RngCore;
-
-    let mut bytes = [0_u8; 32];
-    rand::thread_rng().fill_bytes(&mut bytes);
-    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
-}
-
-fn random_site_admin_password() -> String {
-    random_storage_token().chars().take(6).collect()
-}
-
-fn send_signup_verification_mail(
-    to: &str,
-    login_id: &str,
-    verification_code: &str,
-    public_origin: &str,
-    base_path: &str,
-) -> Result<(), ConnectError> {
-    let verify_url = absolute_app_url(
-        public_origin,
-        base_path,
-        &format!("/verify/{login_id}/{verification_code}"),
-    );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
-        from: default_smtp_from(),
-        html: false,
-        reply_to: None,
-        subject: "New Sign-up Confirm".to_string(),
-        to: to.to_string(),
-    })
-    .map_err(internal_error)
-}
-
-fn send_password_reset_mail(
-    to: &str,
-    verification_code: &str,
-    public_origin: &str,
-    base_path: &str,
-    site_name: &str,
-) -> Result<(), ConnectError> {
-    let reset_url = absolute_app_url(
-        public_origin,
-        base_path,
-        &format!("/resetPassword?s={verification_code}"),
-    );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
-        from: default_smtp_from(),
-        html: false,
-        reply_to: None,
-        subject: format!("[{}] Password reset request", site_name),
-        to: to.to_string(),
-    })
-    .map_err(internal_error)
-}
-
-fn send_workspace_email_validation_mail(
-    to: &str,
-    email_id: i64,
-    token: &str,
-    public_origin: &str,
-    base_path: &str,
-) -> Result<(), ConnectError> {
-    let confirm_url = absolute_app_url(
-        public_origin,
-        base_path,
-        &format!("/user/email/confirm/{email_id}/{token}"),
-    );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
-        from: default_smtp_from(),
-        html: false,
-        reply_to: None,
-        subject: "Validation email".to_string(),
-        to: to.to_string(),
-    })
-    .map_err(internal_error)
-}
-
-async fn send_project_transfer_request_mail(
-    repository: &PilotRepository,
-    authorization: &persistence::ProjectAuthorizationRecord,
-    transfer: &persistence::ProjectTransferRecord,
-    sender: &persistence::AppUserRecord,
-    public_origin: &str,
-    base_path: &str,
-) -> Result<(), String> {
-    let mut recipients = Vec::new();
-    if let Some(user) = repository
-        .find_user_by_login_id(&transfer.destination)
-        .await
-        .map_err(|error| error.to_string())?
-    {
-        recipients.push(user.email_address);
-    } else {
-        let members = repository
-            .read_organization_members(&transfer.destination)
-            .await
-            .map_err(|error| error.to_string())?;
-        recipients.extend(
-            members
-                .members
-                .into_iter()
-                .filter(|member| member.role == "org_admin")
-                .map(|member| member.email_address),
-        );
-    }
-    recipients.sort();
-    recipients.dedup();
-
-    let accept_url = absolute_app_url(
-        public_origin,
-        base_path,
-        &format!("/project/transfer/{}/{}", transfer.id, transfer.confirm_key),
-    );
-    let body = format!(
-        "Hello {},\n\n@{} wants to transfer the {}/{} project to {}/{}.\n{}\n\n{}\n\nIf you do not accept the transfer it will expire in a day.\n\nThanks",
-        transfer.destination,
-        authorization.project.owner_name,
-        authorization.project.owner_name,
-        authorization.project.project_name,
-        transfer.destination,
-        transfer.new_project_name,
-        "To accept the request, visit this link:",
-        accept_url,
-    );
-    let subject = format!(
-        "[{}] @{} wants to transfer project",
-        authorization.project.project_name, sender.login_id
-    );
-    for to in recipients.into_iter().filter(|to| !to.trim().is_empty()) {
-        let _ = deliver(OutboundMail {
-            bcc: Vec::new(),
-            body: body.clone(),
-            from: default_smtp_from(),
-            html: false,
-            reply_to: None,
-            subject: subject.clone(),
-            to,
-        });
-    }
-    Ok(())
-}
-
-fn site_export_filename_stamp() -> String {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|duration| duration.as_secs().to_string())
-        .unwrap_or_else(|_| "0".to_string())
 }
 
 #[derive(Clone)]

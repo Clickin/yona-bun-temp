@@ -829,7 +829,7 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
 
 #[tokio::test]
 async fn site_admin_export_download_follows_legacy_site_data_route() {
-    // Guards the site-admin export DTO route-module ownership split.
+    // Guards the site-admin export DTO route-module ownership split and route-utils timestamp helper.
     let _data_guard = yona_data_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());

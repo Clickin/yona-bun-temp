@@ -9,7 +9,8 @@ use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, time::SystemTime};
+use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
@@ -293,6 +294,162 @@ pub(crate) fn max_uploaded_file_size_from_option(value: Option<usize>) -> usize 
 pub(crate) fn configured_max_uploaded_file_size() -> usize {
     let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
     max_uploaded_file_size_from_env_value(env_value.as_deref())
+}
+
+pub(crate) fn random_storage_token() -> String {
+    use base64::Engine;
+
+    let mut bytes = [0_u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+pub(crate) fn random_site_admin_password() -> String {
+    random_storage_token().chars().take(6).collect()
+}
+
+pub(crate) fn send_signup_verification_mail(
+    to: &str,
+    login_id: &str,
+    verification_code: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), ConnectError> {
+    let verify_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/verify/{login_id}/{verification_code}"),
+    );
+    deliver(OutboundMail {
+        bcc: Vec::new(),
+        body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
+        from: default_smtp_from(),
+        html: false,
+        reply_to: None,
+        subject: "New Sign-up Confirm".to_string(),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
+pub(crate) fn send_password_reset_mail(
+    to: &str,
+    verification_code: &str,
+    public_origin: &str,
+    base_path: &str,
+    site_name: &str,
+) -> Result<(), ConnectError> {
+    let reset_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/resetPassword?s={verification_code}"),
+    );
+    deliver(OutboundMail {
+        bcc: Vec::new(),
+        body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
+        from: default_smtp_from(),
+        html: false,
+        reply_to: None,
+        subject: format!("[{}] Password reset request", site_name),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
+pub(crate) fn send_workspace_email_validation_mail(
+    to: &str,
+    email_id: i64,
+    token: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), ConnectError> {
+    let confirm_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/user/email/confirm/{email_id}/{token}"),
+    );
+    deliver(OutboundMail {
+        bcc: Vec::new(),
+        body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
+        from: default_smtp_from(),
+        html: false,
+        reply_to: None,
+        subject: "Validation email".to_string(),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
+pub(crate) async fn send_project_transfer_request_mail(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    transfer: &persistence::ProjectTransferRecord,
+    sender: &persistence::AppUserRecord,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), String> {
+    let mut recipients = Vec::new();
+    if let Some(user) = repository
+        .find_user_by_login_id(&transfer.destination)
+        .await
+        .map_err(|error| error.to_string())?
+    {
+        recipients.push(user.email_address);
+    } else {
+        let members = repository
+            .read_organization_members(&transfer.destination)
+            .await
+            .map_err(|error| error.to_string())?;
+        recipients.extend(
+            members
+                .members
+                .into_iter()
+                .filter(|member| member.role == "org_admin")
+                .map(|member| member.email_address),
+        );
+    }
+    recipients.sort();
+    recipients.dedup();
+
+    let accept_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/project/transfer/{}/{}", transfer.id, transfer.confirm_key),
+    );
+    let body = format!(
+        "Hello {},\n\n@{} wants to transfer the {}/{} project to {}/{}.\n{}\n\n{}\n\nIf you do not accept the transfer it will expire in a day.\n\nThanks",
+        transfer.destination,
+        authorization.project.owner_name,
+        authorization.project.owner_name,
+        authorization.project.project_name,
+        transfer.destination,
+        transfer.new_project_name,
+        "To accept the request, visit this link:",
+        accept_url,
+    );
+    let subject = format!(
+        "[{}] @{} wants to transfer project",
+        authorization.project.project_name, sender.login_id
+    );
+    for to in recipients.into_iter().filter(|to| !to.trim().is_empty()) {
+        let _ = deliver(OutboundMail {
+            bcc: Vec::new(),
+            body: body.clone(),
+            from: default_smtp_from(),
+            html: false,
+            reply_to: None,
+            subject: subject.clone(),
+            to,
+        });
+    }
+    Ok(())
+}
+
+pub(crate) fn site_export_filename_stamp() -> String {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|duration| duration.as_secs().to_string())
+        .unwrap_or_else(|_| "0".to_string())
 }
 
 #[derive(Serialize)]

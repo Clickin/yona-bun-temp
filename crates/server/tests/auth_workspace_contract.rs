@@ -1606,6 +1606,7 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
 
 #[tokio::test]
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
+    // Guards route-utils-owned password reset mail helper and absolute reset URL composition.
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
     let previous_site_name = std::env::var("YONA_SITE_NAME").ok();
@@ -1725,6 +1726,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
 
 #[tokio::test]
 async fn direct_email_validation_send_and_confirm_routes_round_trip() {
+    // Guards route-utils-owned workspace email validation mail helper and confirmation URL.
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repository, db) = build_auth_router().await;
