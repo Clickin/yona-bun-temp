@@ -176,6 +176,7 @@ fn build_router_with_app_config(
         &base_path,
         project_default_menus.clone(),
         project_default_scope.clone(),
+        site_name.clone(),
         supported_languages.clone(),
         show_user_email,
     );

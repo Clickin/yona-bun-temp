@@ -4,6 +4,7 @@ export interface RuntimeConfig {
   projectDefaultMenus?: string[];
   projectDefaultScope?: string;
   showUserEmail?: boolean;
+  siteName?: string;
   supportedLanguages?: string[];
 }
 
@@ -23,6 +24,7 @@ declare global {
     readonly VITE_YONA_LANGS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_MENUS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_SCOPE?: string;
+    readonly VITE_YONA_SITE_NAME?: string;
     readonly VITE_YONA_SHOW_USER_EMAIL?: string;
   }
 
@@ -51,6 +53,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
     projectDefaultScope: normalizeProjectDefaultScope(input.projectDefaultScope),
     showUserEmail: normalizeShowUserEmail(input.showUserEmail),
+    siteName: normalizeSiteName(input.siteName),
     supportedLanguages: normalizeSupportedLanguages(input.supportedLanguages),
   };
 }
@@ -62,6 +65,7 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
     projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
     supportedLanguages: import.meta.env.VITE_YONA_LANGS,
     projectDefaultScope: import.meta.env.VITE_YONA_PROJECT_DEFAULT_SCOPE,
+    siteName: import.meta.env.VITE_YONA_SITE_NAME,
     showUserEmail: import.meta.env.VITE_YONA_SHOW_USER_EMAIL,
   };
 }
@@ -162,4 +166,9 @@ export function normalizeShowUserEmail(input: boolean | string | null | undefine
     default:
       return true;
   }
+}
+
+export function normalizeSiteName(input: string | null | undefined): string {
+  const trimmed = (input ?? "").trim();
+  return trimmed === "" ? "Yona" : trimmed;
 }

@@ -339,7 +339,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 #[tokio::test]
 // Guards asset-owned embedded fallback, runtime injection, and base-path SPA routing.
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
-    // Guards app-config-owned runtime projection for project scope, languages, and email visibility.
+    // Guards app-config-owned runtime projection for project scope, site name, languages, and email visibility.
     let _guard = runtime_config_env_lock().lock().unwrap();
     let previous_project_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let previous_langs = std::env::var("YONA_LANGS").ok();
@@ -358,6 +358,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
                 "ja-JP".to_string(),
             ],
             show_user_email: false,
+            site_name: "Legacy Yona".to_string(),
             ..AppRuntimeConfig::default()
         },
     );
@@ -379,6 +380,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"projectDefaultScope\":\"private\""));
+    assert!(html.contains("\"siteName\":\"Legacy Yona\""));
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
     assert_eq!(

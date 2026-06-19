@@ -118,7 +118,10 @@ export function NotificationRouteComponent({
     <main className="app-shell notification-page">
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <NotificationWelcomeGuide basePath={runtimeConfig.basePath} />
+          <NotificationWelcomeGuide
+            basePath={runtimeConfig.basePath}
+            siteName={runtimeConfig.siteName}
+          />
           <div className="page on-fold-intro">
             <div className="row-fluid content-container">
               <div className="span8 main-stream">
@@ -292,7 +295,13 @@ function NotificationMessage({
   );
 }
 
-export function NotificationWelcomeGuide({ basePath }: { basePath: string }) {
+export function NotificationWelcomeGuide({
+  basePath,
+  siteName = "Yona",
+}: {
+  basePath: string;
+  siteName?: string;
+}) {
   const [visible, setVisible] = React.useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -313,7 +322,7 @@ export function NotificationWelcomeGuide({ basePath }: { basePath: string }) {
     <>
       <div className={`site-guide-outer${visible ? "" : " hide"}`}>
         <h3>
-          <span>app.welcome Yona - app.description</span>
+          <span>{`app.welcome ${siteName} - app.description`}</span>
         </h3>
         <table className="welcome-table table borderless">
           <tbody>

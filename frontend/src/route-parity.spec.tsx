@@ -1887,10 +1887,11 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain("page-wrap-outer");
     expect(notificationRouteSource).toContain("page-wrap");
     expect(notificationRouteSource).toContain("NotificationWelcomeGuide");
+    expect(notificationRouteSource).toContain("siteName={runtimeConfig.siteName}");
     expect(notificationRouteSource).toContain(
       'className={`site-guide-outer${visible ? "" : " hide"}`}',
     );
-    expect(notificationRouteSource).toContain("app.welcome Yona - app.description");
+    expect(notificationRouteSource).toContain("app.welcome ${siteName} - app.description");
     expect(notificationRouteSource).toContain("welcome-table table borderless");
     expect(notificationRouteSource).toContain("button.newProject");
     expect(notificationRouteSource).toContain("title.newOrganization");
@@ -1964,6 +1965,15 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="guide-toggle"');
     expect(html).toContain('id="toggleIntro"');
     expect(html).toContain('class="yobicon-resizev"');
+  });
+
+  it("renders the legacy notification welcome guide with the configured site name", () => {
+    const html = renderToStaticMarkup(
+      <NotificationWelcomeGuide basePath="/yona" siteName="Legacy Yona" />,
+    );
+
+    expect(html).toContain("app.welcome Legacy Yona - app.description");
+    expect(html).not.toContain("app.welcome Yona - app.description");
   });
 
   it("requires real board routes and board API wiring instead of placeholders", () => {
@@ -4993,7 +5003,7 @@ describe("file-route parity harness", () => {
     expect(viewSource).not.toContain('required\n                      type="url"');
 
     const serverSource = fs.readFileSync(
-      path.resolve(__dirname, "../..", "crates/server/src/lib.rs"),
+      path.resolve(__dirname, "../..", "crates/server/src/routes/projects/webhooks.rs"),
       "utf8",
     );
     expect(serverSource).toContain("project.webhook.payloadUrl.empty");

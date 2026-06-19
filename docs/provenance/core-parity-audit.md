@@ -1068,6 +1068,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_legacy_fragment`
   and
   `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`.
+- 2026-06-20 scalar parity note: browser runtime config now injects the
+  configured legacy site name as `siteName`, and the notification welcome guide
+  renders the legacy `app.welcome <site> - app.description` scalar from that
+  runtime value instead of hard-coding `Yona`. Verification passed with
+  `pnpm --dir frontend exec vitest run src/runtime-config.spec.ts src/route-parity.spec.tsx`
+  and
+  `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test assets_contract embedded_assets_support_base_path_injection_and_spa_fallback`.
 
 ## Wave 0 Exit Snapshot
 

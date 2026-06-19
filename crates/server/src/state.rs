@@ -149,6 +149,8 @@ pub(crate) struct BrowserRuntimeConfig {
     project_default_menus: Vec<String>,
     #[serde(rename = "projectDefaultScope")]
     project_default_scope: String,
+    #[serde(rename = "siteName")]
+    site_name: String,
     #[serde(rename = "supportedLanguages")]
     supported_languages: Vec<String>,
     #[serde(rename = "showUserEmail")]
@@ -160,6 +162,7 @@ impl BrowserRuntimeConfig {
         base_path: &str,
         project_default_menus: Vec<String>,
         project_default_scope: String,
+        site_name: String,
         supported_languages: Vec<String>,
         show_user_email: bool,
     ) -> Self {
@@ -174,6 +177,7 @@ impl BrowserRuntimeConfig {
             base_path,
             project_default_menus,
             project_default_scope,
+            site_name,
             supported_languages,
             show_user_email,
         }
