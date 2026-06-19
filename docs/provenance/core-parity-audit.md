@@ -838,6 +838,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
   `svn_protocol_contract::svn_protocol_external_client_can_deepen_depth_empty_checkout`,
   and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN root/default VCC/baseline/tree/file
+  `PROPFIND` response handling moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/propfind_response.rs`; method dispatch and
+  non-PROPFIND file/write/REPORT handling remain in the protocol module. This
+  preserves DeltaV allprop metadata, Label revision metadata, and executable
+  file/tree PROPFIND behavior covered by
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata`,
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
+  and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 

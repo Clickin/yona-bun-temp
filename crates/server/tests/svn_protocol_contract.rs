@@ -4,10 +4,11 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 
 // Guards SVN protocol OPTIONS, activity/merge choreography, write mutation,
-// href, path, PROPFIND property/item rendering, the report_update helper,
-// update-report, REPORT filtering/location/revision/log/file-revs/replay/mergeinfo/list/get-locks/
-// inherited-props responses, delta, date, XML, lock, and report item behavior
-// while focused helpers move out of the request dispatch module.
+// href, path, PROPFIND response/property/item rendering, the propfind_response
+// and report_update helpers, update-report, REPORT filtering/location/revision/
+// log/file-revs/replay/mergeinfo/list/get-locks/inherited-props responses,
+// delta, date, XML, lock, and report item behavior while focused helpers move
+// out of the request dispatch module.
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
 use std::path::Path;
