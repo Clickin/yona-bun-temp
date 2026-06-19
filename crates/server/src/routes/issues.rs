@@ -15,28 +15,25 @@ use super::utils::{
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_proto,
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
     absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
     direct_status_from_connect_error, dispatch_issue_webhooks, form_bool, form_value,
-    headers_with_form_csrf, internal_error,
-    issue_detail_response_from_record_with_repository_issue_references,
-    issue_detail_response_from_record_with_sharer_flags, issue_label_css,
-    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
+    headers_with_form_csrf, internal_error, issue_label_css,
+    issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
+    markdown_mention_references, mention_reference_metadata_from_resolved, normalize_identifier,
     normalize_issue_label_color, parse_attachment_ids, parse_milestone_due_date,
     parse_rest_query_i64, parse_rest_query_u32, persistence, project_read_allowed, redirect_to,
     require_authenticated_user, require_project_authorization, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf,
-    rest_issue_detail_response_from_record_with_sharer_flags_and_references,
-    rest_issue_list_item_from_record, rest_json_response, rest_owned_view, session::SessionManager,
-    user_issue_filter_name, user_issue_state, visible_projects_for_organization,
-    visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
+    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
+    rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
+    visible_projects_for_organization, visible_user_issue_items, ConnectError, Context, ErrorCode,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
-    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueListItem, RestRouteError,
-    RestUserIssuesQuery,
+    RestIssueAssignableUsersQuery, RestRouteError, RestUserIssuesQuery,
 };
 
 #[derive(Default, Deserialize)]
@@ -232,6 +229,89 @@ struct RestIssueStateBody {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestIssueWeightResponse {
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueDetailResponse {
+    #[serde(flatten)]
+    detail: ReadIssueDetailResponse,
+    author_id: Option<i64>,
+    child_closed_count: u32,
+    child_issues: Vec<RestIssueChildIssue>,
+    child_open_count: u32,
+    due_date_label: String,
+    history_html: String,
+    history_markdown: String,
+    comment_parent_links: Vec<RestIssueCommentParentLink>,
+    issue_id: i64,
+    issue_voters: Vec<RestIssueVoter>,
+    is_draft: bool,
+    parent_issue_id: Option<i64>,
+    parent_issue_number: Option<i64>,
+    parent_issue_title: String,
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueCommentParentLink {
+    id: i64,
+    parent_comment_id: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueVoter {
+    avatar_url: String,
+    email_address: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueChildIssue {
+    assignee_label: String,
+    created_label: String,
+    is_draft: bool,
+    issue_number: i64,
+    labels: Vec<IssueLabel>,
+    state: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueListItem {
+    assignee_avatar_url: String,
+    assignee_label: String,
+    assignee_login_id: String,
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    child_closed_count: u32,
+    child_issues: Vec<RestIssueChildIssue>,
+    child_open_count: u32,
+    comment_count: u32,
+    due_date_label: String,
+    due_date_overdue: bool,
+    id: i64,
+    issue_number: i64,
+    labels: Vec<IssueLabel>,
+    milestone_id: i64,
+    milestone_title: String,
+    owner_name: String,
+    parent_issue_number: Option<i64>,
+    parent_issue_title: String,
+    project_name: String,
+    state: String,
+    title: String,
+    updated_label: String,
+    voter_count: u32,
+    watcher_count: u32,
     weight: i16,
 }
 
@@ -6401,6 +6481,518 @@ pub(crate) async fn read_issue_access(
         })
     } else {
         Err(ConnectError::permission_denied("issue read is not allowed"))
+    }
+}
+
+pub(crate) fn issue_attachment_from_record(
+    record: &persistence::IssueAttachmentRecord,
+    base_path: &str,
+) -> IssueAttachment {
+    IssueAttachment {
+        id: record.id,
+        mime_type: record.mime_type.clone(),
+        name: record.name.clone(),
+        size: record.size,
+        url: base_path_href(base_path, &format!("/files/{}", record.id)),
+        ..Default::default()
+    }
+}
+
+fn issue_comment_from_record(
+    record: &persistence::IssueCommentRecord,
+    viewer_can_manage: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    _owner_name: &str,
+    _project_name: &str,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> IssueComment {
+    let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
+    IssueComment {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
+        author_label: record.author_label.clone(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
+        author_login_id: record.author_login_id.clone(),
+        contents_html: String::new(),
+        contents_markdown: record.contents_markdown.clone(),
+        created_label: record.created_label.clone(),
+        id: record.id,
+        issue_references: issue_references
+            .iter()
+            .map(issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(mention_reference_metadata_from_resolved)
+            .collect(),
+        via_email: record.via_email,
+        viewer_can_delete: viewer_can_manage || viewer_is_author,
+        viewer_can_update: viewer_can_manage || viewer_is_author,
+        viewer_has_voted: record.viewer_has_voted,
+        voter_count: record.voter_count,
+        voters: record
+            .voters
+            .iter()
+            .map(issue_comment_voter_from_record)
+            .collect(),
+        ..Default::default()
+    }
+}
+
+fn issue_comment_voter_from_record(
+    record: &persistence::IssueCommentVoterRecord,
+) -> IssueCommentVoter {
+    IssueCommentVoter {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn issue_voter_from_record(record: &persistence::IssueVoterRecord) -> RestIssueVoter {
+    RestIssueVoter {
+        avatar_url: gravatar_url(&record.email_address),
+        email_address: record.email_address.clone(),
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+    }
+}
+
+fn issue_timeline_item_from_record(
+    record: &persistence::IssueTimelineItemRecord,
+    viewer_can_manage: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> IssueTimelineItem {
+    match record {
+        persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
+            comment: Some(issue_comment_from_record(
+                comment,
+                viewer_can_manage,
+                viewer_id,
+                base_path,
+                owner_name,
+                project_name,
+                issue_references,
+                mention_references,
+            ))
+            .into(),
+            created_label: comment.created_label.clone(),
+            id: comment.id,
+            kind: "comment".to_string(),
+            ..Default::default()
+        },
+        persistence::IssueTimelineItemRecord::Event {
+            created_label,
+            event_type,
+            id,
+            new_value,
+            old_value,
+            sender_login_id,
+        } => IssueTimelineItem {
+            created_label: created_label.clone(),
+            event_type: event_type.clone(),
+            id: *id,
+            kind: "event".to_string(),
+            new_value: new_value.clone(),
+            old_value: old_value.clone(),
+            sender_login_id: sender_login_id.clone(),
+            ..Default::default()
+        },
+    }
+}
+
+pub(crate) fn issue_milestone_from_record(
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> IssueMilestone {
+    IssueMilestone {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
+        closed_issue_count: record.closed_issue_count,
+        closed_issues: record
+            .closed_issues
+            .clone()
+            .into_iter()
+            .map(project_issue_list_item_to_proto)
+            .collect(),
+        completion_percent: record.completion_percent,
+        contents_html: String::new(),
+        contents_markdown: record.contents_markdown.clone(),
+        due_date_label: record.due_date_label.clone(),
+        id: record.id,
+        open_issue_count: record.open_issue_count,
+        open_issues: record
+            .open_issues
+            .clone()
+            .into_iter()
+            .map(project_issue_list_item_to_proto)
+            .collect(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) async fn issue_milestone_from_record_with_issue_references(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> Result<IssueMilestone, ConnectError> {
+    let issue_references = markdown_issue_references_for_project(
+        repository,
+        authorization,
+        actor_id,
+        &[record.contents_markdown.as_str()],
+    )
+    .await?;
+    let mention_references =
+        markdown_mention_references(repository, &[record.contents_markdown.as_str()]).await?;
+    let mut milestone = issue_milestone_from_record(record, base_path);
+    milestone.issue_references = issue_references
+        .iter()
+        .map(issue_reference_metadata_from_resolved)
+        .collect();
+    milestone.mention_references = mention_references
+        .iter()
+        .map(mention_reference_metadata_from_resolved)
+        .collect();
+    Ok(milestone)
+}
+
+pub(crate) fn issue_detail_response_from_record(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> ReadIssueDetailResponse {
+    issue_detail_response_from_record_with_sharer_flags(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        false,
+        false,
+        viewer_id,
+        base_path,
+    )
+}
+
+pub(crate) async fn issue_detail_response_from_record_with_repository_issue_references(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<ReadIssueDetailResponse, ConnectError> {
+    let authorization = require_project_read(
+        repository,
+        &issue.owner_name,
+        &issue.project_name,
+        viewer_id,
+    )
+    .await?;
+    let mut markdowns = vec![
+        issue.body_markdown.as_str(),
+        issue.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references =
+        markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
+            .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
+    Ok(
+        issue_detail_response_from_record_with_sharer_flags_and_references(
+            issue,
+            viewer_can_manage,
+            viewer_can_comment,
+            false,
+            false,
+            viewer_id,
+            base_path,
+            &issue_references,
+            &mention_references,
+        ),
+    )
+}
+
+pub(crate) fn issue_detail_response_from_record_with_sharer_flags(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> ReadIssueDetailResponse {
+    let current_issue_reference = MarkdownIssueReference {
+        owner_name: issue.owner_name.clone(),
+        project_name: issue.project_name.clone(),
+        issue_number: issue.issue_number,
+        state: issue.state.clone(),
+        title: issue.title.clone(),
+    };
+    issue_detail_response_from_record_with_sharer_flags_and_references(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        viewer_is_direct_sharer,
+        viewer_has_inherited_share,
+        viewer_id,
+        base_path,
+        std::slice::from_ref(&current_issue_reference),
+        &[],
+    )
+}
+
+fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> RestIssueDetailResponse {
+    let detail = issue_detail_response_from_record_with_sharer_flags_and_references(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        viewer_is_direct_sharer,
+        viewer_has_inherited_share,
+        viewer_id,
+        base_path,
+        issue_references,
+        mention_references,
+    );
+    RestIssueDetailResponse {
+        author_id: issue.author_id,
+        child_closed_count: issue.child_closed_count,
+        child_issues: issue
+            .child_issues
+            .iter()
+            .map(rest_issue_child_issue_from_record)
+            .collect(),
+        child_open_count: issue.child_open_count,
+        due_date_label: issue.due_date_label.clone(),
+        detail,
+        history_html: String::new(),
+        history_markdown: issue.history_markdown.clone(),
+        comment_parent_links: issue
+            .comments
+            .iter()
+            .map(|comment| RestIssueCommentParentLink {
+                id: comment.id,
+                parent_comment_id: comment.parent_comment_id,
+            })
+            .collect(),
+        issue_id: issue.id,
+        issue_voters: issue.voters.iter().map(issue_voter_from_record).collect(),
+        is_draft: issue.is_draft,
+        parent_issue_id: issue.parent_issue_id,
+        parent_issue_number: issue.parent_issue_number,
+        parent_issue_title: issue.parent_issue_title.clone(),
+        weight: issue.weight,
+    }
+}
+
+fn rest_issue_child_issue_from_record(
+    record: &persistence::IssueChildRecord,
+) -> RestIssueChildIssue {
+    RestIssueChildIssue {
+        assignee_label: record.assignee_label.clone(),
+        created_label: record.created_label.clone(),
+        is_draft: record.is_draft,
+        issue_number: record.issue_number,
+        labels: record
+            .labels
+            .iter()
+            .map(super::utils::issue_label_from_record)
+            .collect(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+    }
+}
+
+fn issue_detail_response_from_record_with_sharer_flags_and_references(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> ReadIssueDetailResponse {
+    ReadIssueDetailResponse {
+        assignee_avatar_url: if issue.assignee_login_id.is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&issue.assignee_email_address)
+        },
+        assignee_label: issue.assignee_label.clone(),
+        assignee_login_id: issue.assignee_login_id.clone(),
+        attachments: issue
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
+        author_avatar_url: gravatar_url(&issue.author_email_address),
+        author_label: issue.author_label.clone(),
+        author_login_id: issue.author_login_id.clone(),
+        body_html: String::new(),
+        body_markdown: issue.body_markdown.clone(),
+        comment_count: issue.comment_count,
+        comments: issue
+            .comments
+            .iter()
+            .map(|comment| {
+                issue_comment_from_record(
+                    comment,
+                    viewer_can_manage,
+                    viewer_id,
+                    base_path,
+                    &issue.owner_name,
+                    &issue.project_name,
+                    issue_references,
+                    mention_references,
+                )
+            })
+            .collect(),
+        has_voted: issue.has_voted,
+        issue_references: issue_references
+            .iter()
+            .map(issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(mention_reference_metadata_from_resolved)
+            .collect(),
+        is_favorited: issue.is_favorited,
+        is_watching: issue.is_watching,
+        issue_number: issue.issue_number,
+        labels: issue
+            .labels
+            .iter()
+            .map(super::utils::issue_label_from_record)
+            .collect(),
+        milestone_id: issue.milestone_id.unwrap_or_default(),
+        milestone_title: issue.milestone_title.clone(),
+        owner_name: issue.owner_name.clone(),
+        project_name: issue.project_name.clone(),
+        sharers: issue.sharers.iter().map(issue_sharer_from_record).collect(),
+        state: issue.state.clone(),
+        timeline: issue
+            .timeline
+            .iter()
+            .map(|item| {
+                issue_timeline_item_from_record(
+                    item,
+                    viewer_can_manage,
+                    viewer_id,
+                    base_path,
+                    &issue.owner_name,
+                    &issue.project_name,
+                    issue_references,
+                    mention_references,
+                )
+            })
+            .collect(),
+        title: issue.title.clone(),
+        viewer_can_comment,
+        viewer_can_delete: viewer_can_manage,
+        viewer_can_manage_sharers: viewer_can_manage,
+        viewer_can_update: viewer_can_manage,
+        viewer_has_inherited_share,
+        viewer_is_direct_sharer,
+        voter_count: issue.voter_count,
+        watcher_count: issue.watcher_count,
+        ..Default::default()
+    }
+}
+
+fn issue_sharer_from_record(record: &persistence::IssueSharerRecord) -> IssueSharer {
+    IssueSharer {
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn rest_issue_list_item_from_record(
+    item: persistence::ProjectIssueListItemRecord,
+) -> RestIssueListItem {
+    RestIssueListItem {
+        assignee_avatar_url: if item.assignee_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.assignee_email_address)
+        },
+        assignee_label: item.assignee_label,
+        assignee_login_id: item.assignee_login_id,
+        author_avatar_url: if item.author_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.author_email_address)
+        },
+        author_label: item.author_label,
+        author_login_id: item.author_login_id,
+        child_closed_count: item.child_closed_count,
+        child_issues: item
+            .child_issues
+            .iter()
+            .map(rest_issue_child_issue_from_record)
+            .collect(),
+        child_open_count: item.child_open_count,
+        comment_count: item.comment_count,
+        due_date_label: item.due_date_label,
+        due_date_overdue: item.due_date_overdue,
+        id: item.id,
+        issue_number: item.issue_number,
+        labels: item
+            .labels
+            .iter()
+            .map(super::utils::issue_label_from_record)
+            .collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        parent_issue_number: item.parent_issue_number,
+        parent_issue_title: item.parent_issue_title,
+        project_name: item.project_name,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
+        weight: item.weight,
     }
 }
 

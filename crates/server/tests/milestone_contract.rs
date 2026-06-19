@@ -147,7 +147,7 @@ fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, 
 }
 
 #[tokio::test]
-// Guards project milestone REST/direct ownership splits across issue and project route modules.
+// Guards project milestone REST/direct ownership splits and issue-owned milestone projections.
 async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

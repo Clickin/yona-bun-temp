@@ -43,7 +43,11 @@ pub(crate) use files::{
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
-    issue_can_mutate, issue_detail_response_from_access, legacy_external_assignable_users_result,
+    issue_attachment_from_record, issue_can_mutate, issue_detail_response_from_access,
+    issue_detail_response_from_record,
+    issue_detail_response_from_record_with_repository_issue_references,
+    issue_detail_response_from_record_with_sharer_flags, issue_milestone_from_record,
+    issue_milestone_from_record_with_issue_references, legacy_external_assignable_users_result,
     legacy_external_label_id, read_issue_access, resolve_issue_reference_search_project,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_read_direct_issue_form_options,
