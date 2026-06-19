@@ -1048,6 +1048,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   post import, imported-author creation, content conflict handling, comment
   creation/update, attachment assignment, and label update behavior covered by
   `board_contract::legacy_external_board_post_create_and_content_routes_follow_legacy_json_shape`.
+- 2026-06-20 build/check diet note: legacy external favorite project/issue/
+  organization list and toggle handlers moved from
+  `crates/server/src/routes/workspace.rs` into
+  `crates/server/src/routes/workspace/legacy_favorites.rs`; direct route
+  registration remains in the parent workspace route module. This preserves
+  legacy favorite issue list/toggle response shape and read-ACL checks covered
+  by
+  `user_issue_favorite_contract::favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues`,
+  with project and organization favorite routes remaining on the same moved
+  legacy favorites boundary.
 
 ## Wave 0 Exit Snapshot
 
