@@ -451,6 +451,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   member rejection, last-admin protection, self-leave member removal, enrollment
   cleanup, and refreshed admin projection behavior covered by
   `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
+- 2026-06-20 build/check diet note: organization enroll, cancel-enroll, leave,
+  and delete RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs`;
+  service methods remain compatibility delegates while REST organization
+  enroll/leave/delete handlers call the project route-owned helpers directly,
+  preserving guest-only enrollment, enrollment cancellation, last-admin
+  protection, member leave redirects, empty-organization delete checks, and
+  redirect/container projection behavior covered by
+  `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
 
 ## Wave 0 Exit Snapshot
 
