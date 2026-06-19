@@ -635,6 +635,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_external_client_can_diff_public_file`,
   and
   `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`.
+- 2026-06-20 build/check diet note: SVN committed-date and HTTP-date
+  formatting helpers moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/date.rs`; log, PROPFIND, and REPORT response
+  builders still call the same formatting behavior through the route module.
+  This preserves verbose log dates, public info/provenance dates, and mergeinfo
+  report behavior covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`,
+  `svn_protocol_contract::svn_protocol_external_client_can_info_public_project`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_read_mergeinfo`.
 
 ## Wave 0 Exit Snapshot
 
