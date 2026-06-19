@@ -868,6 +868,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   This preserves activity creation, checkout working-resource mapping, and
   MERGE checked-in metadata covered by
   `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`.
+- 2026-06-20 build/check diet note: SVN GET/HEAD file response handling moved
+  from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/file_response.rs`; method dispatch, REPORT
+  dispatch, PROPFIND delegation, write delegation, and shared DAV/status helpers
+  remain in the protocol module. This preserves executable-backed file content,
+  HEAD body suppression, and file content headers covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
