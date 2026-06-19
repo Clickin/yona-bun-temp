@@ -575,6 +575,7 @@ async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
 }
 
 #[tokio::test]
+// Guards the issue route-module DTO split for parent issue options.
 async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

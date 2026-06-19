@@ -33,14 +33,49 @@ use crate::{
     rest_owned_view, rest_project_issue_filter_from_query, session::SessionManager,
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormOptionsResponse,
-    RestDirectIssueFormProject, RestDirectIssueFormQuery, RestIssueAssignableUsersQuery,
-    RestIssueCommentBody, RestIssueDetailResponse, RestIssueMutationBody, RestIssueParentOption,
-    RestIssueParentOptionsQuery, RestIssueParentOptionsResponse, RestIssueStateBody,
-    RestIssueWeightResponse, RestMassUpdateIssuesBody, RestOrganizationIssueListResponse,
-    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssuesQuery,
-    RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
+    RestIssueAssignableUsersQuery, RestIssueCommentBody, RestIssueDetailResponse,
+    RestIssueMutationBody, RestIssueStateBody, RestIssueWeightResponse, RestMassUpdateIssuesBody,
+    RestOrganizationIssueListResponse, RestOrganizationIssuesQuery, RestProjectIssueListResponse,
+    RestProjectIssuesQuery, RestRouteError, RestUserIssueListResponse,
+    RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueParentOptionsQuery {
+    current_issue_number: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestDirectIssueFormProject {
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestDirectIssueFormOptionsResponse {
+    body_markdown: String,
+    refer_comment_id: String,
+    selected_project: RestDirectIssueFormProject,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueParentOption {
+    id: i64,
+    issue_number: i64,
+    selected: bool,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueParentOptionsResponse {
+    items: Vec<RestIssueParentOption>,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -4383,7 +4418,7 @@ pub(crate) async fn rest_list_project_issues(
     }))
 }
 
-pub(crate) async fn rest_list_issue_parent_options(
+async fn rest_list_issue_parent_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,

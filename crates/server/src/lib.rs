@@ -2928,12 +2928,6 @@ pub(crate) struct RestProjectIssuesQuery {
     state: String,
 }
 
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestIssueParentOptionsQuery {
-    current_issue_number: Option<i64>,
-}
-
 impl RestProjectIssuesQuery {
     fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
@@ -3089,36 +3083,6 @@ pub(crate) struct RestDirectIssueFormQuery {
     )]
     comment_id: Option<i64>,
     mine: bool,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestDirectIssueFormProject {
-    owner_name: String,
-    project_name: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestDirectIssueFormOptionsResponse {
-    body_markdown: String,
-    refer_comment_id: String,
-    selected_project: RestDirectIssueFormProject,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestIssueParentOption {
-    id: i64,
-    issue_number: i64,
-    selected: bool,
-    title: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestIssueParentOptionsResponse {
-    items: Vec<RestIssueParentOption>,
 }
 
 #[derive(Default, Deserialize)]
