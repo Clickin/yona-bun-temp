@@ -439,9 +439,9 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/.*(repo|code|branches|commit)/i,
-      /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart-http|inline-edit)/i,
+      /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart[_-]http|inline-edit)/i,
     ],
-    testKeywords: ["repo", "code", "branch", "commit", "smart-http", "inline-edit"],
+    testKeywords: ["repo", "code", "branch", "commit", "smart-http", "smart_http", "inline-edit"],
     provenanceDocs: [
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/core-parity-audit.md",

@@ -391,7 +391,7 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
         "Unsupported service: getanyfile"
     );
 
-    let (status, headers, _) = response_bytes(
+    let (status, headers, body) = response_bytes(
         direct_request(
             app,
             Method::GET,
@@ -402,6 +402,7 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
     )
     .await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(String::from_utf8_lossy(&body), "user.login.required");
     assert_eq!(
         headers
             .get(http::header::WWW_AUTHENTICATE)
