@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
+use buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest as _, Sha1};
 use std::collections::HashMap;
@@ -2653,6 +2654,72 @@ async fn rest_issue_participation(
     Ok(rest_json_response(payload, ctx))
 }
 
+pub(crate) async fn issue_participation_mutation(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<IssueParticipationRequestView<'static>>,
+    action: &str,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id).await?;
+    let access = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        Some(actor.id),
+    )
+    .await?;
+    match action {
+        "watch" => repository
+            .watch_issue(access.issue.id, actor.id)
+            .await
+            .map_err(internal_error)?,
+        "unwatch" => repository
+            .unwatch_issue(access.issue.id, actor.id)
+            .await
+            .map_err(internal_error)?,
+        "vote" => repository
+            .vote_issue(access.issue.id, actor.id)
+            .await
+            .map_err(internal_error)?,
+        "unvote" => repository
+            .unvote_issue(access.issue.id, actor.id)
+            .await
+            .map_err(internal_error)?,
+        _ => {
+            return Err(ConnectError::invalid_argument(
+                "invalid issue participation action",
+            ));
+        }
+    }
+    let updated = repository
+        .read_issue_detail(
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+    Ok((
+        issue_detail_response_from_record(
+            &updated,
+            false,
+            true,
+            session.user_id,
+            &service.base_path,
+        ),
+        ctx,
+    ))
+}
+
 async fn rest_issue_comment_participation(
     headers: HeaderMap,
     owner_name: String,
@@ -2692,6 +2759,82 @@ async fn rest_issue_comment_participation(
     )
     .await?;
     Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn issue_comment_participation_mutation(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<IssueCommentParticipationRequestView<'static>>,
+    action: &str,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    if request.issue_number <= 0 || request.comment_id <= 0 {
+        return Err(ConnectError::invalid_argument(
+            "invalid issue comment participation request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id).await?;
+    let access = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        Some(actor.id),
+    )
+    .await?;
+    if !access.viewer_can_comment() {
+        return Err(ConnectError::permission_denied(
+            "issue comment vote is not allowed",
+        ));
+    }
+    if !access
+        .issue
+        .comments
+        .iter()
+        .any(|comment| comment.id == request.comment_id)
+    {
+        return Err(ConnectError::not_found("pilot issue comment not found"));
+    }
+
+    match action {
+        "vote" => repository
+            .vote_issue_comment(request.comment_id, actor.id)
+            .await
+            .map_err(internal_error)?,
+        "unvote" => {
+            if !repository
+                .unvote_issue_comment(request.comment_id, actor.id)
+                .await
+                .map_err(internal_error)?
+            {
+                return Err(ConnectError::not_found("issue comment vote not found"));
+            }
+        }
+        _ => {
+            return Err(ConnectError::invalid_argument(
+                "invalid issue comment participation action",
+            ));
+        }
+    }
+
+    let updated = read_issue_access(
+        repository,
+        request.owner_name,
+        request.project_name,
+        request.issue_number,
+        Some(actor.id),
+    )
+    .await?;
+    Ok((
+        issue_detail_response_from_access(&updated, Some(actor.id), &service.base_path),
+        ctx,
+    ))
 }
 
 async fn rest_toggle_favorite_issue(

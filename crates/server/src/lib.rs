@@ -48,28 +48,28 @@ pub(crate) use routes::{
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
     format_project_date_label, gravatar_url, headers_with_form_csrf, internal_error,
-    issue_attachment_from_record, issue_can_mutate, issue_detail_response_from_access,
-    issue_detail_response_from_record,
+    issue_attachment_from_record, issue_can_mutate, issue_comment_participation_mutation,
+    issue_detail_response_from_access, issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_category_from_record,
     issue_label_css, issue_label_from_record, issue_list_filter_from_request,
     issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
-    legacy_content_disposition_filename, legacy_content_update_body_from_value,
-    legacy_external_api_auth_error_response, legacy_external_api_hello,
-    legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
-    legacy_external_attachment_result, legacy_external_authenticated_user_id,
-    legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
-    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
-    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, map_project_scope,
-    max_uploaded_file_size_from_env_value, max_uploaded_file_size_from_option,
-    milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
-    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
-    organization_admin_member_from_record, organization_detail_from_record,
-    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url,
-    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    issue_participation_mutation, legacy_content_disposition_filename,
+    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    legacy_external_api_hello, legacy_external_api_token_from_headers,
+    legacy_external_assignable_users_result, legacy_external_attachment_result,
+    legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
+    legacy_external_parse_datetime, legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
+    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
+    legacy_json_find_value, map_project_scope, max_uploaded_file_size_from_env_value,
+    max_uploaded_file_size_from_option, milestone_list_filter_from_request,
+    milestone_mutation_input, normalize_identifier, normalize_issue_label_color,
+    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
+    organization_detail_from_record, organization_detail_with_logo_from_record,
+    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
+    organization_logo_url, organization_member_summary_from_record, organization_role_options,
+    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
     percent_encode_uri_component, posting_can_create, posting_can_update,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
@@ -982,148 +982,6 @@ pub(crate) struct PilotServiceImpl {
 }
 
 impl PilotServiceImpl {
-    async fn issue_participation(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueParticipationRequestView<'static>>,
-        action: &str,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            Some(actor.id),
-        )
-        .await?;
-        match action {
-            "watch" => repository
-                .watch_issue(access.issue.id, actor.id)
-                .await
-                .map_err(internal_error)?,
-            "unwatch" => repository
-                .unwatch_issue(access.issue.id, actor.id)
-                .await
-                .map_err(internal_error)?,
-            "vote" => repository
-                .vote_issue(access.issue.id, actor.id)
-                .await
-                .map_err(internal_error)?,
-            "unvote" => repository
-                .unvote_issue(access.issue.id, actor.id)
-                .await
-                .map_err(internal_error)?,
-            _ => {
-                return Err(ConnectError::invalid_argument(
-                    "invalid issue participation action",
-                ));
-            }
-        }
-        let updated = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        Ok((
-            issue_detail_response_from_record(
-                &updated,
-                false,
-                true,
-                session.user_id,
-                &self.base_path,
-            ),
-            ctx,
-        ))
-    }
-
-    async fn issue_comment_participation(
-        &self,
-        ctx: Context,
-        request: OwnedView<IssueCommentParticipationRequestView<'static>>,
-        action: &str,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        if request.issue_number <= 0 || request.comment_id <= 0 {
-            return Err(ConnectError::invalid_argument(
-                "invalid issue comment participation request",
-            ));
-        }
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "issue requires repository backend",
-            ));
-        };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let access = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            Some(actor.id),
-        )
-        .await?;
-        if !access.viewer_can_comment() {
-            return Err(ConnectError::permission_denied(
-                "issue comment vote is not allowed",
-            ));
-        }
-        if !access
-            .issue
-            .comments
-            .iter()
-            .any(|comment| comment.id == request.comment_id)
-        {
-            return Err(ConnectError::not_found("pilot issue comment not found"));
-        }
-
-        match action {
-            "vote" => repository
-                .vote_issue_comment(request.comment_id, actor.id)
-                .await
-                .map_err(internal_error)?,
-            "unvote" => {
-                if !repository
-                    .unvote_issue_comment(request.comment_id, actor.id)
-                    .await
-                    .map_err(internal_error)?
-                {
-                    return Err(ConnectError::not_found("issue comment vote not found"));
-                }
-            }
-            _ => {
-                return Err(ConnectError::invalid_argument(
-                    "invalid issue comment participation action",
-                ));
-            }
-        }
-
-        let updated = read_issue_access(
-            repository,
-            request.owner_name,
-            request.project_name,
-            request.issue_number,
-            Some(actor.id),
-        )
-        .await?;
-        Ok((
-            issue_detail_response_from_access(&updated, Some(actor.id), &self.base_path),
-            ctx,
-        ))
-    }
-
     async fn issue_sharer_mutation(
         &self,
         ctx: Context,
@@ -3849,7 +3707,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_participation(ctx, request, "watch").await
+        issue_participation_mutation(self, ctx, request, "watch").await
     }
 
     async fn unwatch_issue(
@@ -3857,7 +3715,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_participation(ctx, request, "unwatch").await
+        issue_participation_mutation(self, ctx, request, "unwatch").await
     }
 
     async fn vote_issue(
@@ -3865,7 +3723,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_participation(ctx, request, "vote").await
+        issue_participation_mutation(self, ctx, request, "vote").await
     }
 
     async fn unvote_issue(
@@ -3873,7 +3731,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_participation(ctx, request, "unvote").await
+        issue_participation_mutation(self, ctx, request, "unvote").await
     }
 
     async fn vote_issue_comment(
@@ -3881,7 +3739,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueCommentParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_comment_participation(ctx, request, "vote").await
+        issue_comment_participation_mutation(self, ctx, request, "vote").await
     }
 
     async fn unvote_issue_comment(
@@ -3889,8 +3747,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueCommentParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_comment_participation(ctx, request, "unvote")
-            .await
+        issue_comment_participation_mutation(self, ctx, request, "unvote").await
     }
 
     async fn toggle_favorite_issue(

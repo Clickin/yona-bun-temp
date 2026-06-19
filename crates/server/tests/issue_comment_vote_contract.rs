@@ -256,6 +256,7 @@ async fn share_issue(app: axum::Router, cookie: &str, csrf: &str, issue_number: 
 
 #[tokio::test]
 async fn issue_comment_vote_contract_updates_projection_and_preserves_unvote_policy() {
+    // Guards issue route-owned issue-comment participation helper and projection refresh.
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
