@@ -2885,7 +2885,7 @@ fn parse_rest_i64(value: RestStringOrNumber) -> Result<i64, String> {
     }
 }
 
-fn deserialize_optional_i64_from_string_or_number<'de, D>(
+pub(crate) fn deserialize_optional_i64_from_string_or_number<'de, D>(
     deserializer: D,
 ) -> Result<Option<i64>, D::Error>
 where
@@ -3137,35 +3137,6 @@ pub(crate) struct RestIssueCommentBody {
     attachment_ids: Vec<i64>,
     contents_markdown: String,
     parent_comment_id: Option<i64>,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-struct RestMassUpdateIssuesBody {
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    add_label_ids: Vec<i64>,
-    assignee_login_id: String,
-    assignee_update: bool,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    issue_numbers: Vec<i64>,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_optional_i64_from_string_or_number"
-    )]
-    milestone_id: Option<i64>,
-    milestone_update: bool,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    remove_label_ids: Vec<i64>,
-    state: String,
 }
 
 fn rest_issue_mutation_input_from_body(

@@ -553,6 +553,7 @@ async fn notification_contract_stages_issue_state_change_rows_for_watchers() {
 }
 
 #[tokio::test]
+// Guards notification fan-out for the issue route-module mass-update body DTO split.
 async fn notification_contract_stages_mass_update_issue_state_rows_for_watchers() {
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

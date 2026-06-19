@@ -985,6 +985,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         .await
         .unwrap();
 
+    // Guards the issue route-module mass-update body DTO split.
     let mass_updated = response_json(
         rest(
             app,

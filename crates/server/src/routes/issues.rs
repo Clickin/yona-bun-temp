@@ -19,9 +19,10 @@ use super::utils::{
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
-    absolute_app_url, direct_create_issue_comment, direct_delete_issue_comment,
-    direct_issue_comment_vote, direct_project_update_allowed, direct_update_issue_comment,
-    dispatch_issue_webhooks, form_bool, form_value, internal_error,
+    absolute_app_url, deserialize_i64_vec_from_strings_or_numbers,
+    deserialize_optional_i64_from_string_or_number, direct_create_issue_comment,
+    direct_delete_issue_comment, direct_issue_comment_vote, direct_project_update_allowed,
+    direct_update_issue_comment, dispatch_issue_webhooks, form_bool, form_value, internal_error,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_css,
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
@@ -35,7 +36,7 @@ use crate::{
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
     RestIssueAssignableUsersQuery, RestIssueCommentBody, RestIssueDetailResponse,
-    RestIssueMutationBody, RestIssueStateBody, RestIssueWeightResponse, RestMassUpdateIssuesBody,
+    RestIssueMutationBody, RestIssueStateBody, RestIssueWeightResponse,
     RestOrganizationIssueListResponse, RestOrganizationIssuesQuery, RestProjectIssueListResponse,
     RestProjectIssuesQuery, RestRouteError, RestUserIssueListResponse,
     RestUserIssueSideFilterCounts, RestUserIssuesQuery,
@@ -60,6 +61,35 @@ pub(crate) struct RestDirectIssueFormOptionsResponse {
     body_markdown: String,
     refer_comment_id: String,
     selected_project: RestDirectIssueFormProject,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestMassUpdateIssuesBody {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    add_label_ids: Vec<i64>,
+    assignee_login_id: String,
+    assignee_update: bool,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    issue_numbers: Vec<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    milestone_id: Option<i64>,
+    milestone_update: bool,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    remove_label_ids: Vec<i64>,
+    state: String,
 }
 
 #[derive(Serialize)]
@@ -5751,7 +5781,7 @@ pub(crate) async fn rest_update_issue_weight(
     }))
 }
 
-pub(crate) async fn rest_mass_update_issues(
+async fn rest_mass_update_issues(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
