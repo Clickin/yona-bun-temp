@@ -401,6 +401,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::update_profile_replaces_existing_avatar_attachment`
   and
   `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`.
+- 2026-06-20 build/check diet note: workspace email add/delete/validation,
+  main-email selection, API-token reset, and notification toggle RPC logic
+  moved from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/workspace.rs`, preserving email id validation,
+  workspace settings mutation error mapping, API token regeneration, project
+  read authorization for notification toggles, unwatched-project rejection, and
+  refreshed overview response behavior covered by
+  `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`
+  and
+  `auth_workspace_contract::toggle_workspace_notification_preserves_missing_forbidden_and_unwatched_statuses`.
 
 ## Wave 0 Exit Snapshot
 

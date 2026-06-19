@@ -100,8 +100,10 @@ pub(crate) use routes::{
     site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
     uploaded_file_path, user_issue_filter_name, user_issue_state,
     visible_code_projects_for_organization, visible_projects_for_organization,
-    visible_user_issue_items, workspace_avatar_url, workspace_default_landing_path_set,
-    workspace_invalid_argument, workspace_overview_read, workspace_profile_from_record,
+    visible_user_issue_items, workspace_api_token_reset, workspace_avatar_url,
+    workspace_default_landing_path_set, workspace_email_add, workspace_email_delete,
+    workspace_email_validation_send, workspace_invalid_argument, workspace_main_email_set,
+    workspace_notification_toggle, workspace_overview_read, workspace_profile_from_record,
     workspace_profile_update, workspace_visited_projects_reset, ProjectCreatableResource,
     RestBoardLabel, RestIssueAssignableUsersQuery, RestProjectDeleteResponse,
     RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery, RestRouteError,
@@ -1173,26 +1175,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<AddWorkspaceEmailRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .add_workspace_email_for_user(user_id, &request.email)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_email_add(self, ctx, request).await
     }
 
     async fn delete_workspace_email(
@@ -1200,30 +1183,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<DeleteWorkspaceEmailRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let email_id = request
-            .id
-            .parse::<i64>()
-            .map_err(|_| workspace_invalid_argument("Email id is invalid."))?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .delete_workspace_email_for_user(user_id, email_id)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_email_delete(self, ctx, request).await
     }
 
     async fn send_workspace_email_validation(
@@ -1231,30 +1191,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<SendWorkspaceEmailValidationRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let email_id = request
-            .id
-            .parse::<i64>()
-            .map_err(|_| workspace_invalid_argument("Email id is invalid."))?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .send_workspace_email_validation_for_user(user_id, email_id)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_email_validation_send(self, ctx, request).await
     }
 
     async fn set_main_workspace_email(
@@ -1262,30 +1199,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<SetMainWorkspaceEmailRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let email_id = request
-            .id
-            .parse::<i64>()
-            .map_err(|_| workspace_invalid_argument("Email id is invalid."))?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .set_main_workspace_email_for_user(user_id, email_id)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_main_email_set(self, ctx, request).await
     }
 
     async fn reset_api_token(
@@ -1293,26 +1207,7 @@ impl PilotServiceImpl {
         ctx: Context,
         _request: OwnedView<ResetApiTokenRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .reset_api_token_for_user(user_id)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_api_token_reset(self, ctx).await
     }
 
     async fn toggle_workspace_notification(
@@ -1320,64 +1215,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<ToggleWorkspaceNotificationRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let project_id = request
-            .project_id
-            .parse::<i64>()
-            .map_err(|_| workspace_invalid_argument("Project id is invalid."))?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        let project = repository
-            .read_project_by_id(project_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let authorization = repository
-            .read_project_authorization(&project.owner_name, &project.project_name, Some(user_id))
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let project_scope = map_project_scope(&authorization.project.project_scope)?;
-        let access = authorize_project_access(
-            &ProjectAccessFacts {
-                is_anonymous: false,
-                is_guest: authorization.viewer.is_guest,
-                is_organization_admin: authorization.viewer.is_organization_admin,
-                is_organization_member: authorization.viewer.is_organization_member,
-                is_project_manager: authorization.viewer.is_project_manager,
-                is_project_member: authorization.viewer.is_project_member,
-                is_site_admin: authorization.viewer.is_site_admin,
-                project_scope,
-            },
-            ProjectOperation::Read,
-        );
-        if !access.allowed {
-            return Err(ConnectError::permission_denied("project access forbidden"));
-        }
-        let is_watching = repository
-            .is_watching_project(user_id, project_id)
-            .await
-            .map_err(internal_error)?;
-        if !is_watching {
-            return Err(workspace_invalid_argument("watch not found"));
-        }
-        repository
-            .toggle_workspace_notification_for_user(user_id, project_id, &request.event_type)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_notification_toggle(self, ctx, request).await
     }
 
     async fn create_organization(
