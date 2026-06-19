@@ -10,6 +10,7 @@ use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 
+// Keeps issue vote/comment-vote route ownership splits tied to an issue-specific contract target.
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await

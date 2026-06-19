@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
+use serde::Deserialize;
 use sha1::{Digest as _, Sha1};
 use std::collections::HashMap;
 
@@ -26,35 +27,51 @@ use crate::{
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
     normalize_issue_label_color, persistence, project_read_allowed, require_authenticated_user,
     require_project_authorization, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, rest_assign_issue, rest_copy_project_labels,
-    rest_create_project_label, rest_create_project_label_category, rest_create_project_milestone,
-    rest_delete_project_label, rest_delete_project_label_category, rest_delete_project_milestone,
-    rest_issue_comment_participation,
+    require_session, require_valid_csrf, rest_copy_project_labels, rest_create_project_label,
+    rest_create_project_label_category, rest_create_project_milestone, rest_delete_project_label,
+    rest_delete_project_label_category, rest_delete_project_milestone,
     rest_issue_detail_response_from_record_with_sharer_flags_and_references,
-    rest_issue_list_item_from_record, rest_issue_mutation_input_from_body,
-    rest_issue_participation, rest_issue_reference_metadata_from_resolved,
+    rest_issue_list_item_from_record, rest_issue_mutation_input_from_body, rest_json_response,
     rest_list_project_label_categories, rest_list_project_labels, rest_list_project_milestones,
-    rest_mention_reference_metadata_from_resolved, rest_project_issue_filter_from_query,
-    rest_read_project_milestone, rest_set_project_milestone_state, rest_share_issue,
-    rest_toggle_favorite_issue, rest_unshare_issue, rest_update_project_label,
+    rest_owned_view, rest_project_issue_filter_from_query, rest_read_project_milestone,
+    rest_set_project_milestone_state, rest_update_project_label,
     rest_update_project_label_category, rest_update_project_milestone, session::SessionManager,
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
-    visible_user_issue_items, ConnectError, ErrorCode, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, RestDirectIssueFormOptionsResponse, RestDirectIssueFormProject,
-    RestDirectIssueFormQuery, RestIssueAssignableUserItem, RestIssueAssignableUsersQuery,
-    RestIssueAssignableUsersResponse, RestIssueAssigneeBody, RestIssueCommentBody,
+    visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormOptionsResponse,
+    RestDirectIssueFormProject, RestDirectIssueFormQuery, RestIssueAssignableUserItem,
+    RestIssueAssignableUsersQuery, RestIssueAssignableUsersResponse, RestIssueCommentBody,
     RestIssueDetailResponse, RestIssueMentionUserItem, RestIssueMentionUsersQuery,
     RestIssueMentionUsersResponse, RestIssueMutationBody, RestIssueParentOption,
-    RestIssueParentOptionsQuery, RestIssueParentOptionsResponse, RestIssueSharerBody,
-    RestIssueSharerDeleteQuery, RestIssueStateBody, RestIssueWeightResponse,
-    RestMassUpdateIssuesBody, RestMilestoneListQuery, RestOrganizationIssueListResponse,
-    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssueReferenceItem,
-    RestProjectIssueReferencesQuery, RestProjectIssueReferencesResponse, RestProjectIssuesQuery,
-    RestProjectLabelCategoryBody, RestProjectLabelCopyBody, RestProjectLabelCreateBody,
-    RestProjectLabelUpdateBody, RestProjectMilestoneBody, RestProjectMilestoneStateBody,
-    RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    RestIssueParentOptionsQuery, RestIssueParentOptionsResponse, RestIssueStateBody,
+    RestIssueWeightResponse, RestMassUpdateIssuesBody, RestMilestoneListQuery,
+    RestOrganizationIssueListResponse, RestOrganizationIssuesQuery, RestProjectIssueListResponse,
+    RestProjectIssueReferenceItem, RestProjectIssueReferencesQuery,
+    RestProjectIssueReferencesResponse, RestProjectIssuesQuery, RestProjectLabelCategoryBody,
+    RestProjectLabelCopyBody, RestProjectLabelCreateBody, RestProjectLabelUpdateBody,
+    RestProjectMilestoneBody, RestProjectMilestoneStateBody, RestRouteError,
+    RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueAssigneeBody {
+    assignee_login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueSharerBody {
+    login_id: String,
+    #[serde(default)]
+    target_type: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueSharerDeleteQuery {
+    target_type: String,
+}
 
 fn direct_json_label(label: &persistence::IssueLabelRecord) -> serde_json::Value {
     serde_json::json!({
@@ -1456,6 +1473,277 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 },
             ),
         )
+}
+
+async fn rest_issue_participation(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    service: PilotServiceImpl,
+    action: &str,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueParticipationRequest {
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueParticipationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match action {
+        "watch" => service.watch_issue(context, request).await,
+        "unwatch" => service.unwatch_issue(context, request).await,
+        "vote" => service.vote_issue(context, request).await,
+        "unvote" => service.unvote_issue(context, request).await,
+        _ => Err(ConnectError::invalid_argument(
+            "invalid issue participation action",
+        )),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_issue_comment_participation(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    comment_id: i64,
+    service: PilotServiceImpl,
+    action: &str,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueCommentParticipationRequest {
+        comment_id,
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueCommentParticipationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match action {
+        "vote" => service.vote_issue_comment(context, request).await,
+        "unvote" => service.unvote_issue_comment(context, request).await,
+        _ => Err(ConnectError::invalid_argument(
+            "invalid issue comment participation action",
+        )),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_toggle_favorite_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueParticipationRequest {
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueParticipationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_favorite_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_assign_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueAssigneeBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = AssignIssueRequest {
+        assignee_login_id: body.assignee_login_id,
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AssignIssueRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .assign_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_share_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueSharerBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueShareRequest {
+        issue_number,
+        login_id: body.login_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .issue_sharer_mutation(Context::new(headers), request, "share", &body.target_type)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_unshare_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    login_id: String,
+    query: RestIssueSharerDeleteQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueShareRequest {
+        issue_number,
+        login_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .issue_sharer_mutation(
+            Context::new(headers),
+            request,
+            "unshare",
+            &query.target_type,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_refreshed_issue_detail(
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: i64,
+    service: &PilotServiceImpl,
+    fallback: ReadIssueDetailResponse,
+) -> Result<RestIssueDetailResponse, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(RestIssueDetailResponse {
+            author_id: None,
+            child_closed_count: 0,
+            child_issues: Vec::new(),
+            child_open_count: 0,
+            due_date_label: String::new(),
+            detail: fallback,
+            history_html: String::new(),
+            history_markdown: String::new(),
+            comment_parent_links: Vec::new(),
+            issue_id: 0,
+            issue_voters: Vec::new(),
+            is_draft: false,
+            parent_issue_id: None,
+            parent_issue_number: None,
+            parent_issue_title: String::new(),
+            weight: 0,
+        });
+    };
+    let access = read_issue_access(repository, owner_name, project_name, issue_number, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    rest_issue_detail_response_from_access_with_repository_issue_references(
+        repository,
+        &access,
+        actor_id,
+        &service.base_path,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)
 }
 
 pub(crate) fn routes(

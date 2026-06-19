@@ -4480,6 +4480,7 @@ async fn rest_project_watchers_lists_actual_watchers_with_read_acl() {
 }
 
 #[tokio::test]
+// Guards issue meta route-module ownership for participation, assignment, sharing, and comment votes.
 async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comment_votes() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
