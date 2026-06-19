@@ -816,6 +816,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
   and
   `svn_protocol_contract::svn_protocol_external_client_can_read_mergeinfo`.
+- 2026-06-20 build/check diet note: SVN `list-report` response handling moved
+  from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_list.rs`; REPORT method dispatch
+  remains in the protocol module. This preserves ra_serf directory listing
+  metadata covered by
+  `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 
