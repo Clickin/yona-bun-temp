@@ -11,11 +11,13 @@ use std::collections::HashMap;
 
 use crate::generated::yona::pilot::v1::*;
 use crate::{
-    append_response_headers, attach_session_headers, auth_ui_capabilities_from_config,
-    base_path_href, headers_with_form_csrf, normalize_identifier, percent_encode_uri_component,
-    rest_json_response, rest_owned_view, rest_read_current_session, send_password_reset_mail,
-    serve_frontend_page, session::SessionManager, AssetMode, AuthUiConfig, BrowserRuntimeConfig,
-    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    anonymous_current_session_response, append_response_headers, attach_session_headers,
+    auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
+    percent_encode_uri_component, require_session, require_valid_csrf,
+    resolve_current_session_response, rest_json_response, rest_owned_view,
+    rest_read_current_session, send_password_reset_mail, serve_frontend_page,
+    session::SessionManager, AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context,
+    PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 #[derive(Deserialize)]
@@ -180,13 +182,36 @@ pub(crate) async fn rest_sign_out(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    let request = SignOutRequest::default();
-    let request = rest_owned_view::<SignOutRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .sign_out(Context::new(headers), request)
+    let (payload, ctx) = auth_sign_out(&service, Context::new(headers))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn auth_session_read(
+    service: &PilotServiceImpl,
+    ctx: Context,
+) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
+    let session = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers);
+    let response = resolve_current_session_response(&service.backend, session.as_ref()).await?;
+    Ok((response, ctx))
+}
+
+pub(crate) async fn auth_sign_out(
+    service: &PilotServiceImpl,
+    mut ctx: Context,
+) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+
+    let anonymous_session = service
+        .session_manager
+        .create_anonymous_session(Some(&session.token));
+    attach_session_headers(&mut ctx, &service.session_manager, &anonymous_session);
+
+    Ok((anonymous_current_session_response(), ctx))
 }
 
 pub(crate) async fn direct_request_reset_password_email(

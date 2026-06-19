@@ -351,6 +351,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   and delete behavior covered by
   `milestone_contract::milestone_rpc_manages_crud_state_sorting_and_linked_issues`
   and `rest_contract::rest_milestone_routes_manage_crud_and_state`.
+- 2026-06-20 build/check diet note: current-session read and sign-out RPC logic
+  moved from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/auth.rs`, preserving current-session projection,
+  CSRF-gated sign-out, anonymous session replacement, and response-header
+  attachment behavior covered by
+  `auth_workspace_contract::rest_auth_routes_round_trip_with_shared_session_and_error_envelope`
+  and `server_core_contract::read_current_session_works_over_connect_json`.
 
 ## Wave 0 Exit Snapshot
 

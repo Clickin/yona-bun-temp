@@ -29,11 +29,11 @@ pub use notification_mail::{
 };
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
-    append_response_headers, attach_session_headers, auth_social_providers_from_option,
-    auth_ui_capabilities_from_config, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response,
-    build_workspace_overview_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown,
+    append_response_headers, attach_session_headers, auth_session_read, auth_sign_out,
+    auth_social_providers_from_option, auth_ui_capabilities_from_config, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, build_workspace_overview_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
     configured_auth_social_providers, configured_bool_env, configured_env_value,
     configured_max_uploaded_file_size, configured_project_default_menus,
     configured_project_default_scope, configured_site_name, configured_supported_languages,
@@ -1051,9 +1051,7 @@ impl PilotServiceImpl {
         ctx: Context,
         _request: OwnedView<ReadCurrentSessionRequestView<'static>>,
     ) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
-        let session = self.session_manager.read_session_from_headers(&ctx.headers);
-        let response = resolve_current_session_response(&self.backend, session.as_ref()).await?;
-        Ok((response, ctx))
+        auth_session_read(self, ctx).await
     }
 
     async fn sign_in_with_password(
@@ -1235,18 +1233,10 @@ impl PilotServiceImpl {
 
     async fn sign_out(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         _request: OwnedView<SignOutRequestView<'static>>,
     ) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-
-        let anonymous_session = self
-            .session_manager
-            .create_anonymous_session(Some(&session.token));
-        attach_session_headers(&mut ctx, &self.session_manager, &anonymous_session);
-
-        Ok((anonymous_current_session_response(), ctx))
+        auth_sign_out(self, ctx).await
     }
 
     async fn read_workspace_overview(
