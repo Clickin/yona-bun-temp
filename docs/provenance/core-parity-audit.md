@@ -609,6 +609,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `org_project_contract::rest_project_routes_cover_directory_views_and_mutations`,
   `code_browser_contract::rest_commit_detail_creates_comments_and_updates_threads_from_git_repo`,
   and `svn_protocol_contract`.
+- 2026-06-20 build/check diet note: additional root helper forwarding was
+  replaced with owning-module imports for Excel export, Smart HTTP route
+  parsing, frontend page serving, and server config command/bool/duration
+  parsing. `routes/mod.rs` also dropped unused crate-internal forwarding.
+  This preserves auth legacy form routing, legacy runtime repository
+  initialization, site update command construction, and notification scheduler
+  config parsing covered by
+  `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`,
+  `assets_contract::legacy_init_redirects_home_and_recreates_project_repositories`,
+  the site-admin fetch command lib unit test, and
+  `notification_contract::notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mutation`.
 
 ## Wave 0 Exit Snapshot
 

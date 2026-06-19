@@ -14,10 +14,6 @@ mod state;
 pub use app_config::{
     AppRuntimeConfig, AuthUiConfig, RuntimeConfig, SiteUpdateConfig, TranslationProxyConfig,
 };
-pub(crate) use excel_export::{
-    direct_issue_excel_export, direct_issue_excel_route_from_request, direct_review_excel_export,
-    direct_review_excel_route_from_request,
-};
 pub(crate) use markdown::{
     issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
     markdown_mention_references, mention_reference_metadata_from_resolved,
@@ -121,7 +117,6 @@ pub mod session;
 mod smart_http;
 mod svn_protocol;
 
-use assets::serve_frontend_page;
 pub use mailbox::{
     mailbox_polling_config_from_env, mailbox_polling_config_from_startup,
     poll_mailbox_scheduler_tick, process_mailbox_parsed_message, process_mailbox_raw_message,
@@ -138,11 +133,7 @@ pub use router::{
     create_router_with_repository_and_filesystem_assets,
     create_router_with_repository_and_filesystem_assets_and_app_config,
 };
-pub(crate) use server_config::{
-    configured_command_parts, parse_legacy_bool, parse_legacy_duration_ms,
-};
 pub(crate) use smart_http::{
-    direct_smart_http_request, route_from_path as smart_http_route_from_path,
     smart_http_authorization, smart_http_basic_challenge_response,
     smart_http_principal_from_headers, SmartHttpAccessFailure, SmartHttpPermission,
 };

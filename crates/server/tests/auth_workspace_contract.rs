@@ -2,8 +2,8 @@ use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 
-// Guards workspace/default-landing behavior while server root import forwarding
-// is replaced with module-local imports.
+// Guards auth/workspace behavior while server root helper forwarding is
+// replaced with module-local imports.
 use sea_orm::{
     entity::prelude::{DateTime, DateTimeUtc},
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,

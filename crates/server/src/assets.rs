@@ -5,11 +5,14 @@ use axum::response::{IntoResponse, Response};
 use axum::{extract::Path as AxumPath, routing::get, Router};
 use http::Method;
 
-use crate::{
+use crate::excel_export::{
     direct_issue_excel_export, direct_issue_excel_route_from_request, direct_review_excel_export,
-    direct_review_excel_route_from_request, direct_smart_http_request, embedded_assets,
-    session::SessionManager, smart_http_route_from_path, svn_protocol, AssetMode,
-    BrowserRuntimeConfig, PilotBackend,
+    direct_review_excel_route_from_request,
+};
+use crate::smart_http::{direct_smart_http_request, route_from_path as smart_http_route_from_path};
+use crate::{
+    embedded_assets, session::SessionManager, svn_protocol, AssetMode, BrowserRuntimeConfig,
+    PilotBackend,
 };
 
 pub(crate) fn apply_asset_routes(

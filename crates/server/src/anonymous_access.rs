@@ -5,9 +5,8 @@ use axum::response::{IntoResponse, Redirect, Response};
 
 use crate::routes::{base_path_href, percent_encode_uri_component, RestRouteError};
 use crate::session::SessionManager;
-use crate::{
-    smart_http_route_from_path, svn_protocol, ConnectError, LEGACY_LOGIN_REQUIRED_MESSAGE,
-};
+use crate::smart_http::route_from_path as smart_http_route_from_path;
+use crate::{svn_protocol, ConnectError, LEGACY_LOGIN_REQUIRED_MESSAGE};
 
 pub(crate) async fn anonymous_access_gate(
     request: Request,

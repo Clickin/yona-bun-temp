@@ -1,6 +1,9 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards notification scheduler config parsing while server config helpers are
+// imported from their owning module instead of the root.
 use sea_orm::entity::prelude::DateTimeUtc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,

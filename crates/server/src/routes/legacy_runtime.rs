@@ -7,11 +7,12 @@ use axum::{
 };
 use std::collections::HashMap;
 
+use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, headers_with_form_csrf, legacy_external_api_hello, map_project_scope,
     persistence, redirect_to, repository_provisioning_lock, require_session, require_valid_csrf,
-    rest_project_menu_settings, serve_frontend_page, session::SessionManager, yona_data_root,
-    AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
+    rest_project_menu_settings, session::SessionManager, yona_data_root, AssetMode,
+    BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,

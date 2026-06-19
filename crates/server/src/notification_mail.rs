@@ -6,11 +6,11 @@ use yona_rust_integrations::{
 };
 
 use crate::persistence::PilotRepository;
+use crate::server_config::{parse_legacy_bool, parse_legacy_duration_ms};
 use crate::{
     absolute_app_url, configured_env_value, configured_site_name, default_public_origin,
-    default_smtp_from, escape_html_attr, escape_html_text, normalize_identifier, parse_legacy_bool,
-    parse_legacy_duration_ms, percent_encode_uri_component, persistence, runtime_config,
-    site_name_from_option,
+    default_smtp_from, escape_html_attr, escape_html_text, normalize_identifier,
+    percent_encode_uri_component, persistence, runtime_config, site_name_from_option,
 };
 
 fn parse_mail_domain_csv(value: Option<&str>) -> Vec<String> {

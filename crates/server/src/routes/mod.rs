@@ -30,11 +30,9 @@ pub(crate) use auth::{
     auth_register_with_password, auth_session_read, auth_sign_in_with_password, auth_sign_out,
     auth_verify_user,
 };
+pub(crate) use boards::read_posting_access;
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;
-pub(crate) use boards::{
-    posting_can_create, posting_can_update, read_posting_access, read_posting_comment_create_access,
-};
 pub(crate) use code::rest_routes as code_rest_routes;
 pub(crate) use code::rest_update_commit_discussion_thread_state;
 pub(crate) use code::routes as code_routes;
@@ -47,19 +45,14 @@ pub(crate) use files::{
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
-    issue_assignment_mutation, issue_attachment_from_record, issue_can_mutate,
-    issue_comment_participation_mutation, issue_detail_read, issue_detail_response_from_access,
-    issue_detail_response_from_record,
-    issue_detail_response_from_record_with_repository_issue_references,
-    issue_detail_response_from_record_with_sharer_flags, issue_favorite_toggle,
-    issue_list_filter_from_request, issue_milestone_from_record,
+    issue_assignment_mutation, issue_attachment_from_record, issue_comment_participation_mutation,
+    issue_detail_read, issue_favorite_toggle, issue_milestone_from_record,
     issue_milestone_from_record_with_issue_references, issue_participation_mutation,
     issue_state_update, legacy_external_assignable_users_result, legacy_external_label_id,
     organization_issues_list, project_issues_list, project_label_categories_list,
     project_label_category_create, project_label_category_delete, project_label_category_update,
     project_label_create, project_label_delete, project_label_update, project_labels_list,
-    read_issue_access, resolve_issue_reference_search_project,
-    rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
+    read_issue_access, resolve_issue_reference_search_project, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_read_direct_issue_form_options,
     visible_user_issue_items, RestDirectIssueFormQuery, RestProjectIssuesQuery,
     RestUserIssuesQuery,
@@ -71,8 +64,7 @@ pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use projects::{
     delete_project_repository_storage, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
-    milestone_list_filter_from_request, milestone_mutation_input, organization_admin_read,
-    organization_container_read, organization_create, organization_delete,
+    organization_admin_read, organization_container_read, organization_create, organization_delete,
     organization_detail_read, organization_enroll, organization_enroll_cancel,
     organization_enrollment_accept, organization_leave, organization_list, organization_member_add,
     organization_member_delete, organization_member_role_update, organization_members_read,
@@ -93,7 +85,6 @@ pub(crate) use pull_requests::{
 pub(crate) use search::routes as search_routes;
 pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
-pub(crate) use site_admin::site_update_https_fetch_command;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
@@ -114,22 +105,16 @@ pub(crate) use utils::{
     format_project_date_label, gravatar_url, headers_with_form_csrf, internal_error,
     issue_label_category_from_record, issue_label_css, issue_label_from_record,
     legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
-    legacy_external_api_hello, legacy_external_api_token_from_headers,
-    legacy_external_attachment_result, legacy_external_authenticated_user_id,
-    legacy_external_date_string, legacy_external_parse_datetime, legacy_external_post_author,
-    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
-    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, map_project_scope, max_uploaded_file_size_from_env_value,
+    legacy_external_api_hello, legacy_external_attachment_result,
+    legacy_external_authenticated_user_id, legacy_external_date_string,
+    legacy_external_parse_datetime, legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_json_find_value, map_project_scope,
     max_uploaded_file_size_from_option, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
-    organization_logo_url, organization_member_summary_from_record, organization_role_options,
-    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
-    percent_encode_uri_component, project_code_menu_visible, project_default_menus_from_option,
-    project_default_scope_from_option, project_detail_from_record,
-    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
-    project_member_summary_from_record, project_milestone_summary_from_record,
+    normalize_milestone_state, optional_i64_string, organization_detail_with_logo_from_record,
+    organization_logo_url, parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64,
+    parse_rest_query_u32, percent_encode_uri_component, project_code_menu_visible,
+    project_default_menus_from_option, project_default_scope_from_option,
+    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
     project_read_allowed, project_resource_create_allowed, project_update_allowed,
     random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
     require_project_authorization, require_project_read, require_project_resource_create,
@@ -147,8 +132,7 @@ pub(crate) use utils::{
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;
 pub(crate) use workspace::{
-    build_workspace_overview_response, direct_toggle_workspace_notification,
-    filter_workspace_issue_items_by_read_acl_for_viewer,
+    direct_toggle_workspace_notification, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, workspace_api_token_reset,
     workspace_avatar_url, workspace_default_landing_path_set, workspace_email_add,

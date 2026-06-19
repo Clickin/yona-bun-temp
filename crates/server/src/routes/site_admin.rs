@@ -19,18 +19,19 @@ use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver, OutboundMail};
 
 use crate::persistence::PilotRepository;
+use crate::server_config::configured_command_parts;
 use crate::{
-    base_path_href, configured_command_parts, configured_env_value, decode_query_component,
-    default_smtp_from, delete_project_repository_storage, detect_upload_mime_type,
-    escape_html_text, gravatar_url, headers_with_form_csrf, internal_error,
-    legacy_content_disposition_filename, map_project_scope, normalize_identifier,
-    normalize_issue_label_color, normalize_milestone_state, parse_milestone_due_date,
-    percent_encode_uri_component, persistence, project_logo_url, random_site_admin_password,
-    random_storage_token, redirect_to, require_authenticated_user, require_session,
-    require_valid_csrf, rest_board_label_from_record, rest_repository, session::SessionManager,
-    site_export_filename_stamp, trimmed_option, uploaded_file_path, workspace_avatar_url,
-    AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl, RestBoardLabel,
-    RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    base_path_href, configured_env_value, decode_query_component, default_smtp_from,
+    delete_project_repository_storage, detect_upload_mime_type, escape_html_text, gravatar_url,
+    headers_with_form_csrf, internal_error, legacy_content_disposition_filename, map_project_scope,
+    normalize_identifier, normalize_issue_label_color, normalize_milestone_state,
+    parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
+    random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
+    require_session, require_valid_csrf, rest_board_label_from_record, rest_repository,
+    session::SessionManager, site_export_filename_stamp, trimmed_option, uploaded_file_path,
+    workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
+    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 #[derive(Default, Deserialize)]
