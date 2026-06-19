@@ -21,8 +21,8 @@ use crate::{
         OrganizationRoleOption, ProjectContainer, ProjectDetail, ProjectIssueListItem,
         ProjectMemberSummary, ProjectMilestoneSummary, ReadCurrentSessionResponse,
     },
-    internal_error, normalize_identifier, persistence, project_read_allowed,
-    project_update_allowed, require_project_read,
+    internal_error, persistence, project_read_allowed, project_update_allowed,
+    require_project_read,
     session::{Session, SessionManager},
     ConnectError, Context, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl,
 };
@@ -30,6 +30,10 @@ use yona_rust_domain::{
     can_create_organization_project, can_request_project_enrollment, can_update_organization,
     DEFAULT_LANDING_FALLBACK_PATH,
 };
+
+pub(crate) fn normalize_identifier(value: &str) -> String {
+    value.trim().to_ascii_lowercase()
+}
 
 #[derive(Serialize)]
 struct RestErrorEnvelope {

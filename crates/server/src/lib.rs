@@ -54,13 +54,14 @@ pub(crate) use routes::{
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
     legacy_issue_update_body_from_value, legacy_json_find_value,
-    milestone_list_filter_from_request, milestone_mutation_input, normalize_issue_label_color,
-    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
-    organization_logo_url, organization_member_summary_from_record, organization_role_options,
-    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
-    posting_can_create, posting_can_update, project_code_menu_visible, project_detail_from_record,
+    milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
+    organization_admin_member_from_record, organization_detail_from_record,
+    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url,
+    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32, posting_can_create,
+    posting_can_update, project_code_menu_visible, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
     project_resource_create_allowed, project_webhook_type_label, read_issue_access,
@@ -1781,10 +1782,6 @@ fn confirmation_session_required_from_config(config: &AuthUiConfig) -> bool {
 const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
 const LEGACY_LOGIN_REQUIRED_MESSAGE: &str = "user.login.required";
 const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
-
-fn normalize_identifier(value: &str) -> String {
-    value.trim().to_ascii_lowercase()
-}
 
 pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
     ConnectError::new(ErrorCode::Internal, error.to_string())
