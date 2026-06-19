@@ -21,6 +21,7 @@ mod pull_requests;
 mod search;
 mod site_admin;
 mod users;
+mod utils;
 mod workspace;
 
 pub(crate) use auth::rest_routes as auth_rest_routes;
@@ -41,8 +42,9 @@ pub(crate) use files::routes as file_routes;
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
-    issue_can_mutate, issue_detail_response_from_access, read_issue_access,
-    resolve_issue_reference_search_project, rest_create_issue_comment, rest_delete_issue_comment,
+    issue_can_mutate, issue_detail_response_from_access, legacy_external_assignable_users_result,
+    legacy_external_label_id, read_issue_access, resolve_issue_reference_search_project,
+    rest_create_issue_comment, rest_delete_issue_comment,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_read_direct_issue_form_options, rest_update_issue_comment,
 };
@@ -63,6 +65,15 @@ pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
+pub(crate) use utils::{
+    accepts_legacy_json, base_path_href, gravatar_url, legacy_content_update_body_from_value,
+    legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
+    legacy_external_attachment_result, legacy_external_authenticated_user_id,
+    legacy_external_date_string, legacy_external_parse_datetime, legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
+    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
+    legacy_json_find_value,
+};
 pub(crate) use workspace::direct_toggle_workspace_notification;
 pub(crate) use workspace::rest_routes as workspace_rest_routes;
 pub(crate) use workspace::routes as workspace_routes;

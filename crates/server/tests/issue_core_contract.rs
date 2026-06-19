@@ -435,7 +435,6 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         legacy_external_comment_updated["result"]["contents"],
         "legacy external issue comment updated"
     );
-
     let direct_created_comment = app
         .clone()
         .oneshot(
@@ -843,6 +842,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         legacy_read["result"]["body"],
         "legacy external content update"
     );
+    assert_eq!(legacy_read["result"]["number"], 1);
 
     let legacy_updated = response_json(
         rest(
