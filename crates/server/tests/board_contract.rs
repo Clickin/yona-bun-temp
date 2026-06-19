@@ -360,6 +360,7 @@ async fn board_readme_posting_commits_git_readme_file() {
         .await,
     )
     .await;
+    assert_eq!(created["title"], "Project README");
     assert_eq!(created["readme"], true);
     assert_eq!(
         run_git_output(

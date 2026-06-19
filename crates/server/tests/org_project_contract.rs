@@ -1376,21 +1376,15 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let json = String::from_utf8(
-        response
-            .into_body()
-            .collect()
-            .await
-            .unwrap()
-            .to_bytes()
-            .to_vec(),
-    )
-    .unwrap();
+    let json = response_json(response).await;
     assert!(json.contains("\"ownerName\":\"admin\""));
     assert!(json.contains("\"projectName\":\"projectYobi\""));
     assert!(json.contains("\"defaultTab\":\"readme\""));
     assert!(json.contains("\"showIssue\":"));
     assert!(json.contains("\"members\":["));
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    assert_eq!(payload["defaultTab"], "readme");
+    assert!(payload["members"].as_array().is_some());
 }
 
 #[tokio::test]

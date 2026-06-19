@@ -1479,6 +1479,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(listed["items"].as_array().unwrap().len(), 1);
     assert_eq!(listed["items"][0]["ownerName"], "owner");
     assert_eq!(listed["items"][0]["projectName"], "projectYobi");
+    assert_eq!(listed["items"][0]["memberCount"], 1);
+    assert_eq!(listed["items"][0]["watchCount"], 0);
 
     let detail = ok_json(
         rest(
@@ -1508,6 +1510,9 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(container["ownerName"], "owner");
     assert_eq!(container["projectName"], "projectYobi");
+    assert!(container["dashboard"]["assignees"].as_array().is_some());
+    assert!(container["history"]["items"].as_array().is_some());
+    assert!(container.get("readmeFile").is_some());
 
     let forbidden_settings = rest(
         app.clone(),
@@ -1556,6 +1561,9 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(settings["ownerName"], "owner");
     assert_eq!(settings["projectName"], "projectYobi");
+    assert_eq!(settings["showBoard"], true);
+    assert_eq!(settings["showCode"], true);
+    assert_eq!(settings["maxReviewerCount"], 1);
 
     let members = ok_json(
         rest(

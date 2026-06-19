@@ -6,14 +6,14 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
-use serde::Deserialize;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, path::Path as StdPath};
 
 use crate::generated::yona::pilot::v1::*;
 use crate::routes::utils::gravatar_url;
 use crate::{
-    absolute_app_url, accepts_legacy_json, base_path_href, build_project_member_directory_response,
-    build_project_settings_container_response, code_browser_error, direct_accept_project_transfer,
+    absolute_app_url, accepts_legacy_json, base_path_href, build_project_container_response,
+    code_browser_error, code_file_record_is_renderable_markdown, direct_accept_project_transfer,
     direct_create_project_milestone, direct_delete_project_milestone,
     direct_delete_project_pushed_branch, direct_render_markdown, direct_toggle_project_watch,
     direct_update_project_milestone, direct_update_project_milestone_state,
@@ -23,34 +23,483 @@ use crate::{
     legacy_external_watchers, legacy_json_find_value, map_project_scope,
     markdown_mention_references, normalize_identifier, normalize_issue_label_color, persistence,
     project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
-    project_member_is_owner, project_member_role_options, project_read_allowed,
-    project_readme_file_from_git, project_settings_container_json, project_update_allowed,
-    repository_provisioning_lock, require_authenticated_user, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
+    project_read_allowed, project_update_allowed, repository_provisioning_lock,
+    require_authenticated_user, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, rest_json_response,
     rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
-    rest_require_project_code_read, send_project_transfer_request_mail, session::SessionManager,
-    yona_data_root, ConnectError, Context, DirectMarkdownRenderBody, GitPushCommitRecord,
-    LegacyExternalWatchersQuery, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, ProjectHistoryCommitRecord, RestIssueAssignableUsersQuery,
-    RestOrganizationBody, RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
-    RestProjectChangeVcsResponse, RestProjectContainerResponse, RestProjectCreateBody,
-    RestProjectCreateFormOptionsQuery, RestProjectCreateFormOptionsResponse,
-    RestProjectCreateOwnerOption, RestProjectDashboard, RestProjectDashboardAssignee,
-    RestProjectDashboardLabel, RestProjectDeleteResponse, RestProjectDirectoryItem,
-    RestProjectDirectoryResponse, RestProjectForkBody, RestProjectForkOptionsResponse,
-    RestProjectForkOwnerOption, RestProjectForkResponse, RestProjectForkSelected,
-    RestProjectForkSource, RestProjectForkSummary, RestProjectHistory, RestProjectHistoryItem,
-    RestProjectMemberBody, RestProjectMemberDirectoryResponse, RestProjectMemberRoleBody,
-    RestProjectOverviewBody, RestProjectReadmeFile, RestProjectReviewerSettings,
-    RestProjectTransferBody, RestProjectTransferResponse, RestProjectUpdateBody,
-    RestProjectWatcher, RestProjectWatchersResponse, RestProjectWebhook, RestProjectWebhookBody,
-    RestProjectWebhookDelivery, RestProjectWebhooksResponse, RestRouteError,
+    rest_require_project_code_read, rewrite_project_readme_markdown_links,
+    send_project_transfer_request_mail, session::SessionManager, yona_data_root, ConnectError,
+    Context, DirectMarkdownRenderBody, GitPushCommitRecord, LegacyExternalWatchersQuery,
+    PilotBackend, PilotRepository, PilotServiceImpl, ProjectCreatableResource,
+    ProjectHistoryCommitRecord, RestIssueAssignableUsersQuery, RestMentionReferenceMetadata,
+    RestProjectDeleteResponse, RestProjectOverviewBody, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, can_update_organization,
     is_valid_project_name,
 };
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
+use yona_rust_vcs::VcsError;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDirectoryItem {
+    created_label: String,
+    last_pushed_label: String,
+    logo_url: String,
+    member_count: u32,
+    overview: String,
+    owner_name: String,
+    project_name: String,
+    project_scope: String,
+    watch_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDirectoryResponse {
+    items: Vec<RestProjectDirectoryItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationBody {
+    description: String,
+    logo_attachment_id: Option<i64>,
+    organization_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationMemberBody {
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationMemberRoleBody {
+    role: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberBody {
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberRoleBody {
+    role: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberRoleOption {
+    role: String,
+    label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberEntry {
+    avatar_url: String,
+    is_owner: bool,
+    login_id: String,
+    role: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectEnrollmentRequestEntry {
+    avatar_url: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberDirectoryResponse {
+    enrollment_requests: Vec<RestProjectEnrollmentRequestEntry>,
+    members: Vec<RestProjectMemberEntry>,
+    owner_name: String,
+    project_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_path: Option<String>,
+    role_options: Vec<RestProjectMemberRoleOption>,
+    viewer_can_update: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectCreateBody {
+    board: Option<bool>,
+    code: Option<bool>,
+    issue: Option<bool>,
+    milestone: Option<bool>,
+    overview: String,
+    pull_request: Option<bool>,
+    project_name: String,
+    project_scope: String,
+    review: Option<bool>,
+    vcs: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RestProjectCreateFormOptionsQuery {
+    owner: Option<String>,
+}
+
+#[derive(Serialize)]
+struct RestProjectCreateOwnerOption {
+    #[serde(rename = "ownerName")]
+    owner_name: String,
+    organization: bool,
+    selected: bool,
+}
+
+#[derive(Serialize)]
+struct RestProjectCreateFormOptionsResponse {
+    #[serde(rename = "ownerOptions")]
+    owner_options: Vec<RestProjectCreateOwnerOption>,
+    #[serde(rename = "selectedOwnerName")]
+    selected_owner_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectUpdateBody {
+    board: Option<bool>,
+    code: Option<bool>,
+    default_reviewer_count: Option<u32>,
+    issue: Option<bool>,
+    is_using_reviewer_count: Option<bool>,
+    logo_attachment_id: Option<i64>,
+    milestone: Option<bool>,
+    overview: String,
+    pull_request: Option<bool>,
+    project_name: String,
+    project_scope: String,
+    review: Option<bool>,
+}
+
+#[derive(Clone, Copy)]
+struct RestProjectReviewerSettings {
+    default_reviewer_count: Option<u32>,
+    is_using_reviewer_count: Option<bool>,
+}
+
+impl RestProjectCreateBody {
+    fn menu_settings(&self) -> Option<persistence::ProjectMenuSettingsRecord> {
+        rest_project_menu_settings(
+            self.code,
+            self.issue,
+            self.pull_request,
+            self.review,
+            self.milestone,
+            self.board,
+        )
+    }
+
+    fn normalized_vcs(&self) -> Result<&'static str, RestRouteError> {
+        let Some(vcs) = self.vcs.as_deref() else {
+            return Ok("GIT");
+        };
+        match vcs.trim().to_ascii_lowercase().as_str() {
+            "" | "git" => Ok("GIT"),
+            "svn" | "subversion" => Ok("Subversion"),
+            _ => Err(RestRouteError::bad_request("invalid project VCS")),
+        }
+    }
+}
+
+impl RestProjectUpdateBody {
+    fn reviewer_settings(&self) -> Option<RestProjectReviewerSettings> {
+        if self.default_reviewer_count.is_none() && self.is_using_reviewer_count.is_none() {
+            return None;
+        }
+
+        Some(RestProjectReviewerSettings {
+            default_reviewer_count: self.default_reviewer_count,
+            is_using_reviewer_count: self.is_using_reviewer_count,
+        })
+    }
+
+    fn menu_settings(&self) -> Option<persistence::ProjectMenuSettingsRecord> {
+        rest_project_menu_settings(
+            self.code,
+            self.issue,
+            self.pull_request,
+            self.review,
+            self.milestone,
+            self.board,
+        )
+    }
+}
+
+pub(crate) fn rest_project_menu_settings(
+    code: Option<bool>,
+    issue: Option<bool>,
+    pull_request: Option<bool>,
+    review: Option<bool>,
+    milestone: Option<bool>,
+    board: Option<bool>,
+) -> Option<persistence::ProjectMenuSettingsRecord> {
+    if code.is_none()
+        && issue.is_none()
+        && pull_request.is_none()
+        && review.is_none()
+        && milestone.is_none()
+        && board.is_none()
+    {
+        return None;
+    }
+
+    Some(persistence::ProjectMenuSettingsRecord {
+        board: board.unwrap_or(false),
+        code: code.unwrap_or(false),
+        issue: issue.unwrap_or(false),
+        milestone: milestone.unwrap_or(false),
+        pull_request: pull_request.unwrap_or(false),
+        review: review.unwrap_or(false),
+    })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectContainerResponse {
+    #[serde(flatten)]
+    container: ProjectContainer,
+    dashboard: RestProjectDashboard,
+    history: RestProjectHistory,
+    readme_file: Option<RestProjectReadmeFile>,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboard {
+    assignees: Vec<RestProjectDashboardAssignee>,
+    labels: Vec<RestProjectDashboardLabel>,
+    unassigned_open_issue_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardAssignee {
+    avatar_url: String,
+    login_id: String,
+    open_issue_count: u32,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardLabel {
+    category_id: Option<i64>,
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    id: i64,
+    name: String,
+    open_issue_count: u32,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectHistory {
+    items: Vec<RestProjectHistoryItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectHistoryItem {
+    actor_avatar_url: String,
+    actor_name: String,
+    actor_url: String,
+    created_label: String,
+    item_type: String,
+    short_title: String,
+    #[serde(skip)]
+    sort_key: i64,
+    title: String,
+    url: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectReadmeFile {
+    body_html: String,
+    body_markdown: String,
+    mention_references: Vec<RestMentionReferenceMetadata>,
+    name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWatcher {
+    avatar_url: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWatchersResponse {
+    owner_name: String,
+    project_name: String,
+    total_count: u32,
+    watchers: Vec<RestProjectWatcher>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhook {
+    git_push: bool,
+    id: i64,
+    payload_url: String,
+    secret: String,
+    webhook_type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhookDelivery {
+    created_label: String,
+    error_message: Option<String>,
+    event_type: String,
+    id: i64,
+    payload_url: String,
+    request_body: String,
+    response_body: Option<String>,
+    status: String,
+    webhook_id: i64,
+    webhook_type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhooksResponse {
+    deliveries: Vec<RestProjectWebhookDelivery>,
+    owner_name: String,
+    project_name: String,
+    viewer_can_update: bool,
+    webhook_types: Vec<&'static str>,
+    webhooks: Vec<RestProjectWebhook>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhookBody {
+    #[serde(default)]
+    git_push: bool,
+    payload_url: String,
+    #[serde(default)]
+    secret: String,
+    webhook_type: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectTransferBody {
+    destination: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectTransferResponse {
+    owner_name: String,
+    project_name: String,
+    viewer_can_transfer: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    new_project_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    transfer_id: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    confirm_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    accept_path: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectChangeVcsResponse {
+    owner_name: String,
+    project_name: String,
+    current_vcs: String,
+    next_vcs: String,
+    viewer_can_change: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_path: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkSource {
+    is_forked: bool,
+    overview: String,
+    owner_name: String,
+    project_name: String,
+    project_scope: String,
+    vcs: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkOwnerOption {
+    organization: bool,
+    owner_name: String,
+    selected: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkSelected {
+    owner_name: String,
+    project_name: String,
+    project_scope: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkSummary {
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkOptionsResponse {
+    can_fork: bool,
+    existing_forks: Vec<RestProjectForkSummary>,
+    owner_options: Vec<RestProjectForkOwnerOption>,
+    selected: RestProjectForkSelected,
+    source: RestProjectForkSource,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkBody {
+    name: Option<String>,
+    owner: Option<String>,
+    project_scope: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectForkResponse {
+    ok: bool,
+    project: ProjectDetail,
+    redirect_path: String,
+}
 
 async fn rest_reject_legacy_guest_prohibited_user(
     headers: &HeaderMap,
@@ -80,6 +529,141 @@ async fn rest_reject_legacy_guest_prohibited_user(
         ));
     }
     Ok(())
+}
+
+fn project_member_role_options() -> Vec<RestProjectMemberRoleOption> {
+    vec![
+        RestProjectMemberRoleOption {
+            role: "manager".to_string(),
+            label: "manager".to_string(),
+        },
+        RestProjectMemberRoleOption {
+            role: "member".to_string(),
+            label: "member".to_string(),
+        },
+    ]
+}
+
+fn project_member_is_owner(
+    project: &persistence::ProjectRecord,
+    member: &persistence::ProjectMemberRecord,
+) -> bool {
+    project.organization_id.is_none()
+        && normalize_identifier(&project.owner_name) == normalize_identifier(&member.login_id)
+}
+
+async fn build_project_member_directory_response(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    redirect_path: Option<String>,
+) -> Result<RestProjectMemberDirectoryResponse, ConnectError> {
+    let directory = repository
+        .read_project_members(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(internal_error)?;
+    Ok(RestProjectMemberDirectoryResponse {
+        enrollment_requests: directory
+            .enrollment_requests
+            .into_iter()
+            .map(|request| RestProjectEnrollmentRequestEntry {
+                avatar_url: gravatar_url(&request.email_address),
+                login_id: request.login_id,
+                user_id: request.user_id,
+                user_label: request.user_label,
+            })
+            .collect(),
+        members: directory
+            .members
+            .into_iter()
+            .map(|member| RestProjectMemberEntry {
+                avatar_url: gravatar_url(&member.email_address),
+                is_owner: project_member_is_owner(&authorization.project, &member),
+                login_id: member.login_id,
+                role: member.role,
+                user_id: member.user_id,
+                user_label: member.user_label,
+            })
+            .collect(),
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        redirect_path,
+        role_options: project_member_role_options(),
+        viewer_can_update: project_update_allowed(authorization)?,
+    })
+}
+
+async fn build_project_settings_container_response(
+    repository: &PilotRepository,
+    public_origin: &str,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<ProjectContainer, ConnectError> {
+    let mut container = build_project_container_response(
+        repository,
+        public_origin,
+        base_path,
+        authorization,
+        actor_id,
+    )
+    .await?;
+    let menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    container.show_board = menu_settings.board;
+    container.show_code = menu_settings.code;
+    container.show_issue = menu_settings.issue;
+    container.show_milestone = menu_settings.milestone;
+    container.show_pull_request = menu_settings.pull_request;
+    container.show_review = menu_settings.review;
+    Ok(container)
+}
+
+fn project_settings_container_json(
+    container: ProjectContainer,
+    project: &persistence::ProjectRecord,
+    max_reviewer_count: u32,
+) -> Result<serde_json::Value, ConnectError> {
+    let show_board = container.show_board;
+    let show_code = container.show_code;
+    let show_issue = container.show_issue;
+    let show_milestone = container.show_milestone;
+    let show_pull_request = container.show_pull_request;
+    let show_review = container.show_review;
+    let mut value = serde_json::to_value(container)
+        .map_err(|error| internal_error(format!("serialize project settings: {error}")))?;
+    let Some(object) = value.as_object_mut() else {
+        return Err(internal_error("project settings response is not an object"));
+    };
+    object.insert("showBoard".to_string(), serde_json::json!(show_board));
+    object.insert("showCode".to_string(), serde_json::json!(show_code));
+    object.insert("showIssue".to_string(), serde_json::json!(show_issue));
+    object.insert(
+        "showMilestone".to_string(),
+        serde_json::json!(show_milestone),
+    );
+    object.insert(
+        "showPullRequest".to_string(),
+        serde_json::json!(show_pull_request),
+    );
+    object.insert("showReview".to_string(), serde_json::json!(show_review));
+    object.insert(
+        "defaultReviewerCount".to_string(),
+        serde_json::json!(project.default_reviewer_count.max(1)),
+    );
+    object.insert(
+        "isUsingReviewerCount".to_string(),
+        serde_json::json!(project.is_using_reviewer_count),
+    );
+    object.insert(
+        "maxReviewerCount".to_string(),
+        serde_json::json!(max_reviewer_count.max(1)),
+    );
+    Ok(value)
 }
 
 pub(crate) async fn rest_list_projects(
@@ -872,6 +1456,48 @@ async fn rest_project_readme_file(
                 .collect();
     }
     Ok(readme)
+}
+
+fn project_readme_file_from_git(
+    repo_path: &StdPath,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+) -> Result<Option<RestProjectReadmeFile>, ConnectError> {
+    for candidate in [
+        "README.md",
+        "readme.md",
+        "README.markdown",
+        "readme.markdown",
+    ] {
+        match yona_rust_vcs::read_code_browser(repo_path, None, candidate) {
+            Ok(snapshot) => {
+                let Some(file) = snapshot.file else {
+                    continue;
+                };
+                if !code_file_record_is_renderable_markdown(&file) {
+                    continue;
+                }
+                let body_markdown = rewrite_project_readme_markdown_links(
+                    &file.text,
+                    base_path,
+                    owner_name,
+                    project_name,
+                    &snapshot.selected_branch,
+                );
+                return Ok(Some(RestProjectReadmeFile {
+                    body_html: String::new(),
+                    body_markdown,
+                    mention_references: Vec::new(),
+                    name: file.name,
+                }));
+            }
+            Err(VcsError::NotFound) => continue,
+            Err(error) => return Err(code_browser_error(error)),
+        }
+    }
+
+    Ok(None)
 }
 
 pub(crate) async fn rest_read_project_settings(

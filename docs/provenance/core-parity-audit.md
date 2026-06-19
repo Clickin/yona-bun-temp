@@ -156,6 +156,8 @@ Project REST route module diet note: REST project/organization handler bodies, p
 
 Project REST dependency diet note: `crates/server/src/routes/projects.rs` no longer imports the root crate wildcard after the handler-body move. The module now relies on explicit root imports for the remaining compatibility DTOs and route bridges, preserving the same project/organization REST surfaces while reducing hidden route-module dependencies.
 
+Project REST DTO diet note: project/organization REST body DTOs, project dashboard/history/member/webhook/transfer/fork response DTOs, and project-member/settings response builders moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs` on 2026-06-19. Shared cross-route types such as project delete responses and resource-create ACL remain root-owned until their remaining call sites are split.
+
 ## Phase 4E Review Comment Attachment Note
 
 PR review comment attachment readback now follows the legacy `partial_comment_thread.scala.html` and `code/partial_nonrange_codecomment_thread.scala.html` behavior: ranged and non-ranged review comment shells render `.attachments[data-attachments]` from `AttachmentApp.getFileList(comment.asResource().getType().toString(), comment.id.toString())`, using the legacy `REVIEW_COMMENT` container metadata in the REST comment payload.
