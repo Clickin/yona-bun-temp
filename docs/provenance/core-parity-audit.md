@@ -742,6 +742,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   dispatch remain in the protocol module. This preserves WebDAV method
   advertisement and direct-file OPTIONS metadata covered by
   `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN CHECKOUT working-resource `Location`
+  construction and MERGE `updated-set` XML item rendering moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/activity.rs`; MKACTIVITY/CHECKOUT/MERGE
+  request validation, VCS error mapping, and HTTP status/header response
+  construction remain in the protocol module. This preserves activity creation,
+  checkout working-resource mapping, PUT through working resources, and MERGE
+  checked-in metadata covered by
+  `svn_protocol_contract::svn_protocol_supports_checkout_merge_choreography`.
 
 ## Wave 0 Exit Snapshot
 
