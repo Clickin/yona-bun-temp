@@ -974,6 +974,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   Git/SVN repository reset behavior, svnadmin availability handling, and storage
   deletion helper reuse covered by
   `project_change_vcs_contract::project_change_vcs_follows_legacy_update_gate_and_resets_repository`.
+- 2026-06-20 build/check diet note: project home container response DTOs,
+  dashboard projection, legacy activity/Git commit history projection, README
+  lookup/link rewrite, and README mention-reference enrichment moved from
+  `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/home.rs`; route registration remains in the
+  parent project route module. This preserves home container dashboard labels,
+  README rendering metadata, and legacy home history behavior covered by
+  `org_project_contract::rest_project_container_includes_git_readme_with_legacy_readme_link_rewrites`,
+  `org_project_contract::rest_project_container_includes_dashboard_open_issue_counts_by_label`,
+  and
+  `org_project_contract::rest_project_container_includes_legacy_project_home_history_rows`.
 
 ## Wave 0 Exit Snapshot
 

@@ -1397,6 +1397,9 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
 }
 
 #[tokio::test]
+// Guards the `routes/projects/home.rs` README projection: legacy README link
+// rewrites and mention-reference metadata stay with the project home container
+// response.
 async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewrites() {
     let _guard = yona_data_env_lock()
         .lock()
@@ -1493,6 +1496,8 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
 }
 
 #[tokio::test]
+// Guards the `routes/projects/home.rs` dashboard label projection in the
+// project home container response.
 async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() {
     let (app, repo) = build_app_with_repository().await;
 
@@ -1782,6 +1787,8 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
 }
 
 #[tokio::test]
+// Guards the `routes/projects/home.rs` legacy activity history projection in
+// the project home container response.
 async fn rest_project_container_includes_legacy_project_home_history_rows() {
     let _guard = yona_data_env_lock()
         .lock()
