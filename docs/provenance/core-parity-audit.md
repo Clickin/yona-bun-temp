@@ -848,6 +848,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metadata`,
   `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
   and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
+- 2026-06-20 build/check diet note: SVN PUT/COPY/MOVE/MKCOL/PROPPATCH/
+  DELETE/LOCK/UNLOCK response handling moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/write_response.rs`; method dispatch,
+  read-only GET/HEAD handling, REPORT dispatch, and activity MERGE/CHECKOUT
+  handling remain in the protocol module. This preserves WebDAV write mutation
+  behavior, property patch commits, lock/unlock behavior, and direct URL
+  copy/move behavior covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_commit_file_update`,
+  `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`,
+  `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`,
+  `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_move_direct_url`.
 
 ## Wave 0 Exit Snapshot
 
