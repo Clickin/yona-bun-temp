@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect, Response},
-    routing::{delete, get, patch, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use http::HeaderValue;
@@ -14,7 +14,6 @@ use yona_rust_vcs::{
     CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
 };
 
-use crate::generated::yona::pilot::v1::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
     base_path_href, code_branch_error, code_browser_error, code_file_record_is_renderable_markdown,

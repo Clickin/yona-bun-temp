@@ -1,6 +1,9 @@
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards workspace route behavior while server root import-bus dependencies are
+// replaced with module-local imports.
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     Set,

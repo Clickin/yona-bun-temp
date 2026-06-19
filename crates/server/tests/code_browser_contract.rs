@@ -1,6 +1,9 @@
 use axum::body::Body;
 use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards code route behavior while stale route-local imports are removed from
+// the server route diet cleanup.
 use sea_orm::{
     ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, NotSet, Set, Statement,
 };

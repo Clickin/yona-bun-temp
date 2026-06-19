@@ -1,6 +1,9 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards project route behavior while server root domain/VCS import forwarding
+// is replaced with module-local imports.
 use sea_orm::Database;
 use std::fs;
 use std::path::Path;

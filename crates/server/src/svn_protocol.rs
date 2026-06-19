@@ -6,7 +6,6 @@ use http::{HeaderMap, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 use md5::{Digest, Md5};
 use std::path::Path as StdPath;
-use std::process::Command;
 use std::time::SystemTime;
 
 use crate::session::SessionManager;

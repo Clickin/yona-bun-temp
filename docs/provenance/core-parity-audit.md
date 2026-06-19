@@ -598,6 +598,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   boundary parsing, legacy upload-size defaults, and site-update fetch command
   construction while keeping the root module as declarations/re-exports only;
   the moved behavior is covered by the corresponding lib unit tests.
+- 2026-06-20 build/check diet note: the remaining root import bus entries for
+  Axum, generated protocol wildcard types, domain ACL helpers, and VCS commit
+  records were removed from `crates/server/src/lib.rs`; workspace and project
+  route modules now import their domain/VCS dependencies directly, and stale
+  unused imports were removed from code/SVN route modules. This preserves
+  workspace default landing behavior, project directory/mutation behavior,
+  code commit discussion behavior, and SVN protocol behavior covered by
+  `rest_contract::rest_workspace_routes_manage_overview_settings_and_recent_projects`,
+  `org_project_contract::rest_project_routes_cover_directory_views_and_mutations`,
+  `code_browser_contract::rest_commit_detail_creates_comments_and_updates_threads_from_git_repo`,
+  and `svn_protocol_contract`.
 
 ## Wave 0 Exit Snapshot
 

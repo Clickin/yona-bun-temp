@@ -2,6 +2,9 @@ use axum::body::Body;
 use base64::{engine::general_purpose, Engine as _};
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+
+// Guards SVN protocol behavior while stale route-local imports are removed from
+// the server route diet cleanup.
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
 use std::path::Path;

@@ -31,9 +31,8 @@ use crate::{
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotRepository, PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
-    RestIssueAssignableUsersQuery, RestMentionReferenceMetadata, RestProjectDeleteResponse,
-    RestRouteError,
+    PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
+    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
@@ -41,7 +40,7 @@ use yona_rust_domain::{
     is_valid_project_name, ProjectAccessFacts, ProjectOperation,
 };
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
-use yona_rust_vcs::VcsError;
+use yona_rust_vcs::{ProjectHistoryCommitRecord, VcsError};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -12,7 +12,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use yona_rust_domain::{
-    authorize_project_access, ProjectAccessFacts, ProjectOperation, ProjectScope,
+    authorize_project_access, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
+    ProjectScope,
 };
 
 use crate::generated::yona::pilot::v1::*;
@@ -21,13 +22,12 @@ use crate::{
     anonymous_current_session_response, attach_session_headers, base_path_href, escape_html_attr,
     escape_html_text, gravatar_url, headers_with_form_csrf, internal_error,
     legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
-    normalize_default_landing_path, normalize_identifier, read_issue_access, redirect_to,
-    require_authenticated_user, require_session, require_valid_csrf,
-    resolve_current_session_response, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail,
+    normalize_identifier, read_issue_access, redirect_to, require_authenticated_user,
+    require_session, require_valid_csrf, resolve_current_session_response, rest_json_response,
+    rest_owned_view, send_workspace_email_validation_mail,
     session::{self, SessionManager},
     workspace_invalid_argument, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, WorkspaceIssueItem, LEGACY_MIN_PASSWORD_LENGTH,
+    PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
