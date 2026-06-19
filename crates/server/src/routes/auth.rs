@@ -403,6 +403,7 @@ pub(crate) async fn direct_request_reset_password_email(
     base_path: String,
     public_origin: String,
     site_name: String,
+    from: String,
 ) -> Response {
     let session = session_manager.ensure_anonymous_session(&headers);
     let redirect_path = match &backend {
@@ -431,7 +432,7 @@ pub(crate) async fn direct_request_reset_password_email(
                             &public_origin,
                             &base_path,
                             &site_name,
-                            &SmtpRuntimeConfig::from_env().default_from(),
+                            &from,
                         );
                     }
                     "/lostPassword?requested=1"
@@ -849,6 +850,7 @@ pub(crate) fn routes(
     base_path: String,
     public_origin: String,
     site_name: String,
+    smtp: SmtpRuntimeConfig,
 ) -> Router {
     let session_bootstrap_session_manager = session_manager.clone();
     let session_bootstrap_backend = backend.clone();
@@ -879,6 +881,7 @@ pub(crate) fn routes(
     let lost_password_base_path = base_path.clone();
     let lost_password_public_origin = public_origin.clone();
     let lost_password_site_name = site_name.clone();
+    let lost_password_from = smtp.default_from();
     let legacy_reset_password_page_assets = assets;
     let legacy_reset_password_page_browser_runtime = browser_runtime;
     let reset_password_backend = backend.clone();
@@ -1015,6 +1018,7 @@ pub(crate) fn routes(
                         lost_password_base_path.clone(),
                         lost_password_public_origin.clone(),
                         lost_password_site_name.clone(),
+                        lost_password_from.clone(),
                     )
                     .await
                 },

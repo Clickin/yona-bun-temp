@@ -1688,14 +1688,20 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
     let previous_site_name = std::env::var("YONA_SITE_NAME").ok();
+    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
             site_name: "Yona Test".to_string(),
+            smtp: SmtpRuntimeConfig {
+                from: "reset-sender@example.com".to_string(),
+                ..SmtpRuntimeConfig::default()
+            },
             ..AppRuntimeConfig::default()
         },
     )
     .await;
+    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1739,7 +1745,15 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
     );
     let outbox = snapshot_test_outbox();
     assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "reset-sender@example.com");
     assert_eq!(outbox[0].to, "door@example.com");
+    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
+    restore_env_var("SMTP_FROM", previous_smtp_from);
+    assert_eq!(
+        smtp_from_after_request.as_deref(),
+        Some("request-time@example.com"),
+        "SMTP runtime config must not mutate process env"
+    );
 
     let verification = user_verification::Entity::find()
         .one(&db)

@@ -216,6 +216,7 @@ pub(crate) fn app_routes(
             base_path.clone(),
             public_origin.clone(),
             site_name,
+            smtp.clone(),
         ))
         .nest("/api/v1", rest_router)
         .merge(legacy_runtime_routes(
