@@ -837,7 +837,7 @@ async fn session_bootstrap(
     backend: PilotBackend,
 ) -> Response {
     let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = crate::build_session_route_payload(&backend, &session).await;
+    let payload = build_session_route_payload(&backend, &session).await;
     let mut response = Json(payload).into_response();
     response.headers_mut().insert(
         "X-CSRF-Token",
@@ -850,4 +850,69 @@ async fn session_bootstrap(
         );
     }
     response
+}
+
+#[derive(Clone, Serialize)]
+struct SessionRoutePayload {
+    session: Option<SessionRouteRecord>,
+    user: Option<SessionRouteUser>,
+}
+
+#[derive(Clone, Serialize)]
+struct SessionRouteRecord {
+    #[serde(rename = "csrfToken")]
+    csrf_token: String,
+    projection: ReadCurrentSessionResponse,
+    #[serde(rename = "userId")]
+    user_id: i64,
+}
+
+#[derive(Clone, Serialize)]
+struct SessionRouteUser {
+    #[serde(rename = "emailAddress")]
+    email_address: String,
+    id: i64,
+    #[serde(rename = "isConfirmed")]
+    is_confirmed: bool,
+    #[serde(rename = "isSiteAdmin")]
+    is_site_admin: bool,
+    #[serde(rename = "loginId")]
+    login_id: String,
+    name: String,
+}
+
+async fn build_session_route_payload(
+    backend: &PilotBackend,
+    session: &crate::session::Session,
+) -> SessionRoutePayload {
+    let Ok(projection) = crate::resolve_current_session_response(backend, Some(session)).await
+    else {
+        return SessionRoutePayload {
+            session: None,
+            user: None,
+        };
+    };
+
+    if projection.is_anonymous {
+        return SessionRoutePayload {
+            session: None,
+            user: None,
+        };
+    }
+
+    SessionRoutePayload {
+        session: Some(SessionRouteRecord {
+            csrf_token: session.csrf_token.clone(),
+            projection: projection.clone(),
+            user_id: projection.actor_id,
+        }),
+        user: Some(SessionRouteUser {
+            email_address: projection.email_address.clone(),
+            id: projection.actor_id,
+            is_confirmed: projection.is_confirmed,
+            is_site_admin: projection.is_site_admin,
+            login_id: projection.login_id.clone(),
+            name: projection.user_label.clone(),
+        }),
+    }
 }

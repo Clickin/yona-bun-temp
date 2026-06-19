@@ -170,6 +170,7 @@ async fn mounts_session_bootstrap_under_base_path() {
 }
 
 #[tokio::test]
+// Guards the auth route-owned session bootstrap payload DTOs.
 async fn session_bootstrap_issues_cookies_and_csrf_header() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,

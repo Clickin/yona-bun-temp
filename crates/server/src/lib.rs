@@ -1731,35 +1731,6 @@ pub(crate) struct BrowserRuntimeConfig {
     show_user_email: bool,
 }
 
-#[derive(Clone, Serialize)]
-struct SessionRoutePayload {
-    session: Option<SessionRouteRecord>,
-    user: Option<SessionRouteUser>,
-}
-
-#[derive(Clone, Serialize)]
-struct SessionRouteRecord {
-    #[serde(rename = "csrfToken")]
-    csrf_token: String,
-    projection: ReadCurrentSessionResponse,
-    #[serde(rename = "userId")]
-    user_id: i64,
-}
-
-#[derive(Clone, Serialize)]
-struct SessionRouteUser {
-    #[serde(rename = "emailAddress")]
-    email_address: String,
-    id: i64,
-    #[serde(rename = "isConfirmed")]
-    is_confirmed: bool,
-    #[serde(rename = "isSiteAdmin")]
-    is_site_admin: bool,
-    #[serde(rename = "loginId")]
-    login_id: String,
-    name: String,
-}
-
 impl BrowserRuntimeConfig {
     fn from_base_path(
         base_path: &str,
@@ -1872,41 +1843,6 @@ pub(crate) async fn resolve_current_session_response(
             ))
         }
         PilotBackend::Static => Ok(anonymous_current_session_response()),
-    }
-}
-
-async fn build_session_route_payload(
-    backend: &PilotBackend,
-    session: &session::Session,
-) -> SessionRoutePayload {
-    let Ok(projection) = resolve_current_session_response(backend, Some(session)).await else {
-        return SessionRoutePayload {
-            session: None,
-            user: None,
-        };
-    };
-
-    if projection.is_anonymous {
-        return SessionRoutePayload {
-            session: None,
-            user: None,
-        };
-    }
-
-    SessionRoutePayload {
-        session: Some(SessionRouteRecord {
-            csrf_token: session.csrf_token.clone(),
-            projection: projection.clone(),
-            user_id: projection.actor_id,
-        }),
-        user: Some(SessionRouteUser {
-            email_address: projection.email_address.clone(),
-            id: projection.actor_id,
-            is_confirmed: projection.is_confirmed,
-            is_site_admin: projection.is_site_admin,
-            login_id: projection.login_id.clone(),
-            name: projection.user_label.clone(),
-        }),
     }
 }
 
