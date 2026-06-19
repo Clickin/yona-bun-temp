@@ -155,7 +155,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 
 #[tokio::test]
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
-    // Guards REST/direct issue mutation and comment surfaces while route ownership is split.
+    // Guards issue route-owned REST response DTOs plus mutation and comment surfaces.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "reviewer").await;

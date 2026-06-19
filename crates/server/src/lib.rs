@@ -1540,12 +1540,6 @@ struct RestIssueVoter {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestIssueWeightResponse {
-    weight: i16,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 struct RestIssueChildIssue {
     assignee_label: String,
     created_label: String,
@@ -1586,54 +1580,6 @@ struct RestIssueListItem {
     voter_count: u32,
     watcher_count: u32,
     weight: i16,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestProjectIssueListResponse {
-    draft_items: Vec<RestIssueListItem>,
-    items: Vec<RestIssueListItem>,
-    owner_name: String,
-    page_num: u32,
-    page_size: u32,
-    project_name: String,
-    total_count: u32,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestOrganizationIssueListResponse {
-    closed_issue_count: u32,
-    items: Vec<RestIssueListItem>,
-    open_issue_count: u32,
-    organization_name: String,
-    page_num: u32,
-    page_size: u32,
-    total_count: u32,
-    visible_projects: Vec<OrganizationIssueProjectOption>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestUserIssueListResponse {
-    closed_issue_count: u32,
-    filter: String,
-    items: Vec<RestIssueListItem>,
-    open_issue_count: u32,
-    page_num: u32,
-    page_size: u32,
-    side_filter_counts: RestUserIssueSideFilterCounts,
-    state: String,
-    total_count: u32,
-    viewer_user_id: i64,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestUserIssueSideFilterCounts {
-    favorite: u32,
-    mentioned: u32,
-    shared: u32,
 }
 
 impl RestRouteError {

@@ -35,9 +35,8 @@ use crate::{
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
-    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueWeightResponse,
-    RestOrganizationIssueListResponse, RestProjectIssueListResponse, RestRouteError,
-    RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueListItem, RestRouteError,
+    RestUserIssuesQuery,
 };
 
 #[derive(Default, Deserialize)]
@@ -228,6 +227,60 @@ struct RestIssueMutationBody {
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueStateBody {
     state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueWeightResponse {
+    weight: i16,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueListResponse {
+    draft_items: Vec<RestIssueListItem>,
+    items: Vec<RestIssueListItem>,
+    owner_name: String,
+    page_num: u32,
+    page_size: u32,
+    project_name: String,
+    total_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationIssueListResponse {
+    closed_issue_count: u32,
+    items: Vec<RestIssueListItem>,
+    open_issue_count: u32,
+    organization_name: String,
+    page_num: u32,
+    page_size: u32,
+    total_count: u32,
+    visible_projects: Vec<OrganizationIssueProjectOption>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestUserIssueListResponse {
+    closed_issue_count: u32,
+    filter: String,
+    items: Vec<RestIssueListItem>,
+    open_issue_count: u32,
+    page_num: u32,
+    page_size: u32,
+    side_filter_counts: RestUserIssueSideFilterCounts,
+    state: String,
+    total_count: u32,
+    viewer_user_id: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestUserIssueSideFilterCounts {
+    favorite: u32,
+    mentioned: u32,
+    shared: u32,
 }
 
 fn rest_issue_mutation_input_from_body(
