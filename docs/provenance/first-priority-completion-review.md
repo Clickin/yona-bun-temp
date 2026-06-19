@@ -3,7 +3,7 @@
 > Status: active completion review for the current first-priority conversion scope.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and `docs/provenance/core-parity-audit.md`.
 
-Last updated: 2026-06-18
+Last updated: 2026-06-20
 
 ## Scope
 
@@ -33,7 +33,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 ## Next Closure Steps
 
 1. Audit the current first-priority review against `SPEC.md` Definition of Done before marking the persistent `1순위 전환 범위 완료까지 진행` goal complete.
-2. Split or classify slow Rust gates so focused parity implementation loops do not need to pay the full workspace cost on every turn.
+2. Refresh the release-level gates before final closure: parity gate, frontend gates, deployment smokes, migration/DB matrix gates, Smart HTTP, and full workspace Rust gate.
 
 ## Current Verification Evidence
 
@@ -72,6 +72,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-18: the same `AppRuntimeConfig` upload size snapshot now also flows into site-import portable attachment restore, so `/sites/import` rejects oversized exported attachment payloads without re-reading or mutating `YONA_MAX_FILE_SIZE` during the request. `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test site_admin_contract site_admin_import_respects_configured_max_file_size_without_env_mutation` passed in 312.5s. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-18T085708-804Z.log`.
 - 2026-06-18: `AppRuntimeConfig` now carries auth UI capability flags, social-provider list, and login/password placeholders from the initialized startup config snapshot. Both `/api/v1/auth/capabilities` and debug `/_pilot/ReadAuthUiCapabilities` now project that snapshot instead of reading `YONA_AUTH_*` during the request. `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test auth_workspace_contract read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation` passed in 17.2s after a warm incremental rebuild. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-18T091344-047Z.log`.
 - 2026-06-18: the same auth UI snapshot now also drives `PilotServiceImpl` signup and password sign-in confirmation policy checks, so the app auth paths no longer re-read `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM` or `YONA_AUTH_EMAIL_VERIFICATION_ENABLED` during service execution. `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test auth_workspace_contract register_requires_confirmation_session_from_runtime_config_without_env_mutation` passed in 284.2s. Full log: `.agent/cargo-test-logs/cargo-test-2026-06-18T092544-933Z.log`.
+- 2026-06-20: stale active-gap/follow-up documentation was retired after later slices had already closed the referenced surfaces. `README.md`, `docs/plans/2026-04-11-wave-2b-organization-follow-up.md`, `docs/plans/2026-06-13-repo-root-parity-todo.md`, `docs/provenance/phase-0b/user-workspace.md`, `docs/provenance/phase-0b/code-browser.md`, `docs/provenance/phase-0b/pull-request-review.md`, and `docs/provenance/phase-0b/legacy-test-inventory.md` now point to the active completion review or mark the old items as app-runtime closed / deferred / migrator / hardening scope. Verification: `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` passed, and a canonical/plans/provenance search for stale active first-priority gap markers returned no matches.
 
 ## Compile-Time Note
 
