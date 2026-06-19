@@ -60,13 +60,14 @@ pub(crate) use routes::{
     organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
     organization_issue_list_item_to_proto, organization_logo_url,
     organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
-    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32, posting_can_create,
-    posting_can_update, project_code_menu_visible, project_detail_from_record,
-    project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
-    project_member_summary_from_record, project_milestone_summary_from_record,
-    project_resource_create_allowed, project_webhook_type_label, read_issue_access,
-    read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
-    redirect_to, require_project_resource_create, require_session, require_valid_csrf,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    percent_encode_uri_component, posting_can_create, posting_can_update,
+    project_code_menu_visible, project_detail_from_record, project_detail_with_logo_from_record,
+    project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
+    project_milestone_summary_from_record, project_resource_create_allowed,
+    project_webhook_type_label, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
+    require_project_resource_create, require_session, require_valid_csrf,
     resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
     rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
@@ -942,36 +943,6 @@ pub(crate) async fn serve_frontend_page(
         AssetMode::Embedded => serve_embedded_fallback(method, browser_runtime).await,
         AssetMode::None => StatusCode::NOT_FOUND.into_response(),
     }
-}
-
-pub(crate) fn percent_encode_uri_component(value: &str) -> String {
-    let mut encoded = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        if uri_component_unescaped(byte) {
-            encoded.push(byte as char);
-        } else {
-            encoded.push_str(&format!("%{byte:02X}"));
-        }
-    }
-    encoded
-}
-
-fn uri_component_unescaped(byte: u8) -> bool {
-    matches!(
-        byte,
-        b'A'..=b'Z'
-            | b'a'..=b'z'
-            | b'0'..=b'9'
-            | b'-'
-            | b'_'
-            | b'.'
-            | b'!'
-            | b'~'
-            | b'*'
-            | b'\''
-            | b'('
-            | b')'
-    )
 }
 
 fn default_public_origin(configured: &str) -> String {

@@ -1883,7 +1883,7 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
 }
 
 #[tokio::test]
-// Guards shared label mapping, identifier normalization, redirects, and users route boundary.
+// Guards shared label mapping, identifier/URI normalization, redirects, and users route boundary.
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     // Keeps site-admin user surfaces on the shared users route-module boundary after root DTO diet.
     let (app, repo, db) = build_app_with_repository().await;

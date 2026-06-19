@@ -40,6 +40,36 @@ pub(crate) fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectErro
         .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
 }
 
+pub(crate) fn percent_encode_uri_component(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        if uri_component_unescaped(byte) {
+            encoded.push(byte as char);
+        } else {
+            encoded.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    encoded
+}
+
+fn uri_component_unescaped(byte: u8) -> bool {
+    matches!(
+        byte,
+        b'A'..=b'Z'
+            | b'a'..=b'z'
+            | b'0'..=b'9'
+            | b'-'
+            | b'_'
+            | b'.'
+            | b'!'
+            | b'~'
+            | b'*'
+            | b'\''
+            | b'('
+            | b')'
+    )
+}
+
 #[derive(Serialize)]
 struct RestErrorEnvelope {
     error: RestErrorPayload,

@@ -446,6 +446,7 @@ async fn read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation(
 }
 
 #[tokio::test]
+// Guards auth redirect reuse of the route-utils-owned URI component encoder.
 async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
     let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
@@ -491,6 +492,7 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
 }
 
 #[tokio::test]
+// Guards auth denied redirect reuse of the route-utils-owned URI component encoder.
 async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
     let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
