@@ -5103,6 +5103,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
 }
 
 #[tokio::test]
+// Guards public user profile route-module ownership in the users route module.
 async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     let (app, repository) = build_app_with_repository().await;
     let (_owner_csrf, _owner_cookie) = register_user(app.clone(), "owner").await;

@@ -1815,26 +1815,6 @@ impl IntoResponse for RestRouteError {
     }
 }
 
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestPublicUserProfileQuery {
-    days_ago: Option<i64>,
-    selected: Option<String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RestPublicUserProfileResponse {
-    days_ago: u32,
-    issue_items: Vec<WorkspaceIssueItem>,
-    member_projects: Vec<WorkspaceMemberProjectItem>,
-    profile: Option<WorkspaceProfile>,
-    pull_request_items: Vec<WorkspacePullRequestItem>,
-    redirect_path: Option<String>,
-    selected: String,
-    viewer_can_edit_profile: bool,
-}
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RestBoardLabel {
@@ -2112,121 +2092,6 @@ pub(crate) fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Resp
     let mut response = Json(payload).into_response();
     append_response_headers(response.headers_mut(), &ctx.response_headers);
     response
-}
-
-pub(crate) async fn rest_read_public_user_profile(
-    headers: HeaderMap,
-    login_id: String,
-    query: RestPublicUserProfileQuery,
-    service: PilotServiceImpl,
-) -> Result<Response, RestRouteError> {
-    let PilotBackend::Repository(repository) = &service.backend else {
-        return Err(RestRouteError::not_implemented(
-            "public user profile requires repository backend",
-        ));
-    };
-
-    if repository
-        .read_organization_by_name(&login_id)
-        .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-        .is_some()
-    {
-        return Ok(rest_json_response(
-            RestPublicUserProfileResponse {
-                days_ago: public_profile_days_ago(query.days_ago),
-                issue_items: Vec::new(),
-                member_projects: Vec::new(),
-                profile: None,
-                pull_request_items: Vec::new(),
-                redirect_path: Some(format!("/organizations/{login_id}")),
-                selected: public_profile_selected(query.selected),
-                viewer_can_edit_profile: false,
-            },
-            Context::new(headers),
-        ));
-    }
-
-    let Some(user) = repository
-        .find_user_by_login_id(&login_id)
-        .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-    else {
-        return Err(RestRouteError::not_found("user not found"));
-    };
-
-    let viewer_id = service
-        .session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
-    let viewer_can_edit_profile = viewer_id == Some(user.id);
-    let days_ago = public_profile_days_ago(query.days_ago);
-    let profile = match repository
-        .read_workspace_profile_for_user(user.id)
-        .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-    {
-        Some(record) => {
-            let avatar_url = workspace_avatar_url(
-                repository,
-                user.id,
-                &record.primary_email_address,
-                &service.base_path,
-            )
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
-            let mut profile = workspace_profile_from_record(&record, avatar_url);
-            if !viewer_can_edit_profile {
-                profile.primary_email_address.clear();
-            }
-            Some(profile)
-        }
-        None => None,
-    };
-    let issue_items = filter_workspace_issue_items_by_read_acl_for_viewer(
-        repository,
-        viewer_id,
-        repository
-            .list_recent_workspace_issues_for_user(user.id, u64::from(days_ago))
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
-    let pull_request_items = filter_workspace_pull_request_items_by_read_acl_for_viewer(
-        repository,
-        viewer_id,
-        repository
-            .list_recent_workspace_pull_requests_for_user(user.id, u64::from(days_ago))
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
-    let member_projects = filter_workspace_member_projects_by_read_acl_for_viewer(
-        repository,
-        viewer_id,
-        repository
-            .list_member_projects_for_user(user.id)
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
-
-    Ok(rest_json_response(
-        RestPublicUserProfileResponse {
-            days_ago,
-            issue_items,
-            member_projects,
-            profile,
-            pull_request_items,
-            redirect_path: None,
-            selected: public_profile_selected(query.selected),
-            viewer_can_edit_profile,
-        },
-        Context::new(headers),
-    ))
 }
 
 pub(crate) async fn rest_read_current_session(
@@ -4626,20 +4491,6 @@ fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
 
 const WORKSPACE_DAYS_AGO: u32 = 14;
 
-fn public_profile_days_ago(days_ago: Option<i64>) -> u32 {
-    days_ago
-        .map(|value| value.max(1) as u32)
-        .unwrap_or(WORKSPACE_DAYS_AGO)
-}
-
-fn public_profile_selected(selected: Option<String>) -> String {
-    match selected.as_deref().map(str::trim) {
-        Some("projects") => "projects".to_string(),
-        Some("pullRequests") => "pullRequests".to_string(),
-        _ => "issues".to_string(),
-    }
-}
-
 fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> ProjectListItem {
     ProjectListItem {
         owner_name: item.owner_name.clone(),
@@ -4702,7 +4553,7 @@ fn watched_project_notifications_from_record(
     }
 }
 
-fn workspace_profile_from_record(
+pub(crate) fn workspace_profile_from_record(
     record: &persistence::WorkspaceProfileRecord,
     avatar_url: String,
 ) -> WorkspaceProfile {
@@ -4897,7 +4748,7 @@ async fn filter_workspace_issue_items_by_read_acl(
     filter_workspace_issue_items_by_read_acl_for_viewer(repository, Some(user_id), items).await
 }
 
-async fn filter_workspace_issue_items_by_read_acl_for_viewer(
+pub(crate) async fn filter_workspace_issue_items_by_read_acl_for_viewer(
     repository: &PilotRepository,
     viewer_id: Option<i64>,
     items: Vec<persistence::WorkspaceIssueListItemRecord>,
@@ -4929,7 +4780,7 @@ async fn filter_workspace_pull_request_items_by_read_acl(
         .await
 }
 
-async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
+pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
     repository: &PilotRepository,
     viewer_id: Option<i64>,
     items: Vec<persistence::WorkspacePullRequestListItemRecord>,
@@ -4960,7 +4811,7 @@ async fn filter_workspace_member_projects_by_read_acl(
     filter_workspace_member_projects_by_read_acl_for_viewer(repository, Some(user_id), items).await
 }
 
-async fn filter_workspace_member_projects_by_read_acl_for_viewer(
+pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
     repository: &PilotRepository,
     viewer_id: Option<i64>,
     items: Vec<persistence::WorkspaceMemberProjectRecord>,

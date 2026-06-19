@@ -238,6 +238,7 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - The root runtime error banner is route-bootstrap support for visible in-page
   API errors; it does not change legacy route ownership or close a parity row.
 - Public `/:user` profile parity now preserves the legacy `user/view.scala.html` two-column mode and show-subtasks checkbox anchors (`#two-column-mode-checkbox`, `#two-column-mode`, `.show-subtasks-li`, `#toggle-show-subtasks`) inside the same tab structure as the legacy profile shell.
+- 2026-06-19 build/check diet note: public user profile REST query/response DTOs and handler moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/users.rs`, preserving the single-segment profile JSON surface covered by `rest_contract`.
 - Site admin update parity now includes the direct legacy `POST /sites/unwatchUpdate`
   alias. It is site-admin/CSRF-gated and lowers the in-process update notification
   watch flag; configured update status, metadata URL/file discovery, and download-link
