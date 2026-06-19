@@ -542,6 +542,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:multistatus")
+            && text.contains("<D:href>/yona/svn/owner/projectYobi</D:href>")
             && text.contains("<D:collection/>")
             && text.contains("<D:displayname>projectYobi</D:displayname>")
             && text.contains(
