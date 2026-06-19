@@ -183,6 +183,9 @@ fn member<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
 }
 
 #[tokio::test]
+// Guards the `routes/projects/members.rs` REST membership module: add,
+// directory projection, role update, self-leave, and delete authorization stay
+// together while route registration remains in the parent project module.
 async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
@@ -396,6 +399,9 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
 }
 
 #[tokio::test]
+// Guards the private-project self-leave response owned by
+// `routes/projects/members.rs`; the former member must not receive the private
+// directory after removal.
 async fn project_member_self_leave_private_project_does_not_leak_directory() {
     let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -456,6 +462,8 @@ async fn project_member_self_leave_private_project_does_not_leak_directory() {
 }
 
 #[tokio::test]
+// Guards the workspace legacy alias that reuses the project-member delete
+// helper through the parent `routes/projects.rs` re-export.
 async fn direct_legacy_info_leave_route_removes_current_user_and_redirects_to_profile_projects() {
     let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

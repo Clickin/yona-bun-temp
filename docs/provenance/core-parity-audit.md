@@ -932,6 +932,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `org_project_contract::organization_admin_mutations_add_accept_promote_and_delete_members`,
   and
   `org_project_contract::organization_enrollment_mutations_toggle_guest_request_state`.
+- 2026-06-20 build/check diet note: project member REST DTOs, member directory
+  projection, role options, owner guard, and read/add/update/delete handlers
+  moved from `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/members.rs`; route registration remains in
+  the parent project route module, and the parent re-export keeps the legacy
+  workspace leave alias on the same delete helper. This preserves project
+  member directory, add, role update, self-leave/delete authorization, private
+  self-leave response, and direct `/info/leave/:owner/:project` redirect
+  behavior covered by
+  `project_members_contract::project_member_management_preserves_legacy_add_role_delete_guards`,
+  `project_members_contract::project_member_self_leave_private_project_does_not_leak_directory`,
+  and
+  `project_members_contract::direct_legacy_info_leave_route_removes_current_user_and_redirects_to_profile_projects`.
 
 ## Wave 0 Exit Snapshot
 
