@@ -29,12 +29,12 @@ pub use notification_mail::{
 };
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
-    append_response_headers, attach_session_headers, auth_session_read, auth_sign_in_with_password,
-    auth_sign_out, auth_social_providers_from_option, auth_ui_capabilities_from_config,
-    auth_verify_user, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response,
-    build_workspace_overview_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown,
+    append_response_headers, attach_session_headers, auth_register_with_password,
+    auth_session_read, auth_sign_in_with_password, auth_sign_out,
+    auth_social_providers_from_option, auth_ui_capabilities_from_config, auth_verify_user,
+    base_path_href, build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, build_workspace_overview_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
     configured_auth_social_providers, configured_bool_env, configured_env_value,
     configured_max_uploaded_file_size, configured_project_default_menus,
     configured_project_default_scope, configured_site_name, configured_supported_languages,
@@ -95,7 +95,7 @@ pub(crate) use routes::{
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
     rest_read_direct_issue_form_options, rest_repository, rest_require_project_code_read,
     rest_review_thread_filter, rest_update_commit_discussion_thread_state,
-    send_password_reset_mail, send_project_transfer_request_mail, send_signup_verification_mail,
+    send_password_reset_mail, send_project_transfer_request_mail,
     send_workspace_email_validation_mail, site_export_filename_stamp, site_name_from_option,
     site_update_https_fetch_command, supported_languages_from_option, trimmed_option,
     uploaded_file_path, user_issue_filter_name, user_issue_state,
@@ -1065,92 +1065,10 @@ impl PilotServiceImpl {
 
     async fn register_with_password(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         request: OwnedView<RegisterWithPasswordRequestView<'static>>,
     ) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "auth requires repository backend",
-            ));
-        };
-
-        let capabilities = auth_ui_capabilities_from_config(&self.auth_ui);
-        let login_id = normalize_identifier(request.login_id);
-        let email_address = normalize_identifier(request.email_address);
-        if login_id.is_empty() {
-            return Err(ConnectError::invalid_argument("user.wrongloginId.alert"));
-        }
-        if email_address.is_empty() {
-            return Err(ConnectError::invalid_argument("validation.invalidEmail"));
-        }
-        if request.name.trim().is_empty() {
-            return Err(ConnectError::invalid_argument("validation.required"));
-        }
-        if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
-            return Err(ConnectError::invalid_argument(
-                "validation.tooShortPassword",
-            ));
-        }
-        if request.password != request.retyped_password {
-            return Err(ConnectError::invalid_argument(
-                "validation.passwordMismatch",
-            ));
-        }
-
-        if repository
-            .user_login_id_exists(&login_id)
-            .await
-            .map_err(internal_error)?
-        {
-            return Err(ConnectError::already_exists("user.loginId.duplicate"));
-        }
-        if repository
-            .user_email_exists(&email_address)
-            .await
-            .map_err(internal_error)?
-        {
-            return Err(ConnectError::already_exists("user.email.duplicate"));
-        }
-
-        let password_hash = hash(&request.password, DEFAULT_COST).map_err(internal_error)?;
-        let user = repository
-            .create_user(persistence::CreateUserInput {
-                display_name: request.name.trim().to_string(),
-                email_address,
-                is_confirmed: !confirmation_session_required_from_config(&self.auth_ui),
-                is_site_admin: false,
-                login_id,
-                password_hash,
-            })
-            .await
-            .map_err(internal_error)?;
-
-        if capabilities.email_verification_enabled {
-            let verification_code = repository
-                .create_signup_verification_for_user(user.id, &user.login_id)
-                .await
-                .map_err(internal_error)?;
-            send_signup_verification_mail(
-                &user.email_address,
-                &user.login_id,
-                &verification_code,
-                &self.public_origin,
-                &self.base_path,
-            )?;
-        }
-
-        if confirmation_session_required_from_config(&self.auth_ui) {
-            return Ok((anonymous_current_session_response(), ctx));
-        }
-
-        let authenticated_session =
-            self.session_manager
-                .create_authenticated_session(Some(&session.token), user.id, false);
-        attach_session_headers(&mut ctx, &self.session_manager, &authenticated_session);
-
-        Ok((current_session_response_from_user(&user, None), ctx))
+        auth_register_with_password(self, ctx, request).await
     }
 
     async fn verify_user(

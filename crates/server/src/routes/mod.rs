@@ -27,7 +27,8 @@ mod workspace;
 pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
 pub(crate) use auth::{
-    auth_session_read, auth_sign_in_with_password, auth_sign_out, auth_verify_user,
+    auth_register_with_password, auth_session_read, auth_sign_in_with_password, auth_sign_out,
+    auth_verify_user,
 };
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;

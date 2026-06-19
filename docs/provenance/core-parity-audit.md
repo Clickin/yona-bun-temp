@@ -373,6 +373,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   cleanup, and returned login id behavior covered by
   `auth_workspace_contract::rest_verify_user_confirms_pending_signup` and
   `auth_workspace_contract::verify_user_activates_pending_account_and_rejects_invalid_or_expired_links`.
+- 2026-06-20 build/check diet note: register RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/auth.rs`, preserving CSRF-gated signup validation,
+  duplicate login/email rejection, bcrypt password hashing, optional signup
+  verification mail creation, confirmation-session anonymous response, and
+  authenticated session replacement behavior covered by
+  `auth_workspace_contract::register_sign_in_sign_out_and_current_session_round_trip`,
+  `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`,
+  and
+  `auth_workspace_contract::register_with_email_verification_creates_signup_verification_and_mail_delivery`.
 
 ## Wave 0 Exit Snapshot
 

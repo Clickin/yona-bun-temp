@@ -1007,13 +1007,22 @@ async fn register_requires_confirmation_session_from_runtime_config_without_env_
 }
 
 #[tokio::test]
+// Guards the auth route-owned register helper through REST registration.
 async fn register_with_email_verification_creates_signup_verification_and_mail_delivery() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
 
-    let (app, _, db) = build_auth_router().await;
+    let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                email_verification_enabled: true,
+                ..AuthUiConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .oneshot(
@@ -1028,8 +1037,6 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
 
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
@@ -1053,7 +1060,7 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
 }
 
 #[tokio::test]
-// Guards the auth route-owned sign-in helper through the proto adapter.
+// Guards auth route-owned register/sign-in/sign-out helpers through proto adapters.
 async fn register_sign_in_sign_out_and_current_session_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

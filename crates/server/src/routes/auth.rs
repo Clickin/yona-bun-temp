@@ -22,6 +22,8 @@ use crate::{
     LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
+use super::send_signup_verification_mail;
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RestSignInRequest {
@@ -154,8 +156,7 @@ pub(crate) async fn rest_register_with_password(
         ..Default::default()
     };
     let request = rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .register_with_password(Context::new(headers), request)
+    let (payload, ctx) = auth_register_with_password(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -250,6 +251,97 @@ pub(crate) async fn auth_sign_in_with_password(
         crate::current_session_response_from_user(&user, default_landing_path),
         ctx,
     ))
+}
+
+pub(crate) async fn auth_register_with_password(
+    service: &PilotServiceImpl,
+    mut ctx: Context,
+    request: OwnedView<RegisterWithPasswordRequestView<'static>>,
+) -> Result<(ReadCurrentSessionResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "auth requires repository backend",
+        ));
+    };
+
+    let capabilities = auth_ui_capabilities_from_config(&service.auth_ui);
+    let login_id = normalize_identifier(request.login_id);
+    let email_address = normalize_identifier(request.email_address);
+    if login_id.is_empty() {
+        return Err(ConnectError::invalid_argument("user.wrongloginId.alert"));
+    }
+    if email_address.is_empty() {
+        return Err(ConnectError::invalid_argument("validation.invalidEmail"));
+    }
+    if request.name.trim().is_empty() {
+        return Err(ConnectError::invalid_argument("validation.required"));
+    }
+    if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
+        return Err(ConnectError::invalid_argument(
+            "validation.tooShortPassword",
+        ));
+    }
+    if request.password != request.retyped_password {
+        return Err(ConnectError::invalid_argument(
+            "validation.passwordMismatch",
+        ));
+    }
+
+    if repository
+        .user_login_id_exists(&login_id)
+        .await
+        .map_err(crate::internal_error)?
+    {
+        return Err(ConnectError::already_exists("user.loginId.duplicate"));
+    }
+    if repository
+        .user_email_exists(&email_address)
+        .await
+        .map_err(crate::internal_error)?
+    {
+        return Err(ConnectError::already_exists("user.email.duplicate"));
+    }
+
+    let password_hash = hash(&request.password, DEFAULT_COST).map_err(crate::internal_error)?;
+    let user = repository
+        .create_user(crate::persistence::CreateUserInput {
+            display_name: request.name.trim().to_string(),
+            email_address,
+            is_confirmed: !crate::confirmation_session_required_from_config(&service.auth_ui),
+            is_site_admin: false,
+            login_id,
+            password_hash,
+        })
+        .await
+        .map_err(crate::internal_error)?;
+
+    if capabilities.email_verification_enabled {
+        let verification_code = repository
+            .create_signup_verification_for_user(user.id, &user.login_id)
+            .await
+            .map_err(crate::internal_error)?;
+        send_signup_verification_mail(
+            &user.email_address,
+            &user.login_id,
+            &verification_code,
+            &service.public_origin,
+            &service.base_path,
+        )?;
+    }
+
+    if crate::confirmation_session_required_from_config(&service.auth_ui) {
+        return Ok((anonymous_current_session_response(), ctx));
+    }
+
+    let authenticated_session =
+        service
+            .session_manager
+            .create_authenticated_session(Some(&session.token), user.id, false);
+    attach_session_headers(&mut ctx, &service.session_manager, &authenticated_session);
+
+    Ok((crate::current_session_response_from_user(&user, None), ctx))
 }
 
 pub(crate) async fn auth_sign_out(
@@ -542,12 +634,12 @@ pub(crate) async fn direct_legacy_signup(
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
     };
-    match service
-        .register_with_password(
-            Context::new(headers_with_form_csrf(headers, &form)),
-            request,
-        )
-        .await
+    match auth_register_with_password(
+        &service,
+        Context::new(headers_with_form_csrf(headers, &form)),
+        request,
+    )
+    .await
     {
         Ok((payload, ctx)) => {
             let capabilities = auth_ui_capabilities_from_config(&service.auth_ui);
