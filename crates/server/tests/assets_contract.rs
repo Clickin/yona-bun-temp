@@ -11,10 +11,11 @@ use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, CreatePullRequestInput,
-    CreatePullRequestResult, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
-    PullRequestMutationInput, UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdatePullRequestInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    IssueMutationInput, MilestoneMutationInput, PostingMutationInput, PullRequestMutationInput,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput, UpdatePostingInput,
+    UpdatePullRequestInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -1652,6 +1653,65 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         "PULL_REQUEST",
         private_pull_request.id,
         private_pull_request_file_id,
+        StatusCode::OK,
+    )
+    .await;
+
+    let private_review_comment_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "private-review-comment-attachment.png",
+    )
+    .await;
+    let private_pull_request_with_comment = repository
+        .create_pull_request_comment(CreatePullRequestCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: vec![private_review_comment_file_id],
+            commit_id: None,
+            contents_markdown: "private review comment body".to_string(),
+            end_line: None,
+            end_side: None,
+            owner_name: "owner".to_string(),
+            path: None,
+            prev_commit_id: None,
+            project_name: "privateYobi".to_string(),
+            pull_request_number: private_pull_request.pull_request_number,
+            start_line: None,
+            start_side: None,
+            thread_id: None,
+        })
+        .await
+        .unwrap()
+        .expect("private review comment");
+    let private_review_comment = private_pull_request_with_comment
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .find(|comment| {
+            comment
+                .attachments
+                .iter()
+                .any(|file| file.id == private_review_comment_file_id)
+        })
+        .expect("private review comment attachment owner");
+    assert_attachment_container_acl(
+        app.clone(),
+        &other_cookie_header,
+        "REVIEW_COMMENT",
+        private_review_comment.id,
+        private_review_comment_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+    assert_attachment_container_acl(
+        app.clone(),
+        &cookie_header,
+        "REVIEW_COMMENT",
+        private_review_comment.id,
+        private_review_comment_file_id,
         StatusCode::OK,
     )
     .await;
