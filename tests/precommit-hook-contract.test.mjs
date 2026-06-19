@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
@@ -8,6 +8,7 @@ const hookPath = path.join(repoRoot, ".husky", "pre-commit");
 const verifyToolPath = path.join(repoRoot, "tools", "precommit-verify.mjs");
 const designHarnessPath = path.join(repoRoot, "tools", "yona-design-harness.mjs");
 const serverSourcePath = path.join(repoRoot, "crates", "server", "src", "lib.rs");
+const serverRoutesPath = path.join(repoRoot, "crates", "server", "src", "routes");
 const specPath = path.join(repoRoot, "SPEC.md");
 const yonaExportProvenancePath = path.join(
   repoRoot,
@@ -34,6 +35,15 @@ function readStringArray(source, name) {
   const match = source.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
   assert.ok(match, `${name} must be declared as an array literal`);
   return [...match[1].matchAll(/"([^"]+)"/gu)].map((entry) => entry[1]);
+}
+
+function readServerRouteSurfaceSource() {
+  const routeSources = readdirSync(serverRoutesPath, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".rs"))
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((entry) => readFileSync(path.join(serverRoutesPath, entry.name), "utf8"));
+
+  return [readFileSync(serverSourcePath, "utf8"), ...routeSources].join("\n");
 }
 
 test("pre-commit hook points at the canonical root verification tool", () => {
@@ -89,7 +99,7 @@ test("pre-commit runs React Doctor when frontend source files are staged", () =>
 });
 
 test("external REST harness requires inventory provenance for issue and milestone REST", () => {
-  const serverSource = readFileSync(serverSourcePath, "utf8");
+  const serverSource = readServerRouteSurfaceSource();
   const specSource = readFileSync(specPath, "utf8");
   const provenanceSource = readFileSync(yonaExportProvenancePath, "utf8");
   const legacyExternalApiSource = readFileSync(legacyExternalApiProvenancePath, "utf8");

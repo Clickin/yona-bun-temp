@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "agent:cargo": "node tools/agent-cargo.mjs",
     "agent:cargo-test": "node tools/agent-cargo-test.mjs",
     "agent:turn-commit": "node tools/agent-turn-commit.mjs",
     "dev": "node scripts/dev.mjs",
@@ -13,7 +14,7 @@
     "doctor:react:precommit": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
     "smoke:docker": "node scripts/smoke-docker.mjs",
     "smoke:embedded-assets": "node scripts/smoke-embedded-assets.mjs",
-    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs tests/precommit-hook-contract.test.mjs tests/design-harness-contract.test.mjs tests/agent-turn-commit-hook-contract.test.mjs tests/agent-cargo-test-harness-contract.test.mjs"
+    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs tests/precommit-hook-contract.test.mjs tests/design-harness-contract.test.mjs tests/agent-turn-commit-hook-contract.test.mjs tests/agent-cargo-harness-contract.test.mjs tests/agent-cargo-test-harness-contract.test.mjs"
   },
   "devDependencies": {
     "oxfmt": "0.45.0",

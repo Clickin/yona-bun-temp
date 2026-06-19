@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import process from "node:process";
 
-const DEFAULT_LOG_DIR = ".agent/cargo-test-logs";
+const DEFAULT_LOG_DIR = ".agent/cargo-logs";
 const DEFAULT_TAIL_LINES = 80;
 
 export function parseArgs(argv) {
@@ -65,12 +65,16 @@ export function parseArgs(argv) {
     options.cargoArgs.push(arg);
   }
 
+  if (options.cargoArgs.length === 0) {
+    throw new Error("agent-cargo requires cargo arguments, for example: pnpm agent:cargo -- check --lib");
+  }
+
   return options;
 }
 
 export function cargoCommand(options) {
   return {
-    args: ["test", ...options.cargoArgs],
+    args: options.cargoArgs,
     command: options.cargoBin,
   };
 }
@@ -105,12 +109,12 @@ function tailLines(path, lineCount) {
   return lines.slice(-lineCount).join("\n");
 }
 
-export async function runAgentCargoTest(options, env = process.env) {
+export async function runAgentCargo(options, env = process.env) {
   const sandboxReason = codexSandboxReason(env);
   if (!options.allowSandbox && !options.dryRun && sandboxReason) {
     console.error(
-      `agent-cargo-test: refusing to run cargo inside Codex sandbox (${sandboxReason}). ` +
-        "Run the whole command with sandbox escalation/require_escalated; this pnpm wrapper is only a guard/log harness and cannot escape the sandbox by itself. Pass --allow-sandbox only for intentional diagnostics.",
+      `agent-cargo: refusing to run cargo inside Codex sandbox (${sandboxReason}). ` +
+        "Run the whole command with sandbox escalation/require_escalated; this pnpm wrapper is only a guard/log harness and cannot escape the sandbox by itself.",
     );
     return { logPath: null, status: 1 };
   }
@@ -118,12 +122,12 @@ export async function runAgentCargoTest(options, env = process.env) {
   const { args, command } = cargoCommand(options);
   const logDir = resolve(process.cwd(), options.logDir);
   mkdirSync(logDir, { recursive: true });
-  const logPath = join(logDir, `cargo-test-${timestampSlug()}.log`);
+  const logPath = join(logDir, `cargo-${timestampSlug()}.log`);
   mkdirSync(dirname(logPath), { recursive: true });
 
   const renderedCommand = formatCommand(command, args);
-  console.log(`agent-cargo-test: running ${renderedCommand}`);
-  console.log(`agent-cargo-test: log ${logPath}`);
+  console.log(`agent-cargo: running ${renderedCommand}`);
+  console.log(`agent-cargo: log ${logPath}`);
 
   if (options.dryRun) {
     return { logPath, status: 0 };
@@ -144,12 +148,12 @@ export async function runAgentCargoTest(options, env = process.env) {
 
   const status = await new Promise((resolveStatus) => {
     child.on("error", (error) => {
-      log.write(`\nagent-cargo-test spawn error: ${error.message}\n`);
+      log.write(`\nagent-cargo spawn error: ${error.message}\n`);
       resolveStatus(1);
     });
     child.on("close", (code, signal) => {
       if (signal) {
-        log.write(`\nagent-cargo-test signal: ${signal}\n`);
+        log.write(`\nagent-cargo signal: ${signal}\n`);
         resolveStatus(1);
         return;
       }
@@ -161,21 +165,21 @@ export async function runAgentCargoTest(options, env = process.env) {
 
   const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
   if (status === 0) {
-    console.log(`agent-cargo-test: passed in ${elapsedSeconds}s`);
+    console.log(`agent-cargo: passed in ${elapsedSeconds}s`);
     return { logPath, status };
   }
 
-  console.error(`agent-cargo-test: failed with status ${status} after ${elapsedSeconds}s`);
+  console.error(`agent-cargo: failed with status ${status} after ${elapsedSeconds}s`);
   const tail = tailLines(logPath, options.tailLines);
   if (tail) {
-    console.error(`agent-cargo-test: last ${options.tailLines} log line(s):\n${tail}`);
+    console.error(`agent-cargo: last ${options.tailLines} log line(s):\n${tail}`);
   }
   return { logPath, status };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   try {
-    const result = await runAgentCargoTest(parseArgs(process.argv.slice(2)));
+    const result = await runAgentCargo(parseArgs(process.argv.slice(2)));
     process.exitCode = result.status;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

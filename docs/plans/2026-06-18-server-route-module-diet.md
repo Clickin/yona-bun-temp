@@ -73,7 +73,7 @@ Route modules should expose route builders or tightly scoped handlers. They shou
 - `lib.rs` shrinks through real module ownership, not `include!` or mechanical hiding.
 - Public API compatibility remains intact for existing tests unless a narrower public surface is explicitly updated with tests.
 - Every extraction has focused contract coverage or preserves an existing contract test.
-- `cargo check` and the affected `pnpm agent:cargo-test -- ...` target pass before committing. Rust cargo checks/tests/timings must be run outside the Codex sandbox with escalation; sandbox timings are recorded only as agent-environment overhead and are not used as compile-time evidence.
+- `pnpm agent:cargo -- check ...` and the affected `pnpm agent:cargo-test -- ...` target pass before committing. Rust cargo checks/tests/timings must be run outside the Codex sandbox with escalation; the pnpm wrappers are log/guard harnesses and cannot escape the sandbox by themselves. Sandbox timings are recorded only as agent-environment overhead and are not used as compile-time evidence.
 - No legacy route, label, UX flow, or REST compatibility behavior changes as part of this refactor.
 
 ## Verification Log
