@@ -43,8 +43,9 @@ pub(crate) use files::{
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
-    issue_attachment_from_record, issue_can_mutate, issue_comment_participation_mutation,
-    issue_detail_response_from_access, issue_detail_response_from_record,
+    issue_assignment_mutation, issue_attachment_from_record, issue_can_mutate,
+    issue_comment_participation_mutation, issue_detail_response_from_access,
+    issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_favorite_toggle,
     issue_list_filter_from_request, issue_milestone_from_record,

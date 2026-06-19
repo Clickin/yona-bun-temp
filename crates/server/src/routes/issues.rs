@@ -3000,6 +3000,57 @@ pub(crate) async fn issue_sharer_mutation(
     ))
 }
 
+pub(crate) async fn issue_assignment_mutation(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<AssignIssueRequestView<'static>>,
+) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id).await?;
+    let authorization = require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.user_id,
+    )
+    .await?;
+    let existing = repository
+        .read_issue_detail(
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+    if !issue_can_mutate(&authorization, &existing, &actor) {
+        return Err(ConnectError::permission_denied(
+            "issue assign is not allowed",
+        ));
+    }
+    let issue = repository
+        .assign_issue(
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            Some(request.assignee_login_id).filter(|value| !value.trim().is_empty()),
+            &actor.login_id,
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+    Ok((
+        issue_detail_response_from_record(&issue, true, true, session.user_id, &service.base_path),
+        ctx,
+    ))
+}
+
 async fn rest_toggle_favorite_issue(
     headers: HeaderMap,
     owner_name: String,
@@ -3052,8 +3103,7 @@ async fn rest_assign_issue(
         ..Default::default()
     };
     let request = rest_owned_view::<AssignIssueRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .assign_issue(Context::new(headers), request)
+    let (payload, ctx) = issue_assignment_mutation(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let payload = rest_refreshed_issue_detail(
