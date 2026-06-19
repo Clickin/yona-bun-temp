@@ -13,12 +13,26 @@ use crate::{
     PilotRepository, RestRouteError,
 };
 
-fn legacy_external_random_storage_token() -> String {
+pub(crate) fn legacy_external_random_storage_token() -> String {
     use base64::Engine;
 
     let mut bytes = [0_u8; 32];
     rand::thread_rng().fill_bytes(&mut bytes);
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+pub(crate) fn legacy_external_user_statistics_result(
+    record: &persistence::UserStatisticsRecord,
+) -> serde_json::Value {
+    serde_json::json!({
+        "assignedIssue": record.assigned_issue,
+        "issue": record.issue,
+        "issueComment": record.issue_comment,
+        "issueCommentVoter": record.issue_comment_voter,
+        "issueVoter": record.issue_voter,
+        "posting": record.posting,
+        "postingComment": record.posting_comment,
+    })
 }
 
 pub(crate) fn base_path_href(base_path: &str, path: &str) -> String {

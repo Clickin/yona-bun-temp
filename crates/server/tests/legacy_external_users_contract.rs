@@ -140,7 +140,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
 async fn legacy_external_users_search_preserves_members_helper_contract() {
     let (app, _repository) = build_app_with_repository().await;
     register_user(app.clone(), "owner").await;
-    register_user(app.clone(), "visitor").await;
+    let (_, visitor_cookie_header) = register_user(app.clone(), "visitor").await;
 
     let legacy_users_empty = ok_json(
         rest_with_headers(
@@ -203,7 +203,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
     assert_eq!(legacy_users_html.status(), StatusCode::NOT_ACCEPTABLE);
 
     let legacy_users_without_members_referer = rest_with_headers(
-        app,
+        app.clone(),
         Method::GET,
         "/yona/-_-api/v1/users?query=vis",
         &[("Accept", "application/json")],
@@ -214,4 +214,18 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         legacy_users_without_members_referer.status(),
         StatusCode::NOT_ACCEPTABLE
     );
+
+    let legacy_statistics = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users/visitor/statistics",
+            &[("Cookie", &visitor_cookie_header)],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(legacy_statistics["assignedIssue"], 0);
+    assert_eq!(legacy_statistics["issueComment"], 0);
 }

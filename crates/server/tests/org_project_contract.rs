@@ -1557,6 +1557,7 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
         .expect("guide title head");
     assert_eq!(guide_title_head["category"], "Type");
     assert_eq!(guide_title_head["id"], guide_label.id);
+    assert_eq!(guide_title_head["labelColor"], "#00aa55");
 
     let create_open_issue = app
         .clone()

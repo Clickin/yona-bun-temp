@@ -283,6 +283,10 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
     .await;
     assert_eq!(unfavored["issueId"], issue_id.to_string());
     assert_eq!(unfavored["favored"], false);
+
+    let legacy_favorites_after_toggle =
+        response_json(rest_get(app, "/yona/-_-api/v1/favoriteIssues", &owner_cookie).await).await;
+    assert_eq!(legacy_favorites_after_toggle["projectIds"], json!([]));
 }
 
 #[tokio::test]
