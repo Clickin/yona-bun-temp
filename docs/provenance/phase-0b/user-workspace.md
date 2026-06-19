@@ -17,6 +17,7 @@
 - `frontend/src/routes/$user/route.tsx` mounts the single-segment file route and redirects organization names to `/organizations/:name`.
 - `frontend/src/routes/-workspace-views.tsx` renders `PublicUserProfilePage` with the legacy user card, tab/list anchors, two-column mode checkbox shell, and show-subtasks checkbox shell without inheriting private `/me` workspace controls.
 - `crates/server/src/lib.rs` reuses existing workspace profile, issue, pull-request, and member-project projections, then filters project-backed rows by the current viewer's READ ACL. Anonymous viewers see public projects only.
+- `YONA_ALLOW_ANONYMOUS_ACCESS=false` installs the global anonymous-access gate for app-runtime pages and non-auth `/api/v1` calls while preserving public auth/bootstrap/reset/verify/static entrypoints.
 
 ## Route Module Diet Note
 
@@ -24,5 +25,5 @@
 
 ## Status
 
-- Closed: public `/:user` profile shell, two-column/show-subtasks checkbox anchors, visible member-project list, organization-name redirect, missing-user 404, public email redaction for other viewers, authenticated user statistics counts, and app-owned legacy external user statistics/default-login/admin-user helpers.
-- Still open: global anonymous-access configuration toggle parity not already represented by project READ ACL, plus broad legacy external user create/export issue-list compatibility in the separate migrator/deferred scope.
+- Closed: public `/:user` profile shell, two-column/show-subtasks checkbox anchors, visible member-project list, organization-name redirect, missing-user 404, public email redaction for other viewers, authenticated user statistics counts, global anonymous-access configuration gate, and app-owned legacy external user statistics/default-login/admin-user/create/user-issues helpers.
+- Still open: no first-priority user-workspace app-runtime follow-up is tracked here; OAuth/LDAP and broader migrator hardening stay in their dedicated deferred provenance.

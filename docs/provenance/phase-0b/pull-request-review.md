@@ -171,8 +171,6 @@
 
 ## Explicit Phase 4 Deferrals
 
-- multi-line ranged inline review selection polish
-- diff composition and PR event timeline
 - legacy external `/-_-api/v1/**` compatibility
 
-이 항목들은 bounded exemplar 밖의 `deferred` scope다.
+Side-aware single-line and same-file text-selection multi-line ranged review comments, diff composition buckets, selected-commit/outdated markers, and PR event timeline anchors are now covered by the app-runtime PR read/mutation surfaces. Legacy external API compatibility remains outside the Rust app server and belongs to separate migrator/export/import scope if reopened.
