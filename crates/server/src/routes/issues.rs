@@ -19,26 +19,25 @@ use super::utils::{
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
-    absolute_app_url, deserialize_i64_vec_from_strings_or_numbers,
+    absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
     direct_status_from_connect_error, dispatch_issue_webhooks, form_bool, form_value,
     headers_with_form_csrf, internal_error,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_css,
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    normalize_issue_label_color, parse_attachment_ids, persistence, project_read_allowed,
-    redirect_to, require_authenticated_user, require_project_authorization, require_project_read,
+    normalize_issue_label_color, parse_attachment_ids, parse_milestone_due_date,
+    parse_rest_query_i64, parse_rest_query_u32, persistence, project_read_allowed, redirect_to,
+    require_authenticated_user, require_project_authorization, require_project_read,
     require_project_resource_create, require_session, require_valid_csrf,
     rest_issue_detail_response_from_record_with_sharer_flags_and_references,
-    rest_issue_list_item_from_record, rest_issue_mutation_input_from_body, rest_json_response,
-    rest_owned_view, rest_project_issue_filter_from_query, session::SessionManager,
+    rest_issue_list_item_from_record, rest_json_response, rest_owned_view, session::SessionManager,
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
-    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueMutationBody,
-    RestIssueStateBody, RestIssueWeightResponse, RestOrganizationIssueListResponse,
-    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssuesQuery,
-    RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    RestIssueAssignableUsersQuery, RestIssueDetailResponse, RestIssueWeightResponse,
+    RestOrganizationIssueListResponse, RestProjectIssueListResponse, RestRouteError,
+    RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
 
 #[derive(Default, Deserialize)]
@@ -89,6 +88,181 @@ struct RestMassUpdateIssuesBody {
     )]
     remove_label_ids: Vec<i64>,
     state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestProjectIssuesQuery {
+    assignee_id: Option<i64>,
+    assignee_login_id: String,
+    author_login_id: String,
+    pub(crate) format: String,
+    label_ids: Vec<i64>,
+    milestone_id: Option<i64>,
+    pub(crate) page_num: u32,
+    state: String,
+}
+
+impl RestProjectIssuesQuery {
+    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "assigneeId" => query.assignee_id = Some(parse_rest_query_i64(&value)?),
+                "assigneeLoginId" => query.assignee_login_id = value,
+                "authorLoginId" => query.author_login_id = value,
+                "format" => query.format = value,
+                "labelIds" | "labelIds[]" => {
+                    let parsed = parse_rest_query_i64(&value)?;
+                    if parsed > 0 {
+                        query.label_ids.push(parsed);
+                    }
+                }
+                "milestoneId" => {
+                    let parsed = parse_rest_query_i64(&value)?;
+                    query.milestone_id = (parsed > 0).then_some(parsed);
+                }
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "state" => query.state = value,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestOrganizationIssuesQuery {
+    assignee_id: i64,
+    author_id: i64,
+    filter: String,
+    items_per_page: u32,
+    mention_id: i64,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    project_names: Vec<String>,
+    state: String,
+}
+
+impl RestOrganizationIssuesQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "assigneeId" => query.assignee_id = parse_rest_query_i64(&value)?,
+                "authorId" => query.author_id = parse_rest_query_i64(&value)?,
+                "filter" => query.filter = value,
+                "itemsPerPage" => query.items_per_page = parse_rest_query_u32(&value)?,
+                "mentionId" => query.mention_id = parse_rest_query_i64(&value)?,
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "projectNames" | "projectNames[]" => {
+                    if !value.trim().is_empty() {
+                        query.project_names.push(value);
+                    }
+                }
+                "state" => query.state = value,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueMutationBody {
+    assignee_login_id: String,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    attachment_ids: Vec<i64>,
+    body_markdown: String,
+    due_date: String,
+    is_draft: bool,
+    is_publish: bool,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    label_ids: Vec<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    milestone_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    parent_issue_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    refer_comment_id: Option<i64>,
+    title: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueStateBody {
+    state: String,
+}
+
+fn rest_issue_mutation_input_from_body(
+    body: RestIssueMutationBody,
+) -> Result<persistence::IssueMutationInput, ConnectError> {
+    Ok(persistence::IssueMutationInput {
+        assignee_login_id: (!body.assignee_login_id.trim().is_empty())
+            .then(|| body.assignee_login_id.trim().to_string()),
+        attachment_ids: body.attachment_ids,
+        body_markdown: body.body_markdown,
+        due_date: parse_milestone_due_date(&body.due_date)?,
+        is_draft: body.is_draft,
+        is_publish: body.is_publish,
+        label_ids: body.label_ids,
+        milestone_id: body.milestone_id.filter(|value| *value > 0),
+        parent_issue_id: body.parent_issue_id.filter(|value| *value > 0),
+        title: body.title.trim().to_string(),
+    })
+}
+
+pub(crate) fn rest_project_issue_filter_from_query(
+    query: RestProjectIssuesQuery,
+) -> persistence::IssueListFilter {
+    persistence::IssueListFilter {
+        assignee_id: query.assignee_id,
+        assignee_login_id: (!query.assignee_login_id.trim().is_empty())
+            .then(|| query.assignee_login_id.trim().to_string()),
+        author_login_id: (!query.author_login_id.trim().is_empty())
+            .then(|| query.author_login_id.trim().to_string()),
+        draft_author_login_id: None,
+        label_ids: query.label_ids,
+        milestone_id: query.milestone_id.filter(|value| *value > 0),
+        page_num: query.page_num.max(1),
+        state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
+    }
 }
 
 #[derive(Default, Deserialize)]

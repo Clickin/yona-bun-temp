@@ -46,10 +46,11 @@ pub(crate) use routes::{
     rest_commit_thread_from_record, rest_delete_project_member,
     rest_delete_pull_request_source_branch,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
-    rest_project_menu_settings, rest_read_direct_issue_form_options,
-    rest_restore_pull_request_source_branch, rest_review_thread_filter, rest_toggle_project_watch,
+    rest_project_issue_filter_from_query, rest_project_menu_settings,
+    rest_read_direct_issue_form_options, rest_restore_pull_request_source_branch,
+    rest_review_thread_filter, rest_toggle_project_watch,
     rest_update_commit_discussion_thread_state, rest_update_pull_request_thread_state,
-    uploaded_file_path, RestReviewThread, RestReviewThreadListQuery,
+    uploaded_file_path, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -2914,104 +2915,6 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestProjectIssuesQuery {
-    assignee_id: Option<i64>,
-    assignee_login_id: String,
-    author_login_id: String,
-    format: String,
-    label_ids: Vec<i64>,
-    milestone_id: Option<i64>,
-    page_num: u32,
-    state: String,
-}
-
-impl RestProjectIssuesQuery {
-    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
-        let mut query = Self::default();
-        let Some(raw_query) = raw_query else {
-            return Ok(query);
-        };
-
-        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
-            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
-            let key = decode_query_component(raw_key);
-            let value = decode_query_component(raw_value);
-            match key.as_str() {
-                "assigneeId" => query.assignee_id = Some(parse_rest_query_i64(&value)?),
-                "assigneeLoginId" => query.assignee_login_id = value,
-                "authorLoginId" => query.author_login_id = value,
-                "format" => query.format = value,
-                "labelIds" | "labelIds[]" => {
-                    let parsed = parse_rest_query_i64(&value)?;
-                    if parsed > 0 {
-                        query.label_ids.push(parsed);
-                    }
-                }
-                "milestoneId" => {
-                    let parsed = parse_rest_query_i64(&value)?;
-                    query.milestone_id = (parsed > 0).then_some(parsed);
-                }
-                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
-                "state" => query.state = value,
-                _ => {}
-            }
-        }
-
-        Ok(query)
-    }
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestOrganizationIssuesQuery {
-    assignee_id: i64,
-    author_id: i64,
-    filter: String,
-    items_per_page: u32,
-    mention_id: i64,
-    order_by: String,
-    order_dir: String,
-    page_num: u32,
-    project_names: Vec<String>,
-    state: String,
-}
-
-impl RestOrganizationIssuesQuery {
-    pub(crate) fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
-        let mut query = Self::default();
-        let Some(raw_query) = raw_query else {
-            return Ok(query);
-        };
-
-        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
-            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
-            let key = decode_query_component(raw_key);
-            let value = decode_query_component(raw_value);
-            match key.as_str() {
-                "assigneeId" => query.assignee_id = parse_rest_query_i64(&value)?,
-                "authorId" => query.author_id = parse_rest_query_i64(&value)?,
-                "filter" => query.filter = value,
-                "itemsPerPage" => query.items_per_page = parse_rest_query_u32(&value)?,
-                "mentionId" => query.mention_id = parse_rest_query_i64(&value)?,
-                "orderBy" => query.order_by = value,
-                "orderDir" => query.order_dir = value,
-                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
-                "projectNames" | "projectNames[]" => {
-                    if !value.trim().is_empty() {
-                        query.project_names.push(value);
-                    }
-                }
-                "state" => query.state = value,
-                _ => {}
-            }
-        }
-
-        Ok(query)
-    }
-}
-
 fn parse_rest_query_i64(value: &str) -> Result<i64, RestRouteError> {
     if value.trim().is_empty() {
         return Ok(0);
@@ -3082,83 +2985,6 @@ pub(crate) struct RestDirectIssueFormQuery {
     )]
     comment_id: Option<i64>,
     mine: bool,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestIssueMutationBody {
-    assignee_login_id: String,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    attachment_ids: Vec<i64>,
-    body_markdown: String,
-    due_date: String,
-    is_draft: bool,
-    is_publish: bool,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
-    )]
-    label_ids: Vec<i64>,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_optional_i64_from_string_or_number"
-    )]
-    milestone_id: Option<i64>,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_optional_i64_from_string_or_number"
-    )]
-    parent_issue_id: Option<i64>,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_optional_i64_from_string_or_number"
-    )]
-    refer_comment_id: Option<i64>,
-    title: String,
-}
-
-#[derive(Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct RestIssueStateBody {
-    state: String,
-}
-
-fn rest_issue_mutation_input_from_body(
-    body: RestIssueMutationBody,
-) -> Result<persistence::IssueMutationInput, ConnectError> {
-    Ok(persistence::IssueMutationInput {
-        assignee_login_id: (!body.assignee_login_id.trim().is_empty())
-            .then(|| body.assignee_login_id.trim().to_string()),
-        attachment_ids: body.attachment_ids,
-        body_markdown: body.body_markdown,
-        due_date: parse_milestone_due_date(&body.due_date)?,
-        is_draft: body.is_draft,
-        is_publish: body.is_publish,
-        label_ids: body.label_ids,
-        milestone_id: body.milestone_id.filter(|value| *value > 0),
-        parent_issue_id: body.parent_issue_id.filter(|value| *value > 0),
-        title: body.title.trim().to_string(),
-    })
-}
-
-fn rest_project_issue_filter_from_query(
-    query: RestProjectIssuesQuery,
-) -> persistence::IssueListFilter {
-    persistence::IssueListFilter {
-        assignee_id: query.assignee_id,
-        assignee_login_id: (!query.assignee_login_id.trim().is_empty())
-            .then(|| query.assignee_login_id.trim().to_string()),
-        author_login_id: (!query.author_login_id.trim().is_empty())
-            .then(|| query.author_login_id.trim().to_string()),
-        draft_author_login_id: None,
-        label_ids: query.label_ids,
-        milestone_id: query.milestone_id.filter(|value| *value > 0),
-        page_num: query.page_num.max(1),
-        state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
-    }
 }
 
 pub(crate) async fn direct_update_review_thread_state(
@@ -3232,7 +3058,7 @@ fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {
     }
 }
 
-fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectError> {
+pub(crate) fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectError> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
         return Ok(None);

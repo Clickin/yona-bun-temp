@@ -464,6 +464,7 @@ async fn rest_issue_create_update_persists_legacy_due_date() {
 
 #[tokio::test]
 async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
+    // Guards legacy issue-list query parsing and row payloads while route ownership is split.
     let (app, _, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
