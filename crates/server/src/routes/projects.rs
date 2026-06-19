@@ -17,22 +17,21 @@ use crate::{
     direct_create_project_milestone, direct_delete_project_milestone,
     direct_delete_project_pushed_branch, direct_render_markdown, direct_toggle_project_watch,
     direct_update_project_milestone, direct_update_project_milestone_state,
-    direct_update_project_overview, format_project_date_label, internal_error,
-    legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
-    legacy_external_authenticated_user_id, legacy_external_create_milestones,
-    legacy_external_watchers, legacy_json_find_value, map_project_scope,
-    markdown_mention_references, normalize_identifier, normalize_issue_label_color, persistence,
-    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
-    project_read_allowed, project_update_allowed, repository_provisioning_lock,
-    require_authenticated_user, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, rest_json_response,
-    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
-    rest_require_project_code_read, rewrite_project_readme_markdown_links,
-    send_project_transfer_request_mail, session::SessionManager, yona_data_root, ConnectError,
-    Context, DirectMarkdownRenderBody, GitPushCommitRecord, LegacyExternalWatchersQuery,
-    PilotBackend, PilotRepository, PilotServiceImpl, ProjectCreatableResource,
-    ProjectHistoryCommitRecord, RestIssueAssignableUsersQuery, RestMentionReferenceMetadata,
-    RestProjectDeleteResponse, RestProjectOverviewBody, RestRouteError,
+    format_project_date_label, internal_error, legacy_external_api_auth_error_response,
+    legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
+    legacy_external_create_milestones, legacy_external_watchers, legacy_json_find_value,
+    map_project_scope, markdown_mention_references, normalize_identifier,
+    normalize_issue_label_color, persistence, project_detail_from_record,
+    project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
+    project_update_allowed, repository_provisioning_lock, require_authenticated_user,
+    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
+    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
+    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context,
+    DirectMarkdownRenderBody, LegacyExternalWatchersQuery, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
+    RestIssueAssignableUsersQuery, RestMentionReferenceMetadata, RestProjectDeleteResponse,
+    RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, can_update_organization,
@@ -439,6 +438,12 @@ struct RestProjectChangeVcsResponse {
     viewer_can_change: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     redirect_path: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectOverviewBody {
+    overview: String,
 }
 
 #[derive(Serialize)]
@@ -3323,7 +3328,7 @@ async fn rest_update_project_reviewer_settings(
         .map_err(RestRouteError::from_connect_error)
 }
 
-pub(crate) async fn rest_update_project_overview(
+async fn rest_update_project_overview(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -3342,6 +3347,32 @@ pub(crate) async fn rest_update_project_overview(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn direct_update_project_overview(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Ok(body) = serde_json::from_slice::<RestProjectOverviewBody>(&body) else {
+        return RestRouteError::bad_request("overview is required").into_response();
+    };
+    let overview = body.overview.trim().to_string();
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
+        Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
+        Err(error) => error.into_response(),
+    }
 }
 
 pub(crate) async fn rest_delete_project(

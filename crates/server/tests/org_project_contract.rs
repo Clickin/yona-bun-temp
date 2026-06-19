@@ -1961,6 +1961,7 @@ async fn rest_project_container_includes_legacy_project_home_commit_history_rows
 }
 
 #[tokio::test]
+// Guards project overview REST/direct route ownership in the projects route module.
 async fn update_project_overview_returns_refreshed_project_container() {
     let app = build_app().await;
 

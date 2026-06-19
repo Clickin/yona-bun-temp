@@ -49,8 +49,8 @@ pub(crate) use routes::{
     rest_project_menu_settings, rest_read_direct_issue_form_options,
     rest_restore_pull_request_source_branch, rest_review_thread_filter, rest_toggle_project_watch,
     rest_update_commit_discussion_thread_state, rest_update_issue_comment,
-    rest_update_project_overview, rest_update_pull_request_thread_state, uploaded_file_path,
-    RestReviewThread, RestReviewThreadListQuery,
+    rest_update_pull_request_thread_state, uploaded_file_path, RestReviewThread,
+    RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -58,7 +58,6 @@ pub mod session;
 mod smart_http;
 mod svn_protocol;
 
-use axum::body::Bytes;
 use axum::extract::{Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
@@ -110,7 +109,7 @@ use yona_rust_domain::{
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 use yona_rust_integrations::{deliver, OutboundMail};
-use yona_rust_vcs::{CodeFileRecord, GitPushCommitRecord, ProjectHistoryCommitRecord, VcsError};
+use yona_rust_vcs::{CodeFileRecord, ProjectHistoryCommitRecord, VcsError};
 
 pub use yona_rust_pilot_protocol as generated;
 
@@ -1367,32 +1366,6 @@ fn site_export_filename_stamp() -> String {
         .unwrap_or_else(|_| "0".to_string())
 }
 
-pub(crate) async fn direct_update_project_overview(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let Ok(body) = serde_json::from_slice::<RestProjectOverviewBody>(&body) else {
-        return RestRouteError::bad_request("overview is required").into_response();
-    };
-    let overview = body.overview.trim().to_string();
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
-        Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
 async fn direct_legacy_leave_project(
     mut headers: HeaderMap,
     owner_name: String,
@@ -1904,12 +1877,6 @@ struct RestProjectIssueReferencesResponse {
 struct RestProjectDeleteResponse {
     ok: bool,
     redirect_path: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RestProjectOverviewBody {
-    overview: String,
 }
 
 #[derive(Serialize)]
