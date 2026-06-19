@@ -617,6 +617,263 @@ pub(crate) async fn organization_admin_read(
     ))
 }
 
+pub(crate) async fn organization_member_add(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<AddOrganizationMemberRequestView<'static>>,
+) -> Result<(OrganizationAdminView, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(ConnectError::permission_denied(
+            "organization update is not allowed",
+        ));
+    }
+
+    let target_user = repository
+        .find_user_by_login_id(request.login_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::invalid_argument("organization member is unknown"))?;
+    if target_user.is_guest {
+        return Err(ConnectError::invalid_argument(
+            "guest users cannot be added to organizations directly",
+        ));
+    }
+    repository
+        .add_organization_membership(authorization.organization.id, target_user.id, "org_member")
+        .await
+        .map_err(internal_error)?;
+    repository
+        .delete_organization_enrollment_request(authorization.organization.id, target_user.id)
+        .await
+        .map_err(internal_error)?;
+
+    let refreshed = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    Ok((
+        build_organization_admin_response(repository, &refreshed).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_member_role_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateOrganizationMemberRoleRequestView<'static>>,
+) -> Result<(OrganizationAdminView, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    if request.role != "org_admin" && request.role != "org_member" {
+        return Err(ConnectError::invalid_argument(
+            "organization role is invalid",
+        ));
+    }
+
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(ConnectError::permission_denied(
+            "organization update is not allowed",
+        ));
+    }
+
+    let directory = repository
+        .read_organization_members(request.organization_name)
+        .await
+        .map_err(internal_error)?;
+    let current_member = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == request.user_id);
+    if let Some(current_member) = current_member {
+        let admin_count = directory
+            .members
+            .iter()
+            .filter(|member| member.role == "org_admin")
+            .count();
+        if current_member.role == "org_admin" && request.role == "org_member" && admin_count == 1 {
+            return Err(ConnectError::invalid_argument(
+                "organization requires at least one admin",
+            ));
+        }
+        repository
+            .add_organization_membership(
+                authorization.organization.id,
+                request.user_id,
+                request.role,
+            )
+            .await
+            .map_err(internal_error)?;
+    }
+
+    let refreshed = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    Ok((
+        build_organization_admin_response(repository, &refreshed).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_member_delete(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<DeleteOrganizationMemberRequestView<'static>>,
+) -> Result<(OrganizationAdminView, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    let can_update = can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    );
+    if !can_update && user_id != request.user_id {
+        return Err(ConnectError::permission_denied(
+            "organization update is not allowed",
+        ));
+    }
+
+    let directory = repository
+        .read_organization_members(request.organization_name)
+        .await
+        .map_err(internal_error)?;
+    if let Some(current_member) = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == request.user_id)
+    {
+        let admin_count = directory
+            .members
+            .iter()
+            .filter(|member| member.role == "org_admin")
+            .count();
+        if current_member.role == "org_admin" && admin_count == 1 {
+            return Err(ConnectError::invalid_argument(
+                "organization requires at least one admin",
+            ));
+        }
+        repository
+            .delete_organization_membership(authorization.organization.id, request.user_id)
+            .await
+            .map_err(internal_error)?;
+    }
+
+    let refreshed = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    Ok((
+        build_organization_admin_response(repository, &refreshed).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn organization_enrollment_accept(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<AcceptOrganizationEnrollmentRequestView<'static>>,
+) -> Result<(OrganizationAdminView, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(ConnectError::permission_denied(
+            "organization update is not allowed",
+        ));
+    }
+
+    repository
+        .add_organization_membership(authorization.organization.id, request.user_id, "org_member")
+        .await
+        .map_err(internal_error)?;
+    repository
+        .delete_organization_enrollment_request(authorization.organization.id, request.user_id)
+        .await
+        .map_err(internal_error)?;
+
+    let refreshed = repository
+        .read_organization_authorization(request.organization_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    Ok((
+        build_organization_admin_response(repository, &refreshed).await?,
+        ctx,
+    ))
+}
+
 pub(crate) async fn project_milestone_create(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -2069,8 +2326,7 @@ pub(crate) async fn rest_add_organization_member(
         ..Default::default()
     };
     let request = rest_owned_view::<AddOrganizationMemberRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .add_organization_member(Context::new(headers), request)
+    let (payload, ctx) = organization_member_add(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2090,8 +2346,7 @@ pub(crate) async fn rest_update_organization_member_role(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateOrganizationMemberRoleRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .update_organization_member_role(Context::new(headers), request)
+    let (payload, ctx) = organization_member_role_update(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2109,8 +2364,7 @@ pub(crate) async fn rest_delete_organization_member(
         ..Default::default()
     };
     let request = rest_owned_view::<DeleteOrganizationMemberRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .delete_organization_member(Context::new(headers), request)
+    let (payload, ctx) = organization_member_delete(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2128,8 +2382,7 @@ pub(crate) async fn rest_accept_organization_enrollment(
         ..Default::default()
     };
     let request = rest_owned_view::<AcceptOrganizationEnrollmentRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .accept_organization_enrollment(Context::new(headers), request)
+    let (payload, ctx) = organization_enrollment_accept(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))

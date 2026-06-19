@@ -442,6 +442,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   duplicate-name checks, update authorization, and detail projection behavior
   covered by
   `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
+- 2026-06-20 build/check diet note: organization member add, member role
+  update, member delete, and enrollment accept RPC logic moved from
+  `PilotServiceImpl` in monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/routes/projects.rs`; service methods remain compatibility
+  delegates while REST organization member/enrollment mutation handlers call the
+  project route-owned helpers directly, preserving admin authorization, guest
+  member rejection, last-admin protection, self-leave member removal, enrollment
+  cleanup, and refreshed admin projection behavior covered by
+  `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
 
 ## Wave 0 Exit Snapshot
 
