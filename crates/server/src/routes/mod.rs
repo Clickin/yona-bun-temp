@@ -29,9 +29,7 @@ pub(crate) use auth::routes as auth_routes;
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;
 pub(crate) use boards::{
-    posting_can_create, posting_can_update, read_posting_access,
-    read_posting_comment_create_access, rest_create_posting_comment, rest_delete_posting_comment,
-    rest_update_posting_comment,
+    posting_can_create, posting_can_update, read_posting_access, read_posting_comment_create_access,
 };
 pub(crate) use code::rest_routes as code_rest_routes;
 pub(crate) use code::rest_update_commit_discussion_thread_state;

@@ -213,6 +213,7 @@ async fn create_project_in_existing_organization(
 }
 
 #[tokio::test]
+// Guards the organization-board route-module DTO and mapper split.
 async fn organization_board_contract_lists_visible_cross_project_posts_without_notice_pin() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

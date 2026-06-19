@@ -1,37 +1,305 @@
 use axum::{
     extract::{Form, Path, RawQuery},
     http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
     routing::{delete, get, patch, post},
     Json, Router,
 };
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use yona_rust_vcs::VcsError;
 
 use crate::{
-    code_browser_error, direct_create_posting_comment, direct_delete_posting_comment,
-    direct_update_posting_comment, escape_html_attr, escape_html_text, internal_error,
-    issue_attachment_from_record, issue_label_from_record,
-    legacy_external_create_board_posting_comment, legacy_external_create_board_postings,
-    legacy_external_update_board_posting_content, legacy_external_update_board_posting_labels,
-    legacy_update_posting_comment, markdown_issue_references_for_project,
-    markdown_mention_references, normalize_identifier, persistence, project_read_allowed,
-    project_resource_create_allowed, project_update_allowed, require_authenticated_user,
-    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    rest_board_label_from_record, rest_issue_reference_metadata_from_resolved,
-    rest_mention_reference_metadata_from_resolved,
-    rest_post_detail_response_from_record_with_access_issue_references,
-    rest_post_detail_response_from_record_with_repository_issue_references,
-    rest_post_list_item_from_record, rest_post_mutation_input_from_body,
-    rewrite_project_readme_markdown_links, session::SessionManager,
-    visible_projects_for_organization, yona_data_root, ConnectError, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, ProjectCreatableResource,
-    RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestOrganizationBoardProjectOption,
-    RestOrganizationBoardsQuery, RestOrganizationBoardsResponse, RestPostCommentBody,
-    RestPostDefaultPermissions, RestPostDetailResponse, RestPostFormOptionsQuery,
-    RestPostMutationBody, RestPostMutationResponse, RestPostOnlineCommitOptions,
-    RestPostOnlineCommitResponse, RestProjectPostFormOptionsResponse, RestProjectPostsQuery,
-    RestProjectPostsResponse, RestRouteError,
+    code_browser_error, decode_query_component, direct_post_comment_body, gravatar_url,
+    headers_with_form_csrf, internal_error, legacy_external_create_board_posting_comment,
+    legacy_external_create_board_postings, legacy_external_update_board_posting_content,
+    legacy_external_update_board_posting_labels, legacy_update_posting_comment,
+    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
+    optional_i64_string, parse_rest_query_i64, parse_rest_query_u32, persistence,
+    project_resource_create_allowed, project_update_allowed, redirect_to,
+    require_authenticated_user, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, rest_board_label_from_record,
+    rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
+    rest_post_mutation_input_from_body, session::SessionManager, visible_projects_for_organization,
+    yona_data_root, ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
+    PilotRepository, ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
+    RestMentionReferenceMetadata, RestPostCommentBody, RestPostMutationBody, RestRouteError,
 };
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectPostsQuery {
+    filter: String,
+    label_ids: Vec<i64>,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+}
+
+impl RestProjectPostsQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "filter" => query.filter = value,
+                "labelIds" | "labelIds[]" => {
+                    if !value.trim().is_empty() {
+                        query.label_ids.push(parse_rest_query_i64(&value)?);
+                    }
+                }
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
+}
+
+#[derive(Default)]
+struct RestPostFormOptionsQuery {
+    branch: Option<String>,
+    edit: bool,
+    issue_template: bool,
+    path: Option<String>,
+}
+
+impl RestPostFormOptionsQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "branch" => query.branch = Some(value),
+                "edit" => query.edit = true,
+                "issueTemplate" | "issueTemplate[]" | "issue_template" => {
+                    query.issue_template = true;
+                }
+                "path" => query.path = Some(value),
+                _ => {}
+            }
+        }
+        Ok(query)
+    }
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestOrganizationBoardsQuery {
+    filter: String,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    project_names: Vec<String>,
+}
+
+impl RestOrganizationBoardsQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "filter" => query.filter = value,
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "projectNames" | "projectNames[]" => {
+                    if !value.trim().is_empty() {
+                        query.project_names.push(value);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestBoardAttachment {
+    id: String,
+    mime_type: String,
+    name: String,
+    size: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostComment {
+    attachments: Vec<RestBoardAttachment>,
+    author_id: String,
+    author_label: String,
+    author_login_id: String,
+    contents_html: String,
+    contents_markdown: String,
+    created_label: String,
+    id: String,
+    issue_references: Vec<RestIssueReferenceMetadata>,
+    mention_references: Vec<RestMentionReferenceMetadata>,
+    parent_comment_id: String,
+    via_email: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostListItem {
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    created_label: String,
+    labels: Vec<RestBoardLabel>,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+    updated_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostDetailResponse {
+    attachments: Vec<RestBoardAttachment>,
+    author_id: String,
+    author_label: String,
+    author_login_id: String,
+    body_html: String,
+    body_markdown: String,
+    comment_count: u32,
+    comments: Vec<RestPostComment>,
+    created_label: String,
+    history_html: String,
+    history_markdown: String,
+    id: String,
+    issue_references: Vec<RestIssueReferenceMetadata>,
+    mention_references: Vec<RestMentionReferenceMetadata>,
+    is_watching: bool,
+    labels: Vec<RestBoardLabel>,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+    updated_label: String,
+    permissions: RestPostPermissions,
+    watcher_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostPermissions {
+    can_comment: bool,
+    can_create: bool,
+    can_delete: bool,
+    can_read: bool,
+    can_set_notice: bool,
+    can_watch: bool,
+    can_update: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostDefaultPermissions {
+    can_attach_files: bool,
+    can_create: bool,
+    can_mark_notice: bool,
+    can_mark_readme: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectPostFormOptionsResponse {
+    can_attach_files: bool,
+    can_mark_notice: bool,
+    can_mark_readme: bool,
+    default_permissions: RestPostDefaultPermissions,
+    online_commit: RestPostOnlineCommitOptions,
+    labels: Vec<RestBoardLabel>,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostOnlineCommitOptions {
+    branch: String,
+    edit: bool,
+    issue_template: bool,
+    path: String,
+    prepared_body_markdown: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostOnlineCommitResponse {
+    branch: String,
+    commit_id: Option<String>,
+    online_commit: bool,
+    path: String,
+    redirect_href: String,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum RestPostMutationResponse {
+    Detail(RestPostDetailResponse),
+    OnlineCommit(RestPostOnlineCommitResponse),
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectPostsResponse {
+    items: Vec<RestPostListItem>,
+    notices: Vec<RestPostListItem>,
+    owner_name: String,
+    page_num: u32,
+    page_size: u32,
+    project_name: String,
+    readme: Option<RestPostDetailResponse>,
+    total_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationBoardProjectOption {
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationBoardsResponse {
+    items: Vec<RestPostListItem>,
+    organization_name: String,
+    page_num: u32,
+    page_size: u32,
+    total_count: u32,
+    visible_projects: Vec<RestOrganizationBoardProjectOption>,
+}
 
 pub(crate) fn rest_routes(
     session_manager: SessionManager,
@@ -624,6 +892,328 @@ fn normalize_online_commit_line_endings(contents: &str, line_ending: &str) -> St
     }
 }
 
+fn rest_board_attachment_from_record(
+    attachment: &persistence::IssueAttachmentRecord,
+) -> RestBoardAttachment {
+    RestBoardAttachment {
+        id: attachment.id.to_string(),
+        mime_type: attachment.mime_type.clone(),
+        name: attachment.name.clone(),
+        size: attachment.size,
+    }
+}
+
+fn rest_post_comment_from_record(
+    comment: &persistence::PostingCommentRecord,
+    _base_path: &str,
+    _owner_name: &str,
+    _project_name: &str,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> RestPostComment {
+    RestPostComment {
+        attachments: comment
+            .attachments
+            .iter()
+            .map(rest_board_attachment_from_record)
+            .collect(),
+        author_id: optional_i64_string(comment.author_id),
+        author_label: comment.author_label.clone(),
+        author_login_id: comment.author_login_id.clone(),
+        contents_html: String::new(),
+        contents_markdown: comment.contents_markdown.clone(),
+        created_label: comment.created_label.clone(),
+        id: comment.id.to_string(),
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
+            .collect(),
+        parent_comment_id: optional_i64_string(comment.parent_comment_id),
+        via_email: comment.via_email,
+    }
+}
+
+fn rest_post_list_item_from_record(
+    item: &persistence::ProjectPostingListItemRecord,
+) -> RestPostListItem {
+    RestPostListItem {
+        author_avatar_url: gravatar_url(&item.author_email_address),
+        author_label: item.author_label.clone(),
+        author_login_id: item.author_login_id.clone(),
+        comment_count: item.comment_count,
+        created_label: item.created_label.clone(),
+        labels: item
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        notice: item.notice,
+        owner_name: item.owner_name.clone(),
+        post_number: item.post_number.to_string(),
+        project_name: item.project_name.clone(),
+        readme: item.readme,
+        title: item.title.clone(),
+        updated_label: item.updated_label.clone(),
+    }
+}
+
+async fn rest_post_detail_response_from_record_with_repository_issue_references(
+    repository: &PilotRepository,
+    posting: &persistence::PostingRecord,
+    actor_id: Option<i64>,
+    base_path: &str,
+    viewer_can_create: bool,
+    viewer_can_update: bool,
+    viewer_can_delete: bool,
+    viewer_can_comment: bool,
+    viewer_can_set_notice: bool,
+    viewer_can_watch: bool,
+) -> Result<RestPostDetailResponse, ConnectError> {
+    let authorization = require_project_read(
+        repository,
+        &posting.owner_name,
+        &posting.project_name,
+        actor_id,
+    )
+    .await?;
+    rest_post_detail_response_from_record_with_access_issue_references(
+        repository,
+        &authorization,
+        posting,
+        actor_id,
+        base_path,
+        viewer_can_create,
+        viewer_can_update,
+        viewer_can_delete,
+        viewer_can_comment,
+        viewer_can_set_notice,
+        viewer_can_watch,
+    )
+    .await
+}
+
+async fn rest_post_detail_response_from_record_with_access_issue_references(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    posting: &persistence::PostingRecord,
+    actor_id: Option<i64>,
+    base_path: &str,
+    viewer_can_create: bool,
+    viewer_can_update: bool,
+    viewer_can_delete: bool,
+    viewer_can_comment: bool,
+    viewer_can_set_notice: bool,
+    viewer_can_watch: bool,
+) -> Result<RestPostDetailResponse, ConnectError> {
+    let mut markdowns = vec![
+        posting.body_markdown.as_str(),
+        posting.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        posting
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references =
+        markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
+            .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
+    Ok(rest_post_detail_response_from_record_with_references(
+        posting,
+        base_path,
+        viewer_can_create,
+        viewer_can_update,
+        viewer_can_delete,
+        viewer_can_comment,
+        viewer_can_set_notice,
+        viewer_can_watch,
+        &issue_references,
+        &mention_references,
+    ))
+}
+
+fn rest_post_detail_response_from_record_with_references(
+    posting: &persistence::PostingRecord,
+    base_path: &str,
+    viewer_can_create: bool,
+    viewer_can_update: bool,
+    viewer_can_delete: bool,
+    viewer_can_comment: bool,
+    viewer_can_set_notice: bool,
+    viewer_can_watch: bool,
+    issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
+) -> RestPostDetailResponse {
+    RestPostDetailResponse {
+        attachments: posting
+            .attachments
+            .iter()
+            .map(rest_board_attachment_from_record)
+            .collect(),
+        author_id: optional_i64_string(posting.author_id),
+        author_label: posting.author_label.clone(),
+        author_login_id: posting.author_login_id.clone(),
+        body_html: String::new(),
+        body_markdown: posting.body_markdown.clone(),
+        comment_count: posting.comment_count,
+        comments: posting
+            .comments
+            .iter()
+            .map(|comment| {
+                rest_post_comment_from_record(
+                    comment,
+                    base_path,
+                    &posting.owner_name,
+                    &posting.project_name,
+                    issue_references,
+                    mention_references,
+                )
+            })
+            .collect(),
+        created_label: posting.created_label.clone(),
+        history_html: String::new(),
+        history_markdown: posting.history_markdown.clone(),
+        id: posting.id.to_string(),
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
+            .collect(),
+        is_watching: posting.is_watching,
+        labels: posting
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        notice: posting.notice,
+        owner_name: posting.owner_name.clone(),
+        post_number: posting.post_number.to_string(),
+        project_name: posting.project_name.clone(),
+        readme: posting.readme,
+        title: posting.title.clone(),
+        updated_label: posting.updated_label.clone(),
+        permissions: RestPostPermissions {
+            can_comment: viewer_can_comment,
+            can_create: viewer_can_create,
+            can_delete: viewer_can_delete,
+            can_read: true,
+            can_set_notice: viewer_can_set_notice,
+            can_watch: viewer_can_watch,
+            can_update: viewer_can_update,
+        },
+        watcher_count: posting.watcher_count,
+    }
+}
+
+async fn direct_create_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_create_posting_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        post_number,
+        direct_post_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(Json(detail)) => {
+            let fragment = detail
+                .comments
+                .iter()
+                .filter_map(|comment| comment.id.parse::<i64>().ok())
+                .max()
+                .map(|comment_id| format!("#comment-{comment_id}"))
+                .unwrap_or_default();
+            redirect_to(
+                &base_path,
+                &format!("/{owner}/{project}/post/{post_number}{fragment}"),
+            )
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    comment_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_update_posting_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        post_number,
+        comment_id,
+        direct_post_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/post/{post_number}#comment-{comment_id}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_delete_posting_comment(
+        headers,
+        owner.clone(),
+        project.clone(),
+        post_number,
+        comment_id,
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/post/{post_number}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
 fn rest_project_posting_filter_from_query(
     query: RestProjectPostsQuery,
 ) -> persistence::PostingListFilter {
@@ -644,7 +1234,7 @@ fn rest_project_posting_filter_from_query(
     }
 }
 
-pub(crate) async fn rest_list_project_posts(
+async fn rest_list_project_posts(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -723,7 +1313,7 @@ pub(crate) async fn rest_list_project_posts(
     }))
 }
 
-pub(crate) async fn rest_project_post_form_options(
+async fn rest_project_post_form_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -774,7 +1364,7 @@ pub(crate) async fn rest_project_post_form_options(
     }))
 }
 
-pub(crate) async fn rest_list_organization_boards(
+async fn rest_list_organization_boards(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationBoardsQuery,
@@ -849,7 +1439,7 @@ pub(crate) async fn rest_list_organization_boards(
     }))
 }
 
-pub(crate) async fn rest_read_posting_detail(
+async fn rest_read_posting_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -898,7 +1488,7 @@ pub(crate) async fn rest_read_posting_detail(
     ))
 }
 
-pub(crate) async fn rest_create_posting(
+async fn rest_create_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -996,7 +1586,7 @@ pub(crate) async fn rest_create_posting(
     )))
 }
 
-pub(crate) async fn rest_update_posting(
+async fn rest_update_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1088,7 +1678,7 @@ pub(crate) async fn rest_update_posting(
     ))
 }
 
-pub(crate) async fn rest_delete_posting(
+async fn rest_delete_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1139,7 +1729,7 @@ pub(crate) async fn rest_delete_posting(
     Ok(StatusCode::NO_CONTENT)
 }
 
-pub(crate) async fn rest_create_posting_comment(
+async fn rest_create_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1212,7 +1802,7 @@ pub(crate) async fn rest_create_posting_comment(
     ))
 }
 
-pub(crate) async fn rest_update_posting_comment(
+async fn rest_update_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1292,7 +1882,7 @@ pub(crate) async fn rest_update_posting_comment(
     ))
 }
 
-pub(crate) async fn rest_delete_posting_comment(
+async fn rest_delete_posting_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1369,7 +1959,7 @@ pub(crate) async fn rest_delete_posting_comment(
     ))
 }
 
-pub(crate) async fn rest_watch_posting(
+async fn rest_watch_posting(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
