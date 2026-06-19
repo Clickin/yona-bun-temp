@@ -11,6 +11,7 @@ use crate::{
     absolute_app_url, configured_env_value, configured_site_name, default_public_origin,
     default_smtp_from, escape_html_attr, escape_html_text, normalize_identifier,
     percent_encode_uri_component, persistence, runtime_config, site_name_from_option,
+    SmtpRuntimeConfig,
 };
 
 fn parse_mail_domain_csv(value: Option<&str>) -> Vec<String> {
@@ -59,6 +60,7 @@ pub struct NotificationMailSchedulerConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NotificationMailDeliveryConfig {
     pub allowed_domains: Vec<String>,
+    pub default_from: String,
     pub hide_address: bool,
     pub recipient_limit: Option<usize>,
     pub site_name: String,
@@ -68,6 +70,7 @@ impl Default for NotificationMailDeliveryConfig {
     fn default() -> Self {
         Self {
             allowed_domains: Vec::new(),
+            default_from: "noreply@yona.local".to_string(),
             hide_address: false,
             recipient_limit: None,
             site_name: "Yona".to_string(),
@@ -84,6 +87,7 @@ impl NotificationMailDeliveryConfig {
                     .as_deref()
                     .unwrap_or(&[]),
             ),
+            default_from: SmtpRuntimeConfig::from_startup(config).default_from(),
             hide_address: config.notification_mail_hide_address.unwrap_or(false),
             recipient_limit: config.notification_mail_recipient_limit,
             site_name: site_name_from_option(config.site_name.as_deref()),
@@ -95,6 +99,7 @@ impl NotificationMailDeliveryConfig {
             allowed_domains: parse_mail_domain_csv(
                 std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok().as_deref(),
             ),
+            default_from: default_smtp_from(),
             hide_address: notification_mail_hide_address_from_env(),
             recipient_limit: notification_mail_recipient_limit_from_env(),
             site_name: configured_site_name(),
@@ -720,7 +725,6 @@ pub async fn deliver_due_notification_mails_with_config(
     }
 
     let mut delivered = 0;
-    let default_from = default_smtp_from();
     for (item, recipients) in grouped {
         let target_url = if item.target_path.is_empty() {
             String::new()
@@ -736,7 +740,7 @@ pub async fn deliver_due_notification_mails_with_config(
         );
         for batch in notification_mail_batches(
             &recipients,
-            &default_from,
+            &delivery_config.default_from,
             &delivery_config.site_name,
             delivery_config.hide_address,
             delivery_config.recipient_limit,
@@ -751,7 +755,7 @@ pub async fn deliver_due_notification_mails_with_config(
                 deliver(OutboundMail {
                     bcc: bcc.clone(),
                     body: body.clone(),
-                    from: default_from.clone(),
+                    from: delivery_config.default_from.clone(),
                     html: true,
                     reply_to: reply_to.clone(),
                     subject: subject.clone(),

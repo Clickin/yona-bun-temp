@@ -52,7 +52,7 @@ pub struct AuthUiConfig {
 }
 
 impl AuthUiConfig {
-    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+    pub(crate) fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
             email_verification_enabled: config.auth_email_verification_enabled.unwrap_or(false),
             enabled_social_providers: auth_social_providers_from_option(
@@ -228,7 +228,7 @@ impl SiteUpdateConfig {
 }
 
 impl SmtpRuntimeConfig {
-    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+    pub(crate) fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
             domain: trimmed_option(config.smtp_domain.as_deref()).unwrap_or_default(),
             from: trimmed_option(config.smtp_from.as_deref()).unwrap_or_default(),

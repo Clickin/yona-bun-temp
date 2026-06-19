@@ -177,6 +177,13 @@ async fn response_text(response: Response<Body>) -> String {
     .unwrap()
 }
 
+fn restore_env_var(name: &str, value: Option<String>) {
+    match value {
+        Some(value) => std::env::set_var(name, value),
+        None => std::env::remove_var(name),
+    }
+}
+
 async fn response_json(response: Response<Body>) -> serde_json::Value {
     let status = response.status();
     let text = response_text(response).await;
@@ -930,6 +937,42 @@ fn notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mut
     );
 }
 
+#[test]
+fn notification_delivery_config_from_startup_uses_smtp_sender_snapshot_without_env_mutation() {
+    let current_dir = tempfile::tempdir().expect("temp dir");
+    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
+    let startup = load_startup_config(
+        BTreeMap::from([
+            (
+                "SMTP_FROM".to_string(),
+                "startup-notify@example.com".to_string(),
+            ),
+            (
+                "YONA_ALLOWED_MAIL_DOMAINS".to_string(),
+                "allowed.example.com".to_string(),
+            ),
+        ]),
+        current_dir.path(),
+    )
+    .expect("startup config");
+    std::env::set_var("SMTP_FROM", "request-time@example.com");
+
+    let delivery_config = NotificationMailDeliveryConfig::from_startup(&startup);
+    let smtp_from_after_conversion = std::env::var("SMTP_FROM").ok();
+    restore_env_var("SMTP_FROM", previous_smtp_from);
+
+    assert_eq!(delivery_config.default_from, "startup-notify@example.com");
+    assert_eq!(
+        delivery_config.allowed_domains,
+        vec!["allowed.example.com".to_string()]
+    );
+    assert_eq!(
+        smtp_from_after_conversion.as_deref(),
+        Some("request-time@example.com"),
+        "notification delivery config conversion must not mutate process env"
+    );
+}
+
 #[tokio::test]
 // Guards notification mail reuse of route-utils-owned public-origin, URL, URI, and SMTP helpers.
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
@@ -1400,6 +1443,8 @@ async fn notification_contract_review_comment_mail_replies_to_parent_thread_like
 async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     let previous_allowed_domains = std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok();
+    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
+    std::env::set_var("SMTP_FROM", "request-time@example.com");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1467,6 +1512,7 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
         "/yona",
         &NotificationMailDeliveryConfig {
             allowed_domains: vec!["allowed.example.com".to_string()],
+            default_from: "configured-notify@example.com".to_string(),
             hide_address: false,
             recipient_limit: None,
             site_name: "Yona".to_string(),
@@ -1481,8 +1527,16 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
         0
     );
     let outbox = snapshot_test_outbox();
+    let smtp_from_after_delivery = std::env::var("SMTP_FROM").ok();
+    restore_env_var("SMTP_FROM", previous_smtp_from);
     assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "configured-notify@example.com");
     assert_eq!(outbox[0].to, "allowed@allowed.example.com");
+    assert_eq!(
+        smtp_from_after_delivery.as_deref(),
+        Some("request-time@example.com"),
+        "notification delivery config must not mutate SMTP env"
+    );
     clear_test_outbox();
     assert_eq!(
         std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok(),
