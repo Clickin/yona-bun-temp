@@ -140,6 +140,7 @@ async fn create_public_project_named(
 }
 
 #[tokio::test]
+// Guards issue label/category REST ownership splits in the issues route module.
 async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

@@ -5,7 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha1::{Digest as _, Sha1};
 use std::collections::HashMap;
 
@@ -27,15 +27,10 @@ use crate::{
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
     normalize_issue_label_color, persistence, project_read_allowed, require_authenticated_user,
     require_project_authorization, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, rest_copy_project_labels, rest_create_project_label,
-    rest_create_project_label_category, rest_create_project_milestone, rest_delete_project_label,
-    rest_delete_project_label_category, rest_delete_project_milestone,
+    require_session, require_valid_csrf,
     rest_issue_detail_response_from_record_with_sharer_flags_and_references,
     rest_issue_list_item_from_record, rest_issue_mutation_input_from_body, rest_json_response,
-    rest_list_project_label_categories, rest_list_project_labels, rest_list_project_milestones,
-    rest_owned_view, rest_project_issue_filter_from_query, rest_read_project_milestone,
-    rest_set_project_milestone_state, rest_update_project_label,
-    rest_update_project_label_category, rest_update_project_milestone, session::SessionManager,
+    rest_owned_view, rest_project_issue_filter_from_query, session::SessionManager,
     user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     visible_user_issue_items, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormOptionsResponse,
@@ -44,13 +39,10 @@ use crate::{
     RestIssueDetailResponse, RestIssueMentionUserItem, RestIssueMentionUsersQuery,
     RestIssueMentionUsersResponse, RestIssueMutationBody, RestIssueParentOption,
     RestIssueParentOptionsQuery, RestIssueParentOptionsResponse, RestIssueStateBody,
-    RestIssueWeightResponse, RestMassUpdateIssuesBody, RestMilestoneListQuery,
-    RestOrganizationIssueListResponse, RestOrganizationIssuesQuery, RestProjectIssueListResponse,
-    RestProjectIssueReferenceItem, RestProjectIssueReferencesQuery,
-    RestProjectIssueReferencesResponse, RestProjectIssuesQuery, RestProjectLabelCategoryBody,
-    RestProjectLabelCopyBody, RestProjectLabelCreateBody, RestProjectLabelUpdateBody,
-    RestProjectMilestoneBody, RestProjectMilestoneStateBody, RestRouteError,
-    RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
+    RestIssueWeightResponse, RestMassUpdateIssuesBody, RestOrganizationIssueListResponse,
+    RestOrganizationIssuesQuery, RestProjectIssueListResponse, RestProjectIssueReferenceItem,
+    RestProjectIssueReferencesQuery, RestProjectIssueReferencesResponse, RestProjectIssuesQuery,
+    RestRouteError, RestUserIssueListResponse, RestUserIssueSideFilterCounts, RestUserIssuesQuery,
 };
 
 #[derive(Deserialize)]
@@ -71,6 +63,71 @@ struct RestIssueSharerBody {
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueSharerDeleteQuery {
     target_type: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCreateBody {
+    #[serde(default)]
+    category_is_exclusive: bool,
+    category_name: String,
+    label_color: String,
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelUpdateBody {
+    category_id: i64,
+    label_color: String,
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCategoryBody {
+    #[serde(default)]
+    category_is_exclusive: bool,
+    category_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCopyBody {
+    from_owner_name: String,
+    from_project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCopyResponse {
+    copied: u32,
+    labels: Vec<IssueLabel>,
+    skipped: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestMilestoneListQuery {
+    order_by: String,
+    order_dir: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectMilestoneBody {
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+    due_date: String,
+    state: String,
+    title: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMilestoneStateBody {
+    state: String,
 }
 
 fn direct_json_label(label: &persistence::IssueLabelRecord) -> serde_json::Value {
@@ -1473,6 +1530,394 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 },
             ),
         )
+}
+
+async fn rest_list_project_labels(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectLabelsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectLabelsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_labels(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_project_label_categories(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectLabelsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectLabelsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_label_categories(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCreateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectLabelRequest {
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        label_color: body.label_color,
+        label_name: body.label_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    label_id: i64,
+    body: RestProjectLabelUpdateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectLabelRequest {
+        category_id: body.category_id,
+        label_color: body.label_color,
+        label_id,
+        label_name: body.label_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    label_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectLabelRequest {
+        label_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_copy_project_labels(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCopyBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectLabelCopyResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue label requires repository backend",
+        ));
+    };
+    require_authenticated_user(&repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let target_authorization =
+        require_project_read(&repository, &owner_name, &project_name, session.user_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    if !crate::project_update_allowed(&target_authorization)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue label copy is not allowed"),
+        ));
+    }
+    require_project_read(
+        &repository,
+        &body.from_owner_name,
+        &body.from_project_name,
+        session.user_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let result = repository
+        .copy_project_labels(
+            &body.from_owner_name,
+            &body.from_project_name,
+            &owner_name,
+            &project_name,
+        )
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    Ok(Json(RestProjectLabelCopyResponse {
+        copied: result.copied,
+        labels: result
+            .labels
+            .iter()
+            .map(crate::issue_label_from_record)
+            .collect(),
+        skipped: result.skipped,
+    }))
+}
+
+async fn rest_create_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCategoryBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectLabelCategoryRequest {
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    category_id: i64,
+    body: RestProjectLabelCategoryBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectLabelCategoryRequest {
+        category_id,
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    category_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectLabelCategoryRequest {
+        category_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_project_milestones(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestMilestoneListQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectMilestonesRequest {
+        order_by: if query.order_by.trim().is_empty() {
+            "dueDate".to_string()
+        } else {
+            query.order_by
+        },
+        order_dir: if query.order_dir.trim().is_empty() {
+            "asc".to_string()
+        } else {
+            query.order_dir
+        },
+        owner_name,
+        project_name,
+        state: if query.state.trim().is_empty() {
+            "open".to_string()
+        } else {
+            query.state
+        },
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectMilestonesRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_milestones(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectMilestoneRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectMilestoneBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectMilestoneRequest {
+        attachment_ids: body.attachment_ids,
+        contents_markdown: body.contents_markdown,
+        due_date: body.due_date,
+        owner_name,
+        project_name,
+        state: body.state,
+        title: body.title,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    body: RestProjectMilestoneBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectMilestoneRequest {
+        attachment_ids: body.attachment_ids,
+        contents_markdown: body.contents_markdown,
+        due_date: body.due_date,
+        milestone_id,
+        owner_name,
+        project_name,
+        state: body.state,
+        title: body.title,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectMilestoneRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_set_project_milestone_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    body: RestProjectMilestoneStateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = MilestoneStateMutationRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<MilestoneStateMutationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match normalize_identifier(&body.state).as_str() {
+        "open" => service.open_project_milestone(context, request).await,
+        "closed" | "close" => service.close_project_milestone(context, request).await,
+        _ => Err(ConnectError::invalid_argument("invalid milestone state")),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
 }
 
 async fn rest_issue_participation(
