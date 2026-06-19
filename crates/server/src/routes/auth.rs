@@ -19,7 +19,7 @@ use crate::{
     resolve_current_session_response, rest_json_response, rest_owned_view,
     rest_read_current_session, send_password_reset_mail, session::SessionManager, AssetMode,
     AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotServiceImpl,
-    RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE,
+    RestRouteError, SmtpRuntimeConfig, LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE,
     LEGACY_MIN_PASSWORD_LENGTH,
 };
 
@@ -329,6 +329,7 @@ pub(crate) async fn auth_register_with_password(
             &verification_code,
             &service.public_origin,
             &service.base_path,
+            &service.smtp.default_from(),
         )?;
     }
 
@@ -430,6 +431,7 @@ pub(crate) async fn direct_request_reset_password_email(
                             &public_origin,
                             &base_path,
                             &site_name,
+                            &SmtpRuntimeConfig::from_env().default_from(),
                         );
                     }
                     "/lostPassword?requested=1"
@@ -584,6 +586,7 @@ pub(crate) async fn direct_legacy_login(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match service
         .sign_in_with_password(
@@ -634,6 +637,7 @@ pub(crate) async fn direct_legacy_signup(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match auth_register_with_password(
         &service,

@@ -217,6 +217,7 @@ pub(super) async fn rest_request_project_transfer(
         &sender,
         &service.public_origin,
         &service.base_path,
+        &service.smtp.default_from(),
     )
     .await
     .map_err(internal_error)

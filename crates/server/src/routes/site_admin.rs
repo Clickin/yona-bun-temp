@@ -952,6 +952,7 @@ async fn direct_read_site_diagnostic_shell(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_read_site_diagnostics(headers, service).await {
         Ok(payload) => {
@@ -1012,6 +1013,7 @@ async fn direct_read_site_no_avatar_users(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_read_site_no_avatar_users(headers, service).await {
         Ok(payload) => payload.into_response(),
@@ -1031,6 +1033,7 @@ async fn direct_export_site_data(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_export_site_data(headers, service).await {
         Ok(payload) => direct_site_export_response(&payload),
@@ -1058,6 +1061,7 @@ async fn direct_import_site_data(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
         Ok(payload) => {
@@ -1170,6 +1174,7 @@ async fn direct_set_attachment_to_user_avatar(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
         Ok(payload) => payload.into_response(),
@@ -1191,6 +1196,7 @@ async fn direct_read_site_mail_list(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(payload) => Json(payload.0.recipients).into_response(),
@@ -1220,6 +1226,7 @@ async fn direct_send_site_mail(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_send_site_test_mail(headers, body, service, SmtpRuntimeConfig::from_env()).await {
         Ok(_) => {
@@ -1281,6 +1288,7 @@ async fn direct_unwatch_site_update(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(_) => {
@@ -1305,6 +1313,7 @@ async fn direct_toggle_site_admin_role(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_toggle_site_user_admin(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, "/sites/userList"),
@@ -1331,6 +1340,7 @@ async fn direct_toggle_site_user_account_lock(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_toggle_site_user_account_lock(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, &redirect_path),
@@ -1357,6 +1367,7 @@ async fn direct_toggle_site_user_guest(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_toggle_site_user_guest(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, &redirect_path),
@@ -1377,6 +1388,7 @@ async fn direct_reset_site_user_password(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_reset_site_user_password(headers, login_id, service).await {
         Ok(payload) => payload.into_response(),
@@ -1402,6 +1414,7 @@ async fn direct_delete_site_user_by_legacy_path(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(repository) => repository,
@@ -1441,6 +1454,7 @@ async fn direct_delete_site_project(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_delete_site_project(headers, project_id, service).await {
         Ok(_) => redirect_to(&base_path, "/sites/projectList"),
@@ -1474,6 +1488,7 @@ async fn direct_download_site_update(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_redirect(&site_update) {
@@ -1497,6 +1512,7 @@ async fn direct_download_site_update_file(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_file_response(&site_update) {

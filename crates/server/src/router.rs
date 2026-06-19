@@ -168,6 +168,7 @@ fn build_router_with_app_config(
         session_manager: session_manager.clone(),
         backend: backend.clone(),
         project_default_scope: project_default_scope.clone(),
+        smtp: smtp.clone(),
     };
     let rest_auth_ui = auth_ui.clone();
     let route_backend = backend.clone();

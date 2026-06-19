@@ -274,6 +274,7 @@ pub(super) async fn direct_toggle_project_watch(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
         Ok(_) => StatusCode::OK.into_response(),

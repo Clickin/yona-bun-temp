@@ -22,7 +22,7 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
-    RuntimeConfig,
+    RuntimeConfig, SmtpRuntimeConfig,
 };
 
 // Workspace route-module ownership guard: the legacy `/info/leave/:owner/:project`
@@ -122,6 +122,13 @@ fn set_cookie_headers(response: &axum::response::Response) -> Vec<String> {
         .iter()
         .map(|value| value.to_str().unwrap().to_string())
         .collect()
+}
+
+fn restore_env_var(name: &str, value: Option<String>) {
+    match value {
+        Some(value) => std::env::set_var(name, value),
+        None => std::env::remove_var(name),
+    }
 }
 
 fn named_cookie<'a>(cookies: &'a [String], name: &str) -> &'a str {
@@ -1062,6 +1069,57 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
     assert_eq!(outbox[0].to, "door@example.com");
     assert!(outbox[0].subject.contains("Sign-up"));
     assert!(outbox[0].body.contains("/verify/door/"));
+}
+
+#[tokio::test]
+async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutation() {
+    let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
+    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
+
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                email_verification_enabled: true,
+                ..AuthUiConfig::default()
+            },
+            smtp: SmtpRuntimeConfig {
+                from: "startup-sender@example.com".to_string(),
+                ..SmtpRuntimeConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    std::env::set_var("SMTP_FROM", "request-time@example.com");
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
+    restore_env_var("SMTP_FROM", previous_smtp_from);
+
+    assert_eq!(register.status(), StatusCode::OK);
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "startup-sender@example.com");
+    assert_eq!(outbox[0].to, "door@example.com");
+    assert_eq!(
+        smtp_from_after_request.as_deref(),
+        Some("request-time@example.com"),
+        "SMTP runtime config must not mutate process env"
+    );
 }
 
 #[tokio::test]

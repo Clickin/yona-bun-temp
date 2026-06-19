@@ -11,6 +11,7 @@ use crate::{
     require_valid_csrf, rest_repository, rest_require_project_code_read,
     rest_update_commit_discussion_thread_state, session::SessionManager, AuthUiConfig,
     ConnectError, PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestRouteError,
+    SmtpRuntimeConfig,
 };
 
 use super::{
@@ -61,6 +62,7 @@ pub(super) async fn direct_update_review_thread_state(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     let result = if let Some(pull_request_number) = context.pull_request_number {
         rest_update_pull_request_thread_state(

@@ -32,7 +32,7 @@ use crate::{
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
+    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
@@ -1544,6 +1544,7 @@ async fn direct_update_project_overview(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),

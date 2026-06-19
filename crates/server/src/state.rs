@@ -8,7 +8,7 @@ use std::{
 
 use crate::runtime_config::normalize_base_path;
 use crate::session::SessionManager;
-use crate::{AuthUiConfig, PilotRepository};
+use crate::{AuthUiConfig, PilotRepository, SmtpRuntimeConfig};
 
 pub(crate) static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 
@@ -123,6 +123,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) session_manager: SessionManager,
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,
+    pub(crate) smtp: SmtpRuntimeConfig,
 }
 
 #[derive(Clone)]

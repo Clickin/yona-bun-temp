@@ -26,7 +26,7 @@ use crate::{
     send_workspace_email_validation_mail,
     session::{self, SessionManager},
     workspace_invalid_argument, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    PilotServiceImpl, RestRouteError, SmtpRuntimeConfig, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -898,6 +898,7 @@ async fn direct_legacy_leave_project(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
     redirect_to(
@@ -1579,6 +1580,7 @@ async fn direct_update_user_profile(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_update_profile(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1606,6 +1608,7 @@ async fn direct_change_user_password(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_change_password(headers, body, service).await {
         Ok(rest_response) => {
@@ -1642,6 +1645,7 @@ async fn direct_add_workspace_email(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1663,6 +1667,7 @@ async fn direct_reset_api_token_from_settings_form(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_reset_api_token(headers_with_form_csrf(headers, &form), service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform/token"),
@@ -1684,6 +1689,7 @@ async fn direct_delete_workspace_email(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_delete_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1705,6 +1711,7 @@ async fn direct_set_main_workspace_email(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_set_main_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1749,6 +1756,8 @@ async fn direct_send_workspace_email_validation(
         ))
         .into_response();
     };
+    let smtp = SmtpRuntimeConfig::from_env();
+    let default_from = smtp.default_from();
 
     let redirect_path = match &backend {
         PilotBackend::Repository(repository) => {
@@ -1767,6 +1776,7 @@ async fn direct_send_workspace_email_validation(
                         &token,
                         &public_origin,
                         &base_path,
+                        &default_from,
                     );
                 }
                 "/user/editform/emails?validation=sent"
@@ -1854,6 +1864,7 @@ pub(crate) async fn direct_toggle_workspace_notification(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     let body = RestWorkspaceNotificationBody {
         event_type,

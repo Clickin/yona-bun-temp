@@ -453,6 +453,7 @@ pub(crate) fn send_signup_verification_mail(
     verification_code: &str,
     public_origin: &str,
     base_path: &str,
+    from: &str,
 ) -> Result<(), ConnectError> {
     let verify_url = absolute_app_url(
         public_origin,
@@ -462,7 +463,7 @@ pub(crate) fn send_signup_verification_mail(
     deliver(OutboundMail {
         bcc: Vec::new(),
         body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
-        from: default_smtp_from(),
+        from: from.to_string(),
         html: false,
         reply_to: None,
         subject: "New Sign-up Confirm".to_string(),
@@ -477,6 +478,7 @@ pub(crate) fn send_password_reset_mail(
     public_origin: &str,
     base_path: &str,
     site_name: &str,
+    from: &str,
 ) -> Result<(), ConnectError> {
     let reset_url = absolute_app_url(
         public_origin,
@@ -486,7 +488,7 @@ pub(crate) fn send_password_reset_mail(
     deliver(OutboundMail {
         bcc: Vec::new(),
         body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
-        from: default_smtp_from(),
+        from: from.to_string(),
         html: false,
         reply_to: None,
         subject: format!("[{}] Password reset request", site_name),
@@ -501,6 +503,7 @@ pub(crate) fn send_workspace_email_validation_mail(
     token: &str,
     public_origin: &str,
     base_path: &str,
+    from: &str,
 ) -> Result<(), ConnectError> {
     let confirm_url = absolute_app_url(
         public_origin,
@@ -510,7 +513,7 @@ pub(crate) fn send_workspace_email_validation_mail(
     deliver(OutboundMail {
         bcc: Vec::new(),
         body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
-        from: default_smtp_from(),
+        from: from.to_string(),
         html: false,
         reply_to: None,
         subject: "Validation email".to_string(),
@@ -526,6 +529,7 @@ pub(crate) async fn send_project_transfer_request_mail(
     sender: &persistence::AppUserRecord,
     public_origin: &str,
     base_path: &str,
+    from: &str,
 ) -> Result<(), String> {
     let mut recipients = Vec::new();
     if let Some(user) = repository
@@ -574,7 +578,7 @@ pub(crate) async fn send_project_transfer_request_mail(
         let _ = deliver(OutboundMail {
             bcc: Vec::new(),
             body: body.clone(),
-            from: default_smtp_from(),
+            from: from.to_string(),
             html: false,
             reply_to: None,
             subject: subject.clone(),

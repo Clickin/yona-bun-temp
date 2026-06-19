@@ -21,6 +21,7 @@ use crate::{
     visible_code_projects_for_organization, yona_data_root, AuthUiConfig, ConnectError,
     MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
     PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
+    SmtpRuntimeConfig,
 };
 
 mod review_comments;
@@ -58,6 +59,7 @@ async fn direct_accept_pull_request(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_accept_pull_request(
         headers,
@@ -94,6 +96,7 @@ async fn direct_update_pull_request_source_branch(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
     };
     let result = match action {
         PullRequestSourceBranchAction::Delete => {

@@ -989,7 +989,9 @@ async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
 }
 
 #[tokio::test]
-// Guards routes/pull_requests/review_comments.rs review comment and thread mutation routing.
+// Guards routes/pull_requests/review_comments.rs review comment/thread mutation
+// routing plus direct PR wrapper construction through the shared PilotServiceImpl
+// runtime snapshot boundary.
 async fn pull_request_interaction_surface_mutates_state_review_comments_threads_and_events() {
     let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("data");
