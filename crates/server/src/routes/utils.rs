@@ -12,8 +12,10 @@ use std::collections::HashMap;
 
 use crate::{
     generated::yona::pilot::v1::{
-        IssueLabel, IssueLabelCategory, OrganizationDetail, OrganizationIssueListItem,
-        ProjectDetail, ProjectIssueListItem, ProjectMemberSummary, ProjectMilestoneSummary,
+        IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationDetail,
+        OrganizationEnrollmentRequestSummary, OrganizationIssueListItem, OrganizationMemberSummary,
+        OrganizationRoleOption, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
+        ProjectMilestoneSummary,
     },
     internal_error, normalize_identifier, persistence, require_valid_csrf,
     session::SessionManager,
@@ -135,6 +137,64 @@ pub(crate) fn organization_issue_list_item_to_proto(
         watcher_count: item.watcher_count,
         ..Default::default()
     }
+}
+
+pub(crate) fn format_project_date_label(value: Option<DateTime>) -> String {
+    value
+        .map(|value| value.format("%Y-%m-%d").to_string())
+        .unwrap_or_default()
+}
+
+pub(crate) fn organization_member_summary_from_record(
+    record: &persistence::OrganizationMemberRecord,
+) -> OrganizationMemberSummary {
+    OrganizationMemberSummary {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        role: record.role.clone(),
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn organization_admin_member_from_record(
+    record: &persistence::OrganizationMemberRecord,
+) -> OrganizationAdminMember {
+    OrganizationAdminMember {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        role: record.role.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn organization_enrollment_request_summary_from_record(
+    record: &persistence::OrganizationEnrollmentRequestRecord,
+) -> OrganizationEnrollmentRequestSummary {
+    OrganizationEnrollmentRequestSummary {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn organization_role_options() -> Vec<OrganizationRoleOption> {
+    vec![
+        OrganizationRoleOption {
+            role: "org_admin".to_string(),
+            label: "org_admin".to_string(),
+            ..Default::default()
+        },
+        OrganizationRoleOption {
+            role: "org_member".to_string(),
+            label: "org_member".to_string(),
+            ..Default::default()
+        },
+    ]
 }
 
 pub(crate) fn user_issue_filter_name(value: &str) -> Result<String, ConnectError> {

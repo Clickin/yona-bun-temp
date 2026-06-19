@@ -34,18 +34,20 @@ pub(crate) use routes::{
     filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
-    gravatar_url, headers_with_form_csrf, issue_can_mutate, issue_detail_response_from_access,
-    issue_label_category_from_record, issue_label_css, issue_label_from_record,
-    legacy_content_disposition_filename, legacy_content_update_body_from_value,
-    legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
-    legacy_external_assignable_users_result, legacy_external_attachment_result,
-    legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
-    legacy_external_parse_datetime, legacy_external_post_author,
-    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
-    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url, posting_can_create,
+    format_project_date_label, gravatar_url, headers_with_form_csrf, issue_can_mutate,
+    issue_detail_response_from_access, issue_label_category_from_record, issue_label_css,
+    issue_label_from_record, legacy_content_disposition_filename,
+    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
+    legacy_external_attachment_result, legacy_external_authenticated_user_id,
+    legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
+    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
+    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value, normalize_issue_label_color,
+    optional_i64_string, organization_admin_member_from_record, organization_detail_from_record,
+    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url,
+    organization_member_summary_from_record, organization_role_options, posting_can_create,
     posting_can_update, project_detail_from_record, project_detail_with_logo_from_record,
     project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
     project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
@@ -3969,64 +3971,6 @@ fn issue_sharer_from_record(record: &persistence::IssueSharerRecord) -> IssueSha
         user_label: record.user_label.clone(),
         ..Default::default()
     }
-}
-
-fn format_project_date_label(value: Option<sea_orm::entity::prelude::DateTime>) -> String {
-    value
-        .map(|value| value.format("%Y-%m-%d").to_string())
-        .unwrap_or_default()
-}
-
-fn organization_member_summary_from_record(
-    record: &persistence::OrganizationMemberRecord,
-) -> OrganizationMemberSummary {
-    OrganizationMemberSummary {
-        avatar_url: gravatar_url(&record.email_address),
-        login_id: record.login_id.clone(),
-        role: record.role.clone(),
-        user_label: record.user_label.clone(),
-        ..Default::default()
-    }
-}
-
-fn organization_admin_member_from_record(
-    record: &persistence::OrganizationMemberRecord,
-) -> OrganizationAdminMember {
-    OrganizationAdminMember {
-        avatar_url: gravatar_url(&record.email_address),
-        login_id: record.login_id.clone(),
-        role: record.role.clone(),
-        user_id: record.user_id,
-        user_label: record.user_label.clone(),
-        ..Default::default()
-    }
-}
-
-fn organization_enrollment_request_summary_from_record(
-    record: &persistence::OrganizationEnrollmentRequestRecord,
-) -> OrganizationEnrollmentRequestSummary {
-    OrganizationEnrollmentRequestSummary {
-        avatar_url: gravatar_url(&record.email_address),
-        login_id: record.login_id.clone(),
-        user_id: record.user_id,
-        user_label: record.user_label.clone(),
-        ..Default::default()
-    }
-}
-
-fn organization_role_options() -> Vec<OrganizationRoleOption> {
-    vec![
-        OrganizationRoleOption {
-            role: "org_admin".to_string(),
-            label: "org_admin".to_string(),
-            ..Default::default()
-        },
-        OrganizationRoleOption {
-            role: "org_member".to_string(),
-            label: "org_member".to_string(),
-            ..Default::default()
-        },
-    ]
 }
 
 async fn resolve_project_origin(

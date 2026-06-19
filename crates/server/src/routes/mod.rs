@@ -71,8 +71,8 @@ pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
-    accepts_legacy_json, base_path_href, form_bool, form_value, gravatar_url,
-    headers_with_form_csrf, issue_label_category_from_record, issue_label_css,
+    accepts_legacy_json, base_path_href, form_bool, form_value, format_project_date_label,
+    gravatar_url, headers_with_form_csrf, issue_label_category_from_record, issue_label_css,
     issue_label_from_record, legacy_content_update_body_from_value,
     legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
@@ -80,8 +80,10 @@ pub(crate) use utils::{
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
     legacy_json_find_value, normalize_issue_label_color, optional_i64_string,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_issue_list_item_to_proto, organization_logo_url, project_detail_from_record,
+    organization_admin_member_from_record, organization_detail_from_record,
+    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url,
+    organization_member_summary_from_record, organization_role_options, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
     project_member_summary_from_record, project_milestone_summary_from_record,
     rest_board_label_from_record, user_issue_filter_name, user_issue_state, RestBoardLabel,

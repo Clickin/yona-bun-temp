@@ -900,7 +900,7 @@ async fn legacy_external_hello_matches_global_api_contract() {
 }
 
 #[tokio::test]
-// Guards organization detail/container projection helpers shared through route utils.
+// Guards organization detail/container, member/admin, and enrollment projection helpers shared through route utils.
 async fn rest_organization_routes_cover_directory_views_and_membership_mutations() {
     let (app, repository) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;
@@ -1204,7 +1204,7 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 }
 
 #[tokio::test]
-// Guards project detail/container projection helpers shared through route utils.
+// Guards project detail/container projection and shared date-label helpers through route utils.
 async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (translation_api, translation_stub_path) =
         write_legacy_translation_stub_response("Translated **issue**");
