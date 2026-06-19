@@ -137,6 +137,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
 }
 
 #[tokio::test]
+// Guards the users route-module split for legacy external user search/statistics surfaces.
 async fn legacy_external_users_search_preserves_members_helper_contract() {
     let (app, _repository) = build_app_with_repository().await;
     register_user(app.clone(), "owner").await;

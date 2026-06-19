@@ -1884,7 +1884,7 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
 
 #[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
-    // Guards the site-admin user DTO route-module ownership split.
+    // Guards site-admin user surfaces that still share the users route-module boundary.
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;

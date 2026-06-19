@@ -7,7 +7,7 @@ use axum::{
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
 use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::process::Command;
 
 use super::utils::{legacy_external_random_storage_token, legacy_external_user_statistics_result};
@@ -15,12 +15,24 @@ use crate::{
     accepts_legacy_json, escape_html_text, gravatar_url, internal_error,
     legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
     legacy_json_find_value, persistence, read_issue_access, read_posting_access,
-    rest_list_user_issues, rest_read_direct_issue_form_options, rest_read_public_user_profile,
-    rest_read_user_statistics, session::SessionManager, user_issue_filter_name,
-    visible_user_issue_items, ConnectError, PilotBackend, PilotRepository, PilotServiceImpl,
-    RestDirectIssueFormQuery, RestPublicUserProfileQuery, RestRouteError, RestUserIssuesQuery,
-    TranslationProxyConfig,
+    require_authenticated_user, require_session, rest_json_response, rest_list_user_issues,
+    rest_read_direct_issue_form_options, rest_read_public_user_profile, session::SessionManager,
+    user_issue_filter_name, visible_user_issue_items, ConnectError, Context, PilotBackend,
+    PilotRepository, PilotServiceImpl, RestDirectIssueFormQuery, RestPublicUserProfileQuery,
+    RestRouteError, RestUserIssuesQuery, TranslationProxyConfig,
 };
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestUserStatisticsResponse {
+    assigned_issue: u32,
+    issue: u32,
+    issue_comment: u32,
+    issue_comment_voter: u32,
+    issue_voter: u32,
+    posting: u32,
+    posting_comment: u32,
+}
 
 fn direct_plain_response(status: StatusCode, body: &str) -> Response {
     (status, body.to_string()).into_response()
@@ -95,6 +107,53 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             }),
         )
+}
+
+fn rest_user_statistics_from_record(
+    record: &persistence::UserStatisticsRecord,
+) -> RestUserStatisticsResponse {
+    RestUserStatisticsResponse {
+        assigned_issue: record.assigned_issue,
+        issue: record.issue,
+        issue_comment: record.issue_comment,
+        issue_comment_voter: record.issue_comment_voter,
+        issue_voter: record.issue_voter,
+        posting: record.posting,
+        posting_comment: record.posting_comment,
+    }
+}
+
+pub(crate) async fn rest_read_user_statistics(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "user statistics requires repository backend",
+        ));
+    };
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let _actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let statistics = match repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        Some(user) => repository
+            .read_user_statistics(user.id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?,
+        None => persistence::UserStatisticsRecord::default(),
+    };
+
+    Ok(rest_json_response(
+        rest_user_statistics_from_record(&statistics),
+        Context::new(headers),
+    ))
 }
 
 pub(crate) fn routes(

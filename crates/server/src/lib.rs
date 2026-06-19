@@ -1837,18 +1837,6 @@ struct RestPublicUserProfileResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestUserStatisticsResponse {
-    assigned_issue: u32,
-    issue: u32,
-    issue_comment: u32,
-    issue_comment_voter: u32,
-    issue_voter: u32,
-    posting: u32,
-    posting_comment: u32,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct RestBoardLabel {
     category_id: String,
     category_is_exclusive: bool,
@@ -2322,39 +2310,6 @@ pub(crate) async fn rest_read_public_user_profile(
             selected: public_profile_selected(query.selected),
             viewer_can_edit_profile,
         },
-        Context::new(headers),
-    ))
-}
-
-pub(crate) async fn rest_read_user_statistics(
-    headers: HeaderMap,
-    login_id: String,
-    service: PilotServiceImpl,
-) -> Result<Response, RestRouteError> {
-    let PilotBackend::Repository(repository) = &service.backend else {
-        return Err(RestRouteError::not_implemented(
-            "user statistics requires repository backend",
-        ));
-    };
-    let session = require_session(&service.session_manager, &headers)
-        .map_err(RestRouteError::from_connect_error)?;
-    let _actor = require_authenticated_user(repository, session.user_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    let statistics = match repository
-        .find_user_by_login_id(&login_id)
-        .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-    {
-        Some(user) => repository
-            .read_user_statistics(user.id)
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
-        None => persistence::UserStatisticsRecord::default(),
-    };
-
-    Ok(rest_json_response(
-        rest_user_statistics_from_record(&statistics),
         Context::new(headers),
     ))
 }
@@ -5420,20 +5375,6 @@ fn public_profile_selected(selected: Option<String>) -> String {
         Some("projects") => "projects".to_string(),
         Some("pullRequests") => "pullRequests".to_string(),
         _ => "issues".to_string(),
-    }
-}
-
-fn rest_user_statistics_from_record(
-    record: &persistence::UserStatisticsRecord,
-) -> RestUserStatisticsResponse {
-    RestUserStatisticsResponse {
-        assigned_issue: record.assigned_issue,
-        issue: record.issue,
-        issue_comment: record.issue_comment,
-        issue_comment_voter: record.issue_comment_voter,
-        issue_voter: record.issue_voter,
-        posting: record.posting,
-        posting_comment: record.posting_comment,
     }
 }
 

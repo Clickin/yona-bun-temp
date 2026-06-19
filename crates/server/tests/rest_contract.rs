@@ -5209,6 +5209,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
 }
 
 #[tokio::test]
+// Guards the user statistics REST DTO and mapper ownership split into the users route module.
 async fn rest_user_statistics_counts_legacy_activity_rows() {
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
