@@ -516,6 +516,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   pilot fallback behavior covered by
   `rest_contract::rest_project_routes_cover_directory_views_and_mutations` and
   `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`.
+- 2026-06-20 build/check diet note: project and organization issue-list RPC
+  logic moved from `PilotServiceImpl` in monolithic `crates/server/src/lib.rs`
+  into `crates/server/src/routes/issues.rs`; service methods remain
+  compatibility delegates while the issue route module owns the project and
+  organization list filters plus proto projection beside the REST list
+  handlers. This preserves project issue list ACL, organization visible-project
+  aggregation, state/filter parsing, pagination counts, and proto list response
+  shape covered by
+  `rest_contract::rest_project_issue_list_exposes_legacy_row_payload_fields`
+  and `organization_issue_contract::organization_issue_list_contract_respects_visible_projects_and_counts`.
 
 ## Wave 0 Exit Snapshot
 

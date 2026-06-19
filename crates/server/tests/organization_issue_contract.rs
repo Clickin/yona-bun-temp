@@ -229,7 +229,7 @@ async fn close_issue(app: axum::Router, cookie: &str, csrf: &str, project_name: 
 
 #[tokio::test]
 async fn organization_issue_list_contract_respects_visible_projects_and_counts() {
-    // Guards issue route-owned organization list projection and visible-project aggregation.
+    // Guards issue route-owned organization list helper, projection, and visible-project aggregation.
     let (app, repo) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, _) = register_user(app.clone(), "admin").await;
     let (_, member_cookie, member_id) = register_user(app.clone(), "member").await;

@@ -16,7 +16,8 @@ use super::utils::{
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_proto,
+    legacy_issue_update_body_from_value, legacy_json_find_value,
+    organization_issue_list_item_to_proto, project_issue_list_item_to_proto,
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
@@ -259,6 +260,175 @@ pub(crate) fn issue_list_filter_from_request(
         page_num: request.page_num.max(1),
         state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
     }
+}
+
+pub(crate) async fn organization_issues_list(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ListOrganizationIssuesRequestView<'static>>,
+) -> Result<(ListOrganizationIssuesResponse, Context), ConnectError> {
+    if request.organization_name.trim().is_empty() {
+        return Err(ConnectError::invalid_argument(
+            "invalid organization issue list request",
+        ));
+    }
+    let state = if request.state.trim().is_empty() {
+        "open".to_string()
+    } else {
+        normalize_identifier(request.state)
+    };
+    if !matches!(state.as_str(), "open" | "closed") {
+        return Err(ConnectError::invalid_argument(
+            "invalid organization issue state",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization issues require repository backend",
+        ));
+    };
+    let session = service
+        .session_manager
+        .read_session_from_headers(&ctx.headers);
+    let actor_id = session.as_ref().and_then(|session| session.user_id);
+    let authorization = repository
+        .read_organization_authorization(request.organization_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    let visible_projects =
+        visible_projects_for_organization(repository, authorization.organization.id, actor_id)
+            .await?;
+    let current_user_filter = |value: i64| {
+        if value > 0 {
+            actor_id.or(Some(-1))
+        } else {
+            None
+        }
+    };
+    let record = repository
+        .list_organization_issues_filtered(
+            &authorization.organization.organization_name,
+            visible_projects,
+            persistence::OrganizationIssueListFilter {
+                assignee_user_id: current_user_filter(request.assignee_id),
+                author_id: current_user_filter(request.author_id),
+                filter: Some(request.filter.to_string()).filter(|value| !value.trim().is_empty()),
+                items_per_page: request.items_per_page,
+                mention_user_id: None,
+                order_by: request.order_by.to_string(),
+                order_dir: request.order_dir.to_string(),
+                page_num: request.page_num,
+                project_names: request
+                    .project_names
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect(),
+                state,
+            },
+        )
+        .await
+        .map_err(internal_error)?;
+
+    Ok((
+        ListOrganizationIssuesResponse {
+            closed_issue_count: record.closed_issue_count,
+            items: record
+                .items
+                .into_iter()
+                .map(organization_issue_list_item_to_proto)
+                .collect(),
+            open_issue_count: record.open_issue_count,
+            organization_name: record.organization_name,
+            page_num: record.page_num,
+            page_size: record.page_size,
+            total_count: record.total_count,
+            visible_projects: record
+                .visible_projects
+                .into_iter()
+                .map(|project| OrganizationIssueProjectOption {
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        },
+        ctx,
+    ))
+}
+
+pub(crate) async fn project_issues_list(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ListProjectIssuesRequestView<'static>>,
+) -> Result<(ListProjectIssuesResponse, Context), ConnectError> {
+    if request.owner_name.trim().is_empty() || request.project_name.trim().is_empty() {
+        return Err(ConnectError::invalid_argument(
+            "invalid pilot project issue list request",
+        ));
+    }
+
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let actor_id = service
+            .session_manager
+            .read_session_from_headers(&ctx.headers)
+            .and_then(|session| session.user_id);
+
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            actor_id,
+        )
+        .await?;
+
+        let record = repository
+            .list_project_issues_filtered(
+                request.owner_name,
+                request.project_name,
+                issue_list_filter_from_request(&request),
+            )
+            .await
+            .map_err(internal_error)?;
+
+        return Ok((
+            ListProjectIssuesResponse {
+                items: record
+                    .items
+                    .into_iter()
+                    .map(project_issue_list_item_to_proto)
+                    .collect(),
+                owner_name: authorization.project.owner_name,
+                page_num: record.page_num,
+                page_size: record.page_size,
+                project_name: authorization.project.project_name,
+                total_count: record.total_count,
+                ..Default::default()
+            },
+            ctx,
+        ));
+    }
+
+    if request.owner_name != "pilot" || request.project_name != "yona" {
+        return Err(ConnectError::not_found("pilot project not found"));
+    }
+
+    Ok((
+        ListProjectIssuesResponse {
+            owner_name: "pilot".to_string(),
+            project_name: "yona".to_string(),
+            items: vec![ProjectIssueListItem {
+                issue_number: 1,
+                title: "Pilot issue".to_string(),
+                state: "open".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
+        ctx,
+    ))
 }
 
 #[derive(Default, Deserialize)]
