@@ -147,7 +147,7 @@ fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, 
 }
 
 #[tokio::test]
-// Guards project route-owned milestone RPC helpers and issue-owned milestone projections.
+// Guards projects/milestones.rs RPC helpers and issue-owned milestone projections.
 async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
@@ -480,7 +480,7 @@ async fn milestone_rpc_validates_due_date_and_project_permissions() {
 
 #[tokio::test]
 async fn milestone_legacy_mutation_routes_preserve_redirects() {
-    // Guards project route-owned milestone input helper plus route-utils redirect/parser helpers.
+    // Guards projects/milestones.rs direct and legacy external milestone routes.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_public_project(app.clone(), &cookie, &csrf).await;

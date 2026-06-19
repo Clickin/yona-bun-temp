@@ -897,6 +897,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   Cargo wrapper timing evidence now requires tool-level escalation: active
   `CODEX_SANDBOX` blocks `--outside-sandbox` before cargo starts, while
   `CODEX_SANDBOX_NETWORK_DISABLED` alone is treated as inherited metadata.
+- 2026-06-20 build/check diet note: project milestone proto helpers, REST
+  create/update/delete delegates, direct legacy mutation handlers, and legacy
+  external milestones API body/result helpers moved from
+  `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/milestones.rs`; route registration remains
+  in the parent project route module. This preserves milestone CRUD/state,
+  linked issue projection, legacy redirect aliases, and legacy external
+  milestone creation covered by
+  `milestone_contract::milestone_rpc_manages_crud_state_sorting_and_linked_issues`,
+  `milestone_contract::milestone_legacy_mutation_routes_preserve_redirects`,
+  and `rest_contract::rest_project_routes_cover_directory_views_and_mutations`.
 
 ## Wave 0 Exit Snapshot
 
