@@ -657,6 +657,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   Compile/check timing evidence for this split uses tool-level unsandboxed
   execution only; cargo or pnpm wrapper commands run inside the agent sandbox
   remain excluded from timing comparisons.
+- 2026-06-20 build/check diet note: SVN lock token generation, lock-token
+  header parsing, and lockdiscovery XML body/item helpers moved from
+  `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/lock.rs`; LOCK/UNLOCK dispatch and status
+  mapping remain in the protocol module. This preserves executable-backed lock
+  creation, token response headers, get-locks report visibility, PROPFIND
+  lockdiscovery metadata, and unlock behavior covered by
+  `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`.
 
 ## Wave 0 Exit Snapshot
 

@@ -6,7 +6,6 @@ use http::{HeaderMap, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 use md5::{Digest, Md5};
 use std::path::Path as StdPath;
-use std::time::SystemTime;
 
 use crate::session::SessionManager;
 use crate::{
@@ -17,6 +16,7 @@ use crate::{
 use yona_rust_vcs::VcsError;
 
 mod date;
+mod lock;
 mod svndiff;
 mod xml;
 
@@ -1509,7 +1509,7 @@ fn svn_protocol_propfind_file_item(
         "        <SD:deadprop-count>1</SD:deadprop-count>\n".to_string()
     };
     let lock_discovery = lock
-        .map(|(route, lock)| svn_protocol_lock_discovery_item(route, lock))
+        .map(|(route, lock)| lock::discovery_item(&svn_protocol_project_href(route), lock))
         .unwrap_or_default();
     format!(
         r#"  <D:response>
@@ -3105,7 +3105,7 @@ fn svn_protocol_lock_response(
         .or_else(|| xml::text(&request, "owner"))
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "Yona WebDAV lock".to_string());
-    let token = svn_protocol_new_lock_token();
+    let token = lock::new_token();
     let lock =
         match yona_rust_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
             Ok(lock) => lock,
@@ -3125,7 +3125,7 @@ fn svn_protocol_lock_response(
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
-    let body = svn_protocol_lock_discovery_body(route, &lock);
+    let body = lock::discovery_body(&svn_protocol_project_href(route), &lock);
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
     response.headers_mut().insert(
@@ -3150,7 +3150,7 @@ fn svn_protocol_unlock_response(
     let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let Some(token) = svn_protocol_lock_token_header(headers) else {
+    let Some(token) = lock::token_header(headers) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     match yona_rust_vcs::svn_unlock_path(repo_path, &path, &actor.login_id, &token) {
@@ -3920,71 +3920,6 @@ fn svn_protocol_proppatch_multistatus(
     </D:propstat>
   </D:response>
 </D:multistatus>"#,
-        xml_escape(&href)
-    )
-}
-
-fn svn_protocol_new_lock_token() -> String {
-    let nanos = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    format!("opaquelocktoken:yona-{}-{nanos}", std::process::id())
-}
-
-fn svn_protocol_lock_token_header(headers: &HeaderMap) -> Option<String> {
-    let value = headers.get("lock-token")?.to_str().ok()?.trim();
-    let value = value
-        .strip_prefix('<')
-        .and_then(|token| token.strip_suffix('>'))
-        .unwrap_or(value);
-    if value.is_empty() {
-        None
-    } else {
-        Some(value.to_string())
-    }
-}
-
-fn svn_protocol_lock_discovery_body(
-    route: &SvnProtocolRoute,
-    lock: &yona_rust_vcs::SvnLock,
-) -> String {
-    let item = svn_protocol_lock_discovery_item(route, lock);
-    format!(
-        r#"<?xml version="1.0" encoding="utf-8"?>
-<D:prop xmlns:D="DAV:">
-{item}</D:prop>"#
-    )
-}
-
-fn svn_protocol_lock_discovery_item(
-    route: &SvnProtocolRoute,
-    lock: &yona_rust_vcs::SvnLock,
-) -> String {
-    let href = format!("{}{}", svn_protocol_project_href(route), lock.path);
-    let created = if lock.created.is_empty() {
-        String::new()
-    } else {
-        format!(
-            "\n        <D:creationdate>{}</D:creationdate>",
-            xml_escape(&lock.created)
-        )
-    };
-    format!(
-        r#"        <D:lockdiscovery>
-    <D:activelock>
-      <D:locktype><D:write/></D:locktype>
-      <D:lockscope><D:exclusive/></D:lockscope>
-      <D:depth>0</D:depth>
-      <D:owner>{}</D:owner>
-      <D:timeout>Infinite</D:timeout>
-      <D:locktoken><D:href>{}</D:href></D:locktoken>
-      <D:lockroot><D:href>{}</D:href></D:lockroot>{created}
-    </D:activelock>
-  </D:lockdiscovery>
-"#,
-        xml_escape(&lock.owner),
-        xml_escape(&lock.token),
         xml_escape(&href)
     )
 }
