@@ -77,10 +77,11 @@ pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;
 pub(crate) use users::routes as user_routes;
 pub(crate) use utils::{
-    accepts_legacy_json, anonymous_current_session_response, append_response_headers,
-    attach_session_headers, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response, code_branch_error,
-    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
+    absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
+    append_response_headers, attach_session_headers, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, code_branch_error, code_browser_error,
+    code_file_record_is_renderable_markdown, code_path_is_markdown,
     current_session_response_from_user, decode_query_component,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     direct_project_update_allowed, direct_status_from_connect_error, escape_html_attr,

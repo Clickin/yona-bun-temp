@@ -13,7 +13,6 @@ use std::collections::HashMap;
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
-    absolute_app_url,
     generated::yona::pilot::v1::{
         IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
         OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
@@ -68,6 +67,10 @@ fn uri_component_unescaped(byte: u8) -> bool {
             | b'('
             | b')'
     )
+}
+
+pub(crate) fn absolute_app_url(public_origin: &str, base_path: &str, path: &str) -> String {
+    format!("{public_origin}{}", base_path_href(base_path, path))
 }
 
 #[derive(Serialize)]

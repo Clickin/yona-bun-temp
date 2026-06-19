@@ -614,6 +614,7 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
 }
 
 #[tokio::test]
+// Guards Smart HTTP webhook payload reuse of the route-utils-owned absolute app URL helper.
 async fn smart_http_push_records_legacy_post_receive_side_effects() {
     let _guard = yona_data_env_lock()
         .lock()

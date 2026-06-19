@@ -928,7 +928,7 @@ fn notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mut
 }
 
 #[tokio::test]
-// Guards notification mail reuse of route-utils-owned URI component encoding for reply/unwatch links.
+// Guards notification mail reuse of route-utils-owned absolute URL and URI encoding helpers.
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");

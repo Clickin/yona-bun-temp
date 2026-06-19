@@ -28,11 +28,11 @@ pub use notification_mail::{
     NotificationMailSchedulerConfig,
 };
 pub(crate) use routes::{
-    accepts_legacy_json, anonymous_current_session_response, append_response_headers,
-    attach_session_headers, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response,
-    build_workspace_overview_response, code_branch_error, code_browser_error,
-    code_file_record_is_renderable_markdown, code_path_is_markdown,
+    absolute_app_url, accepts_legacy_json, anonymous_current_session_response,
+    append_response_headers, attach_session_headers, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, build_workspace_overview_response, code_branch_error,
+    code_browser_error, code_file_record_is_renderable_markdown, code_path_is_markdown,
     current_session_response_from_user, decode_query_component, delete_project_repository_storage,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     detect_upload_mime_type, direct_project_update_allowed, direct_status_from_connect_error,
@@ -955,10 +955,6 @@ fn default_public_origin(configured: &str) -> String {
         configured.trim().to_string()
     };
     candidate.trim_end_matches('/').to_string()
-}
-
-pub(crate) fn absolute_app_url(public_origin: &str, base_path: &str, path: &str) -> String {
-    format!("{public_origin}{}", base_path_href(base_path, path))
 }
 
 fn default_smtp_from() -> String {
