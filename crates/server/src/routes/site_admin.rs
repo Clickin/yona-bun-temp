@@ -659,7 +659,7 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     site_update: SiteUpdateConfig,
-    _smtp: SmtpRuntimeConfig,
+    smtp: SmtpRuntimeConfig,
     base_path: String,
     max_uploaded_file_size: usize,
 ) -> Router {
@@ -697,6 +697,7 @@ pub(crate) fn routes(
     let site_mail_send_session_manager = session_manager.clone();
     let site_mail_send_backend = backend.clone();
     let site_mail_send_base_path = base_path.clone();
+    let site_mail_send_smtp = smtp.clone();
     let site_mail_list_session_manager = session_manager.clone();
     let site_mail_list_backend = backend.clone();
     let site_export_session_manager = session_manager.clone();
@@ -786,6 +787,7 @@ pub(crate) fn routes(
                         site_mail_send_session_manager.clone(),
                         site_mail_send_backend.clone(),
                         site_mail_send_base_path.clone(),
+                        site_mail_send_smtp.clone(),
                     )
                     .await
                 }
@@ -1210,6 +1212,7 @@ async fn direct_send_site_mail(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    smtp: SmtpRuntimeConfig,
 ) -> Response {
     let form = direct_site_mail_form(&body);
     let headers = headers_with_form_csrf(headers, &form);
@@ -1226,9 +1229,9 @@ async fn direct_send_site_mail(
         backend,
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
+        smtp: smtp.clone(),
     };
-    match rest_send_site_test_mail(headers, body, service, SmtpRuntimeConfig::from_env()).await {
+    match rest_send_site_test_mail(headers, body, service, smtp).await {
         Ok(_) => {
             Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
         }

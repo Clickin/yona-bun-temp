@@ -2891,7 +2891,8 @@ async fn site_admin_update_download_file_proxies_configured_https_binary() {
 #[tokio::test]
 async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     // Guards the site-admin mail DTO route-module ownership split and SMTP
-    // runtime snapshot plumbing through the shared PilotServiceImpl wrapper.
+    // runtime snapshot plumbing through the shared PilotServiceImpl wrapper,
+    // including the direct legacy POST /sites/mail form submit path.
     let _guard = smtp_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());
