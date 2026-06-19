@@ -185,6 +185,44 @@ async fn upload_image_file(
         .expect("uploaded file id")
 }
 
+async fn assert_attachment_container_acl(
+    app: axum::Router,
+    cookie_header: &str,
+    container_type: &str,
+    container_id: i64,
+    attachment_id: i64,
+    expected_status: StatusCode,
+) {
+    let list_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType={container_type}&containerId={container_id}"
+                ))
+                .header(http::header::COOKIE, cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(list_response.status(), expected_status);
+
+    let read_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{attachment_id}"))
+                .header(http::header::COOKIE, cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(read_response.status(), expected_status);
+}
+
 #[tokio::test]
 // Guards asset-owned filesystem fallback, runtime injection, and base-path SPA routing.
 async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
@@ -1482,6 +1520,141 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .await
         .unwrap();
     assert_eq!(owner_private_issue_file_list.status(), StatusCode::OK);
+
+    let private_board_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "private-board-attachment.png",
+    )
+    .await;
+    let private_posting = repository
+        .create_posting(CreatePostingInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "privateYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![private_board_file_id],
+                body_markdown: "private board body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "Private board post with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("private posting");
+    assert_attachment_container_acl(
+        app.clone(),
+        &other_cookie_header,
+        "BOARD_POST",
+        private_posting.id,
+        private_board_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+    assert_attachment_container_acl(
+        app.clone(),
+        &cookie_header,
+        "BOARD_POST",
+        private_posting.id,
+        private_board_file_id,
+        StatusCode::OK,
+    )
+    .await;
+
+    let private_milestone_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "private-milestone-attachment.png",
+    )
+    .await;
+    let private_milestone = repository
+        .create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(owner_id),
+            attachment_ids: vec![private_milestone_file_id],
+            contents_markdown: "private milestone body".to_string(),
+            due_date: None,
+            owner_name: "owner".to_string(),
+            project_name: "privateYobi".to_string(),
+            state: "open".to_string(),
+            title: "Private milestone with attachment".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("private milestone");
+    assert_attachment_container_acl(
+        app.clone(),
+        &other_cookie_header,
+        "MILESTONE",
+        private_milestone.id,
+        private_milestone_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+    assert_attachment_container_acl(
+        app.clone(),
+        &cookie_header,
+        "MILESTONE",
+        private_milestone.id,
+        private_milestone_file_id,
+        StatusCode::OK,
+    )
+    .await;
+
+    let private_pull_request_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "private-pull-request-attachment.png",
+    )
+    .await;
+    let private_pull_request = match repository
+        .create_pull_request(CreatePullRequestInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            from_branch: "topic/private-pr".to_string(),
+            from_project_id: private_project.id,
+            to_branch: "main".to_string(),
+            to_project_id: private_project.id,
+            values: PullRequestMutationInput {
+                attachment_ids: vec![private_pull_request_file_id],
+                body_markdown: "private pull request body".to_string(),
+                title: "Private pull request with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("private pull request")
+    {
+        CreatePullRequestResult::Created(detail) => detail,
+        CreatePullRequestResult::Duplicate(_) => {
+            panic!("unexpected private duplicate pull request")
+        }
+    };
+    assert_attachment_container_acl(
+        app.clone(),
+        &other_cookie_header,
+        "PULL_REQUEST",
+        private_pull_request.id,
+        private_pull_request_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+    assert_attachment_container_acl(
+        app.clone(),
+        &cookie_header,
+        "PULL_REQUEST",
+        private_pull_request.id,
+        private_pull_request_file_id,
+        StatusCode::OK,
+    )
+    .await;
 
     let issue_comment_file_id = upload_image_file(
         app.clone(),
