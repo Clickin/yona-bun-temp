@@ -102,9 +102,10 @@ pub(crate) use routes::{
     visible_code_projects_for_organization, visible_projects_for_organization,
     visible_user_issue_items, workspace_avatar_url, workspace_default_landing_path_set,
     workspace_invalid_argument, workspace_overview_read, workspace_profile_from_record,
-    ProjectCreatableResource, RestBoardLabel, RestIssueAssignableUsersQuery,
-    RestProjectDeleteResponse, RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
-    RestRouteError, LEGACY_DEFAULT_MAX_FILE_SIZE,
+    workspace_profile_update, workspace_visited_projects_reset, ProjectCreatableResource,
+    RestBoardLabel, RestIssueAssignableUsersQuery, RestProjectDeleteResponse,
+    RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery, RestRouteError,
+    LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
 pub mod runtime_config;
 mod server_config;
@@ -1109,49 +1110,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateProfileRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        if request.name.trim().is_empty() {
-            return Err(workspace_invalid_argument("validation.required"));
-        }
-        if !request.avatar_attachment_id.trim().is_empty() {
-            let attachment_id = request
-                .avatar_attachment_id
-                .trim()
-                .parse::<i64>()
-                .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?;
-            let Some(attachment) = repository
-                .promote_avatar_attachment_for_user(user_id, attachment_id)
-                .await
-                .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?
-            else {
-                return Err(workspace_invalid_argument("user.avatar.uploadError"));
-            };
-            if !attachment.mime_type.starts_with("image/") {
-                return Err(workspace_invalid_argument("user.avatar.onlyImage"));
-            }
-            if attachment.size > 1024 * 1000 {
-                return Err(workspace_invalid_argument("user.avatar.fileSizeAlert"));
-            }
-        }
-        repository
-            .update_profile_for_user(user_id, &request.name, &request.email)
-            .await
-            .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_profile_update(self, ctx, request).await
     }
 
     async fn change_password(
@@ -1206,26 +1165,7 @@ impl PilotServiceImpl {
         ctx: Context,
         _request: OwnedView<ResetVisitedProjectsRequestView<'static>>,
     ) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let Some(user_id) = session.user_id else {
-            return Err(ConnectError::unauthenticated(
-                "missing authenticated session",
-            ));
-        };
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "workspace requires repository backend",
-            ));
-        };
-        repository
-            .clear_recent_projects_for_user(user_id)
-            .await
-            .map_err(internal_error)?;
-        Ok((
-            build_workspace_overview_response(repository, &session, &self.base_path).await?,
-            ctx,
-        ))
+        workspace_visited_projects_reset(self, ctx).await
     }
 
     async fn add_workspace_email(

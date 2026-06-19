@@ -24,8 +24,8 @@ use crate::{
     resolve_current_session_response, rest_json_response, rest_owned_view,
     send_workspace_email_validation_mail,
     session::{self, SessionManager},
-    AuthUiConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
-    WorkspaceIssueItem,
+    workspace_invalid_argument, AuthUiConfig, ConnectError, Context, PilotBackend,
+    PilotServiceImpl, RestRouteError, WorkspaceIssueItem,
 };
 
 use super::rest_delete_project_member;
@@ -509,6 +509,82 @@ pub(crate) async fn workspace_default_landing_path_set(
         .await
         .map_err(internal_error)?;
 
+    Ok((
+        build_workspace_overview_response(repository, &session, &service.base_path).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn workspace_profile_update(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<UpdateProfileRequestView<'static>>,
+) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "workspace requires repository backend",
+        ));
+    };
+    if request.name.trim().is_empty() {
+        return Err(workspace_invalid_argument("validation.required"));
+    }
+    if !request.avatar_attachment_id.trim().is_empty() {
+        let attachment_id = request
+            .avatar_attachment_id
+            .trim()
+            .parse::<i64>()
+            .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?;
+        let Some(attachment) = repository
+            .promote_avatar_attachment_for_user(user_id, attachment_id)
+            .await
+            .map_err(|_| workspace_invalid_argument("user.avatar.uploadError"))?
+        else {
+            return Err(workspace_invalid_argument("user.avatar.uploadError"));
+        };
+        if !attachment.mime_type.starts_with("image/") {
+            return Err(workspace_invalid_argument("user.avatar.onlyImage"));
+        }
+        if attachment.size > 1024 * 1000 {
+            return Err(workspace_invalid_argument("user.avatar.fileSizeAlert"));
+        }
+    }
+    repository
+        .update_profile_for_user(user_id, &request.name, &request.email)
+        .await
+        .map_err(|error| workspace_invalid_argument(error.to_string()))?;
+    Ok((
+        build_workspace_overview_response(repository, &session, &service.base_path).await?,
+        ctx,
+    ))
+}
+
+pub(crate) async fn workspace_visited_projects_reset(
+    service: &PilotServiceImpl,
+    ctx: Context,
+) -> Result<(ReadWorkspaceOverviewResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let Some(user_id) = session.user_id else {
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "workspace requires repository backend",
+        ));
+    };
+    repository
+        .clear_recent_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
     Ok((
         build_workspace_overview_response(repository, &session, &service.base_path).await?,
         ctx,
@@ -2238,8 +2314,7 @@ pub(crate) async fn rest_update_profile(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateProfileRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .update_profile(Context::new(headers), request)
+    let (payload, ctx) = workspace_profile_update(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -2271,8 +2346,8 @@ pub(crate) async fn rest_reset_visited_projects(
 ) -> Result<Response, RestRouteError> {
     let request = ResetVisitedProjectsRequest::default();
     let request = rest_owned_view::<ResetVisitedProjectsRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .reset_visited_projects(Context::new(headers), request)
+    let _request = request;
+    let (payload, ctx) = workspace_visited_projects_reset(&service, Context::new(headers))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))

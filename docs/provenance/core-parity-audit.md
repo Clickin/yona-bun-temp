@@ -392,6 +392,15 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::workspace_overview_reads_and_updates_default_landing`
   and
   `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`.
+- 2026-06-20 build/check diet note: workspace profile update and recent-project
+  reset RPC logic moved from `PilotServiceImpl` in monolithic
+  `crates/server/src/lib.rs` into `crates/server/src/routes/workspace.rs`,
+  preserving profile validation, avatar attachment promotion and MIME/size
+  checks, profile persistence, recent-project clearing, CSRF enforcement, and
+  refreshed overview response behavior covered by
+  `auth_workspace_contract::update_profile_replaces_existing_avatar_attachment`
+  and
+  `auth_workspace_contract::workspace_settings_mutations_round_trip_through_workspace_overview`.
 
 ## Wave 0 Exit Snapshot
 
