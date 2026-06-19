@@ -665,6 +665,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   creation, token response headers, get-locks report visibility, PROPFIND
   lockdiscovery metadata, and unlock behavior covered by
   `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`.
+- 2026-06-20 build/check diet note: SVN report path joining, file lookup,
+  label revision, destination URL lookup, and activity id parsing helpers moved
+  from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/path.rs`; route parsing and DAV
+  response/status helpers remain in the protocol module. This preserves legacy
+  SVN path/auth routing, label-revision PROPFIND behavior, update report path
+  resolution, and direct URL copy destination handling covered by
+  `svn_protocol_contract::svn_protocol_route_preserves_legacy_path_and_auth_boundary`,
+  `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
+  `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
+  and `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`.
 
 ## Wave 0 Exit Snapshot
 

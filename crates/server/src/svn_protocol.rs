@@ -17,6 +17,7 @@ use yona_rust_vcs::VcsError;
 
 mod date;
 mod lock;
+mod path;
 mod svndiff;
 mod xml;
 
@@ -110,7 +111,7 @@ pub(crate) async fn direct_request(
             }
         };
         let request = String::from_utf8_lossy(&body_bytes);
-        let youngest_revision = svn_protocol_label_revision(&parts.headers)
+        let youngest_revision = path::label_revision(&parts.headers)
             .or_else(|| yona_rust_vcs::svn_youngest_revision(&repo_path).ok());
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
         return svn_protocol_root_propfind_response(
@@ -129,7 +130,7 @@ pub(crate) async fn direct_request(
             }
         };
         let request = String::from_utf8_lossy(&body_bytes);
-        let youngest_revision = svn_protocol_label_revision(&parts.headers)
+        let youngest_revision = path::label_revision(&parts.headers)
             .or_else(|| yona_rust_vcs::svn_youngest_revision(&repo_path).ok());
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
         return svn_protocol_collection_propfind_response(
@@ -167,7 +168,7 @@ pub(crate) async fn direct_request(
         let recursive_children = depth
             .map(|value| value.eq_ignore_ascii_case("infinity"))
             .unwrap_or(false);
-        let propfind_route = svn_protocol_labeled_route(&route, &parts.headers);
+        let propfind_route = path::labeled_route(&route, &parts.headers);
         if let Some(response) = svn_protocol_tree_propfind_response(
             &repo_path,
             &propfind_route,
@@ -219,7 +220,7 @@ pub(crate) async fn direct_request(
         return svn_protocol_move_response(&repo_path, &route, principal.as_ref(), &parts.headers);
     }
     if method == "DELETE" {
-        if svn_protocol_activity_id(&route.svn_path).is_some() {
+        if path::activity_id(&route.svn_path).is_some() {
             return svn_protocol_status_response(StatusCode::NO_CONTENT);
         }
         return svn_protocol_delete_response(&repo_path, &route, principal.as_ref());
@@ -834,7 +835,7 @@ fn svn_protocol_file_response(
     route: &SvnProtocolRoute,
     head_only: bool,
 ) -> Response {
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_not_implemented_response(
             route,
             if head_only { "HEAD" } else { "GET" },
@@ -878,7 +879,7 @@ fn svn_protocol_file_propfind_response(
     route: &SvnProtocolRoute,
     request: &str,
 ) -> Response {
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_not_implemented_response(route, "PROPFIND");
     };
     let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
@@ -971,7 +972,7 @@ fn svn_protocol_tree_propfind_response(
     recursive_children: bool,
     request: &str,
 ) -> Option<Response> {
-    let (revision, path) = svn_protocol_file_lookup_for_route(route)?;
+    let (revision, path) = path::file_lookup_for_route(route)?;
     let tree_result = if recursive_children {
         yona_rust_vcs::svn_list_tree_recursive(repo_path, revision, &path)
     } else {
@@ -1983,10 +1984,10 @@ fn svn_protocol_update_report_response(
     }
     .map(|path| svn_protocol_repo_relative_request_path(route, &path))
     .unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let update_path = join_svn_report_path(&base_path, &requested_path);
+    let update_path = path::join_report_path(&base_path, &requested_path);
     let depth = svn_protocol_update_depth(request);
     let start_empty = svn_protocol_update_start_empty(request);
     let base_revision = svn_protocol_update_entry_revision(request).unwrap_or(target_revision);
@@ -2217,10 +2218,10 @@ fn svn_protocol_file_revs_report_response(
     let start_revision = xml::i64(request, "start-revision").unwrap_or(0);
     let end_revision = xml::i64(request, "end-revision").unwrap_or(youngest_revision);
     let requested_path = xml::text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let file_path = join_svn_report_path(&base_path, &requested_path);
+    let file_path = path::join_report_path(&base_path, &requested_path);
     if file_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
@@ -2273,7 +2274,7 @@ fn svn_protocol_replay_report_response(
     request: &str,
 ) -> Response {
     let revision = match xml::i64(request, "revision")
-        .or_else(|| svn_protocol_file_lookup_for_route(route).and_then(|(revision, _)| revision))
+        .or_else(|| path::file_lookup_for_route(route).and_then(|(revision, _)| revision))
     {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
@@ -2291,7 +2292,7 @@ fn svn_protocol_replay_report_response(
     let include_path = xml::text(request, "include-path")
         .map(|path| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
     let filter_path = include_path.or(base_path);
@@ -2346,7 +2347,7 @@ fn svn_protocol_mergeinfo_report_response(
             }
         },
     };
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let requested_paths = xml::sections(request, "path");
@@ -2358,7 +2359,7 @@ fn svn_protocol_mergeinfo_report_response(
 
     let mut items = String::new();
     for requested_path in requested_paths {
-        let path = join_svn_report_path(&base_path, requested_path);
+        let path = path::join_report_path(&base_path, requested_path);
         let mergeinfo =
             match yona_rust_vcs::svn_property(repo_path, Some(revision), &path, "svn:mergeinfo") {
                 Ok(Some(mergeinfo)) => mergeinfo,
@@ -2421,10 +2422,10 @@ fn svn_protocol_get_deleted_rev_report_response(
             }
         },
     };
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let path = join_svn_report_path(&base_path, &requested_path);
+    let path = path::join_report_path(&base_path, &requested_path);
     let deleted_revision =
         match yona_rust_vcs::svn_deleted_revision(repo_path, &path, peg_revision, end_revision) {
             Ok(revision) => revision,
@@ -2475,10 +2476,10 @@ fn svn_protocol_list_report_response(
         },
     };
     let requested_path = xml::text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let list_path = join_svn_report_path(&base_path, &requested_path);
+    let list_path = path::join_report_path(&base_path, &requested_path);
     let tree = match yona_rust_vcs::svn_list_tree(repo_path, Some(revision), &list_path) {
         Ok(tree) => tree,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -2533,7 +2534,7 @@ fn svn_protocol_get_locks_report_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
 ) -> Response {
-    let path = svn_protocol_file_lookup_for_route(route)
+    let path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let lock = match yona_rust_vcs::svn_lock(repo_path, &path) {
@@ -2584,10 +2585,10 @@ fn svn_protocol_inherited_props_report_response(
         },
     };
     let requested_path = xml::text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let path = join_svn_report_path(&base_path, &requested_path);
+    let path = path::join_report_path(&base_path, &requested_path);
     let inherited = match yona_rust_vcs::svn_inherited_properties(repo_path, revision, &path) {
         Ok(inherited) => inherited,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -2618,7 +2619,7 @@ fn svn_protocol_inherited_props_report_response(
 }
 
 fn svn_protocol_mkactivity_response(route: &SvnProtocolRoute) -> Response {
-    if svn_protocol_activity_id(&route.svn_path).is_none() {
+    if path::activity_id(&route.svn_path).is_none() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
     svn_protocol_status_response(StatusCode::CREATED)
@@ -2629,14 +2630,14 @@ fn svn_protocol_checkout_response(route: &SvnProtocolRoute, body: &Bytes) -> Res
     let Some(activity_href) = xml::text(&request, "href") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let Some(activity_id) = svn_protocol_activity_id(&activity_href) else {
+    let Some(activity_id) = path::activity_id(&activity_href) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let working_path =
         if route.svn_path == "!svn/vcc/default" || route.svn_path.starts_with("!svn/bln/") {
             String::new()
         } else {
-            let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
+            let Some((_, path)) = path::file_lookup_for_route(route) else {
                 return svn_protocol_status_response(StatusCode::BAD_REQUEST);
             };
             path
@@ -2666,7 +2667,7 @@ fn svn_protocol_merge_response(
     let Some(activity_href) = xml::text(&request, "href") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    if svn_protocol_activity_id(&activity_href).is_none() {
+    if path::activity_id(&activity_href).is_none() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
     let revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
@@ -2679,7 +2680,7 @@ fn svn_protocol_merge_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let merge_path = svn_protocol_file_lookup_for_route(route)
+    let merge_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
@@ -2788,7 +2789,7 @@ fn svn_protocol_put_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -2849,7 +2850,7 @@ fn svn_protocol_copy_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((source_revision, source_path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((source_revision, source_path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if source_path.trim().is_empty() {
@@ -2858,7 +2859,7 @@ fn svn_protocol_copy_response(
     let Some(destination) = headers
         .get("destination")
         .and_then(|value| value.to_str().ok())
-        .and_then(|value| svn_protocol_destination_file_lookup(route, value))
+        .and_then(|value| path::destination_file_lookup(route, value))
     else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
@@ -2904,7 +2905,7 @@ fn svn_protocol_move_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((source_revision, source_path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((source_revision, source_path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if source_revision.is_some() || source_path.trim().is_empty() {
@@ -2913,7 +2914,7 @@ fn svn_protocol_move_response(
     let Some(destination) = headers
         .get("destination")
         .and_then(|value| value.to_str().ok())
-        .and_then(|value| svn_protocol_destination_file_lookup(route, value))
+        .and_then(|value| path::destination_file_lookup(route, value))
     else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
@@ -2952,7 +2953,7 @@ fn svn_protocol_mkcol_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -2987,10 +2988,10 @@ fn svn_protocol_proppatch_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    if svn_protocol_working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
+    if path::working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
         let mut response = (
             StatusCode::MULTI_STATUS,
             svn_protocol_proppatch_multistatus(route, "", &[]),
@@ -3048,7 +3049,7 @@ fn svn_protocol_delete_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -3097,7 +3098,7 @@ fn svn_protocol_lock_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((_, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let request = String::from_utf8_lossy(body);
@@ -3147,7 +3148,7 @@ fn svn_protocol_unlock_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
+    let Some((_, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let Some(token) = lock::token_header(headers) else {
@@ -3174,10 +3175,10 @@ fn svn_protocol_get_locations_report_response(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let requested_path = xml::text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let location_path = join_svn_report_path(&base_path, &requested_path);
+    let location_path = path::join_report_path(&base_path, &requested_path);
     let exists =
         match yona_rust_vcs::svn_path_exists(repo_path, Some(location_revision), &location_path) {
             Ok(exists) => exists,
@@ -3225,10 +3226,10 @@ fn svn_protocol_get_location_segments_report_response(
     };
     let end_revision = xml::i64(request, "end-revision").unwrap_or(start_revision);
     let requested_path = xml::text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup_for_route(route)
+    let base_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let location_path = join_svn_report_path(&base_path, &requested_path);
+    let location_path = path::join_report_path(&base_path, &requested_path);
     let exists =
         match yona_rust_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
             Ok(exists) => exists,
@@ -3922,142 +3923,6 @@ fn svn_protocol_proppatch_multistatus(
 </D:multistatus>"#,
         xml_escape(&href)
     )
-}
-
-fn join_svn_report_path(base_path: &str, requested_path: &str) -> String {
-    let base_path = base_path.trim_matches('/');
-    let requested_path = requested_path.trim_matches('/');
-    if base_path.is_empty() {
-        requested_path.to_string()
-    } else if requested_path.is_empty() {
-        base_path.to_string()
-    } else {
-        format!("{base_path}/{requested_path}")
-    }
-}
-
-fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
-    let trimmed = svn_path.trim_matches('/');
-    if trimmed.is_empty() {
-        return None;
-    }
-    if let Some(rest) = trimmed.strip_prefix("!svn/wrk/") {
-        let (_, path) = rest.split_once('/').unwrap_or((rest, ""));
-        return Some((None, path.to_string()));
-    }
-    if let Some(rest) = trimmed.strip_prefix("!svn/vcc/default/") {
-        return Some((None, rest.to_string()));
-    }
-    if let Some(rest) = trimmed.strip_prefix("!svn/rvr/") {
-        return svn_protocol_revision_path(rest);
-    }
-    if let Some(rest) = trimmed.strip_prefix("!svn/bc/") {
-        return svn_protocol_revision_path(rest);
-    }
-    if let Some(rest) = trimmed.strip_prefix("!svn/ver/") {
-        return svn_protocol_revision_path(rest);
-    }
-    if trimmed.starts_with("!svn/") {
-        return None;
-    }
-    Some((None, trimmed.to_string()))
-}
-
-fn svn_protocol_file_lookup_for_route(route: &SvnProtocolRoute) -> Option<(Option<i64>, String)> {
-    let (revision, path) = svn_protocol_file_lookup(&route.svn_path)?;
-    Some((
-        revision,
-        svn_protocol_strip_project_path_alias(route, &path),
-    ))
-}
-
-fn svn_protocol_labeled_route(route: &SvnProtocolRoute, headers: &HeaderMap) -> SvnProtocolRoute {
-    let Some(revision) = svn_protocol_label_revision(headers) else {
-        return route.clone();
-    };
-    let path = route.svn_path.trim_matches('/');
-    let svn_path = if path.is_empty() {
-        format!("!svn/bc/{revision}")
-    } else if path.starts_with("!svn/") {
-        path.to_string()
-    } else {
-        format!("!svn/ver/{revision}/{path}")
-    };
-    SvnProtocolRoute {
-        svn_path,
-        ..route.clone()
-    }
-}
-
-fn svn_protocol_label_revision(headers: &HeaderMap) -> Option<i64> {
-    headers
-        .get("label")
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.trim().parse::<i64>().ok())
-}
-
-fn svn_protocol_destination_file_lookup(
-    route: &SvnProtocolRoute,
-    destination: &str,
-) -> Option<(Option<i64>, String)> {
-    let svn_path = svn_protocol_repo_relative_request_path(route, destination);
-    let destination_route = SvnProtocolRoute {
-        base_path: route.base_path.clone(),
-        request_origin: route.request_origin.clone(),
-        owner_name: route.owner_name.clone(),
-        project_name: route.project_name.clone(),
-        svn_path,
-    };
-    svn_protocol_file_lookup_for_route(&destination_route)
-}
-
-fn svn_protocol_strip_project_path_alias(route: &SvnProtocolRoute, path: &str) -> String {
-    let trimmed = path.trim_matches('/');
-    if trimmed == route.project_name {
-        return String::new();
-    }
-    if let Some(stripped) = trimmed.strip_prefix(&format!("{}/", route.project_name)) {
-        return stripped.to_string();
-    }
-    path.to_string()
-}
-
-fn svn_protocol_revision_path(rest: &str) -> Option<(Option<i64>, String)> {
-    let (revision, path) = rest.split_once('/').unwrap_or((rest, ""));
-    let revision = revision.parse::<i64>().ok()?;
-    Some((Some(revision), path.to_string()))
-}
-
-fn svn_protocol_activity_id(value: &str) -> Option<String> {
-    let marker = "!svn/act/";
-    let rest = value.split(marker).nth(1)?;
-    let activity_id = rest
-        .trim_start_matches('/')
-        .split(['/', '?', '#'])
-        .next()
-        .unwrap_or_default()
-        .trim();
-    if activity_id.is_empty() {
-        None
-    } else {
-        Some(activity_id.to_string())
-    }
-}
-
-fn svn_protocol_working_activity_id(value: &str) -> Option<String> {
-    let marker = "!svn/wrk/";
-    let rest = value.split(marker).nth(1)?;
-    let activity_id = rest
-        .trim_start_matches('/')
-        .split(['/', '?', '#'])
-        .next()
-        .unwrap_or_default()
-        .trim();
-    if activity_id.is_empty() {
-        None
-    } else {
-        Some(activity_id.to_string())
-    }
 }
 
 fn add_svn_dav_headers(response: &mut Response) {

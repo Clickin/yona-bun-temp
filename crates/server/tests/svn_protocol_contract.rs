@@ -3,7 +3,7 @@ use base64::{engine::general_purpose, Engine as _};
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 
-// Guards SVN protocol delta, date, XML/property, and lock behavior while
+// Guards SVN protocol path, delta, date, XML/property, and lock behavior while
 // focused helpers move out of the request dispatch module.
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
