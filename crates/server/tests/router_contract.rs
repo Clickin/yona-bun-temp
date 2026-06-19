@@ -469,6 +469,7 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
     assert!(html.contains("마일스톤 옮기기"));
     assert!(html.contains("이슈 옮기기"));
     assert!(html.contains("게시글 옮기기"));
+    assert!(html.contains("<a href=\"/yona/sites/data\">/sites/data</a>"));
     assert!(html.contains("error.forbidden.or.not.allowed"));
     assert!(!html.contains("window.__YONA_RUNTIME_CONFIG__"));
 }
