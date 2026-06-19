@@ -22,6 +22,10 @@ use yona_rust_pilot_server::{
     RuntimeConfig,
 };
 
+// Workspace route-module ownership guard: the legacy `/info/leave/:owner/:project`
+// project-leave handler lives with workspace routes, while the membership side effect
+// is asserted by project_members_contract::leave_project_redirects_to_member_projects_after_removal.
+
 fn auth_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))

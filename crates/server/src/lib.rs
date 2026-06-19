@@ -1342,52 +1342,6 @@ fn site_export_filename_stamp() -> String {
         .unwrap_or_else(|_| "0".to_string())
 }
 
-async fn direct_legacy_leave_project(
-    mut headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
-    let login_redirect = base_path_href(
-        &base_path,
-        "/users/loginform?redirectUrl=%2Fuser%2Feditform",
-    );
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
-        return Redirect::to(&login_redirect).into_response();
-    };
-    let Some(user_id) = session.user_id else {
-        return Redirect::to(&login_redirect).into_response();
-    };
-    let PilotBackend::Repository(repository) = &backend else {
-        return RestRouteError::not_implemented("project leave requires repository backend")
-            .into_response();
-    };
-    let user = match repository.find_user_by_id(user_id).await {
-        Ok(Some(user)) => user,
-        Ok(None) => return RestRouteError::not_found("user not found").into_response(),
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    headers.insert(
-        "x-csrf-token",
-        HeaderValue::from_str(&session.csrf_token).expect("csrf token header"),
-    );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-    };
-    let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
-    redirect_to(
-        &base_path,
-        &format!("/{}?daysAgo=14&selected=projects", user.login_id),
-    )
-}
-
 fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
     let mut params = Vec::new();
     if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {

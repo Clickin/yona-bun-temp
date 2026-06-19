@@ -1,6 +1,6 @@
 use axum::{
     extract::{Form, Path, Query},
-    http::{HeaderMap, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, patch, post, put},
     Json, Router,
@@ -16,15 +16,16 @@ use yona_rust_domain::{
 use crate::generated::yona::pilot::v1::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    base_path_href, direct_legacy_leave_project, escape_html_attr, escape_html_text,
-    filter_workspace_issue_items_by_read_acl, headers_with_form_csrf,
-    legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
-    normalize_default_landing_path, normalize_identifier, read_issue_access, redirect_to,
-    require_authenticated_user, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail, session::SessionManager, AuthUiConfig, ConnectError,
-    Context, PilotBackend, PilotServiceImpl, RestRouteError, WorkspaceIssueItem,
+    base_path_href, escape_html_attr, escape_html_text, filter_workspace_issue_items_by_read_acl,
+    headers_with_form_csrf, legacy_external_api_auth_error_response,
+    legacy_external_authenticated_user_id, normalize_default_landing_path, normalize_identifier,
+    read_issue_access, redirect_to, require_authenticated_user, rest_json_response,
+    rest_owned_view, send_workspace_email_validation_mail, session::SessionManager, AuthUiConfig,
+    ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError, WorkspaceIssueItem,
     WORKSPACE_DAYS_AGO,
 };
+
+use super::rest_delete_project_member;
 
 #[derive(Deserialize)]
 struct DirectDefaultLoginPageQuery {
@@ -40,6 +41,52 @@ struct DirectDefaultLoginPageResponse {
 fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
     ProjectScope::try_from(value)
         .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
+}
+
+async fn direct_legacy_leave_project(
+    mut headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let login_redirect = base_path_href(
+        &base_path,
+        "/users/loginform?redirectUrl=%2Fuser%2Feditform",
+    );
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let Some(user_id) = session.user_id else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project leave requires repository backend")
+            .into_response();
+    };
+    let user = match repository.find_user_by_id(user_id).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return RestRouteError::not_found("user not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    headers.insert(
+        "x-csrf-token",
+        HeaderValue::from_str(&session.csrf_token).expect("csrf token header"),
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+    };
+    let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
+    redirect_to(
+        &base_path,
+        &format!("/{}?daysAgo=14&selected=projects", user.login_id),
+    )
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
