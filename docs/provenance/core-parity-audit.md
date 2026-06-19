@@ -964,6 +964,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   recipient authorization, moved project alias behavior, and transfer row
   acceptance covered by
   `project_transfer_contract::project_transfer_requests_and_accept_link_follow_legacy_permissions`.
+- 2026-06-20 build/check diet note: project change-vcs response DTO,
+  next-vcs projection, repository storage delete/reset helpers, and change-vcs
+  read/mutation handlers moved from `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/vcs.rs`; route registration remains in the
+  parent project route module, repository deletion stays crate-re-exported for
+  site-admin project deletion, and repository reset stays parent-visible for
+  Subversion project creation. This preserves change-vcs authorization,
+  Git/SVN repository reset behavior, svnadmin availability handling, and storage
+  deletion helper reuse covered by
+  `project_change_vcs_contract::project_change_vcs_follows_legacy_update_gate_and_resets_repository`.
 
 ## Wave 0 Exit Snapshot
 

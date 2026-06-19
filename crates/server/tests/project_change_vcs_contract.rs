@@ -173,6 +173,9 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 }
 
 #[tokio::test]
+// Guards the `routes/projects/vcs.rs` ownership boundary: change-vcs form,
+// update gate, Git/SVN repository reset, and unavailable-svnadmin errors stay
+// together while route registration remains in the parent project module.
 async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
     let _guard = yona_data_env_lock()
         .lock()
