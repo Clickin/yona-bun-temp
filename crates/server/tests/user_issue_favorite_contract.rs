@@ -290,7 +290,7 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
 }
 
 #[tokio::test]
-// Guards users route reuse of issue route list projection and user-filter helper boundaries.
+// Guards users route reuse of issue route list projection, visibility, and filter helper boundaries.
 async fn user_issue_list_defaults_to_assigned_and_filters_comment_shared_and_favorite() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

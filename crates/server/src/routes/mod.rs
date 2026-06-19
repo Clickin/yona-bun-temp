@@ -46,12 +46,13 @@ pub(crate) use issues::{
     issue_attachment_from_record, issue_can_mutate, issue_detail_response_from_access,
     issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
-    issue_detail_response_from_record_with_sharer_flags, issue_milestone_from_record,
-    issue_milestone_from_record_with_issue_references, legacy_external_assignable_users_result,
-    legacy_external_label_id, read_issue_access, resolve_issue_reference_search_project,
+    issue_detail_response_from_record_with_sharer_flags, issue_list_filter_from_request,
+    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
+    legacy_external_assignable_users_result, legacy_external_label_id, read_issue_access,
+    resolve_issue_reference_search_project,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_read_direct_issue_form_options,
-    RestProjectIssuesQuery,
+    visible_user_issue_items, RestProjectIssuesQuery,
 };
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::rest_routes as notification_rest_routes;
@@ -60,8 +61,8 @@ pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use projects::{
     delete_project_repository_storage, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
-    project_webhook_type_label, record_project_webhook_delivery, rest_delete_project_member,
-    rest_project_menu_settings,
+    milestone_list_filter_from_request, milestone_mutation_input, project_webhook_type_label,
+    record_project_webhook_delivery, rest_delete_project_member, rest_project_menu_settings,
 };
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;

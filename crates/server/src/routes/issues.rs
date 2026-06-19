@@ -30,10 +30,10 @@ use crate::{
     require_authenticated_user, require_project_authorization, require_project_read,
     require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
-    visible_projects_for_organization, visible_user_issue_items, ConnectError, Context, ErrorCode,
-    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestDirectIssueFormQuery,
-    RestIssueAssignableUsersQuery, RestRouteError, RestUserIssuesQuery,
+    visible_projects_for_organization, ConnectError, Context, ErrorCode, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, RestDirectIssueFormQuery, RestIssueAssignableUsersQuery,
+    RestRouteError, RestUserIssuesQuery,
 };
 
 #[derive(Default, Deserialize)]
@@ -218,6 +218,23 @@ struct RestIssueMutationBody {
     )]
     refer_comment_id: Option<i64>,
     title: String,
+}
+
+pub(crate) fn issue_list_filter_from_request(
+    request: &ListProjectIssuesRequestView<'_>,
+) -> persistence::IssueListFilter {
+    persistence::IssueListFilter {
+        assignee_id: None,
+        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
+            .then(|| request.assignee_login_id.trim().to_string()),
+        author_login_id: (!request.author_login_id.trim().is_empty())
+            .then(|| request.author_login_id.trim().to_string()),
+        draft_author_login_id: None,
+        label_ids: request.label_ids.to_vec(),
+        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+        page_num: request.page_num.max(1),
+        state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
+    }
 }
 
 #[derive(Default, Deserialize)]
@@ -6482,6 +6499,33 @@ pub(crate) async fn read_issue_access(
     } else {
         Err(ConnectError::permission_denied("issue read is not allowed"))
     }
+}
+
+pub(crate) async fn visible_user_issue_items(
+    repository: &PilotRepository,
+    user_id: i64,
+    filter: persistence::UserIssueListFilter,
+) -> Result<Vec<persistence::ProjectIssueListItemRecord>, ConnectError> {
+    let candidates = repository
+        .list_user_issue_candidates(user_id, filter)
+        .await
+        .map_err(internal_error)?;
+    let mut visible = Vec::new();
+    for candidate in candidates {
+        if read_issue_access(
+            repository,
+            &candidate.item.owner_name,
+            &candidate.item.project_name,
+            candidate.item.issue_number,
+            Some(user_id),
+        )
+        .await
+        .is_ok()
+        {
+            visible.push(candidate.item);
+        }
+    }
+    Ok(visible)
 }
 
 pub(crate) fn issue_attachment_from_record(

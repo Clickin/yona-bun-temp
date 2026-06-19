@@ -52,6 +52,54 @@ struct DirectMarkdownRenderResponse {
     breaks: bool,
 }
 
+pub(crate) fn milestone_list_filter_from_request(
+    request: &ListProjectMilestonesRequestView<'_>,
+) -> persistence::MilestoneListFilter {
+    persistence::MilestoneListFilter {
+        order_by: if request.order_by.trim().is_empty() {
+            "dueDate".to_string()
+        } else {
+            request.order_by.trim().to_string()
+        },
+        order_dir: if request.order_dir.trim().is_empty() {
+            "asc".to_string()
+        } else {
+            request.order_dir.trim().to_string()
+        },
+        state: if request.state.trim().is_empty() {
+            "open".to_string()
+        } else {
+            request.state.trim().to_string()
+        },
+    }
+}
+
+pub(crate) fn milestone_mutation_input(
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+    title: &str,
+    contents_markdown: &str,
+    due_date: &str,
+    state: &str,
+    attachment_ids: &[i64],
+) -> Result<persistence::MilestoneMutationInput, ConnectError> {
+    let title = title.trim();
+    if title.is_empty() {
+        return Err(ConnectError::invalid_argument("milestone.error.title"));
+    }
+    Ok(persistence::MilestoneMutationInput {
+        actor_id,
+        attachment_ids: attachment_ids.to_vec(),
+        contents_markdown: contents_markdown.to_string(),
+        due_date: parse_milestone_due_date(due_date)?,
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+        state: normalize_milestone_state(state)?,
+        title: title.to_string(),
+    })
+}
+
 async fn direct_toggle_project_watch(
     headers: HeaderMap,
     owner_name: String,

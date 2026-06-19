@@ -42,21 +42,23 @@ pub(crate) use routes::{
     issue_can_mutate, issue_detail_response_from_access, issue_detail_response_from_record,
     issue_detail_response_from_record_with_repository_issue_references,
     issue_detail_response_from_record_with_sharer_flags, issue_label_category_from_record,
-    issue_label_css, issue_label_from_record, issue_milestone_from_record,
-    issue_milestone_from_record_with_issue_references, legacy_content_disposition_filename,
-    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
-    legacy_external_api_token_from_headers, legacy_external_assignable_users_result,
-    legacy_external_attachment_result, legacy_external_authenticated_user_id,
-    legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
-    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
-    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, normalize_issue_label_color,
-    normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
-    organization_detail_from_record, organization_detail_with_logo_from_record,
-    organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,
-    organization_logo_url, organization_member_summary_from_record, organization_role_options,
-    parse_attachment_ids, parse_milestone_due_date, posting_can_create, posting_can_update,
-    project_code_menu_visible, project_detail_from_record, project_detail_with_logo_from_record,
+    issue_label_css, issue_label_from_record, issue_list_filter_from_request,
+    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
+    legacy_content_disposition_filename, legacy_content_update_body_from_value,
+    legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
+    legacy_external_assignable_users_result, legacy_external_attachment_result,
+    legacy_external_authenticated_user_id, legacy_external_date_string, legacy_external_label_id,
+    legacy_external_parse_datetime, legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
+    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
+    legacy_json_find_value, milestone_list_filter_from_request, milestone_mutation_input,
+    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
+    organization_admin_member_from_record, organization_detail_from_record,
+    organization_detail_with_logo_from_record, organization_enrollment_request_summary_from_record,
+    organization_issue_list_item_to_proto, organization_logo_url,
+    organization_member_summary_from_record, organization_role_options, parse_attachment_ids,
+    parse_milestone_due_date, posting_can_create, posting_can_update, project_code_menu_visible,
+    project_detail_from_record, project_detail_with_logo_from_record,
     project_issue_list_item_to_proto, project_logo_url, project_member_summary_from_record,
     project_milestone_summary_from_record, project_webhook_type_label, read_issue_access,
     read_posting_access, read_posting_comment_create_access, record_project_webhook_delivery,
@@ -67,8 +69,8 @@ pub(crate) use routes::{
     rest_read_direct_issue_form_options, rest_review_thread_filter,
     rest_update_commit_discussion_thread_state, uploaded_file_path, user_issue_filter_name,
     user_issue_state, visible_code_projects_for_organization, visible_projects_for_organization,
-    workspace_avatar_url, workspace_profile_from_record, RestBoardLabel, RestProjectIssuesQuery,
-    RestReviewThread, RestReviewThreadListQuery,
+    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record, RestBoardLabel,
+    RestProjectIssuesQuery, RestReviewThread, RestReviewThreadListQuery,
 };
 pub mod runtime_config;
 mod server_config;
@@ -2398,98 +2400,6 @@ fn escape_html_attr(value: &str) -> String {
     escape_html_text(value)
         .replace('"', "&quot;")
         .replace('\'', "&#x27;")
-}
-
-fn issue_list_filter_from_request(
-    request: &ListProjectIssuesRequestView<'_>,
-) -> persistence::IssueListFilter {
-    persistence::IssueListFilter {
-        assignee_id: None,
-        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
-            .then(|| request.assignee_login_id.trim().to_string()),
-        author_login_id: (!request.author_login_id.trim().is_empty())
-            .then(|| request.author_login_id.trim().to_string()),
-        draft_author_login_id: None,
-        label_ids: request.label_ids.to_vec(),
-        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
-        page_num: request.page_num.max(1),
-        state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
-    }
-}
-
-async fn visible_user_issue_items(
-    repository: &PilotRepository,
-    user_id: i64,
-    filter: persistence::UserIssueListFilter,
-) -> Result<Vec<persistence::ProjectIssueListItemRecord>, ConnectError> {
-    let candidates = repository
-        .list_user_issue_candidates(user_id, filter)
-        .await
-        .map_err(internal_error)?;
-    let mut visible = Vec::new();
-    for candidate in candidates {
-        if read_issue_access(
-            repository,
-            &candidate.item.owner_name,
-            &candidate.item.project_name,
-            candidate.item.issue_number,
-            Some(user_id),
-        )
-        .await
-        .is_ok()
-        {
-            visible.push(candidate.item);
-        }
-    }
-    Ok(visible)
-}
-
-fn milestone_list_filter_from_request(
-    request: &ListProjectMilestonesRequestView<'_>,
-) -> persistence::MilestoneListFilter {
-    persistence::MilestoneListFilter {
-        order_by: if request.order_by.trim().is_empty() {
-            "dueDate".to_string()
-        } else {
-            request.order_by.trim().to_string()
-        },
-        order_dir: if request.order_dir.trim().is_empty() {
-            "asc".to_string()
-        } else {
-            request.order_dir.trim().to_string()
-        },
-        state: if request.state.trim().is_empty() {
-            "open".to_string()
-        } else {
-            request.state.trim().to_string()
-        },
-    }
-}
-
-fn milestone_mutation_input(
-    owner_name: &str,
-    project_name: &str,
-    actor_id: Option<i64>,
-    title: &str,
-    contents_markdown: &str,
-    due_date: &str,
-    state: &str,
-    attachment_ids: &[i64],
-) -> Result<persistence::MilestoneMutationInput, ConnectError> {
-    let title = title.trim();
-    if title.is_empty() {
-        return Err(ConnectError::invalid_argument("milestone.error.title"));
-    }
-    Ok(persistence::MilestoneMutationInput {
-        actor_id,
-        attachment_ids: attachment_ids.to_vec(),
-        contents_markdown: contents_markdown.to_string(),
-        due_date: parse_milestone_due_date(due_date)?,
-        owner_name: owner_name.to_string(),
-        project_name: project_name.to_string(),
-        state: normalize_milestone_state(state)?,
-        title: title.to_string(),
-    })
 }
 
 fn project_facts(
