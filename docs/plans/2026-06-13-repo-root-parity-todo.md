@@ -15,25 +15,25 @@ against repo-root routes and legacy `yona-original/conf/routes`.
 | Scope | Estimate | Notes |
 | --- | ---: | --- |
 | Full legacy Yona parity | ~50% | Includes all legacy product capability, VCS, PR/review, board, search, notifications, webhooks, admin, migration/import/export, and external API compatibility. |
-| Current first-priority conversion scope | ~58% | Excludes explicitly deferred second-priority items such as LDAP, OAuth provider runtime flow, remaining broader SVN edge work, and full production migration hardening. |
+| Current first-priority conversion scope | audit closed; completion review ongoing | Excludes explicitly deferred second-priority items such as LDAP, OAuth provider runtime flow, remaining broader SVN edge work, and full production migration hardening. |
 | Mechanical SPEC row count | ~49% | Strong app slices exist for auth/workspace/project/issue/VCS/PR/board/search/notification/admin, but many rows remain partial or deferred. |
 
 Interpretation:
 
 - Auth, workspace, project/organization core, issue tracker, board, Git code
   browser, PR/review, search, notifications, webhooks, files, and site admin are
-  broad but still partial parity.
+  app-runtime closed in the provenance review; remaining work is release/deferred
+  closure evidence rather than a user-facing route TODO list.
 - The largest documented gaps remain broader SVN VCC/baseline PROPFIND edge
   completeness, production migration/import hardening, and deferred LDAP/OAuth
   provider runtime flows.
 - H2 is intentionally not a Rust runtime dialect. Legacy H2 data goes through
   the standalone Java H2-to-SQLite tool and then the SQLite adopt path.
 
-## Active User-Facing TODO
+## Historical User-Facing TODO
 
-These items are selected because they are visible legacy routes or route-backed
-UI surfaces and can be handled independently. UI/copy/flow must follow
-`yona-original/` exactly; do not improve or redesign.
+These items were selected because they were visible legacy routes or route-backed
+UI surfaces and could be handled independently. They are no longer active first-priority TODOs.
 
 | Priority | Item | Legacy evidence | Owner | Status |
 | --- | --- | --- | --- | --- |
