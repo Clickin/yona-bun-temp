@@ -14,19 +14,19 @@ use crate::routes::utils::gravatar_url;
 use crate::{
     absolute_app_url, accepts_legacy_json, base_path_href, build_project_container_response,
     code_browser_error, code_file_record_is_renderable_markdown, direct_accept_project_transfer,
-    direct_create_project_milestone, direct_delete_project_milestone,
-    direct_delete_project_pushed_branch, direct_render_markdown, direct_toggle_project_watch,
-    direct_update_project_milestone, direct_update_project_milestone_state,
-    format_project_date_label, internal_error, legacy_external_api_auth_error_response,
-    legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
-    legacy_external_create_milestones, legacy_external_watchers, legacy_json_find_value,
-    map_project_scope, markdown_mention_references, normalize_identifier,
-    normalize_issue_label_color, persistence, project_detail_from_record,
-    project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
-    project_update_allowed, repository_provisioning_lock, require_authenticated_user,
-    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
-    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    direct_delete_project_pushed_branch, direct_project_update_allowed, direct_render_markdown,
+    direct_toggle_project_watch, form_value, format_project_date_label, internal_error,
+    legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
+    legacy_external_authenticated_user_id, legacy_external_create_milestones,
+    legacy_external_watchers, legacy_json_find_value, map_project_scope,
+    markdown_mention_references, normalize_identifier, normalize_issue_label_color,
+    normalize_milestone_state, parse_attachment_ids, parse_milestone_due_date, persistence,
+    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
+    project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
+    require_authenticated_user, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, rest_json_response,
+    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
+    rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context,
     DirectMarkdownRenderBody, LegacyExternalWatchersQuery, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
@@ -39,6 +39,213 @@ use yona_rust_domain::{
 };
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
 use yona_rust_vcs::VcsError;
+
+fn direct_milestone_input_from_form(
+    owner: &str,
+    project: &str,
+    actor_id: Option<i64>,
+    form: &HashMap<String, String>,
+) -> Result<persistence::MilestoneMutationInput, ConnectError> {
+    let title = form_value(form, &["title"]).trim().to_string();
+    if title.is_empty() {
+        return Err(ConnectError::invalid_argument("milestone.error.title"));
+    }
+    Ok(persistence::MilestoneMutationInput {
+        actor_id,
+        attachment_ids: parse_attachment_ids(form_value(
+            form,
+            &["attachmentIds", "attachment_ids"],
+        )),
+        contents_markdown: form_value(form, &["contents", "contentsMarkdown", "contents_markdown"])
+            .to_string(),
+        due_date: parse_milestone_due_date(form_value(form, &["dueDate", "due_date"]))?,
+        owner_name: owner.to_string(),
+        project_name: project.to_string(),
+        state: normalize_milestone_state(form_value(form, &["state"]))?,
+        title,
+    })
+}
+
+fn connect_error_to_status(error: ConnectError) -> Response {
+    if error.to_string().contains("invalid") || error.to_string().contains("required") {
+        StatusCode::BAD_REQUEST.into_response()
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    }
+}
+
+async fn direct_create_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+    let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
+        Ok(input) => input,
+        Err(error) => return connect_error_to_status(error),
+    };
+    match repository
+        .project_milestone_title_exists(&owner, &project, &input.title, None)
+        .await
+    {
+        Ok(true) => return StatusCode::BAD_REQUEST.into_response(),
+        Ok(false) => {}
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+    match repository.create_project_milestone(input).await {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_update_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+    let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
+        Ok(input) => input,
+        Err(error) => return connect_error_to_status(error),
+    };
+    match repository
+        .project_milestone_title_exists(&owner, &project, &input.title, Some(milestone_id))
+        .await
+    {
+        Ok(true) => return StatusCode::BAD_REQUEST.into_response(),
+        Ok(false) => {}
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+    match repository
+        .update_project_milestone(persistence::UpdateMilestoneInput {
+            milestone_id,
+            values: input,
+        })
+        .await
+    {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_update_project_milestone_state(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    state: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .update_project_milestone_state(&owner, &project, milestone_id, state)
+        .await
+    {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_delete_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_milestone(&owner, &project, milestone_id)
+        .await
+    {
+        Ok(true) => redirect_to(&base_path, &format!("/{owner}/{project}/milestones")),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
