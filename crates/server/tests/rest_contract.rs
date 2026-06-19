@@ -5905,6 +5905,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
 
 #[tokio::test]
 async fn rest_milestone_routes_manage_crud_and_state() {
+    // Guards REST milestone state route reuse of the project route-owned state mutation helper.
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;

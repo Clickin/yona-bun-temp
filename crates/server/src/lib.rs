@@ -74,15 +74,15 @@ pub(crate) use routes::{
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_issue_list_item_to_proto, project_logo_url,
-    project_member_summary_from_record, project_milestone_summary_from_record,
-    project_read_allowed, project_resource_create_allowed, project_update_allowed,
-    project_webhook_type_label, random_site_admin_password, random_storage_token,
-    read_issue_access, read_posting_access, read_posting_comment_create_access,
-    record_project_webhook_delivery, redirect_to, require_authenticated_user,
-    require_project_authorization, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, resolve_current_session_response,
-    resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
-    rest_commit_thread_from_record, rest_delete_project_member,
+    project_member_summary_from_record, project_milestone_state_mutation,
+    project_milestone_summary_from_record, project_read_allowed, project_resource_create_allowed,
+    project_update_allowed, project_webhook_type_label, random_site_admin_password,
+    random_storage_token, read_issue_access, read_posting_access,
+    read_posting_comment_create_access, record_project_webhook_delivery, redirect_to,
+    require_authenticated_user, require_project_authorization, require_project_read,
+    require_project_resource_create, require_session, require_valid_csrf,
+    resolve_current_session_response, resolve_issue_reference_search_project, rest_actor_id,
+    rest_board_label_from_record, rest_commit_thread_from_record, rest_delete_project_member,
     rest_issue_detail_response_from_access_with_repository_issue_references, rest_json_response,
     rest_list_user_issues, rest_not_found_response, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
@@ -982,61 +982,6 @@ pub(crate) struct PilotServiceImpl {
 }
 
 impl PilotServiceImpl {
-    async fn set_project_milestone_state(
-        &self,
-        ctx: Context,
-        request: OwnedView<MilestoneStateMutationRequestView<'static>>,
-        state: &str,
-    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        let session = require_session(&self.session_manager, &ctx.headers)?;
-        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
-        let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented(
-                "milestone requires repository backend",
-            ));
-        };
-        require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
-            repository,
-            request.owner_name,
-            request.project_name,
-            session.user_id,
-        )
-        .await?;
-        if !project_update_allowed(&authorization)? {
-            return Err(ConnectError::permission_denied(
-                "milestone update is not allowed",
-            ));
-        }
-        let milestone = repository
-            .update_project_milestone_state(
-                request.owner_name,
-                request.project_name,
-                request.milestone_id,
-                state,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            repository,
-            &authorization,
-            session.user_id,
-            &milestone,
-            &self.base_path,
-        )
-        .await?;
-        milestone.viewer_can_update = true;
-        milestone.viewer_can_delete = true;
-        Ok((
-            ProjectMilestoneMutationResponse {
-                milestone: Some(milestone).into(),
-                ..Default::default()
-            },
-            ctx,
-        ))
-    }
-
     async fn issue_participation(
         &self,
         ctx: Context,
@@ -4673,7 +4618,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<MilestoneStateMutationRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        self.set_project_milestone_state(ctx, request, "open").await
+        project_milestone_state_mutation(self, ctx, request, "open").await
     }
 
     async fn close_project_milestone(
@@ -4681,8 +4626,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<MilestoneStateMutationRequestView<'static>>,
     ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
-        self.set_project_milestone_state(ctx, request, "closed")
-            .await
+        project_milestone_state_mutation(self, ctx, request, "closed").await
     }
 }
 

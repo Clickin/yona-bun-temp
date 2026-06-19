@@ -6,6 +6,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
+use buffa::view::OwnedView;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path as StdPath};
@@ -16,16 +17,16 @@ use crate::{
     absolute_app_url, accepts_legacy_json, base_path_href, build_project_container_response,
     code_browser_error, code_file_record_is_renderable_markdown, direct_project_update_allowed,
     direct_status_from_connect_error, form_value, format_project_date_label, internal_error,
-    legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
-    legacy_external_authenticated_user_id, legacy_json_find_value, map_project_scope,
-    markdown_mention_references, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, parse_attachment_ids, parse_milestone_due_date, persistence,
-    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
-    project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
-    require_authenticated_user, require_project_read, require_project_resource_create,
-    require_session, require_valid_csrf, rest_json_response,
-    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
-    rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    issue_milestone_from_record_with_issue_references, legacy_external_api_auth_error_response,
+    legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
+    legacy_json_find_value, map_project_scope, markdown_mention_references, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, parse_attachment_ids,
+    parse_milestone_due_date, persistence, project_detail_from_record,
+    project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
+    project_update_allowed, redirect_to, repository_provisioning_lock, require_authenticated_user,
+    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
+    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
+    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, ProjectHistoryCommitRecord,
     RestIssueAssignableUsersQuery, RestMentionReferenceMetadata, RestProjectDeleteResponse,
@@ -98,6 +99,61 @@ pub(crate) fn milestone_mutation_input(
         state: normalize_milestone_state(state)?,
         title: title.to_string(),
     })
+}
+
+pub(crate) async fn project_milestone_state_mutation(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<MilestoneStateMutationRequestView<'static>>,
+    state: &str,
+) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "milestone requires repository backend",
+        ));
+    };
+    require_authenticated_user(repository, session.user_id).await?;
+    let authorization = require_project_read(
+        repository,
+        request.owner_name,
+        request.project_name,
+        session.user_id,
+    )
+    .await?;
+    if !project_update_allowed(&authorization)? {
+        return Err(ConnectError::permission_denied(
+            "milestone update is not allowed",
+        ));
+    }
+    let milestone = repository
+        .update_project_milestone_state(
+            request.owner_name,
+            request.project_name,
+            request.milestone_id,
+            state,
+        )
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
+    let mut milestone = issue_milestone_from_record_with_issue_references(
+        repository,
+        &authorization,
+        session.user_id,
+        &milestone,
+        &service.base_path,
+    )
+    .await?;
+    milestone.viewer_can_update = true;
+    milestone.viewer_can_delete = true;
+    Ok((
+        ProjectMilestoneMutationResponse {
+            milestone: Some(milestone).into(),
+            ..Default::default()
+        },
+        ctx,
+    ))
 }
 
 async fn direct_toggle_project_watch(
