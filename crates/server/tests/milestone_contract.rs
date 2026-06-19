@@ -480,6 +480,7 @@ async fn milestone_rpc_validates_due_date_and_project_permissions() {
 
 #[tokio::test]
 async fn milestone_legacy_mutation_routes_preserve_redirects() {
+    // Guards route-owned legacy external milestone creation and direct milestone mutations.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_public_project(app.clone(), &cookie, &csrf).await;

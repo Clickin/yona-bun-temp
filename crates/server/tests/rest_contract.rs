@@ -1204,7 +1204,7 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 }
 
 #[tokio::test]
-// Guards project detail/container projection and shared date-label helpers through route utils.
+// Guards project detail/container projection, shared date-label helpers, and project-owned legacy external watchers/milestones.
 async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (translation_api, translation_stub_path) =
         write_legacy_translation_stub_response("Translated **issue**");
