@@ -3,7 +3,7 @@ use axum::{routing::any, Router};
 use crate::session::SessionManager;
 use crate::{
     AssetMode, AuthUiConfig, BrowserRuntimeConfig, PilotBackend, PilotServiceImpl,
-    SiteUpdateConfig, TranslationProxyConfig,
+    SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
 };
 
 mod auth;
@@ -144,6 +144,7 @@ pub(crate) use workspace::{
 pub(crate) fn rest_api_routes(
     service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
+    smtp: SmtpRuntimeConfig,
     auth_ui: AuthUiConfig,
 ) -> Router {
     let session_manager = service.session_manager.clone();
@@ -154,7 +155,11 @@ pub(crate) fn rest_api_routes(
     let router = Router::new()
         .merge(auth_rest_routes(service.clone(), auth_ui.clone()))
         .merge(user_rest_routes(service.clone()))
-        .merge(site_admin_rest_routes(service.clone(), site_update.clone()))
+        .merge(site_admin_rest_routes(
+            service.clone(),
+            site_update.clone(),
+            smtp.clone(),
+        ))
         .merge(workspace_rest_routes(service.clone()))
         .merge(notification_rest_routes(
             session_manager.clone(),
@@ -198,6 +203,7 @@ pub(crate) fn app_routes(
     project_default_scope: String,
     translation_proxy: TranslationProxyConfig,
     site_update: SiteUpdateConfig,
+    smtp: SmtpRuntimeConfig,
     max_uploaded_file_size: usize,
     rest_router: Router,
 ) -> Router {
@@ -273,6 +279,7 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
             site_update,
+            smtp,
             base_path.clone(),
             max_uploaded_file_size,
         ))

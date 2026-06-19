@@ -20,7 +20,7 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
-    AppRuntimeConfig, RuntimeConfig, SiteUpdateConfig,
+    AppRuntimeConfig, RuntimeConfig, SiteUpdateConfig, SmtpRuntimeConfig,
 };
 
 mod rest_test_support;
@@ -3126,6 +3126,51 @@ async fn site_admin_mail_options_accept_legacy_yona_smtp_env_aliases() {
     std::env::remove_var("YONA_SMTP_PASSWORD");
 
     assert_eq!(options["notConfiguredItems"], json!([]));
+}
+
+#[tokio::test]
+async fn site_admin_mail_options_use_runtime_smtp_config_without_env_mutation() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASSWORD");
+    std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("SMTP_DOMAIN");
+    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
+    std::env::remove_var("APPLICATION_HOSTNAME");
+    std::env::remove_var("YONA_SMTP_FROM");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_DOMAIN");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    let (app, _repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        smtp: SmtpRuntimeConfig {
+            host: "smtp.snapshot.example.com".to_string(),
+            password: "snapshot-pass".to_string(),
+            site_hostname: "snapshot-host.example.com".to_string(),
+            user: "snapshot-user".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .await;
+    std::env::set_var("SMTP_USER", "mutated-user");
+    std::env::set_var("SMTP_DOMAIN", "mutated.example.com");
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_DOMAIN");
+
+    assert_eq!(options["notConfiguredItems"], json!([]));
+    assert_eq!(options["sender"], "snapshot-user@snapshot-host.example.com");
 }
 
 #[tokio::test]

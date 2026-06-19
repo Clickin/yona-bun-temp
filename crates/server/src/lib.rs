@@ -12,7 +12,8 @@ mod service;
 mod state;
 
 pub use app_config::{
-    AppRuntimeConfig, AuthUiConfig, RuntimeConfig, SiteUpdateConfig, TranslationProxyConfig,
+    AppRuntimeConfig, AuthUiConfig, RuntimeConfig, SiteUpdateConfig, SmtpRuntimeConfig,
+    TranslationProxyConfig,
 };
 pub(crate) use markdown::{
     issue_reference_metadata_from_resolved, markdown_issue_references_for_project,

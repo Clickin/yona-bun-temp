@@ -607,6 +607,52 @@ draft_time = "30s"
 }
 
 #[test]
+fn startup_config_snapshots_legacy_smtp_aliases() {
+    let dir = tempdir().expect("tempdir");
+    let config = load_startup_config(
+        BTreeMap::from([
+            (
+                "APPLICATION_HOSTNAME".to_string(),
+                "legacy-host.example.com".to_string(),
+            ),
+            (
+                "SMTP_HOST".to_string(),
+                "smtp.legacy.example.com".to_string(),
+            ),
+            ("SMTP_PORT".to_string(), "2526".to_string()),
+            ("SMTP_SSL".to_string(), "true".to_string()),
+            ("SMTP_USER".to_string(), "legacy-user".to_string()),
+            ("SMTP_PASS".to_string(), "legacy-pass".to_string()),
+            (
+                "SMTP_DOMAIN".to_string(),
+                "legacy-domain.example.com".to_string(),
+            ),
+            (
+                "SMTP_FROM".to_string(),
+                "legacy-from@example.com".to_string(),
+            ),
+        ]),
+        dir.path(),
+    )
+    .expect("load config");
+
+    assert_eq!(
+        config.site_hostname.as_deref(),
+        Some("legacy-host.example.com")
+    );
+    assert_eq!(config.smtp_host.as_deref(), Some("smtp.legacy.example.com"));
+    assert_eq!(config.smtp_port, Some(2526));
+    assert_eq!(config.smtp_ssl, Some(true));
+    assert_eq!(config.smtp_user.as_deref(), Some("legacy-user"));
+    assert_eq!(config.smtp_password.as_deref(), Some("legacy-pass"));
+    assert_eq!(
+        config.smtp_domain.as_deref(),
+        Some("legacy-domain.example.com")
+    );
+    assert_eq!(config.smtp_from.as_deref(), Some("legacy-from@example.com"));
+}
+
+#[test]
 fn applies_startup_runtime_env_for_browser_runtime_flags() {
     let _guard = runtime_config_env_lock().lock().unwrap();
     std::env::remove_var("YONA_SITE_NAME");

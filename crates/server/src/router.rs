@@ -153,6 +153,7 @@ fn build_router_with_app_config(
     let show_user_email = app_config.show_user_email;
     let site_name = app_config.site_name;
     let site_update = app_config.site_update;
+    let smtp = app_config.smtp;
     let supported_languages = app_config.supported_languages;
     let translation_proxy = app_config.translation_proxy;
     let session_manager = SessionManager::new(SessionConfig {
@@ -180,8 +181,12 @@ fn build_router_with_app_config(
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
-    let rest_router =
-        routes::rest_api_routes(pilot_service.clone(), site_update.clone(), rest_auth_ui);
+    let rest_router = routes::rest_api_routes(
+        pilot_service.clone(),
+        site_update.clone(),
+        smtp.clone(),
+        rest_auth_ui,
+    );
 
     let mut base_router = routes::app_routes(
         session_manager.clone(),
@@ -194,6 +199,7 @@ fn build_router_with_app_config(
         project_default_scope.clone(),
         translation_proxy.clone(),
         site_update.clone(),
+        smtp.clone(),
         max_uploaded_file_size,
         rest_router,
     );

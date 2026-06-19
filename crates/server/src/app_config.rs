@@ -36,6 +36,7 @@ pub struct AppRuntimeConfig {
     pub show_user_email: bool,
     pub site_name: String,
     pub site_update: SiteUpdateConfig,
+    pub smtp: SmtpRuntimeConfig,
     pub supported_languages: Vec<String>,
     pub translation_proxy: TranslationProxyConfig,
 }
@@ -112,6 +113,16 @@ impl Default for SiteUpdateConfig {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SmtpRuntimeConfig {
+    pub domain: String,
+    pub from: String,
+    pub host: String,
+    pub password: String,
+    pub site_hostname: String,
+    pub user: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TranslationProxyConfig {
     pub api_url: String,
     pub header_key: String,
@@ -129,6 +140,7 @@ impl Default for AppRuntimeConfig {
             show_user_email: true,
             site_name: "Yona".to_string(),
             site_update: SiteUpdateConfig::default(),
+            smtp: SmtpRuntimeConfig::default(),
             supported_languages: default_supported_languages(),
             translation_proxy: TranslationProxyConfig::default(),
         }
@@ -150,6 +162,7 @@ impl AppRuntimeConfig {
             show_user_email: config.show_user_email.unwrap_or(true),
             site_name: site_name_from_option(config.site_name.as_deref()),
             site_update: SiteUpdateConfig::from_startup(config),
+            smtp: SmtpRuntimeConfig::from_startup(config),
             supported_languages: supported_languages_from_option(
                 config.supported_languages.as_deref(),
             ),
@@ -170,6 +183,7 @@ impl AppRuntimeConfig {
             ),
             site_name: configured_site_name(),
             site_update: SiteUpdateConfig::from_env(),
+            smtp: SmtpRuntimeConfig::from_env(),
             supported_languages: configured_supported_languages(),
             translation_proxy: TranslationProxyConfig::from_env(),
         }
@@ -195,7 +209,7 @@ impl SiteUpdateConfig {
         }
     }
 
-    fn from_env() -> Self {
+    pub(crate) fn from_env() -> Self {
         let defaults = Self::default();
         Self {
             current_version: configured_env_value(&["YONA_CURRENT_VERSION"])
@@ -210,6 +224,64 @@ impl SiteUpdateConfig {
             release_url: configured_env_value(&["YONA_UPDATE_RELEASE_URL"]).unwrap_or_default(),
             version: configured_env_value(&["YONA_UPDATE_VERSION"]).unwrap_or_default(),
         }
+    }
+}
+
+impl SmtpRuntimeConfig {
+    fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        Self {
+            domain: trimmed_option(config.smtp_domain.as_deref()).unwrap_or_default(),
+            from: trimmed_option(config.smtp_from.as_deref()).unwrap_or_default(),
+            host: trimmed_option(config.smtp_host.as_deref()).unwrap_or_default(),
+            password: trimmed_option(config.smtp_password.as_deref()).unwrap_or_default(),
+            site_hostname: trimmed_option(config.site_hostname.as_deref()).unwrap_or_default(),
+            user: trimmed_option(config.smtp_user.as_deref()).unwrap_or_default(),
+        }
+    }
+
+    pub(crate) fn from_env() -> Self {
+        Self {
+            domain: configured_env_value(&["SMTP_DOMAIN", "YONA_SMTP_DOMAIN"]).unwrap_or_default(),
+            from: configured_env_value(&["SMTP_FROM", "YONA_SMTP_FROM"]).unwrap_or_default(),
+            host: configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"]).unwrap_or_default(),
+            password: configured_env_value(&["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"])
+                .unwrap_or_default(),
+            site_hostname: configured_env_value(&[
+                "YONA_APPLICATION_HOSTNAME",
+                "APPLICATION_HOSTNAME",
+            ])
+            .unwrap_or_default(),
+            user: configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"]).unwrap_or_default(),
+        }
+    }
+
+    pub(crate) fn default_from(&self) -> String {
+        trimmed_option(Some(&self.from))
+            .or_else(|| self.sender_from_user_and_domain())
+            .unwrap_or_else(|| "noreply@yona.local".to_string())
+    }
+
+    pub(crate) fn not_configured_items(&self) -> Vec<String> {
+        [
+            ("smtp.host", self.host.as_str()),
+            ("smtp.user", self.user.as_str()),
+            ("smtp.password", self.password.as_str()),
+        ]
+        .into_iter()
+        .filter(|(_, value)| value.trim().is_empty())
+        .map(|(label, _)| label.to_string())
+        .collect()
+    }
+
+    fn sender_from_user_and_domain(&self) -> Option<String> {
+        let user = trimmed_option(Some(&self.user))?;
+        if user.contains('@') {
+            return Some(user.to_string());
+        }
+        let domain = trimmed_option(Some(&self.domain))
+            .or_else(|| trimmed_option(Some(&self.site_hostname)))
+            .unwrap_or_else(|| "localhost".to_string());
+        Some(format!("{user}@{domain}"))
     }
 }
 

@@ -239,8 +239,9 @@ pub fn load_startup_config(
     let site_name = env_string(&env, "YONA_SITE_NAME").or_else(|| non_empty_string(site.name));
     let site_allow_anonymous_access =
         env_bool(&env, "YONA_ALLOW_ANONYMOUS_ACCESS").or(site.allow_anonymous_access);
-    let site_hostname =
-        env_string(&env, "YONA_APPLICATION_HOSTNAME").or_else(|| non_empty_string(site.hostname));
+    let site_hostname = env_string(&env, "YONA_APPLICATION_HOSTNAME")
+        .or_else(|| env_string(&env, "APPLICATION_HOSTNAME"))
+        .or_else(|| non_empty_string(site.hostname));
     let allowed_sending_mail_domains = env_string(&env, "YONA_ALLOWED_MAIL_DOMAINS")
         .map(|value| split_csv(&value))
         .or(site.allowed_sending_mail_domains);
@@ -296,18 +297,30 @@ pub fn load_startup_config(
         .get("YONA_MAX_FILE_SIZE")
         .and_then(|value| value.trim().parse::<usize>().ok())
         .or(project.max_file_size);
-    let smtp_host = env_string(&env, "YONA_SMTP_HOST").or_else(|| non_empty_string(smtp.host));
+    let smtp_host = env_string(&env, "YONA_SMTP_HOST")
+        .or_else(|| env_string(&env, "SMTP_HOST"))
+        .or_else(|| non_empty_string(smtp.host));
     let smtp_port = env
         .get("YONA_SMTP_PORT")
+        .or_else(|| env.get("SMTP_PORT"))
         .and_then(|value| value.trim().parse::<u16>().ok())
         .or(smtp.port);
-    let smtp_ssl = env_bool(&env, "YONA_SMTP_SSL").or(smtp.ssl);
-    let smtp_user = env_string(&env, "YONA_SMTP_USER").or_else(|| non_empty_string(smtp.user));
-    let smtp_password =
-        env_string(&env, "YONA_SMTP_PASSWORD").or_else(|| non_empty_string(smtp.password));
-    let smtp_domain =
-        env_string(&env, "YONA_SMTP_DOMAIN").or_else(|| non_empty_string(smtp.domain));
-    let smtp_from = env_string(&env, "YONA_SMTP_FROM").or_else(|| non_empty_string(smtp.from));
+    let smtp_ssl = env_bool(&env, "YONA_SMTP_SSL")
+        .or_else(|| env_bool(&env, "SMTP_SSL"))
+        .or(smtp.ssl);
+    let smtp_user = env_string(&env, "YONA_SMTP_USER")
+        .or_else(|| env_string(&env, "SMTP_USER"))
+        .or_else(|| non_empty_string(smtp.user));
+    let smtp_password = env_string(&env, "YONA_SMTP_PASSWORD")
+        .or_else(|| env_string(&env, "SMTP_PASSWORD"))
+        .or_else(|| env_string(&env, "SMTP_PASS"))
+        .or_else(|| non_empty_string(smtp.password));
+    let smtp_domain = env_string(&env, "YONA_SMTP_DOMAIN")
+        .or_else(|| env_string(&env, "SMTP_DOMAIN"))
+        .or_else(|| non_empty_string(smtp.domain));
+    let smtp_from = env_string(&env, "YONA_SMTP_FROM")
+        .or_else(|| env_string(&env, "SMTP_FROM"))
+        .or_else(|| non_empty_string(smtp.from));
     let update_current_version = env_string(&env, "YONA_CURRENT_VERSION")
         .or_else(|| non_empty_string(update.current_version));
     let update_error =

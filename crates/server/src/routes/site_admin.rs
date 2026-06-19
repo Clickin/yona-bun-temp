@@ -17,16 +17,16 @@ use yona_rust_integrations::{deliver, OutboundMail};
 
 use crate::persistence::PilotRepository;
 use crate::{
-    base_path_href, configured_env_value, decode_query_component, default_smtp_from,
-    delete_project_repository_storage, detect_upload_mime_type, escape_html_text, gravatar_url,
-    headers_with_form_csrf, internal_error, map_project_scope, normalize_identifier,
-    normalize_issue_label_color, normalize_milestone_state, parse_milestone_due_date,
-    percent_encode_uri_component, persistence, project_logo_url, random_site_admin_password,
-    random_storage_token, redirect_to, require_authenticated_user, require_session,
-    require_valid_csrf, rest_board_label_from_record, rest_repository, session::SessionManager,
-    site_export_filename_stamp, uploaded_file_path, workspace_avatar_url, AuthUiConfig,
-    ConnectError, PilotBackend, PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse,
-    RestRouteError, SiteUpdateConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    base_path_href, decode_query_component, delete_project_repository_storage,
+    detect_upload_mime_type, escape_html_text, gravatar_url, headers_with_form_csrf,
+    internal_error, map_project_scope, normalize_identifier, normalize_issue_label_color,
+    normalize_milestone_state, parse_milestone_due_date, percent_encode_uri_component, persistence,
+    project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
+    require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
+    rest_repository, session::SessionManager, site_export_filename_stamp, uploaded_file_path,
+    workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
+    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig, SmtpRuntimeConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 mod update;
@@ -445,7 +445,11 @@ struct RestSiteImportResponse {
     unsupported_sections: Vec<String>,
 }
 
-pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
+pub(crate) fn rest_routes(
+    service: PilotServiceImpl,
+    site_update: SiteUpdateConfig,
+    smtp: SmtpRuntimeConfig,
+) -> Router {
     Router::new()
         .route(
             "/site/users",
@@ -609,9 +613,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
             "/site/mail",
             get({
                 let service = service.clone();
+                let smtp = smtp.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    async move { rest_read_site_mail(headers, service).await }
+                    let smtp = smtp.clone();
+                    async move { rest_read_site_mail(headers, service, smtp).await }
                 }
             }),
         )
@@ -619,9 +625,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
             "/site/mail/test",
             post({
                 let service = service.clone();
+                let smtp = smtp.clone();
                 move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
                     let service = service.clone();
-                    async move { rest_send_site_test_mail(headers, body, service).await }
+                    let smtp = smtp.clone();
+                    async move { rest_send_site_test_mail(headers, body, service, smtp).await }
                 }
             }),
         )
@@ -651,6 +659,7 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     site_update: SiteUpdateConfig,
+    _smtp: SmtpRuntimeConfig,
     base_path: String,
     max_uploaded_file_size: usize,
 ) -> Router {
@@ -1212,7 +1221,7 @@ async fn direct_send_site_mail(
         project_default_scope: "public".to_string(),
         auth_ui: AuthUiConfig::from_env(),
     };
-    match rest_send_site_test_mail(headers, body, service).await {
+    match rest_send_site_test_mail(headers, body, service, SmtpRuntimeConfig::from_env()).await {
         Ok(_) => {
             Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
         }
@@ -2887,15 +2896,17 @@ async fn rest_export_site_issues(
 async fn rest_read_site_mail(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    smtp: SmtpRuntimeConfig,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    Ok(Json(rest_site_mail_options(false)))
+    Ok(Json(rest_site_mail_options(false, &smtp)))
 }
 
 async fn rest_send_site_test_mail(
     headers: HeaderMap,
     body: RestSiteMailSendBody,
     service: PilotServiceImpl,
+    smtp: SmtpRuntimeConfig,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, true).await?;
     let from = required_site_mail_field(body.from, "from")?;
@@ -2913,7 +2924,7 @@ async fn rest_send_site_test_mail(
     })
     .map_err(RestRouteError::internal)?;
 
-    Ok(Json(rest_site_mail_options(true)))
+    Ok(Json(rest_site_mail_options(true, &smtp)))
 }
 
 async fn rest_read_site_mail_list(
@@ -2934,27 +2945,12 @@ async fn rest_read_site_mail_list(
     Ok(Json(RestSiteMailListResponse { recipients }))
 }
 
-fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
+fn rest_site_mail_options(sent: bool, smtp: &SmtpRuntimeConfig) -> RestSiteMailOptionsResponse {
     RestSiteMailOptionsResponse {
-        not_configured_items: site_mail_not_configured_items(),
-        sender: default_smtp_from(),
+        not_configured_items: smtp.not_configured_items(),
+        sender: smtp.default_from(),
         sent,
     }
-}
-
-fn site_mail_not_configured_items() -> Vec<String> {
-    [
-        ("smtp.host", &["SMTP_HOST", "YONA_SMTP_HOST"][..]),
-        ("smtp.user", &["SMTP_USER", "YONA_SMTP_USER"][..]),
-        (
-            "smtp.password",
-            &["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"][..],
-        ),
-    ]
-    .into_iter()
-    .filter(|(_, names)| configured_env_value(names).is_none())
-    .map(|(label, _)| label.to_string())
-    .collect()
 }
 
 fn required_site_mail_field(value: String, name: &str) -> Result<String, RestRouteError> {
