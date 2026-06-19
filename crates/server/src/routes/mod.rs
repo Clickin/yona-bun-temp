@@ -93,7 +93,7 @@ pub(crate) use utils::{
     legacy_external_parse_datetime, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
     legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, normalize_identifier, normalize_issue_label_color,
+    legacy_json_find_value, map_project_scope, normalize_identifier, normalize_issue_label_color,
     normalize_milestone_state, optional_i64_string, organization_admin_member_from_record,
     organization_detail_from_record, organization_detail_with_logo_from_record,
     organization_enrollment_request_summary_from_record, organization_issue_list_item_to_proto,

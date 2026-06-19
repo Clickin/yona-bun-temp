@@ -412,6 +412,7 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
 }
 
 #[tokio::test]
+// Guards Smart HTTP reuse of the route-utils-owned project scope mapper for write ACL facts.
 async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider() {
     let _guard = yona_data_env_lock()
         .lock()

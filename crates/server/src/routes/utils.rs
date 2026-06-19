@@ -28,11 +28,16 @@ use crate::{
 };
 use yona_rust_domain::{
     can_create_organization_project, can_request_project_enrollment, can_update_organization,
-    DEFAULT_LANDING_FALLBACK_PATH,
+    ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 
 pub(crate) fn normalize_identifier(value: &str) -> String {
     value.trim().to_ascii_lowercase()
+}
+
+pub(crate) fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
+    ProjectScope::try_from(value)
+        .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
 }
 
 #[derive(Serialize)]

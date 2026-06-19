@@ -53,7 +53,7 @@ pub(crate) use routes::{
     legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value, map_project_scope,
     milestone_list_filter_from_request, milestone_mutation_input, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
     organization_admin_member_from_record, organization_detail_from_record,
@@ -1785,11 +1785,6 @@ const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
 
 pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
     ConnectError::new(ErrorCode::Internal, error.to_string())
-}
-
-fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
-    ProjectScope::try_from(value)
-        .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
 }
 
 fn workspace_invalid_argument(message: impl Into<String>) -> ConnectError {
