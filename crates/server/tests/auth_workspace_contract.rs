@@ -143,6 +143,7 @@ fn days_ago_datetime(days: u64) -> DateTime {
 
 #[tokio::test]
 async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
+    // Guards the runtime anonymous-access gate's page redirect and REST rejection boundary.
     let (_, repository, _) = build_auth_router_with_anonymous_access(false).await;
 
     repository

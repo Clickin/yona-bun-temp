@@ -1,3 +1,4 @@
+mod anonymous_access;
 mod assets;
 mod excel_export;
 mod mailbox;
@@ -124,13 +125,13 @@ pub mod session;
 mod smart_http;
 mod svn_protocol;
 
+use axum::extract::Path;
 use axum::extract::{Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
-use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
 use axum::Router;
-use axum::{extract::Path, http::Method};
 use buffa::view::OwnedView;
 use http::StatusCode;
 use runtime_config::normalize_base_path;
@@ -143,6 +144,7 @@ use std::{
     vec,
 };
 
+use anonymous_access::anonymous_access_gate;
 use assets::{apply_asset_routes, mount_base_path, serve_frontend_page};
 use generated::yona::pilot::v1::*;
 pub use mailbox::{
@@ -716,79 +718,10 @@ fn build_router_with_app_config(
     mount_base_path(base_router, assets, browser_runtime, base_path)
 }
 
-async fn anonymous_access_gate(
-    request: Request,
-    next: Next,
-    session_manager: SessionManager,
-    base_path: String,
-    allow_anonymous_access: bool,
-) -> Response {
-    if allow_anonymous_access
-        || anonymous_access_path_is_public(request.uri().path())
-        || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
-        || svn_protocol::route_from_path(request.uri().path(), &base_path).is_some()
-    {
-        return next.run(request).await;
-    }
-
-    if session_manager
-        .read_session_from_headers(request.headers())
-        .and_then(|session| session.user_id)
-        .is_some()
-    {
-        return next.run(request).await;
-    }
-
-    let method = request.method().clone();
-    let path = request.uri().path().to_string();
-    if path.starts_with("/api/") {
-        return anonymous_access_rest_response();
-    }
-    if method == Method::GET || method == Method::HEAD {
-        return anonymous_access_login_redirect(&base_path, &path);
-    }
-
-    anonymous_access_rest_response()
-}
-
 fn configured_session_timeout_seconds() -> Option<u64> {
     std::env::var("YONA_SESSION_TIMEOUT_SECONDS")
         .ok()
         .and_then(|value| value.trim().parse::<u64>().ok())
-}
-
-fn anonymous_access_path_is_public(path: &str) -> bool {
-    path == "/api/auth/session"
-        || path == "/api/v1/session"
-        || path.starts_with("/api/v1/auth/")
-        || path.starts_with("/assets/")
-        || path == "/favicon.ico"
-        || path == "/messages.js"
-        || path == "/_init"
-        || path == "/_UIKit"
-        || path == "/login"
-        || path.starts_with("/authenticate/")
-        || path == "/user/sidebar"
-        || path == "/users/loginform"
-        || path == "/users/signupform"
-        || path == "/forgot-password"
-        || path == "/lostPassword"
-        || path == "/reset-password"
-        || path == "/resetPassword"
-        || path.starts_with("/verify/")
-}
-
-fn anonymous_access_login_redirect(base_path: &str, path: &str) -> Response {
-    let redirect_path = format!(
-        "/users/loginform?redirectUrl={}",
-        percent_encode_uri_component(path)
-    );
-    Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
-}
-
-fn anonymous_access_rest_response() -> Response {
-    RestRouteError::from_connect_error(ConnectError::unauthenticated(LEGACY_LOGIN_REQUIRED_MESSAGE))
-        .into_response()
 }
 
 pub(crate) fn yona_data_root() -> PathBuf {

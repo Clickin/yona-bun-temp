@@ -544,6 +544,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   page helper. This preserves runtime config injection, base-path SPA fallback,
   legacy API index fallback, and Smart HTTP/SVN/Excel fallback dispatch covered
   by `assets_contract` and `server_core_contract`.
+- 2026-06-20 build/check diet note: global anonymous-access gate helpers moved
+  from monolithic `crates/server/src/lib.rs` into
+  `crates/server/src/anonymous_access.rs`; router assembly still installs the
+  middleware while the auth/session bootstrap boundary owns public path
+  allowlisting, login redirect construction, and REST unauthorized responses.
+  This preserves disabled-anonymous page redirects, non-auth REST rejection, and
+  protected migration route behavior covered by
+  `auth_workspace_contract::anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest`
+  and
+  `server_core_contract::legacy_migration_requires_login_when_anonymous_access_is_disabled`.
 
 ## Wave 0 Exit Snapshot
 
