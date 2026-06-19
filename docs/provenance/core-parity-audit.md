@@ -676,6 +676,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `svn_protocol_contract::svn_protocol_root_and_default_vcc_propfind_honor_label_revision`,
   `svn_protocol_contract::svn_protocol_external_client_can_update_after_remote_commit`,
   and `svn_protocol_contract::svn_protocol_external_client_can_copy_direct_url`.
+- 2026-06-20 build/check diet note: SVN log, changed-path, file-rev,
+  mergeinfo, list, inherited-props, get-locks, and PROPPATCH multistatus XML
+  item helpers moved from `crates/server/src/svn_protocol.rs` into
+  `crates/server/src/svn_protocol/report_items.rs`; REPORT/PROPPATCH control
+  flow remains in the protocol module. This preserves verbose log output,
+  file-revs/blame metadata, mergeinfo output, PROPPATCH multistatus responses,
+  lock report metadata, list-report rows, and inherited property report rows
+  covered by `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`,
+  `svn_protocol_contract::svn_protocol_external_client_can_blame_public_file`,
+  `svn_protocol_contract::svn_protocol_external_client_can_read_mergeinfo`,
+  `svn_protocol_contract::svn_protocol_external_client_can_propset_and_commit`,
+  `svn_protocol_contract::svn_protocol_external_client_can_lock_and_unlock_file`,
+  and `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`.
 
 ## Wave 0 Exit Snapshot
 

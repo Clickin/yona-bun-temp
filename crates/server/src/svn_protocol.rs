@@ -18,6 +18,7 @@ use yona_rust_vcs::VcsError;
 mod date;
 mod lock;
 mod path;
+mod report_items;
 mod svndiff;
 mod xml;
 
@@ -1901,9 +1902,9 @@ fn svn_protocol_log_report_response(
                 }
             }
             Some(if include_changed_paths && entry.revision > 0 {
-                svn_protocol_log_item(entry, &changed_paths)
+                report_items::log(entry, &changed_paths)
             } else {
-                svn_protocol_log_item(entry, &[])
+                report_items::log(entry, &[])
             })
         })
         .collect::<String>();
@@ -2240,7 +2241,7 @@ fn svn_protocol_file_revs_report_response(
     for entry in entries {
         match yona_rust_vcs::svn_cat_file(repo_path, Some(entry.revision), &file_path) {
             Ok(contents) => {
-                file_revs.push_str(&svn_protocol_file_rev_item(&file_path, &entry, &contents))
+                file_revs.push_str(&report_items::file_rev(&file_path, &entry, &contents))
             }
             Err(VcsError::NotFound) => {}
             Err(VcsError::InvalidPath) => {
@@ -2381,7 +2382,7 @@ fn svn_protocol_mergeinfo_report_response(
         } else {
             requested_path.trim_matches('/')
         };
-        items.push_str(&svn_protocol_mergeinfo_item(response_path, &mergeinfo));
+        items.push_str(&report_items::mergeinfo(response_path, &mergeinfo));
     }
 
     let body = format!(
@@ -2512,7 +2513,7 @@ fn svn_protocol_list_report_response(
         .unwrap_or_default();
     let mut items = String::new();
     for entry in &tree.entries {
-        items.push_str(&svn_protocol_list_item(
+        items.push_str(&report_items::list(
             repo_path, revision, entry, author, &date,
         ));
     }
@@ -2548,10 +2549,7 @@ fn svn_protocol_get_locks_report_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let lock_item = lock
-        .as_ref()
-        .map(svn_protocol_lock_item)
-        .unwrap_or_default();
+    let lock_item = lock.as_ref().map(report_items::lock).unwrap_or_default();
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:get-locks-report xmlns:S="svn:" xmlns:D="DAV:">
@@ -2602,7 +2600,7 @@ fn svn_protocol_inherited_props_report_response(
     };
     let items = inherited
         .iter()
-        .map(svn_protocol_inherited_props_item)
+        .map(report_items::inherited_props)
         .collect::<String>();
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
@@ -2994,7 +2992,7 @@ fn svn_protocol_proppatch_response(
     if path::working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
         let mut response = (
             StatusCode::MULTI_STATUS,
-            svn_protocol_proppatch_multistatus(route, "", &[]),
+            report_items::proppatch_multistatus(&svn_protocol_href(route, "", false), &[]),
         )
             .into_response();
         add_svn_dav_headers(&mut response);
@@ -3020,7 +3018,10 @@ fn svn_protocol_proppatch_response(
         Ok(revision) => {
             let mut response = (
                 StatusCode::MULTI_STATUS,
-                svn_protocol_proppatch_multistatus(route, &path, &patches),
+                report_items::proppatch_multistatus(
+                    &svn_protocol_href(route, &path, false),
+                    &patches,
+                ),
             )
                 .into_response();
             add_svn_dav_headers(&mut response);
@@ -3342,108 +3343,6 @@ fn svn_protocol_location_segments(
         });
     }
     Ok(segments)
-}
-
-fn svn_protocol_lock_item(lock: &yona_rust_vcs::SvnLock) -> String {
-    let comment = if lock.comment.is_empty() {
-        String::new()
-    } else {
-        format!("    <S:comment>{}</S:comment>\n", xml_escape(&lock.comment))
-    };
-    let expiration = lock
-        .expires
-        .as_ref()
-        .map(|value| {
-            format!(
-                "    <S:expirationdate>{}</S:expirationdate>\n",
-                xml_escape(value)
-            )
-        })
-        .unwrap_or_default();
-    format!(
-        r#"  <S:lock>
-    <S:path>{}</S:path>
-    <S:token>{}</S:token>
-    <S:owner>{}</S:owner>
-{comment}    <S:creationdate>{}</S:creationdate>
-{expiration}  </S:lock>
-"#,
-        xml_escape(&lock.path),
-        xml_escape(&lock.token),
-        xml_escape(&lock.owner),
-        xml_escape(&lock.created)
-    )
-}
-
-fn svn_protocol_log_item(
-    entry: &yona_rust_vcs::SvnLogEntry,
-    changed_paths: &[yona_rust_vcs::SvnChangedPath],
-) -> String {
-    let changed_paths = changed_paths
-        .iter()
-        .map(svn_protocol_log_changed_path_item)
-        .collect::<String>();
-    format!(
-        r#"  <S:log-item>
-    <D:version-name>{}</D:version-name>
-    <S:creator-displayname>{}</S:creator-displayname>
-    <S:date>{}</S:date>
-{changed_paths}    <D:comment>{}</D:comment>
-  </S:log-item>
-"#,
-        entry.revision,
-        xml_escape(&entry.author),
-        xml_escape(&date::committed_date(&entry.date)),
-        xml_escape(&entry.message)
-    )
-}
-
-fn svn_protocol_log_changed_path_item(changed_path: &yona_rust_vcs::SvnChangedPath) -> String {
-    let tag_name = match changed_path.action {
-        yona_rust_vcs::SvnChangedAction::Added => "added-path",
-        yona_rust_vcs::SvnChangedAction::Modified => "modified-path",
-        yona_rust_vcs::SvnChangedAction::Deleted => "deleted-path",
-        yona_rust_vcs::SvnChangedAction::Replaced => "replaced-path",
-    };
-    let node_kind = if changed_path.is_dir { "dir" } else { "file" };
-    let copyfrom = match (
-        changed_path.copy_from_path.as_deref(),
-        changed_path.copy_from_revision,
-    ) {
-        (Some(path), Some(revision)) => format!(
-            r#" copyfrom-path="/{}" copyfrom-rev="{revision}""#,
-            xml_escape(path.trim_matches('/'))
-        ),
-        _ => String::new(),
-    };
-    format!(
-        r#"    <S:{tag_name} node-kind="{node_kind}"{copyfrom}>/{}</S:{tag_name}>
-"#,
-        xml_escape(changed_path.path.trim_matches('/'))
-    )
-}
-
-fn svn_protocol_file_rev_item(
-    path: &str,
-    entry: &yona_rust_vcs::SvnLogEntry,
-    contents: &[u8],
-) -> String {
-    let txdelta = general_purpose::STANDARD.encode(svndiff::svndiff0_fulltext(contents));
-    format!(
-        r#"  <S:file-rev path="/{}" rev="{}">
-    <S:rev-prop name="svn:author">{}</S:rev-prop>
-    <S:rev-prop name="svn:date">{}</S:rev-prop>
-    <S:rev-prop name="svn:log">{}</S:rev-prop>
-    <S:txdelta>{}</S:txdelta>
-  </S:file-rev>
-"#,
-        xml_escape(path.trim_matches('/')),
-        entry.revision,
-        xml_escape(&entry.author),
-        xml_escape(&date::committed_date(&entry.date)),
-        xml_escape(&entry.message),
-        txdelta
-    )
 }
 
 fn svn_protocol_replay_included(path: &str, filter_path: Option<&str>) -> bool {
@@ -3828,101 +3727,6 @@ fn svn_protocol_replay_operation(
 "#
         ),
     }
-}
-
-fn svn_protocol_mergeinfo_item(path: &str, mergeinfo: &str) -> String {
-    let response_path = if path.trim_matches('/').is_empty() {
-        String::new()
-    } else {
-        format!("/{}", xml_escape(path.trim_matches('/')))
-    };
-    format!(
-        r#"  <S:mergeinfo-item>
-    <S:mergeinfo-path>{}</S:mergeinfo-path>
-    <S:mergeinfo-info>{}</S:mergeinfo-info>
-  </S:mergeinfo-item>
-"#,
-        response_path,
-        xml_escape(mergeinfo)
-    )
-}
-
-fn svn_protocol_list_item(
-    repo_path: &StdPath,
-    revision: i64,
-    entry: &yona_rust_vcs::SvnTreeEntry,
-    author: &str,
-    date: &str,
-) -> String {
-    let node_kind = if entry.is_dir { "dir" } else { "file" };
-    let size = if entry.is_dir {
-        String::new()
-    } else {
-        match yona_rust_vcs::svn_cat_file(repo_path, Some(revision), &entry.path) {
-            Ok(bytes) => format!(r#" size="{}""#, bytes.len()),
-            Err(_) => String::new(),
-        }
-    };
-    let date_attr = if date.trim().is_empty() {
-        String::new()
-    } else {
-        format!(r#" date="{}""#, xml_escape(date))
-    };
-    let author_element = if author.trim().is_empty() {
-        String::new()
-    } else {
-        format!(
-            "    <D:creator-displayname>{}</D:creator-displayname>\n",
-            xml_escape(author)
-        )
-    };
-    format!(
-        r#"  <S:item node-kind="{node_kind}"{size} created-rev="{revision}"{date_attr}>
-{author_element}    {}
-  </S:item>
-"#,
-        xml_escape(entry.path.trim_matches('/'))
-    )
-}
-
-fn svn_protocol_inherited_props_item(item: &yona_rust_vcs::SvnInheritedPropertySet) -> String {
-    item.properties
-        .iter()
-        .map(|property| {
-            format!(
-                "  <S:iprop-item>\n    <S:iprop-path>{}</S:iprop-path>\n    <S:iprop-propname>{}</S:iprop-propname>\n    <S:iprop-propval>{}</S:iprop-propval>\n  </S:iprop-item>\n",
-                xml_escape(&item.path),
-                xml_escape(&property.name),
-                xml_escape(&property.value)
-            )
-        })
-        .collect()
-}
-
-fn svn_protocol_proppatch_multistatus(
-    route: &SvnProtocolRoute,
-    path: &str,
-    patches: &[yona_rust_vcs::SvnPropertyPatch],
-) -> String {
-    let href = svn_protocol_href(route, path, false);
-    let mut properties = String::new();
-    for patch in patches {
-        properties.push_str(&format!("        <D:{}/>\n", xml_escape(&patch.name)));
-    }
-    format!(
-        r#"<?xml version="1.0" encoding="utf-8"?>
-<D:multistatus xmlns:D="DAV:">
-  <D:response>
-    <D:href>{}</D:href>
-    <D:propstat>
-      <D:prop>
-{properties}      </D:prop>
-      <D:status>HTTP/1.1 200 OK</D:status>
-    </D:propstat>
-  </D:response>
-</D:multistatus>"#,
-        xml_escape(&href)
-    )
 }
 
 fn add_svn_dav_headers(response: &mut Response) {
