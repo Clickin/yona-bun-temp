@@ -855,6 +855,8 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
 
 #[tokio::test]
 async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
+    // PR webhooks share the projects/webhooks.rs dispatch and Hangout thread
+    // persistence path.
     let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("hangout-webhook-data");
     fs::create_dir_all(&data_root).unwrap();

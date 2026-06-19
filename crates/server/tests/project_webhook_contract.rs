@@ -171,6 +171,8 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 
 #[tokio::test]
 async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
+    // Keeps the route-owned webhook dispatch module covered after the
+    // projects.rs -> projects/webhooks.rs split.
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
@@ -501,6 +503,8 @@ async fn project_webhooks_persist_hangout_thread_names_for_resource_followups() 
 
 #[tokio::test]
 async fn project_webhooks_require_update_and_manage_crud() {
+    // Keeps the route-owned webhook CRUD module covered after the
+    // projects.rs -> projects/webhooks.rs split.
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");

@@ -883,6 +883,20 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   by `svn_protocol_contract::svn_protocol_get_serves_repository_file_with_svnlook`
   and
   `svn_protocol_contract::svn_protocol_external_client_can_log_verbose_public_project`.
+- 2026-06-20 build/check diet note: project webhook REST DTOs, CRUD handlers,
+  delivery-history projection, issue/PR webhook dispatch, and Hangout thread
+  persistence helpers moved from `crates/server/src/routes/projects.rs` into
+  `crates/server/src/routes/projects/webhooks.rs`; route registration and the
+  shared project update guard remain in the parent project route module. This
+  preserves webhook management, legacy issue webhook payload delivery, and PR
+  Hangout follow-up threading covered by
+  `project_webhook_contract::project_webhooks_require_update_and_manage_crud`,
+  `project_webhook_contract::project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks`,
+  and
+  `pull_request_mutation_contract::pull_request_hangout_webhooks_persist_thread_names_for_followups`.
+  Cargo wrapper timing evidence now requires tool-level escalation: active
+  `CODEX_SANDBOX` blocks `--outside-sandbox` before cargo starts, while
+  `CODEX_SANDBOX_NETWORK_DISABLED` alone is treated as inherited metadata.
 
 ## Wave 0 Exit Snapshot
 

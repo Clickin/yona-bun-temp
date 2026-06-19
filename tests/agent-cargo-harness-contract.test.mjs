@@ -61,10 +61,7 @@ describe("agent cargo harness contract", () => {
   it("detects Codex sandbox environments", () => {
     assert.equal(codexSandboxReason({}), null);
     assert.equal(codexSandboxReason({ CODEX_SANDBOX: "seatbelt" }), "CODEX_SANDBOX=seatbelt");
-    assert.equal(
-      codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }),
-      "CODEX_SANDBOX_NETWORK_DISABLED=1",
-    );
+    assert.equal(codexSandboxReason({ CODEX_SANDBOX_NETWORK_DISABLED: "1" }), null);
   });
 
   it("refuses execution when a Codex sandbox marker is present", async () => {
@@ -98,7 +95,26 @@ describe("agent cargo harness contract", () => {
     }
   });
 
-  it("allows escalated invocations to assert that inherited Codex markers are stale", async () => {
+  it("refuses outside-sandbox assertions when the active Codex sandbox marker is present", async () => {
+    const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-contract-"));
+    try {
+      const result = await runAgentCargo(
+        {
+          ...parseArgs(["--outside-sandbox", "check"]),
+          cargoBin: "/bin/echo",
+          logDir,
+        },
+        { CODEX_SANDBOX: "seatbelt" },
+      );
+
+      assert.equal(result.status, 1);
+      assert.equal(result.logPath, null);
+    } finally {
+      rmSync(logDir, { force: true, recursive: true });
+    }
+  });
+
+  it("allows escalated invocations that only inherit network-disabled metadata", async () => {
     const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-contract-"));
     try {
       const result = await runAgentCargo(
