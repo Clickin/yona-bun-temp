@@ -5,7 +5,93 @@ use yona_rust_pilot_migration::legacy_external::{
 #[test]
 fn app_server_exceptions_are_marked_app_owned() {
     let app_owned = [
+        ("GET", "/-_-api"),
+        ("GET", "/-_-api/v1/"),
         ("GET", "/-_-api/v1/hello"),
+        ("GET", "/-_-api/v1/users"),
+        ("POST", "/-_-api/v1/users"),
+        ("POST", "/-_-api/v1/users/token"),
+        ("GET", "/-_-api/v1/user/issues"),
+        ("GET", "/-_-api/v1/users/:user/statistics"),
+        ("POST", "/-_-api/v1/user/defultLoginPage"),
+        ("GET", "/-_-api/v1/admin/users"),
+        ("PATCH", "/-_-api/v1/admin/users/:user"),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/labels",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+        ),
+        (
+            "PUT",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+        ),
+        (
+            "PATCH",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+        ),
+        (
+            "PATCH",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
+        ),
+        (
+            "PUT",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
+        ),
         ("GET", "/-_-api/v1/favoriteProjects"),
         ("POST", "/-_-api/v1/favoriteProjects/:projectId"),
         ("GET", "/-_-api/v1/favoriteIssues"),
@@ -16,6 +102,26 @@ fn app_server_exceptions_are_marked_app_owned() {
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts",
+        ),
+        (
+            "PATCH",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
         ),
     ];
 
@@ -30,8 +136,6 @@ fn app_server_exceptions_are_marked_app_owned() {
 #[test]
 fn broader_legacy_external_endpoints_remain_migrator_scope() {
     let broader_endpoints = [
-        ("GET", "/-_-api/v1/users"),
-        ("POST", "/-_-api/v1/users/token"),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/exports",
@@ -41,19 +145,6 @@ fn broader_legacy_external_endpoints_remain_migrator_scope() {
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues",
         ),
-        (
-            "GET",
-            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
-        ),
-        (
-            "POST",
-            "/-_-api/v1/owners/:owner/projects/:projectName/posts",
-        ),
-        (
-            "POST",
-            "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
-        ),
-        ("PATCH", "/-_-api/v1/admin/users/:user"),
     ];
 
     for (method, path) in broader_endpoints {
@@ -75,20 +166,8 @@ fn migration_tool_source_adapter_endpoints_do_not_become_app_owned_runtime_api()
             "/-_-api/v1/owners/:owner/projects/:projectName/exports",
         ),
         (
-            "GET",
-            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
-        ),
-        (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues",
-        ),
-        (
-            "POST",
-            "/-_-api/v1/owners/:owner/projects/:projectName/posts",
-        ),
-        (
-            "POST",
-            "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
         ),
     ];
 

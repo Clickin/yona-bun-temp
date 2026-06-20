@@ -131,7 +131,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "getIssue",
-        direction: MigrationDirection::Export,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::AuthorizationTokenHeader,
         request: shape(
             &["owner", "projectName", "number"],
@@ -170,7 +170,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateIssue",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::AuthorizationTokenHeader,
         request: shape(
             &["owner", "projectName", "number"],
@@ -186,7 +186,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateIssueState",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::AuthorizationTokenHeader,
         request: shape(
             &["owner", "projectName", "number"],
@@ -202,7 +202,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateIssueContent",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -218,7 +218,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "newIssueComment",
-        direction: MigrationDirection::Import,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::AuthorizationTokenOrImportSession,
         request: shape(
             &["owner", "projectName", "number"],
@@ -240,7 +240,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateIssueComment",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number", "commentId"],
@@ -262,7 +262,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "commentNotiRecivers",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::CurrentUserSession,
         request: shape(
             &["owner", "projectName", "number"],
@@ -278,7 +278,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateIssueLabel",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::CurrentUserSession,
         request: shape(
             &["owner", "projectName", "number"],
@@ -294,7 +294,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "findAssignableUsers",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::ProjectReadJsonAccept,
         request: shape(
             &["owner", "projectName", "number"],
@@ -316,7 +316,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "findAssignableUsersOfProject",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::ProjectReadJsonAccept,
         request: shape(
             &["owner", "projectName"],
@@ -338,7 +338,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateAssginees",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -360,7 +360,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "findSharerByloginIds",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::AnonymousJsonAccept,
         request: shape(
             &["owner", "projectName", "number"],
@@ -376,7 +376,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "findSharableUsers",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::ProjectReadJsonAccept,
         request: shape(
             &["owner", "projectName", "number"],
@@ -398,7 +398,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "updateSharer",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -414,7 +414,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "upvoteWeight",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -430,7 +430,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "downvoteWeight",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -446,7 +446,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "detectChange",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::CurrentUserSession,
         request: shape(
             &["owner", "projectName", "number"],

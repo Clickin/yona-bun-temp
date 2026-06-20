@@ -25,7 +25,7 @@ fn user_fixtures_cover_legacy_users_auth_token_routes() {
         let inventory = find_endpoint(method, path)
             .unwrap_or_else(|| panic!("missing endpoint inventory entry: {method} {path}"));
 
-        assert_eq!(inventory.status, EndpointStatus::MigratorDeferred);
+        assert_eq!(inventory.status, EndpointStatus::AppOwned);
         assert_eq!(fixture.legacy_controller, inventory.source.controller);
         assert_eq!(fixture.legacy_action, inventory.source.action);
     }

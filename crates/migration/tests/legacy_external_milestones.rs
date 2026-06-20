@@ -8,7 +8,7 @@ fn milestone_fixtures_cover_legacy_milestone_external_routes() {
     let expected = [(
         "POST",
         "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
-        MigrationDirection::Import,
+        MigrationDirection::AppOwned,
     )];
 
     assert_eq!(fixtures().len(), expected.len());
@@ -36,7 +36,7 @@ fn milestone_import_preserves_bulk_payload_and_duplicate_response_metadata() {
 
     assert_eq!(fixture.legacy_controller, "controllers.api.MilestoneApi");
     assert_eq!(fixture.legacy_action, "newMilestone");
-    assert_eq!(fixture.direction, MigrationDirection::Import);
+    assert_eq!(fixture.direction, MigrationDirection::AppOwned);
     assert_eq!(fixture.auth, AuthRequirement::MilestoneCreatePermission);
     assert_eq!(fixture.request.path_fields, &["owner", "projectName"]);
     assert_eq!(

@@ -11,6 +11,7 @@ pub enum AuthRequirement {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MigrationDirection {
     Import,
+    AppOwned,
     Deferred,
 }
 
@@ -18,6 +19,7 @@ impl MigrationDirection {
     pub const fn endpoint_status(self) -> EndpointStatus {
         match self {
             Self::Import => EndpointStatus::MigratorImport,
+            Self::AppOwned => EndpointStatus::AppOwned,
             Self::Deferred => EndpointStatus::MigratorDeferred,
         }
     }
@@ -79,25 +81,25 @@ pub const ENDPOINT_DESCRIPTORS: &[EndpointDescriptor] = &[
         method: "POST",
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts",
         source: source("controllers.api.BoardApi", "newPostings"),
-        status: EndpointStatus::MigratorImport,
+        status: EndpointStatus::AppOwned,
     },
     EndpointDescriptor {
         method: "PATCH",
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
         source: source("controllers.api.BoardApi", "updatePostingContent"),
-        status: EndpointStatus::MigratorDeferred,
+        status: EndpointStatus::AppOwned,
     },
     EndpointDescriptor {
         method: "POST",
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
         source: source("controllers.api.BoardApi", "newPostingComment"),
-        status: EndpointStatus::MigratorImport,
+        status: EndpointStatus::AppOwned,
     },
     EndpointDescriptor {
         method: "POST",
         path: "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
         source: source("controllers.api.BoardApi", "updatePostLabel"),
-        status: EndpointStatus::MigratorDeferred,
+        status: EndpointStatus::AppOwned,
     },
 ];
 
@@ -107,7 +109,7 @@ const BOARD_ENDPOINT_FIXTURES: &[BoardEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts",
         legacy_controller: "controllers.api.BoardApi",
         legacy_action: "newPostings",
-        direction: MigrationDirection::Import,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::BoardPostCreatePermission,
         request: shape(
             &["owner", "projectName"],
@@ -132,7 +134,7 @@ const BOARD_ENDPOINT_FIXTURES: &[BoardEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
         legacy_controller: "controllers.api.BoardApi",
         legacy_action: "updatePostingContent",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::BoardPostUpdatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -168,7 +170,7 @@ const BOARD_ENDPOINT_FIXTURES: &[BoardEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
         legacy_controller: "controllers.api.BoardApi",
         legacy_action: "newPostingComment",
-        direction: MigrationDirection::Import,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::NonIssueCommentCreatePermission,
         request: shape(
             &["owner", "projectName", "number"],
@@ -184,7 +186,7 @@ const BOARD_ENDPOINT_FIXTURES: &[BoardEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
         legacy_controller: "controllers.api.BoardApi",
         legacy_action: "updatePostLabel",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::LegacyJsonMutation,
         request: shape(
             &["owner", "projectName", "number"],

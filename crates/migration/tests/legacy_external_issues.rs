@@ -20,87 +20,87 @@ fn issue_fixtures_cover_legacy_issue_comment_external_routes() {
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
-            MigrationDirection::Export,
+            MigrationDirection::AppOwned,
         ),
         (
             "PUT",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "PATCH",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "PATCH",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
-            MigrationDirection::Import,
+            MigrationDirection::AppOwned,
         ),
         (
             "PUT",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
@@ -219,7 +219,7 @@ fn token_auth_issue_endpoints_are_explicit() {
 }
 
 #[test]
-fn import_export_classification_and_shapes_match_legacy_inventory() {
+fn import_classification_and_app_owned_export_shape_match_legacy_inventory() {
     let imports = find_fixture(
         "POST",
         "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
@@ -240,15 +240,21 @@ fn import_export_classification_and_shapes_match_legacy_inventory() {
     assert!(bulk.request.body_fields.contains(&"sendNotification"));
     assert!(bulk.request.body_fields.contains(&"temporaryUploadFiles"));
 
-    let export = find_fixture(
+    let app_owned_export = find_fixture(
         "GET",
         "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
     )
     .unwrap();
-    assert_eq!(export.direction, MigrationDirection::Export);
-    assert_eq!(export.auth, AuthRequirement::AuthorizationTokenHeader);
-    assert!(export.response.response_fields.contains(&"events"));
-    assert!(export.response.response_fields.contains(&"actor"));
+    assert_eq!(app_owned_export.direction, MigrationDirection::AppOwned);
+    assert_eq!(
+        app_owned_export.auth,
+        AuthRequirement::AuthorizationTokenHeader
+    );
+    assert!(app_owned_export
+        .response
+        .response_fields
+        .contains(&"events"));
+    assert!(app_owned_export.response.response_fields.contains(&"actor"));
 }
 
 #[test]

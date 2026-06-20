@@ -7,12 +7,14 @@ pub enum AuthRequirement {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MigrationDirection {
+    AppOwned,
     Import,
 }
 
 impl MigrationDirection {
     pub const fn endpoint_status(self) -> EndpointStatus {
         match self {
+            Self::AppOwned => EndpointStatus::AppOwned,
             Self::Import => EndpointStatus::MigratorImport,
         }
     }
@@ -73,7 +75,7 @@ pub const ENDPOINT_DESCRIPTORS: &[EndpointDescriptor] = &[EndpointDescriptor {
     method: "POST",
     path: "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
     source: source("controllers.api.MilestoneApi", "newMilestone"),
-    status: EndpointStatus::MigratorImport,
+    status: EndpointStatus::AppOwned,
 }];
 
 const MILESTONE_ENDPOINT_FIXTURES: &[MilestoneEndpointFixture] = &[MilestoneEndpointFixture {
@@ -81,7 +83,7 @@ const MILESTONE_ENDPOINT_FIXTURES: &[MilestoneEndpointFixture] = &[MilestoneEndp
     path: "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
     legacy_controller: "controllers.api.MilestoneApi",
     legacy_action: "newMilestone",
-    direction: MigrationDirection::Import,
+    direction: MigrationDirection::AppOwned,
     auth: AuthRequirement::MilestoneCreatePermission,
     request: shape(
         &["owner", "projectName"],

@@ -19,12 +19,12 @@ fn project_fixtures_cover_legacy_project_external_routes() {
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/labels",
-            MigrationDirection::Import,
+            MigrationDirection::AppOwned,
         ),
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
     ];
 
@@ -81,7 +81,7 @@ fn project_export_descriptor_preserves_export_shape() {
 }
 
 #[test]
-fn project_import_descriptors_preserve_body_and_status_classification() {
+fn project_import_descriptor_preserves_body_and_status_classification() {
     let project = find_fixture("POST", "/-_-api/v1/owners/:owner/projects").unwrap();
     assert_eq!(project.direction, MigrationDirection::Import);
     assert_eq!(project.auth, AuthRequirement::SiteManagerSession);
@@ -99,13 +99,16 @@ fn project_import_descriptors_preserve_body_and_status_classification() {
             "role",
         ]
     );
+}
 
+#[test]
+fn project_app_owned_helpers_preserve_label_and_title_head_shapes() {
     let labels = find_fixture(
         "POST",
         "/-_-api/v1/owners/:owner/projects/:projectName/labels",
     )
     .unwrap();
-    assert_eq!(labels.direction, MigrationDirection::Import);
+    assert_eq!(labels.direction, MigrationDirection::AppOwned);
     assert_eq!(labels.auth, AuthRequirement::IssueLabelCreatePermission);
     assert_eq!(
         labels.request.body_fields,
@@ -145,7 +148,7 @@ fn title_heads_action_and_path_are_stable() {
     );
     assert_eq!(fixture.legacy_controller, "controllers.api.ProjectApi");
     assert_eq!(fixture.legacy_action, "titleHeads");
-    assert_eq!(fixture.direction, MigrationDirection::Deferred);
+    assert_eq!(fixture.direction, MigrationDirection::AppOwned);
     assert_eq!(fixture.auth, AuthRequirement::ReadPermission);
     assert_eq!(fixture.request.query_fields, &["query"]);
     assert_eq!(fixture.request.header_fields, &["Accept"]);

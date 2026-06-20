@@ -9,22 +9,22 @@ fn board_fixtures_cover_legacy_board_external_routes() {
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/posts",
-            MigrationDirection::Import,
+            MigrationDirection::AppOwned,
         ),
         (
             "PATCH",
             "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
-            MigrationDirection::Import,
+            MigrationDirection::AppOwned,
         ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
-            MigrationDirection::Deferred,
+            MigrationDirection::AppOwned,
         ),
     ];
 
@@ -53,7 +53,7 @@ fn board_post_import_preserves_bulk_post_shape() {
 
     assert_eq!(fixture.legacy_controller, "controllers.api.BoardApi");
     assert_eq!(fixture.legacy_action, "newPostings");
-    assert_eq!(fixture.direction, MigrationDirection::Import);
+    assert_eq!(fixture.direction, MigrationDirection::AppOwned);
     assert_eq!(fixture.auth, AuthRequirement::BoardPostCreatePermission);
     assert_eq!(fixture.request.path_fields, &["owner", "projectName"]);
     assert_eq!(
@@ -81,7 +81,7 @@ fn board_comment_import_preserves_legacy_comment_shape() {
     .unwrap();
 
     assert_eq!(fixture.legacy_action, "newPostingComment");
-    assert_eq!(fixture.direction, MigrationDirection::Import);
+    assert_eq!(fixture.direction, MigrationDirection::AppOwned);
     assert_eq!(
         fixture.auth,
         AuthRequirement::NonIssueCommentCreatePermission
@@ -98,7 +98,7 @@ fn board_comment_import_preserves_legacy_comment_shape() {
 }
 
 #[test]
-fn board_deferred_mutations_preserve_conflict_and_label_metadata() {
+fn board_app_owned_mutations_preserve_conflict_and_label_metadata() {
     let content = find_fixture(
         "PATCH",
         "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
@@ -106,7 +106,7 @@ fn board_deferred_mutations_preserve_conflict_and_label_metadata() {
     .unwrap();
 
     assert_eq!(content.legacy_action, "updatePostingContent");
-    assert_eq!(content.direction, MigrationDirection::Deferred);
+    assert_eq!(content.direction, MigrationDirection::AppOwned);
     assert_eq!(content.auth, AuthRequirement::BoardPostUpdatePermission);
     assert_eq!(content.request.body_fields, &["content", "original"]);
     assert!(content.response.response_fields.contains(&"storedContent"));
@@ -119,7 +119,7 @@ fn board_deferred_mutations_preserve_conflict_and_label_metadata() {
     .unwrap();
 
     assert_eq!(labels.legacy_action, "updatePostLabel");
-    assert_eq!(labels.direction, MigrationDirection::Deferred);
+    assert_eq!(labels.direction, MigrationDirection::AppOwned);
     assert_eq!(labels.auth, AuthRequirement::LegacyJsonMutation);
     assert_eq!(labels.request.body_fields, &["labelId"]);
     assert_eq!(labels.response.response_fields, &["id", "labels"]);

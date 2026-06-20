@@ -12,6 +12,7 @@ pub enum AuthRequirement {
 pub enum MigrationDirection {
     Export,
     Import,
+    AppOwned,
     Deferred,
 }
 
@@ -20,6 +21,7 @@ impl MigrationDirection {
         match self {
             Self::Export => EndpointStatus::MigratorExport,
             Self::Import => EndpointStatus::MigratorImport,
+            Self::AppOwned => EndpointStatus::AppOwned,
             Self::Deferred => EndpointStatus::MigratorDeferred,
         }
     }
@@ -145,7 +147,7 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/labels",
         legacy_controller: "controllers.api.ProjectApi",
         legacy_action: "newLabel",
-        direction: MigrationDirection::Import,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::IssueLabelCreatePermission,
         request: shape(
             &["owner", "projectName"],
@@ -181,7 +183,7 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
         path: "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
         legacy_controller: "controllers.api.ProjectApi",
         legacy_action: "titleHeads",
-        direction: MigrationDirection::Deferred,
+        direction: MigrationDirection::AppOwned,
         auth: AuthRequirement::ReadPermission,
         request: shape(&["owner", "projectName"], &["query"], &["Accept"], &[], &[]),
         response: shape(
