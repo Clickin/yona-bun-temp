@@ -2114,11 +2114,10 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
 }
 
 #[tokio::test]
+// Guards direct workspace profile/email aliases through the app-scoped
+// service/runtime config supplied by router bootstrap.
 async fn direct_legacy_profile_and_email_routes_accept_form_csrf_redirect_and_mutate_workspace_state(
 ) {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -2208,10 +2207,9 @@ async fn direct_legacy_profile_and_email_routes_accept_form_csrf_redirect_and_mu
 }
 
 #[tokio::test]
+// Guards direct workspace email delete/main aliases through the app-scoped
+// service/runtime config supplied by router bootstrap.
 async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_email_state() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -2391,10 +2389,9 @@ async fn direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates
 }
 
 #[tokio::test]
+// Guards direct visited-list reset through the app-scoped service/runtime config
+// supplied by router bootstrap.
 async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspace_state() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -2725,10 +2722,9 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
 }
 
 #[tokio::test]
+// Guards direct password reset through the app-scoped service/runtime config
+// supplied by router bootstrap.
 async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_password() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 

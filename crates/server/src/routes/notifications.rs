@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     base_path_href, direct_toggle_workspace_notification, escape_html_attr, escape_html_text,
     format_project_date_label, internal_error, persistence, redirect_to, require_project_read,
-    require_session, session::SessionManager, ConnectError, PilotBackend, RestRouteError,
+    require_session, session::SessionManager, ConnectError, PilotBackend, PilotServiceImpl,
+    RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -68,6 +69,7 @@ struct RestNotificationsResponse {
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
@@ -83,8 +85,7 @@ pub(crate) fn routes(
     let unwatch_post_session_manager = session_manager.clone();
     let unwatch_post_backend = backend.clone();
     let unwatch_post_base_path = base_path.clone();
-    let direct_notification_toggle_session_manager = session_manager.clone();
-    let direct_notification_toggle_backend = backend.clone();
+    let direct_notification_toggle_service = service;
 
     Router::new()
         .route(
@@ -116,8 +117,7 @@ pub(crate) fn routes(
                             headers,
                             project_id,
                             noti_type,
-                            direct_notification_toggle_session_manager.clone(),
-                            direct_notification_toggle_backend.clone(),
+                            direct_notification_toggle_service.clone(),
                         )
                         .await
                     }

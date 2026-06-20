@@ -232,10 +232,10 @@ pub(crate) fn app_routes(
             runtime.project_default_scope.clone(),
         ))
         .merge(workspace_routes(
+            service.clone(),
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
-            public_origin.clone(),
             runtime.smtp.clone(),
             runtime.site_name.clone(),
         ))
@@ -257,6 +257,7 @@ pub(crate) fn app_routes(
         ))
         .merge(static_compat_routes())
         .merge(notification_routes(
+            service.clone(),
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),

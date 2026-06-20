@@ -25,8 +25,8 @@ use crate::{
     resolve_current_session_response, rest_json_response, rest_owned_view,
     send_workspace_email_validation_mail,
     session::{self, SessionManager},
-    workspace_invalid_argument, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, SmtpRuntimeConfig, LEGACY_MIN_PASSWORD_LENGTH,
+    workspace_invalid_argument, ConnectError, Context, PilotBackend, PilotServiceImpl,
+    RestRouteError, SmtpRuntimeConfig, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -864,21 +864,20 @@ async fn direct_legacy_leave_project(
     mut headers: HeaderMap,
     owner_name: String,
     project_name: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let login_redirect = base_path_href(
         &base_path,
         "/users/loginform?redirectUrl=%2Fuser%2Feditform",
     );
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&login_redirect).into_response();
     };
     let Some(user_id) = session.user_id else {
         return Redirect::to(&login_redirect).into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project leave requires repository backend")
             .into_response();
     };
@@ -891,15 +890,6 @@ async fn direct_legacy_leave_project(
         "x-csrf-token",
         HeaderValue::from_str(&session.csrf_token).expect("csrf token header"),
     );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
     redirect_to(
         &base_path,
@@ -1041,16 +1031,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
     smtp: SmtpRuntimeConfig,
     site_name: String,
 ) -> Router {
-    let reset_visited_session_manager = session_manager.clone();
-    let reset_visited_backend = backend.clone();
-    let reset_visited_base_path = base_path.clone();
+    let reset_visited_service = service.clone();
     let default_login_page_session_manager = session_manager.clone();
     let default_login_page_backend = backend.clone();
     let legacy_default_login_page_session_manager = session_manager.clone();
@@ -1062,35 +1050,16 @@ pub(crate) fn routes(
     let usermenu_tab_session_manager = session_manager.clone();
     let usermenu_tab_backend = backend.clone();
     let usermenu_tab_base_path = base_path.clone();
-    let update_profile_session_manager = session_manager.clone();
-    let update_profile_backend = backend.clone();
-    let update_profile_base_path = base_path.clone();
-    let change_user_password_session_manager = session_manager.clone();
-    let change_user_password_backend = backend.clone();
-    let change_user_password_base_path = base_path.clone();
-    let add_workspace_email_session_manager = session_manager.clone();
-    let add_workspace_email_backend = backend.clone();
-    let add_workspace_email_base_path = base_path.clone();
-    let reset_api_token_session_manager = session_manager.clone();
-    let reset_api_token_backend = backend.clone();
-    let reset_api_token_base_path = base_path.clone();
-    let delete_email_session_manager = session_manager.clone();
-    let delete_email_backend = backend.clone();
-    let delete_email_base_path = base_path.clone();
-    let set_main_email_session_manager = session_manager.clone();
-    let set_main_email_backend = backend.clone();
-    let set_main_email_base_path = base_path.clone();
-    let send_validation_session_manager = session_manager.clone();
-    let send_validation_backend = backend.clone();
-    let send_validation_base_path = base_path.clone();
-    let send_validation_public_origin = public_origin.clone();
+    let update_profile_service = service.clone();
+    let change_user_password_service = service.clone();
+    let add_workspace_email_service = service.clone();
+    let reset_api_token_service = service.clone();
+    let delete_email_service = service.clone();
+    let set_main_email_service = service.clone();
+    let send_validation_service = service.clone();
     let send_validation_default_from = smtp.default_from();
-    let confirm_email_session_manager = session_manager.clone();
-    let confirm_email_backend = backend.clone();
-    let confirm_email_base_path = base_path.clone();
-    let info_leave_session_manager = session_manager.clone();
-    let info_leave_backend = backend.clone();
-    let info_leave_base_path = base_path.clone();
+    let confirm_email_service = service.clone();
+    let info_leave_service = service.clone();
     let legacy_favorite_projects_list_backend = backend.clone();
     let legacy_favorite_projects_list_session_manager = session_manager.clone();
     let legacy_favorite_project_toggle_backend = backend.clone();
@@ -1227,9 +1196,7 @@ pub(crate) fn routes(
                     direct_update_user_profile(
                         headers,
                         form,
-                        update_profile_session_manager.clone(),
-                        update_profile_backend.clone(),
-                        update_profile_base_path.clone(),
+                        update_profile_service.clone(),
                     )
                     .await
                 }
@@ -1242,9 +1209,7 @@ pub(crate) fn routes(
                     direct_change_user_password(
                         headers,
                         form,
-                        change_user_password_session_manager.clone(),
-                        change_user_password_backend.clone(),
-                        change_user_password_base_path.clone(),
+                        change_user_password_service.clone(),
                     )
                     .await
                 }
@@ -1257,9 +1222,7 @@ pub(crate) fn routes(
                     direct_add_workspace_email(
                         headers,
                         form,
-                        add_workspace_email_session_manager.clone(),
-                        add_workspace_email_backend.clone(),
-                        add_workspace_email_base_path.clone(),
+                        add_workspace_email_service.clone(),
                     )
                     .await
                 }
@@ -1272,9 +1235,7 @@ pub(crate) fn routes(
                     direct_reset_api_token_from_settings_form(
                         headers,
                         form,
-                        reset_api_token_session_manager.clone(),
-                        reset_api_token_backend.clone(),
-                        reset_api_token_base_path.clone(),
+                        reset_api_token_service.clone(),
                     )
                     .await
                 }
@@ -1287,9 +1248,7 @@ pub(crate) fn routes(
                     direct_delete_workspace_email(
                         headers,
                         email_id,
-                        delete_email_session_manager.clone(),
-                        delete_email_backend.clone(),
-                        delete_email_base_path.clone(),
+                        delete_email_service.clone(),
                     )
                     .await
                 }
@@ -1302,9 +1261,7 @@ pub(crate) fn routes(
                     direct_set_main_workspace_email(
                         headers,
                         email_id,
-                        set_main_email_session_manager.clone(),
-                        set_main_email_backend.clone(),
-                        set_main_email_base_path.clone(),
+                        set_main_email_service.clone(),
                     )
                     .await
                 }
@@ -1321,10 +1278,7 @@ pub(crate) fn routes(
                             headers,
                             email_id,
                             form,
-                            send_validation_session_manager.clone(),
-                            send_validation_backend.clone(),
-                            send_validation_base_path.clone(),
-                            send_validation_public_origin.clone(),
+                            send_validation_service.clone(),
                             send_validation_default_from.clone(),
                         )
                         .await
@@ -1341,9 +1295,7 @@ pub(crate) fn routes(
                             headers,
                             email_id,
                             token,
-                            confirm_email_session_manager.clone(),
-                            confirm_email_backend.clone(),
-                            confirm_email_base_path.clone(),
+                            confirm_email_service.clone(),
                         )
                         .await
                     }
@@ -1360,9 +1312,7 @@ pub(crate) fn routes(
                             headers,
                             owner_name,
                             project_name,
-                            info_leave_session_manager.clone(),
-                            info_leave_backend.clone(),
-                            info_leave_base_path.clone(),
+                            info_leave_service.clone(),
                         )
                         .await
                     }
@@ -1375,9 +1325,7 @@ pub(crate) fn routes(
                 async move {
                     direct_reset_user_visited_list(
                         headers,
-                        reset_visited_session_manager.clone(),
-                        reset_visited_backend.clone(),
-                        reset_visited_base_path.clone(),
+                        reset_visited_service.clone(),
                     )
                     .await
                 }
@@ -1413,24 +1361,20 @@ pub(crate) fn routes(
         )
 }
 
-async fn direct_reset_user_visited_list(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Response {
+async fn direct_reset_user_visited_list(headers: HeaderMap, service: PilotServiceImpl) -> Response {
+    let base_path = service.base_path.clone();
     let login_redirect = base_path_href(
         &base_path,
         "/users/loginform?redirectUrl=%2Fuser%2Feditform",
     );
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&login_redirect).into_response();
     };
     let Some(user_id) = session.user_id else {
         return Redirect::to(&login_redirect).into_response();
     };
 
-    match &backend {
+    match &service.backend {
         PilotBackend::Repository(repository) => {
             match repository.clear_recent_projects_for_user(user_id).await {
                 Ok(()) => redirect_to(&base_path, "/user/editform"),
@@ -1566,10 +1510,9 @@ struct RestWorkspaceFilesResponse {
 async fn direct_update_user_profile(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let body = RestUpdateProfileBody {
         avatar_attachment_id: form
             .get("avatarAttachmentId")
@@ -1578,15 +1521,6 @@ async fn direct_update_user_profile(
             .unwrap_or_default(),
         email: form.get("email").cloned().unwrap_or_default(),
         name: form.get("name").cloned().unwrap_or_default(),
-    };
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_update_profile(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1597,24 +1531,14 @@ async fn direct_update_user_profile(
 async fn direct_change_user_password(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let body = RestChangePasswordBody {
         login_id: form.get("loginId").cloned().unwrap_or_default(),
         old_password: form.get("oldPassword").cloned().unwrap_or_default(),
         password: form.get("password").cloned().unwrap_or_default(),
         retyped_password: form.get("retypedPassword").cloned().unwrap_or_default(),
-    };
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_change_password(headers, body, service).await {
         Ok(rest_response) => {
@@ -1637,21 +1561,11 @@ async fn direct_change_user_password(
 async fn direct_add_workspace_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let body = RestWorkspaceEmailBody {
         email: form.get("email").cloned().unwrap_or_default(),
-    };
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
@@ -1662,19 +1576,9 @@ async fn direct_add_workspace_email(
 async fn direct_reset_api_token_from_settings_form(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_reset_api_token(headers_with_form_csrf(headers, &form), service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform/token"),
         Err(error) => error.into_response(),
@@ -1684,19 +1588,9 @@ async fn direct_reset_api_token_from_settings_form(
 async fn direct_delete_workspace_email(
     headers: HeaderMap,
     email_id: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_delete_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
         Err(error) => error.into_response(),
@@ -1706,19 +1600,9 @@ async fn direct_delete_workspace_email(
 async fn direct_set_main_workspace_email(
     headers: HeaderMap,
     email_id: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_set_main_workspace_email(headers, email_id, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
         Err(error) => error.into_response(),
@@ -1729,17 +1613,16 @@ async fn direct_send_workspace_email_validation(
     headers: HeaderMap,
     email_id: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
+    service: PilotServiceImpl,
     default_from: String,
 ) -> Response {
+    let base_path = service.base_path.clone();
+    let public_origin = service.public_origin.clone();
     let login_redirect = base_path_href(
         &base_path,
         "/users/loginform?redirectUrl=%2Fuser%2Feditform%2Femails",
     );
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&login_redirect).into_response();
     };
     let Some(user_id) = session.user_id else {
@@ -1763,7 +1646,7 @@ async fn direct_send_workspace_email_validation(
         ))
         .into_response();
     };
-    let redirect_path = match &backend {
+    let redirect_path = match &service.backend {
         PilotBackend::Repository(repository) => {
             if repository
                 .send_workspace_email_validation_for_user(user_id, email_id)
@@ -1798,11 +1681,10 @@ async fn direct_confirm_workspace_email(
     headers: HeaderMap,
     email_id: String,
     token: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let previous_session = session_manager.read_session_from_headers(&headers);
+    let base_path = service.base_path.clone();
+    let previous_session = service.session_manager.read_session_from_headers(&headers);
     let previous_token = previous_session
         .as_ref()
         .map(|session| session.token.as_str());
@@ -1814,24 +1696,25 @@ async fn direct_confirm_workspace_email(
         .into_response();
     };
 
-    match &backend {
+    match &service.backend {
         PilotBackend::Repository(repository) => {
             match repository
                 .confirm_workspace_email_for_user(email_id, &token)
                 .await
             {
                 Ok(Some(user_id)) => {
-                    let authenticated_session = session_manager.create_authenticated_session(
-                        previous_token,
-                        user_id,
-                        false,
-                    );
+                    let authenticated_session = service
+                        .session_manager
+                        .create_authenticated_session(previous_token, user_id, false);
                     let mut response = Redirect::to(&base_path_href(
                         &base_path,
                         "/user/editform/emails?confirmed=1",
                     ))
                     .into_response();
-                    for cookie in session_manager.build_set_cookie_headers(&authenticated_session) {
+                    for cookie in service
+                        .session_manager
+                        .build_set_cookie_headers(&authenticated_session)
+                    {
                         response.headers_mut().append(
                             axum::http::header::SET_COOKIE,
                             cookie.parse().expect("set-cookie header"),
@@ -1858,18 +1741,8 @@ pub(crate) async fn direct_toggle_workspace_notification(
     headers: HeaderMap,
     project_id: i64,
     event_type: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     let body = RestWorkspaceNotificationBody {
         event_type,
         project_id: project_id.to_string(),

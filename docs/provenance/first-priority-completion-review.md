@@ -96,6 +96,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-20: runtime config DI cleanup continued for auth direct login/signup. The legacy form handlers now reuse the router's app-scoped `PilotServiceImpl`, and their direct form contract no longer mutates auth env vars to force default config.
 - 2026-06-20: runtime config DI cleanup continued for code commit discussion direct create/delete routes. The legacy form handlers now reuse the router's app-scoped `PilotServiceImpl`, preserving direct redirect behavior while removing per-request env-backed service reconstruction.
 - 2026-06-20: runtime config DI cleanup continued for pull request direct aliases. Legacy accept, source-branch delete/restore, and review-thread open/close handlers now reuse the router's app-scoped `PilotServiceImpl` instead of rebuilding runtime config from process env.
+- 2026-06-20: runtime config DI cleanup continued for workspace and notification direct aliases. Profile/password/email/token/project-leave/visited-list/notification handlers now reuse the router's app-scoped `PilotServiceImpl`, and representative direct workspace tests no longer mutate auth env vars to force default config.
 
 ## Compile-Time Note
 
