@@ -122,9 +122,9 @@ mod smart_http;
 mod svn_protocol;
 
 pub use mailbox::{
-    mailbox_polling_config_from_env, mailbox_polling_config_from_startup,
-    poll_mailbox_scheduler_tick, process_mailbox_parsed_message, process_mailbox_raw_message,
-    spawn_mailbox_polling_scheduler, MailboxPollingConfig,
+    mailbox_polling_config_from_startup, poll_mailbox_scheduler_tick,
+    process_mailbox_parsed_message, process_mailbox_raw_message, spawn_mailbox_polling_scheduler,
+    MailboxPollingConfig,
 };
 pub(crate) use persistence::PilotRepository;
 pub use router::{

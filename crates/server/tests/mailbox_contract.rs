@@ -3,7 +3,6 @@ use sea_orm::{
     Set,
 };
 use std::collections::BTreeMap;
-use std::sync::{Mutex, OnceLock};
 use yona_rust_integrations::{MailboxMimePart, MailboxParsedMessageInput};
 use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
@@ -15,15 +14,9 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::runtime_config::load_startup_config;
 use yona_rust_pilot_server::{
-    mailbox_polling_config_from_env, mailbox_polling_config_from_startup,
-    poll_mailbox_scheduler_tick, process_mailbox_parsed_message, process_mailbox_raw_message,
-    MailboxPollingConfig,
+    mailbox_polling_config_from_startup, poll_mailbox_scheduler_tick,
+    process_mailbox_parsed_message, process_mailbox_raw_message, MailboxPollingConfig,
 };
-
-fn mailbox_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_repository() -> (AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -853,35 +846,7 @@ printf '%s\0%s' "$first" "$second"
 }
 
 #[test]
-fn mailbox_polling_config_from_env_preserves_legacy_scheduler_shape() {
-    let _guard = mailbox_env_lock().lock().unwrap();
-    std::env::set_var("YONA_MAILBOX_POLLING_ENABLED", "true");
-    std::env::set_var("YONA_MAILBOX_POLLING_INITIAL_DELAY", "2s");
-    std::env::set_var("YONA_MAILBOX_POLLING_INTERVAL", "750ms");
-    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.local");
-    std::env::set_var("YONA_MAILBOX_FETCH_COMMAND", "fetch-mailbox --unseen");
-
-    assert_eq!(
-        mailbox_polling_config_from_env(),
-        MailboxPollingConfig {
-            enabled: true,
-            fetch_command: "fetch-mailbox --unseen".to_string(),
-            imap_address: "noreply@yona.local".to_string(),
-            initial_delay_ms: 2_000,
-            interval_ms: 750,
-        }
-    );
-
-    std::env::remove_var("YONA_MAILBOX_POLLING_ENABLED");
-    std::env::remove_var("YONA_MAILBOX_POLLING_INITIAL_DELAY");
-    std::env::remove_var("YONA_MAILBOX_POLLING_INTERVAL");
-    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
-    std::env::remove_var("YONA_MAILBOX_FETCH_COMMAND");
-}
-
-#[test]
 fn mailbox_polling_config_from_startup_uses_init_snapshot_without_env_mutation() {
-    let _guard = mailbox_env_lock().lock().unwrap();
     let current_dir = tempfile::tempdir().expect("temp dir");
     let previous_fetch_command = std::env::var("YONA_MAILBOX_FETCH_COMMAND").ok();
     let startup = load_startup_config(

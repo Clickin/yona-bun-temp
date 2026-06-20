@@ -53,26 +53,6 @@ impl Default for MailboxPollingConfig {
     }
 }
 
-pub fn mailbox_polling_config_from_env() -> MailboxPollingConfig {
-    let fetch_command = std::env::var("YONA_MAILBOX_FETCH_COMMAND")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
-    let enabled = std::env::var("YONA_MAILBOX_POLLING_ENABLED")
-        .ok()
-        .and_then(|value| parse_legacy_bool(&value));
-    let imap_address = std::env::var("YONA_MAILBOX_IMAP_ADDRESS").ok();
-    let initial_delay = std::env::var("YONA_MAILBOX_POLLING_INITIAL_DELAY").ok();
-    let interval = std::env::var("YONA_MAILBOX_POLLING_INTERVAL").ok();
-    mailbox_polling_config_from_options(
-        fetch_command.as_deref(),
-        enabled,
-        imap_address.as_deref(),
-        initial_delay.as_deref(),
-        interval.as_deref(),
-    )
-}
-
 pub fn mailbox_polling_config_from_startup(
     config: &runtime_config::StartupConfig,
 ) -> MailboxPollingConfig {
