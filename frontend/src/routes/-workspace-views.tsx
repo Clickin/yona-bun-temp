@@ -691,7 +691,7 @@ export function WorkspacePage(props: {
     isConfirmed: false,
     isSiteAdmin: false,
     loginId: "anonymous",
-    userLabel: "Anonymous",
+    userLabel: "User.anonymous.name",
   };
   const daysAgo = props.workspaceOverview?.daysAgo ?? 14;
   const emails = props.workspaceOverview?.emails ?? [];

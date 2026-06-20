@@ -5690,6 +5690,15 @@ describe("file-route parity harness", () => {
     expect(anonymousFallbackHtml).toContain("<h3>User.anonymous.name</h3>");
     expect(anonymousFallbackHtml).toContain('<span class="name">User.anonymous.name</span>');
     expect(anonymousFallbackHtml).not.toContain("Unknown user");
+    for (const routePath of [
+      "routes/$user/route.tsx",
+      "routes/-workspace-views.tsx",
+      "routes/-workspace-settings-view.tsx",
+    ]) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).toContain('userLabel: "User.anonymous.name"');
+      expect(source).not.toContain('userLabel: "Anonymous"');
+    }
 
     const issueHtml = renderPublicUserProfile({
       defaultLandingPath: "/me",

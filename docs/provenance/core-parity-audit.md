@@ -34,6 +34,7 @@
 - User settings at `/user/editform/**` follow legacy `user/edit*.scala.html`: keep `site-breadcrumb-outer`, `page-wrap-outer`, `page-wrap`, `partial_edit_tabmenu` `nav nav-tabs mt20`, active tab state, `userinfo.*` labels, profile/avatar/reset-visited form anchors, password reset form anchors, notification project tabs, email table/action anchors, and token generator anchors without the temporary `Yona Rust Workspace` heading or temporary English profile/password/email/token copy.
 - Shared forbidden/not-found status pages follow legacy error pages with `page-wrap-outer`, `project-page-wrap`, `error-wrap`, `ico ico-err2`, and `error.*` message-key titles instead of the temporary `Yona Rust Route` shell.
 - Fork creation rendering follows legacy `git/fork.scala.html`: the project-home CTA, fork form legend suffix, and submit button use the legacy `fork` scalar rather than the non-legacy `project.fork` key while preserving the `fork.help.*` and `fork.already.exist` help blocks.
+- Workspace/public-profile anonymous fallback rendering uses the legacy `User.anonymous.name` key instead of a literal `Anonymous` label for route-level fallback session seeds.
 - Unless a row explicitly says otherwise, read owner intent through this mapping:
 
 | Historical owner label                       | Canonical owner path                    |

@@ -143,10 +143,6 @@ function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
 
-function readSearchParams(href: string): URLSearchParams {
-  return new URL(href, "http://yona.local").searchParams;
-}
-
 export function WorkspaceSettingsPage(props: {
   onAddWorkspaceEmail?: (email: string) => void;
   onChangePassword?: (input: {
@@ -169,7 +165,6 @@ export function WorkspaceSettingsPage(props: {
   section: WorkspaceSettingsSection;
   workspaceOverview: WorkspaceOverviewViewModel | null;
 }) {
-  const searchParams = readSearchParams(props.routeHref);
   const session = props.workspaceOverview?.session ?? {
     defaultLandingPath: "/me",
     emailAddress: "anonymous@yona.invalid",
@@ -177,7 +172,7 @@ export function WorkspaceSettingsPage(props: {
     isConfirmed: false,
     isSiteAdmin: false,
     loginId: "anonymous",
-    userLabel: "Anonymous",
+    userLabel: "User.anonymous.name",
   };
   const apiToken = props.workspaceOverview?.apiToken ?? "";
   const emails = props.workspaceOverview?.emails ?? [];
@@ -744,7 +739,10 @@ export function WorkspaceSettingsPage(props: {
         <div className="page-wrap">
           <ul className="nav nav-tabs mt20">
             {WORKSPACE_SETTINGS_TABS.map((tab) => (
-              <li className={props.section === tab.section ? "active" : undefined} key={tab.section}>
+              <li
+                className={props.section === tab.section ? "active" : undefined}
+                key={tab.section}
+              >
                 <a href={appHref(props.runtimeConfig, tab.href)}>{tab.label}</a>
               </li>
             ))}

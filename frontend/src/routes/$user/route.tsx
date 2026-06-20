@@ -5,7 +5,12 @@ import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } fro
 import { useAppRuntime } from "../../app-runtime-context";
 import type { WorkspaceOverviewViewModel } from "../-view-models";
 import { PublicUserProfilePage } from "../-workspace-views";
-import { BadRequestPage, classifyConnectFailure, navigateToAppHref, NotFoundPage } from "../-shared";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  navigateToAppHref,
+  NotFoundPage,
+} from "../-shared";
 
 export const Route = createFileRoute("/$user")({
   component: PublicUserProfileRouteComponent,
@@ -32,7 +37,7 @@ function anonymousSession(): WorkspaceOverviewViewModel["session"] {
     isConfirmed: false,
     isSiteAdmin: false,
     loginId: "anonymous",
-    userLabel: "Anonymous",
+    userLabel: "User.anonymous.name",
   };
 }
 

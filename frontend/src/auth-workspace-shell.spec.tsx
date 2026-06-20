@@ -885,6 +885,18 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain("Reset password by email");
   });
 
+  it("keeps route-level anonymous workspace fallbacks on the legacy user label key", () => {
+    for (const routePath of [
+      "routes/$user/route.tsx",
+      "routes/-workspace-views.tsx",
+      "routes/-workspace-settings-view.tsx",
+    ]) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).toContain('userLabel: "User.anonymous.name"');
+      expect(source).not.toContain('userLabel: "Anonymous"');
+    }
+  });
+
   it("prefers profile.avatarUrl on /me and profile settings before placeholder fallback", () => {
     const withAvatarHtml = renderWorkspace({
       defaultLandingPath: "/me",
