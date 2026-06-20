@@ -12,6 +12,7 @@ use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Barrier;
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::{
     original_email, AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
     PostingMutationInput,
@@ -328,6 +329,86 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
     assert_eq!(updated["title"], "legacy board title");
     assert_eq!(updated["body"], "legacy board body updated");
     assert_eq!(updated["type"], "BOARD_POST");
+}
+
+#[tokio::test]
+async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
+    // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting) parity.
+    clear_test_webhook_outbox();
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/board",
+                "secret": "board-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/push",
+                "secret": "push-secret",
+                "webhookType": "JSON",
+                "gitPush": true
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let created = ok_json(
+        rest(
+            app,
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Board webhook parity",
+                "bodyMarkdown": "Created from board webhook test"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["postNumber"], "1");
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    let delivery = &deliveries[0];
+    assert_eq!(delivery.payload_url, "https://hooks.example/board");
+    assert_eq!(delivery.event_type, "NEW_POSTING");
+    assert_eq!(delivery.webhook_type, "SIMPLE");
+    assert!(delivery
+        .headers
+        .iter()
+        .any(|header| header.name == "Authorization" && header.value == "token board-secret "));
+    let payload: serde_json::Value =
+        serde_json::from_str(&delivery.body).expect("posting webhook payload");
+    let text = payload["text"].as_str().unwrap_or_default();
+    assert!(text.contains("[projectYobi] owner"));
+    assert!(text.contains("notification.type.new.posting"));
+    assert!(text.contains("/yona/owner/projectYobi/post/1|#1: Board webhook parity"));
+
+    clear_test_webhook_outbox();
 }
 
 #[tokio::test]

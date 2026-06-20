@@ -11,7 +11,7 @@ use yona_rust_vcs::VcsError;
 
 use crate::{
     code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
-    form_value, gravatar_url, headers_with_form_csrf, internal_error,
+    dispatch_posting_webhooks, form_value, gravatar_url, headers_with_form_csrf, internal_error,
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
     optional_i64_string, parse_rest_query_i64, parse_rest_query_u32, persistence,
     project_resource_create_allowed, project_update_allowed, redirect_to,
@@ -1667,6 +1667,16 @@ async fn rest_create_posting(
             &actor,
         )?;
     }
+    dispatch_posting_webhooks(
+        repository,
+        &posting,
+        &actor,
+        "NEW_POSTING",
+        None,
+        "",
+        &base_path,
+    )
+    .await;
     Ok(Json(RestPostMutationResponse::Detail(
         rest_post_detail_response_from_record_with_access_issue_references(
             repository,

@@ -888,12 +888,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   persistence helpers moved from `crates/server/src/routes/projects.rs` into
   `crates/server/src/routes/projects/webhooks.rs`; route registration and the
   shared project update guard remain in the parent project route module. This
-  preserves webhook management, legacy issue webhook payload delivery, and PR
-  Hangout follow-up threading covered by
+  preserves webhook management, legacy issue webhook payload delivery, PR
+  Hangout follow-up threading, and board `NEW_POSTING` webhook fan-out covered by
   `project_webhook_contract::project_webhooks_require_update_and_manage_crud`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks`,
+  `project_webhook_contract::project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hooks`,
+  `pull_request_mutation_contract::pull_request_hangout_webhooks_persist_thread_names_for_followups`,
   and
-  `pull_request_mutation_contract::pull_request_hangout_webhooks_persist_thread_names_for_followups`.
+  `board_contract::board_post_create_dispatches_legacy_new_posting_webhooks`.
   Cargo wrapper timing evidence now requires tool-level escalation: active
   `CODEX_SANDBOX` blocks `--outside-sandbox` before cargo starts, while
   `CODEX_SANDBOX_NETWORK_DISABLED` alone is treated as inherited metadata.

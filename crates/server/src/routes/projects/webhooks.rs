@@ -127,6 +127,7 @@ fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
     match event_type {
         "NEW_COMMENT" => "notification.type.new.comment",
         "NEW_ISSUE" => "notification.type.new.issue",
+        "NEW_POSTING" => "notification.type.new.posting",
         "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
         "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
         "PULL_REQUEST_MERGED" => "pullRequest.event.message.merged",
@@ -288,6 +289,108 @@ fn issue_webhook_payload(
             "text": request_message,
         })
         .to_string(),
+    }
+}
+
+fn posting_webhook_payload(
+    webhook: &persistence::ProjectWebhookRecord,
+    request_message: &str,
+    thread_name: Option<&str>,
+) -> String {
+    if webhook.webhook_type == 2 {
+        serde_json::json!({
+            "text": request_message,
+            "thread": legacy_hangout_thread_json(thread_name),
+        })
+        .to_string()
+    } else {
+        serde_json::json!({
+            "text": request_message,
+        })
+        .to_string()
+    }
+}
+
+pub(crate) async fn dispatch_posting_webhooks(
+    repository: &PilotRepository,
+    posting: &persistence::PostingRecord,
+    actor: &persistence::AppUserRecord,
+    event_type: &str,
+    target_fragment: Option<&str>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(Some(project)) = repository
+        .read_project_by_owner_and_name(&posting.owner_name, &posting.project_name)
+        .await
+    else {
+        return;
+    };
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+
+    let mut path = format!(
+        "/{}/{}/post/{}",
+        posting.owner_name, posting.project_name, posting.post_number
+    );
+    if let Some(fragment) = target_fragment {
+        path.push_str(fragment);
+    }
+    let url = absolute_app_url(public_origin, base_path, &path);
+    let target_label = format!("#{}: {}", posting.post_number, posting.title);
+    let resource_id = posting.id.to_string();
+
+    for webhook in webhooks.webhooks {
+        if webhook.webhook_type == 3 {
+            continue;
+        }
+        let thread_name = if webhook.webhook_type == 2 {
+            read_existing_webhook_thread_name(repository, webhook.id, "BOARD_POST", &resource_id)
+                .await
+        } else {
+            None
+        };
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let request_message = format!(
+            "[{}] {} {}{}",
+            project.project_name,
+            actor.display_name,
+            legacy_webhook_event_key(event_type),
+            legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1)
+        );
+        let body = posting_webhook_payload(&webhook, &request_message, thread_name.as_deref());
+        let request_body = body.clone();
+        let delivery = deliver_webhook(OutboundWebhook {
+            body,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
+            webhook_type,
+        });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            event_type,
+            &project_webhook_type_label(webhook.webhook_type),
+            &request_body,
+            &delivery,
+        )
+        .await;
+        if webhook.webhook_type == 2 {
+            persist_hangout_webhook_thread_from_delivery(
+                repository,
+                webhook.id,
+                "BOARD_POST",
+                &resource_id,
+                thread_name.as_deref(),
+                delivery,
+            )
+            .await;
+        }
     }
 }
 

@@ -63,14 +63,15 @@ pub(crate) use notifications::routes as notification_routes;
 pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use projects::{
-    delete_project_repository_storage, dispatch_issue_webhooks, dispatch_pull_request_webhooks,
-    organization_admin_read, organization_container_read, organization_create, organization_delete,
-    organization_detail_read, organization_enroll, organization_enroll_cancel,
-    organization_enrollment_accept, organization_leave, organization_list, organization_member_add,
-    organization_member_delete, organization_member_role_update, organization_members_read,
-    organization_settings_read, organization_update, project_container_read, project_create,
-    project_detail_read, project_enroll, project_enroll_cancel, project_favorite_toggle,
-    project_list, project_milestone_create, project_milestone_delete, project_milestone_list,
+    delete_project_repository_storage, dispatch_issue_webhooks, dispatch_posting_webhooks,
+    dispatch_pull_request_webhooks, organization_admin_read, organization_container_read,
+    organization_create, organization_delete, organization_detail_read, organization_enroll,
+    organization_enroll_cancel, organization_enrollment_accept, organization_leave,
+    organization_list, organization_member_add, organization_member_delete,
+    organization_member_role_update, organization_members_read, organization_settings_read,
+    organization_update, project_container_read, project_create, project_detail_read,
+    project_enroll, project_enroll_cancel, project_favorite_toggle, project_list,
+    project_milestone_create, project_milestone_delete, project_milestone_list,
     project_milestone_read, project_milestone_state_mutation, project_milestone_update,
     project_overview_update, project_settings_read, project_update, project_watch_toggle,
     project_webhook_type_label, recent_project_visit_record, record_project_webhook_delivery,
