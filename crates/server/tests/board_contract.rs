@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
@@ -24,6 +24,11 @@ use yona_rust_pilot_server::{
 };
 
 mod rest_test_support;
+
+fn webhook_outbox_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -357,6 +362,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
 async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting) parity
     // through the app-scoped board route integration config snapshot.
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -438,6 +444,7 @@ async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
 async fn board_comment_create_and_update_dispatch_legacy_webhooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_COMMENT/COMMENT_UPDATED, Comment)
     // parity for board posting comments through the board route service snapshot.
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

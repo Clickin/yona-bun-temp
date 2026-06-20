@@ -520,14 +520,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_create_posting_comment(
                             headers,
@@ -538,7 +538,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -551,7 +551,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
                     String,
@@ -563,7 +563,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_posting_comment(
                             headers,
@@ -575,7 +575,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -693,7 +693,6 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
-    let integrations = service.integrations.clone();
 
     let legacy_board_posts_backend = backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
@@ -707,11 +706,11 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let board_comment_create_backend = backend.clone();
     let board_comment_create_session_manager = session_manager.clone();
     let board_comment_create_base_path = base_path.clone();
-    let board_comment_create_integrations = integrations.clone();
+    let board_comment_create_service = service.clone();
     let board_comment_update_backend = backend.clone();
     let board_comment_update_session_manager = session_manager.clone();
     let board_comment_update_base_path = base_path.clone();
-    let board_comment_update_integrations = integrations;
+    let board_comment_update_service = service.clone();
     let legacy_board_comment_update_backend = backend.clone();
     let legacy_board_comment_update_session_manager = session_manager.clone();
     let board_comment_delete_backend = backend.clone();
@@ -817,7 +816,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             board_comment_create_session_manager.clone(),
                             board_comment_create_backend.clone(),
                             board_comment_create_base_path.clone(),
-                            board_comment_create_integrations.clone(),
+                            board_comment_create_service.clone(),
                         )
                         .await
                     }
@@ -846,7 +845,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             board_comment_update_session_manager.clone(),
                             board_comment_update_backend.clone(),
                             board_comment_update_base_path.clone(),
-                            board_comment_update_integrations.clone(),
+                            board_comment_update_service.clone(),
                         )
                         .await
                     }
@@ -1249,7 +1248,7 @@ async fn direct_create_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Response {
     match rest_create_posting_comment(
         headers_with_form_csrf(headers, &form),
@@ -1260,7 +1259,7 @@ async fn direct_create_posting_comment(
         session_manager,
         backend,
         base_path.clone(),
-        integrations,
+        service,
     )
     .await
     {
@@ -1291,7 +1290,7 @@ async fn direct_update_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Response {
     match rest_update_posting_comment(
         headers_with_form_csrf(headers, &form),
@@ -1303,7 +1302,7 @@ async fn direct_update_posting_comment(
         session_manager,
         backend,
         base_path.clone(),
-        integrations,
+        service,
     )
     .await
     {
@@ -1887,7 +1886,7 @@ async fn rest_create_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -1947,7 +1946,7 @@ async fn rest_create_posting_comment(
             "NEW_COMMENT",
             "",
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -1980,7 +1979,7 @@ async fn rest_update_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -2046,7 +2045,7 @@ async fn rest_update_posting_comment(
             "COMMENT_UPDATED",
             "",
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }

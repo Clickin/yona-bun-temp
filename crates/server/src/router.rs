@@ -164,6 +164,7 @@ fn build_router_with_app_config(
         site_name: runtime.site_name.clone(),
         site_update: runtime.site_update.clone(),
         smtp: runtime.smtp.clone(),
+        translation_proxy: runtime.translation_proxy.clone(),
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(

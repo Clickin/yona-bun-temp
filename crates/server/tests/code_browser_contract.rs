@@ -1553,6 +1553,7 @@ async fn rest_compare_reports_missing_commit_as_not_found() {
 
 #[tokio::test]
 async fn rest_branch_list_renders_default_branch_first_with_legacy_actions() {
+    // Guards REST branch routes using the app-scoped code data-root service snapshot.
     let data_dir = tempdir().expect("yona data");
     let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

@@ -154,6 +154,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) site_name: String,
     pub(crate) site_update: SiteUpdateConfig,
     pub(crate) smtp: SmtpRuntimeConfig,
+    pub(crate) translation_proxy: TranslationProxyConfig,
 }
 
 #[derive(Clone)]

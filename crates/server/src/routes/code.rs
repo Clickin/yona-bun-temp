@@ -297,48 +297,24 @@ pub(crate) fn rest_routes(
         .route(
             "/projects/{owner_name}/{project_name}/branches",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
-                        rest_read_code_branches(
-                            headers,
-                            owner_name,
-                            project_name,
-                            session_manager,
-                            backend,
-                            data_root,
-                        )
-                        .await
+                        rest_read_code_branches(headers, owner_name, project_name, service).await
                     }
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestCodeBranchMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
-                        rest_delete_code_branch(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            data_root,
-                        )
-                        .await
+                        rest_delete_code_branch(headers, owner_name, project_name, body, service)
+                            .await
                     }
                 }
             }),
@@ -346,24 +322,18 @@ pub(crate) fn rest_routes(
         .route(
             "/projects/{owner_name}/{project_name}/branches/default",
             post({
-                let session_manager = session_manager;
-                let backend = backend;
-                let data_root = data_root;
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestCodeBranchMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
                         rest_set_default_code_branch(
                             headers,
                             owner_name,
                             project_name,
                             body,
-                            session_manager,
-                            backend,
-                            data_root,
+                            service,
                         )
                         .await
                     }
@@ -2124,21 +2094,20 @@ async fn rest_read_code_branches(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "code branches require repository backend",
         ));
     };
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_branch_list(&repo_path)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2157,15 +2126,13 @@ async fn rest_set_default_code_branch(
     owner_name: String,
     project_name: String,
     body: RestCodeBranchMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "code branches require repository backend",
         ));
@@ -2181,7 +2148,7 @@ async fn rest_set_default_code_branch(
             ConnectError::permission_denied("branch default update is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::set_default_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2200,15 +2167,13 @@ async fn rest_delete_code_branch(
     owner_name: String,
     project_name: String,
     body: RestCodeBranchMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "code branches require repository backend",
         ));
@@ -2224,7 +2189,7 @@ async fn rest_delete_code_branch(
             ConnectError::permission_denied("branch delete is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::delete_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;

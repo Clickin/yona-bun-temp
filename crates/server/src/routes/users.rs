@@ -315,11 +315,9 @@ pub(crate) async fn rest_read_user_statistics(
     ))
 }
 
-pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    translation_proxy: TranslationProxyConfig,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
     let legacy_admin_users_session_manager = session_manager.clone();
     let legacy_admin_users_backend = backend.clone();
     let legacy_admin_user_state_session_manager = session_manager.clone();
@@ -333,8 +331,7 @@ pub(crate) fn routes(
     let legacy_user_issues_session_manager = session_manager.clone();
     let legacy_user_statistics_backend = backend.clone();
     let legacy_user_statistics_session_manager = session_manager.clone();
-    let legacy_translation_backend = backend;
-    let legacy_translation_session_manager = session_manager;
+    let legacy_translation_service = service;
 
     Router::new()
         .route(
@@ -450,9 +447,7 @@ pub(crate) fn routes(
                         legacy_external_translation(
                             headers,
                             body,
-                            legacy_translation_session_manager.clone(),
-                            legacy_translation_backend.clone(),
-                            translation_proxy.clone(),
+                            legacy_translation_service.clone(),
                         )
                         .await
                     }
@@ -1049,32 +1044,34 @@ fn direct_translation_request_from_value(value: &serde_json::Value) -> DirectTra
 pub(crate) async fn legacy_external_translation(
     headers: HeaderMap,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    translation_proxy: TranslationProxyConfig,
+    service: PilotServiceImpl,
 ) -> Response {
-    if translation_proxy.api_url.trim().is_empty() {
+    if service.translation_proxy.api_url.trim().is_empty() {
         return direct_plain_response(StatusCode::PRECONDITION_FAILED, "Precondition Failed");
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("translation requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let body = direct_translation_request_from_value(&body);
 
     let text = match legacy_translation_source(repository, &body, actor_id).await {
         Ok(text) => text,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
     };
-    let translated = match legacy_translate_text(&translation_proxy, &text) {
+    let translated = match legacy_translate_text(&service.translation_proxy, &text) {
         Ok(translated) => translated,
         Err(error) => return RestRouteError::bad_request(error).into_response(),
     };

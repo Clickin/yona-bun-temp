@@ -222,11 +222,7 @@ pub(crate) fn app_routes(
             base_path.clone(),
             runtime.site_name.clone(),
         ))
-        .merge(user_routes(
-            session_manager.clone(),
-            backend.clone(),
-            runtime.translation_proxy.clone(),
-        ))
+        .merge(user_routes(service.clone()))
         .merge(board_routes(service.clone()))
         .merge(issue_routes(service.clone()))
         .merge(static_compat_routes())

@@ -3383,6 +3383,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_issue_toggle).await;
 
+    // Guards legacy translation proxy routes using the app-scoped translation config snapshot.
     let translation_unconfigured_app = build_app_with_repository_and_translation_config(
         repository.clone(),
         TranslationProxyConfig::default(),
