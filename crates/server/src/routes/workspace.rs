@@ -23,10 +23,8 @@ use crate::{
     headers_with_form_csrf, internal_error, normalize_identifier, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail,
-    session::{self, SessionManager},
-    workspace_invalid_argument, ConnectError, Context, PilotBackend, PilotServiceImpl,
-    RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    send_workspace_email_validation_mail, session, workspace_invalid_argument, ConnectError,
+    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -1030,25 +1028,121 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(
+async fn direct_legacy_external_favorite_projects(
+    headers: HeaderMap,
     service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+) -> Response {
+    legacy_external_favorite_projects(
+        headers,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_legacy_external_toggle_favorite_project(
+    headers: HeaderMap,
+    project_id: i64,
+    service: PilotServiceImpl,
+) -> Response {
+    legacy_external_toggle_favorite_project(
+        headers,
+        project_id,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_legacy_external_favorite_issues(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Response {
+    legacy_external_favorite_issues(
+        headers,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_legacy_external_toggle_favorite_issue(
+    headers: HeaderMap,
+    issue_id: i64,
+    service: PilotServiceImpl,
+) -> Response {
+    legacy_external_toggle_favorite_issue(
+        headers,
+        issue_id,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_legacy_external_favorite_organizations(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Response {
+    legacy_external_favorite_organizations(
+        headers,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_legacy_external_toggle_favorite_organization(
+    headers: HeaderMap,
+    organization_id: i64,
+    service: PilotServiceImpl,
+) -> Response {
+    legacy_external_toggle_favorite_organization(
+        headers,
+        organization_id,
+        service.session_manager.clone(),
+        service.backend.clone(),
+    )
+    .await
+}
+
+async fn direct_user_sidebar_from_service(
+    headers: HeaderMap,
+    query: DirectUserSidebarQuery,
+    service: PilotServiceImpl,
     site_name: String,
-) -> Router {
+) -> Response {
+    direct_user_sidebar(
+        headers,
+        query,
+        service.session_manager.clone(),
+        service.backend.clone(),
+        service.base_path.clone(),
+        site_name,
+    )
+    .await
+}
+
+async fn direct_user_menu_tab_content_list_from_service(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Response {
+    direct_user_menu_tab_content_list(
+        headers,
+        service.session_manager.clone(),
+        service.backend.clone(),
+        service.base_path.clone(),
+    )
+    .await
+}
+
+pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
     let reset_visited_service = service.clone();
-    let default_login_page_session_manager = session_manager.clone();
-    let default_login_page_backend = backend.clone();
-    let legacy_default_login_page_session_manager = session_manager.clone();
-    let legacy_default_login_page_backend = backend.clone();
-    let user_sidebar_session_manager = session_manager.clone();
-    let user_sidebar_backend = backend.clone();
-    let user_sidebar_base_path = base_path.clone();
+    let default_login_page_service = service.clone();
+    let legacy_default_login_page_service = service.clone();
+    let user_sidebar_service = service.clone();
     let user_sidebar_site_name = site_name;
-    let usermenu_tab_session_manager = session_manager.clone();
-    let usermenu_tab_backend = backend.clone();
-    let usermenu_tab_base_path = base_path.clone();
+    let usermenu_tab_service = service.clone();
     let update_profile_service = service.clone();
     let change_user_password_service = service.clone();
     let add_workspace_email_service = service.clone();
@@ -1058,84 +1152,57 @@ pub(crate) fn routes(
     let send_validation_service = service.clone();
     let confirm_email_service = service.clone();
     let info_leave_service = service.clone();
-    let legacy_favorite_projects_list_backend = backend.clone();
-    let legacy_favorite_projects_list_session_manager = session_manager.clone();
-    let legacy_favorite_project_toggle_backend = backend.clone();
-    let legacy_favorite_project_toggle_session_manager = session_manager.clone();
-    let legacy_favorite_issues_list_backend = backend.clone();
-    let legacy_favorite_issues_list_session_manager = session_manager.clone();
-    let legacy_favorite_issue_toggle_backend = backend.clone();
-    let legacy_favorite_issue_toggle_session_manager = session_manager.clone();
-    let legacy_favorite_organizations_list_backend = backend.clone();
-    let legacy_favorite_organizations_list_session_manager = session_manager.clone();
-    let legacy_favorite_organization_toggle_backend = backend.clone();
-    let legacy_favorite_organization_toggle_session_manager = session_manager.clone();
+    let legacy_favorite_projects_list_service = service.clone();
+    let legacy_favorite_project_toggle_service = service.clone();
+    let legacy_favorite_issues_list_service = service.clone();
+    let legacy_favorite_issue_toggle_service = service.clone();
+    let legacy_favorite_organizations_list_service = service.clone();
+    let legacy_favorite_organization_toggle_service = service.clone();
 
     Router::new()
         .route(
             "/-_-api/v1/favoriteProjects",
             get(move |headers: HeaderMap| {
+                let service = legacy_favorite_projects_list_service.clone();
                 async move {
-                    legacy_external_favorite_projects(
-                        headers,
-                        legacy_favorite_projects_list_session_manager.clone(),
-                        legacy_favorite_projects_list_backend.clone(),
-                    )
-                    .await
+                    direct_legacy_external_favorite_projects(headers, service).await
                 }
             }),
         )
         .route(
             "/-_-api/v1/favoriteProjects/{project_id}",
             post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                let service = legacy_favorite_project_toggle_service.clone();
                 async move {
-                    legacy_external_toggle_favorite_project(
-                        headers,
-                        project_id,
-                        legacy_favorite_project_toggle_session_manager.clone(),
-                        legacy_favorite_project_toggle_backend.clone(),
-                    )
-                    .await
+                    direct_legacy_external_toggle_favorite_project(headers, project_id, service)
+                        .await
                 }
             }),
         )
         .route(
             "/-_-api/v1/favoriteIssues",
             get(move |headers: HeaderMap| {
+                let service = legacy_favorite_issues_list_service.clone();
                 async move {
-                    legacy_external_favorite_issues(
-                        headers,
-                        legacy_favorite_issues_list_session_manager.clone(),
-                        legacy_favorite_issues_list_backend.clone(),
-                    )
-                    .await
+                    direct_legacy_external_favorite_issues(headers, service).await
                 }
             }),
         )
         .route(
             "/-_-api/v1/favoriteIssues/{issue_id}",
             post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
+                let service = legacy_favorite_issue_toggle_service.clone();
                 async move {
-                    legacy_external_toggle_favorite_issue(
-                        headers,
-                        issue_id,
-                        legacy_favorite_issue_toggle_session_manager.clone(),
-                        legacy_favorite_issue_toggle_backend.clone(),
-                    )
-                    .await
+                    direct_legacy_external_toggle_favorite_issue(headers, issue_id, service).await
                 }
             }),
         )
         .route(
             "/-_-api/v1/favoriteOrganizations",
             get(move |headers: HeaderMap| {
+                let service = legacy_favorite_organizations_list_service.clone();
                 async move {
-                    legacy_external_favorite_organizations(
-                        headers,
-                        legacy_favorite_organizations_list_session_manager.clone(),
-                        legacy_favorite_organizations_list_backend.clone(),
-                    )
-                    .await
+                    direct_legacy_external_favorite_organizations(headers, service).await
                 }
             }),
         )
@@ -1143,12 +1210,12 @@ pub(crate) fn routes(
             "/-_-api/v1/favoriteOrganizations/{organization_id}",
             post(
                 move |headers: HeaderMap, Path(organization_id): Path<i64>| {
+                    let service = legacy_favorite_organization_toggle_service.clone();
                     async move {
-                        legacy_external_toggle_favorite_organization(
+                        direct_legacy_external_toggle_favorite_organization(
                             headers,
                             organization_id,
-                            legacy_favorite_organization_toggle_session_manager.clone(),
-                            legacy_favorite_organization_toggle_backend.clone(),
+                            service,
                         )
                         .await
                     }
@@ -1159,16 +1226,10 @@ pub(crate) fn routes(
             "/user/sidebar",
             axum::routing::get(
                 move |headers: HeaderMap, Query(query): Query<DirectUserSidebarQuery>| {
+                    let service = user_sidebar_service.clone();
+                    let site_name = user_sidebar_site_name.clone();
                     async move {
-                        direct_user_sidebar(
-                            headers,
-                            query,
-                            user_sidebar_session_manager.clone(),
-                            user_sidebar_backend.clone(),
-                            user_sidebar_base_path.clone(),
-                            user_sidebar_site_name.clone(),
-                        )
-                        .await
+                        direct_user_sidebar_from_service(headers, query, service, site_name).await
                     }
                 },
             ),
@@ -1176,14 +1237,9 @@ pub(crate) fn routes(
         .route(
             "/user/usermenuTabContentList",
             axum::routing::get(move |headers: HeaderMap| {
+                let service = usermenu_tab_service.clone();
                 async move {
-                    direct_user_menu_tab_content_list(
-                        headers,
-                        usermenu_tab_session_manager.clone(),
-                        usermenu_tab_backend.clone(),
-                        usermenu_tab_base_path.clone(),
-                    )
-                    .await
+                    direct_user_menu_tab_content_list_from_service(headers, service).await
                 }
             }),
         )
@@ -1335,8 +1391,7 @@ pub(crate) fn routes(
                     direct_set_default_login_page(
                         headers,
                         query,
-                        default_login_page_session_manager.clone(),
-                        default_login_page_backend.clone(),
+                        default_login_page_service.clone(),
                     )
                     .await
                 }
@@ -1349,8 +1404,7 @@ pub(crate) fn routes(
                     direct_set_default_login_page(
                         headers,
                         query,
-                        legacy_default_login_page_session_manager.clone(),
-                        legacy_default_login_page_backend.clone(),
+                        legacy_default_login_page_service.clone(),
                     )
                     .await
                 }
@@ -1387,10 +1441,9 @@ async fn direct_reset_user_visited_list(headers: HeaderMap, service: PilotServic
 async fn direct_set_default_login_page(
     headers: HeaderMap,
     query: DirectDefaultLoginPageQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return RestRouteError::from_connect_error(ConnectError::unauthenticated(
             "missing authenticated session",
         ))
@@ -1406,7 +1459,7 @@ async fn direct_set_default_login_page(
         return RestRouteError::bad_request("invalid default landing path").into_response();
     };
 
-    match &backend {
+    match &service.backend {
         PilotBackend::Repository(repository) => match repository
             .set_default_landing_path(user_id, Some(path.clone()))
             .await

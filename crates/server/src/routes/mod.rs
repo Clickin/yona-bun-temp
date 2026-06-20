@@ -201,13 +201,7 @@ pub(crate) fn app_routes(
             assets,
             browser_runtime,
         ))
-        .merge(workspace_routes(
-            service.clone(),
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-            runtime.site_name.clone(),
-        ))
+        .merge(workspace_routes(service.clone(), runtime.site_name.clone()))
         .merge(user_routes(service.clone()))
         .merge(board_routes(service.clone()))
         .merge(issue_routes(service.clone()))

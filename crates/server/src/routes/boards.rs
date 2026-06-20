@@ -18,9 +18,9 @@ use crate::{
     redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    session::SessionManager, visible_projects_for_organization, ConnectError,
-    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
+    visible_projects_for_organization, ConnectError, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
 };
 
@@ -345,62 +345,30 @@ struct RestOrganizationBoardsResponse {
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-
     Router::new()
         .route(
             "/projects/{owner_name}/{project_name}/posts",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         let query = RestProjectPostsQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_list_project_posts(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
+                        rest_list_project_posts(headers, owner_name, project_name, query, service)
+                            .await
                     }
                 }
             })
             .post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestPostMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
-                        rest_create_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                            service,
-                        )
-                        .await
+                        rest_create_posting(headers, owner_name, project_name, body, service).await
                     }
                 }
             }),
@@ -408,14 +376,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/posts/form-options",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
                     let service = service.clone();
                     async move {
                         let query = RestPostFormOptionsQuery::from_raw_query(raw_query.as_deref())?;
@@ -424,8 +388,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             owner_name,
                             project_name,
                             query,
-                            session_manager,
-                            backend,
                             service,
                         )
                         .await
@@ -436,39 +398,27 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/posts/{post_number}",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_read_posting_detail(
                             headers,
                             owner_name,
                             project_name,
                             post_number,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                         )
                         .await
                     }
                 }
             })
             .patch({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_update_posting(
@@ -477,9 +427,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             post_number,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -487,22 +434,13 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
-                        rest_delete_posting(
-                            headers,
-                            owner_name,
-                            project_name,
-                            post_number,
-                            session_manager,
-                            backend,
-                        )
-                        .await
+                        rest_delete_posting(headers, owner_name, project_name, post_number, service)
+                            .await
                     }
                 }
             }),
@@ -510,16 +448,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/posts/{post_number}/comments",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_create_posting_comment(
@@ -528,9 +460,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             post_number,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -541,9 +470,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/posts/{post_number}/comments/{comment_id}",
             patch({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
@@ -553,9 +479,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     i64,
                 )>,
                       Json(body): Json<RestPostCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_update_posting_comment(
@@ -565,9 +488,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             post_number,
                             comment_id,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -575,9 +495,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
                     String,
@@ -585,9 +503,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     i64,
                     i64,
                 )>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_delete_posting_comment(
                             headers,
@@ -595,9 +511,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             post_number,
                             comment_id,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                         )
                         .await
                     }
@@ -607,23 +521,17 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/posts/{post_number}/watch",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_watch_posting(
                             headers,
                             owner_name,
                             project_name,
                             post_number,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                             true,
                         )
                         .await
@@ -631,23 +539,17 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_watch_posting(
                             headers,
                             owner_name,
                             project_name,
                             post_number,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                             false,
                         )
                         .await
@@ -658,24 +560,16 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/organizations/{organization_name}/boards",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path(organization_name): Path<String>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         let query =
                             RestOrganizationBoardsQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_list_organization_boards(
-                            headers,
-                            organization_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
+                        rest_list_organization_boards(headers, organization_name, query, service)
+                            .await
                     }
                 }
             }),
@@ -696,19 +590,11 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let legacy_board_comment_session_manager = session_manager.clone();
     let legacy_board_comment_base_path = base_path.clone();
     let legacy_board_label_backend = backend.clone();
-    let board_comment_create_backend = backend.clone();
-    let board_comment_create_session_manager = session_manager.clone();
-    let board_comment_create_base_path = base_path.clone();
     let board_comment_create_service = service.clone();
-    let board_comment_update_backend = backend.clone();
-    let board_comment_update_session_manager = session_manager.clone();
-    let board_comment_update_base_path = base_path.clone();
     let board_comment_update_service = service.clone();
     let legacy_board_comment_update_backend = backend.clone();
     let legacy_board_comment_update_session_manager = session_manager.clone();
-    let board_comment_delete_backend = backend.clone();
-    let board_comment_delete_session_manager = session_manager.clone();
-    let board_comment_delete_base_path = base_path.clone();
+    let board_comment_delete_service = service.clone();
 
     Router::new()
         .route(
@@ -806,9 +692,6 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             number,
                             form,
-                            board_comment_create_session_manager.clone(),
-                            board_comment_create_backend.clone(),
-                            board_comment_create_base_path.clone(),
                             board_comment_create_service.clone(),
                         )
                         .await
@@ -835,9 +718,6 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             form,
-                            board_comment_update_session_manager.clone(),
-                            board_comment_update_backend.clone(),
-                            board_comment_update_base_path.clone(),
                             board_comment_update_service.clone(),
                         )
                         .await
@@ -889,9 +769,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             number,
                             comment_id,
-                            board_comment_delete_session_manager.clone(),
-                            board_comment_delete_backend.clone(),
-                            board_comment_delete_base_path.clone(),
+                            board_comment_delete_service.clone(),
                         )
                         .await
                     }
@@ -1238,20 +1116,15 @@ async fn direct_create_posting_comment(
     project: String,
     post_number: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     match rest_create_posting_comment(
         headers_with_form_csrf(headers, &form),
         owner.clone(),
         project.clone(),
         post_number,
         direct_post_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
         service,
     )
     .await
@@ -1280,11 +1153,9 @@ async fn direct_update_posting_comment(
     post_number: i64,
     comment_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     match rest_update_posting_comment(
         headers_with_form_csrf(headers, &form),
         owner.clone(),
@@ -1292,9 +1163,6 @@ async fn direct_update_posting_comment(
         post_number,
         comment_id,
         direct_post_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
         service,
     )
     .await
@@ -1313,19 +1181,16 @@ async fn direct_delete_posting_comment(
     project: String,
     post_number: i64,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     match rest_delete_posting_comment(
         headers,
         owner.clone(),
         project.clone(),
         post_number,
         comment_id,
-        session_manager,
-        backend,
-        base_path.clone(),
+        service,
     )
     .await
     {
@@ -1362,21 +1227,20 @@ async fn rest_list_project_posts(
     owner_name: String,
     project_name: String,
     query: RestProjectPostsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestProjectPostsResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid project posting list request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project postings require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -1401,7 +1265,7 @@ async fn rest_list_project_posts(
                 repository,
                 readme,
                 actor_id,
-                &base_path,
+                &service.base_path,
                 viewer_can_create,
                 false,
                 false,
@@ -1441,8 +1305,6 @@ async fn rest_project_post_form_options(
     owner_name: String,
     project_name: String,
     query: RestPostFormOptionsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
     service: PilotServiceImpl,
 ) -> Result<Json<RestProjectPostFormOptionsResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
@@ -1450,12 +1312,13 @@ async fn rest_project_post_form_options(
             "invalid project posting form options request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project posting form options require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -1492,20 +1355,20 @@ async fn rest_list_organization_boards(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationBoardsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestOrganizationBoardsResponse>, RestRouteError> {
     if organization_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid organization board list request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "organization boards require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = repository
@@ -1568,21 +1431,20 @@ async fn rest_read_posting_detail(
     owner_name: String,
     project_name: String,
     post_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     if post_number <= 0 {
         return Err(RestRouteError::bad_request(
             "invalid posting detail request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let access = read_posting_access(
@@ -1599,7 +1461,7 @@ async fn rest_read_posting_detail(
             repository,
             &access.posting,
             actor_id,
-            &base_path,
+            &service.base_path,
             access.viewer_can_create(),
             access.viewer_can_update(),
             access.viewer_can_delete(),
@@ -1617,20 +1479,17 @@ async fn rest_create_posting(
     owner_name: String,
     project_name: String,
     body: RestPostMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestPostMutationResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     let online_commit = rest_post_online_commit_input(&body);
     if !online_commit.enabled && body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request("post.error.emptyTitle"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -1658,7 +1517,7 @@ async fn rest_create_posting(
             &authorization,
             &online_commit,
             &actor,
-            &base_path,
+            &service.base_path,
         )?;
         return Ok(Json(RestPostMutationResponse::OnlineCommit(response)));
     }
@@ -1701,7 +1560,7 @@ async fn rest_create_posting(
         "NEW_POSTING",
         None,
         "",
-        &base_path,
+        &service.base_path,
         &service.integrations,
     )
     .await;
@@ -1711,7 +1570,7 @@ async fn rest_create_posting(
             &authorization,
             &posting,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&authorization),
             posting_can_update(&authorization, &posting, &actor),
             posting_can_delete(&authorization, &posting, &actor),
@@ -1730,21 +1589,18 @@ async fn rest_update_posting(
     project_name: String,
     post_number: i64,
     body: RestPostMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if post_number <= 0 || body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid posting update request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -1805,7 +1661,7 @@ async fn rest_update_posting(
             repository,
             &posting,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&access.authorization),
             posting_can_update(&access.authorization, &posting, &actor),
             posting_can_delete(&access.authorization, &posting, &actor),
@@ -1823,14 +1679,13 @@ async fn rest_delete_posting(
     owner_name: String,
     project_name: String,
     post_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<StatusCode, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -1875,21 +1730,18 @@ async fn rest_create_posting_comment(
     project_name: String,
     post_number: i64,
     body: RestPostCommentBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if post_number <= 0 || body.contents_markdown.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid posting comment request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -1937,7 +1789,7 @@ async fn rest_create_posting_comment(
             &actor,
             "NEW_COMMENT",
             "",
-            &base_path,
+            &service.base_path,
             &service.integrations,
         )
         .await;
@@ -1948,7 +1800,7 @@ async fn rest_create_posting_comment(
             &access.authorization,
             &posting,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&access.authorization),
             posting_can_update(&access.authorization, &posting, &actor),
             posting_can_delete(&access.authorization, &posting, &actor),
@@ -1968,21 +1820,18 @@ async fn rest_update_posting_comment(
     post_number: i64,
     comment_id: i64,
     body: RestPostCommentBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if post_number <= 0 || comment_id <= 0 || body.contents_markdown.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid posting comment update request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -2036,7 +1885,7 @@ async fn rest_update_posting_comment(
             &actor,
             "COMMENT_UPDATED",
             "",
-            &base_path,
+            &service.base_path,
             &service.integrations,
         )
         .await;
@@ -2046,7 +1895,7 @@ async fn rest_update_posting_comment(
             repository,
             &posting,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&access.authorization),
             posting_can_update(&access.authorization, &posting, &actor),
             posting_can_delete(&access.authorization, &posting, &actor),
@@ -2065,20 +1914,18 @@ async fn rest_delete_posting_comment(
     project_name: String,
     post_number: i64,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if post_number <= 0 || comment_id <= 0 {
         return Err(RestRouteError::bad_request(
             "invalid posting comment delete request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -2123,7 +1970,7 @@ async fn rest_delete_posting_comment(
             repository,
             &posting,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&access.authorization),
             posting_can_update(&access.authorization, &posting, &actor),
             posting_can_delete(&access.authorization, &posting, &actor),
@@ -2141,16 +1988,14 @@ async fn rest_watch_posting(
     owner_name: String,
     project_name: String,
     post_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
     watch: bool,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "posting requires repository backend",
         ));
@@ -2196,7 +2041,7 @@ async fn rest_watch_posting(
             repository,
             &updated,
             session.user_id,
-            &base_path,
+            &service.base_path,
             posting_can_create(&access.authorization),
             posting_can_update(&access.authorization, &updated, &actor),
             posting_can_delete(&access.authorization, &updated, &actor),

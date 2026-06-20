@@ -5440,7 +5440,8 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
 }
 
 #[tokio::test]
-// Guards the user statistics REST DTO and mapper ownership split into the users route module.
+// Guards the user statistics REST DTO, mapper ownership split, and app-scoped
+// service snapshot access in the users route module.
 async fn rest_user_statistics_counts_legacy_activity_rows() {
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
@@ -5765,7 +5766,8 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
 }
 
 #[tokio::test]
-// Guards issue route-owned label/category helpers through the REST label surface.
+// Guards issue route-owned label/category helpers and app-scoped service
+// snapshot access through the REST label surface.
 async fn rest_label_routes_manage_labels_and_categories() {
     let (app, repository, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

@@ -499,6 +499,8 @@ async fn issue_mention_contract_suggests_contextual_users_and_filters_private_se
 }
 
 #[tokio::test]
+// Guards legacy project mention-list helpers through the app-scoped service
+// snapshot used by direct project routes.
 async fn issue_mention_contract_serves_legacy_project_mention_list_helpers() {
     let (app, repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

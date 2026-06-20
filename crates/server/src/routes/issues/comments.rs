@@ -50,9 +50,6 @@ pub(super) async fn direct_create_issue_comment(
     project: String,
     issue_number: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
     match rest_create_issue_comment(
@@ -61,10 +58,7 @@ pub(super) async fn direct_create_issue_comment(
         project.clone(),
         issue_number,
         direct_issue_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
-        service,
+        service.clone(),
     )
     .await
     {
@@ -77,7 +71,7 @@ pub(super) async fn direct_create_issue_comment(
                 .map(|comment| format!("#comment-{}", comment.id))
                 .unwrap_or_default();
             redirect_to(
-                &base_path,
+                &service.base_path,
                 &format!("/{owner}/{project}/issue/{issue_number}{fragment}"),
             )
         }
@@ -92,9 +86,7 @@ pub(super) async fn direct_update_issue_comment(
     issue_number: i64,
     comment_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     match rest_update_issue_comment(
         headers_with_form_csrf(headers, &form),
@@ -103,14 +95,12 @@ pub(super) async fn direct_update_issue_comment(
         issue_number,
         comment_id,
         direct_issue_comment_body(&form),
-        session_manager,
-        backend,
-        base_path.clone(),
+        service.clone(),
     )
     .await
     {
         Ok(_) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
         ),
         Err(error) => error.into_response(),
@@ -123,9 +113,7 @@ pub(super) async fn direct_delete_issue_comment(
     project: String,
     issue_number: i64,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     match rest_delete_issue_comment(
         headers,
@@ -133,14 +121,12 @@ pub(super) async fn direct_delete_issue_comment(
         project.clone(),
         issue_number,
         comment_id,
-        session_manager,
-        backend,
-        base_path.clone(),
+        service.clone(),
     )
     .await
     {
         Ok(_) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/issue/{issue_number}"),
         ),
         Err(error) => error.into_response(),
@@ -154,36 +140,27 @@ pub(super) async fn direct_issue_comment_vote(
     issue_number: i64,
     comment_id: i64,
     action: &str,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let session = match session_manager.read_session_from_headers(&headers) {
+    let session = match service.session_manager.read_session_from_headers(&headers) {
         Some(session) if session.user_id.is_some() => session,
         _ => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
+    if require_valid_csrf(&service.session_manager, &headers, &session).is_err() {
         return StatusCode::FORBIDDEN.into_response();
     }
-    let actor = match require_authenticated_user(&repository, session.user_id).await {
+    let actor = match require_authenticated_user(repository, session.user_id).await {
         Ok(actor) => actor,
         Err(error) => return direct_status_from_connect_error(error).into_response(),
     };
-    let access = match read_issue_access(
-        &repository,
-        &owner,
-        &project,
-        issue_number,
-        Some(actor.id),
-    )
-    .await
-    {
-        Ok(access) => access,
-        Err(error) => return direct_status_from_connect_error(error).into_response(),
-    };
+    let access =
+        match read_issue_access(repository, &owner, &project, issue_number, Some(actor.id)).await {
+            Ok(access) => access,
+            Err(error) => return direct_status_from_connect_error(error).into_response(),
+        };
     if !access.viewer_can_comment() {
         return StatusCode::FORBIDDEN.into_response();
     }
@@ -215,7 +192,7 @@ pub(super) async fn direct_issue_comment_vote(
     }
 
     redirect_to(
-        &base_path,
+        &service.base_path,
         &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
     )
 }
@@ -226,20 +203,16 @@ pub(super) async fn rest_create_issue_comment(
     project_name: String,
     issue_number: i64,
     body: RestIssueCommentBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || body.contents_markdown.trim().is_empty() {
         return Err(RestRouteError::bad_request("invalid issue comment request"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -302,8 +275,8 @@ pub(super) async fn rest_create_issue_comment(
         "NEW_COMMENT",
         detail_markdown,
         (!target_fragment.is_empty()).then_some(target_fragment.as_str()),
-        &public_origin,
-        &base_path,
+        &service.public_origin,
+        &service.base_path,
         &service.integrations,
     )
     .await;
@@ -315,7 +288,7 @@ pub(super) async fn rest_create_issue_comment(
             issue_can_mutate(&authorization, &issue, &actor),
             true,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -329,18 +302,16 @@ pub(super) async fn rest_update_issue_comment(
     issue_number: i64,
     comment_id: i64,
     body: RestIssueCommentBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || comment_id <= 0 {
         return Err(RestRouteError::bad_request("invalid issue comment request"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -388,7 +359,7 @@ pub(super) async fn rest_update_issue_comment(
             &issue,
             &access,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -401,15 +372,13 @@ pub(super) async fn rest_delete_issue_comment(
     project_name: String,
     issue_number: i64,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -449,7 +418,7 @@ pub(super) async fn rest_delete_issue_comment(
             &issue,
             &access,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,

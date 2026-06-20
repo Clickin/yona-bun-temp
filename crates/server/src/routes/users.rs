@@ -23,11 +23,12 @@ use crate::{
     filter_workspace_pull_request_items_by_read_acl_for_viewer, gravatar_url, internal_error,
     legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
     legacy_json_find_value, persistence, read_issue_access, read_posting_access,
-    require_authenticated_user, require_session, rest_json_response, rest_list_user_issues,
-    rest_read_direct_issue_form_options, session::SessionManager, user_issue_filter_name,
-    visible_user_issue_items, workspace_avatar_url, workspace_profile_from_record, ConnectError,
-    Context, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
-    TranslationProxyConfig,
+    require_authenticated_user, require_session, rest_json_response,
+    rest_list_user_issues as rest_list_user_issues_impl,
+    rest_read_direct_issue_form_options as rest_read_direct_issue_form_options_impl,
+    user_issue_filter_name, visible_user_issue_items, workspace_avatar_url,
+    workspace_profile_from_record, ConnectError, Context, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestRouteError, TranslationProxyConfig,
 };
 
 #[derive(Serialize)]
@@ -83,11 +84,6 @@ fn direct_plain_response(status: StatusCode, body: &str) -> Response {
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-    let public_origin = service.public_origin.clone();
-
     Router::new()
         .route(
             "/users/{login_id}/profile",
@@ -114,25 +110,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/user/issues/new-options",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
+                let service = service.clone();
                 move |headers: HeaderMap, Query(query): Query<RestDirectIssueFormQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
+                    let service = service.clone();
                     async move {
-                        rest_read_direct_issue_form_options(
-                            headers,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                            public_origin,
-                        )
-                        .await
+                        rest_read_direct_issue_form_options(headers, query, service).await
                     }
                 }
             }),
@@ -140,13 +122,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/user/issues",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap, Query(query): Query<RestUserIssuesQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
-                        rest_list_user_issues(headers, query, session_manager, backend).await
+                        rest_list_user_issues(headers, query, service).await
                     }
                 }
             }),
@@ -315,127 +295,107 @@ pub(crate) async fn rest_read_user_statistics(
     ))
 }
 
-pub(crate) fn routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let legacy_admin_users_session_manager = session_manager.clone();
-    let legacy_admin_users_backend = backend.clone();
-    let legacy_admin_user_state_session_manager = session_manager.clone();
-    let legacy_admin_user_state_backend = backend.clone();
-    let legacy_user_search_backend = backend.clone();
-    let legacy_user_create_backend = backend.clone();
-    let legacy_user_create_session_manager = session_manager.clone();
-    let legacy_user_token_session_manager = session_manager.clone();
-    let legacy_user_token_backend = backend.clone();
-    let legacy_user_issues_backend = backend.clone();
-    let legacy_user_issues_session_manager = session_manager.clone();
-    let legacy_user_statistics_backend = backend.clone();
-    let legacy_user_statistics_session_manager = session_manager.clone();
-    let legacy_translation_service = service;
+async fn rest_list_user_issues(
+    headers: HeaderMap,
+    query: RestUserIssuesQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    rest_list_user_issues_impl(headers, query, service.session_manager, service.backend)
+        .await
+        .map(IntoResponse::into_response)
+}
 
+async fn rest_read_direct_issue_form_options(
+    headers: HeaderMap,
+    query: RestDirectIssueFormQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    rest_read_direct_issue_form_options_impl(
+        headers,
+        query,
+        service.session_manager,
+        service.backend,
+        service.base_path,
+        service.public_origin,
+    )
+    .await
+    .map(IntoResponse::into_response)
+}
+
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
             "/-_-api/v1/admin/users",
-            get(move |headers: HeaderMap| {
-                async move {
-                    legacy_external_admin_users(
-                        headers,
-                        legacy_admin_users_session_manager.clone(),
-                        legacy_admin_users_backend.clone(),
-                    )
-                    .await
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { legacy_external_admin_users(headers, service).await }
                 }
             }),
         )
         .route(
             "/-_-api/v1/admin/users/{login_id}",
-            patch(
+            patch({
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path(login_id): Path<String>,
                       Json(body): Json<serde_json::Value>| {
+                    let service = service.clone();
                     async move {
-                        legacy_external_update_admin_user_state(
-                            headers,
-                            login_id,
-                            body,
-                            legacy_admin_user_state_session_manager.clone(),
-                            legacy_admin_user_state_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/-_-api/v1/users",
-            get(
-                move |headers: HeaderMap, Query(query): Query<LegacyExternalUsersQuery>| {
-                    async move {
-                        legacy_external_users(headers, query, legacy_user_search_backend.clone())
+                        legacy_external_update_admin_user_state(headers, login_id, body, service)
                             .await
                     }
-                },
-            ),
+                }
+            }),
         )
         .route(
             "/-_-api/v1/users",
-            post(
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<LegacyExternalUsersQuery>| {
+                    let service = service.clone();
+                    async move { legacy_external_users(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/-_-api/v1/users",
+            post({
+                let service = service.clone();
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_create_users(
-                            headers,
-                            body,
-                            legacy_user_create_session_manager.clone(),
-                            legacy_user_create_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
+                    let service = service.clone();
+                    async move { legacy_external_create_users(headers, body, service).await }
+                }
+            }),
         )
         .route(
             "/-_-api/v1/users/token",
-            post(
+            post({
+                let service = service.clone();
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_user_token(
-                            headers,
-                            body,
-                            legacy_user_token_session_manager.clone(),
-                            legacy_user_token_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
+                    let service = service.clone();
+                    async move { legacy_external_user_token(headers, body, service).await }
+                }
+            }),
         )
         .route(
             "/-_-api/v1/user/issues",
-            get(
+            get({
+                let service = service.clone();
                 move |headers: HeaderMap, Query(query): Query<LegacyExternalUserIssuesQuery>| {
-                    async move {
-                        legacy_external_user_issues(
-                            headers,
-                            query,
-                            legacy_user_issues_session_manager.clone(),
-                            legacy_user_issues_backend.clone(),
-                        )
-                        .await
-                    }
-                },
-            ),
+                    let service = service.clone();
+                    async move { legacy_external_user_issues(headers, query, service).await }
+                }
+            }),
         )
         .route(
             "/-_-api/v1/users/{login_id}/statistics",
-            get(move |headers: HeaderMap, Path(login_id): Path<String>| {
-                async move {
-                    legacy_external_user_statistics(
-                        headers,
-                        login_id,
-                        legacy_user_statistics_session_manager.clone(),
-                        legacy_user_statistics_backend.clone(),
-                    )
-                    .await
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { legacy_external_user_statistics(headers, login_id, service).await }
                 }
             }),
         )
@@ -443,14 +403,8 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             "/-_-api/v1/translation",
             post(
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
-                    async move {
-                        legacy_external_translation(
-                            headers,
-                            body,
-                            legacy_translation_service.clone(),
-                        )
-                        .await
-                    }
+                    let service = service.clone();
+                    async move { legacy_external_translation(headers, body, service).await }
                 },
             ),
         )
@@ -537,7 +491,7 @@ fn legacy_external_user_token_body_from_value(
 pub(crate) async fn legacy_external_users(
     headers: HeaderMap,
     query: LegacyExternalUsersQuery,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let referer_is_members = headers
         .get(REFERER)
@@ -549,7 +503,7 @@ pub(crate) async fn legacy_external_users(
     if query.query.trim().is_empty() {
         return Json(Vec::<serde_json::Value>::new()).into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("users search requires repository backend")
             .into_response();
     };
@@ -596,11 +550,10 @@ pub(crate) async fn legacy_external_users(
 pub(crate) async fn legacy_external_user_token(
     headers: HeaderMap,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_external_user_token_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("user token requires repository backend")
             .into_response();
     };
@@ -631,18 +584,23 @@ pub(crate) async fn legacy_external_user_token(
         Ok(token) => token,
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
-    let previous_session = session_manager.read_session_from_headers(&headers);
+    let previous_session = service.session_manager.read_session_from_headers(&headers);
     let previous_token = previous_session
         .as_ref()
         .map(|session| session.token.as_str());
     let authenticated_session =
-        session_manager.create_authenticated_session(previous_token, user.id, false);
+        service
+            .session_manager
+            .create_authenticated_session(previous_token, user.id, false);
     let mut response = Json(serde_json::json!({ "access_token": token })).into_response();
     response.headers_mut().insert(
         "x-csrf-token",
         HeaderValue::from_str(&authenticated_session.csrf_token).expect("csrf header"),
     );
-    for cookie in session_manager.build_set_cookie_headers(&authenticated_session) {
+    for cookie in service
+        .session_manager
+        .build_set_cookie_headers(&authenticated_session)
+    {
         response.headers_mut().append(
             SET_COOKIE,
             HeaderValue::from_str(&cookie).expect("set-cookie header"),
@@ -654,14 +612,14 @@ pub(crate) async fn legacy_external_user_token(
 pub(crate) async fn legacy_external_create_users(
     headers: HeaderMap,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("user create requires repository backend")
             .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let actor = match actor_id {
@@ -751,20 +709,23 @@ pub(crate) async fn legacy_external_create_users(
 pub(crate) async fn legacy_external_user_issues(
     headers: HeaderMap,
     query: LegacyExternalUserIssuesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("user issues require repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let filter_name = match user_issue_filter_name(&query.filter) {
         Ok(filter_name) => filter_name,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
@@ -861,20 +822,23 @@ fn legacy_external_user_issue_result(
 
 pub(crate) async fn legacy_external_admin_users(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("admin users require repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(actor_id) => actor_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(actor_id) => actor_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -926,20 +890,23 @@ pub(crate) async fn legacy_external_update_admin_user_state(
     headers: HeaderMap,
     login_id: String,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("admin user state requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(actor_id) => actor_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(actor_id) => actor_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -984,15 +951,15 @@ pub(crate) async fn legacy_external_update_admin_user_state(
 pub(crate) async fn legacy_external_user_statistics(
     headers: HeaderMap,
     login_id: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("user statistics require repository backend")
             .into_response();
     };
     if let Err(error) =
-        legacy_external_authenticated_user_id(&headers, &session_manager, repository, false).await
+        legacy_external_authenticated_user_id(&headers, &service.session_manager, repository, false)
+            .await
     {
         return legacy_external_api_auth_error_response(error);
     }

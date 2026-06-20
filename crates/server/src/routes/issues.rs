@@ -1076,16 +1076,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_create_issue_comment(
@@ -1094,9 +1088,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -1107,9 +1098,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments/{comment_id}",
             put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number, comment_id)): Path<(
                     String,
@@ -1118,9 +1107,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     i64,
                 )>,
                       Json(body): Json<RestIssueCommentBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_issue_comment(
                             headers,
@@ -1129,18 +1116,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             issue_number,
                             comment_id,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                         )
                         .await
                     }
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number, comment_id)): Path<(
                     String,
@@ -1148,9 +1131,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     i64,
                     i64,
                 )>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_delete_issue_comment(
                             headers,
@@ -1158,9 +1139,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             comment_id,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                         )
                         .await
                     }
@@ -1818,22 +1797,11 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let legacy_issue_comment_service = service.clone();
     let legacy_issue_comment_receivers_service = service.clone();
     let legacy_issue_comment_update_service = service.clone();
-    let issue_comment_create_backend = backend.clone();
-    let issue_comment_create_session_manager = session_manager.clone();
-    let issue_comment_create_base_path = base_path.clone();
     let issue_comment_create_service = service.clone();
-    let issue_comment_update_backend = backend.clone();
-    let issue_comment_update_session_manager = session_manager.clone();
-    let issue_comment_update_base_path = base_path.clone();
-    let issue_comment_delete_backend = backend.clone();
-    let issue_comment_delete_session_manager = session_manager.clone();
-    let issue_comment_delete_base_path = base_path.clone();
-    let comment_vote_backend = backend.clone();
-    let comment_vote_session_manager = session_manager.clone();
-    let comment_vote_base_path = base_path.clone();
-    let comment_unvote_backend = backend.clone();
-    let comment_unvote_session_manager = session_manager.clone();
-    let comment_unvote_base_path = base_path.clone();
+    let issue_comment_update_service = service.clone();
+    let issue_comment_delete_service = service.clone();
+    let comment_vote_service = service.clone();
+    let comment_unvote_service = service.clone();
     let label_list_service = service.clone();
     let label_create_service = service.clone();
     let label_css_service = service.clone();
@@ -2182,9 +2150,6 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             number,
                             form,
-                            issue_comment_create_session_manager.clone(),
-                            issue_comment_create_backend.clone(),
-                            issue_comment_create_base_path.clone(),
                             issue_comment_create_service.clone(),
                         )
                         .await
@@ -2211,9 +2176,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             form,
-                            issue_comment_update_session_manager.clone(),
-                            issue_comment_update_backend.clone(),
-                            issue_comment_update_base_path.clone(),
+                            issue_comment_update_service.clone(),
                         )
                         .await
                     }
@@ -2237,9 +2200,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             number,
                             comment_id,
-                            issue_comment_delete_session_manager.clone(),
-                            issue_comment_delete_backend.clone(),
-                            issue_comment_delete_base_path.clone(),
+                            issue_comment_delete_service.clone(),
                         )
                         .await
                     }
@@ -2264,9 +2225,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             "vote",
-                            comment_vote_session_manager.clone(),
-                            comment_vote_backend.clone(),
-                            comment_vote_base_path.clone(),
+                            comment_vote_service.clone(),
                         )
                         .await
                     }
@@ -2291,9 +2250,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             "unvote",
-                            comment_unvote_session_manager.clone(),
-                            comment_unvote_backend.clone(),
-                            comment_unvote_base_path.clone(),
+                            comment_unvote_service.clone(),
                         )
                         .await
                     }

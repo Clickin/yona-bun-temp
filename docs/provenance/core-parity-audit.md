@@ -1278,6 +1278,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   threaded session/backend/base-path fragments. Existing route contracts keep
   the same legacy URLs, redirect/status behavior, and payload shapes while
   narrowing the remaining service-fragment threading queue.
+- 2026-06-21 runtime DI note: board REST/direct posting routes, workspace
+  direct aliases, users legacy external routes, issue comment create/update/
+  delete/vote routes, and project label/mention/markdown/go/watchers direct
+  helpers now read session/backend/base-path state through `PilotServiceImpl`
+  instead of separately threaded route fragments. Focused board, workspace,
+  user, issue comment, and project mention/go/label contracts preserve the
+  same legacy URLs, redirect/status behavior, and payload shapes.
 
 ## Wave 0 Exit Snapshot
 

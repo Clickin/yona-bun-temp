@@ -650,18 +650,17 @@ async fn direct_delete_project_pushed_branch(
     owner_name: String,
     project_name: String,
     pushed_branch_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner_name,
         &project_name,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -734,14 +733,13 @@ async fn direct_go_convention_menu(
     owner_name: String,
     project_name: String,
     query: DirectGoConventionMenuQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization =
@@ -775,7 +773,7 @@ async fn direct_go_convention_menu(
             authorization.project.owner_name, authorization.project.project_name
         )
     };
-    redirect_to(&base_path, &path)
+    redirect_to(&service.base_path, &path)
 }
 
 fn direct_mention_user_item(
@@ -847,13 +845,13 @@ async fn direct_project_mention_list(
     owner_name: String,
     project_name: String,
     query: DirectMentionListQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization =
@@ -969,13 +967,12 @@ async fn direct_render_markdown(
     owner_name: String,
     project_name: String,
     body: DirectMarkdownRenderBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    _base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let markdown = body.body.as_deref().unwrap_or_default();
-    if let PilotBackend::Repository(repository) = &backend {
-        let actor_id = session_manager
+    if let PilotBackend::Repository(repository) = &service.backend {
+        let actor_id = service
+            .session_manager
             .read_session_from_headers(&headers)
             .and_then(|session| session.user_id);
         if let Err(error) =
@@ -2394,12 +2391,9 @@ pub(crate) fn routes(
     let direct_project_unwatch_service = service.clone();
     let direct_project_enroll_service = service.clone();
     let direct_project_cancel_enroll_service = service.clone();
-    let direct_project_labels_backend = backend.clone();
-    let direct_project_labels_session_manager = session_manager.clone();
-    let direct_project_label_attach_backend = backend.clone();
-    let direct_project_label_attach_session_manager = session_manager.clone();
-    let direct_project_label_detach_backend = backend.clone();
-    let direct_project_label_detach_session_manager = session_manager.clone();
+    let direct_project_labels_service = service.clone();
+    let direct_project_label_attach_service = service.clone();
+    let direct_project_label_detach_service = service.clone();
     let direct_project_change_vcs_service = service.clone();
     let direct_project_member_add_service = service.clone();
     let direct_project_member_update_service = service.clone();
@@ -2407,36 +2401,24 @@ pub(crate) fn routes(
     let direct_project_webhook_create_service = service.clone();
     let direct_project_webhook_delete_service = service.clone();
     let direct_project_transfer_request_service = service.clone();
-    let legacy_watchers_backend = backend.clone();
-    let legacy_watchers_base_path = base_path.clone();
-    let legacy_project_labels_backend = backend.clone();
-    let legacy_project_labels_session_manager = session_manager.clone();
-    let legacy_title_heads_backend = backend.clone();
-    let legacy_title_heads_session_manager = session_manager.clone();
-    let legacy_project_assignable_backend = backend.clone();
-    let legacy_project_assignable_session_manager = session_manager.clone();
+    let legacy_watchers_service = service.clone();
+    let legacy_project_labels_service = service.clone();
+    let legacy_title_heads_service = service.clone();
+    let legacy_project_assignable_service = service.clone();
     let legacy_milestone_service = service.clone();
     let milestone_create_service = service.clone();
     let milestone_update_service = service.clone();
     let milestone_delete_service = service.clone();
     let milestone_open_service = service.clone();
     let milestone_close_service = service.clone();
-    let pushed_branch_delete_backend = backend.clone();
-    let pushed_branch_delete_session_manager = session_manager.clone();
+    let pushed_branch_delete_service = service.clone();
     let transfer_accept_service = service.clone();
     let direct_clone_service = service.clone();
-    let markdown_render_backend = backend.clone();
-    let markdown_render_session_manager = session_manager.clone();
-    let markdown_render_base_path = base_path.clone();
-    let mention_list_backend = backend.clone();
-    let mention_list_session_manager = session_manager.clone();
-    let commit_diff_mention_list_backend = backend.clone();
-    let commit_diff_mention_list_session_manager = session_manager.clone();
-    let pull_request_mention_list_backend = backend.clone();
-    let pull_request_mention_list_session_manager = session_manager.clone();
-    let go_convention_backend = backend.clone();
-    let go_convention_session_manager = session_manager.clone();
-    let go_convention_base_path = base_path.clone();
+    let markdown_render_service = service.clone();
+    let mention_list_service = service.clone();
+    let commit_diff_mention_list_service = service.clone();
+    let pull_request_mention_list_service = service.clone();
+    let go_convention_service = service.clone();
     let project_overview_update_service = service;
 
     Router::new()
@@ -2566,8 +2548,7 @@ pub(crate) fn routes(
                             owner,
                             project_name,
                             body,
-                            legacy_project_labels_session_manager.clone(),
-                            legacy_project_labels_backend.clone(),
+                            legacy_project_labels_service.clone(),
                         )
                         .await
                     }
@@ -2586,8 +2567,7 @@ pub(crate) fn routes(
                             owner,
                             project_name,
                             query,
-                            legacy_title_heads_session_manager.clone(),
-                            legacy_title_heads_backend.clone(),
+                            legacy_title_heads_service.clone(),
                         )
                         .await
                     }
@@ -2606,8 +2586,7 @@ pub(crate) fn routes(
                             owner,
                             project_name,
                             query,
-                            legacy_project_assignable_session_manager.clone(),
-                            legacy_project_assignable_backend.clone(),
+                            legacy_project_assignable_service.clone(),
                         )
                         .await
                     }
@@ -2625,8 +2604,7 @@ pub(crate) fn routes(
                             project_name,
                             number,
                             query,
-                            legacy_watchers_base_path.clone(),
-                            legacy_watchers_backend.clone(),
+                            legacy_watchers_service.clone(),
                         )
                         .await
                     }
@@ -2715,8 +2693,7 @@ pub(crate) fn routes(
                             headers,
                             owner_name,
                             project_name,
-                            direct_project_labels_session_manager.clone(),
-                            direct_project_labels_backend.clone(),
+                            direct_project_labels_service.clone(),
                         )
                         .await
                     }
@@ -2732,8 +2709,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             form,
-                            direct_project_label_attach_session_manager.clone(),
-                            direct_project_label_attach_backend.clone(),
+                            direct_project_label_attach_service.clone(),
                         )
                         .await
                     }
@@ -2753,8 +2729,7 @@ pub(crate) fn routes(
                             project_name,
                             label_id,
                             form,
-                            direct_project_label_detach_session_manager.clone(),
-                            direct_project_label_detach_backend.clone(),
+                            direct_project_label_detach_service.clone(),
                         )
                         .await
                     }
@@ -2903,8 +2878,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             query,
-                            mention_list_session_manager.clone(),
-                            mention_list_backend.clone(),
+                            mention_list_service.clone(),
                         )
                         .await
                     }
@@ -2923,8 +2897,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             query,
-                            commit_diff_mention_list_session_manager.clone(),
-                            commit_diff_mention_list_backend.clone(),
+                            commit_diff_mention_list_service.clone(),
                         )
                         .await
                     }
@@ -2943,8 +2916,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             query,
-                            pull_request_mention_list_session_manager.clone(),
-                            pull_request_mention_list_backend.clone(),
+                            pull_request_mention_list_service.clone(),
                         )
                         .await
                     }
@@ -2963,9 +2935,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             query,
-                            go_convention_session_manager.clone(),
-                            go_convention_backend.clone(),
-                            go_convention_base_path.clone(),
+                            go_convention_service.clone(),
                         )
                         .await
                     }
@@ -3002,8 +2972,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             pushed_branch_id,
-                            pushed_branch_delete_session_manager.clone(),
-                            pushed_branch_delete_backend.clone(),
+                            pushed_branch_delete_service.clone(),
                         )
                         .await
                     }
@@ -3052,9 +3021,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             body,
-                            markdown_render_session_manager.clone(),
-                            markdown_render_backend.clone(),
-                            markdown_render_base_path.clone(),
+                            markdown_render_service.clone(),
                         )
                         .await
                     }
@@ -3074,8 +3041,7 @@ async fn legacy_external_watchers(
     project_name: String,
     number: i64,
     query: LegacyExternalWatchersQuery,
-    base_path: String,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let Some(resource_type) = query.resource_type.as_deref() else {
         return StatusCode::OK.into_response();
@@ -3083,7 +3049,7 @@ async fn legacy_external_watchers(
     if !matches!(resource_type, "issues" | "posts") {
         return StatusCode::OK.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("watchers require repository backend")
             .into_response();
     };
@@ -3101,7 +3067,7 @@ async fn legacy_external_watchers(
         .map(|watcher| {
             serde_json::json!({
                 "name": watcher.name,
-                "url": base_path_href(&base_path, &format!("/{}", watcher.login_id)),
+                "url": base_path_href(&service.base_path, &format!("/{}", watcher.login_id)),
             })
         })
         .collect();
@@ -3124,17 +3090,17 @@ async fn legacy_project_title_heads(
     owner: String,
     project_name: String,
     query: LegacyProjectTitleHeadsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project title heads require repository backend")
             .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization =
@@ -3207,17 +3173,17 @@ async fn direct_project_labels(
     headers: HeaderMap,
     owner: String,
     project_name: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     if let Err(error) = require_project_read(repository, &owner, &project_name, actor_id).await {
@@ -3239,10 +3205,9 @@ async fn direct_attach_project_label(
     owner: String,
     project_name: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
@@ -3250,7 +3215,7 @@ async fn direct_attach_project_label(
         &headers,
         &owner,
         &project_name,
-        &session_manager,
+        &service.session_manager,
         repository,
         true,
     )
@@ -3292,10 +3257,9 @@ async fn direct_detach_project_label(
     project_name: String,
     label_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
@@ -3303,7 +3267,7 @@ async fn direct_detach_project_label(
         &headers,
         &owner,
         &project_name,
-        &session_manager,
+        &service.session_manager,
         repository,
         true,
     )
@@ -3333,19 +3297,19 @@ async fn legacy_external_project_assignable_users(
     owner: String,
     project_name: String,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "project assignable users require repository backend",
         )
         .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     if let Err(error) = require_project_read(repository, &owner, &project_name, actor_id).await {
@@ -3374,8 +3338,7 @@ async fn legacy_project_create_labels(
     owner: String,
     project_name: String,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let Some(labels) = legacy_json_find_value(&body, "labels").and_then(|value| value.as_array())
     else {
@@ -3387,17 +3350,21 @@ async fn legacy_project_create_labels(
         )
             .into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let authorization =
         match require_project_read(repository, &owner, &project_name, Some(actor_id)).await {
             Ok(authorization) => authorization,

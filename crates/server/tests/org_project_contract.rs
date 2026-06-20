@@ -753,6 +753,8 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
 }
 
 #[tokio::test]
+// Guards project go-convention redirects through the app-scoped service
+// snapshot used by direct project routes.
 async fn project_go_convention_menu_redirects_to_legacy_default_menu() {
     let (app, app_repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
