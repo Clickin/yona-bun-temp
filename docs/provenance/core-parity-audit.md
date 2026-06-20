@@ -1234,10 +1234,10 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - 2026-06-20 runtime DI note: auth/workspace contract tests no longer clear
   auth UI process env vars to force default signup/email-verification/social
   login behavior. Those tests rely on explicit `AppRuntimeConfig::default()`
-  router construction, and verification-mail tests now serialize only the
-  shared test mail outbox through `auth_outbox_lock` instead of `auth_env_lock`.
-  Remaining auth env locks are limited to SMTP_FROM/site-name request-time
-  mutation checks queued for the next auth/runtime-config slice.
+  router construction. SMTP sender and site-name mail route checks now assert
+  the injected `AppRuntimeConfig` behavior directly without mutating
+  `SMTP_FROM` or `YONA_SITE_NAME`; shared mail delivery assertions serialize
+  only the test outbox through `auth_outbox_lock`.
 
 ## Wave 0 Exit Snapshot
 

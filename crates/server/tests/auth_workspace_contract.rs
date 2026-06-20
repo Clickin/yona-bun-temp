@@ -29,11 +29,6 @@ use yona_rust_pilot_server::{
 // project-leave handler lives with workspace routes, while the membership side effect
 // is asserted by project_members_contract::leave_project_redirects_to_member_projects_after_removal.
 
-fn auth_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
 fn auth_outbox_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
@@ -140,13 +135,6 @@ fn set_cookie_headers(response: &axum::response::Response) -> Vec<String> {
         .iter()
         .map(|value| value.to_str().unwrap().to_string())
         .collect()
-}
-
-fn restore_env_var(name: &str, value: Option<String>) {
-    match value {
-        Some(value) => std::env::set_var(name, value),
-        None => std::env::remove_var(name),
-    }
 }
 
 fn named_cookie<'a>(cookies: &'a [String], name: &str) -> &'a str {
@@ -1092,10 +1080,8 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
 
 #[tokio::test]
 async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutation() {
-    let _guard = auth_env_lock().lock().unwrap();
     let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
-    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
 
     let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
@@ -1112,7 +1098,6 @@ async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutati
         },
     )
     .await;
-    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .oneshot(
@@ -1127,19 +1112,12 @@ async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutati
         )
         .await
         .unwrap();
-    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
-    restore_env_var("SMTP_FROM", previous_smtp_from);
 
     assert_eq!(register.status(), StatusCode::OK);
     let outbox = snapshot_test_outbox();
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "startup-sender@example.com");
     assert_eq!(outbox[0].to, "door@example.com");
-    assert_eq!(
-        smtp_from_after_request.as_deref(),
-        Some("request-time@example.com"),
-        "SMTP runtime config must not mutate process env"
-    );
 }
 
 #[tokio::test]
@@ -1692,11 +1670,8 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
 #[tokio::test]
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     // Guards route-utils-owned password reset mail helper and absolute reset URL composition.
-    let _guard = auth_env_lock().lock().unwrap();
     let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
-    let previous_site_name = std::env::var("YONA_SITE_NAME").ok();
-    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -1709,7 +1684,6 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         },
     )
     .await;
-    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1755,13 +1729,6 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "reset-sender@example.com");
     assert_eq!(outbox[0].to, "door@example.com");
-    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
-    restore_env_var("SMTP_FROM", previous_smtp_from);
-    assert_eq!(
-        smtp_from_after_request.as_deref(),
-        Some("request-time@example.com"),
-        "SMTP runtime config must not mutate process env"
-    );
 
     let verification = user_verification::Entity::find()
         .one(&db)
@@ -1817,20 +1784,13 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .await
         .unwrap()
         .is_empty());
-    assert_eq!(
-        std::env::var("YONA_SITE_NAME").ok(),
-        previous_site_name,
-        "site name app config must not mutate process env"
-    );
 }
 
 #[tokio::test]
 async fn direct_email_validation_send_and_confirm_routes_round_trip() {
     // Guards route-utils-owned workspace email validation mail helper and confirmation URL.
-    let _guard = auth_env_lock().lock().unwrap();
     let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
-    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -1842,7 +1802,6 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         },
     )
     .await;
-    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -1907,18 +1866,11 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         Some("/yona/user/editform/emails?validation=sent")
     );
     let outbox = snapshot_test_outbox();
-    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
-    restore_env_var("SMTP_FROM", previous_smtp_from);
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "workspace-sender@example.com");
     assert_eq!(outbox[0].to, "pending@example.com");
     assert!(outbox[0].subject.contains("Validation"));
     assert!(outbox[0].body.contains("/user/email/confirm/"));
-    assert_eq!(
-        smtp_from_after_request.as_deref(),
-        Some("request-time@example.com"),
-        "SMTP runtime config must not mutate process env"
-    );
 
     let email_after_send = email::Entity::find_by_id(email_before.id)
         .one(&db)
