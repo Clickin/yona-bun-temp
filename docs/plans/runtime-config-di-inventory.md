@@ -2,7 +2,7 @@
 
 Status: current
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 This inventory is the working queue for removing request/test-time runtime
 configuration access through process environment mutation. Before starting a
@@ -37,6 +37,7 @@ slice lands instead of re-running broad repository searches every turn.
 | done | Integrations env-backed convenience functions | `crates/integrations/src/lib.rs` | Converted. Server runtime mail and webhook paths use injected `IntegrationConfig` snapshots and `*_with_config` APIs; env-backed helpers remain compatibility wrappers with no server runtime call sites. | Startup config now snapshots SMTP/webhook integration keys once, and notification/site-admin/auth/workspace/project-transfer mail paths receive the app-scoped snapshot. |
 | done | Remaining read-only env assertions | `crates/server/tests/{auth_workspace,org_project,site_admin,mailbox,notification}_contract.rs` | Converted. Tests now prove runtime/startup snapshot behavior through returned payloads, persisted state, or config structs instead of comparing process env before/after. | No process-env reads remain in these runtime-config contract tests. |
 | done | Startup compatibility env bridge | `crates/server/src/runtime_config.rs`, `crates/server/src/main.rs`, `crates/server/tests/runtime_config_contract.rs` | Removed. Production startup no longer writes parsed runtime config back into process env; `runtime_config_contract` no longer serializes process env mutation. | Startup still reads process env once through `load_startup_config_from_env`; runtime config then flows through `AppRuntimeConfig`, `RepositoryConfig`, scheduler configs, and integration delivery config. |
+| done | Auth lost-password runtime config parameter threading | `crates/server/src/routes/auth.rs` | Converted. `direct_request_reset_password_email` receives the app-scoped `PilotServiceImpl` instead of separate session/backend/base-path/public-origin/site-name/SMTP/integration config parameters. | `PilotServiceImpl` now carries `site_name`; direct lost-password mail uses the same service snapshot as REST/auth registration paths. |
 
 ## Startup Env Parser Boundary
 

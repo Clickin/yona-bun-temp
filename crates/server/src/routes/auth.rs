@@ -20,8 +20,8 @@ use crate::{
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, rest_read_current_session, send_password_reset_mail, session::SessionManager,
     AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, SmtpRuntimeConfig, LEGACY_LOGIN_INVALID_MESSAGE,
-    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE,
+    LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -401,16 +401,10 @@ pub(crate) async fn auth_verify_user(
 pub(crate) async fn direct_request_reset_password_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-    site_name: String,
-    from: String,
-    integrations: yona_rust_integrations::IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Response {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let redirect_path = match &backend {
+    let session = service.session_manager.ensure_anonymous_session(&headers);
+    let redirect_path = match &service.backend {
         PilotBackend::Repository(repository) => {
             let login_id =
                 normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
@@ -433,11 +427,11 @@ pub(crate) async fn direct_request_reset_password_email(
                         let _ = send_password_reset_mail(
                             &user.email_address,
                             &code,
-                            &public_origin,
-                            &base_path,
-                            &site_name,
-                            &from,
-                            &integrations,
+                            &service.public_origin,
+                            &service.base_path,
+                            &service.site_name,
+                            &service.smtp.default_from(),
+                            &service.integrations,
                         );
                     }
                     "/lostPassword?requested=1"
@@ -448,8 +442,9 @@ pub(crate) async fn direct_request_reset_password_email(
         _ => "/lostPassword?error=unsupported",
     };
 
-    let mut response = Redirect::to(&base_path_href(&base_path, redirect_path)).into_response();
-    for cookie in session_manager.build_set_cookie_headers(&session) {
+    let mut response =
+        Redirect::to(&base_path_href(&service.base_path, redirect_path)).into_response();
+    for cookie in service.session_manager.build_set_cookie_headers(&session) {
         response.headers_mut().append(
             axum::http::header::SET_COOKIE,
             cookie.parse().expect("set-cookie header"),
@@ -830,9 +825,6 @@ pub(crate) fn routes(
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
     base_path: String,
-    public_origin: String,
-    site_name: String,
-    smtp: SmtpRuntimeConfig,
 ) -> Router {
     let session_bootstrap_session_manager = session_manager.clone();
     let session_bootstrap_backend = backend.clone();
@@ -847,18 +839,12 @@ pub(crate) fn routes(
     let legacy_signup_page_assets = assets.clone();
     let legacy_signup_page_browser_runtime = browser_runtime.clone();
     let direct_login_service = service.clone();
-    let lost_password_integrations = service.integrations.clone();
+    let lost_password_service = service.clone();
     let direct_signup_service = service;
     let signup_name_validator_backend = backend.clone();
     let signup_email_validator_backend = backend.clone();
     let legacy_lost_password_page_assets = assets.clone();
     let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
-    let lost_password_session_manager = session_manager.clone();
-    let lost_password_backend = backend.clone();
-    let lost_password_base_path = base_path.clone();
-    let lost_password_public_origin = public_origin.clone();
-    let lost_password_site_name = site_name.clone();
-    let lost_password_from = smtp.default_from();
     let legacy_reset_password_page_assets = assets;
     let legacy_reset_password_page_browser_runtime = browser_runtime;
     let reset_password_backend = backend.clone();
@@ -974,13 +960,7 @@ pub(crate) fn routes(
                     direct_request_reset_password_email(
                         headers,
                         form,
-                        lost_password_session_manager.clone(),
-                        lost_password_backend.clone(),
-                        lost_password_base_path.clone(),
-                        lost_password_public_origin.clone(),
-                        lost_password_site_name.clone(),
-                        lost_password_from.clone(),
-                        lost_password_integrations.clone(),
+                        lost_password_service.clone(),
                     )
                     .await
                 },

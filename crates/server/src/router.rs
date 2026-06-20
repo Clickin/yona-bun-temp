@@ -160,6 +160,7 @@ fn build_router_with_app_config(
         session_manager: session_manager.clone(),
         backend: backend.clone(),
         project_default_scope: runtime.project_default_scope.clone(),
+        site_name: runtime.site_name.clone(),
         smtp: runtime.smtp.clone(),
     };
     let route_backend = backend.clone();

@@ -214,9 +214,6 @@ pub(crate) fn app_routes(
             assets.clone(),
             browser_runtime.clone(),
             base_path.clone(),
-            public_origin.clone(),
-            runtime.site_name.clone(),
-            runtime.smtp.clone(),
         ))
         .nest("/api/v1", rest_router)
         .merge(legacy_runtime_routes(

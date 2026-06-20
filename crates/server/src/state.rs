@@ -150,6 +150,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) session_manager: SessionManager,
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,
+    pub(crate) site_name: String,
     pub(crate) smtp: SmtpRuntimeConfig,
 }
 
