@@ -1197,6 +1197,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   The project transfer contract now injects its per-test data root through
   `AppRuntimeConfig`, preserving transfer mail behavior while removing the
   project-transfer runtime config mutex.
+- 2026-06-20 runtime DI note: uploaded-file path resolution no longer exposes
+  an env-backed `uploaded_file_path` compatibility wrapper or `state::yona_data_root`.
+  Site-admin export/import attachment storage now receives the app-scoped
+  `data_root` through `PilotServiceImpl`, while legacy `/_init` and file route
+  tests inject per-test data roots through `AppRuntimeConfig`. The only
+  remaining `YONA_DATA` references are startup/config loading plus the temporary
+  startup compatibility bridge for legacy surfaces not covered by this runtime
+  DI slice.
 
 ## Wave 0 Exit Snapshot
 

@@ -11,7 +11,7 @@ use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, DEFAULT_COST};
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::atomic::Ordering};
+use std::{collections::HashMap, path::Path as StdPath, sync::atomic::Ordering};
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver, OutboundMail};
 
@@ -23,10 +23,12 @@ use crate::{
     normalize_milestone_state, parse_milestone_due_date, percent_encode_uri_component, persistence,
     project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
-    rest_repository, site_export_filename_stamp, uploaded_file_path, workspace_avatar_url,
-    ConnectError, PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError,
-    RuntimeRegistry, SiteUpdateConfig, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    rest_repository, site_export_filename_stamp, workspace_avatar_url, ConnectError,
+    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, RuntimeRegistry,
+    SiteUpdateConfig, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
+
+use super::uploaded_file_path_with_root;
 
 mod update;
 
@@ -1648,11 +1650,13 @@ async fn rest_export_site_data(
         );
     }
     let labels = rest_export_site_labels(repository, &milestone_project_refs).await?;
-    let milestones = rest_export_site_milestones(repository, &milestone_project_refs).await?;
+    let milestones =
+        rest_export_site_milestones(repository, &milestone_project_refs, &service.data_root)
+            .await?;
     let project_members =
         rest_export_site_project_members(repository, &milestone_project_refs).await?;
-    let posts = rest_export_site_posts(repository).await?;
-    let issues = rest_export_site_issues(repository).await?;
+    let posts = rest_export_site_posts(repository, &service.data_root).await?;
+    let issues = rest_export_site_issues(repository, &service.data_root).await?;
 
     Ok(RestSiteExportResponse {
         format: "yobi-data".to_string(),
@@ -1857,6 +1861,7 @@ async fn rest_import_site_data(
             continue;
         }
         let imported_attachments = rest_site_import_attachments(
+            &service.data_root,
             repository,
             &actor,
             &milestone.attachments,
@@ -1916,6 +1921,7 @@ async fn rest_import_site_data(
         )
         .await?;
         let imported_attachments = rest_site_import_attachments(
+            &service.data_root,
             repository,
             &actor,
             &post.attachments,
@@ -1960,6 +1966,7 @@ async fn rest_import_site_data(
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
         rest_site_import_post_comments(
+            &service.data_root,
             repository,
             &post.owner_name,
             &post.project_name,
@@ -2007,6 +2014,7 @@ async fn rest_import_site_data(
         )
         .await?;
         let imported_attachments = rest_site_import_attachments(
+            &service.data_root,
             repository,
             &actor,
             &issue.attachments,
@@ -2068,6 +2076,7 @@ async fn rest_import_site_data(
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
         rest_site_import_issue_comments(
+            &service.data_root,
             repository,
             &issue.owner_name,
             &issue.project_name,
@@ -2101,6 +2110,7 @@ async fn rest_import_site_data(
 }
 
 async fn rest_site_import_post_comments(
+    data_root: &StdPath,
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
@@ -2119,6 +2129,7 @@ async fn rest_site_import_post_comments(
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
         let imported_attachments = rest_site_import_attachments(
+            data_root,
             repository,
             &actor,
             &comment.attachments,
@@ -2148,6 +2159,7 @@ async fn rest_site_import_post_comments(
             .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
         {
             Box::pin(rest_site_import_post_comments(
+                data_root,
                 repository,
                 owner_name,
                 project_name,
@@ -2164,6 +2176,7 @@ async fn rest_site_import_post_comments(
 }
 
 async fn rest_site_import_issue_comments(
+    data_root: &StdPath,
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
@@ -2182,6 +2195,7 @@ async fn rest_site_import_issue_comments(
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
         let imported_attachments = rest_site_import_attachments(
+            data_root,
             repository,
             &actor,
             &comment.attachments,
@@ -2209,6 +2223,7 @@ async fn rest_site_import_issue_comments(
             .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
         {
             Box::pin(rest_site_import_issue_comments(
+                data_root,
                 repository,
                 owner_name,
                 project_name,
@@ -2247,6 +2262,7 @@ struct RestSiteImportedAttachments {
 }
 
 async fn rest_site_import_attachments(
+    data_root: &StdPath,
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
@@ -2289,7 +2305,7 @@ async fn rest_site_import_attachments(
                 .then(|| detect_upload_mime_type(&file_name, None, &bytes))
                 .unwrap_or_else(|| attachment.mime_type.trim().to_string());
             let hash = random_storage_token();
-            let path = uploaded_file_path(&hash);
+            let path = uploaded_file_path_with_root(data_root, &hash);
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent)
                     .map_err(|error| RestRouteError::internal(error.to_string()))?;
@@ -2528,6 +2544,7 @@ async fn rest_export_site_users(
 async fn rest_export_site_milestones(
     repository: &PilotRepository,
     project_refs: &[(String, String)],
+    data_root: &StdPath,
 ) -> Result<Vec<RestSiteExportMilestoneItem>, RestRouteError> {
     let mut milestones = Vec::new();
     for (owner_name, project_name) in project_refs {
@@ -2545,6 +2562,7 @@ async fn rest_export_site_milestones(
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         for record in records {
             milestones.push(rest_site_export_milestone_from_record(
+                data_root,
                 owner_name,
                 project_name,
                 &record,
@@ -2613,6 +2631,7 @@ fn rest_site_export_project_label_from_record(
 }
 
 fn rest_site_export_milestone_from_record(
+    data_root: &StdPath,
     owner_name: &str,
     project_name: &str,
     milestone: &persistence::IssueMilestoneRecord,
@@ -2621,7 +2640,7 @@ fn rest_site_export_milestone_from_record(
         attachments: milestone
             .attachments
             .iter()
-            .map(rest_site_export_attachment_from_record)
+            .map(|record| rest_site_export_attachment_from_record(data_root, record))
             .collect(),
         contents_markdown: milestone.contents_markdown.clone(),
         due_date: milestone.due_date_label.clone(),
@@ -2634,6 +2653,7 @@ fn rest_site_export_milestone_from_record(
 
 async fn rest_export_site_posts(
     repository: &PilotRepository,
+    data_root: &StdPath,
 ) -> Result<Vec<RestSiteExportPostItem>, RestRouteError> {
     let mut posts = Vec::new();
     let mut page = 1;
@@ -2654,7 +2674,7 @@ async fn rest_export_site_posts(
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?
                 .ok_or_else(|| RestRouteError::internal("site export post disappeared"))?;
-            posts.push(rest_site_export_post_from_record(&detail));
+            posts.push(rest_site_export_post_from_record(data_root, &detail));
         }
         if record.total_pages == 0 || page >= record.total_pages {
             break;
@@ -2666,6 +2686,7 @@ async fn rest_export_site_posts(
 
 async fn rest_export_site_issues(
     repository: &PilotRepository,
+    data_root: &StdPath,
 ) -> Result<Vec<RestSiteExportIssueItem>, RestRouteError> {
     let mut issues = Vec::new();
     for state in ["open", "closed"] {
@@ -2681,7 +2702,7 @@ async fn rest_export_site_issues(
                     .await
                     .map_err(|error| RestRouteError::internal(error.to_string()))?
                     .ok_or_else(|| RestRouteError::internal("site export issue disappeared"))?;
-                issues.push(rest_site_export_issue_from_record(&detail));
+                issues.push(rest_site_export_issue_from_record(data_root, &detail));
             }
             if record.total_pages == 0 || page >= record.total_pages {
                 break;
@@ -2985,6 +3006,7 @@ async fn rest_site_project_from_record(
 }
 
 fn rest_site_export_post_from_record(
+    data_root: &StdPath,
     record: &persistence::PostingRecord,
 ) -> RestSiteExportPostItem {
     RestSiteExportPostItem {
@@ -2992,10 +3014,10 @@ fn rest_site_export_post_from_record(
         attachments: record
             .attachments
             .iter()
-            .map(rest_site_export_attachment_from_record)
+            .map(|record| rest_site_export_attachment_from_record(data_root, record))
             .collect(),
         body_markdown: record.body_markdown.clone(),
-        comments: rest_site_export_post_comments_from_records(&record.comments),
+        comments: rest_site_export_post_comments_from_records(data_root, &record.comments),
         history_markdown: record.history_markdown.clone(),
         labels: record
             .labels
@@ -3012,6 +3034,7 @@ fn rest_site_export_post_from_record(
 }
 
 fn rest_site_export_issue_from_record(
+    data_root: &StdPath,
     record: &persistence::IssueRecord,
 ) -> RestSiteExportIssueItem {
     RestSiteExportIssueItem {
@@ -3020,10 +3043,10 @@ fn rest_site_export_issue_from_record(
         attachments: record
             .attachments
             .iter()
-            .map(rest_site_export_attachment_from_record)
+            .map(|record| rest_site_export_attachment_from_record(data_root, record))
             .collect(),
         body_markdown: record.body_markdown.clone(),
-        comments: rest_site_export_issue_comments_from_records(&record.comments),
+        comments: rest_site_export_issue_comments_from_records(data_root, &record.comments),
         history_markdown: record.history_markdown.clone(),
         issue_number: record.issue_number.to_string(),
         labels: record
@@ -3040,6 +3063,7 @@ fn rest_site_export_issue_from_record(
 }
 
 fn rest_site_export_post_comment_from_record(
+    data_root: &StdPath,
     record: &persistence::PostingCommentRecord,
     child_comments: Vec<RestSiteExportCommentItem>,
 ) -> RestSiteExportCommentItem {
@@ -3048,7 +3072,7 @@ fn rest_site_export_post_comment_from_record(
         attachments: record
             .attachments
             .iter()
-            .map(rest_site_export_attachment_from_record)
+            .map(|record| rest_site_export_attachment_from_record(data_root, record))
             .collect(),
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
@@ -3056,6 +3080,7 @@ fn rest_site_export_post_comment_from_record(
 }
 
 fn rest_site_export_issue_comment_from_record(
+    data_root: &StdPath,
     record: &persistence::IssueCommentRecord,
     child_comments: Vec<RestSiteExportCommentItem>,
 ) -> RestSiteExportCommentItem {
@@ -3064,7 +3089,7 @@ fn rest_site_export_issue_comment_from_record(
         attachments: record
             .attachments
             .iter()
-            .map(rest_site_export_attachment_from_record)
+            .map(|record| rest_site_export_attachment_from_record(data_root, record))
             .collect(),
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
@@ -3072,54 +3097,59 @@ fn rest_site_export_issue_comment_from_record(
 }
 
 fn rest_site_export_post_comments_from_records(
+    data_root: &StdPath,
     records: &[persistence::PostingCommentRecord],
 ) -> Vec<RestSiteExportCommentItem> {
     records
         .iter()
         .filter(|record| record.parent_comment_id.is_none())
-        .map(|record| rest_site_export_post_comment_tree(record, records))
+        .map(|record| rest_site_export_post_comment_tree(data_root, record, records))
         .collect()
 }
 
 fn rest_site_export_post_comment_tree(
+    data_root: &StdPath,
     record: &persistence::PostingCommentRecord,
     records: &[persistence::PostingCommentRecord],
 ) -> RestSiteExportCommentItem {
     let children = records
         .iter()
         .filter(|child| child.parent_comment_id == Some(record.id))
-        .map(|child| rest_site_export_post_comment_tree(child, records))
+        .map(|child| rest_site_export_post_comment_tree(data_root, child, records))
         .collect();
-    rest_site_export_post_comment_from_record(record, children)
+    rest_site_export_post_comment_from_record(data_root, record, children)
 }
 
 fn rest_site_export_issue_comments_from_records(
+    data_root: &StdPath,
     records: &[persistence::IssueCommentRecord],
 ) -> Vec<RestSiteExportCommentItem> {
     records
         .iter()
         .filter(|record| record.parent_comment_id.is_none())
-        .map(|record| rest_site_export_issue_comment_tree(record, records))
+        .map(|record| rest_site_export_issue_comment_tree(data_root, record, records))
         .collect()
 }
 
 fn rest_site_export_issue_comment_tree(
+    data_root: &StdPath,
     record: &persistence::IssueCommentRecord,
     records: &[persistence::IssueCommentRecord],
 ) -> RestSiteExportCommentItem {
     let children = records
         .iter()
         .filter(|child| child.parent_comment_id == Some(record.id))
-        .map(|child| rest_site_export_issue_comment_tree(child, records))
+        .map(|child| rest_site_export_issue_comment_tree(data_root, child, records))
         .collect();
-    rest_site_export_issue_comment_from_record(record, children)
+    rest_site_export_issue_comment_from_record(data_root, record, children)
 }
 
 fn rest_site_export_attachment_from_record(
+    data_root: &StdPath,
     record: &persistence::IssueAttachmentRecord,
 ) -> RestSiteExportAttachmentItem {
     RestSiteExportAttachmentItem {
-        content_base64: rest_site_export_attachment_content_base64(record),
+        content_base64: rest_site_export_attachment_content_base64(data_root, record),
         id: record.id,
         mime_type: record.mime_type.clone(),
         name: record.name.clone(),
@@ -3128,13 +3158,14 @@ fn rest_site_export_attachment_from_record(
 }
 
 fn rest_site_export_attachment_content_base64(
+    data_root: &StdPath,
     record: &persistence::IssueAttachmentRecord,
 ) -> Option<String> {
     let hash = record.hash.trim();
     if hash.is_empty() {
         return None;
     }
-    std::fs::read(uploaded_file_path(hash))
+    std::fs::read(uploaded_file_path_with_root(data_root, hash))
         .ok()
         .map(|bytes| general_purpose::STANDARD.encode(bytes))
 }

@@ -30,11 +30,6 @@ fn smtp_env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -833,12 +828,12 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
 #[tokio::test]
 async fn site_admin_export_download_follows_legacy_site_data_route() {
     // Guards the site-admin export DTO route-module ownership split and route-utils timestamp helper.
-    let _data_guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempfile::tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -1179,7 +1174,6 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         payload["issues"][0]["comments"].as_array().unwrap().len(),
         1
     );
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
@@ -1620,12 +1614,12 @@ async fn site_admin_import_rebinds_existing_attachment_ids_from_yobi_data_snapsh
 
 #[tokio::test]
 async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_snapshot() {
-    let _data_guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempfile::tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -1746,17 +1740,16 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         .find(|comment| comment.contents_markdown == "child comment with portable attachment")
         .expect("child comment");
     assert_eq!(child_comment.parent_comment_id, Some(parent_comment.id));
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
-    let _data_guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempfile::tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -1809,18 +1802,14 @@ async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
         .await
         .expect("read rejected post")
         .is_none());
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 async fn site_admin_import_respects_configured_max_file_size_without_env_mutation() {
-    let _data_guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
     let data_dir = tempfile::tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
         max_uploaded_file_size: 8,
         ..AppRuntimeConfig::default()
     })
@@ -1882,7 +1871,6 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
         previous_max_file_size,
         "site import upload limit must come from app config without mutating process env"
     );
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]

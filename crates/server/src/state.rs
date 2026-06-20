@@ -106,14 +106,6 @@ impl Context {
     }
 }
 
-pub(crate) fn yona_data_root() -> PathBuf {
-    std::env::var("YONA_DATA")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(".yona-data"))
-}
-
 pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))

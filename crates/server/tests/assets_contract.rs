@@ -1,5 +1,4 @@
 use std::fs;
-use std::sync::{Mutex, OnceLock};
 
 // Guards asset/runtime helper ownership while server root forwarding and
 // embedded asset lookup move into the owning asset module.
@@ -23,11 +22,6 @@ use yona_rust_pilot_server::{
     create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
-
-fn runtime_config_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -728,12 +722,14 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
 }
 
 #[tokio::test]
-// Guards state-owned YONA_DATA lookup and repository provisioning lock.
+// Guards app-scoped data-root injection and repository provisioning lock.
 async fn legacy_init_redirects_home_and_recreates_project_repositories() {
-    let _guard = runtime_config_env_lock().lock().unwrap();
     let data_root = tempdir().expect("data root");
-    std::env::set_var("YONA_DATA", data_root.path());
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, _) = build_auth_router_with_app_config(AppRuntimeConfig {
+        data_root: data_root.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let project = repository
         .create_project(CreateProjectInput {
             organization_id: None,
@@ -756,8 +752,6 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_DATA");
 
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     assert_eq!(

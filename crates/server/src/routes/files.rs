@@ -10,15 +10,11 @@ use std::path::PathBuf;
 
 use crate::{
     base_path_href, persistence, project_read_allowed, random_storage_token,
-    session::SessionManager, yona_data_root, PilotBackend,
+    session::SessionManager, PilotBackend,
 };
 
 fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
     data_root.join("uploads")
-}
-
-pub(crate) fn uploaded_file_path(hash: &str) -> PathBuf {
-    uploaded_file_path_with_root(&yona_data_root(), hash)
 }
 
 pub(crate) fn uploaded_file_path_with_root(data_root: &std::path::Path, hash: &str) -> PathBuf {
