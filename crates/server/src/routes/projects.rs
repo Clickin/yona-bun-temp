@@ -51,7 +51,9 @@ mod transfers;
 mod vcs;
 mod webhooks;
 
-use forks::{rest_fork_project, rest_read_project_fork_options, RestProjectForkBody};
+use forks::{
+    direct_clone_project, rest_fork_project, rest_read_project_fork_options, RestProjectForkBody,
+};
 use home::rest_read_project_container;
 pub(crate) use members::rest_delete_project_member;
 use members::{
@@ -2429,6 +2431,9 @@ pub(crate) fn routes(
     let transfer_accept_backend = backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
+    let direct_clone_backend = backend.clone();
+    let direct_clone_session_manager = session_manager.clone();
+    let direct_clone_base_path = base_path.clone();
     let markdown_render_backend = backend.clone();
     let markdown_render_session_manager = session_manager.clone();
     let markdown_render_base_path = base_path.clone();
@@ -2822,6 +2827,27 @@ pub(crate) fn routes(
                             transfer_accept_base_path.clone(),
                         )
                         .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/clone",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    let service = PilotServiceImpl {
+                        base_path: direct_clone_base_path.clone(),
+                        public_origin: String::new(),
+                        session_manager: direct_clone_session_manager.clone(),
+                        backend: direct_clone_backend.clone(),
+                        project_default_scope: "public".to_string(),
+                        auth_ui: AuthUiConfig::from_env(),
+                        smtp: SmtpRuntimeConfig::from_env(),
+                    };
+                    async move {
+                        direct_clone_project(headers, owner_name, project_name, form, service).await
                     }
                 },
             ),

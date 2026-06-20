@@ -1,4 +1,5 @@
 use super::*;
+use crate::ErrorCode;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,6 +59,20 @@ struct RestProjectForkResponse {
     ok: bool,
     project: ProjectDetail,
     redirect_path: String,
+}
+
+#[derive(Serialize)]
+struct DirectProjectCloneResponse {
+    status: String,
+    url: String,
+}
+
+fn direct_project_clone_response(status: &str, base_path: &str, path: &str) -> Response {
+    Json(DirectProjectCloneResponse {
+        status: status.to_string(),
+        url: base_path_href(base_path, path),
+    })
+    .into_response()
 }
 
 async fn rest_project_fork_owner_options(
@@ -166,6 +181,121 @@ async fn rest_project_fork_target_organization_id(
     Ok(Some(authorization.organization.id))
 }
 
+async fn fork_project_after_auth(
+    repository: &PilotRepository,
+    actor_id: i64,
+    actor: &persistence::AppUserRecord,
+    authorization: persistence::ProjectAuthorizationRecord,
+    body: RestProjectForkBody,
+) -> Result<RestProjectForkResponse, RestRouteError> {
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return Err(RestRouteError::bad_request("project.fork.gitOnly"));
+    }
+    let target_owner_name = body
+        .owner
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&actor.login_id)
+        .to_string();
+    let target_project_name = body
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&authorization.project.project_name)
+        .to_string();
+    let target_scope_value = body
+        .project_scope
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&authorization.project.project_scope);
+    let target_scope = map_project_scope(target_scope_value)
+        .map_err(RestRouteError::from_connect_error)?
+        .as_str()
+        .to_string();
+    if !is_valid_project_name(&target_project_name) {
+        return Err(RestRouteError::bad_request("project.name.invalid"));
+    }
+    let target_organization_id =
+        rest_project_fork_target_organization_id(repository, actor, &target_owner_name).await?;
+    if repository
+        .project_identifier_exists(&target_owner_name, &target_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::already_exists("project.name.duplicate"),
+        ));
+    }
+
+    let fork = repository
+        .create_fork_project(persistence::CreateForkProjectInput {
+            organization_id: target_organization_id,
+            original_project_id: authorization.project.id,
+            owner_name: target_owner_name.clone(),
+            overview: authorization.project.overview.clone(),
+            project_name: target_project_name.clone(),
+            project_scope: target_scope.clone(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let source_menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .set_project_menu_settings(fork.id, source_menu_settings)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let source_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let fork_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), fork.id);
+    let clone_result = {
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| internal_error("repository provisioning lock poisoned"))
+            .map_err(RestRouteError::from_connect_error)?;
+        yona_rust_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
+    };
+    if let Err(error) = clone_result {
+        let _ = repository
+            .delete_project_by_owner_and_name(&fork.owner_name, &fork.project_name)
+            .await;
+        let _ = yona_rust_vcs::delete_repository(&fork_repo_path);
+        return Err(RestRouteError::from_connect_error(code_browser_error(
+            error,
+        )));
+    }
+    repository
+        .add_project_membership(fork.id, actor_id, "manager")
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let fork_authorization = repository
+        .read_project_authorization(&fork.owner_name, &fork.project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let project = project_detail_from_record(
+        &fork_authorization,
+        project_update_allowed(&fork_authorization).map_err(RestRouteError::from_connect_error)?,
+        false,
+    );
+    Ok(RestProjectForkResponse {
+        ok: true,
+        redirect_path: format!("/{}/{}", fork.owner_name, fork.project_name),
+        project,
+    })
+}
+
 pub(super) async fn rest_read_project_fork_options(
     headers: HeaderMap,
     owner_name: String,
@@ -238,111 +368,75 @@ pub(super) async fn rest_fork_project(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
-        return Err(RestRouteError::bad_request("project.fork.gitOnly"));
-    }
-    let target_owner_name = body
-        .owner
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or(&actor.login_id)
-        .to_string();
-    let target_project_name = body
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or(&authorization.project.project_name)
-        .to_string();
-    let target_scope_value = body
-        .project_scope
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or(&authorization.project.project_scope);
-    let target_scope = map_project_scope(target_scope_value)
-        .map_err(RestRouteError::from_connect_error)?
-        .as_str()
-        .to_string();
-    if !is_valid_project_name(&target_project_name) {
-        return Err(RestRouteError::bad_request("project.name.invalid"));
-    }
-    let target_organization_id =
-        rest_project_fork_target_organization_id(repository, &actor, &target_owner_name).await?;
-    if repository
-        .project_identifier_exists(&target_owner_name, &target_project_name)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-    {
-        return Err(RestRouteError::from_connect_error(
-            ConnectError::already_exists("project.name.duplicate"),
-        ));
-    }
+    Ok(
+        Json(fork_project_after_auth(repository, actor_id, &actor, authorization, body).await?)
+            .into_response(),
+    )
+}
 
-    let fork = repository
-        .create_fork_project(persistence::CreateForkProjectInput {
-            organization_id: target_organization_id,
-            original_project_id: authorization.project.id,
-            owner_name: target_owner_name.clone(),
-            overview: authorization.project.overview.clone(),
-            project_name: target_project_name.clone(),
-            project_scope: target_scope.clone(),
-            vcs: "GIT".to_string(),
-        })
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    let source_menu_settings = repository
-        .read_project_menu_settings(authorization.project.id)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    repository
-        .set_project_menu_settings(fork.id, source_menu_settings)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    let source_repo_path =
-        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-    let fork_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), fork.id);
-    let clone_result = {
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| internal_error("repository provisioning lock poisoned"))
-            .map_err(RestRouteError::from_connect_error)?;
-        yona_rust_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
+pub(super) async fn direct_clone_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    form: HashMap<String, String>,
+    service: PilotServiceImpl,
+) -> Response {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
+        return direct_project_clone_response("failed", &service.base_path, "/users/loginform");
     };
-    if let Err(error) = clone_result {
-        let _ = repository
-            .delete_project_by_owner_and_name(&fork.owner_name, &fork.project_name)
-            .await;
-        let _ = yona_rust_vcs::delete_repository(&fork_repo_path);
-        return Err(RestRouteError::from_connect_error(code_browser_error(
-            error,
-        )));
+    let Some(actor_id) = session.user_id else {
+        return direct_project_clone_response("failed", &service.base_path, "/users/loginform");
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return direct_project_clone_response("failed", &service.base_path, "/");
+    };
+    let Ok(actor) = require_authenticated_user(repository, Some(actor_id)).await else {
+        return direct_project_clone_response("failed", &service.base_path, "/users/loginform");
+    };
+    let authorization = match require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        Some(actor_id),
+        ProjectCreatableResource::Fork,
+    )
+    .await
+    {
+        Ok(authorization) => authorization,
+        Err(error) => {
+            let path = if matches!(error.code, ErrorCode::NotFound) {
+                "/"
+            } else {
+                "/users/loginform"
+            };
+            return direct_project_clone_response("failed", &service.base_path, path);
+        }
+    };
+    let body = RestProjectForkBody {
+        name: Some(
+            form_value(&form, &["name", "projectName"])
+                .trim()
+                .to_string(),
+        ),
+        owner: Some(
+            form_value(&form, &["owner", "ownerName"])
+                .trim()
+                .to_string(),
+        ),
+        project_scope: Some(
+            form_value(&form, &["projectScope", "project_scope", "scope"])
+                .trim()
+                .to_string(),
+        ),
+    };
+    match fork_project_after_auth(repository, actor_id, &actor, authorization, body).await {
+        Ok(response) => {
+            direct_project_clone_response("success", &service.base_path, &response.redirect_path)
+        }
+        Err(_) => direct_project_clone_response(
+            "failed",
+            &service.base_path,
+            &format!("/{owner_name}/{project_name}/pullRequests"),
+        ),
     }
-    repository
-        .add_project_membership(fork.id, actor_id, "manager")
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    let fork_authorization = repository
-        .read_project_authorization(&fork.owner_name, &fork.project_name, Some(actor_id))
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    let project = project_detail_from_record(
-        &fork_authorization,
-        project_update_allowed(&fork_authorization).map_err(RestRouteError::from_connect_error)?,
-        false,
-    );
-    Ok(Json(RestProjectForkResponse {
-        ok: true,
-        redirect_path: format!("/{}/{}", fork.owner_name, fork.project_name),
-        project,
-    })
-    .into_response())
 }

@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-06-17
+Last updated: 2026-06-20
 
 ## Progress Estimate
 
@@ -17,6 +17,7 @@ Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
 - The app-runtime first-priority core parity audit is closed at the provenance-row level; full goal completion still requires closing `docs/provenance/first-priority-completion-review.md` rather than treating deferred second-priority or migrator scope as implemented.
+- Legacy `PullRequestApp.doClone` direct fork creation is restored as `POST /:owner/:project/clone`, returning the legacy `{status,url}` JSON wrapper while reusing the app fork implementation for native bare repository clone and `original_project_id` persistence.
 - Workspace and public profile PR streams now follow legacy `user/partial_pullRequests.scala.html` scalar output for PR number, author/no-author fallback, comment icon counts, receiver avatar shell, and `pullRequest.state.*` state labels instead of temporary English prefixes.
 - Workspace and public profile project streams now follow legacy `user/partial_projectlist.scala.html` scalar output for `project.onmember`, owner link, created date title scalar, `project.codeUpdate` title scalar, and stats badge shell instead of temporary `Owner:` / `Created` / `Updated` / `State:` / `Members:` / `Watchers:` prefixes.
 - Workspace and public profile user-card/day-filter labels now follow legacy `user/view.scala.html` keys (`userinfo.editProfile`, `userinfo.since`, `user.connected.social.login`, `userinfo.daysAgo.prefix`, `userinfo.daysAgo.suffix`) instead of temporary English copy.

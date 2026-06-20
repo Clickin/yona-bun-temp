@@ -125,6 +125,32 @@ async fn rest(
     .unwrap()
 }
 
+async fn rest_form(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    form: &[(&str, &str)],
+) -> Response<Body> {
+    let mut builder = Request::builder().method(method).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    builder = builder.header(
+        http::header::CONTENT_TYPE,
+        "application/x-www-form-urlencoded",
+    );
+    let body = form
+        .iter()
+        .map(|(key, value)| format!("{key}={value}"))
+        .collect::<Vec<_>>()
+        .join("&");
+
+    app.oneshot(builder.body(Body::from(body)).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rest_test_support::pilot_rest(
@@ -262,6 +288,7 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
     let (app, repository, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    let (_, cloner_cookie) = register_user(app.clone(), "cloner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let source = repository
         .read_project_by_owner_and_name("owner", "projectYobi")
@@ -290,6 +317,52 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
     assert_eq!(form["selected"]["projectName"], "projectYobi");
     assert_eq!(form["canFork"], true);
     assert_eq!(form["ownerOptions"][0]["ownerName"], "guest");
+
+    let direct_clone = ok_json(
+        rest_form(
+            app.clone(),
+            Method::POST,
+            "/yona/owner/projectYobi/clone",
+            Some(&cloner_cookie),
+            &[
+                ("owner", "cloner"),
+                ("name", "projectYobi"),
+                ("projectScope", "public"),
+            ],
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(direct_clone["status"], "success");
+    assert_eq!(direct_clone["url"], "/yona/cloner/projectYobi");
+    let direct_fork = repository
+        .read_project_by_owner_and_name("cloner", "projectYobi")
+        .await
+        .expect("direct fork lookup")
+        .expect("direct fork exists");
+    assert_eq!(direct_fork.original_project_id, Some(source.id));
+    assert_eq!(
+        head_commit(&repository_path(data_dir.path(), direct_fork.id)),
+        source_head
+    );
+
+    let direct_missing = ok_json(
+        rest_form(
+            app.clone(),
+            Method::POST,
+            "/yona/missing/projectYobi/clone",
+            Some(&cloner_cookie),
+            &[
+                ("owner", "cloner"),
+                ("name", "missingFork"),
+                ("projectScope", "public"),
+            ],
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(direct_missing["status"], "failed");
+    assert_eq!(direct_missing["url"], "/yona/");
 
     let guest = repository
         .toggle_site_user_guest_mode("guest")
