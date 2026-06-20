@@ -31,9 +31,9 @@ use crate::{
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
-    session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
-    PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
+    session::SessionManager, yona_data_root, ConnectError, Context, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
+    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,

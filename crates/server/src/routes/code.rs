@@ -24,10 +24,10 @@ use crate::{
     require_valid_csrf, rest_commit_thread_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
-    session::SessionManager, workspace_avatar_url, yona_data_root, AuthUiConfig, ConnectError,
+    session::SessionManager, workspace_avatar_url, yona_data_root, ConnectError,
     MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotServiceImpl,
     ProjectCreatableResource, RestIssueReferenceMetadata, RestMentionReferenceMetadata,
-    RestReviewThread, RestRouteError, SmtpRuntimeConfig,
+    RestReviewThread, RestRouteError,
 };
 
 pub(crate) fn rest_routes(
@@ -351,6 +351,7 @@ pub(crate) fn rest_routes(
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
@@ -384,12 +385,8 @@ pub(crate) fn routes(
     let code_ajax_branch_root_slash_backend = backend.clone();
     let code_ajax_branch_root_slash_session_manager = session_manager.clone();
     let code_ajax_branch_root_slash_base_path = base_path.clone();
-    let direct_commit_comment_create_backend = backend.clone();
-    let direct_commit_comment_create_session_manager = session_manager.clone();
-    let direct_commit_comment_create_base_path = base_path.clone();
-    let direct_commit_comment_delete_backend = backend;
-    let direct_commit_comment_delete_session_manager = session_manager;
-    let direct_commit_comment_delete_base_path = base_path;
+    let direct_commit_comment_create_service = service.clone();
+    let direct_commit_comment_delete_service = service;
 
     Router::new()
         .route(
@@ -634,9 +631,7 @@ pub(crate) fn routes(
                             project,
                             commit_id,
                             form,
-                            direct_commit_comment_create_session_manager.clone(),
-                            direct_commit_comment_create_backend.clone(),
-                            direct_commit_comment_create_base_path.clone(),
+                            direct_commit_comment_create_service.clone(),
                         )
                         .await
                     }
@@ -660,9 +655,7 @@ pub(crate) fn routes(
                             project,
                             commit_id,
                             comment_id,
-                            direct_commit_comment_delete_session_manager.clone(),
-                            direct_commit_comment_delete_backend.clone(),
-                            direct_commit_comment_delete_base_path.clone(),
+                            direct_commit_comment_delete_service.clone(),
                         )
                         .await
                     }
@@ -1684,19 +1677,9 @@ async fn direct_create_commit_discussion_comment(
     project_name: String,
     commit_id: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        auth_ui: AuthUiConfig::from_env(),
-        backend,
-        base_path: base_path.clone(),
-        project_default_scope: "public".to_string(),
-        public_origin: String::new(),
-        session_manager,
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_create_commit_discussion_comment(
         headers,
         owner_name.clone(),
@@ -1718,19 +1701,9 @@ async fn direct_delete_commit_discussion_comment(
     project_name: String,
     commit_id: String,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        auth_ui: AuthUiConfig::from_env(),
-        backend,
-        base_path: base_path.clone(),
-        project_default_scope: "public".to_string(),
-        public_origin: String::new(),
-        session_manager,
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_delete_commit_discussion_comment(
         headers,
         owner_name.clone(),

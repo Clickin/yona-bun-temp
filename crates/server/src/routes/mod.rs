@@ -292,7 +292,7 @@ pub(crate) fn app_routes(
             base_path.clone(),
             runtime.max_uploaded_file_size,
         ))
-        .merge(code_routes(session_manager, backend, base_path))
+        .merge(code_routes(service, session_manager, backend, base_path))
 }
 
 pub(crate) fn static_compat_routes() -> Router {
