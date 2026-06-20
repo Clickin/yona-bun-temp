@@ -1,6 +1,66 @@
 use super::*;
 
 impl AppRepository {
+    pub async fn read_legacy_review_comment_delete_target(
+        &self,
+        comment_id: i64,
+    ) -> Result<Option<LegacyReviewCommentDeleteTarget>, DbErr> {
+        let Some(comment) = review_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(thread_id) = comment.thread_id else {
+            return Ok(None);
+        };
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        if let Some(pull_request_id) = thread.pull_request_id {
+            let Some(pull_request_model) = pull_request::Entity::find_by_id(pull_request_id)
+                .one(&self.db)
+                .await?
+            else {
+                return Ok(None);
+            };
+            let Some(project_id) = pull_request_model.to_project_id else {
+                return Ok(None);
+            };
+            let Some(project) = self.read_project_by_id(project_id).await? else {
+                return Ok(None);
+            };
+            return Ok(Some(LegacyReviewCommentDeleteTarget {
+                author_id: comment.author_id,
+                kind: LegacyReviewCommentDeleteTargetKind::PullRequest {
+                    pull_request_number: pull_request_model.number.unwrap_or_default(),
+                },
+                owner_name: project.owner_name,
+                project_name: project.project_name,
+            }));
+        }
+
+        let Some(project_id) = thread.project_id else {
+            return Ok(None);
+        };
+        let Some(commit_id) = thread.commit_id.filter(|commit_id| !commit_id.is_empty()) else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(LegacyReviewCommentDeleteTarget {
+            author_id: comment.author_id,
+            kind: LegacyReviewCommentDeleteTargetKind::Commit { commit_id },
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+        }))
+    }
+
     pub async fn update_commit_discussion_thread_state(
         &self,
         input: CommitDiscussionThreadStateInput,

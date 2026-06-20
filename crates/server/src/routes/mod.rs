@@ -9,6 +9,7 @@ use crate::{
 mod auth;
 mod boards;
 mod code;
+mod comments;
 #[cfg(debug_assertions)]
 mod debug;
 mod files;
@@ -37,6 +38,7 @@ pub(crate) use boards::routes as board_routes;
 pub(crate) use code::rest_routes as code_rest_routes;
 pub(crate) use code::rest_update_commit_discussion_thread_state;
 pub(crate) use code::routes as code_routes;
+pub(crate) use comments::routes as comment_routes;
 #[cfg(debug_assertions)]
 pub(crate) use debug::routes as debug_routes;
 pub(crate) use files::routes as file_routes;
@@ -270,6 +272,7 @@ pub(crate) fn app_routes(
             backend.clone(),
             base_path.clone(),
         ))
+        .merge(comment_routes(session_manager.clone(), backend.clone()))
         .merge(project_routes(
             session_manager.clone(),
             backend.clone(),

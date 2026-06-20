@@ -1607,21 +1607,28 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     .await;
     assert_eq!(forbidden_ranged_delete.status(), StatusCode::FORBIDDEN);
 
-    let ranged_deleted = response_json(
-        rest_json(
+    let ranged_deleted = rest_json(
+        app.clone(),
+        Method::DELETE,
+        &format!("/yona/comments/review_comment/{ranged_comment_id}"),
+        Some(&reviewer_cookie),
+        Some(&reviewer_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(ranged_deleted.status(), StatusCode::OK);
+    assert!(response_text(ranged_deleted).await.is_empty());
+
+    let after_generic_ranged_delete = response_json(
+        rest_get(
             app.clone(),
-            Method::DELETE,
-            &format!(
-                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments/{ranged_comment_id}"
-            ),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
             Some(&reviewer_cookie),
-            Some(&reviewer_csrf),
-            json!({}),
         )
         .await,
     )
     .await;
-    assert!(!ranged_deleted["threads"]
+    assert!(!after_generic_ranged_delete["threads"]
         .as_array()
         .unwrap()
         .iter()

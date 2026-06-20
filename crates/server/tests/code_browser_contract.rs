@@ -214,6 +214,27 @@ async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) 
         .unwrap()
 }
 
+async fn direct_delete(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::DELETE)
+        .uri(format!("/yona{path}"));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn response_bytes(response: Response<Body>) -> (StatusCode, HeaderMap, Vec<u8>) {
     let status = response.status();
     let headers = response.headers().clone();
@@ -1283,7 +1304,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         1
     );
 
-    let refreshed = response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    let refreshed = response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
     assert_eq!(refreshed["commit"]["commentCount"], 1);
     assert_eq!(
         refreshed["threads"][0]["comments"]
@@ -1292,6 +1313,24 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
             .len(),
         1
     );
+
+    let generic_deleted = direct_delete(
+        app.clone(),
+        &format!("/comments/code_comment/{comment_id}"),
+        Some(&cookie),
+        Some(&csrf),
+    )
+    .await;
+    let (generic_delete_status, generic_delete_headers, generic_delete_body) =
+        response_bytes(generic_deleted).await;
+    assert_eq!(generic_delete_status, StatusCode::OK);
+    assert!(generic_delete_headers.get(http::header::LOCATION).is_none());
+    assert!(generic_delete_body.is_empty());
+
+    let after_generic_delete =
+        response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    assert_eq!(after_generic_delete["commit"]["commentCount"], 0);
+    assert_eq!(after_generic_delete["threads"].as_array().unwrap().len(), 0);
     assert_eq!(count_event_rows(&db, "NEW_REVIEW_COMMENT").await, 2);
     assert_eq!(
         count_event_rows(&db, "REVIEW_THREAD_STATE_CHANGED").await,

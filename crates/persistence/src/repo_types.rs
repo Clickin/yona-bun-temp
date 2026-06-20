@@ -1624,6 +1624,20 @@ pub struct DeletePullRequestCommentInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LegacyReviewCommentDeleteTargetKind {
+    Commit { commit_id: String },
+    PullRequest { pull_request_number: i64 },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyReviewCommentDeleteTarget {
+    pub author_id: Option<i64>,
+    pub kind: LegacyReviewCommentDeleteTargetKind,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdatePullRequestCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,
