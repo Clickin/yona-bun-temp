@@ -9,9 +9,8 @@ use crate::{
     dispatch_pull_request_webhooks, internal_error, normalize_identifier, persistence,
     require_authenticated_user, require_project_resource_create, require_session,
     require_valid_csrf, rest_repository, rest_require_project_code_read,
-    rest_update_commit_discussion_thread_state, session::SessionManager, AuthUiConfig,
-    ConnectError, PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestRouteError,
-    SmtpRuntimeConfig,
+    rest_update_commit_discussion_thread_state, ConnectError, PilotBackend, PilotServiceImpl,
+    ProjectCreatableResource, RestRouteError,
 };
 
 use super::{
@@ -40,10 +39,9 @@ pub(super) async fn direct_update_review_thread_state(
     headers: HeaderMap,
     thread_id: i64,
     next_state: &str,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let repository = match &backend {
+    let repository = match &service.backend {
         PilotBackend::Repository(repository) => repository,
         PilotBackend::Static => {
             return RestRouteError::not_implemented("review thread requires repository backend")
@@ -54,15 +52,6 @@ pub(super) async fn direct_update_review_thread_state(
         Ok(Some(context)) => context,
         Ok(None) => return StatusCode::NOT_FOUND.into_response(),
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     let result = if let Some(pull_request_number) = context.pull_request_number {
         rest_update_pull_request_thread_state(

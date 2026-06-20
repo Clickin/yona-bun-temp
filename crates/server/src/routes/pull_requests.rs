@@ -18,10 +18,9 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, session::SessionManager,
-    visible_code_projects_for_organization, yona_data_root, AuthUiConfig, ConnectError,
-    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
-    SmtpRuntimeConfig,
+    visible_code_projects_for_organization, yona_data_root, ConnectError, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
@@ -43,24 +42,13 @@ async fn direct_accept_pull_request(
     owner_name: String,
     project_name: String,
     pull_request_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let redirect_path = format!(
         "/{}/{}/pullRequest/{}",
         owner_name, project_name, pull_request_number
     );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin,
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_accept_pull_request(
         headers,
         owner_name,
@@ -81,23 +69,13 @@ async fn direct_update_pull_request_source_branch(
     project_name: String,
     pull_request_number: i64,
     action: PullRequestSourceBranchAction,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let redirect_path = format!(
         "/{}/{}/pullRequest/{}",
         owner_name, project_name, pull_request_number
     );
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     let result = match action {
         PullRequestSourceBranchAction::Delete => {
             rest_delete_pull_request_source_branch(
@@ -573,25 +551,15 @@ pub(crate) struct RestReviewThreadListResponse {
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
 ) -> Router {
-    let thread_open_backend = backend.clone();
-    let thread_open_session_manager = session_manager.clone();
-    let thread_close_backend = backend.clone();
-    let thread_close_session_manager = session_manager.clone();
-    let pull_request_accept_backend = backend.clone();
-    let pull_request_accept_session_manager = session_manager.clone();
-    let pull_request_accept_base_path = base_path.clone();
-    let pull_request_accept_public_origin = public_origin.clone();
-    let pull_request_delete_source_branch_backend = backend.clone();
-    let pull_request_delete_source_branch_session_manager = session_manager.clone();
-    let pull_request_delete_source_branch_base_path = base_path.clone();
-    let pull_request_restore_source_branch_backend = backend.clone();
-    let pull_request_restore_source_branch_session_manager = session_manager.clone();
-    let pull_request_restore_source_branch_base_path = base_path;
+    let thread_open_service = service.clone();
+    let thread_close_service = service.clone();
+    let pull_request_accept_service = service.clone();
+    let pull_request_delete_source_branch_service = service.clone();
+    let pull_request_restore_source_branch_service = service;
     let pull_request_state_backend = backend;
     let pull_request_state_session_manager = session_manager;
 
@@ -604,8 +572,7 @@ pub(crate) fn routes(
                         headers,
                         thread_id,
                         "open",
-                        thread_open_session_manager.clone(),
-                        thread_open_backend.clone(),
+                        thread_open_service.clone(),
                     )
                     .await
                 }
@@ -619,8 +586,7 @@ pub(crate) fn routes(
                         headers,
                         thread_id,
                         "closed",
-                        thread_close_session_manager.clone(),
-                        thread_close_backend.clone(),
+                        thread_close_service.clone(),
                     )
                     .await
                 }
@@ -641,10 +607,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             pull_request_number,
-                            pull_request_accept_session_manager.clone(),
-                            pull_request_accept_backend.clone(),
-                            pull_request_accept_base_path.clone(),
-                            pull_request_accept_public_origin.clone(),
+                            pull_request_accept_service.clone(),
                         )
                         .await
                     }
@@ -667,9 +630,7 @@ pub(crate) fn routes(
                             project,
                             pull_request_number,
                             PullRequestSourceBranchAction::Delete,
-                            pull_request_delete_source_branch_session_manager.clone(),
-                            pull_request_delete_source_branch_backend.clone(),
-                            pull_request_delete_source_branch_base_path.clone(),
+                            pull_request_delete_source_branch_service.clone(),
                         )
                         .await
                     }
@@ -692,9 +653,7 @@ pub(crate) fn routes(
                             project,
                             pull_request_number,
                             PullRequestSourceBranchAction::Restore,
-                            pull_request_restore_source_branch_session_manager.clone(),
-                            pull_request_restore_source_branch_backend.clone(),
-                            pull_request_restore_source_branch_base_path.clone(),
+                            pull_request_restore_source_branch_service.clone(),
                         )
                         .await
                     }

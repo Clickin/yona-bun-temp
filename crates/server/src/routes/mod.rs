@@ -279,10 +279,9 @@ pub(crate) fn app_routes(
             runtime.max_uploaded_file_size,
         ))
         .merge(pull_request_routes(
+            service.clone(),
             session_manager.clone(),
             backend.clone(),
-            base_path.clone(),
-            public_origin.clone(),
         ))
         .merge(site_admin_routes(
             session_manager.clone(),

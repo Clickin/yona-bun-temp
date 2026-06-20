@@ -1960,6 +1960,8 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(direct_reviewed["reviewed"], true);
+    // Direct PR accept/source-branch aliases reuse the app-scoped service and
+    // runtime config registered by pull request routes.
     let direct_accept = app
         .clone()
         .oneshot(
