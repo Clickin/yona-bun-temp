@@ -1,6 +1,5 @@
 use axum::{routing::any, Router};
 
-use crate::session::SessionManager;
 use crate::{AssetMode, BrowserRuntimeConfig, PilotServiceImpl, RuntimeRegistry};
 
 mod auth;
@@ -284,14 +283,7 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
         ))
-        .merge(site_admin_routes(
-            session_manager.clone(),
-            backend.clone(),
-            runtime.site_update,
-            runtime.smtp,
-            base_path.clone(),
-            runtime.max_uploaded_file_size,
-        ))
+        .merge(site_admin_routes(service.clone(), runtime.clone()))
         .merge(code_routes(service, session_manager, backend, base_path))
 }
 

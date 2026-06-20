@@ -2893,26 +2893,16 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     // Guards the site-admin mail DTO route-module ownership split and SMTP
     // runtime snapshot plumbing through the shared PilotServiceImpl wrapper,
     // including the direct legacy POST /sites/mail form submit path.
-    let _guard = smtp_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
-    std::env::remove_var("SMTP_ENABLED");
-    std::env::remove_var("SMTP_HOST");
-    std::env::remove_var("SMTP_USER");
-    std::env::remove_var("SMTP_PASSWORD");
-    std::env::remove_var("SMTP_PASS");
-    std::env::remove_var("SMTP_DOMAIN");
-    std::env::remove_var("YONA_APPLICATION_HOSTNAME");
-    std::env::remove_var("APPLICATION_HOSTNAME");
-    std::env::remove_var("YONA_SMTP_FROM");
-    std::env::remove_var("YONA_SMTP_HOST");
-    std::env::remove_var("YONA_SMTP_USER");
-    std::env::remove_var("YONA_SMTP_DOMAIN");
-    std::env::remove_var("YONA_SMTP_PASSWORD");
-    std::env::set_var("SMTP_FROM", "site-admin@yona.local");
     clear_test_outbox();
 
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        smtp: SmtpRuntimeConfig {
+            from: "site-admin@yona.local".to_string(),
+            ..SmtpRuntimeConfig::default()
+        },
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     let (_observer_csrf, _observer_cookie, observer_id) =

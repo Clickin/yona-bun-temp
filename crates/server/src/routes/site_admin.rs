@@ -23,10 +23,9 @@ use crate::{
     normalize_milestone_state, parse_milestone_due_date, percent_encode_uri_component, persistence,
     project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
-    rest_repository, session::SessionManager, site_export_filename_stamp, uploaded_file_path,
-    workspace_avatar_url, AuthUiConfig, ConnectError, PilotBackend, PilotServiceImpl,
-    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SiteUpdateConfig, SmtpRuntimeConfig,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    rest_repository, site_export_filename_stamp, uploaded_file_path, workspace_avatar_url,
+    ConnectError, PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError,
+    RuntimeRegistry, SiteUpdateConfig, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 mod update;
@@ -655,57 +654,27 @@ pub(crate) fn rest_routes(
         )
 }
 
-pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    site_update: SiteUpdateConfig,
-    smtp: SmtpRuntimeConfig,
-    base_path: String,
-    max_uploaded_file_size: usize,
-) -> Router {
-    let unwatch_session_manager = session_manager.clone();
-    let unwatch_backend = backend.clone();
-    let site_update_download_session_manager = session_manager.clone();
-    let site_update_download_backend = backend.clone();
-    let site_update_download_config = site_update.clone();
-    let site_update_download_file_session_manager = session_manager.clone();
-    let site_update_download_file_backend = backend.clone();
-    let site_update_download_file_config = site_update.clone();
-    let site_toggle_admin_session_manager = session_manager.clone();
-    let site_toggle_admin_backend = backend.clone();
-    let site_toggle_admin_base_path = base_path.clone();
-    let site_toggle_lock_session_manager = session_manager.clone();
-    let site_toggle_lock_backend = backend.clone();
-    let site_toggle_lock_base_path = base_path.clone();
-    let site_toggle_guest_session_manager = session_manager.clone();
-    let site_toggle_guest_backend = backend.clone();
-    let site_toggle_guest_base_path = base_path.clone();
-    let site_delete_user_session_manager = session_manager.clone();
-    let site_delete_user_backend = backend.clone();
-    let site_delete_user_base_path = base_path.clone();
-    let site_delete_project_session_manager = session_manager.clone();
-    let site_delete_project_backend = backend.clone();
-    let site_delete_project_base_path = base_path.clone();
-    let site_reset_user_password_session_manager = session_manager.clone();
-    let site_reset_user_password_backend = backend.clone();
-    let site_diagnostic_shell_session_manager = session_manager.clone();
-    let site_diagnostic_shell_backend = backend.clone();
-    let site_no_avatar_session_manager = session_manager.clone();
-    let site_no_avatar_backend = backend.clone();
-    let site_set_avatar_session_manager = session_manager.clone();
-    let site_set_avatar_backend = backend.clone();
-    let site_mail_send_session_manager = session_manager.clone();
-    let site_mail_send_backend = backend.clone();
-    let site_mail_send_base_path = base_path.clone();
-    let site_mail_send_smtp = smtp.clone();
-    let site_mail_list_session_manager = session_manager.clone();
-    let site_mail_list_backend = backend.clone();
-    let site_export_session_manager = session_manager.clone();
-    let site_export_backend = backend.clone();
-    let site_import_session_manager = session_manager.clone();
-    let site_import_backend = backend.clone();
-    let site_import_base_path = base_path.clone();
-    let site_import_max_uploaded_file_size = max_uploaded_file_size;
+pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Router {
+    let unwatch_service = service.clone();
+    let site_update_download_service = service.clone();
+    let site_update_download_config = runtime.site_update.clone();
+    let site_update_download_file_service = service.clone();
+    let site_update_download_file_config = runtime.site_update.clone();
+    let site_toggle_admin_service = service.clone();
+    let site_toggle_lock_service = service.clone();
+    let site_toggle_guest_service = service.clone();
+    let site_delete_user_service = service.clone();
+    let site_delete_project_service = service.clone();
+    let site_reset_user_password_service = service.clone();
+    let site_diagnostic_shell_service = service.clone();
+    let site_no_avatar_service = service.clone();
+    let site_set_avatar_service = service.clone();
+    let site_mail_send_service = service.clone();
+    let site_mail_send_smtp = service.smtp.clone();
+    let site_mail_list_service = service.clone();
+    let site_export_service = service.clone();
+    let site_import_service = service;
+    let site_import_max_uploaded_file_size = runtime.max_uploaded_file_size;
 
     Router::new()
         .route(
@@ -714,8 +683,7 @@ pub(crate) fn routes(
                 async move {
                     direct_export_site_data(
                         headers,
-                        site_export_session_manager.clone(),
-                        site_export_backend.clone(),
+                        site_export_service.clone(),
                     )
                     .await
                 }
@@ -728,9 +696,7 @@ pub(crate) fn routes(
                     direct_import_site_data(
                         headers,
                         body,
-                        site_import_session_manager.clone(),
-                        site_import_backend.clone(),
-                        site_import_base_path.clone(),
+                        site_import_service.clone(),
                         site_import_max_uploaded_file_size,
                     )
                     .await
@@ -743,8 +709,7 @@ pub(crate) fn routes(
                 async move {
                     direct_read_site_diagnostic_shell(
                         headers,
-                        site_diagnostic_shell_session_manager.clone(),
-                        site_diagnostic_shell_backend.clone(),
+                        site_diagnostic_shell_service.clone(),
                     )
                     .await
                 }
@@ -756,8 +721,7 @@ pub(crate) fn routes(
                 async move {
                     direct_read_site_no_avatar_users(
                         headers,
-                        site_no_avatar_session_manager.clone(),
-                        site_no_avatar_backend.clone(),
+                        site_no_avatar_service.clone(),
                     )
                     .await
                 }
@@ -770,8 +734,7 @@ pub(crate) fn routes(
                     direct_set_attachment_to_user_avatar(
                         headers,
                         body,
-                        site_set_avatar_session_manager.clone(),
-                        site_set_avatar_backend.clone(),
+                        site_set_avatar_service.clone(),
                     )
                     .await
                 }
@@ -784,9 +747,7 @@ pub(crate) fn routes(
                     direct_send_site_mail(
                         headers,
                         body,
-                        site_mail_send_session_manager.clone(),
-                        site_mail_send_backend.clone(),
-                        site_mail_send_base_path.clone(),
+                        site_mail_send_service.clone(),
                         site_mail_send_smtp.clone(),
                     )
                     .await
@@ -800,8 +761,7 @@ pub(crate) fn routes(
                     direct_read_site_mail_list(
                         headers,
                         body,
-                        site_mail_list_session_manager.clone(),
-                        site_mail_list_backend.clone(),
+                        site_mail_list_service.clone(),
                     )
                     .await
                 }
@@ -810,9 +770,8 @@ pub(crate) fn routes(
         .route(
             "/sites/unwatchUpdate",
             post(move |headers: HeaderMap| {
-                let session_manager = unwatch_session_manager.clone();
-                let backend = unwatch_backend.clone();
-                async move { direct_unwatch_site_update(headers, session_manager, backend).await }
+                let service = unwatch_service.clone();
+                async move { direct_unwatch_site_update(headers, service).await }
             }),
         )
         .route(
@@ -820,8 +779,7 @@ pub(crate) fn routes(
             get(move |headers: HeaderMap| async move {
                 direct_download_site_update(
                     headers,
-                    site_update_download_session_manager.clone(),
-                    site_update_download_backend.clone(),
+                    site_update_download_service.clone(),
                     site_update_download_config.clone(),
                 )
                 .await
@@ -832,8 +790,7 @@ pub(crate) fn routes(
             get(move |headers: HeaderMap| async move {
                 direct_download_site_update_file(
                     headers,
-                    site_update_download_file_session_manager.clone(),
-                    site_update_download_file_backend.clone(),
+                    site_update_download_file_service.clone(),
                     site_update_download_file_config.clone(),
                 )
                 .await
@@ -846,9 +803,7 @@ pub(crate) fn routes(
                     direct_toggle_site_admin_role(
                         headers,
                         login_id,
-                        site_toggle_admin_session_manager.clone(),
-                        site_toggle_admin_backend.clone(),
-                        site_toggle_admin_base_path.clone(),
+                        site_toggle_admin_service.clone(),
                     )
                     .await
                 }
@@ -862,9 +817,7 @@ pub(crate) fn routes(
                         direct_toggle_site_user_account_lock(
                             headers,
                             query,
-                            site_toggle_lock_session_manager.clone(),
-                            site_toggle_lock_backend.clone(),
-                            site_toggle_lock_base_path.clone(),
+                            site_toggle_lock_service.clone(),
                         )
                         .await
                     }
@@ -879,9 +832,7 @@ pub(crate) fn routes(
                         direct_toggle_site_user_guest(
                             headers,
                             query,
-                            site_toggle_guest_session_manager.clone(),
-                            site_toggle_guest_backend.clone(),
-                            site_toggle_guest_base_path.clone(),
+                            site_toggle_guest_service.clone(),
                         )
                         .await
                     }
@@ -895,9 +846,7 @@ pub(crate) fn routes(
                     direct_delete_site_user_by_legacy_path(
                         headers,
                         legacy_path,
-                        site_delete_user_session_manager.clone(),
-                        site_delete_user_backend.clone(),
-                        site_delete_user_base_path.clone(),
+                        site_delete_user_service.clone(),
                     )
                     .await
                 }
@@ -910,9 +859,7 @@ pub(crate) fn routes(
                     direct_delete_site_project(
                         headers,
                         project_id,
-                        site_delete_project_session_manager.clone(),
-                        site_delete_project_backend.clone(),
-                        site_delete_project_base_path.clone(),
+                        site_delete_project_service.clone(),
                     )
                     .await
                 }
@@ -925,8 +872,7 @@ pub(crate) fn routes(
                     direct_reset_site_user_password(
                         headers,
                         login_id,
-                        site_reset_user_password_session_manager.clone(),
-                        site_reset_user_password_backend.clone(),
+                        site_reset_user_password_service.clone(),
                     )
                     .await
                 }
@@ -944,18 +890,8 @@ struct RestSiteDirectUserMutationQuery {
 
 async fn direct_read_site_diagnostic_shell(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_read_site_diagnostics(headers, service).await {
         Ok(payload) => {
             let payload = payload.0;
@@ -1005,38 +941,15 @@ fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) ->
 
 async fn direct_read_site_no_avatar_users(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_read_site_no_avatar_users(headers, service).await {
         Ok(payload) => payload.into_response(),
         Err(error) => error.into_response(),
     }
 }
 
-async fn direct_export_site_data(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+async fn direct_export_site_data(headers: HeaderMap, service: PilotServiceImpl) -> Response {
     match rest_export_site_data(headers, service).await {
         Ok(payload) => direct_site_export_response(&payload),
         Err(error) => error.into_response(),
@@ -1046,25 +959,15 @@ async fn direct_export_site_data(
 async fn direct_import_site_data(
     headers: HeaderMap,
     body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
     max_uploaded_file_size: usize,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let (form, payload, is_multipart, has_data_file) = direct_site_import_payload(&headers, &body);
     if is_multipart && !has_data_file {
         return Redirect::to(&base_path_href(&base_path, "/sites/data")).into_response();
     }
     let headers = headers_with_form_csrf(headers, &form);
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
         Ok(payload) => {
             let payload = payload.0;
@@ -1159,8 +1062,7 @@ fn direct_site_import_payload(
 async fn direct_set_attachment_to_user_avatar(
     headers: HeaderMap,
     body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let Ok(body) = serde_json::from_slice::<RestSiteAvatarFromAttachmentBody>(&body) else {
         return (
@@ -1168,15 +1070,6 @@ async fn direct_set_attachment_to_user_avatar(
             Json(serde_json::json!({ "message": "Expecting Json data" })),
         )
             .into_response();
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
         Ok(payload) => payload.into_response(),
@@ -1187,19 +1080,9 @@ async fn direct_set_attachment_to_user_avatar(
 async fn direct_read_site_mail_list(
     headers: HeaderMap,
     body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = direct_site_mail_list_body(&body);
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(payload) => Json(payload.0.recipients).into_response(),
         Err(error) => error.into_response(),
@@ -1209,11 +1092,10 @@ async fn direct_read_site_mail_list(
 async fn direct_send_site_mail(
     headers: HeaderMap,
     body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
     smtp: SmtpRuntimeConfig,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let form = direct_site_mail_form(&body);
     let headers = headers_with_form_csrf(headers, &form);
     let body = RestSiteMailSendBody {
@@ -1221,15 +1103,6 @@ async fn direct_send_site_mail(
         to: form.get("to").cloned().unwrap_or_default(),
         subject: form.get("subject").cloned().unwrap_or_default(),
         body: form.get("body").cloned().unwrap_or_default(),
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: smtp.clone(),
     };
     match rest_send_site_test_mail(headers, body, service, smtp).await {
         Ok(_) => {
@@ -1279,20 +1152,7 @@ fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
     parsed
 }
 
-async fn direct_unwatch_site_update(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+async fn direct_unwatch_site_update(headers: HeaderMap, service: PilotServiceImpl) -> Response {
     match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(_) => {
             SITE_UPDATE_NOTIFICATION_WATCHED.store(false, Ordering::SeqCst);
@@ -1305,19 +1165,9 @@ async fn direct_unwatch_site_update(
 async fn direct_toggle_site_admin_role(
     headers: HeaderMap,
     login_id: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_toggle_site_user_admin(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, "/sites/userList"),
         Err(error) => error.into_response(),
@@ -1327,24 +1177,14 @@ async fn direct_toggle_site_admin_role(
 async fn direct_toggle_site_user_account_lock(
     headers: HeaderMap,
     query: RestSiteDirectUserMutationQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let login_id = query.login_id.trim().to_string();
     if login_id.is_empty() {
         return RestRouteError::bad_request("loginId is required").into_response();
     }
     let redirect_path = direct_site_user_list_href(query.state.as_deref(), query.query.as_deref());
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_toggle_site_user_account_lock(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
@@ -1354,24 +1194,14 @@ async fn direct_toggle_site_user_account_lock(
 async fn direct_toggle_site_user_guest(
     headers: HeaderMap,
     query: RestSiteDirectUserMutationQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let login_id = query.login_id.trim().to_string();
     if login_id.is_empty() {
         return RestRouteError::bad_request("loginId is required").into_response();
     }
     let redirect_path = direct_site_user_list_href(query.state.as_deref(), query.query.as_deref());
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_toggle_site_user_guest(headers, login_id, service).await {
         Ok(_) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
@@ -1381,18 +1211,8 @@ async fn direct_toggle_site_user_guest(
 async fn direct_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_reset_site_user_password(headers, login_id, service).await {
         Ok(payload) => payload.into_response(),
         Err(error) => error.into_response(),
@@ -1402,22 +1222,12 @@ async fn direct_reset_site_user_password(
 async fn direct_delete_site_user_by_legacy_path(
     headers: HeaderMap,
     legacy_path: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     let user_id = match direct_site_user_delete_id(&legacy_path) {
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
-    };
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
         Ok(repository) => repository,
@@ -1446,19 +1256,9 @@ async fn direct_delete_site_user_by_legacy_path(
 async fn direct_delete_site_project(
     headers: HeaderMap,
     project_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
+    let base_path = service.base_path.clone();
     match rest_delete_site_project(headers, project_id, service).await {
         Ok(_) => redirect_to(&base_path, "/sites/projectList"),
         Err(error) => error.into_response(),
@@ -1480,19 +1280,9 @@ fn direct_site_user_delete_id(legacy_path: &str) -> Result<i64, RestRouteError> 
 
 async fn direct_download_site_update(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_redirect(&site_update) {
             Ok(redirect) => redirect.into_response(),
@@ -1504,19 +1294,9 @@ async fn direct_download_site_update(
 
 async fn direct_download_site_update_file(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
     site_update: SiteUpdateConfig,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_require_site_admin_repository(&service, &headers, false).await {
         Ok(_) => match rest_site_update_download_file_response(&site_update) {
             Ok(response) => response,
