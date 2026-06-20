@@ -2,7 +2,7 @@ use super::*;
 
 impl AppRepository {
     pub fn new(db: DatabaseConnection) -> Self {
-        Self::new_with_config(db, RepositoryConfig::from_env())
+        Self::new_with_config(db, RepositoryConfig::default())
     }
 
     pub fn new_with_config(db: DatabaseConnection, config: RepositoryConfig) -> Self {

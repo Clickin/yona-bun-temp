@@ -107,12 +107,6 @@ impl Default for RepositoryConfig {
 }
 
 impl RepositoryConfig {
-    pub fn from_env() -> Self {
-        Self {
-            values: std::env::vars().collect(),
-        }
-    }
-
     pub fn from_pairs<I, K, V>(pairs: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,

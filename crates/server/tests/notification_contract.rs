@@ -18,7 +18,7 @@ use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     comment_thread, issue, issue_comment, issue_event, n4user, notification_event,
     notification_event_n4user, notification_mail, posting, posting_comment, project,
-    review_comment, unwatch, user_project_notification, watch, AppRepository,
+    review_comment, unwatch, user_project_notification, watch, AppRepository, RepositoryConfig,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::runtime_config::load_startup_config;
@@ -171,11 +171,17 @@ fn notification_contract_mail_images_are_wrapped_like_legacy() {
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_repository_config(RepositoryConfig::default()).await
+}
+
+async fn build_app_with_repository_config(
+    repository_config: RepositoryConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
-    let app_repo = AppRepository::new(db.clone());
+    let app_repo = AppRepository::new_with_config(db.clone(), repository_config);
     let app = create_router_with_app_repository(
         RuntimeConfig {
             allow_anonymous_access: true,
@@ -205,31 +211,6 @@ fn restore_env_var(name: &str, value: Option<String>) {
     match value {
         Some(value) => std::env::set_var(name, value),
         None => std::env::remove_var(name),
-    }
-}
-
-struct EnvVarRestore {
-    name: &'static str,
-    previous: Option<String>,
-}
-
-impl EnvVarRestore {
-    fn remove(name: &'static str) -> Self {
-        let previous = std::env::var(name).ok();
-        std::env::remove_var(name);
-        Self { name, previous }
-    }
-
-    fn set(name: &'static str, value: &str) -> Self {
-        let previous = std::env::var(name).ok();
-        std::env::set_var(name, value);
-        Self { name, previous }
-    }
-}
-
-impl Drop for EnvVarRestore {
-    fn drop(&mut self) {
-        restore_env_var(self.name, self.previous.clone());
     }
 }
 
@@ -1950,8 +1931,6 @@ async fn notification_contract_groups_bcc_mail_by_recipient_language() {
 
 #[tokio::test]
 async fn notification_contract_merges_same_sender_resource_events_within_draft_time() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    let _env = EnvVarRestore::remove("YONA_NOTIFICATION_DRAFT_TIME");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
@@ -2044,9 +2023,11 @@ async fn notification_contract_merges_same_sender_resource_events_within_draft_t
 
 #[tokio::test]
 async fn notification_contract_honors_configured_issue_event_draft_time_override() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    let _env = EnvVarRestore::set("YONA_ISSUE_EVENT_DRAFT_TIME", "0");
-    let (app, _repo, db) = build_app_with_repository().await;
+    let (app, _repo, db) = build_app_with_repository_config(RepositoryConfig::from_pairs([(
+        "YONA_ISSUE_EVENT_DRAFT_TIME",
+        "0",
+    )]))
+    .await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
     let (_, _other_cookie, _) = register_user(app.clone(), "other").await;
@@ -2088,8 +2069,6 @@ async fn notification_contract_honors_configured_issue_event_draft_time_override
 
 #[tokio::test]
 async fn notification_contract_merges_issue_events_within_issue_event_draft_time() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    let _env = EnvVarRestore::remove("YONA_ISSUE_EVENT_DRAFT_TIME");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
@@ -2132,9 +2111,11 @@ async fn notification_contract_merges_issue_events_within_issue_event_draft_time
 
 #[tokio::test]
 async fn notification_contract_honors_configured_draft_time_override() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    let _env = EnvVarRestore::set("YONA_NOTIFICATION_DRAFT_TIME", "0");
-    let (app, _repo, db) = build_app_with_repository().await;
+    let (app, _repo, db) = build_app_with_repository_config(RepositoryConfig::from_pairs([(
+        "YONA_NOTIFICATION_DRAFT_TIME",
+        "0",
+    )]))
+    .await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
     let (_, _other_cookie, _) = register_user(app.clone(), "other").await;

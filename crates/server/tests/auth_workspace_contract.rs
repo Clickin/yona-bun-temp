@@ -16,7 +16,7 @@ use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     assignee, attachment, comment_thread, email, issue, linked_account, n4user, project,
     pull_request, user_credential, user_project_notification, user_verification, watch,
-    AppRepository, CreateOrganizationInput, CreateProjectInput,
+    AppRepository, CreateOrganizationInput, CreateProjectInput, RepositoryConfig,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -52,11 +52,24 @@ async fn build_auth_router_with_anonymous_access_and_app_config(
     allow_anonymous_access: bool,
     app_config: AppRuntimeConfig,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_auth_router_with_configs(
+        allow_anonymous_access,
+        app_config,
+        RepositoryConfig::default(),
+    )
+    .await
+}
+
+async fn build_auth_router_with_configs(
+    allow_anonymous_access: bool,
+    app_config: AppRuntimeConfig,
+    repository_config: RepositoryConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
-    let app_repo = AppRepository::new(db.clone());
+    let app_repo = AppRepository::new_with_config(db.clone(), repository_config);
 
     (
         create_router_with_repository_and_app_config(
@@ -1671,12 +1684,12 @@ async fn direct_legacy_signup_validators_report_used_reserved_and_email_state() 
 
 #[tokio::test]
 async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    std::env::set_var("YONA_GUEST_LOGIN_PREFIX", "guest_, pt-");
-
-    let (app, _, db) = build_auth_router().await;
+    let (app, _, db) = build_auth_router_with_configs(
+        true,
+        AppRuntimeConfig::default(),
+        RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "guest_, pt-")]),
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .oneshot(
@@ -1691,8 +1704,6 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
         )
         .await
         .unwrap();
-
-    std::env::remove_var("YONA_GUEST_LOGIN_PREFIX");
 
     assert_eq!(register.status(), StatusCode::OK);
     let registered_user = n4user::Entity::find()

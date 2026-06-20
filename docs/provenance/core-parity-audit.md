@@ -1135,6 +1135,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   without warning lines, `pnpm agent:cargo -- --outside-sandbox check -p yona-rust-pilot-server --tests`,
   `pnpm smoke:embedded-assets`, `pnpm smoke:docker`, and focused
   `auth_workspace_contract::register_requires_confirmation_session_from_runtime_config_without_env_mutation`.
+- 2026-06-20 runtime DI note: persistence `AppRepository::new` now creates an
+  empty `RepositoryConfig` snapshot instead of reading process env at repository
+  construction time. Legacy scalar toggles such as guest login prefixes and
+  notification draft windows remain available through explicit
+  `AppRepository::new_with_config` injection; tests that need those toggles now
+  pass per-test config snapshots rather than mutating global env guarded by a
+  mutex. This preserves guest-prefix signup and notification draft merge
+  behavior while avoiding process-global config reads in the repository layer.
 
 ## Wave 0 Exit Snapshot
 
