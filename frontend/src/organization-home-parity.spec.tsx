@@ -104,8 +104,11 @@ describe("organization home parity", () => {
     );
 
     expect(routeSource).toContain("organization.member.leave.unknownerror");
+    expect(routeSource).toContain("user.enroll.failed.network");
+    expect(routeSource).toContain("user.enroll.failed.client");
+    expect(routeSource).toContain("user.enroll.failed.server");
     expect(routeSource).not.toContain("Leave organization failed.");
-    expect(routeSource).toContain("Server Error");
+    expect(routeSource).not.toContain("Server Error");
     expect(routeSource).not.toContain("Cancel enrollment failed.");
     expect(routeSource).not.toContain("Enroll failed.");
   });

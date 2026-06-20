@@ -123,7 +123,7 @@ export function ProjectDetailRouteComponent() {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Update failed: ");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onToggleProjectWatch={async (nextOwnerName, nextProjectName, watching) => {
@@ -137,7 +137,7 @@ export function ProjectDetailRouteComponent() {
           );
           await detailQuery.refetch();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "Server Error");
+          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
         }
       }}
       onUpdateProjectOverview={async (nextOwnerName, nextProjectName, overview) => {
