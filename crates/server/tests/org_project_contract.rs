@@ -13,7 +13,7 @@ use tempfile::{tempdir, TempDir};
 use tower::ServiceExt;
 use yona_rust_persistence::{
     AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
-    PostingMutationInput, PullRequestMutationInput, RepositoryConfig,
+    PostingMutationInput, ProjectMenuSettingsRecord, PullRequestMutationInput, RepositoryConfig,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -775,6 +775,141 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
         previous_default_menus,
         "project default menu configs must not mutate process env"
     );
+}
+
+#[tokio::test]
+async fn project_go_convention_menu_redirects_to_legacy_default_menu() {
+    let (app, app_repo) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+    let (outsider_csrf, outsider_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &outsider_cookie, &outsider_csrf, "outsider").await;
+
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "Yona",
+        "private",
+    )
+    .await;
+    let authorization = app_repo
+        .read_project_authorization("owner", "projectYobi", None)
+        .await
+        .expect("read project authorization")
+        .expect("created project authorization");
+
+    let issue_redirect = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/go?state=closed&format=xls&pageNum=3")
+                .header(http::header::COOKIE, &owner_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(issue_redirect.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        issue_redirect
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi/issues?state=closed&format=xls&pageNum=3"
+    );
+
+    app_repo
+        .set_project_menu_settings(
+            authorization.project.id,
+            ProjectMenuSettingsRecord {
+                board: true,
+                code: false,
+                issue: false,
+                milestone: false,
+                pull_request: false,
+                review: false,
+            },
+        )
+        .await
+        .expect("set board-only menu settings");
+    let board_redirect = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/go?state=closed&format=xls&pageNum=3")
+                .header(http::header::COOKIE, &owner_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(board_redirect.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        board_redirect
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi/posts?pageNum=3"
+    );
+
+    app_repo
+        .set_project_menu_settings(
+            authorization.project.id,
+            ProjectMenuSettingsRecord {
+                board: false,
+                code: true,
+                issue: false,
+                milestone: false,
+                pull_request: false,
+                review: false,
+            },
+        )
+        .await
+        .expect("set home fallback menu settings");
+    let home_redirect = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/go")
+                .header(http::header::COOKIE, &owner_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(home_redirect.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        home_redirect
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi"
+    );
+
+    let denied = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/go")
+                .header(http::header::COOKIE, &outsider_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

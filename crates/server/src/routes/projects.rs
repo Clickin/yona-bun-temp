@@ -24,13 +24,13 @@ use crate::{
     legacy_json_find_value, map_project_scope, markdown_mention_references, normalize_identifier,
     normalize_issue_label_color, normalize_milestone_state,
     organization_detail_with_logo_from_record, organization_logo_url, parse_attachment_ids,
-    parse_milestone_due_date, persistence, project_detail_from_record,
-    project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
-    project_update_allowed, redirect_to, repository_provisioning_lock, require_authenticated_user,
-    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    resolve_issue_reference_search_project, rest_json_response,
-    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
-    rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    parse_milestone_due_date, percent_encode_uri_component, persistence,
+    project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
+    project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
+    require_authenticated_user, require_project_read, require_project_resource_create,
+    require_session, require_valid_csrf, resolve_issue_reference_search_project,
+    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
+    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
     RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
@@ -136,6 +136,14 @@ struct DirectMentionListQuery {
 #[derive(Serialize)]
 struct DirectMentionListResponse {
     result: Vec<HashMap<String, String>>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct DirectGoConventionMenuQuery {
+    state: Option<String>,
+    format: Option<String>,
+    page_num: Option<u32>,
 }
 
 pub(crate) async fn project_detail_read(
@@ -671,6 +679,99 @@ async fn direct_delete_project_pushed_branch(
         Ok(_) => StatusCode::OK.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
+}
+
+fn direct_go_issue_path(
+    owner_name: &str,
+    project_name: &str,
+    query: &DirectGoConventionMenuQuery,
+) -> String {
+    let mut params = Vec::new();
+    if let Some(state) = query
+        .state
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        params.push(format!(
+            "state={}",
+            percent_encode_uri_component(state.trim())
+        ));
+    }
+    let format = query.format.as_deref().unwrap_or("html").trim();
+    if !format.is_empty() && format != "html" {
+        params.push(format!("format={}", percent_encode_uri_component(format)));
+    }
+    let page_num = query.page_num.unwrap_or(1);
+    if page_num > 1 {
+        params.push(format!("pageNum={page_num}"));
+    }
+    if params.is_empty() {
+        format!("/{owner_name}/{project_name}/issues")
+    } else {
+        format!("/{owner_name}/{project_name}/issues?{}", params.join("&"))
+    }
+}
+
+fn direct_go_board_path(
+    owner_name: &str,
+    project_name: &str,
+    query: &DirectGoConventionMenuQuery,
+) -> String {
+    let page_num = query.page_num.unwrap_or(1);
+    if page_num > 1 {
+        format!("/{owner_name}/{project_name}/posts?pageNum={page_num}")
+    } else {
+        format!("/{owner_name}/{project_name}/posts")
+    }
+}
+
+async fn direct_go_convention_menu(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: DirectGoConventionMenuQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization =
+        match require_project_read(&repository, &owner_name, &project_name, actor_id).await {
+            Ok(authorization) => authorization,
+            Err(error) => return direct_status_from_connect_error(error).into_response(),
+        };
+    let menu_settings = match repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+    {
+        Ok(menu_settings) => menu_settings,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
+    let path = if menu_settings.issue {
+        direct_go_issue_path(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+            &query,
+        )
+    } else if menu_settings.board {
+        direct_go_board_path(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+            &query,
+        )
+    } else {
+        format!(
+            "/{}/{}",
+            authorization.project.owner_name, authorization.project.project_name
+        )
+    };
+    redirect_to(&base_path, &path)
 }
 
 fn direct_mention_user_item(
@@ -2337,6 +2438,9 @@ pub(crate) fn routes(
     let commit_diff_mention_list_session_manager = session_manager.clone();
     let pull_request_mention_list_backend = backend.clone();
     let pull_request_mention_list_session_manager = session_manager.clone();
+    let go_convention_backend = backend.clone();
+    let go_convention_session_manager = session_manager.clone();
+    let go_convention_base_path = base_path.clone();
     let project_overview_update_backend = backend;
     let project_overview_update_session_manager = session_manager;
 
@@ -2637,6 +2741,27 @@ pub(crate) fn routes(
                             query,
                             pull_request_mention_list_session_manager.clone(),
                             pull_request_mention_list_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/go",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<DirectGoConventionMenuQuery>| {
+                    async move {
+                        direct_go_convention_menu(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            go_convention_session_manager.clone(),
+                            go_convention_backend.clone(),
+                            go_convention_base_path.clone(),
                         )
                         .await
                     }
