@@ -76,14 +76,23 @@
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 
-## Explicit Gaps
+## Closed Items And Follow-Up Boundaries
 
-- org enrollment management
-- full workspace settings and default landing UX parity
-- optional event payload/HMAC compatibility and webhook production hardening
-- broader VCC/baseline PROPFIND edge completeness after the executable SVN WebDAV bridge
-
-이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
+- Organization enrollment management is app-runtime closed in
+  `docs/provenance/phase-0b/organization.md` and
+  `docs/provenance/core-parity-audit.md`; focused coverage lives in
+  `org_project_contract::organization_enrollment_mutations_toggle_guest_request_state`
+  and
+  `org_project_contract::organization_admin_mutations_add_accept_promote_and_delete_members`.
+- Workspace settings and default landing UX parity is app-runtime closed in
+  `docs/provenance/phase-0b/user-workspace.md`; the remaining auth-provider and
+  migrator hardening boundaries live in their dedicated deferred provenance.
+- Optional webhook HMAC/signature compatibility is not observed in legacy
+  `Webhook.java`; keep it as evidence-gated follow-up rather than a first-priority
+  gap.
+- Broader VCC/baseline PROPFIND edge completeness after the executable SVN WebDAV
+  bridge remains an explicit VCS lifecycle follow-up/deferred boundary, not a
+  current app-runtime blocker.
 
 ## Internal Translation Notes
 
