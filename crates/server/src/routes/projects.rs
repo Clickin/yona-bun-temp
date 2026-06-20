@@ -63,9 +63,8 @@ use milestones::{
     legacy_external_create_milestones,
 };
 pub(crate) use milestones::{
-    milestone_list_filter_from_request, milestone_mutation_input, project_milestone_create,
-    project_milestone_delete, project_milestone_list, project_milestone_read,
-    project_milestone_state_mutation, project_milestone_update,
+    project_milestone_create, project_milestone_delete, project_milestone_list,
+    project_milestone_read, project_milestone_state_mutation, project_milestone_update,
 };
 pub(crate) use organizations::{
     organization_admin_read, organization_container_read, organization_create, organization_delete,

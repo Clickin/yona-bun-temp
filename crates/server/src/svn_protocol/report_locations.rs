@@ -6,7 +6,7 @@ use crate::{internal_error, RestRouteError};
 use yona_rust_vcs::VcsError;
 
 use super::{
-    add_svn_dav_headers, href, path, report_filters, svn_protocol_not_implemented_response,
+    add_svn_dav_headers, path, report_filters, svn_protocol_not_implemented_response,
     svn_protocol_status_response, xml, xml_escape, SvnProtocolRoute,
 };
 

@@ -19,9 +19,9 @@ use yona_rust_domain::{
 use crate::generated::yona::pilot::v1::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    anonymous_current_session_response, attach_session_headers, base_path_href, escape_html_attr,
-    escape_html_text, gravatar_url, headers_with_form_csrf, internal_error, normalize_identifier,
-    redirect_to, require_authenticated_user, require_session, require_valid_csrf,
+    anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
+    headers_with_form_csrf, internal_error, normalize_identifier, redirect_to,
+    require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
     send_workspace_email_validation_mail,
     session::{self, SessionManager},

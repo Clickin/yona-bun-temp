@@ -3,7 +3,7 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 
 // Guards project route behavior while server root domain/VCS import forwarding
-// is replaced with module-local imports.
+// is replaced with module-local imports and stale route imports are removed.
 use sea_orm::Database;
 use std::fs;
 use std::path::Path;

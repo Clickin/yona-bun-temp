@@ -201,7 +201,8 @@ async fn create_issue(
 }
 
 #[tokio::test]
-// Guards issues/meta.rs and workspace/legacy_favorites.rs favorite issue paths.
+// Guards issues/meta.rs and workspace/legacy_favorites.rs favorite issue paths,
+// including route split/import cleanup on both issue and workspace modules.
 async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issues() {
     let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

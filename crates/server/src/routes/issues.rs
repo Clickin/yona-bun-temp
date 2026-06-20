@@ -32,7 +32,7 @@ use crate::{
     require_authenticated_user, require_project_authorization, require_project_read,
     require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
-    visible_projects_for_organization, ConnectError, Context, ErrorCode, MarkdownIssueReference,
+    visible_projects_for_organization, ConnectError, Context, MarkdownIssueReference,
     MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
     ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
 };
