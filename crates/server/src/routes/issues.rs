@@ -680,12 +680,14 @@ struct RestIssueVoter {
 #[serde(rename_all = "camelCase")]
 struct RestIssueChildIssue {
     assignee_label: String,
+    comment_count: u32,
     created_label: String,
     is_draft: bool,
     issue_number: i64,
     labels: Vec<IssueLabel>,
     state: String,
     title: String,
+    voter_count: u32,
 }
 
 #[derive(Serialize)]
@@ -4008,6 +4010,7 @@ fn rest_issue_child_issue_from_record(
 ) -> RestIssueChildIssue {
     RestIssueChildIssue {
         assignee_label: record.assignee_label.clone(),
+        comment_count: record.comment_count,
         created_label: record.created_label.clone(),
         is_draft: record.is_draft,
         issue_number: record.issue_number,
@@ -4018,6 +4021,7 @@ fn rest_issue_child_issue_from_record(
             .collect(),
         state: record.state.clone(),
         title: record.title.clone(),
+        voter_count: record.voter_count,
     }
 }
 

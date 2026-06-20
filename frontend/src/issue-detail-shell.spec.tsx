@@ -660,12 +660,14 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
           childIssues: [
             {
               assigneeLabel: "Door User",
+              commentCount: 2,
               createdLabel: "now",
               isDraft: false,
               issueNumber: 2,
               labels: [{ color: "#00aaff", id: 9, name: "subtask" }],
               state: "open",
               title: "Child issue",
+              voterCount: 1,
             },
             {
               assigneeLabel: "",
@@ -693,6 +695,14 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="issue-item child-issue"');
     expect(html).toContain('class="state-label open"');
     expect(html).toContain('class="subtask-number">#2');
+    expect(html).toContain('class="font12 no-border-at-child"');
+    expect(html).toContain('class="comments-count comments-count-color"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/2#comments"');
+    expect(html).toContain('class="yobicon-comment2"');
+    expect(html).toContain('class="vote-count vote-color"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/2#vote"');
+    expect(html).toContain('class="yobicon-hearts"');
+    expect(html).not.toContain('<span class="font12 no-border-at-child"><span>open</span></span>');
     expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=9"');
     expect(html).toContain('class="child-issue-date" title="now"');
   });

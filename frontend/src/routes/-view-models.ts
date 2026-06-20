@@ -130,12 +130,14 @@ export interface OrganizationIssueListItemViewModel {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: number;
     labels: Array<{ color: string; id: number; name: string }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount?: number;
   commentCount: number;
@@ -309,12 +311,14 @@ export interface ProjectIssueListItemViewModel {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: number;
     labels: Array<{ color: string; id: number; name: string }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount?: number;
   commentCount: number;
@@ -405,12 +409,14 @@ export interface ProjectIssueDetailViewModel {
   childClosedCount: number;
   childIssues: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft: boolean;
     issueNumber: number;
     labels: Array<{ color: string; id: number; name: string }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount: number;
   hasVoted: boolean;

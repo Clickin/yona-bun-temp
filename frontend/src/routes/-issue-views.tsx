@@ -184,7 +184,26 @@ function IssueSubtaskItem(props: {
         </span>
       </a>
       <span className="font12 no-border-at-child">
-        <span>{child.state}</span>
+        {(child.commentCount ?? 0) > 0 || (child.voterCount ?? 0) > 0 ? (
+          <span className="item-count-groups">
+            {(child.commentCount ?? 0) > 0 ? (
+              <a className="comments-count comments-count-color" href={`${childHref}#comments`}>
+                <span className="count-groups item-icon">
+                  <i className="yobicon-comment2"></i>
+                </span>
+                <span className="count-groups item-count">{child.commentCount}</span>
+              </a>
+            ) : null}
+            {(child.voterCount ?? 0) > 0 ? (
+              <a className="vote-count vote-color" href={`${childHref}#vote`}>
+                <span className="count-groups item-icon">
+                  <i className="yobicon-hearts"></i>
+                </span>
+                <span className="count-groups item-count strong">{child.voterCount}</span>
+              </a>
+            ) : null}
+          </span>
+        ) : null}
       </span>
       {child.labels.map((label) => (
         <a
@@ -425,12 +444,14 @@ function IssueListChildRows(props: { item: IssueListItemViewModel; runtimeConfig
             <IssueSubtaskItem
               child={{
                 assigneeLabel: child.assigneeLabel,
+                commentCount: child.commentCount,
                 createdLabel: child.createdLabel,
                 isDraft: child.isDraft ?? false,
                 issueNumber: child.issueNumber,
                 labels: child.labels,
                 state: child.state,
                 title: child.title,
+                voterCount: child.voterCount,
               }}
               key={`${child.state}-${child.issueNumber}`}
               ownerName={props.item.ownerName}

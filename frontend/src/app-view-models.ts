@@ -530,6 +530,7 @@ export function toProjectIssueListView(
     childClosedCount: item.childClosedCount ?? 0,
     childIssues: (item.childIssues ?? []).map((child) => ({
       assigneeLabel: child.assigneeLabel,
+      commentCount: child.commentCount ?? 0,
       createdLabel: child.createdLabel,
       isDraft: child.isDraft ?? false,
       issueNumber: Number(child.issueNumber),
@@ -540,6 +541,7 @@ export function toProjectIssueListView(
       })),
       state: child.state,
       title: child.title,
+      voterCount: child.voterCount ?? 0,
     })),
     childOpenCount: item.childOpenCount ?? 0,
     commentCount: Number(item.commentCount),
@@ -591,6 +593,7 @@ export function toUserIssueListView(
       childClosedCount: item.childClosedCount ?? 0,
       childIssues: (item.childIssues ?? []).map((child) => ({
         assigneeLabel: child.assigneeLabel,
+        commentCount: child.commentCount ?? 0,
         createdLabel: child.createdLabel,
         isDraft: child.isDraft ?? false,
         issueNumber: Number(child.issueNumber),
@@ -601,6 +604,7 @@ export function toUserIssueListView(
         })),
         state: child.state,
         title: child.title,
+        voterCount: child.voterCount ?? 0,
       })),
       childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
@@ -654,6 +658,7 @@ export function toOrganizationIssueListView(
       childClosedCount: item.childClosedCount ?? 0,
       childIssues: (item.childIssues ?? []).map((child) => ({
         assigneeLabel: child.assigneeLabel,
+        commentCount: child.commentCount ?? 0,
         createdLabel: child.createdLabel,
         isDraft: child.isDraft ?? false,
         issueNumber: Number(child.issueNumber),
@@ -664,6 +669,7 @@ export function toOrganizationIssueListView(
         })),
         state: child.state,
         title: child.title,
+        voterCount: child.voterCount ?? 0,
       })),
       childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
@@ -704,12 +710,14 @@ type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: bigint | number;
     labels: Array<{ color: string; id: bigint | number; name: string }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount?: number;
   createdLabel?: string;
@@ -788,6 +796,7 @@ export function toProjectIssueDetailView(
     childClosedCount: response.childClosedCount ?? 0,
     childIssues: (response.childIssues ?? []).map((child) => ({
       assigneeLabel: child.assigneeLabel,
+      commentCount: child.commentCount ?? 0,
       createdLabel: child.createdLabel,
       isDraft: child.isDraft ?? false,
       issueNumber: Number(child.issueNumber),
@@ -798,6 +807,7 @@ export function toProjectIssueDetailView(
       })),
       state: child.state,
       title: child.title,
+      voterCount: child.voterCount ?? 0,
     })),
     childOpenCount: response.childOpenCount ?? 0,
     hasVoted: response.hasVoted,

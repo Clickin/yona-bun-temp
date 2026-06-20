@@ -253,8 +253,10 @@ impl AppRepository {
             }
             let (_assignee_login_id, assignee_label) =
                 self.issue_assignee_summary(row.assignee_id).await?;
+            let voter_count = self.count_issue_voters(row.id).await?;
             items.push(IssueChildRecord {
                 assignee_label,
+                comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
                 created_label: format_workspace_date_label(row.created_date),
                 is_draft,
                 issue_number: row.number.unwrap_or_default(),
@@ -265,6 +267,7 @@ impl AppRepository {
                     issue_state_from_raw(row.state)
                 },
                 title: row.title.unwrap_or_default(),
+                voter_count,
             });
         }
         items.sort_by(|a, b| {
