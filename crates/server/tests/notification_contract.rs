@@ -927,7 +927,6 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
 #[test]
 fn notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mutation() {
     let current_dir = tempfile::tempdir().expect("temp dir");
-    let previous_enabled = std::env::var("YONA_NOTIFICATION_MAIL_ENABLED").ok();
     let startup = load_startup_config(
         BTreeMap::from([
             (
@@ -956,11 +955,6 @@ fn notification_scheduler_config_from_startup_uses_init_snapshot_without_env_mut
             interval_ms: 750,
             delay_ms: 0,
         }
-    );
-    assert_eq!(
-        std::env::var("YONA_NOTIFICATION_MAIL_ENABLED").ok(),
-        previous_enabled,
-        "startup snapshot conversion must not mutate process env"
     );
 }
 

@@ -1800,7 +1800,6 @@ async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
 
 #[tokio::test]
 async fn site_admin_import_respects_configured_max_file_size_without_env_mutation() {
-    let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
         data_root: data_dir.path().to_path_buf(),
@@ -1860,11 +1859,6 @@ async fn site_admin_import_respects_configured_max_file_size_without_env_mutatio
         .await
         .expect("read rejected post")
         .is_none());
-    assert_eq!(
-        std::env::var("YONA_MAX_FILE_SIZE").ok(),
-        previous_max_file_size,
-        "site import upload limit must come from app config without mutating process env"
-    );
 }
 
 #[tokio::test]

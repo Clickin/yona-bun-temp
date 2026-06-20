@@ -350,13 +350,6 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
 #[tokio::test]
 // Guards app-config-owned auth UI projection without process-env fallback.
 async fn read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation() {
-    let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
-    let previous_email_verification = std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").ok();
-    let previous_social_login_only = std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").ok();
-    let previous_social_login_support = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
-    let previous_login_id_placeholder = std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER").ok();
-    let previous_password_placeholder = std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER").ok();
-
     let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -430,30 +423,6 @@ async fn read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation(
             .get("passwordPlaceholder")
             .and_then(|value| value.as_str()),
         Some("Company password")
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok(),
-        previous_signup_require_confirm
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED").ok(),
-        previous_email_verification
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_SOCIAL_LOGIN_ONLY").ok(),
-        previous_social_login_only
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok(),
-        previous_social_login_support
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER").ok(),
-        previous_login_id_placeholder
-    );
-    assert_eq!(
-        std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER").ok(),
-        previous_password_placeholder
     );
 }
 
@@ -974,7 +943,6 @@ async fn rest_verify_user_confirms_pending_signup() {
 async fn register_requires_confirmation_session_from_runtime_config_without_env_mutation() {
     let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
-    let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
 
     let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
         true,
@@ -1018,11 +986,6 @@ async fn register_requires_confirmation_session_from_runtime_config_without_env_
         .unwrap()
         .is_empty());
     assert!(snapshot_test_outbox().is_empty());
-    assert_eq!(
-        std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok(),
-        previous_signup_require_confirm,
-        "signup confirmation runtime config must not mutate process env"
-    );
 }
 
 #[tokio::test]

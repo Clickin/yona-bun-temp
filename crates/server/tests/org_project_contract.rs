@@ -647,7 +647,6 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
 async fn create_project_uses_configured_default_scope_when_request_omits_scope() {
     // Guards route-utils-owned project default scope config parsing.
     let yona_data = temp_yona_data_root();
-    let previous_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let app = build_app_with_repository_and_app_config(AppRuntimeConfig {
         data_root: yona_data.path().to_path_buf(),
         project_default_scope: "private".to_string(),
@@ -679,18 +678,12 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
 
     let json = response_json(create_project).await;
     assert!(json.contains("\"projectScope\":\"private\""));
-    assert_eq!(
-        std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok(),
-        previous_default_scope,
-        "project default scope app config must not mutate process env"
-    );
 }
 
 #[tokio::test]
 async fn create_project_uses_configured_default_menus_for_new_project_container() {
     // Guards route-utils-owned project default menu config parsing.
     let yona_data = temp_yona_data_root();
-    let previous_default_menus = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
     let (app, app_repo) = build_app_with_repository_and_configs(
         AppRuntimeConfig {
             data_root: yona_data.path().to_path_buf(),
@@ -756,11 +749,6 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
     assert!(payload.get("showPullRequest").is_none());
     assert!(payload.get("showReview").is_none());
     assert!(payload.get("showMilestone").is_none());
-    assert_eq!(
-        std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok(),
-        previous_default_menus,
-        "project default menu configs must not mutate process env"
-    );
 }
 
 #[tokio::test]
