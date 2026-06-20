@@ -369,6 +369,39 @@ pub(crate) async fn direct_list_issue_label_categories(
     }
 }
 
+pub(crate) async fn direct_read_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository
+        .list_project_label_categories(&owner, &project)
+        .await
+    {
+        Ok(categories) => categories
+            .iter()
+            .find(|category| category.id == category_id)
+            .map(|category| Json(direct_json_category(category)).into_response())
+            .unwrap_or_else(|| StatusCode::NOT_FOUND.into_response()),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
 pub(crate) async fn direct_create_issue_label_category(
     headers: HeaderMap,
     owner: String,

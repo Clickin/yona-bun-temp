@@ -391,6 +391,48 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
         .unwrap()
         .iter()
         .any(|category| category["name"] == "Area"));
+    let area_category_id = categories
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["name"] == "Area")
+        .and_then(|category| category["id"].as_str())
+        .expect("area category id")
+        .to_string();
+    let category_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/owner/projectYobi/issue/label/category/{area_category_id}"
+                ))
+                .header(http::header::ACCEPT, "application/json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(category_response.status(), StatusCode::OK);
+    let category: serde_json::Value =
+        serde_json::from_str(&response_text(category_response).await).unwrap();
+    assert_eq!(category["id"], area_category_id);
+    assert_eq!(category["name"], "Area");
+    assert_eq!(category["isExclusive"], "false");
+
+    let missing_category_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/issue/label/category/999999")
+                .header(http::header::ACCEPT, "application/json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing_category_response.status(), StatusCode::NOT_FOUND);
 
     let css_response = app
         .clone()

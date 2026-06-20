@@ -54,9 +54,9 @@ use comments::{
 use labels::{
     direct_copy_issue_labels, direct_create_issue_label, direct_create_issue_label_category,
     direct_delete_issue_label, direct_delete_issue_label_category, direct_issue_label_css,
-    direct_list_issue_label_categories, direct_list_issue_labels, direct_update_issue_label,
-    direct_update_issue_label_category, rest_copy_project_labels, rest_create_project_label,
-    rest_create_project_label_category, rest_delete_project_label,
+    direct_list_issue_label_categories, direct_list_issue_labels, direct_read_issue_label_category,
+    direct_update_issue_label, direct_update_issue_label_category, rest_copy_project_labels,
+    rest_create_project_label, rest_create_project_label_category, rest_delete_project_label,
     rest_delete_project_label_category, rest_list_project_label_categories,
     rest_list_project_labels, rest_update_project_label, rest_update_project_label_category,
     RestProjectLabelCategoryBody, RestProjectLabelCopyBody, RestProjectLabelCreateBody,
@@ -1885,6 +1885,8 @@ pub(crate) fn routes(
     let category_create_session_manager = session_manager.clone();
     let category_update_backend = backend.clone();
     let category_update_session_manager = session_manager.clone();
+    let category_read_backend = backend.clone();
+    let category_read_session_manager = session_manager.clone();
     let category_delete_backend = backend;
     let category_delete_session_manager = session_manager;
 
@@ -2509,7 +2511,23 @@ pub(crate) fn routes(
         )
         .route(
             "/{owner}/{project}/issue/label/category/{category_id}",
-            put(
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, category_id)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_read_issue_label_category(
+                            headers,
+                            owner,
+                            project,
+                            category_id,
+                            category_read_session_manager.clone(),
+                            category_read_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            )
+            .put(
                 move |headers: HeaderMap,
                       Path((owner, project, category_id)): Path<(String, String, i64)>,
                       Form(form): Form<HashMap<String, String>>| {
