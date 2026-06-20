@@ -16,6 +16,11 @@ use yona_rust_vcs::repository_path;
 
 mod rest_test_support;
 
+fn transfer_outbox_lock() -> &'static std::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| std::sync::Mutex::new(()))
+}
+
 async fn build_app_with_repository_and_app_config(
     app_config: AppRuntimeConfig,
 ) -> (axum::Router, DatabaseConnection) {
@@ -47,13 +52,6 @@ async fn response_text(response: Response<Body>) -> String {
             .to_vec(),
     )
     .expect("utf-8 response")
-}
-
-fn restore_env_var(name: &str, value: Option<String>) {
-    match value {
-        Some(value) => std::env::set_var(name, value),
-        None => std::env::remove_var(name),
-    }
 }
 
 async fn ok_json(response: Response<Body>) -> Value {
@@ -186,9 +184,9 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 // preservation, and app-scoped SMTP runtime bootstrap stay together while
 // route registration remains in the parent project module.
 async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
+    let _outbox_guard = transfer_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, db) = build_app_with_repository_and_app_config(AppRuntimeConfig {
         data_root: data_dir.path().to_path_buf(),
         smtp: SmtpRuntimeConfig {
@@ -198,7 +196,6 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
         ..AppRuntimeConfig::default()
     })
     .await;
-    std::env::set_var("SMTP_FROM", "request-time@example.com");
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (recipient_csrf, recipient_cookie) = register_user(app.clone(), "recipient").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
@@ -310,16 +307,9 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     assert_eq!(requested["projectName"], "projectYobi");
     assert_eq!(requested["viewerCanTransfer"], true);
     let outbox = snapshot_test_outbox();
-    let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
-    restore_env_var("SMTP_FROM", previous_smtp_from);
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "transfer-sender@example.com");
     assert_eq!(outbox[0].to, "recipient@example.com");
-    assert_eq!(
-        smtp_from_after_request.as_deref(),
-        Some("request-time@example.com"),
-        "project transfer SMTP runtime config must not mutate process env"
-    );
     assert_eq!(
         outbox[0].subject,
         "[projectYobi] @owner wants to transfer project"

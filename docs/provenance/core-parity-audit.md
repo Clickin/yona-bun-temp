@@ -1250,6 +1250,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   notification mail env vars around test execution. The remaining
   serialization is scoped to the shared test mail outbox through
   `notification_outbox_lock`.
+- 2026-06-20 runtime DI note: project transfer mail contract tests now assert
+  the transfer request sender from explicit `AppRuntimeConfig.smtp` and no
+  longer mutate `SMTP_FROM` around the transfer flow. The transfer form,
+  request mail, direct accept link, permission, alias, and repository move
+  parity checks remain in the same contract with only test outbox serialization.
 
 ## Wave 0 Exit Snapshot
 
