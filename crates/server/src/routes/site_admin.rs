@@ -13,7 +13,7 @@ use http::HeaderValue;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path as StdPath, sync::atomic::Ordering};
 use yona_rust_domain::ProjectScope;
-use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
+use yona_rust_integrations::{deliver_with_config, OutboundMail};
 
 use crate::persistence::PilotRepository;
 use crate::{
@@ -446,11 +446,7 @@ struct RestSiteImportResponse {
     unsupported_sections: Vec<String>,
 }
 
-pub(crate) fn rest_routes(
-    service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
-    smtp: SmtpRuntimeConfig,
-) -> Router {
+pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
     Router::new()
         .route(
             "/site/users",
@@ -614,11 +610,9 @@ pub(crate) fn rest_routes(
             "/site/mail",
             get({
                 let service = service.clone();
-                let smtp = smtp.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    let smtp = smtp.clone();
-                    async move { rest_read_site_mail(headers, service, smtp).await }
+                    async move { rest_read_site_mail(headers, service).await }
                 }
             }),
         )
@@ -626,15 +620,9 @@ pub(crate) fn rest_routes(
             "/site/mail/test",
             post({
                 let service = service.clone();
-                let smtp = smtp.clone();
-                let integrations = service.integrations.clone();
                 move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
                     let service = service.clone();
-                    let smtp = smtp.clone();
-                    let integrations = integrations.clone();
-                    async move {
-                        rest_send_site_test_mail(headers, body, service, smtp, integrations).await
-                    }
+                    async move { rest_send_site_test_mail(headers, body, service).await }
                 }
             }),
         )
@@ -676,8 +664,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
     let site_no_avatar_service = service.clone();
     let site_set_avatar_service = service.clone();
     let site_mail_send_service = service.clone();
-    let site_mail_send_smtp = service.smtp.clone();
-    let site_mail_send_integrations = service.integrations.clone();
     let site_mail_list_service = service.clone();
     let site_export_service = service.clone();
     let site_import_service = service;
@@ -755,8 +741,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
                         headers,
                         body,
                         site_mail_send_service.clone(),
-                        site_mail_send_smtp.clone(),
-                        site_mail_send_integrations.clone(),
                     )
                     .await
                 }
@@ -1101,8 +1085,6 @@ async fn direct_send_site_mail(
     headers: HeaderMap,
     body: Bytes,
     service: PilotServiceImpl,
-    smtp: SmtpRuntimeConfig,
-    integrations: IntegrationConfig,
 ) -> Response {
     let base_path = service.base_path.clone();
     let form = direct_site_mail_form(&body);
@@ -1113,7 +1095,7 @@ async fn direct_send_site_mail(
         subject: form.get("subject").cloned().unwrap_or_default(),
         body: form.get("body").cloned().unwrap_or_default(),
     };
-    match rest_send_site_test_mail(headers, body, service, smtp, integrations).await {
+    match rest_send_site_test_mail(headers, body, service).await {
         Ok(_) => {
             Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
         }
@@ -2723,18 +2705,15 @@ async fn rest_export_site_issues(
 async fn rest_read_site_mail(
     headers: HeaderMap,
     service: PilotServiceImpl,
-    smtp: SmtpRuntimeConfig,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    Ok(Json(rest_site_mail_options(false, &smtp)))
+    Ok(Json(rest_site_mail_options(false, &service.smtp)))
 }
 
 async fn rest_send_site_test_mail(
     headers: HeaderMap,
     body: RestSiteMailSendBody,
     service: PilotServiceImpl,
-    smtp: SmtpRuntimeConfig,
-    integrations: IntegrationConfig,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, true).await?;
     let from = required_site_mail_field(body.from, "from")?;
@@ -2751,11 +2730,11 @@ async fn rest_send_site_test_mail(
             subject,
             to,
         },
-        &integrations,
+        &service.integrations,
     )
     .map_err(RestRouteError::internal)?;
 
-    Ok(Json(rest_site_mail_options(true, &smtp)))
+    Ok(Json(rest_site_mail_options(true, &service.smtp)))
 }
 
 async fn rest_read_site_mail_list(

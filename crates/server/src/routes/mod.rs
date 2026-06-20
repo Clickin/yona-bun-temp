@@ -159,7 +159,6 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistr
         .merge(site_admin_rest_routes(
             service.clone(),
             runtime.site_update.clone(),
-            runtime.smtp.clone(),
         ))
         .merge(workspace_rest_routes(service.clone()))
         .merge(notification_rest_routes(
