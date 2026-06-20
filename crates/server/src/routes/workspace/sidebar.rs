@@ -26,6 +26,7 @@ pub(super) async fn direct_user_sidebar(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    site_name: String,
 ) -> Response {
     let session_user_id = session_manager
         .read_session_from_headers(&headers)
@@ -48,7 +49,12 @@ pub(super) async fn direct_user_sidebar(
 
     (
         [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        render_legacy_user_sidebar_page(&base_path, &iframe_path, authenticated_sidebar.as_deref()),
+        render_legacy_user_sidebar_page(
+            &base_path,
+            &iframe_path,
+            authenticated_sidebar.as_deref(),
+            &site_name,
+        ),
     )
         .into_response()
 }
@@ -162,13 +168,15 @@ fn render_legacy_user_sidebar_page(
     base_path: &str,
     iframe_path: &str,
     authenticated_sidebar: Option<&str>,
+    site_name: &str,
 ) -> String {
+    let escaped_site_name = escape_html_text(site_name);
     format!(
         r#"<!DOCTYPE html>
 <html lang="en-US">
 <head>
 <meta charset="utf-8">
-<title>app.name</title>
+<title>{escaped_site_name}</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">

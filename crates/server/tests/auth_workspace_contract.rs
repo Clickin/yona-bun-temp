@@ -1519,7 +1519,14 @@ async fn direct_legacy_signup_validators_report_used_reserved_and_email_state() 
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            site_name: "Legacy Yona".to_string(),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -2491,7 +2498,14 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            site_name: "Legacy Yona".to_string(),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -2587,7 +2601,14 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            site_name: "Legacy Yona".to_string(),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let register = app
@@ -2648,6 +2669,7 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
         Some("text/html; charset=utf-8")
     );
     let html = response_text(response).await;
+    assert!(html.contains("<title>Legacy Yona</title>"));
     assert!(html.contains(r#"<body class="framed-body" id="html-body">"#));
     assert!(html.contains(r#"<div id="sidebar" class="sidebar hide-in-mobile">"#));
     assert!(html.contains(r#"<div class="row-fluid user-menu-wrap">"#));

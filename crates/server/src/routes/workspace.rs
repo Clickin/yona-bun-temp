@@ -1046,6 +1046,7 @@ pub(crate) fn routes(
     base_path: String,
     public_origin: String,
     smtp: SmtpRuntimeConfig,
+    site_name: String,
 ) -> Router {
     let reset_visited_session_manager = session_manager.clone();
     let reset_visited_backend = backend.clone();
@@ -1057,6 +1058,7 @@ pub(crate) fn routes(
     let user_sidebar_session_manager = session_manager.clone();
     let user_sidebar_backend = backend.clone();
     let user_sidebar_base_path = base_path.clone();
+    let user_sidebar_site_name = site_name;
     let usermenu_tab_session_manager = session_manager.clone();
     let usermenu_tab_backend = backend.clone();
     let usermenu_tab_base_path = base_path.clone();
@@ -1197,6 +1199,7 @@ pub(crate) fn routes(
                             user_sidebar_session_manager.clone(),
                             user_sidebar_backend.clone(),
                             user_sidebar_base_path.clone(),
+                            user_sidebar_site_name.clone(),
                         )
                         .await
                     }

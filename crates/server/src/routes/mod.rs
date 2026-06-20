@@ -225,7 +225,7 @@ pub(crate) fn app_routes(
             assets,
             browser_runtime,
             base_path.clone(),
-            site_name,
+            site_name.clone(),
             project_default_scope,
         ))
         .merge(workspace_routes(
@@ -234,6 +234,7 @@ pub(crate) fn app_routes(
             base_path.clone(),
             public_origin.clone(),
             smtp.clone(),
+            site_name,
         ))
         .merge(user_routes(
             session_manager.clone(),
