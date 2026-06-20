@@ -122,6 +122,7 @@ pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
 #[derive(Clone)]
 pub(crate) struct RuntimeRegistry {
     pub(crate) auth_ui: AuthUiConfig,
+    pub(crate) data_root: PathBuf,
     pub(crate) integrations: IntegrationConfig,
     pub(crate) max_uploaded_file_size: usize,
     pub(crate) project_default_scope: String,
@@ -135,6 +136,7 @@ impl RuntimeRegistry {
     pub(crate) fn from_app_config(config: &AppRuntimeConfig) -> Self {
         Self {
             auth_ui: config.auth_ui.clone(),
+            data_root: config.data_root.clone(),
             integrations: config.integrations.clone(),
             max_uploaded_file_size: config.max_uploaded_file_size,
             project_default_scope: config.project_default_scope.clone(),

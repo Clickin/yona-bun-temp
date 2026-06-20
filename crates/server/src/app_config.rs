@@ -5,6 +5,7 @@ use crate::{
     project_default_scope_from_option, site_name_from_option, supported_languages_from_option,
     trimmed_option, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
+use std::path::PathBuf;
 use yona_rust_integrations::IntegrationConfig;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,6 +28,7 @@ impl Default for RuntimeConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
     pub auth_ui: AuthUiConfig,
+    pub data_root: PathBuf,
     pub integrations: IntegrationConfig,
     pub max_uploaded_file_size: usize,
     pub project_default_menus: Vec<String>,
@@ -115,6 +117,7 @@ impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
             auth_ui: AuthUiConfig::default(),
+            data_root: PathBuf::from(".yona-data"),
             integrations: IntegrationConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             project_default_menus: default_project_menu_keys(),
@@ -134,6 +137,11 @@ impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
             auth_ui: AuthUiConfig::from_startup(config),
+            data_root: config
+                .data_root
+                .as_deref()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from(".yona-data")),
             integrations: integration_config_from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             project_default_menus: project_default_menus_from_option(

@@ -1143,6 +1143,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   pass per-test config snapshots rather than mutating global env guarded by a
   mutex. This preserves guest-prefix signup and notification draft merge
   behavior while avoiding process-global config reads in the repository layer.
+- 2026-06-20 runtime DI note: file upload/download/delete storage now receives
+  the configured Yona data root through `AppRuntimeConfig` and the router
+  `RuntimeRegistry` instead of reading `YONA_DATA` at request time. Startup
+  config still exports `YONA_DATA` as a temporary compatibility bridge for VCS
+  paths that are not yet migrated, while file route tests inject a per-test
+  data root snapshot and assert the uploaded blob lands under that root. This
+  preserves legacy `/files` behavior and moves the file storage slice away from
+  process-global runtime config.
 
 ## Wave 0 Exit Snapshot
 

@@ -777,7 +777,12 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
 
 #[tokio::test]
 async fn file_upload_requires_auth_and_preserves_general_attachments_under_legacy_default_limit() {
-    let (app, _, _) = build_auth_router().await;
+    let data_root = tempdir().expect("file upload data root");
+    let (app, repo, _) = build_auth_router_with_app_config(AppRuntimeConfig {
+        data_root: data_root.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let unauthorized = app
@@ -836,6 +841,15 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
     let text_upload_body = text_upload.into_body().collect().await.unwrap().to_bytes();
     let text_upload_json: serde_json::Value = serde_json::from_slice(&text_upload_body).unwrap();
     let text_file_id = text_upload_json["id"].as_i64().expect("text file id");
+    let text_file = repo
+        .read_attachment_by_id(text_file_id)
+        .await
+        .unwrap()
+        .expect("uploaded text attachment");
+    assert_eq!(
+        fs::read(data_root.path().join("uploads").join(&text_file.hash)).unwrap(),
+        text_bytes
+    );
     let expected_text_file_url = format!("/yona/files/{text_file_id}");
     assert_eq!(
         text_upload_json["url"].as_str(),

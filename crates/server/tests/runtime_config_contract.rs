@@ -46,6 +46,7 @@ seed_pilot = true
 show_user_email = false
 use_embedded_assets = true
 asset_root = "C:/assets"
+data_root = "/var/lib/yona-test"
 "#,
     )
     .expect("write config");
@@ -67,6 +68,7 @@ asset_root = "C:/assets"
     assert_eq!(config.show_user_email, Some(false));
     assert_eq!(config.use_embedded_assets, true);
     assert_eq!(config.asset_root.as_deref(), Some("C:/assets"));
+    assert_eq!(config.data_root.as_deref(), Some("/var/lib/yona-test"));
     assert_eq!(config.bind_addr, "127.0.0.1:8089");
 }
 
@@ -659,6 +661,7 @@ fn applies_startup_runtime_env_for_browser_runtime_flags() {
     std::env::remove_var("YONA_APPLICATION_HOSTNAME");
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
     std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+    std::env::remove_var("YONA_DATA");
     std::env::remove_var("YONA_GUEST_LOGIN_PREFIX");
     std::env::remove_var("YONA_LANGS");
     std::env::remove_var("YONA_SHOW_USER_EMAIL");
@@ -702,11 +705,14 @@ fn applies_startup_runtime_env_for_browser_runtime_flags() {
     std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
     std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
     std::env::remove_var("YONA_NOTIFICATION_DRAFT_TIME");
+    std::env::remove_var("YONA_DATA");
     let dir = tempdir().expect("tempdir");
     let config_path = dir.path().join("yona.toml");
     fs::write(
         &config_path,
         r#"
+data_root = "/var/lib/yona-apply-test"
+
 [site]
 name = "Legacy Yona"
 hostname = "yona.example.com"
@@ -802,6 +808,10 @@ draft_time = "1s"
     assert_eq!(
         std::env::var("YONA_ALLOW_ANONYMOUS_ACCESS").as_deref(),
         Ok("false")
+    );
+    assert_eq!(
+        std::env::var("YONA_DATA").as_deref(),
+        Ok("/var/lib/yona-apply-test")
     );
     assert_eq!(
         std::env::var("YONA_GUEST_LOGIN_PREFIX").as_deref(),

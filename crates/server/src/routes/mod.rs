@@ -275,6 +275,7 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
+            runtime.data_root.clone(),
             runtime.max_uploaded_file_size,
         ))
         .merge(pull_request_routes(

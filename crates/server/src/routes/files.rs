@@ -13,12 +13,16 @@ use crate::{
     session::SessionManager, yona_data_root, PilotBackend,
 };
 
-fn uploaded_files_root() -> PathBuf {
-    yona_data_root().join("uploads")
+fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
+    data_root.join("uploads")
 }
 
 pub(crate) fn uploaded_file_path(hash: &str) -> PathBuf {
-    uploaded_files_root().join(hash)
+    uploaded_file_path_with_root(&yona_data_root(), hash)
+}
+
+pub(crate) fn uploaded_file_path_with_root(data_root: &std::path::Path, hash: &str) -> PathBuf {
+    uploaded_files_root(data_root).join(hash)
 }
 
 fn looks_like_utf8_text(bytes: &[u8]) -> bool {
@@ -297,6 +301,7 @@ pub(crate) async fn upload_file(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
     max_uploaded_file_size: usize,
 ) -> Response {
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
@@ -334,7 +339,7 @@ pub(crate) async fn upload_file(
         let mime_type =
             detect_upload_mime_type(&file_name, declared_mime_type.as_deref(), bytes.as_ref());
         let hash = random_storage_token();
-        let path = uploaded_file_path(&hash);
+        let path = uploaded_file_path_with_root(&data_root, &hash);
         if let Some(parent) = path.parent() {
             if std::fs::create_dir_all(parent).is_err() {
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
@@ -376,6 +381,7 @@ pub(crate) async fn get_uploaded_file(
     raw_query: Option<String>,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Response {
     let PilotBackend::Repository(repository) = &backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
@@ -401,7 +407,8 @@ pub(crate) async fn get_uploaded_file(
             Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }
-    let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
+    let Ok(bytes) = std::fs::read(uploaded_file_path_with_root(&data_root, &attachment.hash))
+    else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let disposition_type = if attachment_query_action(raw_query.as_deref()) == Some("download") {
@@ -465,6 +472,7 @@ pub(crate) async fn delete_uploaded_file(
     attachment_id: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Response {
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
@@ -493,7 +501,10 @@ pub(crate) async fn delete_uploaded_file(
     {
         Ok(persistence::DeleteAttachmentResult::Deleted(attachment)) => {
             if !attachment.hash.is_empty() {
-                let _ = std::fs::remove_file(uploaded_file_path(&attachment.hash));
+                let _ = std::fs::remove_file(uploaded_file_path_with_root(
+                    &data_root,
+                    &attachment.hash,
+                ));
             }
             (
                 StatusCode::OK,
@@ -511,24 +522,31 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
     max_uploaded_file_size: usize,
 ) -> Router {
     let file_session_manager = session_manager.clone();
     let file_backend = backend.clone();
     let file_base_path = base_path.clone();
+    let file_data_root = data_root.clone();
     let file_list_session_manager = session_manager.clone();
     let file_list_backend = backend.clone();
     let file_list_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = backend.clone();
+    let file_read_data_root = data_root.clone();
     let file_read_trailing_session_manager = session_manager.clone();
     let file_read_trailing_backend = backend.clone();
+    let file_read_trailing_data_root = data_root.clone();
     let file_delete_post_session_manager = session_manager.clone();
     let file_delete_post_backend = backend.clone();
+    let file_delete_post_data_root = data_root.clone();
     let file_delete_post_trailing_session_manager = session_manager.clone();
     let file_delete_post_trailing_backend = backend.clone();
+    let file_delete_post_trailing_data_root = data_root.clone();
     let file_delete_session_manager = session_manager;
     let file_delete_backend = backend;
+    let file_delete_data_root = data_root;
 
     Router::new()
         .route(
@@ -555,6 +573,7 @@ pub(crate) fn routes(
                         file_session_manager.clone(),
                         file_backend.clone(),
                         file_base_path.clone(),
+                        file_data_root.clone(),
                         max_uploaded_file_size,
                     )
                     .await
@@ -572,6 +591,7 @@ pub(crate) fn routes(
                             raw_query,
                             file_read_session_manager.clone(),
                             file_read_backend.clone(),
+                            file_read_data_root.clone(),
                         )
                         .await
                     }
@@ -584,6 +604,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_post_session_manager.clone(),
                         file_delete_post_backend.clone(),
+                        file_delete_post_data_root.clone(),
                     )
                     .await
                 }
@@ -595,6 +616,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_session_manager.clone(),
                         file_delete_backend.clone(),
+                        file_delete_data_root.clone(),
                     )
                     .await
                 }
@@ -611,6 +633,7 @@ pub(crate) fn routes(
                             raw_query,
                             file_read_trailing_session_manager.clone(),
                             file_read_trailing_backend.clone(),
+                            file_read_trailing_data_root.clone(),
                         )
                         .await
                     }
@@ -623,6 +646,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_post_trailing_session_manager.clone(),
                         file_delete_post_trailing_backend.clone(),
+                        file_delete_post_trailing_data_root.clone(),
                     )
                     .await
                 }

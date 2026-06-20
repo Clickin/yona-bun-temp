@@ -18,6 +18,7 @@ pub struct StartupConfig {
     pub auth_social_login_only: Option<bool>,
     pub allowed_sending_mail_domains: Option<Vec<String>>,
     pub bind_addr: String,
+    pub data_root: Option<String>,
     pub database_url: String,
     pub guest_login_prefix: Option<String>,
     pub issue_event_draft_time: Option<String>,
@@ -74,6 +75,7 @@ struct StartupConfigFile {
     auth: Option<AuthConfigFile>,
     base_path: Option<String>,
     bind_addr: Option<String>,
+    data_root: Option<String>,
     database: Option<DatabaseConfigFile>,
     issue: Option<IssueConfigFile>,
     mailbox: Option<MailboxConfigFile>,
@@ -224,6 +226,7 @@ pub fn load_startup_config(
         .or(file.database_url)
         .or(database.url)
         .unwrap_or_else(|| "sqlite::memory:".to_string());
+    let data_root = env_string(&env, "YONA_DATA").or_else(|| non_empty_string(file.data_root));
 
     let schema_policy = env
         .get("YONA_SCHEMA_POLICY")
@@ -374,6 +377,7 @@ pub fn load_startup_config(
         auth_social_login_only,
         allowed_sending_mail_domains,
         bind_addr,
+        data_root,
         database_url,
         guest_login_prefix,
         issue_event_draft_time,
@@ -484,6 +488,9 @@ pub fn apply_startup_runtime_env(config: &StartupConfig) {
                 "false"
             },
         );
+    }
+    if let Some(data_root) = &config.data_root {
+        std::env::set_var("YONA_DATA", data_root);
     }
     if let Some(guest_login_prefix) = &config.guest_login_prefix {
         std::env::set_var("YONA_GUEST_LOGIN_PREFIX", guest_login_prefix);
