@@ -6,7 +6,7 @@ use http_body_util::BodyExt;
 use crate::session::SessionManager;
 use crate::{
     internal_error, smart_http_authorization, smart_http_basic_challenge_response,
-    smart_http_principal_from_headers, yona_data_root, PilotBackend, RestRouteError,
+    smart_http_principal_from_headers, yona_data_root, AuthUiConfig, PilotBackend, RestRouteError,
     SmartHttpAccessFailure, SmartHttpPermission,
 };
 mod activity;
@@ -50,6 +50,7 @@ pub(crate) async fn direct_request(
     request: Request,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     base_path: String,
 ) -> Response {
     let Some(mut route) = route_from_path(request.uri().path(), &base_path) else {
@@ -74,12 +75,17 @@ pub(crate) async fn direct_request(
     let PilotBackend::Repository(repository) = &backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
-    let principal =
-        match smart_http_principal_from_headers(&parts.headers, &session_manager, repository).await
-        {
-            Ok(principal) => principal,
-            Err(response) => return response,
-        };
+    let principal = match smart_http_principal_from_headers(
+        &parts.headers,
+        &session_manager,
+        repository,
+        &auth_ui,
+    )
+    .await
+    {
+        Ok(principal) => principal,
+        Err(response) => return response,
+    };
     let actor_id = principal.as_ref().map(|user| user.id);
     let authorization = match repository
         .read_project_authorization(&route.owner_name, &route.project_name, actor_id)

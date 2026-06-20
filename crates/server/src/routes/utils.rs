@@ -57,10 +57,6 @@ pub(crate) fn auth_ui_capabilities_from_config(
     }
 }
 
-pub(crate) fn confirmation_session_required() -> bool {
-    confirmation_session_required_from_config(&AuthUiConfig::from_env())
-}
-
 pub(crate) fn confirmation_session_required_from_config(config: &AuthUiConfig) -> bool {
     config.signup_require_confirm || config.email_verification_enabled
 }

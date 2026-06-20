@@ -10,7 +10,10 @@ use crate::excel_export::{
     direct_review_excel_route_from_request,
 };
 use crate::smart_http::{direct_smart_http_request, route_from_path as smart_http_route_from_path};
-use crate::{session::SessionManager, svn_protocol, AssetMode, BrowserRuntimeConfig, PilotBackend};
+use crate::{
+    session::SessionManager, svn_protocol, AssetMode, AuthUiConfig, BrowserRuntimeConfig,
+    PilotBackend,
+};
 
 mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
@@ -23,6 +26,7 @@ pub(crate) fn apply_asset_routes(
     base_path: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     public_origin: String,
 ) -> Router {
     match assets {
@@ -39,6 +43,7 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
+            let auth_ui_for_fallback = auth_ui;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
 
@@ -87,6 +92,7 @@ pub(crate) fn apply_asset_routes(
                     let browser_runtime = browser_runtime_for_fallback.clone();
                     let session_manager = session_manager_for_fallback.clone();
                     let backend = backend_for_fallback.clone();
+                    let auth_ui = auth_ui_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
                     async move {
@@ -96,6 +102,7 @@ pub(crate) fn apply_asset_routes(
                             browser_runtime,
                             session_manager,
                             backend,
+                            auth_ui,
                             base_path,
                             public_origin,
                         )
@@ -111,6 +118,7 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_two_segment_fallback = browser_runtime;
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
+            let auth_ui_for_fallback = auth_ui;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
 
@@ -150,6 +158,7 @@ pub(crate) fn apply_asset_routes(
                     let browser_runtime = browser_runtime_for_fallback.clone();
                     let session_manager = session_manager_for_fallback.clone();
                     let backend = backend_for_fallback.clone();
+                    let auth_ui = auth_ui_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
                     async move {
@@ -158,6 +167,7 @@ pub(crate) fn apply_asset_routes(
                             browser_runtime,
                             session_manager,
                             backend,
+                            auth_ui,
                             base_path,
                             public_origin,
                         )
@@ -168,11 +178,13 @@ pub(crate) fn apply_asset_routes(
         AssetMode::None => {
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
+            let auth_ui_for_fallback = auth_ui;
             let base_path_for_fallback = base_path;
             let public_origin_for_fallback = public_origin;
             base_router.fallback(move |request: Request| {
                 let session_manager = session_manager_for_fallback.clone();
                 let backend = backend_for_fallback.clone();
+                let auth_ui = auth_ui_for_fallback.clone();
                 let base_path = base_path_for_fallback.clone();
                 let public_origin = public_origin_for_fallback.clone();
                 async move {
@@ -180,6 +192,7 @@ pub(crate) fn apply_asset_routes(
                         request,
                         session_manager,
                         backend,
+                        auth_ui,
                         base_path,
                         public_origin,
                     )
@@ -235,6 +248,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     browser_runtime: BrowserRuntimeConfig,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -272,13 +286,15 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
+            .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
             session_manager,
             backend,
+            auth_ui,
             base_path,
             public_origin,
         )
@@ -292,6 +308,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
     browser_runtime: BrowserRuntimeConfig,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -329,13 +346,15 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
+            .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
             session_manager,
             backend,
+            auth_ui,
             base_path,
             public_origin,
         )
@@ -348,6 +367,7 @@ pub(crate) async fn smart_http_or_not_found(
     request: Request,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -384,13 +404,15 @@ pub(crate) async fn smart_http_or_not_found(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, base_path).await;
+        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
+            .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
             session_manager,
             backend,
+            auth_ui,
             base_path,
             public_origin,
         )

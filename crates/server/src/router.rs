@@ -189,6 +189,7 @@ fn build_router_with_app_config(
         base_path.clone(),
         session_manager.clone(),
         route_backend.clone(),
+        runtime.auth_ui.clone(),
         public_origin.clone(),
     );
 

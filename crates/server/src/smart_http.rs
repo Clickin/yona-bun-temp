@@ -10,10 +10,10 @@ use std::path::Path;
 
 use crate::session::SessionManager;
 use crate::{
-    absolute_app_url, base_path_href, confirmation_session_required,
+    absolute_app_url, base_path_href, confirmation_session_required_from_config,
     dispatch_pull_request_webhooks, internal_error, map_project_scope, persistence,
-    project_webhook_type_label, record_project_webhook_delivery, yona_data_root, ConnectError,
-    PilotBackend, PilotRepository, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
+    project_webhook_type_label, record_project_webhook_delivery, yona_data_root, AuthUiConfig,
+    ConnectError, PilotBackend, PilotRepository, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver_webhook, OutboundWebhook};
@@ -111,6 +111,7 @@ pub(crate) async fn direct_smart_http_request(
     request: Request,
     session_manager: SessionManager,
     backend: PilotBackend,
+    auth_ui: AuthUiConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -133,12 +134,17 @@ pub(crate) async fn direct_smart_http_request(
     let PilotBackend::Repository(repository) = &backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
-    let principal =
-        match smart_http_principal_from_headers(&parts.headers, &session_manager, repository).await
-        {
-            Ok(principal) => principal,
-            Err(response) => return response,
-        };
+    let principal = match smart_http_principal_from_headers(
+        &parts.headers,
+        &session_manager,
+        repository,
+        &auth_ui,
+    )
+    .await
+    {
+        Ok(principal) => principal,
+        Err(response) => return response,
+    };
     let actor_id = principal.as_ref().map(|user| user.id);
     let remote_user = principal.as_ref().map(|user| user.login_id.clone());
     let authorization = match repository
@@ -376,6 +382,7 @@ pub(crate) async fn smart_http_principal_from_headers(
     headers: &HeaderMap,
     session_manager: &SessionManager,
     repository: &PilotRepository,
+    auth_ui: &AuthUiConfig,
 ) -> Result<Option<persistence::AppUserRecord>, Response> {
     match parse_basic_authorization(headers) {
         Ok(Some((identifier, secret))) => {
@@ -399,7 +406,7 @@ pub(crate) async fn smart_http_principal_from_headers(
             if !(password_matches || token_matches) {
                 return Err(smart_http_basic_challenge_response());
             }
-            if confirmation_session_required() && !user.is_confirmed {
+            if confirmation_session_required_from_config(auth_ui) && !user.is_confirmed {
                 return Err(smart_http_basic_challenge_response());
             }
             Ok(Some(user))

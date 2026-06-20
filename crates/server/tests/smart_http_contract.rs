@@ -1,5 +1,6 @@
 use axum::body::Body;
 use base64::{engine::general_purpose, Engine as _};
+use bcrypt::{hash, DEFAULT_COST};
 use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
@@ -14,11 +15,14 @@ use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::{
     notification_event, project_pushed_branch, pull_request_commit, AppRepository,
-    CreateProjectWebhookInput, CreatePullRequestInput, CreatePullRequestResult,
-    PullRequestMutationInput,
+    CreateProjectInput, CreateProjectWebhookInput, CreatePullRequestInput, CreatePullRequestResult,
+    CreateUserInput, PullRequestMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, create_router_with_repository_and_app_config,
+    AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
+};
 use yona_rust_vcs::MAX_SMART_HTTP_RPC_BYTES;
 
 mod rest_test_support;
@@ -41,6 +45,27 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
             public_origin: "http://localhost".to_string(),
         },
         app_repo.clone(),
+    );
+
+    (app, app_repo, db)
+}
+
+async fn build_app_with_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: "http://localhost".to_string(),
+        },
+        app_repo.clone(),
+        app_config,
     );
 
     (app, app_repo, db)
@@ -467,6 +492,85 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
         String::from_utf8_lossy(&body).contains("# service=git-receive-pack"),
         "{}",
         String::from_utf8_lossy(&body)
+    );
+}
+
+#[tokio::test]
+async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mutation() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_app_config(AppRuntimeConfig {
+        auth_ui: AuthUiConfig {
+            signup_require_confirm: true,
+            ..AuthUiConfig::default()
+        },
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let password_hash = hash("doorpass1", DEFAULT_COST).expect("bcrypt test password");
+    let owner = repo
+        .create_user(CreateUserInput {
+            display_name: "owner".to_string(),
+            email_address: "owner@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "owner".to_string(),
+            password_hash: password_hash.clone(),
+        })
+        .await
+        .expect("create owner");
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: false,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash,
+        })
+        .await
+        .expect("create member");
+    let project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: owner.login_id,
+            overview: Some("Smart HTTP parity".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create project");
+    repo.add_project_membership(project.id, member.id, "member")
+        .await
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (status, headers, body) = response_bytes(
+        direct_request(
+            app,
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic("member", "doorpass1")),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(
+        status,
+        StatusCode::UNAUTHORIZED,
+        "{}",
+        String::from_utf8_lossy(&body)
+    );
+    assert_eq!(
+        headers
+            .get(http::header::WWW_AUTHENTICATE)
+            .and_then(|value| value.to_str().ok()),
+        Some("Basic realm=\"Yona\"")
     );
 }
 

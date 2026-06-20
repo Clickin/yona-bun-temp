@@ -98,6 +98,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-20: runtime config DI cleanup continued for pull request direct aliases. Legacy accept, source-branch delete/restore, and review-thread open/close handlers now reuse the router's app-scoped `PilotServiceImpl` instead of rebuilding runtime config from process env.
 - 2026-06-20: runtime config DI cleanup continued for workspace and notification direct aliases. Profile/password/email/token/project-leave/visited-list/notification handlers now reuse the router's app-scoped `PilotServiceImpl`, and representative direct workspace tests no longer mutate auth env vars to force default config.
 - 2026-06-20: runtime config DI cleanup continued for site-admin direct aliases. Diagnostics, no-avatar, export/import, avatar, mail, update, user, and project mutation handlers now reuse the router's app-scoped `PilotServiceImpl`; the representative site-admin mail send contract now injects SMTP through `AppRuntimeConfig` instead of process env.
+- 2026-06-20: runtime config DI cleanup continued for Smart HTTP and SVN. Shared Basic-auth principal resolution now receives the router's app-scoped `AuthUiConfig` through asset fallback registration instead of reading auth env vars during the request.
 
 ## Compile-Time Note
 
