@@ -26,6 +26,10 @@ pub(crate) async fn direct_legacy_init(backend: PilotBackend, base_path: String)
     Redirect::to(&base_path_href(&base_path, "/")).into_response()
 }
 
+pub(crate) async fn direct_legacy_fake() -> Response {
+    StatusCode::BAD_REQUEST.into_response()
+}
+
 async fn make_legacy_test_repositories(repository: &PilotRepository) {
     let projects = match repository.list_projects().await {
         Ok(projects) => projects,
@@ -361,6 +365,7 @@ pub(crate) fn routes(
     let legacy_migration_json_base_path = base_path;
 
     Router::new()
+        .route("/", post(direct_legacy_fake))
         .route(
             "/-_-api",
             get(move || {

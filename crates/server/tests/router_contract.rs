@@ -156,6 +156,30 @@ async fn legacy_external_api_roots_fall_back_to_application_index() {
 }
 
 #[tokio::test]
+async fn legacy_root_post_fake_route_returns_bad_request() {
+    let app = create_router(RuntimeConfig {
+        allow_anonymous_access: true,
+        base_path: "/yona".to_string(),
+        public_origin: String::new(),
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert!(body.is_empty());
+}
+
+#[tokio::test]
 async fn mounts_session_bootstrap_under_base_path() {
     let app = create_router(RuntimeConfig {
         allow_anonymous_access: true,
