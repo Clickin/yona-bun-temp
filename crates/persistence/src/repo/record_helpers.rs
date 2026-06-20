@@ -112,6 +112,7 @@ impl AppRepository {
         let parent_issue_id = model.parent_id;
         let (parent_issue_number, parent_issue_title) =
             self.issue_parent_summary(parent_issue_id).await?;
+        let parent_issue_state = self.issue_parent_state(parent_issue_id).await?;
         let parent_group_issue_id = parent_issue_id.unwrap_or(model.id);
         let child_issues = self
             .list_issue_child_records(parent_group_issue_id, &author_login_id)
@@ -177,6 +178,7 @@ impl AppRepository {
             owner_name: project.owner_name.clone(),
             parent_issue_id: model.parent_id,
             parent_issue_number,
+            parent_issue_state,
             parent_issue_title,
             child_closed_count,
             child_issues,

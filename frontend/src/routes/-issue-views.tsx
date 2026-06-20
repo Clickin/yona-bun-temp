@@ -109,6 +109,7 @@ function IssueSubtaskList(props: {
   );
   const percentage = totalCount === 0 ? 0 : Math.floor((childClosedCount / totalCount) * 100);
   const progressDone = percentage === 100;
+  const parentIssueState = issue.parentIssueState || issue.state;
   return (
     <div className="subtasks">
       <div className="child-issues">
@@ -128,8 +129,8 @@ function IssueSubtaskList(props: {
             {percentage === 100 ? totalCount : `${childClosedCount}/${totalCount}`}{" "}
           </span>
           <span
-            className={`parent-issue-state ${issue.state}`}
-          >{`issue.state.${issue.state}`}</span>
+            className={`parent-issue-state ${parentIssueState}`}
+          >{`issue.state.${parentIssueState}`}</span>
         </div>
         <hr className="parent-issue-delimeter" />
         <div className="child-issues">

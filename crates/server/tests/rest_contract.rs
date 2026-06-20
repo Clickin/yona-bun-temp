@@ -688,6 +688,35 @@ async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
     assert_eq!(parent_detail["childIssues"][0]["commentCount"], 1);
     assert_eq!(parent_detail["childIssues"][0]["voterCount"], 1);
 
+    ok_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    let child_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(child_detail["state"], "closed");
+    assert_eq!(child_detail["parentIssueNumber"], 1);
+    assert_eq!(child_detail["parentIssueState"], "open");
+    assert_eq!(child_detail["parentIssueTitle"], "Parent issue");
+
     let selected_options = ok_json(
         rest(
             app.clone(),

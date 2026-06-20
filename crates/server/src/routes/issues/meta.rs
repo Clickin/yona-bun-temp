@@ -633,6 +633,7 @@ pub(super) async fn rest_refreshed_issue_detail(
             is_draft: false,
             parent_issue_id: None,
             parent_issue_number: None,
+            parent_issue_state: String::new(),
             parent_issue_title: String::new(),
             weight: 0,
         });

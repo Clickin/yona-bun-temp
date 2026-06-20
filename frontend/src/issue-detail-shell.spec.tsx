@@ -665,7 +665,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
               isDraft: false,
               issueNumber: 2,
               labels: [{ color: "#00aaff", id: 9, name: "subtask" }],
-              state: "open",
+              state: "closed",
               title: "Child issue",
               voterCount: 1,
             },
@@ -680,6 +680,11 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             },
           ],
           childOpenCount: 1,
+          issueNumber: 2,
+          parentIssueNumber: 1,
+          parentIssueState: "open",
+          parentIssueTitle: "Shared issue",
+          state: "closed",
         }}
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
       />,
@@ -692,8 +697,10 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="upload-progress red-outline"');
     expect(html).toContain('style="width:50%"');
     expect(html).toContain('class="parent-issue-state open"');
+    expect(html).toContain("issue.state.open");
+    expect(html).not.toContain('class="parent-issue-state closed"');
     expect(html).toContain('class="issue-item child-issue"');
-    expect(html).toContain('class="state-label open"');
+    expect(html).toContain('class="state-label closed"');
     expect(html).toContain('class="subtask-number">#2');
     expect(html).toContain('class="font12 no-border-at-child"');
     expect(html).toContain('class="comments-count comments-count-color"');
@@ -750,6 +757,7 @@ const issueDetail: ProjectIssueDetailViewModel = {
   ownerName: "owner",
   parentIssueId: 0,
   parentIssueNumber: 0,
+  parentIssueState: "",
   parentIssueTitle: "",
   projectName: "projectYobi",
   sharers: [],

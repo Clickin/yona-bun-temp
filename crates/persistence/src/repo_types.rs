@@ -110,6 +110,7 @@ pub struct IssueRecord {
     pub labels: Vec<IssueLabelRecord>,
     pub parent_issue_id: Option<i64>,
     pub parent_issue_number: Option<i64>,
+    pub parent_issue_state: String,
     pub parent_issue_title: String,
     pub child_issues: Vec<IssueChildRecord>,
     pub child_open_count: u32,

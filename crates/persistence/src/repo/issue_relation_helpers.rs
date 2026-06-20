@@ -580,6 +580,22 @@ impl AppRepository {
         Ok((row.number, row.title.unwrap_or_default()))
     }
 
+    pub(super) async fn issue_parent_state(
+        &self,
+        parent_issue_id: Option<i64>,
+    ) -> Result<String, DbErr> {
+        let Some(parent_issue_id) = parent_issue_id else {
+            return Ok(String::new());
+        };
+        let Some(row) = issue::Entity::find_by_id(parent_issue_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(String::new());
+        };
+        Ok(issue_state_from_raw(row.state))
+    }
+
     pub(super) async fn list_issue_labels(
         &self,
         issue_id: i64,

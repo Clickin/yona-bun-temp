@@ -736,6 +736,7 @@ type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>
     userId: bigint | number;
     userLabel: string;
   }>;
+  parentIssueState?: string;
   weight?: number;
 };
 
@@ -837,6 +838,7 @@ export function toProjectIssueDetailView(
     ownerName: response.ownerName,
     parentIssueId: Number(response.parentIssueId ?? 0),
     parentIssueNumber: Number(response.parentIssueNumber ?? 0),
+    parentIssueState: response.parentIssueState ?? "",
     parentIssueTitle: response.parentIssueTitle ?? "",
     projectName: response.projectName,
     sharers: response.sharers.map((sharer) => ({

@@ -435,6 +435,7 @@ export interface ProjectIssueDetailViewModel {
   ownerName: string;
   parentIssueId: number;
   parentIssueNumber: number;
+  parentIssueState: string;
   parentIssueTitle: string;
   projectName: string;
   sharers: Array<{ loginId: string; userId: number; userLabel: string }>;

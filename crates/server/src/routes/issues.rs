@@ -655,6 +655,7 @@ struct RestIssueDetailResponse {
     is_draft: bool,
     parent_issue_id: Option<i64>,
     parent_issue_number: Option<i64>,
+    parent_issue_state: String,
     parent_issue_title: String,
     weight: i16,
 }
@@ -4000,6 +4001,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
         is_draft: issue.is_draft,
         parent_issue_id: issue.parent_issue_id,
         parent_issue_number: issue.parent_issue_number,
+        parent_issue_state: issue.parent_issue_state.clone(),
         parent_issue_title: issue.parent_issue_title.clone(),
         weight: issue.weight,
     }
