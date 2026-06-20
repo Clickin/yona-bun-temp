@@ -5678,8 +5678,13 @@ describe("file-route parity harness", () => {
   });
 
   it("keeps the public home legacy intro and feature grid stable", () => {
+    const legacyMessages = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/conf/messages"),
+      "utf8",
+    );
     const html = renderHome();
 
+    expect(legacyMessages).toContain("button.signup = Sign up for {0}");
     expect(html).toContain('class="siteintro-bg row"');
     expect(html).toContain('class="siteintro"');
     expect(html).toContain('class="siteintro-cover"');
@@ -5689,7 +5694,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain("Just focus on what you have to do");
     expect(html).toContain('class="signup-btn"');
     expect(html).toContain('class="ybtn ybtn-success ybtn-padding"');
-    expect(html).toContain("button.signup");
+    expect(html).toContain(">Sign up for Yona</a>");
+    expect(html).not.toContain("button.signup");
     expect(html).toContain('class="feature-wrap row"');
     expectOrderedText(html, [
       "title.unlimitedProjects",
@@ -5701,6 +5707,18 @@ describe("file-route parity harness", () => {
     ]);
     expect(html).not.toContain("Yona Rust Frontend");
     expect(html).not.toContain("Legacy Route Foundation");
+  });
+
+  it("renders the public home signup CTA with the configured site name", () => {
+    const html = renderHome({
+      apiBaseUrl: "/yona/api",
+      basePath: "/yona",
+      siteName: "Legacy Yona",
+    });
+
+    expect(html).toContain(">Sign up for Legacy Yona</a>");
+    expect(html).not.toContain(">Sign up for Yona</a>");
+    expect(html).not.toContain("button.signup");
   });
 
   it("pins project directory empty state and search CTA", () => {

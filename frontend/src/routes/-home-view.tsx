@@ -5,6 +5,8 @@ function appHref(runtimeConfig: RuntimeConfig, href: string): string {
 }
 
 export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const siteName = runtimeConfig.siteName?.trim() || "Yona";
+
   return (
     <main className="app-shell">
       <div className="siteintro-bg row">
@@ -21,7 +23,7 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 className="ybtn ybtn-success ybtn-padding"
                 href={appHref(runtimeConfig, "/users/signupform")}
               >
-                button.signup
+                {`Sign up for ${siteName}`}
               </a>
             </div>
           </div>

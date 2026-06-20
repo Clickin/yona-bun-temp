@@ -75,7 +75,10 @@ const PARITY_SLICES = [
     id: "public-landing",
     label: "Public landing and global navigation",
     status: "parity",
-    implementationPatterns: [/^frontend\/src\/routes\/index\.tsx$/i],
+    implementationPatterns: [
+      /^frontend\/src\/routes\/index\.tsx$/i,
+      /^frontend\/src\/routes\/-home-view\.tsx$/i,
+    ],
     testKeywords: ["public-landing", "home-route", "layout-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },

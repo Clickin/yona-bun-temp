@@ -51,7 +51,7 @@ Interpretation:
 
 ## Public Landing
 
-- [x] Legacy `index/partial_intro.scala.html` intro and feature-grid shell without the temporary `Yona Rust Frontend` / route-foundation copy
+- [x] Legacy `index/partial_intro.scala.html` intro and feature-grid shell, including `button.signup` site-name interpolation, without the temporary `Yona Rust Frontend` / route-foundation copy
 - [x] Public project/organization directory list shell parity: `/projects` and `/orgs` preserve legacy `project/list.scala.html` / `organization/list.scala.html` tab labels, search placeholders, icon-only search buttons, `ico-err1` empty states, `ul.all-projects`, and non-empty `div#pagination` placeholders.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 

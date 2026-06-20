@@ -627,7 +627,8 @@ describe("auth and workspace views", () => {
     expect(homeHtml).toContain("21st Century Software Development Platform");
     expect(homeHtml).toContain("Just focus on what you have to do");
     expect(homeHtml).toContain('href="/yona/users/signupform"');
-    expect(homeHtml).toContain("button.signup");
+    expect(homeHtml).toContain(">Sign up for Yona</a>");
+    expect(homeHtml).not.toContain("button.signup");
     expect(homeHtml).toContain("title.features");
     expect(homeHtml).toContain("title.unlimitedProjects");
     expect(homeHtml).toContain("site.features.codeReview");
@@ -695,6 +696,18 @@ describe("auth and workspace views", () => {
     expect(organizationsHtml).not.toContain('<img alt="" src="/yona/files/2"/>');
     expect(organizationsHtml).toContain("weblabs");
     expect(organizationsHtml).toContain("web labs");
+  });
+
+  it("renders the public landing signup CTA with the configured site name", () => {
+    const html = renderHome({
+      apiBaseUrl: "/yona/api",
+      basePath: "/yona",
+      siteName: "Legacy Yona",
+    });
+
+    expect(html).toContain(">Sign up for Legacy Yona</a>");
+    expect(html).not.toContain(">Sign up for Yona</a>");
+    expect(html).not.toContain("button.signup");
   });
 
   it("renders organization and project baseline views", () => {
