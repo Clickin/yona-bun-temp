@@ -104,7 +104,7 @@ pub(crate) use utils::{
     configured_project_default_scope, configured_site_name, configured_supported_languages,
     configured_trimmed_string, confirmation_session_required_from_config,
     current_session_response_from_user, decode_query_component, default_project_menu_keys,
-    default_public_origin, default_smtp_from, default_supported_languages,
+    default_public_origin, default_supported_languages,
     deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
     direct_project_update_allowed, direct_status_from_connect_error, escape_html_attr,
     escape_html_text, form_bool, form_value, format_project_date_label, gravatar_url,

@@ -231,27 +231,6 @@ pub(crate) fn configured_env_value(names: &[&str]) -> Option<String> {
     })
 }
 
-pub(crate) fn default_smtp_from() -> String {
-    configured_env_value(&["SMTP_FROM", "YONA_SMTP_FROM"])
-        .or_else(smtp_sender_from_user_and_domain)
-        .unwrap_or_else(|| "noreply@yona.local".to_string())
-}
-
-fn smtp_sender_from_user_and_domain() -> Option<String> {
-    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"])?;
-    if user.contains('@') {
-        return Some(user);
-    }
-    let domain = configured_env_value(&["SMTP_DOMAIN", "YONA_SMTP_DOMAIN"])
-        .or_else(application_hostname_from_env)
-        .unwrap_or_else(|| "localhost".to_string());
-    Some(format!("{user}@{domain}"))
-}
-
-fn application_hostname_from_env() -> Option<String> {
-    configured_env_value(&["YONA_APPLICATION_HOSTNAME", "APPLICATION_HOSTNAME"])
-}
-
 pub(crate) fn configured_site_name() -> String {
     let value = std::env::var("YONA_SITE_NAME").ok();
     site_name_from_option(value.as_deref())

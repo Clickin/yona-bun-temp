@@ -38,6 +38,30 @@ fn notification_mail_env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+fn notification_outbox_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn notification_delivery_config() -> NotificationMailDeliveryConfig {
+    NotificationMailDeliveryConfig {
+        reply_to_address: Some("noreply@yona.example".to_string()),
+        ..NotificationMailDeliveryConfig::default()
+    }
+}
+
+fn notification_bcc_delivery_config(
+    recipient_limit: Option<usize>,
+) -> NotificationMailDeliveryConfig {
+    NotificationMailDeliveryConfig {
+        default_from: "notifications@yona.local".to_string(),
+        hide_address: true,
+        recipient_limit,
+        reply_to_address: Some("noreply@yona.example".to_string()),
+        ..NotificationMailDeliveryConfig::default()
+    }
+}
+
 #[test]
 fn notification_contract_mail_links_add_noreferrer_like_legacy() {
     let html = concat!(
@@ -886,6 +910,7 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
         &disabled_config,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -906,6 +931,7 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
         &enabled_config,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1001,10 +1027,7 @@ fn notification_delivery_config_from_startup_uses_smtp_sender_snapshot_without_e
 #[tokio::test]
 // Guards notification mail reuse of route-utils-owned public-origin, URL, URI, and SMTP helpers.
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1059,6 +1082,7 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         0,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1171,16 +1195,11 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     assert_eq!(issue_unwatch_count_after_watch, 0);
 
     clear_test_outbox();
-    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_legacy() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1243,6 +1262,7 @@ async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_l
         0,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1261,16 +1281,11 @@ async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_l
         .unwrap_or_default()
         .contains("issue_comment"));
     clear_test_outbox();
-    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_board_comment_mail_replies_to_parent_post_like_legacy() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
@@ -1355,6 +1370,7 @@ async fn notification_contract_board_comment_mail_replies_to_parent_post_like_le
         0,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1377,16 +1393,11 @@ async fn notification_contract_board_comment_mail_replies_to_parent_post_like_le
         .unwrap_or_default()
         .contains("posting_comment"));
     clear_test_outbox();
-    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_review_comment_mail_replies_to_parent_thread_like_legacy() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.example");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
@@ -1471,6 +1482,7 @@ async fn notification_contract_review_comment_mail_replies_to_parent_thread_like
         0,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1493,8 +1505,6 @@ async fn notification_contract_review_comment_mail_replies_to_parent_thread_like
         .unwrap_or_default()
         .contains("review_comment"));
     clear_test_outbox();
-    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
@@ -1573,6 +1583,7 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
             default_from: "configured-notify@example.com".to_string(),
             hide_address: false,
             recipient_limit: None,
+            reply_to_address: Some("noreply@yona.example".to_string()),
             site_name: "Yona".to_string(),
         },
     )
@@ -1605,9 +1616,7 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
 
 #[tokio::test]
 async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (_, _, owner_id) = register_user(app.clone(), "owner").await;
@@ -1646,6 +1655,7 @@ async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
         0,
         "https://yona.example",
         "/yona",
+        &notification_delivery_config(),
     )
     .await
     .unwrap();
@@ -1661,11 +1671,7 @@ async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
 
 #[tokio::test]
 async fn notification_contract_hides_recipient_addresses_in_bcc_mode() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "true");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
-    std::env::set_var("SMTP_FROM", "notifications@yona.local");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1722,6 +1728,7 @@ async fn notification_contract_hides_recipient_addresses_in_bcc_mode() {
         0,
         "https://yona.example",
         "/yona",
+        &notification_bcc_delivery_config(None),
     )
     .await
     .unwrap();
@@ -1738,17 +1745,11 @@ async fn notification_contract_hides_recipient_addresses_in_bcc_mode() {
         ]
     );
     clear_test_outbox();
-    std::env::remove_var("SMTP_FROM");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_partitions_bcc_mail_by_recipient_limit() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "true");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT", "2");
-    std::env::set_var("SMTP_FROM", "notifications@yona.local");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1807,6 +1808,7 @@ async fn notification_contract_partitions_bcc_mail_by_recipient_limit() {
         0,
         "https://yona.example",
         "/yona",
+        &notification_bcc_delivery_config(Some(2)),
     )
     .await
     .unwrap();
@@ -1831,18 +1833,11 @@ async fn notification_contract_partitions_bcc_mail_by_recipient_limit() {
         ]
     );
     clear_test_outbox();
-    std::env::remove_var("SMTP_FROM");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
 }
 
 #[tokio::test]
 async fn notification_contract_groups_bcc_mail_by_recipient_language() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "true");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT");
-    std::env::set_var("SMTP_FROM", "notifications@yona.local");
+    let _outbox_guard = notification_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -1917,6 +1912,7 @@ async fn notification_contract_groups_bcc_mail_by_recipient_language() {
         0,
         "https://yona.example",
         "/yona",
+        &notification_bcc_delivery_config(None),
     )
     .await
     .unwrap();
@@ -1943,8 +1939,6 @@ async fn notification_contract_groups_bcc_mail_by_recipient_language() {
         ]
     );
     clear_test_outbox();
-    std::env::remove_var("SMTP_FROM");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]

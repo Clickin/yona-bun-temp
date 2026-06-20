@@ -1,28 +1,16 @@
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use std::time::{Duration, SystemTime};
 use yona_rust_integrations::{
-    deliver, notification_mail_batches, notification_mail_hide_address_from_env,
-    notification_mail_recipient_limit_from_env, NotificationMailRecipient, OutboundMail,
+    deliver, notification_mail_batches, NotificationMailRecipient, OutboundMail,
 };
 
 use crate::persistence::PilotRepository;
 use crate::server_config::{parse_legacy_bool, parse_legacy_duration_ms};
 use crate::{
-    absolute_app_url, configured_env_value, configured_site_name, default_public_origin,
-    default_smtp_from, escape_html_attr, escape_html_text, normalize_identifier,
-    percent_encode_uri_component, persistence, runtime_config, site_name_from_option,
-    SmtpRuntimeConfig,
+    absolute_app_url, default_public_origin, escape_html_attr, escape_html_text,
+    normalize_identifier, percent_encode_uri_component, persistence, runtime_config,
+    site_name_from_option, SmtpRuntimeConfig,
 };
-
-fn parse_mail_domain_csv(value: Option<&str>) -> Vec<String> {
-    value
-        .unwrap_or_default()
-        .split(',')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|value| value.to_ascii_lowercase())
-        .collect()
-}
 
 fn normalize_mail_domain_list(values: &[String]) -> Vec<String> {
     values
@@ -63,6 +51,7 @@ pub struct NotificationMailDeliveryConfig {
     pub default_from: String,
     pub hide_address: bool,
     pub recipient_limit: Option<usize>,
+    pub reply_to_address: Option<String>,
     pub site_name: String,
 }
 
@@ -73,6 +62,7 @@ impl Default for NotificationMailDeliveryConfig {
             default_from: "noreply@yona.local".to_string(),
             hide_address: false,
             recipient_limit: None,
+            reply_to_address: None,
             site_name: "Yona".to_string(),
         }
     }
@@ -90,19 +80,8 @@ impl NotificationMailDeliveryConfig {
             default_from: SmtpRuntimeConfig::from_startup(config).default_from(),
             hide_address: config.notification_mail_hide_address.unwrap_or(false),
             recipient_limit: config.notification_mail_recipient_limit,
+            reply_to_address: config.mailbox_imap_address.clone(),
             site_name: site_name_from_option(config.site_name.as_deref()),
-        }
-    }
-
-    fn from_env() -> Self {
-        Self {
-            allowed_domains: parse_mail_domain_csv(
-                std::env::var("YONA_ALLOWED_MAIL_DOMAINS").ok().as_deref(),
-            ),
-            default_from: default_smtp_from(),
-            hide_address: notification_mail_hide_address_from_env(),
-            recipient_limit: notification_mail_recipient_limit_from_env(),
-            site_name: configured_site_name(),
         }
     }
 }
@@ -176,6 +155,7 @@ fn notification_mail_content(
     public_origin: &str,
     base_path: &str,
     site_name: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
 ) -> (String, String) {
     let subject = if item.target_title.is_empty() {
         item.message.clone()
@@ -183,7 +163,14 @@ fn notification_mail_content(
         item.target_title.clone()
     };
     let body = notification_mail_apply_legacy_html_postprocessing(
-        &notification_mail_legacy_body(item, target_url, public_origin, base_path, site_name),
+        &notification_mail_legacy_body(
+            item,
+            target_url,
+            public_origin,
+            base_path,
+            site_name,
+            delivery_config,
+        ),
         public_origin,
     );
     (subject, body)
@@ -195,6 +182,7 @@ fn notification_mail_legacy_body(
     public_origin: &str,
     base_path: &str,
     site_name: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
 ) -> String {
     let settings_url = absolute_app_url(public_origin, base_path, "/user/editform/notifications");
     let settings_link = notification_mail_footer_link(&settings_url, "Notification settings");
@@ -204,7 +192,7 @@ fn notification_mail_legacy_body(
     let target_link = if target_url.is_empty() {
         String::new()
     } else {
-        let prefix = if notification_mail_reply_to(item).is_some() {
+        let prefix = if notification_mail_reply_to(item, delivery_config).is_some() {
             "Reply to this email directly or "
         } else {
             ""
@@ -223,8 +211,11 @@ fn notification_mail_legacy_body(
     )
 }
 
-fn notification_mail_reply_to(item: &persistence::NotificationItemRecord) -> Option<String> {
-    let imap_address = configured_env_value(&["YONA_MAILBOX_IMAP_ADDRESS"])?;
+fn notification_mail_reply_to(
+    item: &persistence::NotificationItemRecord,
+    delivery_config: &NotificationMailDeliveryConfig,
+) -> Option<String> {
+    let imap_address = delivery_config.reply_to_address.as_deref()?;
     let (local_part, domain) = imap_address.split_once('@')?;
     if local_part.is_empty() || domain.is_empty() {
         return None;
@@ -670,24 +661,6 @@ pub async fn deliver_due_notification_mails(
     delay_ms: i64,
     public_origin: &str,
     base_path: &str,
-) -> Result<usize, String> {
-    deliver_due_notification_mails_with_config(
-        repository,
-        now,
-        delay_ms,
-        public_origin,
-        base_path,
-        &NotificationMailDeliveryConfig::from_env(),
-    )
-    .await
-}
-
-pub async fn deliver_due_notification_mails_with_config(
-    repository: &PilotRepository,
-    now: DateTime,
-    delay_ms: i64,
-    public_origin: &str,
-    base_path: &str,
     delivery_config: &NotificationMailDeliveryConfig,
 ) -> Result<usize, String> {
     let public_origin = default_public_origin(public_origin);
@@ -737,6 +710,7 @@ pub async fn deliver_due_notification_mails_with_config(
             &public_origin,
             base_path,
             &delivery_config.site_name,
+            delivery_config,
         );
         for batch in notification_mail_batches(
             &recipients,
@@ -750,7 +724,7 @@ pub async fn deliver_due_notification_mails_with_config(
                 .into_iter()
                 .map(|recipient| recipient.email)
                 .collect::<Vec<_>>();
-            let reply_to = notification_mail_reply_to(&item);
+            let reply_to = notification_mail_reply_to(&item, delivery_config);
             for recipient in batch.to {
                 deliver(OutboundMail {
                     bcc: bcc.clone(),
@@ -769,18 +743,42 @@ pub async fn deliver_due_notification_mails_with_config(
     Ok(delivered)
 }
 
+pub async fn deliver_due_notification_mails_with_config(
+    repository: &PilotRepository,
+    now: DateTime,
+    delay_ms: i64,
+    public_origin: &str,
+    base_path: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
+) -> Result<usize, String> {
+    deliver_due_notification_mails(
+        repository,
+        now,
+        delay_ms,
+        public_origin,
+        base_path,
+        delivery_config,
+    )
+    .await
+}
+
 pub async fn deliver_notification_mail_scheduler_tick(
     repository: &PilotRepository,
     config: &NotificationMailSchedulerConfig,
     public_origin: &str,
     base_path: &str,
+    delivery_config: &NotificationMailDeliveryConfig,
 ) -> Result<usize, String> {
-    deliver_notification_mail_scheduler_tick_with_config(
+    if !config.enabled {
+        return Ok(0);
+    }
+    deliver_due_notification_mails(
         repository,
-        config,
+        DateTimeUtc::from(SystemTime::now()).naive_utc(),
+        config.delay_ms,
         public_origin,
         base_path,
-        &NotificationMailDeliveryConfig::from_env(),
+        delivery_config,
     )
     .await
 }
@@ -792,13 +790,9 @@ pub async fn deliver_notification_mail_scheduler_tick_with_config(
     base_path: &str,
     delivery_config: &NotificationMailDeliveryConfig,
 ) -> Result<usize, String> {
-    if !config.enabled {
-        return Ok(0);
-    }
-    deliver_due_notification_mails_with_config(
+    deliver_notification_mail_scheduler_tick(
         repository,
-        DateTimeUtc::from(SystemTime::now()).naive_utc(),
-        config.delay_ms,
+        config,
         public_origin,
         base_path,
         delivery_config,
