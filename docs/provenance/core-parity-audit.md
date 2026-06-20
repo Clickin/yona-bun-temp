@@ -1221,6 +1221,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   in that contract is scoped to the shared test webhook outbox, not runtime
   config, while board/issue webhook payload, retry, hangout-thread, and CRUD
   parity coverage remains unchanged.
+- 2026-06-20 runtime DI note: search contract tests now inject per-test
+  repository storage through `AppRuntimeConfig.data_root` instead of mutating
+  `YONA_DATA` under the async `yona_data_env_lock`. Global/project issue,
+  posting, milestone, comment, review, user, and project search parity
+  assertions remain unchanged while runtime config env serialization is removed.
 
 ## Wave 0 Exit Snapshot
 

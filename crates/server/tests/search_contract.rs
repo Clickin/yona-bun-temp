@@ -6,10 +6,9 @@ use sea_orm::{
     ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, NotSet, Set, Statement,
 };
 use serde_json::{json, Value};
-use std::sync::OnceLock;
+use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tempfile::tempdir;
-use tokio::sync::Mutex;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     comment_thread, pull_request, review_comment, AppRepository, CreateIssueCommentInput,
@@ -17,14 +16,12 @@ use yona_rust_persistence::{
     MilestoneMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, create_router_with_repository_and_app_config,
+    AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
-
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -39,6 +36,30 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
             public_origin: String::new(),
         },
         app_repo.clone(),
+    );
+
+    (app, app_repo, db)
+}
+
+async fn build_app_with_repository_in_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo, db)
@@ -453,10 +474,8 @@ async fn seed_search_rows(
 
 #[tokio::test]
 async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
     let payload = response_json(
@@ -500,10 +519,8 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
 
 #[tokio::test]
 async fn global_project_search_matches_legacy_anonymous_public_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _, _) = build_app_with_repository().await;
+    let (app, _, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -555,10 +572,8 @@ async fn global_project_search_matches_legacy_anonymous_public_private_acl() {
 
 #[tokio::test]
 async fn user_search_matches_legacy_login_id_and_name_lookup() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _, _) = build_app_with_repository().await;
+    let (app, _, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     register_user_with_name(app.clone(), "doortts", "suwon").await;
 
     let by_login_id = response_json(
@@ -592,10 +607,8 @@ async fn user_search_matches_legacy_login_id_and_name_lookup() {
 
 #[tokio::test]
 async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
 
     repo.create_issue(CreateIssueInput {
@@ -637,10 +650,8 @@ async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
 
 #[tokio::test]
 async fn issue_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -722,10 +733,8 @@ async fn issue_search_visibility_matches_legacy_public_and_private_acl() {
 
 #[tokio::test]
 async fn issue_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "issue-org-member").await;
@@ -839,10 +848,8 @@ async fn issue_search_protected_visibility_matches_legacy_org_membership_acl() {
 
 #[tokio::test]
 async fn project_issue_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-issue-org-member").await;
@@ -992,10 +999,8 @@ async fn project_issue_search_matches_legacy_project_scope_visibility() {
 
 #[tokio::test]
 async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
 
     repo.create_posting(CreatePostingInput {
@@ -1033,10 +1038,8 @@ async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
 
 #[tokio::test]
 async fn post_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -1114,10 +1117,8 @@ async fn post_search_visibility_matches_legacy_public_and_private_acl() {
 
 #[tokio::test]
 async fn post_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) = register_user(app.clone(), "org-member").await;
     let (_, outsider_cookie, _) = register_user(app.clone(), "outsider").await;
@@ -1223,10 +1224,8 @@ async fn post_search_protected_visibility_matches_legacy_org_membership_acl() {
 
 #[tokio::test]
 async fn project_post_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-post-org-member").await;
@@ -1372,10 +1371,8 @@ async fn project_post_search_matches_legacy_project_scope_visibility() {
 
 #[tokio::test]
 async fn organization_post_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "scope-org-member").await;
@@ -1493,10 +1490,8 @@ async fn organization_post_search_matches_legacy_group_scope_and_visibility() {
 
 #[tokio::test]
 async fn organization_issue_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "issue-scope-org-member").await;
@@ -1618,10 +1613,8 @@ async fn organization_issue_search_matches_legacy_group_scope_and_visibility() {
 
 #[tokio::test]
 async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -1716,10 +1709,8 @@ async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() 
 
 #[tokio::test]
 async fn post_comment_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "post-comment-org-member").await;
@@ -1846,10 +1837,8 @@ async fn post_comment_search_protected_visibility_matches_legacy_org_membership_
 
 #[tokio::test]
 async fn project_post_comment_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-post-comment-org-member").await;
@@ -2006,10 +1995,8 @@ async fn project_post_comment_search_matches_legacy_project_scope_visibility() {
 
 #[tokio::test]
 async fn organization_post_comment_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "post-comment-scope-org-member").await;
@@ -2147,10 +2134,8 @@ async fn organization_post_comment_search_matches_legacy_group_scope_and_visibil
 
 #[tokio::test]
 async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -2226,10 +2211,8 @@ async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
 
 #[tokio::test]
 async fn milestone_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "milestone-org-member").await;
@@ -2337,10 +2320,8 @@ async fn milestone_search_protected_visibility_matches_legacy_org_membership_acl
 
 #[tokio::test]
 async fn project_milestone_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-milestone-org-member").await;
@@ -2484,10 +2465,8 @@ async fn project_milestone_search_matches_legacy_project_scope_visibility() {
 
 #[tokio::test]
 async fn organization_milestone_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "milestone-scope-org-member").await;
@@ -2603,10 +2582,8 @@ async fn organization_milestone_search_matches_legacy_group_scope_and_visibility
 
 #[tokio::test]
 async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
         app.clone(),
@@ -2703,10 +2680,8 @@ async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl()
 
 #[tokio::test]
 async fn issue_comment_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "issue-comment-org-member").await;
@@ -2835,10 +2810,8 @@ async fn issue_comment_search_protected_visibility_matches_legacy_org_membership
 
 #[tokio::test]
 async fn project_issue_comment_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-issue-comment-org-member").await;
@@ -2997,10 +2970,8 @@ async fn project_issue_comment_search_matches_legacy_project_scope_visibility() 
 
 #[tokio::test]
 async fn organization_issue_comment_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "issue-comment-scope-org-member").await;
@@ -3140,10 +3111,8 @@ async fn organization_issue_comment_search_matches_legacy_group_scope_and_visibi
 
 #[tokio::test]
 async fn review_search_visibility_matches_legacy_public_and_private_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, _, reviewer_id) = register_user(app.clone(), "reviewer").await;
     create_named_project(
@@ -3228,10 +3197,8 @@ async fn review_search_visibility_matches_legacy_public_and_private_acl() {
 
 #[tokio::test]
 async fn review_search_protected_visibility_matches_legacy_org_membership_acl() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "review-org-member").await;
@@ -3339,10 +3306,8 @@ async fn review_search_protected_visibility_matches_legacy_org_membership_acl() 
 
 #[tokio::test]
 async fn project_review_search_matches_legacy_project_scope_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "project-review-org-member").await;
@@ -3485,10 +3450,8 @@ async fn project_review_search_matches_legacy_project_scope_visibility() {
 
 #[tokio::test]
 async fn organization_review_search_matches_legacy_group_scope_and_visibility() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, org_member_cookie, org_member_id) =
         register_user(app.clone(), "review-scope-org-member").await;
@@ -3610,10 +3573,8 @@ async fn organization_review_search_matches_legacy_group_scope_and_visibility() 
 #[tokio::test]
 // Guards search route reuse of route-utils-owned query decoding and identifier normalization.
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
-    let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
     let invalid = rest_get(
