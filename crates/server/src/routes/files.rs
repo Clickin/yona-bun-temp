@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use crate::{
     base_path_href, persistence, project_read_allowed, random_storage_token,
-    session::SessionManager, PilotBackend,
+    session::SessionManager, PilotBackend, PilotServiceImpl,
 };
 
 fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
@@ -297,9 +297,9 @@ pub(crate) async fn upload_file(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    data_root: PathBuf,
-    max_uploaded_file_size: usize,
+    service: PilotServiceImpl,
 ) -> Response {
+    let data_root = service.data_root.clone();
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
@@ -329,7 +329,7 @@ pub(crate) async fn upload_file(
         let Ok(bytes) = field.bytes().await else {
             return StatusCode::BAD_REQUEST.into_response();
         };
-        if bytes.len() > max_uploaded_file_size {
+        if bytes.len() > service.max_uploaded_file_size {
             return StatusCode::BAD_REQUEST.into_response();
         }
         let mime_type =
@@ -377,8 +377,9 @@ pub(crate) async fn get_uploaded_file(
     raw_query: Option<String>,
     session_manager: SessionManager,
     backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
+    let data_root = service.data_root.clone();
     let PilotBackend::Repository(repository) = &backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
@@ -468,8 +469,9 @@ pub(crate) async fn delete_uploaded_file(
     attachment_id: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
+    let data_root = service.data_root.clone();
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
@@ -514,35 +516,33 @@ pub(crate) async fn delete_uploaded_file(
     }
 }
 
-pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
-    max_uploaded_file_size: usize,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+
     let file_session_manager = session_manager.clone();
     let file_backend = backend.clone();
     let file_base_path = base_path.clone();
-    let file_data_root = data_root.clone();
+    let file_service = service.clone();
     let file_list_session_manager = session_manager.clone();
     let file_list_backend = backend.clone();
     let file_list_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = backend.clone();
-    let file_read_data_root = data_root.clone();
+    let file_read_service = service.clone();
     let file_read_trailing_session_manager = session_manager.clone();
     let file_read_trailing_backend = backend.clone();
-    let file_read_trailing_data_root = data_root.clone();
+    let file_read_trailing_service = service.clone();
     let file_delete_post_session_manager = session_manager.clone();
     let file_delete_post_backend = backend.clone();
-    let file_delete_post_data_root = data_root.clone();
+    let file_delete_post_service = service.clone();
     let file_delete_post_trailing_session_manager = session_manager.clone();
     let file_delete_post_trailing_backend = backend.clone();
-    let file_delete_post_trailing_data_root = data_root.clone();
+    let file_delete_post_trailing_service = service.clone();
     let file_delete_session_manager = session_manager;
     let file_delete_backend = backend;
-    let file_delete_data_root = data_root;
+    let file_delete_service = service;
 
     Router::new()
         .route(
@@ -569,8 +569,7 @@ pub(crate) fn routes(
                         file_session_manager.clone(),
                         file_backend.clone(),
                         file_base_path.clone(),
-                        file_data_root.clone(),
-                        max_uploaded_file_size,
+                        file_service.clone(),
                     )
                     .await
                 }
@@ -587,7 +586,7 @@ pub(crate) fn routes(
                             raw_query,
                             file_read_session_manager.clone(),
                             file_read_backend.clone(),
-                            file_read_data_root.clone(),
+                            file_read_service.clone(),
                         )
                         .await
                     }
@@ -600,7 +599,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_post_session_manager.clone(),
                         file_delete_post_backend.clone(),
-                        file_delete_post_data_root.clone(),
+                        file_delete_post_service.clone(),
                     )
                     .await
                 }
@@ -612,7 +611,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_session_manager.clone(),
                         file_delete_backend.clone(),
-                        file_delete_data_root.clone(),
+                        file_delete_service.clone(),
                     )
                     .await
                 }
@@ -629,7 +628,7 @@ pub(crate) fn routes(
                             raw_query,
                             file_read_trailing_session_manager.clone(),
                             file_read_trailing_backend.clone(),
-                            file_read_trailing_data_root.clone(),
+                            file_read_trailing_service.clone(),
                         )
                         .await
                     }
@@ -642,7 +641,7 @@ pub(crate) fn routes(
                         id,
                         file_delete_post_trailing_session_manager.clone(),
                         file_delete_post_trailing_backend.clone(),
-                        file_delete_post_trailing_data_root.clone(),
+                        file_delete_post_trailing_service.clone(),
                     )
                     .await
                 }

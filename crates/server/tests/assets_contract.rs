@@ -1134,7 +1134,7 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
 
 #[tokio::test]
 async fn file_upload_respects_injected_max_file_size() {
-    // Guards route-utils-owned upload storage token generation after helper extraction.
+    // Guards file routes using the app-scoped max upload size service snapshot.
     let (app, _, _) = build_auth_router_with_app_config(AppRuntimeConfig {
         max_uploaded_file_size: 8,
         ..AppRuntimeConfig::default()

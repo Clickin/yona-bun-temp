@@ -147,6 +147,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) data_root: PathBuf,
     pub(crate) public_origin: String,
     pub(crate) integrations: IntegrationConfig,
+    pub(crate) max_uploaded_file_size: usize,
     pub(crate) session_manager: SessionManager,
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,

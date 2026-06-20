@@ -198,7 +198,6 @@ pub(crate) fn app_routes(
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
-    let public_origin = service.public_origin.clone();
     Router::new()
         .merge(auth_routes(
             service.clone(),
@@ -251,13 +250,7 @@ pub(crate) fn app_routes(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
         )
-        .merge(file_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-            runtime.data_root.clone(),
-            runtime.max_uploaded_file_size,
-        ))
+        .merge(file_routes(service.clone()))
         .merge(pull_request_routes(
             service.clone(),
             session_manager.clone(),
