@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::{Path as StdPath, PathBuf};
 use yona_rust_integrations::IntegrationConfig;
 use yona_rust_vcs::VcsError;
 
@@ -19,7 +20,7 @@ use crate::{
     redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    session::SessionManager, visible_projects_for_organization, yona_data_root, ConnectError,
+    session::SessionManager, visible_projects_for_organization, ConnectError,
     MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
     ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
@@ -350,6 +351,7 @@ pub(crate) fn rest_routes(
     backend: PilotBackend,
     base_path: String,
     integrations: IntegrationConfig,
+    data_root: PathBuf,
 ) -> Router {
     Router::new()
         .route(
@@ -384,6 +386,7 @@ pub(crate) fn rest_routes(
                 let backend = backend.clone();
                 let base_path = base_path.clone();
                 let integrations = integrations.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestPostMutationBody>| {
@@ -391,6 +394,7 @@ pub(crate) fn rest_routes(
                     let backend = backend.clone();
                     let base_path = base_path.clone();
                     let integrations = integrations.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_create_posting(
                             headers,
@@ -401,6 +405,7 @@ pub(crate) fn rest_routes(
                             backend,
                             base_path,
                             integrations,
+                            data_root,
                         )
                         .await
                     }
@@ -412,11 +417,13 @@ pub(crate) fn rest_routes(
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       RawQuery(raw_query): RawQuery| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let data_root = data_root.clone();
                     async move {
                         let query = RestPostFormOptionsQuery::from_raw_query(raw_query.as_deref())?;
                         rest_project_post_form_options(
@@ -426,6 +433,7 @@ pub(crate) fn rest_routes(
                             query,
                             session_manager,
                             backend,
+                            data_root,
                         )
                         .await
                     }
@@ -461,12 +469,14 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_update_posting(
                             headers,
@@ -477,6 +487,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            data_root,
                         )
                         .await
                     }
@@ -683,6 +694,7 @@ pub(crate) fn routes(
     backend: PilotBackend,
     base_path: String,
     integrations: IntegrationConfig,
+    _data_root: PathBuf,
 ) -> Router {
     let legacy_board_posts_backend = backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
@@ -1440,6 +1452,7 @@ async fn rest_project_post_form_options(
     query: RestPostFormOptionsQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Result<Json<RestProjectPostFormOptionsResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -1465,7 +1478,7 @@ async fn rest_project_post_form_options(
     let can_create = actor_id.is_some() && posting_can_create(&authorization);
     let can_mark_notice = actor_id.is_some() && posting_can_set_notice(&authorization);
     let can_mark_readme = can_mark_notice;
-    let online_commit = rest_post_online_commit_options(&authorization, &query)
+    let online_commit = rest_post_online_commit_options(&data_root, &authorization, &query)
         .map_err(RestRouteError::from_connect_error)?;
     let can_attach_files =
         can_create && online_commit.path.is_empty() && !online_commit.issue_template;
@@ -1617,6 +1630,7 @@ async fn rest_create_posting(
     backend: PilotBackend,
     base_path: String,
     integrations: IntegrationConfig,
+    data_root: PathBuf,
 ) -> Result<Json<RestPostMutationResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -1650,6 +1664,7 @@ async fn rest_create_posting(
     }
     if online_commit.enabled {
         let response = create_online_commit_from_posting_form(
+            &data_root,
             &authorization,
             &online_commit,
             &actor,
@@ -1681,6 +1696,7 @@ async fn rest_create_posting(
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
     if should_sync_readme && posting.readme {
         sync_readme_posting_to_git(
+            &data_root,
             &authorization,
             &owner_name_for_sync,
             &project_name_for_sync,
@@ -1727,6 +1743,7 @@ async fn rest_update_posting(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -1785,6 +1802,7 @@ async fn rest_update_posting(
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
     if should_sync_readme && posting.readme {
         sync_readme_posting_to_git(
+            &data_root,
             &access.authorization,
             &owner_name_for_sync,
             &project_name_for_sync,
@@ -2256,6 +2274,7 @@ fn posting_can_set_notice(authorization: &persistence::ProjectAuthorizationRecor
 }
 
 fn sync_readme_posting_to_git(
+    data_root: &StdPath,
     authorization: &persistence::ProjectAuthorizationRecord,
     owner_name: &str,
     project_name: &str,
@@ -2265,7 +2284,7 @@ fn sync_readme_posting_to_git(
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(());
     }
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
     if !repo_path.exists() {
         return Ok(());
     }
@@ -2284,13 +2303,14 @@ fn sync_readme_posting_to_git(
 }
 
 fn rest_post_online_commit_options(
+    data_root: &StdPath,
     authorization: &persistence::ProjectAuthorizationRecord,
     query: &RestPostFormOptionsQuery,
 ) -> Result<RestPostOnlineCommitOptions, ConnectError> {
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(RestPostOnlineCommitOptions::default());
     }
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
     let issue_template = query.issue_template;
     let path = if issue_template {
         "ISSUE_TEMPLATE.md".to_string()
@@ -2347,6 +2367,7 @@ fn rest_post_online_commit_options(
 }
 
 fn create_online_commit_from_posting_form(
+    data_root: &StdPath,
     authorization: &persistence::ProjectAuthorizationRecord,
     input: &RestPostOnlineCommitInput,
     actor: &persistence::AppUserRecord,
@@ -2367,7 +2388,7 @@ fn create_online_commit_from_posting_form(
             "online code editing requires a file path",
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
     let branch = if input.branch.trim().is_empty() {
         None
     } else {

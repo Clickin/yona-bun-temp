@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::Arc;
 
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
@@ -18,14 +18,12 @@ use yona_rust_persistence::{
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, create_router_with_repository_and_app_config,
+    AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
-
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -40,6 +38,30 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
             public_origin: String::new(),
         },
         app_repo.clone(),
+    );
+
+    (app, app_repo, db)
+}
+
+async fn build_app_with_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo, db)
@@ -531,13 +553,9 @@ async fn board_comment_create_and_update_dispatch_legacy_webhooks() {
 #[tokio::test]
 // Guards the board route-module body DTO and adapter split for README/online-commit posting.
 async fn board_readme_posting_commits_git_readme_file() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _, _) = build_app_with_repository().await;
+    let (app, _, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
@@ -636,19 +654,13 @@ async fn board_readme_posting_commits_git_readme_file() {
         container["readmeFile"]["bodyMarkdown"],
         "Updated Git README"
     );
-
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 async fn board_postform_online_commit_updates_issue_template_and_code_files() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let project = repo
@@ -817,19 +829,13 @@ async fn board_postform_online_commit_updates_issue_template_and_code_files() {
     )
     .await;
     assert_eq!(list["totalCount"], 0);
-
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 // Guards the board route query parser boundary, shared label mapper, body adapter, and direct comment helper split.
 async fn board_contract_manages_project_posts_comments_watch_and_notifications() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
     repository
@@ -1370,19 +1376,13 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         "/yona/owner/projectYobi/post/1"
     );
     assert_eq!(notifications["items"][0]["targetTitle"], "Updated README");
-
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users() {
     // Guards route-utils-owned project resource create authorization for board routes.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
     let (public_csrf, public_cookie, public_id) = register_user(app.clone(), "public").await;
@@ -1600,18 +1600,12 @@ async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users(
     .await;
     assert_eq!(group_delete.status(), StatusCode::FORBIDDEN);
     assert_ne!(public_id, org_member_id);
-
-    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
 async fn board_contract_allocates_unique_post_numbers_under_concurrent_create() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let task_count = 24;
@@ -1652,6 +1646,4 @@ async fn board_contract_allocates_unique_post_numbers_under_concurrent_create() 
     assert_eq!(unique_numbers.len(), task_count);
     assert_eq!(numbers.iter().min().copied(), Some(1));
     assert_eq!(numbers.iter().max().copied(), Some(task_count as i64));
-
-    std::env::remove_var("YONA_DATA");
 }

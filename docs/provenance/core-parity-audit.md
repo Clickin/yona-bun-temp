@@ -1170,6 +1170,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   executable file-read contracts inject per-test data roots through
   `AppRuntimeConfig`, preserving legacy DAV headers, project ACL handling, and
   svnlook-backed repository file reads while reducing global env serialization.
+- 2026-06-20 runtime DI note: board README sync and online commit helpers now
+  receive the board REST route's app-scoped `data_root` snapshot instead of
+  resolving `YONA_DATA` while finding Git repositories. The board contract
+  injects per-test data roots through `AppRuntimeConfig` for README commits,
+  issue-template commits, online file edits, ACL/watch/comment coverage, and
+  concurrent post-number allocation, preserving legacy board VCS behavior while
+  removing the board-level global env lock.
 
 ## Wave 0 Exit Snapshot
 
