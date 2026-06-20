@@ -22,7 +22,7 @@ use crate::{
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     session::SessionManager, visible_projects_for_organization, ConnectError,
     MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
+    PilotServiceImpl, ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
 };
 
@@ -346,13 +346,13 @@ struct RestOrganizationBoardsResponse {
     visible_projects: Vec<RestOrganizationBoardProjectOption>,
 }
 
-pub(crate) fn rest_routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    integrations: IntegrationConfig,
-    data_root: PathBuf,
-) -> Router {
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+    let integrations = service.integrations.clone();
+    let data_root = service.data_root.clone();
+
     Router::new()
         .route(
             "/projects/{owner_name}/{project_name}/posts",
@@ -689,13 +689,12 @@ pub(crate) fn rest_routes(
         )
 }
 
-pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    integrations: IntegrationConfig,
-    _data_root: PathBuf,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+    let integrations = service.integrations.clone();
+
     let legacy_board_posts_backend = backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
     let legacy_board_posts_base_path = base_path.clone();

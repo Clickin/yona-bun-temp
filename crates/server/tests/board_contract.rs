@@ -355,7 +355,8 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
 
 #[tokio::test]
 async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
-    // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting) parity.
+    // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting) parity
+    // through the app-scoped board route integration config snapshot.
     clear_test_webhook_outbox();
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -436,7 +437,7 @@ async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
 #[tokio::test]
 async fn board_comment_create_and_update_dispatch_legacy_webhooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_COMMENT/COMMENT_UPDATED, Comment)
-    // parity for board posting comments.
+    // parity for board posting comments through the board route service snapshot.
     clear_test_webhook_outbox();
     let (app, _, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

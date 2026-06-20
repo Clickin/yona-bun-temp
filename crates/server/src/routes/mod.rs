@@ -168,13 +168,7 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistr
         ))
         .merge(search_routes(session_manager.clone(), backend.clone()))
         .merge(issue_rest_routes(service.clone()))
-        .merge(board_rest_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-            runtime.integrations.clone(),
-            runtime.data_root.clone(),
-        ))
+        .merge(board_rest_routes(service.clone()))
         .merge(code_rest_routes(
             service.clone(),
             session_manager.clone(),
@@ -237,13 +231,7 @@ pub(crate) fn app_routes(
             backend.clone(),
             runtime.translation_proxy.clone(),
         ))
-        .merge(board_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-            runtime.integrations.clone(),
-            runtime.data_root.clone(),
-        ))
+        .merge(board_routes(service.clone()))
         .merge(issue_routes(
             session_manager.clone(),
             backend.clone(),
