@@ -1,16 +1,15 @@
 use tracing_subscriber::EnvFilter;
 use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
 use yona_rust_pilot_server::persistence::PilotRepository;
-use yona_rust_pilot_server::runtime_config::{
-    apply_startup_runtime_env, load_startup_config_from_env,
-};
+use yona_rust_pilot_server::runtime_config::load_startup_config_from_env;
 use yona_rust_pilot_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_embedded_assets_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config,
     mailbox_polling_config_from_startup, notification_mail_scheduler_config_from_startup,
-    spawn_mailbox_polling_scheduler, spawn_notification_mail_scheduler, AppRuntimeConfig,
-    NotificationMailDeliveryConfig, RuntimeConfig,
+    repository_config_from_startup, spawn_mailbox_polling_scheduler,
+    spawn_notification_mail_scheduler, AppRuntimeConfig, NotificationMailDeliveryConfig,
+    RuntimeConfig,
 };
 
 #[tokio::main]
@@ -20,16 +19,16 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let startup = load_startup_config_from_env()?;
-    apply_startup_runtime_env(&startup);
     let config: RuntimeConfig = startup.runtime.clone();
     let app_config = AppRuntimeConfig::from_startup(&startup);
+    let repository_config = repository_config_from_startup(&startup);
     let db = sea_orm::Database::connect(&startup.database_url).await?;
     Migrator::ensure_runtime_schema_with_policy(&db, startup.schema_policy).await?;
     if startup.seed_pilot {
         seed_pilot_data(&db).await?;
     }
 
-    let repository = PilotRepository::new(db);
+    let repository = PilotRepository::new_with_config(db, repository_config);
     let _notification_mail_scheduler = spawn_notification_mail_scheduler(
         repository.clone(),
         config.public_origin.clone(),

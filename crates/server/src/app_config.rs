@@ -1,3 +1,4 @@
+use crate::persistence::RepositoryConfig;
 use crate::runtime_config;
 use crate::{
     auth_social_providers_from_option, default_project_menu_keys, default_supported_languages,
@@ -201,6 +202,35 @@ pub(crate) fn integration_config_from_startup(
         ));
     }
     IntegrationConfig::from_pairs(pairs)
+}
+
+pub fn repository_config_from_startup(config: &runtime_config::StartupConfig) -> RepositoryConfig {
+    let mut pairs = Vec::new();
+    if let Some(guest_login_prefix) = &config.guest_login_prefix {
+        pairs.push((
+            "YONA_GUEST_LOGIN_PREFIX".to_string(),
+            guest_login_prefix.clone(),
+        ));
+    }
+    if let Some(notification_draft_time) = &config.notification_draft_time {
+        pairs.push((
+            "YONA_NOTIFICATION_DRAFT_TIME".to_string(),
+            notification_draft_time.clone(),
+        ));
+    }
+    if let Some(issue_event_draft_time) = &config.issue_event_draft_time {
+        pairs.push((
+            "YONA_ISSUE_EVENT_DRAFT_TIME".to_string(),
+            issue_event_draft_time.clone(),
+        ));
+    }
+    if let Some(default_menus) = &config.project_default_menus {
+        pairs.push((
+            "YONA_PROJECT_DEFAULT_MENUS".to_string(),
+            default_menus.join(","),
+        ));
+    }
+    RepositoryConfig::from_pairs(pairs)
 }
 
 impl SiteUpdateConfig {
