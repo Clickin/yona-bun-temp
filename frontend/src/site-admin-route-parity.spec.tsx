@@ -88,7 +88,9 @@ describe("site-admin route parity harness", () => {
       '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
     );
     expect(userHtml).toContain('placeholder="site.userList.search"');
-    expect(userHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(userHtml).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(userHtml).toContain('<ul class="user-list-wrap"></ul>');
     expect(userHtml).not.toContain("Search users");
     expect(userHtml).not.toContain(">Search</button>");
@@ -116,7 +118,9 @@ describe("site-admin route parity harness", () => {
 
     expect(projectHtml).toContain(">site.sidebar.projectList<");
     expect(projectHtml).toContain('placeholder="site.project.filter"');
-    expect(projectHtml).toContain('<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>');
+    expect(projectHtml).toContain(
+      '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
+    );
     expect(projectHtml).toContain('<ul class="project-list-wrap"></ul>');
     expect(projectHtml).not.toContain("Search projects");
     expect(projectHtml).not.toContain(">Search</button>");
@@ -601,13 +605,15 @@ describe("site-admin route parity harness", () => {
     );
 
     expect(updateHtml).toContain(">site.sidebar.update<");
-    expect(updateHtml).toContain("site.update.isAvailable 1.1.0");
+    expect(updateHtml).toContain("Yona 1.1.0 is available");
     expect(updateHtml).toContain(
       '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
     );
     expect(updateHtml).toContain('href="/yona/sites/update/download"');
     expect(updateHtml).toContain(">site.update.download<");
-    expect(updateHtml).toContain("site.update.currentVersion 1.0.0");
+    expect(updateHtml).toContain("Current version is Yona 1.0.0");
+    expect(updateHtml).not.toContain("site.update.isAvailable 1.1.0");
+    expect(updateHtml).not.toContain("site.update.currentVersion 1.0.0");
     expect(updateHtml).not.toContain(">Update<");
 
     const noUpdateHtml = renderToStaticMarkup(
@@ -624,8 +630,9 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(noUpdateHtml).toContain("site.update.isNotNecessary 1.0.0");
+    expect(noUpdateHtml).toContain("You are using the latest version");
     expect(noUpdateHtml).not.toContain('class="notification-badge"');
     expect(noUpdateHtml).not.toContain(">site.update.isNotNecessary<");
+    expect(noUpdateHtml).not.toContain("site.update.isNotNecessary 1.0.0");
   });
 });

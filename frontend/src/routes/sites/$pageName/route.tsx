@@ -1605,6 +1605,8 @@ export function SiteAdminUpdatePage({
   const versionToUpdate = response?.versionToUpdate ?? null;
   const currentVersion = response?.currentVersion ?? "";
   const showUpdateBadge = updateAvailable || versionToUpdate !== null;
+  const updateAvailableMessage = versionToUpdate ? `Yona ${versionToUpdate} is available` : "";
+  const currentVersionMessage = currentVersion ? `Current version is Yona ${currentVersion}` : "";
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
@@ -1628,7 +1630,7 @@ export function SiteAdminUpdatePage({
               </div>
               {versionToUpdate ? (
                 <p>
-                  <strong>{`site.update.isAvailable ${versionToUpdate}`}</strong>{" "}
+                  <strong>{updateAvailableMessage}</strong>{" "}
                   <a
                     className="ybtn ybtn-success"
                     href={appHref(runtimeConfig, "/sites/update/download")}
@@ -1637,10 +1639,8 @@ export function SiteAdminUpdatePage({
                   </a>
                 </p>
               ) : null}
-              {currentVersion ? <p>{`site.update.currentVersion ${currentVersion}`}</p> : null}
-              {!versionToUpdate && !branchError ? (
-                <p>{`site.update.isNotNecessary ${currentVersion}`}</p>
-              ) : null}
+              {currentVersion ? <p>{currentVersionMessage}</p> : null}
+              {!versionToUpdate && !branchError ? <p>You are using the latest version</p> : null}
               {branchError ? (
                 <>
                   <p>site.update.error</p>
