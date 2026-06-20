@@ -1,12 +1,11 @@
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, Method, StatusCode};
 
-use crate::session::SessionManager;
 use crate::{
     decode_query_component, internal_error, persistence, require_project_read,
     rest_project_issue_filter_from_query, rest_require_project_code_read,
-    rest_review_thread_filter, PilotBackend, RestProjectIssuesQuery, RestReviewThreadListQuery,
-    RestRouteError,
+    rest_review_thread_filter, PilotBackend, PilotServiceImpl, RestProjectIssuesQuery,
+    RestReviewThreadListQuery, RestRouteError,
 };
 
 pub(crate) struct DirectIssueExcelRoute {
@@ -98,13 +97,13 @@ pub(crate) async fn direct_issue_excel_export(
     owner_name: String,
     project_name: String,
     mut query: RestProjectIssuesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization =
@@ -222,13 +221,13 @@ pub(crate) async fn direct_review_excel_export(
     owner_name: String,
     project_name: String,
     mut query: RestReviewThreadListQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = match rest_require_project_code_read(

@@ -1542,6 +1542,7 @@ async fn issue_list_format_xls_exports_filtered_issues_from_legacy_route() {
     let response = rest(
         app,
         Method::GET,
+        // Legacy XLS export is dispatched through the asset fallback path.
         "/yona/owner/projectYobi/issues?state=open&format=xls",
         Some(&cookie),
         None,

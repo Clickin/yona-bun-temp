@@ -1458,6 +1458,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
 
     let review_export = rest_get(
         app.clone(),
+        // Legacy review XLS export is dispatched through the asset fallback path.
         "/yona/owner/projectYobi/reviews?state=open&filter=Review+comment&format=xls",
         Some(&owner_cookie),
     )

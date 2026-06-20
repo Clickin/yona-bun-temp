@@ -36,7 +36,6 @@ pub(crate) fn apply_asset_routes(
             let asset_root_for_two_segment_fallback = asset_root;
             let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
             let service_for_fallback = service;
-            let base_path_for_fallback = base_path.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -82,13 +81,11 @@ pub(crate) fn apply_asset_routes(
                     let asset_root = asset_root_for_fallback.clone();
                     let browser_runtime = browser_runtime_for_fallback.clone();
                     let service = service_for_fallback.clone();
-                    let base_path = base_path_for_fallback.clone();
                     async move {
                         serve_filesystem_or_smart_http_fallback(
                             request,
                             asset_root,
                             browser_runtime,
-                            base_path,
                             service,
                         )
                         .await
@@ -102,7 +99,6 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let browser_runtime_for_two_segment_fallback = browser_runtime;
             let service_for_fallback = service;
-            let base_path_for_fallback = base_path.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -139,25 +135,17 @@ pub(crate) fn apply_asset_routes(
                 .fallback(move |request: Request| {
                     let browser_runtime = browser_runtime_for_fallback.clone();
                     let service = service_for_fallback.clone();
-                    let base_path = base_path_for_fallback.clone();
                     async move {
-                        serve_embedded_or_smart_http_fallback(
-                            request,
-                            browser_runtime,
-                            base_path,
-                            service,
-                        )
-                        .await
+                        serve_embedded_or_smart_http_fallback(request, browser_runtime, service)
+                            .await
                     }
                 })
         }
         AssetMode::None => {
             let service_for_fallback = service;
-            let base_path_for_fallback = base_path;
             base_router.fallback(move |request: Request| {
                 let service = service_for_fallback.clone();
-                let base_path = base_path_for_fallback.clone();
-                async move { smart_http_or_not_found(request, base_path, service).await }
+                async move { smart_http_or_not_found(request, service).await }
             })
         }
     }
@@ -206,10 +194,10 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     request: Request,
     asset_root: PathBuf,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
     let method = request.method().clone();
+    let base_path = service.base_path.clone();
     if let Some(route) = direct_issue_excel_route_from_request(
         &method,
         request.uri().path(),
@@ -221,8 +209,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
@@ -237,8 +224,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
@@ -254,10 +240,10 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
 pub(crate) async fn serve_embedded_or_smart_http_fallback(
     request: Request,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
     let method = request.method().clone();
+    let base_path = service.base_path.clone();
     if let Some(route) = direct_issue_excel_route_from_request(
         &method,
         request.uri().path(),
@@ -269,8 +255,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
@@ -285,8 +270,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
@@ -301,9 +285,9 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
 
 pub(crate) async fn smart_http_or_not_found(
     request: Request,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
+    let base_path = service.base_path.clone();
     if let Some(route) = direct_issue_excel_route_from_request(
         request.method(),
         request.uri().path(),
@@ -315,8 +299,7 @@ pub(crate) async fn smart_http_or_not_found(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
@@ -331,8 +314,7 @@ pub(crate) async fn smart_http_or_not_found(
             route.owner_name,
             route.project_name,
             route.query,
-            service.session_manager.clone(),
-            service.backend.clone(),
+            service,
         )
         .await;
     }
