@@ -2789,7 +2789,7 @@ pub(crate) async fn rest_delete_site_project(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    delete_project_repository_storage(&service.data_root, project.id)?;
+    delete_project_repository_storage(&service, project.id)?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,

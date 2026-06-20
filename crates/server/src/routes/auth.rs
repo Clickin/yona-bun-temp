@@ -18,10 +18,9 @@ use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, rest_read_current_session, send_password_reset_mail, session::SessionManager,
-    AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE,
-    LEGACY_MIN_PASSWORD_LENGTH,
+    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
+    BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
+    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -455,8 +454,7 @@ pub(crate) async fn direct_request_reset_password_email(
 
 pub(crate) async fn direct_reset_password(
     form: HashMap<String, String>,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let hash_string = form.get("hashString").cloned().unwrap_or_default();
     let password = form.get("password").cloned().unwrap_or_default();
@@ -468,10 +466,10 @@ pub(crate) async fn direct_reset_password(
         } else {
             format!("/resetPassword?error=invalid&s={hash_string}")
         };
-        return Redirect::to(&base_path_href(&base_path, &query)).into_response();
+        return Redirect::to(&base_path_href(&service.base_path, &query)).into_response();
     }
 
-    let redirect_path = match &backend {
+    let redirect_path = match &service.backend {
         PilotBackend::Repository(repository) => {
             match repository
                 .find_valid_password_reset_user_id(&hash_string)
@@ -500,7 +498,7 @@ pub(crate) async fn direct_reset_password(
         _ => "/resetPassword?error=unsupported".to_string(),
     };
 
-    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+    Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
 }
 
 fn legacy_form_checkbox_checked(form: &HashMap<String, String>, key: &str) -> bool {
@@ -649,7 +647,7 @@ pub(crate) async fn direct_legacy_signup(
 
 pub(crate) async fn direct_unsupported_authenticate_provider(
     provider: String,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let provider = provider.trim();
     let redirect_path = if provider.is_empty() {
@@ -660,12 +658,12 @@ pub(crate) async fn direct_unsupported_authenticate_provider(
             percent_encode_uri_component(provider)
         )
     };
-    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+    Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
 }
 
 pub(crate) async fn direct_authenticate_provider_denied(
     provider: String,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let provider = provider.trim();
     let redirect_path = if provider.is_empty() {
@@ -676,7 +674,7 @@ pub(crate) async fn direct_authenticate_provider_denied(
             percent_encode_uri_component(provider)
         )
     };
-    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+    Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
 }
 
 const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
@@ -742,11 +740,11 @@ struct DirectUserEmailValidationResponse {
 
 pub(crate) async fn direct_legacy_user_name_validation(
     query: DirectUserNameValidationQuery,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let name = query.name.unwrap_or_default();
     let is_reserved = is_legacy_reserved_user_name(&name);
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = service.backend else {
         return RestRouteError::not_implemented("signup validation requires repository backend")
             .into_response();
     };
@@ -773,10 +771,10 @@ pub(crate) async fn direct_legacy_user_name_validation(
 
 pub(crate) async fn direct_legacy_user_email_validation(
     query: DirectUserEmailValidationQuery,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let email = query.email.unwrap_or_default();
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = service.backend else {
         return RestRouteError::not_implemented("signup validation requires repository backend")
             .into_response();
     };
@@ -797,22 +795,24 @@ fn is_legacy_reserved_user_name(name: &str) -> bool {
 
 pub(crate) async fn direct_legacy_logout(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let redirect_target = headers
         .get(http::header::REFERER)
         .and_then(|value| value.to_str().ok())
         .filter(|value| !value.trim().is_empty())
         .map(str::to_string)
-        .unwrap_or_else(|| base_path_href(&base_path, "/"));
-    let previous_token = session_manager
+        .unwrap_or_else(|| base_path_href(&service.base_path, "/"));
+    let previous_token = service
+        .session_manager
         .read_session_from_headers(&headers)
         .map(|session| session.token);
-    let anonymous_session = session_manager.create_anonymous_session(previous_token.as_deref());
+    let anonymous_session = service
+        .session_manager
+        .create_anonymous_session(previous_token.as_deref());
 
     let mut ctx = Context::new(headers);
-    attach_session_headers(&mut ctx, &session_manager, &anonymous_session);
+    attach_session_headers(&mut ctx, &service.session_manager, &anonymous_session);
     let mut response = Redirect::to(&redirect_target).into_response();
     append_response_headers(response.headers_mut(), &ctx.response_headers);
     response
@@ -820,79 +820,61 @@ pub(crate) async fn direct_legacy_logout(
 
 pub(crate) fn routes(
     service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
 ) -> Router {
-    let session_bootstrap_session_manager = session_manager.clone();
-    let session_bootstrap_backend = backend.clone();
-    let authenticate_base_path = base_path.clone();
-    let authenticate_denied_base_path = base_path.clone();
-    let direct_logout_session_manager = session_manager.clone();
-    let direct_logout_base_path = base_path.clone();
-    let direct_user_logout_session_manager = session_manager.clone();
-    let direct_user_logout_base_path = base_path.clone();
+    let session_bootstrap_service = service.clone();
+    let authenticate_service = service.clone();
+    let authenticate_denied_service = service.clone();
+    let direct_logout_service = service.clone();
+    let direct_user_logout_service = service.clone();
     let legacy_login_page_assets = assets.clone();
     let legacy_login_page_browser_runtime = browser_runtime.clone();
     let legacy_signup_page_assets = assets.clone();
     let legacy_signup_page_browser_runtime = browser_runtime.clone();
     let direct_login_service = service.clone();
     let lost_password_service = service.clone();
-    let direct_signup_service = service;
-    let signup_name_validator_backend = backend.clone();
-    let signup_email_validator_backend = backend.clone();
+    let direct_signup_service = service.clone();
+    let signup_name_validator_service = service.clone();
+    let signup_email_validator_service = service.clone();
     let legacy_lost_password_page_assets = assets.clone();
     let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
     let legacy_reset_password_page_assets = assets;
     let legacy_reset_password_page_browser_runtime = browser_runtime;
-    let reset_password_backend = backend.clone();
-    let reset_password_base_path = base_path.clone();
+    let reset_password_service = service;
 
     Router::new()
         .route(
             "/api/auth/session",
             get(move |headers: HeaderMap| {
-                let session_manager = session_bootstrap_session_manager.clone();
-                let backend = session_bootstrap_backend.clone();
-                async move { session_bootstrap(headers, session_manager, backend).await }
+                let service = session_bootstrap_service.clone();
+                async move { session_bootstrap(headers, service).await }
             }),
         )
         .route(
             "/authenticate/{provider}/denied",
             get(move |Path(provider): Path<String>| async move {
-                direct_authenticate_provider_denied(provider, authenticate_denied_base_path.clone())
+                direct_authenticate_provider_denied(provider, authenticate_denied_service.clone())
                     .await
             }),
         )
         .route(
             "/authenticate/{provider}",
             get(move |Path(provider): Path<String>| async move {
-                direct_unsupported_authenticate_provider(provider, authenticate_base_path.clone())
+                direct_unsupported_authenticate_provider(provider, authenticate_service.clone())
                     .await
             }),
         )
         .route(
             "/logout",
             get(move |headers: HeaderMap| async move {
-                direct_legacy_logout(
-                    headers,
-                    direct_logout_session_manager.clone(),
-                    direct_logout_base_path.clone(),
-                )
-                .await
+                direct_legacy_logout(headers, direct_logout_service.clone()).await
             }),
         )
         .route(
             "/users/logout",
             get(move |headers: HeaderMap| async move {
-                direct_legacy_logout(
-                    headers,
-                    direct_user_logout_session_manager.clone(),
-                    direct_user_logout_base_path.clone(),
-                )
-                .await
+                direct_legacy_logout(headers, direct_user_logout_service.clone()).await
             }),
         )
         .route(
@@ -931,7 +913,7 @@ pub(crate) fn routes(
             "/user/isUsed",
             get(
                 move |Query(query): Query<DirectUserNameValidationQuery>| async move {
-                    direct_legacy_user_name_validation(query, signup_name_validator_backend.clone())
+                    direct_legacy_user_name_validation(query, signup_name_validator_service.clone())
                         .await
                 },
             ),
@@ -942,7 +924,7 @@ pub(crate) fn routes(
                 move |Query(query): Query<DirectUserEmailValidationQuery>| async move {
                     direct_legacy_user_email_validation(
                         query,
-                        signup_email_validator_backend.clone(),
+                        signup_email_validator_service.clone(),
                     )
                     .await
                 },
@@ -975,30 +957,21 @@ pub(crate) fn routes(
             })
             .post(
                 move |Form(form): Form<HashMap<String, String>>| async move {
-                    direct_reset_password(
-                        form,
-                        reset_password_backend.clone(),
-                        reset_password_base_path.clone(),
-                    )
-                    .await
+                    direct_reset_password(form, reset_password_service.clone()).await
                 },
             ),
         )
 }
 
-async fn session_bootstrap(
-    headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Response {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = build_session_route_payload(&backend, &session).await;
+async fn session_bootstrap(headers: HeaderMap, service: PilotServiceImpl) -> Response {
+    let session = service.session_manager.ensure_anonymous_session(&headers);
+    let payload = build_session_route_payload(&service, &session).await;
     let mut response = Json(payload).into_response();
     response.headers_mut().insert(
         "X-CSRF-Token",
         session.csrf_token.parse().expect("csrf token header"),
     );
-    for cookie in session_manager.build_set_cookie_headers(&session) {
+    for cookie in service.session_manager.build_set_cookie_headers(&session) {
         response.headers_mut().append(
             axum::http::header::SET_COOKIE,
             cookie.parse().expect("set-cookie header"),
@@ -1037,10 +1010,11 @@ struct SessionRouteUser {
 }
 
 async fn build_session_route_payload(
-    backend: &PilotBackend,
+    service: &PilotServiceImpl,
     session: &crate::session::Session,
 ) -> SessionRoutePayload {
-    let Ok(projection) = crate::resolve_current_session_response(backend, Some(session)).await
+    let Ok(projection) =
+        crate::resolve_current_session_response(&service.backend, Some(session)).await
     else {
         return SessionRoutePayload {
             session: None,

@@ -31,9 +31,9 @@ use crate::{
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
-    session::SessionManager, ConnectError, Context, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
+    ConnectError, Context, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestMentionReferenceMetadata,
+    RestProjectDeleteResponse, RestRouteError,
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
@@ -1367,7 +1367,7 @@ async fn rest_create_project(
             .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?
             .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-        reset_project_repository_storage(&service.data_root, changed.id, &changed.vcs)?;
+        reset_project_repository_storage(&service, changed.id, &changed.vcs)?;
         let mut changed_authorization = authorization;
         changed_authorization.project = changed;
         payload = project_detail_with_logo_from_record(
@@ -1886,7 +1886,7 @@ pub(crate) async fn rest_delete_project(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    delete_project_repository_storage(&service.data_root, project_id)?;
+    delete_project_repository_storage(&service, project_id)?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,
@@ -2381,12 +2381,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(
-    service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let direct_project_watch_service = service.clone();
     let direct_project_unwatch_service = service.clone();
     let direct_project_enroll_service = service.clone();

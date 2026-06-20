@@ -17,10 +17,9 @@ use crate::{
     persistence, project_code_menu_visible, project_read_allowed, project_update_allowed,
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    rest_repository, rest_require_project_code_read, session::SessionManager,
-    visible_code_projects_for_organization, ConnectError, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
+    rest_repository, rest_require_project_code_read, visible_code_projects_for_organization,
+    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
@@ -2268,7 +2267,7 @@ pub(crate) async fn rest_create_pull_request(
                 None,
                 &service.public_origin,
                 &service.base_path,
-                &service.integrations,
+                &service,
             )
             .await;
             record
@@ -2541,7 +2540,7 @@ async fn accept_pull_request_for_actor(
             None,
             &service.public_origin,
             &service.base_path,
-            &service.integrations,
+            &service,
         )
         .await;
     }
@@ -2754,7 +2753,7 @@ pub(crate) async fn rest_set_pull_request_review(
         Some(reviewed),
         &service.public_origin,
         &service.base_path,
-        &service.integrations,
+        &service,
     )
     .await;
     Ok(Json(

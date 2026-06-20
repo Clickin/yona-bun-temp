@@ -231,9 +231,7 @@ pub(crate) async fn direct_smart_http_request(
                         actor,
                         &repo_path,
                         before_refs,
-                        &service.public_origin,
-                        &service.base_path,
-                        &service.integrations,
+                        &service,
                     )
                     .await;
                 }
@@ -494,9 +492,7 @@ async fn record_smart_http_push_side_effects(
     actor: &persistence::AppUserRecord,
     repo_path: &Path,
     before_refs: Vec<GitHeadRefRecord>,
-    public_origin: &str,
-    base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let Ok(summary) = smart_http_push_summary(repo_path, before_refs) else {
         return;
@@ -517,24 +513,16 @@ async fn record_smart_http_push_side_effects(
             &notification_message,
         )
         .await;
-    record_pull_request_commit_changed_side_effects(
-        repository,
-        project,
-        actor,
-        &summary,
-        public_origin,
-        base_path,
-        integrations,
-    )
-    .await;
+    record_pull_request_commit_changed_side_effects(repository, project, actor, &summary, service)
+        .await;
     dispatch_git_push_webhooks(
         repository,
         project,
         actor,
         &summary,
-        public_origin,
-        base_path,
-        integrations,
+        &service.public_origin,
+        &service.base_path,
+        &service.integrations,
     )
     .await;
 }
@@ -544,9 +532,7 @@ async fn record_pull_request_commit_changed_side_effects(
     project: &persistence::ProjectRecord,
     actor: &persistence::AppUserRecord,
     summary: &SmartHttpPushSummary,
-    public_origin: &str,
-    base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let branches = summary
         .updated_refs
@@ -591,9 +577,9 @@ async fn record_pull_request_commit_changed_side_effects(
             &detail_markdown,
             None,
             None,
-            public_origin,
-            base_path,
-            integrations,
+            &service.public_origin,
+            &service.base_path,
+            service,
         )
         .await;
     }

@@ -1,6 +1,6 @@
 use super::*;
 use yona_rust_integrations::{
-    deliver_webhook_with_config, IntegrationConfig, OutboundWebhook, WebhookDeliveryOutcome,
+    deliver_webhook_with_config, OutboundWebhook, WebhookDeliveryOutcome,
 };
 
 #[derive(Serialize)]
@@ -355,7 +355,7 @@ pub(crate) async fn dispatch_posting_webhooks(
     target_fragment: Option<&str>,
     public_origin: &str,
     base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&posting.owner_name, &posting.project_name)
@@ -409,7 +409,7 @@ pub(crate) async fn dispatch_posting_webhooks(
                 secret: webhook.secret.clone(),
                 webhook_type,
             },
-            integrations,
+            &service.integrations,
         );
         record_project_webhook_delivery(
             repository,
@@ -442,7 +442,7 @@ pub(crate) async fn dispatch_posting_comment_webhooks(
     event_type: &str,
     public_origin: &str,
     base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&posting.owner_name, &posting.project_name)
@@ -498,7 +498,7 @@ pub(crate) async fn dispatch_posting_comment_webhooks(
                 secret: webhook.secret.clone(),
                 webhook_type,
             },
-            integrations,
+            &service.integrations,
         );
         record_project_webhook_delivery(
             repository,
@@ -532,7 +532,7 @@ pub(crate) async fn dispatch_issue_webhooks(
     target_fragment: Option<&str>,
     public_origin: &str,
     base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
@@ -592,7 +592,7 @@ pub(crate) async fn dispatch_issue_webhooks(
                 secret: webhook.secret.clone(),
                 webhook_type,
             },
-            integrations,
+            &service.integrations,
         );
         record_project_webhook_delivery(
             repository,
@@ -672,7 +672,7 @@ pub(crate) async fn dispatch_pull_request_webhooks(
     reviewed: Option<bool>,
     public_origin: &str,
     base_path: &str,
-    integrations: &IntegrationConfig,
+    service: &PilotServiceImpl,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&pull_request.owner_name, &pull_request.project_name)
@@ -746,7 +746,7 @@ pub(crate) async fn dispatch_pull_request_webhooks(
                 secret: webhook.secret.clone(),
                 webhook_type,
             },
-            integrations,
+            &service.integrations,
         );
         record_project_webhook_delivery(
             repository,

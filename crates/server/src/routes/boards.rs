@@ -1561,7 +1561,7 @@ async fn rest_create_posting(
         None,
         "",
         &service.base_path,
-        &service.integrations,
+        &service,
     )
     .await;
     Ok(Json(RestPostMutationResponse::Detail(
@@ -1790,7 +1790,7 @@ async fn rest_create_posting_comment(
             "NEW_COMMENT",
             "",
             &service.base_path,
-            &service.integrations,
+            &service,
         )
         .await;
     }
@@ -1886,7 +1886,7 @@ async fn rest_update_posting_comment(
             "COMMENT_UPDATED",
             "",
             &service.base_path,
-            &service.integrations,
+            &service,
         )
         .await;
     }

@@ -2150,6 +2150,8 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
 
 #[tokio::test]
 async fn site_admin_project_list_and_delete_follow_legacy_surface() {
+    // Guards site-admin project delete service-snapshot threading: repository
+    // storage removal must use the app-config data root from the injected service.
     let data_root = tempfile::tempdir().expect("site project data root");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
         data_root: data_root.path().to_path_buf(),

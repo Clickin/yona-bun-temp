@@ -32,10 +32,10 @@ use crate::{
     persistence, project_read_allowed, project_update_allowed, redirect_to,
     require_authenticated_user, require_project_authorization, require_project_read,
     require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, session::SessionManager, user_issue_filter_name, user_issue_state,
-    visible_projects_for_organization, ConnectError, Context, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
+    rest_owned_view, user_issue_filter_name, user_issue_state, visible_projects_for_organization,
+    ConnectError, Context, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
+    PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
+    RestRouteError,
 };
 
 mod comments;
@@ -807,58 +807,35 @@ pub(crate) fn rest_project_issue_filter_from_query(
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-
     Router::new()
         .route(
             "/projects/{owner_name}/{project_name}/issues",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestProjectIssuesQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_project_issues(
                             headers,
                             owner_name,
                             project_name,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
                 }
             })
             .post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestIssueMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
-                        rest_create_issue(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                            service,
-                        )
-                        .await
+                        rest_create_issue(headers, owner_name, project_name, body, service).await
                     }
                 }
             }),
@@ -866,29 +843,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/mass-update",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestMassUpdateIssuesBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
-                        rest_mass_update_issues(
-                            headers,
-                            owner_name,
-                            project_name,
-                            body,
-                            session_manager,
-                            backend,
-                            base_path,
-                            service,
-                        )
-                        .await
+                        rest_mass_update_issues(headers, owner_name, project_name, body, service)
+                            .await
                     }
                 }
             }),
@@ -917,39 +879,27 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
+                    let service = service.clone();
                     async move {
                         rest_read_issue_detail(
                             headers,
                             owner_name,
                             project_name,
                             issue_number,
-                            session_manager,
-                            backend,
-                            base_path,
+                            service,
                         )
                         .await
                     }
                 }
             })
             .put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueMutationBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_update_issue(
@@ -958,9 +908,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -968,15 +915,9 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             })
             .delete({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_delete_issue(
@@ -984,9 +925,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             owner_name,
                             project_name,
                             issue_number,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -997,16 +935,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}/state",
             put({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueStateBody>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
                     let service = service.clone();
                     async move {
                         rest_update_issue_state(
@@ -1015,9 +947,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             body,
-                            session_manager,
-                            backend,
-                            base_path,
                             service,
                         )
                         .await
@@ -1028,12 +957,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}/upvoteWeight",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_issue_weight(
                             headers,
@@ -1041,8 +968,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             1,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1052,12 +978,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/{issue_number}/downvoteWeight",
             post({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_issue_weight(
                             headers,
@@ -1065,8 +989,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             -1,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1149,21 +1072,18 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/organizations/{organization_name}/issues",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path(organization_name): Path<String>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         let query = RestOrganizationIssuesQuery::from_raw_query(raw_query.as_deref())?;
                         rest_list_organization_issues(
                             headers,
                             organization_name,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1777,10 +1697,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-
     let legacy_issue_label_service = service.clone();
     let legacy_issue_weight_up_service = service.clone();
     let legacy_issue_weight_down_service = service.clone();
@@ -2453,8 +2369,7 @@ async fn rest_list_project_issues(
     owner_name: String,
     project_name: String,
     query: RestProjectIssuesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestProjectIssueListResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -2462,12 +2377,13 @@ async fn rest_list_project_issues(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project issues require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -2511,8 +2427,7 @@ async fn rest_list_organization_issues(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationIssuesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestOrganizationIssueListResponse>, RestRouteError> {
     if organization_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -2530,12 +2445,13 @@ async fn rest_list_organization_issues(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "organization issues require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = repository
@@ -2603,12 +2519,11 @@ async fn rest_list_organization_issues(
 pub(crate) async fn rest_list_user_issues(
     headers: HeaderMap,
     query: RestUserIssuesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestUserIssueListResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "user issues require repository backend",
         ));
@@ -2715,14 +2630,11 @@ pub(crate) async fn rest_list_user_issues(
 pub(crate) async fn rest_read_direct_issue_form_options(
     headers: HeaderMap,
     query: RestDirectIssueFormQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestDirectIssueFormOptionsResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "direct issue form requires repository backend",
         ));
@@ -2776,8 +2688,11 @@ pub(crate) async fn rest_read_direct_issue_form_options(
         )
         .await
         .map_err(RestRouteError::from_connect_error)?;
-        body_markdown =
-            direct_issue_body_markdown_from_comment(&origin, &public_origin, &base_path);
+        body_markdown = direct_issue_body_markdown_from_comment(
+            &origin,
+            &service.public_origin,
+            &service.base_path,
+        );
         refer_comment_id = origin.comment_id.to_string();
     }
 
@@ -2796,9 +2711,7 @@ async fn rest_read_issue_detail(
     owner_name: String,
     project_name: String,
     issue_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
         return Err(RestRouteError::bad_request(
@@ -2806,12 +2719,13 @@ async fn rest_read_issue_detail(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let access = read_issue_access(
@@ -2825,7 +2739,10 @@ async fn rest_read_issue_detail(
     .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_issue_detail_response_from_access_with_repository_issue_references(
-            repository, &access, actor_id, &base_path,
+            repository,
+            &access,
+            actor_id,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -2838,15 +2755,11 @@ async fn rest_update_issue_state(
     project_name: String,
     issue_number: i64,
     body: RestIssueStateBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     let state = normalize_identifier(&body.state);
     if issue_number <= 0 || !matches!(state.as_str(), "open" | "closed") {
@@ -2855,7 +2768,7 @@ async fn rest_update_issue_state(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -2899,9 +2812,9 @@ async fn rest_update_issue_state(
             "ISSUE_STATE_CHANGED",
             &issue.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -2913,7 +2826,7 @@ async fn rest_update_issue_state(
             true,
             true,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -2925,20 +2838,16 @@ async fn rest_create_issue(
     owner_name: String,
     project_name: String,
     body: RestIssueMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request("issue.error.emptyTitle"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -3000,8 +2909,8 @@ async fn rest_create_issue(
                     attachment_ids: Vec::new(),
                     contents_markdown: derived_issue_comment_markdown(
                         &issue,
-                        &public_origin,
-                        &base_path,
+                        &service.public_origin,
+                        &service.base_path,
                     ),
                     issue_number: origin.issue_number,
                     owner_name: origin.owner_name,
@@ -3020,9 +2929,9 @@ async fn rest_create_issue(
             "NEW_ISSUE",
             &issue.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -3034,7 +2943,7 @@ async fn rest_create_issue(
             true,
             true,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -3047,20 +2956,16 @@ async fn rest_update_issue(
     project_name: String,
     issue_number: i64,
     body: RestIssueMutationBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request("invalid issue update request"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -3104,9 +3009,9 @@ async fn rest_update_issue(
             "ISSUE_BODY_CHANGED",
             &issue.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -3118,9 +3023,9 @@ async fn rest_update_issue(
             "ISSUE_ASSIGNEE_CHANGED",
             &issue.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -3132,9 +3037,9 @@ async fn rest_update_issue(
             "ISSUE_MILESTONE_CHANGED",
             &issue.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -3146,7 +3051,7 @@ async fn rest_update_issue(
             true,
             true,
             session.user_id,
-            &base_path,
+            &service.base_path,
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -3158,17 +3063,13 @@ pub(crate) async fn rest_delete_issue(
     owner_name: String,
     project_name: String,
     issue_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<DeleteIssueResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -3207,9 +3108,9 @@ pub(crate) async fn rest_delete_issue(
             "RESOURCE_DELETED",
             &existing.body_markdown,
             None,
-            &public_origin,
-            &base_path,
-            &service.integrations,
+            &service.public_origin,
+            &service.base_path,
+            &service,
         )
         .await;
     }
@@ -3227,17 +3128,16 @@ async fn rest_update_issue_weight(
     project_name: String,
     issue_number: i64,
     delta: i16,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueWeightResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 {
         return Err(RestRouteError::bad_request("invalid issue weight request"));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -3281,17 +3181,13 @@ async fn rest_mass_update_issues(
     owner_name: String,
     project_name: String,
     body: RestMassUpdateIssuesBody,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Result<Json<MassUpdateIssuesResponse>, RestRouteError> {
-    let public_origin = service.public_origin.clone();
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session)
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
         ));
@@ -3349,9 +3245,9 @@ async fn rest_mass_update_issues(
                     "RESOURCE_DELETED",
                     &issue.body_markdown,
                     None,
-                    &public_origin,
-                    &base_path,
-                    &service.integrations,
+                    &service.public_origin,
+                    &service.base_path,
+                    &service,
                 )
                 .await;
             }
@@ -3400,9 +3296,9 @@ async fn rest_mass_update_issues(
                     "ISSUE_STATE_CHANGED",
                     &issue.body_markdown,
                     None,
-                    &public_origin,
-                    &base_path,
-                    &service.integrations,
+                    &service.public_origin,
+                    &service.base_path,
+                    &service,
                 )
                 .await;
             }
@@ -3418,9 +3314,9 @@ async fn rest_mass_update_issues(
                     "ISSUE_ASSIGNEE_CHANGED",
                     &issue.body_markdown,
                     None,
-                    &public_origin,
-                    &base_path,
-                    &service.integrations,
+                    &service.public_origin,
+                    &service.base_path,
+                    &service,
                 )
                 .await;
             }
@@ -3436,9 +3332,9 @@ async fn rest_mass_update_issues(
                     "ISSUE_MILESTONE_CHANGED",
                     &issue.body_markdown,
                     None,
-                    &public_origin,
-                    &base_path,
-                    &service.integrations,
+                    &service.public_origin,
+                    &service.base_path,
+                    &service,
                 )
                 .await;
             }
@@ -3450,7 +3346,7 @@ async fn rest_mass_update_issues(
                 true,
                 true,
                 session.user_id,
-                &base_path,
+                &service.base_path,
             )
             .await
             .map_err(RestRouteError::from_connect_error)?,

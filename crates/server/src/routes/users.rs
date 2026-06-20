@@ -300,7 +300,7 @@ async fn rest_list_user_issues(
     query: RestUserIssuesQuery,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    rest_list_user_issues_impl(headers, query, service.session_manager, service.backend)
+    rest_list_user_issues_impl(headers, query, service)
         .await
         .map(IntoResponse::into_response)
 }
@@ -310,16 +310,9 @@ async fn rest_read_direct_issue_form_options(
     query: RestDirectIssueFormQuery,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    rest_read_direct_issue_form_options_impl(
-        headers,
-        query,
-        service.session_manager,
-        service.backend,
-        service.base_path,
-        service.public_origin,
-    )
-    .await
-    .map(IntoResponse::into_response)
+    rest_read_direct_issue_form_options_impl(headers, query, service)
+        .await
+        .map(IntoResponse::into_response)
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {

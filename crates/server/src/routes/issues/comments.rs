@@ -277,7 +277,7 @@ pub(super) async fn rest_create_issue_comment(
         (!target_fragment.is_empty()).then_some(target_fragment.as_str()),
         &service.public_origin,
         &service.base_path,
-        &service.integrations,
+        &service,
     )
     .await;
     Ok(Json(

@@ -790,6 +790,8 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
 
 #[tokio::test]
 async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
+    // Guards auth route service-snapshot threading for the legacy logout aliases:
+    // session replacement and redirect behavior must not depend on process env.
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 

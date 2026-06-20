@@ -148,9 +148,6 @@ pub(crate) use workspace::{
 };
 
 pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
     let pull_request_service = service.clone();
 
     let router = Router::new()
@@ -189,11 +186,8 @@ pub(crate) fn app_routes(
     Router::new()
         .merge(auth_routes(
             service.clone(),
-            session_manager.clone(),
-            backend.clone(),
             assets.clone(),
             browser_runtime.clone(),
-            base_path.clone(),
         ))
         .nest("/api/v1", rest_router)
         .merge(legacy_runtime_routes(
@@ -208,12 +202,7 @@ pub(crate) fn app_routes(
         .merge(static_compat_routes())
         .merge(notification_routes(service.clone()))
         .merge(comment_routes(service.clone()))
-        .merge(project_routes(
-            service.clone(),
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-        ))
+        .merge(project_routes(service.clone()))
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),

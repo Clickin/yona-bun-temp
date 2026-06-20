@@ -183,7 +183,7 @@ async fn rest_project_fork_target_organization_id(
 
 async fn fork_project_after_auth(
     repository: &PilotRepository,
-    data_root: &std::path::Path,
+    service: &PilotServiceImpl,
     actor_id: i64,
     actor: &persistence::AppUserRecord,
     authorization: persistence::ProjectAuthorizationRecord,
@@ -255,8 +255,9 @@ async fn fork_project_after_auth(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    let source_repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
-    let fork_repo_path = yona_rust_vcs::repository_path(data_root, fork.id);
+    let source_repo_path =
+        yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let fork_repo_path = yona_rust_vcs::repository_path(&service.data_root, fork.id);
     let clone_result = {
         let _guard = repository_provisioning_lock()
             .lock()
@@ -369,15 +370,8 @@ pub(super) async fn rest_fork_project(
     .await
     .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
-        fork_project_after_auth(
-            repository,
-            &service.data_root,
-            actor_id,
-            &actor,
-            authorization,
-            body,
-        )
-        .await?,
+        fork_project_after_auth(repository, &service, actor_id, &actor, authorization, body)
+            .await?,
     )
     .into_response())
 }
@@ -437,15 +431,7 @@ pub(super) async fn direct_clone_project(
                 .to_string(),
         ),
     };
-    match fork_project_after_auth(
-        repository,
-        &service.data_root,
-        actor_id,
-        &actor,
-        authorization,
-        body,
-    )
-    .await
+    match fork_project_after_auth(repository, &service, actor_id, &actor, authorization, body).await
     {
         Ok(response) => {
             direct_project_clone_response("success", &service.base_path, &response.redirect_path)
