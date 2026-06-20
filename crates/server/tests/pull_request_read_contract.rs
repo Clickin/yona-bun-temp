@@ -117,6 +117,24 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
         .unwrap()
 }
 
+async fn rest_get_with_headers(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    headers: &[(&str, &str)],
+) -> Response<Body> {
+    let mut builder = Request::builder().method(Method::GET).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    for (key, value) in headers {
+        builder = builder.header(*key, *value);
+    }
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn direct_delete(
     app: axum::Router,
     uri: &str,
@@ -588,6 +606,101 @@ async fn seed_pull_request_detail_rows(
     .insert(db)
     .await
     .unwrap();
+}
+
+#[tokio::test]
+async fn pull_request_read_contract_serves_legacy_direct_state_helper() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, outsider_cookie, outsider_id) = register_user(app.clone(), "outsider").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let pull_request = seed_pull_request(
+        &db,
+        &repo,
+        "owner",
+        "projectYobi",
+        owner_id,
+        owner_id,
+        1,
+        "Legacy state helper",
+        6,
+        false,
+    )
+    .await;
+    pull_request::ActiveModel {
+        id: Set(pull_request.id),
+        is_merging: Set(Some(1)),
+        merged_commit_id_to: Set(Some("merge-target".to_string())),
+        ..Default::default()
+    }
+    .update(&db)
+    .await
+    .expect("mark PR merging");
+
+    let state_json = response_json(
+        rest_get_with_headers(
+            app.clone(),
+            "/yona/owner/projectYobi/pullRequest/1/state",
+            Some(&owner_cookie),
+            &[("x-requested-with", "XMLHttpRequest")],
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(state_json["id"], 1);
+    assert_eq!(state_json["isOpen"], false);
+    assert_eq!(state_json["isClosed"], false);
+    assert_eq!(state_json["isMerged"], true);
+    assert_eq!(state_json["isMerging"], true);
+    assert_eq!(state_json["isConflict"], false);
+    assert_eq!(state_json["canDeleteBranch"], false);
+    assert_eq!(state_json["canRestoreBranch"], true);
+    assert!(state_json["html"]
+        .as_str()
+        .unwrap()
+        .contains(r#"id="pullRequestState""#));
+
+    let state_html = rest_get(
+        app.clone(),
+        "/yona/owner/projectYobi/pullRequest/1/state",
+        Some(&owner_cookie),
+    )
+    .await;
+    assert_eq!(state_html.status(), StatusCode::OK);
+    let content_type = state_html
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let body = response_text(state_html).await;
+    assert!(content_type.starts_with("text/html"));
+    assert!(body.contains(r#"data-state="merged""#));
+
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    set_code_member_only(&db, project.id).await;
+    let denied = rest_get_with_headers(
+        app,
+        "/yona/owner/projectYobi/pullRequest/1/state",
+        Some(&outsider_cookie),
+        &[("x-requested-with", "XMLHttpRequest")],
+    )
+    .await;
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+    assert_ne!(outsider_id, owner_id);
 }
 
 #[tokio::test]

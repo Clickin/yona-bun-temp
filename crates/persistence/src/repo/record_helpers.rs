@@ -426,6 +426,7 @@ impl AppRepository {
             from_project_name: list_item.from_project_name,
             id: row.id,
             is_watching,
+            is_merging: row.is_merging.unwrap_or_default() != 0,
             lacking_reviewer_count,
             merged_commit_id_from: row.merged_commit_id_from.unwrap_or_default(),
             merged_commit_id_to: row.merged_commit_id_to.unwrap_or_default(),

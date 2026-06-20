@@ -1792,6 +1792,7 @@ pub struct PullRequestDetailRecord {
     pub from_project_name: String,
     pub id: i64,
     pub is_watching: bool,
+    pub is_merging: bool,
     pub lacking_reviewer_count: u32,
     pub merged_commit_id_from: String,
     pub merged_commit_id_to: String,

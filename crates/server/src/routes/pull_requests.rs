@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query},
-    http::HeaderMap,
+    http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
@@ -124,6 +124,82 @@ async fn direct_update_pull_request_source_branch(
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
     }
+}
+
+fn direct_pull_request_state_html(
+    record: &persistence::PullRequestDetailRecord,
+    source_branch_state: &RestPullRequestSourceBranchState,
+) -> String {
+    format!(
+        r#"<div id="pullRequestState" data-state="{}" data-conflict="{}" data-can-delete-branch="{}" data-can-restore-branch="{}"></div>"#,
+        record.state,
+        record.conflict,
+        source_branch_state.can_delete,
+        source_branch_state.can_restore
+    )
+}
+
+fn is_legacy_xhr(headers: &HeaderMap) -> bool {
+    let requested_with = headers
+        .get("x-requested-with")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.eq_ignore_ascii_case("XMLHttpRequest"));
+    let is_pjax = headers.contains_key("x-pjax");
+    requested_with && !is_pjax
+}
+
+async fn direct_pull_request_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if let Err(error) =
+        rest_require_project_code_read(&repository, &owner_name, &project_name, actor_id).await
+    {
+        return error.into_response();
+    }
+    let record = match repository
+        .read_pull_request_detail(&owner_name, &project_name, pull_request_number, actor_id)
+        .await
+    {
+        Ok(Some(record)) => record,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let source_branch_state =
+        match rest_pull_request_source_branch_state(&repository, &record, actor_id).await {
+            Ok(state) => state,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    let html = direct_pull_request_state_html(&record, &source_branch_state);
+    if is_legacy_xhr(&headers) {
+        let state = normalize_identifier(&record.state);
+        return Json(DirectPullRequestStateResponse {
+            id: pull_request_number,
+            is_open: state == "open",
+            is_closed: state == "closed",
+            is_merged: state == "merged",
+            is_merging: record.is_merging,
+            is_conflict: record.conflict,
+            can_delete_branch: source_branch_state.can_delete,
+            can_restore_branch: source_branch_state.can_restore,
+            html,
+        })
+        .into_response();
+    }
+
+    ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response()
 }
 
 #[derive(Default, Deserialize)]
@@ -462,6 +538,20 @@ pub(crate) struct RestPullRequestMergeResultResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct DirectPullRequestStateResponse {
+    id: i64,
+    is_open: bool,
+    is_closed: bool,
+    is_merged: bool,
+    is_merging: bool,
+    is_conflict: bool,
+    can_delete_branch: bool,
+    can_restore_branch: bool,
+    html: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestPullRequestChangedFile {
     path: String,
     patch: String,
@@ -499,9 +589,11 @@ pub(crate) fn routes(
     let pull_request_delete_source_branch_backend = backend.clone();
     let pull_request_delete_source_branch_session_manager = session_manager.clone();
     let pull_request_delete_source_branch_base_path = base_path.clone();
-    let pull_request_restore_source_branch_backend = backend;
-    let pull_request_restore_source_branch_session_manager = session_manager;
+    let pull_request_restore_source_branch_backend = backend.clone();
+    let pull_request_restore_source_branch_session_manager = session_manager.clone();
     let pull_request_restore_source_branch_base_path = base_path;
+    let pull_request_state_backend = backend;
+    let pull_request_state_session_manager = session_manager;
 
     Router::new()
         .route(
@@ -603,6 +695,29 @@ pub(crate) fn routes(
                             pull_request_restore_source_branch_session_manager.clone(),
                             pull_request_restore_source_branch_backend.clone(),
                             pull_request_restore_source_branch_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pullRequest/{pull_request_number}/state",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    async move {
+                        direct_pull_request_state(
+                            headers,
+                            owner,
+                            project,
+                            pull_request_number,
+                            pull_request_state_session_manager.clone(),
+                            pull_request_state_backend.clone(),
                         )
                         .await
                     }
