@@ -889,12 +889,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `crates/server/src/routes/projects/webhooks.rs`; route registration and the
   shared project update guard remain in the parent project route module. This
   preserves webhook management, legacy issue webhook payload delivery, issue
-  body-changed webhook delivery, PR Hangout follow-up threading, board
+  state/assignee/body/milestone-changed webhook delivery, PR Hangout follow-up threading, board
   `NEW_POSTING` webhook fan-out, and board posting-comment `NEW_COMMENT` /
   `COMMENT_UPDATED` webhook fan-out covered by
   `project_webhook_contract::project_webhooks_require_update_and_manage_crud`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_issue_body_changed_payloads_for_non_json_hooks`,
+  `issue_core_contract::issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hooks`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`,
   `pull_request_mutation_contract::pull_request_hangout_webhooks_persist_thread_names_for_followups`,

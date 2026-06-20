@@ -126,7 +126,10 @@ fn build_project_webhooks_response(
 fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
     match event_type {
         "COMMENT_UPDATED" => "notification.type.comment.updated",
+        "ISSUE_ASSIGNEE_CHANGED" => "notification.type.issue.assignee.changed",
         "ISSUE_BODY_CHANGED" => "notification.type.issue.body.changed",
+        "ISSUE_MILESTONE_CHANGED" => "notification.type.milestone.changed",
+        "ISSUE_STATE_CHANGED" => "notification.type.issue.state.changed",
         "NEW_COMMENT" => "notification.type.new.comment",
         "NEW_ISSUE" => "notification.type.new.issue",
         "NEW_POSTING" => "notification.type.new.posting",

@@ -572,6 +572,34 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     assert!(commented_text.contains("notification.type.new.comment"));
     assert!(commented_text.contains("/yona/owner/projectYobi/issue/1#comment-"));
     assert!(commented_text.contains("|#1: First webhook issue"));
+
+    clear_test_webhook_outbox();
+    ok_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let state_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(state_deliveries.len(), 1);
+    let state_changed = &state_deliveries[0];
+    assert_eq!(state_changed.payload_url, "https://hooks.example/simple");
+    assert_eq!(state_changed.event_type, "ISSUE_STATE_CHANGED");
+    assert_eq!(state_changed.webhook_type, "SIMPLE");
+    let state_payload: Value =
+        serde_json::from_str(&state_changed.body).expect("state webhook payload");
+    let state_text = state_payload["text"].as_str().unwrap_or_default();
+    assert!(state_text.contains("notification.type.issue.state.changed"));
+    assert!(state_text.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue"));
+
+    clear_test_webhook_outbox();
 }
 
 #[tokio::test]

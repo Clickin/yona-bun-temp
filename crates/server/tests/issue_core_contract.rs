@@ -256,6 +256,183 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 }
 
 #[tokio::test]
+async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks() {
+    // Guards legacy NotificationEvent issue mutation webhook fan-out from the
+    // issue lifecycle routes.
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "assigned").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue webhook parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-mutations",
+                "secret": "mutation-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Issue mutation webhook parity",
+                "bodyMarkdown": "Issue mutation body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    let state_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(state_deliveries.len(), 1);
+    assert_eq!(state_deliveries[0].event_type, "ISSUE_STATE_CHANGED");
+    let state_payload: serde_json::Value =
+        serde_json::from_str(&state_deliveries[0].body).expect("state webhook payload");
+    let state_text = state_payload["text"].as_str().unwrap_or_default();
+    assert!(state_text.contains("notification.type.issue.state.changed"));
+    assert!(
+        state_text.contains("/yona/owner/projectYobi/issue/1|#1: Issue mutation webhook parity")
+    );
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Issue mutation webhook parity",
+                "bodyMarkdown": "Issue mutation body",
+                "assigneeLoginId": "assigned",
+            })),
+        )
+        .await,
+    )
+    .await;
+    let assignee_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(assignee_deliveries.len(), 1);
+    assert_eq!(assignee_deliveries[0].event_type, "ISSUE_ASSIGNEE_CHANGED");
+    let assignee_payload: serde_json::Value =
+        serde_json::from_str(&assignee_deliveries[0].body).expect("assignee webhook payload");
+    let assignee_text = assignee_payload["text"].as_str().unwrap_or_default();
+    assert!(assignee_text.contains("notification.type.issue.assignee.changed"));
+    assert!(
+        assignee_text.contains("/yona/owner/projectYobi/issue/1|#1: Issue mutation webhook parity")
+    );
+    clear_test_webhook_outbox();
+
+    let milestone = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/milestones",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "v1.0",
+                "contentsMarkdown": "Ship issue webhook parity",
+                "dueDate": "2026-05-09",
+                "state": "open",
+                "attachmentIds": []
+            })),
+        )
+        .await,
+    )
+    .await;
+    let milestone_id = milestone["milestone"]["id"]
+        .as_i64()
+        .or_else(|| {
+            milestone["milestone"]["id"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("milestone id");
+
+    response_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Issue mutation webhook parity",
+                "bodyMarkdown": "Issue mutation body",
+                "assigneeLoginId": "assigned",
+                "milestoneId": milestone_id,
+            })),
+        )
+        .await,
+    )
+    .await;
+    let milestone_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(milestone_deliveries.len(), 1);
+    assert_eq!(
+        milestone_deliveries[0].event_type,
+        "ISSUE_MILESTONE_CHANGED"
+    );
+    let milestone_payload: serde_json::Value =
+        serde_json::from_str(&milestone_deliveries[0].body).expect("milestone webhook payload");
+    let milestone_text = milestone_payload["text"].as_str().unwrap_or_default();
+    assert!(milestone_text.contains("notification.type.milestone.changed"));
+    assert!(milestone_text
+        .contains("/yona/owner/projectYobi/issue/1|#1: Issue mutation webhook parity"));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     // Guards issue route-owned detail/state helpers, detail projections, REST response DTOs, mutation, issues/comments.rs, and issues/legacy_external.rs split.
     let (app, _) = build_app_with_repository().await;
