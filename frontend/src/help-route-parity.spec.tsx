@@ -42,6 +42,10 @@ describe("legacy help route parity", () => {
   });
 
   it("renders the legacy help/toc FAQ shell and anchors", () => {
+    const legacyView = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/help/toc.scala.html"),
+      { encoding: "utf8" },
+    );
     const html = renderToStaticMarkup(<HelpTocPage />);
 
     expect(html).toContain('class="site-breadcrumb-outer"');
@@ -57,10 +61,22 @@ describe("legacy help route parity", () => {
     expect(html).toContain('class="answer-wrap"');
     expect(html).toContain('class="yobicon-a a"');
     expect(html).toContain('style="width:100%"');
-    expect(html).toContain("app.name를 설치하고 싶어요.");
+    expect(legacyView).toContain('@Messages("app.name")를 설치하고 싶어요.');
+    expect(html).toContain("Yona를 설치하고 싶어요.");
+    expect(html).not.toContain("app.name");
     expect(html).toContain("프로젝트를 새로 생성하고 싶어요.");
     expect(html).toContain("게시판에서는 어떠한 것들을 할수 있나요?");
     expect(html).toContain("https://github.com/doortts/yona#korean");
     expect(html).toContain("https://github.com/nforge/yobi/issues");
+  });
+
+  it("renders legacy app.name FAQ copy from the runtime site name", () => {
+    const html = renderToStaticMarkup(<HelpTocPage siteName="Legacy Yona" />);
+
+    expect(html).toContain("Legacy Yona를 설치하고 싶어요.");
+    expect(html).toContain("Legacy Yona를 설치하고자 하면");
+    expect(html).toContain("Legacy Yona의 버그를 발견했어요.");
+    expect(html).toContain("Legacy Yona 이슈트래커에 등록");
+    expect(html).not.toContain("app.name");
   });
 });

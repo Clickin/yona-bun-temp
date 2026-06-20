@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export function HelpTocPage() {
+export function HelpTocPage({ siteName = "Yona" }: { siteName?: string } = {}) {
   const listRef = React.useRef<HTMLUListElement | null>(null);
   const [openItems, setOpenItems] = React.useState<Set<number>>(() => new Set());
 
@@ -42,23 +42,26 @@ export function HelpTocPage() {
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <ul className="qas" ref={listRef}>
-            {helpQuestions.map((item, index) => (
-              <li className={`qa${openItems.has(index) ? " open" : ""}`} key={item.question}>
-                <div className="question-wrap">
-                  <i className="yobicon-q q"></i>
-                  <a className="question" href="#!/toggle">
-                    {item.question}
-                  </a>
-                  <i className="ico icor"></i>
-                </div>
-                <div className="answer-wrap">
-                  <i className="yobicon-a a"></i>
-                  <div className="answer" style={{ width: "100%" }}>
-                    {item.answer}
+            {helpQuestions.map((item, index) => {
+              const question = item.question(siteName);
+              return (
+                <li className={`qa${openItems.has(index) ? " open" : ""}`} key={question}>
+                  <div className="question-wrap">
+                    <i className="yobicon-q q"></i>
+                    <a className="question" href="#!/toggle">
+                      {question}
+                    </a>
+                    <i className="ico icor"></i>
                   </div>
-                </div>
-              </li>
-            ))}
+                  <div className="answer-wrap">
+                    <i className="yobicon-a a"></i>
+                    <div className="answer" style={{ width: "100%" }}>
+                      {item.answer(siteName)}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -66,19 +69,22 @@ export function HelpTocPage() {
   );
 }
 
-const helpQuestions: Array<{ question: string; answer: React.ReactNode }> = [
+const helpQuestions: Array<{
+  question: (siteName: string) => string;
+  answer: (siteName: string) => React.ReactNode;
+}> = [
   {
-    answer: (
+    answer: (siteName) => (
       <>
-        app.name를 설치하고자 하면{" "}
+        {siteName}를 설치하고자 하면{" "}
         <a href="https://github.com/doortts/yona#korean">https://github.com/doortts/yona#korean</a>
         를 참고해 주세요.
       </>
     ),
-    question: "app.name를 설치하고 싶어요.",
+    question: (siteName) => `${siteName}를 설치하고 싶어요.`,
   },
   {
-    answer: (
+    answer: () => (
       <>
         <p>상단의 "새 프로젝트 시작"을 클릭하신후 필요한 정보를 입력하시면 됩니다.</p>
         <p>
@@ -97,10 +103,10 @@ const helpQuestions: Array<{ question: string; answer: React.ReactNode }> = [
         </p>
       </>
     ),
-    question: "프로젝트를 새로 생성하고 싶어요.",
+    question: () => "프로젝트를 새로 생성하고 싶어요.",
   },
   {
-    answer: (
+    answer: () => (
       <>
         <a href="/">메인화면</a>
         우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가 있는 것은
@@ -108,19 +114,19 @@ const helpQuestions: Array<{ question: string; answer: React.ReactNode }> = [
         <a href="/info">정보 페이지</a>에서도 확인하실수 있습니다.
       </>
     ),
-    question: "내가 참여하는 프로젝트들은 어디서 볼수 있나요?",
+    question: () => "내가 참여하는 프로젝트들은 어디서 볼수 있나요?",
   },
   {
-    answer: (
+    answer: () => (
       <>
         자신의 <a href="/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고 탈퇴도
         할수 있습니다. 자신이 프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
       </>
     ),
-    question: "프로젝트 탈퇴는 어떻게 하나요.",
+    question: () => "프로젝트 탈퇴는 어떻게 하나요.",
   },
   {
-    answer: (
+    answer: () => (
       <>
         게시판에서는 다음과 같은 기능이 가능합니다.
         <ul>
@@ -133,16 +139,16 @@ const helpQuestions: Array<{ question: string; answer: React.ReactNode }> = [
         </ul>
       </>
     ),
-    question: "게시판에서는 어떠한 것들을 할수 있나요?",
+    question: () => "게시판에서는 어떠한 것들을 할수 있나요?",
   },
   {
-    answer: (
+    answer: (siteName) => (
       <>
-        app.name는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
-        <a href="https://github.com/nforge/yobi/issues">app.name 이슈트래커에 등록</a>해 주시거나
+        {siteName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
+        <a href="https://github.com/nforge/yobi/issues">{siteName} 이슈트래커에 등록</a>해 주시거나
         패치를 만들어 보내주시면 됩니다.
       </>
     ),
-    question: "app.name의 버그를 발견했어요.",
+    question: (siteName) => `${siteName}의 버그를 발견했어요.`,
   },
 ];

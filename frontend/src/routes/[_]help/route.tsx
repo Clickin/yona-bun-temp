@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAppRuntime } from "../../app-runtime-context";
 import { HelpTocPage } from "../-help-views";
 import { useDocumentTitle } from "../-shared";
 
@@ -7,6 +8,7 @@ export const Route = createFileRoute("/_help")({
 });
 
 function HelpRouteComponent() {
+  const { runtimeConfig } = useAppRuntime();
   useDocumentTitle("title.help");
-  return <HelpTocPage />;
+  return <HelpTocPage siteName={runtimeConfig.siteName ?? "Yona"} />;
 }
