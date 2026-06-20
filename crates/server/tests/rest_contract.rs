@@ -225,6 +225,33 @@ async fn rest(
     .unwrap()
 }
 
+async fn rest_form(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    form_body: &str,
+) -> axum::response::Response {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(
+            http::header::CONTENT_TYPE,
+            "application/x-www-form-urlencoded",
+        )
+        .header(http::header::ACCEPT, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::from(form_body.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn rest_with_headers(
     app: axum::Router,
     method: Method,
@@ -1640,6 +1667,107 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert!(members["members"].is_array());
+
+    let project_labels_empty = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/owner/projectYobi/labels",
+            &[(http::header::ACCEPT.as_str(), "application/json")],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(project_labels_empty.as_object().unwrap().len(), 0);
+
+    let attached_project_label_response = rest_form(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/labels",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "category=OS&name=linux",
+    )
+    .await;
+    assert_eq!(
+        attached_project_label_response.status(),
+        StatusCode::CREATED
+    );
+    let attached_project_label = response_json(attached_project_label_response).await;
+    let attached_project_label_object = attached_project_label.as_object().unwrap();
+    let attached_project_label_id = attached_project_label_object.keys().next().unwrap().clone();
+    assert_eq!(
+        attached_project_label[&attached_project_label_id]["category"],
+        "OS"
+    );
+    assert_eq!(
+        attached_project_label[&attached_project_label_id]["name"],
+        "linux"
+    );
+
+    let duplicate_project_label_response = rest_form(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/labels",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "category=OS&name=linux",
+    )
+    .await;
+    assert_eq!(
+        duplicate_project_label_response.status(),
+        StatusCode::NO_CONTENT
+    );
+
+    let project_labels_listed = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/owner/projectYobi/labels",
+            &[(http::header::ACCEPT.as_str(), "application/json")],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        project_labels_listed[&attached_project_label_id]["category"],
+        "OS"
+    );
+    assert_eq!(
+        project_labels_listed[&attached_project_label_id]["name"],
+        "linux"
+    );
+
+    let detached_project_label_response = rest_form(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/owner/projectYobi/labels/{attached_project_label_id}"),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "_method=DELETE",
+    )
+    .await;
+    assert_eq!(
+        detached_project_label_response.status(),
+        StatusCode::NO_CONTENT
+    );
+
+    let project_labels_after_detach = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/owner/projectYobi/labels",
+            &[(http::header::ACCEPT.as_str(), "application/json")],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(project_labels_after_detach
+        .get(&attached_project_label_id)
+        .is_none());
 
     let updated = ok_json(
         rest(

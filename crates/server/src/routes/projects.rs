@@ -2405,6 +2405,12 @@ pub(crate) fn routes(
     let direct_project_enroll_session_manager = session_manager.clone();
     let direct_project_cancel_enroll_backend = backend.clone();
     let direct_project_cancel_enroll_session_manager = session_manager.clone();
+    let direct_project_labels_backend = backend.clone();
+    let direct_project_labels_session_manager = session_manager.clone();
+    let direct_project_label_attach_backend = backend.clone();
+    let direct_project_label_attach_session_manager = session_manager.clone();
+    let direct_project_label_detach_backend = backend.clone();
+    let direct_project_label_detach_session_manager = session_manager.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2735,6 +2741,62 @@ pub(crate) fn routes(
             ),
         )
         .route(
+            "/{owner_name}/{project_name}/labels",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_project_labels(
+                            headers,
+                            owner_name,
+                            project_name,
+                            direct_project_labels_session_manager.clone(),
+                            direct_project_labels_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            )
+            .post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_attach_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            form,
+                            direct_project_label_attach_session_manager.clone(),
+                            direct_project_label_attach_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/labels/{label_id}",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, label_id)): Path<(String, String, i64)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_detach_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            label_id,
+                            form,
+                            direct_project_label_detach_session_manager.clone(),
+                            direct_project_label_detach_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
             "/{owner_name}/{project_name}/mentionList",
             get(
                 move |headers: HeaderMap,
@@ -3039,6 +3101,147 @@ async fn legacy_project_title_heads(
     }
 
     Json(serde_json::json!({ "result": result })).into_response()
+}
+
+fn legacy_project_label_json(
+    labels: impl IntoIterator<Item = persistence::LegacyProjectLabelRecord>,
+) -> serde_json::Value {
+    let mut result = serde_json::Map::new();
+    for label in labels {
+        result.insert(
+            label.id.to_string(),
+            serde_json::json!({
+                "category": label.category,
+                "name": label.name,
+            }),
+        );
+    }
+    serde_json::Value::Object(result)
+}
+
+async fn direct_project_labels(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if !accepts_legacy_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project labels require repository backend")
+            .into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if let Err(error) = require_project_read(repository, &owner, &project_name, actor_id).await {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
+
+    match repository
+        .list_legacy_project_labels(&owner, &project_name)
+        .await
+    {
+        Ok(Some(labels)) => Json(legacy_project_label_json(labels)).into_response(),
+        Ok(None) => RestRouteError::not_found("pilot project not found").into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_attach_project_label(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project labels require repository backend")
+            .into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project_name,
+        &session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+
+    let name = form_value(&form, &["name"]).trim();
+    if name.is_empty() {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    let category = form
+        .get("category")
+        .map(String::as_str)
+        .filter(|category| !category.trim().is_empty());
+
+    match repository
+        .attach_legacy_project_label(&owner, &project_name, category, name)
+        .await
+    {
+        Ok(Some(result)) if result.attached => {
+            let status = if result.created {
+                StatusCode::CREATED
+            } else {
+                StatusCode::OK
+            };
+            (status, Json(legacy_project_label_json([result.label]))).into_response()
+        }
+        Ok(Some(_)) => StatusCode::NO_CONTENT.into_response(),
+        Ok(None) => RestRouteError::not_found("pilot project not found").into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_detach_project_label(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    label_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project labels require repository backend")
+            .into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project_name,
+        &session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    if !form_value(&form, &["_method"]).eq_ignore_ascii_case("delete") {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+
+    match repository
+        .detach_legacy_project_label(&owner, &project_name, label_id)
+        .await
+    {
+        Ok(Some(true)) => StatusCode::NO_CONTENT.into_response(),
+        Ok(Some(false)) => {
+            RestRouteError::not_found("legacy project label not found").into_response()
+        }
+        Ok(None) => RestRouteError::not_found("pilot project not found").into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
 }
 
 async fn legacy_external_project_assignable_users(

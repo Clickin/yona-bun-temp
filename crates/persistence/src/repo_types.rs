@@ -537,6 +537,20 @@ pub struct ProjectHomeHistoryItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyProjectLabelRecord {
+    pub category: String,
+    pub id: i64,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LegacyProjectLabelAttachResult {
+    pub attached: bool,
+    pub created: bool,
+    pub label: LegacyProjectLabelRecord,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateProjectLabelInput {
     pub category_is_exclusive: bool,
     pub category_name: String,

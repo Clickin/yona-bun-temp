@@ -15,13 +15,14 @@ use crate::repo_types::{
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
     IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
     IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, IssueVoterRecord,
-    LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyProjectTitleHeadRecord,
-    LegacyResourceTargetRecord, LegacyReviewCommentDeleteTarget,
-    LegacyReviewCommentDeleteTargetKind, MailboxActionExecutionInput, MailboxActionExecutionRecord,
-    MailboxNormalizedMessageInput, MailboxNormalizedMessageResult, MailboxReplyTargetRecord,
-    MailboxResourceActionRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
-    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    LegacyExternalWatcherListRecord, LegacyExternalWatcherRecord, LegacyProjectLabelAttachResult,
+    LegacyProjectLabelRecord, LegacyProjectTitleHeadRecord, LegacyResourceTargetRecord,
+    LegacyReviewCommentDeleteTarget, LegacyReviewCommentDeleteTargetKind,
+    MailboxActionExecutionInput, MailboxActionExecutionRecord, MailboxNormalizedMessageInput,
+    MailboxNormalizedMessageResult, MailboxReplyTargetRecord, MailboxResourceActionRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -59,14 +60,15 @@ use crate::{
     assignee, attachment, comment_thread, comment_thread_n4user, commit_comment, email,
     favorite_issue, favorite_organization, favorite_project, issue, issue_comment,
     issue_comment_voter, issue_event, issue_issue_label, issue_label, issue_label_category,
-    issue_sharer, issue_voter, linked_account, mention, milestone, n4user, notification_event,
-    notification_event_n4user, notification_mail, organization, organization_user, original_email,
-    posting, posting_comment, posting_issue_label, project, project_label, project_menu_setting,
-    project_pushed_branch, project_transfer, project_user, project_visitation, pull_request,
-    pull_request_commit, pull_request_event, pull_request_reviewers, recent_issue, recent_project,
-    review_comment, role, site_admin, title_head, unwatch, user_credential,
-    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
-    user_verification, watch, webhook, webhook_delivery, webhook_thread,
+    issue_sharer, issue_voter, label, linked_account, mention, milestone, n4user,
+    notification_event, notification_event_n4user, notification_mail, organization,
+    organization_user, original_email, posting, posting_comment, posting_issue_label, project,
+    project_label, project_menu_setting, project_pushed_branch, project_transfer, project_user,
+    project_visitation, pull_request, pull_request_commit, pull_request_event,
+    pull_request_reviewers, recent_issue, recent_project, review_comment, role, site_admin,
+    title_head, unwatch, user_credential, user_enrolled_organization, user_enrolled_project,
+    user_project_notification, user_setting, user_verification, watch, webhook, webhook_delivery,
+    webhook_thread,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -237,6 +239,8 @@ mod repo_project_activity;
 mod repo_project_delete;
 #[path = "project_home_helpers.rs"]
 mod repo_project_home_helpers;
+#[path = "project_legacy_label.rs"]
+mod repo_project_legacy_label;
 #[path = "project_lookup.rs"]
 mod repo_project_lookup;
 #[path = "project_membership.rs"]
