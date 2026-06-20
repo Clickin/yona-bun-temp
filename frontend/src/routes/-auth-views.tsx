@@ -56,6 +56,34 @@ function ProviderLogo({
   return <span className="auth-provider-logo">{provider}</span>;
 }
 
+function siteNameForTitle(runtimeConfig: RuntimeConfig): string {
+  return runtimeConfig.siteName?.trim() || "Yona";
+}
+
+function LoginForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <>
+      Log in to <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
+    </>
+  );
+}
+
+function SignupForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <>
+      Sign up for <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
+    </>
+  );
+}
+
+function ResetPasswordForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <>
+      Reset password for <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
+    </>
+  );
+}
+
 function SocialProviderButtons({
   authUiCapabilities,
   runtimeConfig,
@@ -161,7 +189,9 @@ export function LoginPage({
     <main className="app-shell">
       <div className="page full">
         <div className="center-wrap tag-line-wrap login">
-          <h1 className="title">title.loginFor</h1>
+          <h1 className="title">
+            <LoginForTitle runtimeConfig={runtimeConfig} />
+          </h1>
           <p className="tag-line">app.description</p>
         </div>
         <div className="login-form-wrap frm-wrap">
@@ -400,7 +430,9 @@ export function RegisterPage({
     <main className="app-shell">
       <div className="page full">
         <div className="center-wrap tag-line-wrap signup">
-          <h1 className="title">title.signupFor</h1>
+          <h1 className="title">
+            <SignupForTitle runtimeConfig={runtimeConfig} />
+          </h1>
           <p className="tag-line">app.description</p>
         </div>
         {authUiCapabilities?.signupRequireConfirm ? (
@@ -567,7 +599,9 @@ export function LostPasswordPage({
     <main className="app-shell">
       <div className="page full">
         <div className="center-wrap tag-line-wrap reset-password">
-          <h1 className="title">title.resetPasswordFor</h1>
+          <h1 className="title">
+            <ResetPasswordForTitle runtimeConfig={runtimeConfig} />
+          </h1>
           <p className="tag-line">app.description</p>
         </div>
         <div className="login-form-wrap frm-wrap">
@@ -636,7 +670,9 @@ export function ResetPasswordPage({
     <main className="app-shell">
       <div className="page full">
         <div className="center-wrap tag-line-wrap reset-password">
-          <h1 className="title">title.resetPasswordFor</h1>
+          <h1 className="title">
+            <ResetPasswordForTitle runtimeConfig={runtimeConfig} />
+          </h1>
           <p className="tag-line">app.description</p>
         </div>
         <div className="login-form-wrap frm-wrap">

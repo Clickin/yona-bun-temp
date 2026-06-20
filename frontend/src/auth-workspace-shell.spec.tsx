@@ -57,8 +57,8 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?redirectUrl=/admin/projectYobi/issue/1",
     });
 
-    expect(html).toContain("title.loginFor");
-    expect(html).not.toContain("Login for Yona");
+    expect(html).toContain('Log in to <span class="highlight">Yona</span>');
+    expect(html).not.toContain("title.loginFor");
     expect(html).toContain('class="page full"');
     expect(html).toContain('class="center-wrap tag-line-wrap login"');
     expect(html).toContain('class="login-form-wrap frm-wrap"');
@@ -422,8 +422,8 @@ describe("auth and workspace views", () => {
       },
     });
 
-    expect(html).toContain("title.signupFor");
-    expect(html).not.toContain("Sign Up for Yona");
+    expect(html).toContain('Sign up for <span class="highlight">Yona</span>');
+    expect(html).not.toContain("title.signupFor");
     expect(html).toContain('class="page full"');
     expect(html).toContain('class="center-wrap tag-line-wrap signup"');
     expect(html).toContain('class="signup-form-wrap frm-wrap"');
@@ -453,8 +453,8 @@ describe("auth and workspace views", () => {
 
   it("renders lost-password and reset-password shells with legacy field layout", () => {
     const lostPasswordHtml = renderLostPassword("/lostPassword");
-    expect(lostPasswordHtml).toContain("title.resetPasswordFor");
-    expect(lostPasswordHtml).not.toContain("Reset Password for Yona");
+    expect(lostPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(lostPasswordHtml).not.toContain("title.resetPasswordFor");
     expect(lostPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(lostPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
@@ -469,8 +469,8 @@ describe("auth and workspace views", () => {
     expect(lostPasswordHtml).not.toContain(">Confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
-    expect(resetPasswordHtml).toContain("title.resetPasswordFor");
-    expect(resetPasswordHtml).not.toContain("Reset Password for Yona");
+    expect(resetPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(resetPasswordHtml).not.toContain("title.resetPasswordFor");
     expect(resetPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(resetPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(resetPasswordHtml).toContain('name="passwordReset"');

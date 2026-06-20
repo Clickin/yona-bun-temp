@@ -14,7 +14,8 @@ describe("wave 1 auth and workspace parity", () => {
     const loginHtml = renderLogin({ routeHref: "/users/loginform" });
     expect(loginHtml).toContain('action="/yona/users/login"');
     expect(loginHtml).toContain('href="/yona/lostPassword"');
-    expect(loginHtml).toContain("title.loginFor");
+    expect(loginHtml).toContain('Log in to <span class="highlight">Yona</span>');
+    expect(loginHtml).not.toContain("title.loginFor");
     expect(loginHtml).toContain('placeholder="user.login.key"');
     expect(loginHtml).toContain('placeholder="user.password"');
     expect(loginHtml).toContain(">button.login<");
@@ -32,7 +33,8 @@ describe("wave 1 auth and workspace parity", () => {
     });
     expect(registerHtml).toContain('action="/yona/users/signup"');
     expect(registerHtml).toContain('href="/yona/users/loginform"');
-    expect(registerHtml).toContain("title.signupFor");
+    expect(registerHtml).toContain('Sign up for <span class="highlight">Yona</span>');
+    expect(registerHtml).not.toContain("title.signupFor");
     expect(registerHtml).toContain('name="email"');
     expect(registerHtml).toContain(">user.signupBtn<");
     expect(registerHtml).not.toContain('name="emailAddress"');
@@ -44,16 +46,48 @@ describe("wave 1 auth and workspace parity", () => {
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
     expect(lostPasswordHtml).toContain('name="loginId"');
     expect(lostPasswordHtml).toContain('name="emailAddress"');
-    expect(lostPasswordHtml).toContain("title.resetPasswordFor");
+    expect(lostPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(lostPasswordHtml).not.toContain("title.resetPasswordFor");
     expect(lostPasswordHtml).toContain(">button.confirm<");
     expect(lostPasswordHtml).not.toContain(">Confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
     expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
     expect(resetPasswordHtml).toContain('name="hashString"');
-    expect(resetPasswordHtml).toContain("title.resetPasswordFor");
+    expect(resetPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(resetPasswordHtml).not.toContain("title.resetPasswordFor");
     expect(resetPasswordHtml).toContain(">button.confirm<");
     expect(resetPasswordHtml).not.toContain(">Confirm<");
+  });
+
+  it("renders legacy auth page titles with the configured site name", () => {
+    const runtimeConfig = {
+      apiBaseUrl: "/yona/api",
+      basePath: "/yona",
+      siteName: "Legacy Yona",
+    };
+
+    expect(renderLogin({ routeHref: "/users/loginform" }, runtimeConfig)).toContain(
+      'Log in to <span class="highlight">Legacy Yona</span>',
+    );
+    expect(
+      renderRegister(
+        {
+          authUiCapabilities: {
+            emailVerificationEnabled: false,
+            signupRequireConfirm: false,
+            socialLoginOnly: false,
+          },
+        },
+        runtimeConfig,
+      ),
+    ).toContain('Sign up for <span class="highlight">Legacy Yona</span>');
+    expect(renderLostPassword("/lostPassword", runtimeConfig)).toContain(
+      'Reset password for <span class="highlight">Legacy Yona</span>',
+    );
+    expect(renderResetPassword("/resetPassword", runtimeConfig)).toContain(
+      'Reset password for <span class="highlight">Legacy Yona</span>',
+    );
   });
 
   it("renders password-reset query messages without temporary email-validation page copy", () => {
@@ -76,25 +110,21 @@ describe("wave 1 auth and workspace parity", () => {
     expect(loginHtml).toContain("user.loginWithNewPassword");
     expect(loginHtml).not.toContain("Login with your new password.");
 
-    const emailHtml = renderWorkspaceSettings(
-      "emails",
-      "/user/editform/emails?validation=sent",
-      {
+    const emailHtml = renderWorkspaceSettings("emails", "/user/editform/emails?validation=sent", {
+      defaultLandingPath: "/me",
+      emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
+      favoriteProjects: [],
+      recentProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
-        favoriteProjects: [],
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
     expect(emailHtml).toContain('data-request-uri="/yona/user/email/sendValidationEmail/3"');
     expect(emailHtml).not.toContain("Validation request was accepted.");
 
@@ -233,7 +263,9 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).not.toContain("Connected social login");
     expect(html).toContain('class="github"');
     expect(html).toContain('class="google"');
-    expect(html).toContain('src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
+    expect(html).toContain(
+      'src="/yona/assets/images/provider-logo/btn_google_light_normal_ios.svg"',
+    );
     expect(html).not.toContain('viewBox="0 0 24 24"');
     expect(html).toContain("Apr 11, 2026");
     expect(html).toContain("menu.issue <span");
@@ -390,24 +422,20 @@ describe("wave 1 auth and workspace parity", () => {
   });
 
   it("renders workspace settings deep links with section-specific bodies", () => {
-    const profileHtml = renderWorkspaceSettings(
-      "profile",
-      "/user/editform",
-      {
+    const profileHtml = renderWorkspaceSettings("profile", "/user/editform", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      recentProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        favoriteProjects: [],
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
     expect(profileHtml).toContain('class="site-breadcrumb-outer"');
     expect(profileHtml).toContain('class="page-wrap-outer"');
     expect(profileHtml).toContain('class="page-wrap"');
@@ -489,30 +517,26 @@ describe("wave 1 auth and workspace parity", () => {
     expect(notificationsHtml).not.toContain("Watched Projects");
     expect(notificationsHtml).not.toContain("No watched projects yet.");
 
-    const emailsHtml = renderWorkspaceSettings(
-      "emails",
-      "/user/editform/emails",
-      {
-        apiToken: "door-token",
+    const emailsHtml = renderWorkspaceSettings("emails", "/user/editform/emails", {
+      apiToken: "door-token",
+      defaultLandingPath: "/me",
+      emails: [
+        { emailAddress: "alt@example.com", id: "2", valid: true },
+        { emailAddress: "pending@example.com", id: "3", valid: false },
+      ],
+      favoriteProjects: [],
+      recentProjects: [],
+      watchedProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        emails: [
-          { emailAddress: "alt@example.com", id: "2", valid: true },
-          { emailAddress: "pending@example.com", id: "3", valid: false },
-        ],
-        favoriteProjects: [],
-        recentProjects: [],
-        watchedProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
     expect(emailsHtml).toContain('action="/yona/user/email"');
     expect(emailsHtml).toContain("form-inline inner-bubble");
     expect(emailsHtml).toContain('name="email"');
@@ -534,27 +558,23 @@ describe("wave 1 auth and workspace parity", () => {
     expect(emailsHtml).not.toContain("Set as main");
     expect(emailsHtml).not.toContain("Validation required");
 
-    const tokenHtml = renderWorkspaceSettings(
-      "token",
-      "/user/editform/token",
-      {
-        apiToken: "door-token",
+    const tokenHtml = renderWorkspaceSettings("token", "/user/editform/token", {
+      apiToken: "door-token",
+      defaultLandingPath: "/me",
+      emails: [],
+      favoriteProjects: [],
+      recentProjects: [],
+      watchedProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        emails: [],
-        favoriteProjects: [],
-        recentProjects: [],
-        watchedProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
     expect(tokenHtml).toContain('action="/yona/user/editform/token_reset"');
     expect(tokenHtml).toContain("token-generate");
     expect(tokenHtml).toContain('id="frmBasic"');
