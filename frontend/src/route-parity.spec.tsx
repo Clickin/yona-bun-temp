@@ -4077,6 +4077,7 @@ describe("file-route parity harness", () => {
           ownerName: "owner",
           projectName: "projectYobi",
           projectScope: "public",
+          showPullRequest: true,
           viewerCanEnroll: false,
           viewerCanUpdate: false,
         }}
@@ -4137,6 +4138,9 @@ describe("file-route parity harness", () => {
     expect(projectHtml).toContain('<a href="/yona/owner">owner</a>');
     expect(projectHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(projectHtml).toContain('class="project-menu-outer"');
+    expect(projectHtml).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/pullRequests"><span class="menu-name">menu.pullRequest</span>',
+    );
     expect(projectHtml).toContain('class="page-wrap-outer"');
     expect(projectHtml).toContain('<div class="project-page-wrap">');
     expect(projectHtml).toContain('<div class="row-fluid cb" pjax-container="">');
@@ -4273,6 +4277,7 @@ describe("file-route parity harness", () => {
           ownerName: "owner",
           projectName: "projectYobi",
           projectScope: "public",
+          showReview: true,
           viewerCanEnroll: false,
           viewerCanUpdate: false,
         }}
@@ -4403,6 +4408,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="app-shell pull-request-page"');
     expect(html).toContain('class="project-header-outer"');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/reviews"><span class="menu-name">menu.review</span>',
+    );
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('<div class="project-page-wrap">');
     expect(html).toContain('<div class="row-fluid issue-list-wrap">');

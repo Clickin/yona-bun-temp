@@ -925,7 +925,7 @@ export function ProjectPullRequestListPage(props: {
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div
@@ -1221,7 +1221,7 @@ export function ProjectPullRequestFormPage(props: {
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">
@@ -2142,7 +2142,7 @@ export function ProjectPullRequestDetailPage(props: {
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           {pr ? (
@@ -3227,7 +3227,7 @@ export function PullRequestChangesPage(props: {
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="code-browse-wrap">
@@ -3590,7 +3590,7 @@ export function ProjectReviewsPage(props: {
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="review" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="row-fluid issue-list-wrap">
