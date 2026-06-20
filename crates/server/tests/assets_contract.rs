@@ -340,10 +340,6 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 // Guards asset-owned embedded fallback, runtime injection, and base-path SPA routing.
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     // Guards app-config-owned runtime projection for project scope, site name, languages, and email visibility.
-    let _guard = runtime_config_env_lock().lock().unwrap();
-    let previous_project_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
-    let previous_langs = std::env::var("YONA_LANGS").ok();
-    let previous_show_user_email = std::env::var("YONA_SHOW_USER_EMAIL").ok();
     let app = create_router_with_embedded_assets_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
@@ -383,21 +379,6 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("\"siteName\":\"Legacy Yona\""));
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
-    assert_eq!(
-        std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok(),
-        previous_project_default_scope,
-        "asset runtime app config must not mutate project default scope env"
-    );
-    assert_eq!(
-        std::env::var("YONA_LANGS").ok(),
-        previous_langs,
-        "asset runtime app config must not mutate languages env"
-    );
-    assert_eq!(
-        std::env::var("YONA_SHOW_USER_EMAIL").ok(),
-        previous_show_user_email,
-        "asset runtime app config must not mutate show-user-email env"
-    );
 
     let asset = app
         .clone()
@@ -1144,9 +1125,8 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
 }
 
 #[tokio::test]
-async fn file_upload_respects_configured_max_file_size_without_env_mutation() {
+async fn file_upload_respects_injected_max_file_size() {
     // Guards route-utils-owned upload storage token generation after helper extraction.
-    let previous_max_file_size = std::env::var("YONA_MAX_FILE_SIZE").ok();
     let (app, _, _) = build_auth_router_with_app_config(AppRuntimeConfig {
         max_uploaded_file_size: 8,
         ..AppRuntimeConfig::default()
@@ -1174,11 +1154,6 @@ async fn file_upload_respects_configured_max_file_size_without_env_mutation() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(
-        std::env::var("YONA_MAX_FILE_SIZE").ok(),
-        previous_max_file_size,
-        "per-test file upload limit must not mutate process env"
-    );
 }
 
 #[tokio::test]

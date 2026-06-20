@@ -212,28 +212,11 @@ pub(crate) fn absolute_app_url(public_origin: &str, base_path: &str, path: &str)
 
 pub(crate) fn default_public_origin(configured: &str) -> String {
     let candidate = if configured.trim().is_empty() {
-        std::env::var("YONA_PUBLIC_ORIGIN")
-            .ok()
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "http://localhost:3001".to_string())
+        "http://localhost:3001".to_string()
     } else {
         configured.trim().to_string()
     };
     candidate.trim_end_matches('/').to_string()
-}
-
-pub(crate) fn configured_env_value(names: &[&str]) -> Option<String> {
-    names.iter().find_map(|name| {
-        std::env::var(name)
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-    })
-}
-
-pub(crate) fn configured_site_name() -> String {
-    let value = std::env::var("YONA_SITE_NAME").ok();
-    site_name_from_option(value.as_deref())
 }
 
 pub(crate) fn site_name_from_option(value: Option<&str>) -> String {
@@ -244,16 +227,6 @@ pub(crate) fn trimmed_option(value: Option<&str>) -> Option<String> {
     value
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-}
-
-pub(crate) fn configured_trimmed_string(name: &str) -> String {
-    let value = std::env::var(name).ok();
-    trimmed_option(value.as_deref()).unwrap_or_default()
-}
-
-pub(crate) fn configured_auth_social_providers() -> Vec<String> {
-    let value = std::env::var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT").ok();
-    auth_social_providers_from_csv(value.as_deref())
 }
 
 pub(crate) fn auth_social_providers_from_option(values: Option<&[String]>) -> Vec<String> {
@@ -272,21 +245,11 @@ fn auth_social_providers_from_csv(value: Option<&str>) -> Vec<String> {
         .collect()
 }
 
-pub(crate) fn configured_project_default_scope() -> String {
-    let value = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
-    project_default_scope_from_option(value.as_deref())
-}
-
 pub(crate) fn project_default_scope_from_option(value: Option<&str>) -> String {
     value
         .map(normalize_identifier)
         .filter(|value| matches!(value.as_str(), "public" | "protected" | "private"))
         .unwrap_or_else(|| "public".to_string())
-}
-
-pub(crate) fn configured_project_default_menus() -> Vec<String> {
-    let value = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
-    project_default_menus_from_csv(value.as_deref())
 }
 
 pub(crate) fn project_default_menus_from_option(values: Option<&[String]>) -> Vec<String> {
@@ -338,29 +301,11 @@ fn normalize_project_default_menu_config_key(value: &str) -> String {
         .to_ascii_lowercase()
 }
 
-pub(crate) fn configured_supported_languages() -> Vec<String> {
-    let value = std::env::var("YONA_LANGS").ok();
-    supported_languages_from_csv(value.as_deref())
-}
-
 pub(crate) fn supported_languages_from_option(values: Option<&[String]>) -> Vec<String> {
     let languages = values
         .unwrap_or_default()
         .iter()
         .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .collect::<Vec<_>>();
-    (!languages.is_empty())
-        .then_some(languages)
-        .unwrap_or_else(default_supported_languages)
-}
-
-fn supported_languages_from_csv(value: Option<&str>) -> Vec<String> {
-    let languages = value
-        .unwrap_or_default()
-        .split(',')
-        .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToString::to_string)
         .collect::<Vec<_>>();
@@ -379,21 +324,6 @@ pub(crate) fn default_supported_languages() -> Vec<String> {
     ]
 }
 
-pub(crate) fn configured_bool_env(names: &[&str], default: bool) -> bool {
-    names
-        .iter()
-        .find_map(|name| {
-            std::env::var(name).ok().and_then(|value| {
-                match value.trim().to_ascii_lowercase().as_str() {
-                    "1" | "true" | "yes" | "on" => Some(true),
-                    "0" | "false" | "no" | "off" => Some(false),
-                    _ => None,
-                }
-            })
-        })
-        .unwrap_or(default)
-}
-
 pub(crate) const LEGACY_DEFAULT_MAX_FILE_SIZE: usize = 2_147_483_454;
 
 pub(crate) fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
@@ -404,11 +334,6 @@ pub(crate) fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usiz
 
 pub(crate) fn max_uploaded_file_size_from_option(value: Option<usize>) -> usize {
     value.unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
-}
-
-pub(crate) fn configured_max_uploaded_file_size() -> usize {
-    let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
-    max_uploaded_file_size_from_env_value(env_value.as_deref())
 }
 
 pub(crate) fn random_storage_token() -> String {

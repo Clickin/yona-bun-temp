@@ -133,7 +133,7 @@ pub fn create_router_with_repository_and_embedded_assets_and_app_config(
 }
 
 fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode) -> Router {
-    build_router_with_app_config(config, backend, assets, AppRuntimeConfig::from_env())
+    build_router_with_app_config(config, backend, assets, AppRuntimeConfig::default())
 }
 
 fn build_router_with_app_config(

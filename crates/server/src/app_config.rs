@@ -1,9 +1,6 @@
 use crate::runtime_config;
 use crate::{
-    auth_social_providers_from_option, configured_auth_social_providers, configured_bool_env,
-    configured_env_value, configured_max_uploaded_file_size, configured_project_default_menus,
-    configured_project_default_scope, configured_site_name, configured_supported_languages,
-    configured_trimmed_string, default_project_menu_keys, default_supported_languages,
+    auth_social_providers_from_option, default_project_menu_keys, default_supported_languages,
     max_uploaded_file_size_from_option, project_default_menus_from_option,
     project_default_scope_from_option, site_name_from_option, supported_languages_from_option,
     trimmed_option, LEGACY_DEFAULT_MAX_FILE_SIZE,
@@ -66,23 +63,6 @@ impl AuthUiConfig {
                 .unwrap_or_default(),
             signup_require_confirm: config.auth_signup_require_confirm.unwrap_or(false),
             social_login_only: config.auth_social_login_only.unwrap_or(false),
-        }
-    }
-
-    pub(crate) fn from_env() -> Self {
-        Self {
-            email_verification_enabled: configured_bool_env(
-                &["YONA_AUTH_EMAIL_VERIFICATION_ENABLED"],
-                false,
-            ),
-            enabled_social_providers: configured_auth_social_providers(),
-            login_id_placeholder: configured_trimmed_string("YONA_AUTH_LOGIN_ID_PLACEHOLDER"),
-            password_placeholder: configured_trimmed_string("YONA_AUTH_PASSWORD_PLACEHOLDER"),
-            signup_require_confirm: configured_bool_env(
-                &["YONA_AUTH_SIGNUP_REQUIRE_CONFIRM"],
-                false,
-            ),
-            social_login_only: configured_bool_env(&["YONA_AUTH_SOCIAL_LOGIN_ONLY"], false),
         }
     }
 }
@@ -173,26 +153,6 @@ impl AppRuntimeConfig {
             translation_proxy: TranslationProxyConfig::from_startup(config),
         }
     }
-
-    pub(crate) fn from_env() -> Self {
-        Self {
-            auth_ui: AuthUiConfig::from_env(),
-            integrations: IntegrationConfig::from_env(),
-            max_uploaded_file_size: configured_max_uploaded_file_size(),
-            project_default_menus: configured_project_default_menus(),
-            project_default_scope: configured_project_default_scope(),
-            session_timeout_seconds: configured_session_timeout_seconds(),
-            show_user_email: configured_bool_env(
-                &["YONA_SHOW_USER_EMAIL", "APPLICATION_SHOW_USER_EMAIL"],
-                true,
-            ),
-            site_name: configured_site_name(),
-            site_update: SiteUpdateConfig::from_env(),
-            smtp: SmtpRuntimeConfig::from_env(),
-            supported_languages: configured_supported_languages(),
-            translation_proxy: TranslationProxyConfig::from_env(),
-        }
-    }
 }
 
 fn integration_config_from_startup(config: &runtime_config::StartupConfig) -> IntegrationConfig {
@@ -230,23 +190,6 @@ impl SiteUpdateConfig {
             version: trimmed_option(config.update_version.as_deref()).unwrap_or_default(),
         }
     }
-
-    pub(crate) fn from_env() -> Self {
-        let defaults = Self::default();
-        Self {
-            current_version: configured_env_value(&["YONA_CURRENT_VERSION"])
-                .unwrap_or(defaults.current_version),
-            error: configured_env_value(&["YONA_UPDATE_ERROR"]).unwrap_or_default(),
-            https_fetch_command: configured_env_value(&["YONA_UPDATE_HTTPS_FETCH_COMMAND"])
-                .unwrap_or_default(),
-            latest_version: configured_env_value(&["YONA_UPDATE_LATEST_VERSION"])
-                .unwrap_or_default(),
-            metadata_file: configured_env_value(&["YONA_UPDATE_METADATA_FILE"]).unwrap_or_default(),
-            metadata_url: configured_env_value(&["YONA_UPDATE_METADATA_URL"]).unwrap_or_default(),
-            release_url: configured_env_value(&["YONA_UPDATE_RELEASE_URL"]).unwrap_or_default(),
-            version: configured_env_value(&["YONA_UPDATE_VERSION"]).unwrap_or_default(),
-        }
-    }
 }
 
 impl SmtpRuntimeConfig {
@@ -258,22 +201,6 @@ impl SmtpRuntimeConfig {
             password: trimmed_option(config.smtp_password.as_deref()).unwrap_or_default(),
             site_hostname: trimmed_option(config.site_hostname.as_deref()).unwrap_or_default(),
             user: trimmed_option(config.smtp_user.as_deref()).unwrap_or_default(),
-        }
-    }
-
-    pub(crate) fn from_env() -> Self {
-        Self {
-            domain: configured_env_value(&["SMTP_DOMAIN", "YONA_SMTP_DOMAIN"]).unwrap_or_default(),
-            from: configured_env_value(&["SMTP_FROM", "YONA_SMTP_FROM"]).unwrap_or_default(),
-            host: configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"]).unwrap_or_default(),
-            password: configured_env_value(&["SMTP_PASSWORD", "SMTP_PASS", "YONA_SMTP_PASSWORD"])
-                .unwrap_or_default(),
-            site_hostname: configured_env_value(&[
-                "YONA_APPLICATION_HOSTNAME",
-                "APPLICATION_HOSTNAME",
-            ])
-            .unwrap_or_default(),
-            user: configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"]).unwrap_or_default(),
         }
     }
 
@@ -317,30 +244,4 @@ impl TranslationProxyConfig {
                 .unwrap_or_default(),
         }
     }
-
-    fn from_env() -> Self {
-        Self {
-            api_url: configured_env_value(&[
-                "YONA_TRANSLATION_API",
-                "APPLICATION_EXTRAS_TRANSLATION_API",
-            ])
-            .unwrap_or_default(),
-            header_key: configured_env_value(&[
-                "YONA_TRANSLATION_HEADER_KEY",
-                "APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY",
-            ])
-            .unwrap_or_default(),
-            header_value: configured_env_value(&[
-                "YONA_TRANSLATION_HEADER_VALUE",
-                "APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE",
-            ])
-            .unwrap_or_default(),
-        }
-    }
-}
-
-fn configured_session_timeout_seconds() -> Option<u64> {
-    std::env::var("YONA_SESSION_TIMEOUT_SECONDS")
-        .ok()
-        .and_then(|value| value.trim().parse::<u64>().ok())
 }
