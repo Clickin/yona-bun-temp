@@ -1191,6 +1191,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   lookup. The pull-request mutation contract injects per-test data roots through
   `AppRuntimeConfig`; its remaining test lock is only for the process-global
   webhook outbox, not runtime config.
+- 2026-06-20 runtime DI note: legacy runtime `/_init` repository provisioning
+  and `/_import` Git clone storage now receive `RuntimeRegistry.data_root`
+  through route registration instead of resolving `YONA_DATA` inside handlers.
+  The project transfer contract now injects its per-test data root through
+  `AppRuntimeConfig`, preserving transfer mail behavior while removing the
+  project-transfer runtime config mutex.
 
 ## Wave 0 Exit Snapshot
 

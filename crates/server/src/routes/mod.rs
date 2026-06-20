@@ -227,6 +227,7 @@ pub(crate) fn app_routes(
             base_path.clone(),
             runtime.site_name.clone(),
             runtime.project_default_scope.clone(),
+            runtime.data_root.clone(),
         ))
         .merge(workspace_routes(
             service.clone(),

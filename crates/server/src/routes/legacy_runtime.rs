@@ -6,21 +6,26 @@ use axum::{
     Router,
 };
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, escape_html_text, headers_with_form_csrf, legacy_external_api_hello,
     map_project_scope, persistence, redirect_to, repository_provisioning_lock, require_session,
-    require_valid_csrf, rest_project_menu_settings, session::SessionManager, yona_data_root,
-    AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
+    require_valid_csrf, rest_project_menu_settings, session::SessionManager, AssetMode,
+    BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,
 };
 
-pub(crate) async fn direct_legacy_init(backend: PilotBackend, base_path: String) -> Response {
+pub(crate) async fn direct_legacy_init(
+    backend: PilotBackend,
+    base_path: String,
+    data_root: PathBuf,
+) -> Response {
     if let PilotBackend::Repository(repository) = backend {
-        make_legacy_test_repositories(&repository).await;
+        make_legacy_test_repositories(&repository, &data_root).await;
     }
 
     Redirect::to(&base_path_href(&base_path, "/")).into_response()
@@ -30,7 +35,7 @@ pub(crate) async fn direct_legacy_fake() -> Response {
     StatusCode::BAD_REQUEST.into_response()
 }
 
-async fn make_legacy_test_repositories(repository: &PilotRepository) {
+async fn make_legacy_test_repositories(repository: &PilotRepository, data_root: &Path) {
     let projects = match repository.list_projects().await {
         Ok(projects) => projects,
         Err(error) => {
@@ -39,8 +44,7 @@ async fn make_legacy_test_repositories(repository: &PilotRepository) {
         }
     };
     for project in projects {
-        let repo_path =
-            yona_rust_vcs::repository_path_for_vcs(&yona_data_root(), project.id, &project.vcs);
+        let repo_path = yona_rust_vcs::repository_path_for_vcs(data_root, project.id, &project.vcs);
         let result = if project.vcs.eq_ignore_ascii_case("Subversion") {
             yona_rust_vcs::create_svn_repository(&repo_path)
         } else {
@@ -160,6 +164,7 @@ pub(crate) async fn direct_import_project(
     backend: PilotBackend,
     base_path: String,
     project_default_scope: String,
+    data_root: PathBuf,
 ) -> Response {
     let headers = headers_with_form_csrf(headers, &form);
     let session = match require_session(&session_manager, &headers) {
@@ -257,7 +262,7 @@ pub(crate) async fn direct_import_project(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), created.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, created.id);
     let clone_result = {
         let _guard = match repository_provisioning_lock().lock() {
             Ok(guard) => guard,
@@ -347,6 +352,7 @@ pub(crate) fn routes(
     base_path: String,
     site_name: String,
     project_default_scope: String,
+    data_root: PathBuf,
 ) -> Router {
     let legacy_api_index_assets = assets.clone();
     let legacy_api_index_browser_runtime = browser_runtime.clone();
@@ -354,10 +360,12 @@ pub(crate) fn routes(
     let legacy_api_v1_index_browser_runtime = browser_runtime;
     let legacy_init_backend = backend.clone();
     let legacy_init_base_path = base_path.clone();
+    let legacy_init_data_root = data_root.clone();
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = backend;
     let project_import_base_path = base_path.clone();
     let project_import_default_scope = project_default_scope;
+    let project_import_data_root = data_root;
     let legacy_migration_session_manager = session_manager.clone();
     let legacy_migration_base_path = base_path.clone();
     let legacy_migration_site_name = site_name;
@@ -388,7 +396,8 @@ pub(crate) fn routes(
             get(move || {
                 let backend = legacy_init_backend.clone();
                 let base_path = legacy_init_base_path.clone();
-                async move { direct_legacy_init(backend, base_path).await }
+                let data_root = legacy_init_data_root.clone();
+                async move { direct_legacy_init(backend, base_path, data_root).await }
             }),
         )
         .route(
@@ -402,6 +411,7 @@ pub(crate) fn routes(
                         project_import_backend.clone(),
                         project_import_base_path.clone(),
                         project_import_default_scope.clone(),
+                        project_import_data_root.clone(),
                     )
                     .await
                 },

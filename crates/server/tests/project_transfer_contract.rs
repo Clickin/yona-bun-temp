@@ -3,7 +3,6 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::{json, Value};
-use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
@@ -16,11 +15,6 @@ use yona_rust_pilot_server::{
 use yona_rust_vcs::repository_path;
 
 mod rest_test_support;
-
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 async fn build_app_with_repository_and_app_config(
     app_config: AppRuntimeConfig,
@@ -192,14 +186,11 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 // preservation, and app-scoped SMTP runtime bootstrap stay together while
 // route registration remains in the parent project module.
 async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     clear_test_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
     let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, db) = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
         smtp: SmtpRuntimeConfig {
             from: "transfer-sender@example.com".to_string(),
             ..SmtpRuntimeConfig::default()
