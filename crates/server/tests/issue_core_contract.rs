@@ -3,13 +3,17 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{Database, EntityName};
 use serde_json::json;
+use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, create_router_with_repository_and_app_config,
+    AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
 
@@ -18,7 +22,7 @@ fn issue_entity_reexport_preserves_legacy_table_name() {
     assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
 }
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
+fn webhook_outbox_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
 }
@@ -36,6 +40,28 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
             public_origin: String::new(),
         },
         app_repo.clone(),
+    );
+
+    (app, app_repo)
+}
+
+async fn build_app_with_repository_in_data_root(data_root: &Path) -> (axum::Router, AppRepository) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db);
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo)
@@ -165,14 +191,11 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
     // Guards legacy NotificationEvent.afterIssueBodyChanged -> Webhook fan-out
     // from the issue lifecycle route.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _) = build_app_with_repository().await;
+    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "assigned").await;
     response_json(
@@ -274,14 +297,11 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks() {
     // Guards legacy NotificationEvent issue mutation webhook fan-out from the
     // issue lifecycle routes.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _) = build_app_with_repository().await;
+    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "assigned").await;
     response_json(
@@ -540,14 +560,11 @@ async fn issue_core_contract_mass_update_updates_due_dates() {
 #[tokio::test]
 async fn issue_core_contract_mass_update_deletes_selected_issues() {
     // Guards legacy IssueMassUpdate.delete bulk deletion over selected non-draft issues.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _) = build_app_with_repository().await;
+    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     response_json(
         rpc(
@@ -649,14 +666,11 @@ async fn issue_core_contract_mass_update_deletes_selected_issues() {
 async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_milestone_webhooks() {
     // Guards legacy IssueApp.massUpdate -> NotificationEvent.afterStateChanged
     // webhook fan-out for every issue whose state actually changed.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _) = build_app_with_repository().await;
+    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "assigned").await;
     response_json(
@@ -990,14 +1004,11 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
 async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
     // Guards legacy NotificationEvent.afterResourceDeleted -> Webhook fan-out
     // from the issue lifecycle delete route.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
 
-    let (app, _) = build_app_with_repository().await;
+    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     response_json(
         rpc(

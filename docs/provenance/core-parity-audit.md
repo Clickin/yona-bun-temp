@@ -1210,6 +1210,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   mutating `YONA_DATA` under a process-global mutex. This keeps legacy project
   import, create, SVN provisioning, container, organization, and directory
   parity coverage isolated without runtime config env locks.
+- 2026-06-20 runtime DI note: issue core webhook contract tests now inject
+  per-test repository storage through `AppRuntimeConfig.data_root` instead of
+  mutating `YONA_DATA` under `yona_data_env_lock`. The legacy issue body,
+  mutation, mass-update, and delete webhook parity checks stay on the same
+  route/API coverage while removing runtime config env serialization.
 
 ## Wave 0 Exit Snapshot
 

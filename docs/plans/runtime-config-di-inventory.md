@@ -26,7 +26,7 @@ slice lands instead of re-running broad repository searches every turn.
 
 | Priority | Area | File | Current env/config shape | Recommended next move |
 | --- | --- | --- | --- | --- |
-| 1 | Issue/core data root | `crates/server/tests/issue_core_contract.rs` | 5 `YONA_DATA` mutations behind `yona_data_env_lock`; router helper still uses default app config. | Add a `build_app_with_repository_in_data_root(&Path)` helper using `AppRuntimeConfig.data_root`, replace the 5 env-locked tests, then remove the mutex helper/import. |
+| done | Issue/core data root | `crates/server/tests/issue_core_contract.rs` | Converted. The issue webhook contract tests now use `AppRuntimeConfig.data_root` per test. | No remaining runtime config env lock in this file. |
 | 2 | Project webhook data root | `crates/server/tests/project_webhook_contract.rs` | 5 `YONA_DATA` mutations behind `yona_data_env_lock`; file already has `build_app_with_app_config`. | Route those tests through `AppRuntimeConfig.data_root`; preserve separate webhook outbox serialization if needed. |
 | 3 | Search data root | `crates/server/tests/search_contract.rs` | 30 `YONA_DATA` mutations behind async `yona_data_env_lock`; broad search parity surface. | Add data-root-aware router helper and convert in batches by route group/search category. Avoid touching search assertions while converting storage setup. |
 | 4 | SVN protocol data root | `crates/server/tests/svn_protocol_contract.rs` | 43 `YONA_DATA` mutations behind `yona_data_env_lock`; heavy executable-backed SVN suite. | Add data-root-aware router helper and convert in mechanical batches. Keep executable availability skips unchanged. |
