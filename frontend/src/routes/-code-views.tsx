@@ -632,7 +632,7 @@ export function CodeBrowserPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <section className="code-browse-wrap">
@@ -831,7 +831,7 @@ export function CodeCommitDetailPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="code-browse-wrap" id="code-browse-wrap">
@@ -909,7 +909,7 @@ export function CodeComparePage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="code-browse-wrap">
@@ -958,7 +958,7 @@ export function CodeBranchListPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="bubble-wrap dark-gray repo-wrap">
@@ -1876,7 +1876,7 @@ export function CodeHistoryPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <section className="code-browse-wrap">

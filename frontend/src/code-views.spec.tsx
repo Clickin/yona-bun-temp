@@ -115,6 +115,9 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('id="showCode"');
     expect(html).toContain('class="project-header-outer"');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">menu.code</span>',
+    );
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('href="/yona/owner">owner</a>');
@@ -1438,6 +1441,9 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("src/main.rs");
+    expect(html).toContain(
+      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">menu.code</span>',
+    );
     expect(html).toContain('class="diff-stats"');
     expect(html).toContain('class="num-added">+2</span>');
     expect(html).toContain('class="num-deleted">-1</span>');
