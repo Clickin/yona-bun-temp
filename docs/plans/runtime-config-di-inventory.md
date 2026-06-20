@@ -1,0 +1,74 @@
+# Runtime Config DI Inventory
+
+Status: current
+
+Last updated: 2026-06-20
+
+This inventory is the working queue for removing request/test-time runtime
+configuration access through process environment mutation. Before starting a
+new runtime-config DI slice, consult this document first and update it after the
+slice lands instead of re-running broad repository searches every turn.
+
+## Target End State
+
+- Runtime behavior receives config from explicit app/service DI snapshots such
+  as `AppRuntimeConfig`, `RuntimeRegistry`, `RepositoryConfig`, or integration
+  delivery config structs.
+- Contract tests that need non-default config define it per test through those
+  structs.
+- Contract tests do not serialize on process-global env locks just to isolate
+  runtime config.
+- Startup env parsing remains centralized in `runtime_config.rs`; tests that
+  intentionally verify startup env parsing are tracked separately from route or
+  service parity tests.
+
+## Current Queue
+
+| Priority | Area | File | Current env/config shape | Recommended next move |
+| --- | --- | --- | --- | --- |
+| 1 | Issue/core data root | `crates/server/tests/issue_core_contract.rs` | 5 `YONA_DATA` mutations behind `yona_data_env_lock`; router helper still uses default app config. | Add a `build_app_with_repository_in_data_root(&Path)` helper using `AppRuntimeConfig.data_root`, replace the 5 env-locked tests, then remove the mutex helper/import. |
+| 2 | Project webhook data root | `crates/server/tests/project_webhook_contract.rs` | 5 `YONA_DATA` mutations behind `yona_data_env_lock`; file already has `build_app_with_app_config`. | Route those tests through `AppRuntimeConfig.data_root`; preserve separate webhook outbox serialization if needed. |
+| 3 | Search data root | `crates/server/tests/search_contract.rs` | 30 `YONA_DATA` mutations behind async `yona_data_env_lock`; broad search parity surface. | Add data-root-aware router helper and convert in batches by route group/search category. Avoid touching search assertions while converting storage setup. |
+| 4 | SVN protocol data root | `crates/server/tests/svn_protocol_contract.rs` | 43 `YONA_DATA` mutations behind `yona_data_env_lock`; heavy executable-backed SVN suite. | Add data-root-aware router helper and convert in mechanical batches. Keep executable availability skips unchanged. |
+| 5 | Auth/workspace runtime config | `crates/server/tests/auth_workspace_contract.rs` | `auth_env_lock` protects auth UI env resets, SMTP_FROM request-time mutations, and site-name mail checks. | Split into auth UI config, SMTP config, and site-name config helpers using `AppRuntimeConfig`; keep only tests that explicitly prove startup env parsing out of this file. |
+| 6 | Site admin SMTP/runtime config | `crates/server/tests/site_admin_contract.rs` | `smtp_env_lock` protects SMTP env parser/default tests and request-time SMTP mutation checks; also has non-mutating max-file-size env assertions. | Convert route/mail behavior tests to `AppRuntimeConfig.smtp`; leave direct `SmtpRuntimeConfig::from_env` parser tests only if they are intentionally scoped as parser tests. |
+| 7 | Notification mail runtime config | `crates/server/tests/notification_contract.rs` | `notification_mail_env_lock` remains around notification scheduler/env and SMTP_FROM request-time mutation assertions. | Prefer `NotificationMailDeliveryConfig` and startup snapshot map helpers; remove request-time env mutation checks once equivalent explicit config coverage exists. |
+| 8 | Project transfer mail config | `crates/server/tests/project_transfer_contract.rs` | SMTP_FROM request-time mutation/restore helper remains. | Inject `AppRuntimeConfig.smtp`/site mail config into the router and assert env is not consulted during request handling. |
+| 9 | Integrations env-backed convenience functions | `crates/integrations/src/lib.rs` | Public helpers such as `deliver`, `deliver_webhook`, `smtp_enabled`, and `*_from_env` call `IntegrationConfig::from_env()`. | Audit call sites. Prefer `*_with_config` APIs from app/runtime paths; keep env-backed helpers only as startup/legacy compatibility wrappers if still needed. |
+
+## Startup Env Parser Exception
+
+`crates/server/tests/runtime_config_contract.rs` intentionally verifies
+`load_startup_config`, `load_startup_config_from_env`, and the temporary startup
+compatibility bridge that writes selected values back to process env. Do not use
+that file as a normal route/service DI conversion target unless the production
+startup bridge itself is being removed.
+
+Current source env accesses are concentrated in:
+
+- `crates/server/src/main.rs`: calls `load_startup_config_from_env()`.
+- `crates/server/src/runtime_config.rs`: owns startup env parsing and the
+  temporary compatibility env bridge.
+- `crates/integrations/src/lib.rs`: still exposes env-backed convenience
+  wrappers around `IntegrationConfig::from_env()`.
+
+## Already Converted Notes
+
+- Repository runtime config is explicit through `RepositoryConfig`.
+- File upload/download/delete storage receives app-scoped `data_root`.
+- Project create/delete/change-vcs/fork storage receives app-scoped `data_root`.
+- Smart HTTP, SVN dispatch, board VCS helpers, code browser, pull-request VCS
+  helpers, legacy `/_init`, legacy `/_import`, and site-admin portable
+  import/export attachment storage use app-scoped data-root snapshots.
+- `crates/server/tests/org_project_contract.rs` now injects per-test
+  `AppRuntimeConfig.data_root` and no longer mutates `YONA_DATA`.
+
+## Maintenance Rule
+
+When a queue item is completed:
+
+1. Update the row to say `done` or remove it if no follow-up remains.
+2. Add a short note to `docs/provenance/core-parity-audit.md` if parity evidence
+   changed.
+3. Run focused tests for the converted contract file and the standard cargo
+   check/parity gates.
