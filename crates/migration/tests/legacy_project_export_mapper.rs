@@ -1,5 +1,3 @@
-#![recursion_limit = "256"]
-
 use serde_json::json;
 use std::collections::BTreeMap;
 use yona_rust_pilot_migration::legacy_external::project_export_mapper::{
