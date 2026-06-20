@@ -2081,7 +2081,7 @@ export function ProjectWebhooksPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={menuDetail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={menuDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={menuDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap webhook-editor-wrap">
           <ProjectSettingsSubMenu
@@ -2333,7 +2333,7 @@ export function ProjectTransferPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingsSubMenu
@@ -2532,7 +2532,7 @@ export function ProjectForkPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">
@@ -2756,7 +2756,7 @@ export function ProjectChangeVcsPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingsSubMenu
@@ -2885,7 +2885,7 @@ export function ProjectStatisticsPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h1>Under Construction</h1>
@@ -2991,7 +2991,7 @@ export function ProjectDeletePage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingsSubMenu
@@ -3160,7 +3160,7 @@ export function ProjectSettingsPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingsSubMenu

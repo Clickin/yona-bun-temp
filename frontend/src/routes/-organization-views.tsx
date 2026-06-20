@@ -1124,7 +1124,7 @@ export function OrganizationSettingsPage(props: {
   return (
     <main className="app-shell organization-settings-shell">
       <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMenu active="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu

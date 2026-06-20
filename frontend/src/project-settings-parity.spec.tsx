@@ -40,6 +40,9 @@ describe("project settings parity", () => {
     expect(html).toContain('<a href="/yona/admin">admin</a>');
     expect(html).toContain('<a href="/yona/admin/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/admin/projectYobi/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="saveSetting"');
     expect(html).toContain('class="bubble-wrap gray"');

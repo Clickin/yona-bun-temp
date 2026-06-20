@@ -509,6 +509,7 @@ describe("file-route parity harness", () => {
       ownerName: "owner",
       projectName: "projectYobi",
       projectScope: "public",
+      showIssue: true,
       viewerCanEnroll: false,
       viewerCanUpdate: true,
     };
@@ -551,6 +552,9 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('<a href="/yona/owner">owner</a>');
     expect(createHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(createHtml).toContain('class="project-menu-outer"');
+    expect(createHtml).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/issues"><span class="menu-name">menu.issue</span>',
+    );
     expect(createHtml).toContain('class="page-wrap-outer"');
     expect(createHtml).toContain('class="project-page-wrap"');
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
@@ -5123,6 +5127,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<a href="/yona/yona">yona</a>');
     expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/yona/projectYobi/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(html).toContain('class="new-webhook-wrap"');
     expect(html).toContain('id="formNewWebhook"');
     expect(html).toContain('action="/yona/yona/projectYobi/webhooks"');
@@ -5249,6 +5256,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<a href="/yona/yona">yona</a>');
     expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/yona/projectYobi/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(html).toContain('id="acceptChangeVCS"');
     expect(html).toContain('class="bg-checkbox label-agreement"');
     expect(html).toContain('class="ybtn ybtn-danger"');
@@ -5330,6 +5340,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<a href="/yona/yona">yona</a>');
     expect(html).toContain('<a href="/yona/yona/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/yona/projectYobi/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(html).toContain('id="subMenuProjectTransfer"');
     expect(html).toContain('class="bubble-wrap gray wp"');
     expect(html).toContain('<div class="cu-label">project.transfer.new.owner</div>');
@@ -5384,6 +5397,7 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(viewSource).toContain("ProjectForkPage");
+    expect(viewSource).toContain('<ProjectMenu activeMenu="pullRequest"');
     expect(viewSource).toContain("href={`${projectHref}/newFork`}");
     expect(viewSource).toContain('className="content-wrap frm-wrap"');
     expect(viewSource).toContain('id="helpMessage"');
@@ -5441,6 +5455,7 @@ describe("file-route parity harness", () => {
           ownerName: "weblabs",
           projectName: "projectYobi",
           projectScope: "protected",
+          showIssue: true,
           viewerCanEnroll: false,
           viewerCanUpdate: true,
         }}
@@ -5454,6 +5469,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<img alt="" src="/logos/projectYobi.png"/>');
     expect(html).toContain('<a href="/yona/weblabs">weblabs</a>');
     expect(html).toContain('<a href="/yona/weblabs/projectYobi">projectYobi</a>');
+    expect(html).toContain(
+      '<li class="active"><a href="/yona/weblabs/projectYobi/issues"><span class="menu-name">menu.issue</span>',
+    );
     expect(html).toContain('<span class="project-title-text">weblabs / projectYobi</span>');
     expect(html).toContain('<span class="project-protected" title="Group Project">G</span>');
     expect(html).toContain("<h1>Under Construction</h1>");

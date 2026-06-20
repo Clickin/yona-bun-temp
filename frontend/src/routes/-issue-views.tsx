@@ -4120,7 +4120,7 @@ export function ProjectIssueFormPage(props: {
     <main className="app-shell issue-form-page">
       <h1 className="sr-only">{props.mode === "create" ? "button.newIssue" : "button.edit"}</h1>
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">

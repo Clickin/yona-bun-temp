@@ -253,6 +253,9 @@ describe("wave 2A container parity", () => {
     expect(organizationSettingsHtml).toContain(">menu.pullRequest</a>");
     expect(organizationSettingsHtml).toContain('class="project-setting"');
     expect(organizationSettingsHtml).toContain('class="yobicon-cog"');
+    expect(organizationSettingsHtml).toContain(
+      '<li class="active"><a href="/yona/organizations/weblabs/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(organizationSettingsHtml).toContain('<span class="blind">menu.admin</span>');
     expect(organizationSettingsHtml).not.toContain(">Group Home<");
     expect(organizationSettingsHtml).not.toContain(">Settings<");
@@ -272,6 +275,9 @@ describe("wave 2A container parity", () => {
       viewerCanUpdate: true,
     } as never);
     expect(projectSettingsHtml).toContain('id="saveSetting"');
+    expect(projectSettingsHtml).toContain(
+      '<li class="active"><a href="/yona/weblabs/projectYobi/settingform"><i class="yobicon-cog"></i>',
+    );
     expect(projectSettingsHtml).toContain('class="bubble-wrap gray"');
     expect(projectSettingsHtml).toContain('class="box-wrap top clearfix frm-wrap"');
     expect(projectSettingsHtml).toContain('class="setting-box left"');
