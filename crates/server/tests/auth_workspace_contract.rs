@@ -34,6 +34,11 @@ fn auth_env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+fn auth_outbox_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
     build_auth_router_with_anonymous_access(true).await
 }
@@ -291,12 +296,6 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
 
 #[tokio::test]
 async fn read_auth_ui_capabilities_returns_local_password_flags() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
-    std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_SUPPORT");
-
     let (app, _, _) = build_auth_router().await;
 
     let rest_response = app
@@ -545,10 +544,6 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
 #[tokio::test]
 // Guards auth route-owned session/sign-in/sign-out helpers plus auth capability, identifier, and error adapters.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -838,10 +833,6 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
 
 #[tokio::test]
 async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -932,7 +923,7 @@ async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
 #[tokio::test]
 // Guards the auth route-owned verify helper through REST verification.
 async fn rest_verify_user_confirms_pending_signup() {
-    let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
 
     let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
@@ -993,7 +984,7 @@ async fn rest_verify_user_confirms_pending_signup() {
 
 #[tokio::test]
 async fn register_requires_confirmation_session_from_runtime_config_without_env_mutation() {
-    let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
 
@@ -1049,7 +1040,7 @@ async fn register_requires_confirmation_session_from_runtime_config_without_env_
 #[tokio::test]
 // Guards the auth route-owned register helper through REST registration.
 async fn register_with_email_verification_creates_signup_verification_and_mail_delivery() {
-    let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
 
     let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
@@ -1102,6 +1093,7 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
 #[tokio::test]
 async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutation() {
     let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let previous_smtp_from = std::env::var("SMTP_FROM").ok();
 
@@ -1153,9 +1145,6 @@ async fn register_email_verification_uses_runtime_smtp_sender_without_env_mutati
 #[tokio::test]
 // Guards service-owned `_pilot` auth delegates and route-owned auth helpers.
 async fn register_sign_in_sign_out_and_current_session_round_trip() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1229,9 +1218,6 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
 
 #[tokio::test]
 async fn remember_me_controls_session_cookie_persistence() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1301,9 +1287,6 @@ async fn remember_me_controls_session_cookie_persistence() {
 
 #[tokio::test]
 async fn session_timeout_config_controls_non_remember_cookie_persistence() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -1380,9 +1363,6 @@ async fn session_timeout_config_controls_non_remember_cookie_persistence() {
 
 #[tokio::test]
 async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_message_keys() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1484,9 +1464,6 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
 
 #[tokio::test]
 async fn register_rejects_duplicate_login_id_and_email() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1544,9 +1521,6 @@ async fn register_rejects_duplicate_login_id_and_email() {
 
 #[tokio::test]
 async fn direct_legacy_signup_validators_report_used_reserved_and_email_state() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -1719,6 +1693,7 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     // Guards route-utils-owned password reset mail helper and absolute reset URL composition.
     let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let previous_site_name = std::env::var("YONA_SITE_NAME").ok();
     let previous_smtp_from = std::env::var("SMTP_FROM").ok();
@@ -1853,6 +1828,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
 async fn direct_email_validation_send_and_confirm_routes_round_trip() {
     // Guards route-utils-owned workspace email validation mail helper and confirmation URL.
     let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let previous_smtp_from = std::env::var("SMTP_FROM").ok();
     let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
@@ -1987,7 +1963,7 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
 #[tokio::test]
 // Guards the auth route-owned verify helper through the proto adapter.
 async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_links() {
-    let _guard = auth_env_lock().lock().unwrap();
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
     let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
         true,
@@ -2333,9 +2309,6 @@ async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_emai
 
 #[tokio::test]
 async fn direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates_api_token() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -2518,9 +2491,6 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
 
 #[tokio::test]
 async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -2621,9 +2591,6 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
 #[tokio::test]
 async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
     // Guards the legacy sidebar/usermenu HTML boundary now owned by routes/workspace/sidebar.rs.
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -2823,9 +2790,6 @@ async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_passwo
 #[tokio::test]
 // Guards workspace route-owned settings/password helpers through REST and proto routes.
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -3199,9 +3163,6 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
 #[tokio::test]
 // Guards workspace route-owned notification toggle helper error mapping.
 async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched_statuses() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -3303,7 +3264,6 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
 #[tokio::test]
 // Guards the workspace route-owned profile helper through avatar replacement.
 async fn update_profile_replaces_existing_avatar_attachment() {
-    let _guard = auth_env_lock().lock().unwrap();
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -3478,9 +3438,6 @@ async fn update_profile_replaces_existing_avatar_attachment() {
 #[tokio::test]
 // Guards workspace route-owned overview/default-landing helpers through proto adapters.
 async fn workspace_overview_reads_and_updates_default_landing() {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 

@@ -1231,6 +1231,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `YONA_DATA` under `yona_data_env_lock`. Existing executable availability
   skips, external SVN client smoke coverage, WebDAV REPORT/PROPFIND/LOCK/write
   parity assertions, and repository path checks stay unchanged.
+- 2026-06-20 runtime DI note: auth/workspace contract tests no longer clear
+  auth UI process env vars to force default signup/email-verification/social
+  login behavior. Those tests rely on explicit `AppRuntimeConfig::default()`
+  router construction, and verification-mail tests now serialize only the
+  shared test mail outbox through `auth_outbox_lock` instead of `auth_env_lock`.
+  Remaining auth env locks are limited to SMTP_FROM/site-name request-time
+  mutation checks queued for the next auth/runtime-config slice.
 
 ## Wave 0 Exit Snapshot
 
