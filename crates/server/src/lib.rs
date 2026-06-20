@@ -28,9 +28,8 @@ pub use notification_mail::{
     deliver_notification_mail_scheduler_tick, deliver_notification_mail_scheduler_tick_with_config,
     notification_mail_add_noreferrer_to_external_links,
     notification_mail_apply_legacy_html_postprocessing,
-    notification_mail_scheduler_config_from_env, notification_mail_scheduler_config_from_startup,
-    spawn_notification_mail_scheduler, NotificationMailDeliveryConfig,
-    NotificationMailSchedulerConfig,
+    notification_mail_scheduler_config_from_startup, spawn_notification_mail_scheduler,
+    NotificationMailDeliveryConfig, NotificationMailSchedulerConfig,
 };
 pub(crate) use routes::{
     absolute_app_url, accepts_legacy_json, anonymous_current_session_response,

@@ -1,11 +1,3 @@
-pub(crate) fn parse_legacy_bool(value: &str) -> Option<bool> {
-    match value.trim().to_ascii_lowercase().as_str() {
-        "1" | "true" | "yes" | "on" => Some(true),
-        "0" | "false" | "no" | "off" => Some(false),
-        _ => None,
-    }
-}
-
 pub(crate) fn parse_legacy_duration_ms(value: &str) -> Option<u64> {
     let trimmed = value.trim();
     if trimmed.is_empty() {

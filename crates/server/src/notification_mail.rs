@@ -5,7 +5,7 @@ use yona_rust_integrations::{
 };
 
 use crate::persistence::PilotRepository;
-use crate::server_config::{parse_legacy_bool, parse_legacy_duration_ms};
+use crate::server_config::parse_legacy_duration_ms;
 use crate::{
     absolute_app_url, default_public_origin, escape_html_attr, escape_html_text,
     normalize_identifier, percent_encode_uri_component, persistence, runtime_config,
@@ -95,23 +95,6 @@ impl Default for NotificationMailSchedulerConfig {
             delay_ms: 180_000,
         }
     }
-}
-
-pub fn notification_mail_scheduler_config_from_env() -> NotificationMailSchedulerConfig {
-    let defaults = NotificationMailSchedulerConfig::default();
-    let enabled = std::env::var("YONA_NOTIFICATION_MAIL_ENABLED")
-        .ok()
-        .and_then(|value| parse_legacy_bool(&value));
-    let initial_delay = std::env::var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY").ok();
-    let interval = std::env::var("YONA_NOTIFICATION_MAIL_INTERVAL").ok();
-    let delay = std::env::var("YONA_NOTIFICATION_MAIL_DELAY").ok();
-    notification_mail_scheduler_config_from_options(
-        enabled,
-        initial_delay.as_deref(),
-        interval.as_deref(),
-        delay.as_deref(),
-        defaults,
-    )
 }
 
 pub fn notification_mail_scheduler_config_from_startup(

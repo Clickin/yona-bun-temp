@@ -27,8 +27,8 @@ use yona_rust_pilot_server::{
     deliver_due_notification_mails_with_config, deliver_notification_mail_scheduler_tick,
     notification_mail_add_noreferrer_to_external_links,
     notification_mail_apply_legacy_html_postprocessing,
-    notification_mail_scheduler_config_from_env, notification_mail_scheduler_config_from_startup,
-    NotificationMailDeliveryConfig, NotificationMailSchedulerConfig, RuntimeConfig,
+    notification_mail_scheduler_config_from_startup, NotificationMailDeliveryConfig,
+    NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -830,16 +830,12 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
 
 #[tokio::test]
 async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults() {
-    let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
     clear_test_outbox();
 
-    let defaults = notification_mail_scheduler_config_from_env();
+    let current_dir = tempfile::tempdir().expect("temp dir");
+    let default_startup =
+        load_startup_config(BTreeMap::new(), current_dir.path()).expect("default startup config");
+    let defaults = notification_mail_scheduler_config_from_startup(&default_startup);
     assert_eq!(
         defaults,
         NotificationMailSchedulerConfig {
@@ -850,11 +846,26 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
         }
     );
 
-    std::env::set_var("YONA_NOTIFICATION_MAIL_ENABLED", "false");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY", "2s");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_INTERVAL", "750ms");
-    std::env::set_var("YONA_NOTIFICATION_MAIL_DELAY", "0");
-    let disabled_config = notification_mail_scheduler_config_from_env();
+    let disabled_startup = load_startup_config(
+        BTreeMap::from([
+            (
+                "YONA_NOTIFICATION_MAIL_ENABLED".to_string(),
+                "false".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INITIAL_DELAY".to_string(),
+                "2s".to_string(),
+            ),
+            (
+                "YONA_NOTIFICATION_MAIL_INTERVAL".to_string(),
+                "750ms".to_string(),
+            ),
+            ("YONA_NOTIFICATION_MAIL_DELAY".to_string(), "0".to_string()),
+        ]),
+        current_dir.path(),
+    )
+    .expect("disabled startup config");
+    let disabled_config = notification_mail_scheduler_config_from_startup(&disabled_startup);
     assert_eq!(
         disabled_config,
         NotificationMailSchedulerConfig {
@@ -942,10 +953,6 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
     );
     assert_eq!(snapshot_test_outbox().len(), 1);
     clear_test_outbox();
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
-    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
 }
 
 #[test]
