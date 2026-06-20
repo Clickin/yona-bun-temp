@@ -26,7 +26,7 @@ use crate::{
     send_workspace_email_validation_mail,
     session::{self, SessionManager},
     workspace_invalid_argument, ConnectError, Context, PilotBackend, PilotServiceImpl,
-    RestRouteError, SmtpRuntimeConfig, LEGACY_MIN_PASSWORD_LENGTH,
+    RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -1035,7 +1035,6 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    smtp: SmtpRuntimeConfig,
     site_name: String,
 ) -> Router {
     let reset_visited_service = service.clone();
@@ -1057,7 +1056,6 @@ pub(crate) fn routes(
     let delete_email_service = service.clone();
     let set_main_email_service = service.clone();
     let send_validation_service = service.clone();
-    let send_validation_default_from = smtp.default_from();
     let confirm_email_service = service.clone();
     let info_leave_service = service.clone();
     let legacy_favorite_projects_list_backend = backend.clone();
@@ -1279,7 +1277,6 @@ pub(crate) fn routes(
                             email_id,
                             form,
                             send_validation_service.clone(),
-                            send_validation_default_from.clone(),
                         )
                         .await
                     }
@@ -1614,7 +1611,6 @@ async fn direct_send_workspace_email_validation(
     email_id: String,
     form: HashMap<String, String>,
     service: PilotServiceImpl,
-    default_from: String,
 ) -> Response {
     let base_path = service.base_path.clone();
     let public_origin = service.public_origin.clone();
@@ -1663,7 +1659,7 @@ async fn direct_send_workspace_email_validation(
                         &token,
                         &public_origin,
                         &base_path,
-                        default_from.as_str(),
+                        &service.smtp.default_from(),
                         &service.integrations,
                     );
                 }

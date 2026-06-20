@@ -1835,6 +1835,9 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "workspace-sender@example.com");
     assert_eq!(outbox[0].to, "pending@example.com");
+    assert_eq!(outbox[0].bcc, Vec::<String>::new());
+    assert_eq!(outbox[0].reply_to, None);
+    assert!(!outbox[0].html);
     assert!(outbox[0].subject.contains("Validation"));
     assert!(outbox[0].body.contains("/user/email/confirm/"));
 
