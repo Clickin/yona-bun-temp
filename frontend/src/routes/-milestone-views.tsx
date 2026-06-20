@@ -165,7 +165,7 @@ export function ProjectMilestoneListPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
       <link
         href={buildProjectHref(
           props.runtimeConfig,
@@ -362,7 +362,7 @@ export function ProjectMilestoneDetailPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
       <link
         href={buildProjectHref(
           props.runtimeConfig,
@@ -634,7 +634,7 @@ export function ProjectMilestoneFormPage(props: {
         {props.mode === "create" ? "title.newMilestone" : "title.editMilestone"}
       </h1>
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">

@@ -2908,6 +2908,7 @@ describe("file-route parity harness", () => {
       ownerName: "owner",
       projectName: "projectYobi",
       projectScope: "public",
+      showMilestone: true,
       viewerCanEnroll: false,
       viewerCanUpdate: true,
     };
@@ -2971,6 +2972,9 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('<a href="/yona/owner">owner</a>');
     expect(listHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(listHtml).toContain('class="project-menu-outer"');
+    expect(listHtml).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/milestones"><span class="menu-name">milestone</span>',
+    );
     expect(listHtml).toContain('class="project-page-wrap"');
     expect(listHtml).toContain('class="tab-wrap"');
     expect(listHtml).toContain("milestone.menu.new");
@@ -3019,6 +3023,9 @@ describe("file-route parity harness", () => {
     );
     expect(detailHtml).toContain('class="project-header-outer"');
     expect(detailHtml).toContain('class="project-menu-outer"');
+    expect(detailHtml).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/milestones"><span class="menu-name">milestone</span>',
+    );
     expect(detailHtml).toContain('href="/yona/owner/projectYobi/issue/labels.css"');
     expect(detailHtml).toContain('rel="stylesheet"');
     expect(detailHtml).toContain('class="milesion-wrap"');
@@ -3054,6 +3061,7 @@ describe("file-route parity harness", () => {
       ownerName: "owner",
       projectName: "projectYobi",
       projectScope: "public",
+      showMilestone: true,
       viewerCanEnroll: false,
       viewerCanUpdate: true,
     };
@@ -3090,6 +3098,9 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('<a href="/yona/owner">owner</a>');
     expect(createHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(createHtml).toContain('class="project-menu-outer"');
+    expect(createHtml).toContain(
+      '<li class="active"><a href="/yona/owner/projectYobi/milestones"><span class="menu-name">milestone</span>',
+    );
     expect(createHtml).toContain('<h1 class="sr-only">title.newMilestone</h1>');
     expect(createHtml).not.toContain("New Milestone");
     expect(createHtml).toContain('class="page-wrap-outer"');
