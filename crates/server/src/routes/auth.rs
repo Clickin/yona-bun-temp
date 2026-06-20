@@ -563,10 +563,7 @@ fn redirect_with_context_headers(base_path: &str, path: &str, ctx: &Context) -> 
 pub(crate) async fn direct_legacy_login(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let request = SignInWithPasswordRequest {
         identifier: form
@@ -582,15 +579,6 @@ pub(crate) async fn direct_legacy_login(
         Ok(request) => request,
         Err(error) => return error.into_response(),
     };
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin,
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match service
         .sign_in_with_password(
             Context::new(headers_with_form_csrf(headers, &form)),
@@ -603,7 +591,7 @@ pub(crate) async fn direct_legacy_login(
                 form.get("redirectUrl").or_else(|| form.get("redirect")),
                 &payload.default_landing_path,
             );
-            redirect_with_context_headers(&base_path, &redirect_path, &ctx)
+            redirect_with_context_headers(&service.base_path, &redirect_path, &ctx)
         }
         Err(error) => RestRouteError::from_connect_error(error).into_response(),
     }
@@ -612,10 +600,7 @@ pub(crate) async fn direct_legacy_login(
 pub(crate) async fn direct_legacy_signup(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let request = RegisterWithPasswordRequest {
         email_address: form
@@ -632,15 +617,6 @@ pub(crate) async fn direct_legacy_signup(
     let request = match rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request) {
         Ok(request) => request,
         Err(error) => return error.into_response(),
-    };
-    let service = PilotServiceImpl {
-        base_path: base_path.clone(),
-        public_origin,
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
     };
     match auth_register_with_password(
         &service,
@@ -667,7 +643,7 @@ pub(crate) async fn direct_legacy_signup(
             } else {
                 redirect_path
             };
-            redirect_with_context_headers(&base_path, redirect_path, &ctx)
+            redirect_with_context_headers(&service.base_path, redirect_path, &ctx)
         }
         Err(error) => RestRouteError::from_connect_error(error).into_response(),
     }
@@ -845,6 +821,7 @@ pub(crate) async fn direct_legacy_logout(
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     assets: AssetMode,
@@ -866,14 +843,8 @@ pub(crate) fn routes(
     let legacy_login_page_browser_runtime = browser_runtime.clone();
     let legacy_signup_page_assets = assets.clone();
     let legacy_signup_page_browser_runtime = browser_runtime.clone();
-    let direct_login_session_manager = session_manager.clone();
-    let direct_login_backend = backend.clone();
-    let direct_login_base_path = base_path.clone();
-    let direct_login_public_origin = public_origin.clone();
-    let direct_signup_session_manager = session_manager.clone();
-    let direct_signup_backend = backend.clone();
-    let direct_signup_base_path = base_path.clone();
-    let direct_signup_public_origin = public_origin.clone();
+    let direct_login_service = service.clone();
+    let direct_signup_service = service;
     let signup_name_validator_backend = backend.clone();
     let signup_email_validator_backend = backend.clone();
     let legacy_lost_password_page_assets = assets.clone();
@@ -954,15 +925,7 @@ pub(crate) fn routes(
             "/users/login",
             post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_legacy_login(
-                        headers,
-                        form,
-                        direct_login_session_manager.clone(),
-                        direct_login_backend.clone(),
-                        direct_login_base_path.clone(),
-                        direct_login_public_origin.clone(),
-                    )
-                    .await
+                    direct_legacy_login(headers, form, direct_login_service.clone()).await
                 },
             ),
         )
@@ -970,15 +933,7 @@ pub(crate) fn routes(
             "/users/signup",
             post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_legacy_signup(
-                        headers,
-                        form,
-                        direct_signup_session_manager.clone(),
-                        direct_signup_backend.clone(),
-                        direct_signup_base_path.clone(),
-                        direct_signup_public_origin.clone(),
-                    )
-                    .await
+                    direct_legacy_signup(headers, form, direct_signup_service.clone()).await
                 },
             ),
         )

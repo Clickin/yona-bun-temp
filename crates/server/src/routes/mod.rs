@@ -211,6 +211,7 @@ pub(crate) fn app_routes(
     let public_origin = service.public_origin.clone();
     Router::new()
         .merge(auth_routes(
+            service.clone(),
             session_manager.clone(),
             backend.clone(),
             assets.clone(),

@@ -695,12 +695,10 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
 }
 
 #[tokio::test]
+// Guards direct auth aliases through the app-scoped service/runtime config
+// supplied by router bootstrap; no process env mutation is needed for defaults.
 async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate(
 ) {
-    let _guard = auth_env_lock().lock().unwrap();
-    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
-    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
-
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
