@@ -1205,6 +1205,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   remaining `YONA_DATA` references are startup/config loading plus the temporary
   startup compatibility bridge for legacy surfaces not covered by this runtime
   DI slice.
+- 2026-06-20 runtime DI note: organization/project contract tests now inject
+  per-test repository storage through `AppRuntimeConfig.data_root` instead of
+  mutating `YONA_DATA` under a process-global mutex. This keeps legacy project
+  import, create, SVN provisioning, container, organization, and directory
+  parity coverage isolated without runtime config env locks.
 
 ## Wave 0 Exit Snapshot
 

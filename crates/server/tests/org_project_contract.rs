@@ -8,7 +8,6 @@ use sea_orm::Database;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Mutex, MutexGuard, OnceLock};
 use tempfile::{tempdir, TempDir};
 use tower::ServiceExt;
 use yona_rust_persistence::{
@@ -28,35 +27,8 @@ fn svnadmin_available() -> bool {
         .is_ok_and(|output| output.status.success())
 }
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
-struct YonaDataTestEnv {
-    _guard: MutexGuard<'static, ()>,
-    dir: TempDir,
-}
-
-impl YonaDataTestEnv {
-    fn path(&self) -> &Path {
-        self.dir.path()
-    }
-}
-
-impl Drop for YonaDataTestEnv {
-    fn drop(&mut self) {
-        std::env::remove_var("YONA_DATA");
-    }
-}
-
-fn temp_yona_data_env() -> YonaDataTestEnv {
-    let guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
-    let dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", dir.path());
-    YonaDataTestEnv { _guard: guard, dir }
+fn temp_yona_data_root() -> TempDir {
+    tempdir().expect("yona data tempdir")
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
@@ -68,6 +40,14 @@ async fn build_app_with_repository_and_app_config(
     app_config: AppRuntimeConfig,
 ) -> (axum::Router, AppRepository) {
     build_app_with_repository_and_configs(app_config, RepositoryConfig::default()).await
+}
+
+async fn build_app_with_repository_in_data_root(data_root: &Path) -> (axum::Router, AppRepository) {
+    build_app_with_repository_and_app_config(AppRuntimeConfig {
+        data_root: data_root.to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await
 }
 
 async fn build_app_with_repository_and_configs(
@@ -94,6 +74,10 @@ async fn build_app_with_repository_and_configs(
 
 async fn build_app() -> axum::Router {
     build_app_with_repository().await.0
+}
+
+async fn build_app_in_data_root(data_root: &Path) -> axum::Router {
+    build_app_with_repository_in_data_root(data_root).await.0
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
@@ -378,12 +362,12 @@ fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) 
 
 #[tokio::test]
 async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_errors() {
-    let yona_data = temp_yona_data_env();
+    let yona_data = temp_yona_data_root();
     let source_dir = tempdir().expect("source repo tempdir");
     let source_repo = source_dir.path().join("source.git");
     seed_source_bare_repository(&source_repo, "# Imported\n");
 
-    let (app, app_repo) = build_app_with_repository().await;
+    let (app, app_repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
@@ -491,8 +475,8 @@ async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_
 
 #[tokio::test]
 async fn organization_and_project_settings_contracts_require_expected_authority() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -662,9 +646,10 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
 #[tokio::test]
 async fn create_project_uses_configured_default_scope_when_request_omits_scope() {
     // Guards route-utils-owned project default scope config parsing.
-    let _yona_data = temp_yona_data_env();
+    let yona_data = temp_yona_data_root();
     let previous_default_scope = std::env::var("YONA_PROJECT_DEFAULT_SCOPE").ok();
     let app = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        data_root: yona_data.path().to_path_buf(),
         project_default_scope: "private".to_string(),
         ..AppRuntimeConfig::default()
     })
@@ -704,10 +689,11 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
 #[tokio::test]
 async fn create_project_uses_configured_default_menus_for_new_project_container() {
     // Guards route-utils-owned project default menu config parsing.
-    let _yona_data = temp_yona_data_env();
+    let yona_data = temp_yona_data_root();
     let previous_default_menus = std::env::var("YONA_PROJECT_DEFAULT_MENUS").ok();
     let (app, app_repo) = build_app_with_repository_and_configs(
         AppRuntimeConfig {
+            data_root: yona_data.path().to_path_buf(),
             project_default_menus: vec!["issue".to_string(), "board".to_string()],
             ..AppRuntimeConfig::default()
         },
@@ -915,8 +901,8 @@ async fn project_go_convention_menu_redirects_to_legacy_default_menu() {
 #[tokio::test]
 // Guards project-route-owned project/organization list helpers through public directory REST routes.
 async fn public_directory_lists_project_and_organization_logo_urls() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
     let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
     let owner_id = register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
@@ -1079,8 +1065,8 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
 
 #[tokio::test]
 async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() {
-    let yona_data = temp_yona_data_env();
-    let (app, app_repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, app_repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1230,8 +1216,8 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
 
 #[tokio::test]
 async fn project_create_form_options_expose_legacy_owner_selector_choices() {
-    let _yona_data = temp_yona_data_env();
-    let (app, _) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, _) = build_app_with_repository_in_data_root(yona_data.path()).await;
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
     create_organization(
@@ -1271,8 +1257,8 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
 // Guards projects/participation.rs enrollment, favorite, and recent-visit
 // helpers through proto-compatible routes.
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1415,8 +1401,8 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
 #[tokio::test]
 // Guards project-route-owned organization and project create/read/settings/container helper ownership.
 async fn organization_container_contract_returns_project_cards_and_gated_rosters() {
-    let _yona_data = temp_yona_data_env();
-    let app = build_app().await;
+    let yona_data = temp_yona_data_root();
+    let app = build_app_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1506,8 +1492,8 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
 
 #[tokio::test]
 async fn project_container_contract_returns_header_menu_and_summary_shells() {
-    let _yona_data = temp_yona_data_env();
-    let app = build_app().await;
+    let yona_data = temp_yona_data_root();
+    let app = build_app_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1558,8 +1544,8 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
 // rewrites and mention-reference metadata stay with the project home container
 // response.
 async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewrites() {
-    let yona_data = temp_yona_data_env();
-    let (app, repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1651,8 +1637,8 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
 // Guards the `routes/projects/home.rs` dashboard label projection in the
 // project home container response.
 async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1817,8 +1803,8 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
 
 #[tokio::test]
 async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee() {
-    let _yona_data = temp_yona_data_env();
-    let (app, _repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, _repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -1944,8 +1930,8 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
 // Guards the `routes/projects/home.rs` legacy activity history projection in
 // the project home container response.
 async fn rest_project_container_includes_legacy_project_home_history_rows() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     let admin_id = register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2066,8 +2052,8 @@ async fn rest_project_container_includes_legacy_project_home_history_rows() {
 
 #[tokio::test]
 async fn rest_project_container_includes_legacy_project_home_commit_history_rows() {
-    let yona_data = temp_yona_data_env();
-    let (app, repo) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2125,8 +2111,8 @@ async fn rest_project_container_includes_legacy_project_home_commit_history_rows
 #[tokio::test]
 // Guards project route-owned overview update helper through REST/direct routes.
 async fn update_project_overview_returns_refreshed_project_container() {
-    let _yona_data = temp_yona_data_env();
-    let app = build_app().await;
+    let yona_data = temp_yona_data_root();
+    let app = build_app_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2213,8 +2199,8 @@ async fn update_project_overview_returns_refreshed_project_container() {
 // Guards projects/participation.rs watch toggle helper through REST and direct
 // aliases.
 async fn toggle_project_watch_returns_refreshed_project_container() {
-    let _yona_data = temp_yona_data_env();
-    let app = build_app().await;
+    let yona_data = temp_yona_data_root();
+    let app = build_app_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2307,8 +2293,8 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
 
 #[tokio::test]
 async fn organization_container_contract_returns_guest_member_and_last_admin_cta_flags() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2417,8 +2403,8 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
 
 #[tokio::test]
 async fn organization_admin_contract_requires_update_permission_and_exposes_member_directory() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2488,8 +2474,8 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
 #[tokio::test]
 async fn organization_enrollment_mutations_toggle_guest_request_state() {
     // Guards projects/organizations.rs enrollment request/cancel helpers.
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2551,8 +2537,8 @@ async fn organization_enrollment_mutations_toggle_guest_request_state() {
 #[tokio::test]
 async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
     // Guards projects/organizations.rs admin member mutation helpers.
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2733,8 +2719,8 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
 
 #[tokio::test]
 async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() {
-    let _yona_data = temp_yona_data_env();
-    let (app, repository) = build_app_with_repository().await;
+    let yona_data = temp_yona_data_root();
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
@@ -2797,8 +2783,8 @@ async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() 
 
 #[tokio::test]
 async fn organization_delete_mutation_redirects_root_and_blocks_orgs_with_projects() {
-    let _yona_data = temp_yona_data_env();
-    let app = build_app().await;
+    let yona_data = temp_yona_data_root();
+    let app = build_app_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
