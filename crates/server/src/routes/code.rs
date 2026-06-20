@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query},
+    extract::{Form, Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, post},
@@ -17,16 +17,17 @@ use yona_rust_vcs::{
 use crate::persistence::{self, PilotRepository};
 use crate::{
     base_path_href, code_branch_error, code_browser_error, code_file_record_is_renderable_markdown,
-    code_path_is_markdown, gravatar_url, internal_error, markdown_issue_references_for_project,
-    markdown_mention_references, normalize_identifier, project_code_menu_visible,
-    project_read_allowed, project_update_allowed, require_authenticated_user,
-    require_project_resource_create, require_session, require_valid_csrf,
-    rest_commit_thread_from_record, rest_issue_reference_metadata_from_resolved,
-    rest_mention_reference_metadata_from_resolved, rest_repository, rest_require_project_code_read,
-    rewrite_code_browser_markdown_image_links, session::SessionManager, workspace_avatar_url,
-    yona_data_root, ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
-    PilotServiceImpl, ProjectCreatableResource, RestIssueReferenceMetadata,
-    RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
+    code_path_is_markdown, form_value, gravatar_url, internal_error,
+    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
+    parse_attachment_ids, project_code_menu_visible, project_read_allowed, project_update_allowed,
+    require_authenticated_user, require_project_resource_create, require_session,
+    require_valid_csrf, rest_commit_thread_from_record,
+    rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
+    rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
+    session::SessionManager, workspace_avatar_url, yona_data_root, AuthUiConfig, ConnectError,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotServiceImpl,
+    ProjectCreatableResource, RestIssueReferenceMetadata, RestMentionReferenceMetadata,
+    RestReviewThread, RestRouteError, SmtpRuntimeConfig,
 };
 
 pub(crate) fn rest_routes(
@@ -380,9 +381,15 @@ pub(crate) fn routes(
     let code_ajax_branch_root_backend = backend.clone();
     let code_ajax_branch_root_session_manager = session_manager.clone();
     let code_ajax_branch_root_base_path = base_path.clone();
-    let code_ajax_branch_root_slash_backend = backend;
-    let code_ajax_branch_root_slash_session_manager = session_manager;
-    let code_ajax_branch_root_slash_base_path = base_path;
+    let code_ajax_branch_root_slash_backend = backend.clone();
+    let code_ajax_branch_root_slash_session_manager = session_manager.clone();
+    let code_ajax_branch_root_slash_base_path = base_path.clone();
+    let direct_commit_comment_create_backend = backend.clone();
+    let direct_commit_comment_create_session_manager = session_manager.clone();
+    let direct_commit_comment_create_base_path = base_path.clone();
+    let direct_commit_comment_delete_backend = backend;
+    let direct_commit_comment_delete_session_manager = session_manager;
+    let direct_commit_comment_delete_base_path = base_path;
 
     Router::new()
         .route(
@@ -608,6 +615,54 @@ pub(crate) fn routes(
                             code_ajax_branch_root_slash_session_manager.clone(),
                             code_ajax_branch_root_slash_backend.clone(),
                             code_ajax_branch_root_slash_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/commit/{commit_id}/comments",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, commit_id)): Path<(String, String, String)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_create_commit_discussion_comment(
+                            headers,
+                            owner,
+                            project,
+                            commit_id,
+                            form,
+                            direct_commit_comment_create_session_manager.clone(),
+                            direct_commit_comment_create_backend.clone(),
+                            direct_commit_comment_create_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/commit/{commit_id}/comments/{comment_id}/delete",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner, project, commit_id, comment_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    async move {
+                        direct_delete_commit_discussion_comment(
+                            headers,
+                            owner,
+                            project,
+                            commit_id,
+                            comment_id,
+                            direct_commit_comment_delete_session_manager.clone(),
+                            direct_commit_comment_delete_backend.clone(),
+                            direct_commit_comment_delete_base_path.clone(),
                         )
                         .await
                     }
@@ -1589,6 +1644,106 @@ async fn rest_code_commit_detail_response(
         &issue_references,
         &mention_references,
     ))
+}
+
+fn direct_commit_comment_body(form: &HashMap<String, String>) -> RestCommitCommentBody {
+    RestCommitCommentBody {
+        attachment_ids: parse_attachment_ids(form_value(
+            form,
+            &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
+        )),
+        contents_markdown: form_value(form, &["contents", "contentsMarkdown"])
+            .trim()
+            .to_string(),
+        end_line: form_value(form, &["endLine", "end_line"]).parse().ok(),
+        path: Some(form_value(form, &["path"]).trim().to_string())
+            .filter(|value| !value.is_empty()),
+        start_line: form_value(form, &["startLine", "start_line"]).parse().ok(),
+        thread_id: form_value(form, &["thread.id", "threadId", "thread_id"])
+            .parse()
+            .ok(),
+    }
+}
+
+fn direct_commit_detail_redirect(
+    base_path: &str,
+    owner: &str,
+    project: &str,
+    commit_id: &str,
+) -> Response {
+    Redirect::to(&base_path_href(
+        base_path,
+        &format!("/{owner}/{project}/commit/{commit_id}"),
+    ))
+    .into_response()
+}
+
+async fn direct_create_commit_discussion_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        auth_ui: AuthUiConfig::from_env(),
+        backend,
+        base_path: base_path.clone(),
+        project_default_scope: "public".to_string(),
+        public_origin: String::new(),
+        session_manager,
+        smtp: SmtpRuntimeConfig::from_env(),
+    };
+    match rest_create_commit_discussion_comment(
+        headers,
+        owner_name.clone(),
+        project_name.clone(),
+        commit_id.clone(),
+        direct_commit_comment_body(&form),
+        service,
+    )
+    .await
+    {
+        Ok(_) => direct_commit_detail_redirect(&base_path, &owner_name, &project_name, &commit_id),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_commit_discussion_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        auth_ui: AuthUiConfig::from_env(),
+        backend,
+        base_path: base_path.clone(),
+        project_default_scope: "public".to_string(),
+        public_origin: String::new(),
+        session_manager,
+        smtp: SmtpRuntimeConfig::from_env(),
+    };
+    match rest_delete_commit_discussion_comment(
+        headers,
+        owner_name.clone(),
+        project_name.clone(),
+        commit_id.clone(),
+        comment_id,
+        service,
+    )
+    .await
+    {
+        Ok(_) => direct_commit_detail_redirect(&base_path, &owner_name, &project_name, &commit_id),
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn rest_create_commit_discussion_comment(

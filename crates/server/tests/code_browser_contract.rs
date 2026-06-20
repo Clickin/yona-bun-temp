@@ -214,6 +214,32 @@ async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) 
         .unwrap()
 }
 
+async fn direct_post_form(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    body: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(format!("/yona{path}"))
+        .header(
+            http::header::CONTENT_TYPE,
+            "application/x-www-form-urlencoded",
+        );
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(body.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn direct_delete(
     app: axum::Router,
     path: &str,
@@ -1314,6 +1340,53 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         1
     );
 
+    let direct_created = direct_post_form(
+        app.clone(),
+        &format!("/owner/projectYobi/commit/{commit_id}/comments"),
+        Some(&cookie),
+        Some(&csrf),
+        "contents=Legacy+direct+commit+comment",
+    )
+    .await;
+    assert_eq!(direct_created.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_created
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/commit/{commit_id}").as_str())
+    );
+    let after_direct_create =
+        response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(after_direct_create["commit"]["commentCount"], 2);
+    let direct_comment_id = after_direct_create["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|thread| thread["comments"].as_array().unwrap().iter())
+        .find(|comment| comment["contentsMarkdown"] == "Legacy direct commit comment")
+        .and_then(|comment| comment["id"].as_i64())
+        .expect("direct legacy commit comment id");
+
+    let direct_deleted = direct_delete(
+        app.clone(),
+        &format!("/owner/projectYobi/commit/{commit_id}/comments/{direct_comment_id}/delete"),
+        Some(&cookie),
+        Some(&csrf),
+    )
+    .await;
+    assert_eq!(direct_deleted.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_deleted
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/commit/{commit_id}").as_str())
+    );
+    let after_direct_delete =
+        response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(after_direct_delete["commit"]["commentCount"], 1);
+
     let generic_deleted = direct_delete(
         app.clone(),
         &format!("/comments/code_comment/{comment_id}"),
@@ -1331,7 +1404,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
     assert_eq!(after_generic_delete["commit"]["commentCount"], 0);
     assert_eq!(after_generic_delete["threads"].as_array().unwrap().len(), 0);
-    assert_eq!(count_event_rows(&db, "NEW_REVIEW_COMMENT").await, 2);
+    assert_eq!(count_event_rows(&db, "NEW_REVIEW_COMMENT").await, 3);
     assert_eq!(
         count_event_rows(&db, "REVIEW_THREAD_STATE_CHANGED").await,
         2
