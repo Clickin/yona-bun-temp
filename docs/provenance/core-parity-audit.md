@@ -1238,6 +1238,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   the injected `AppRuntimeConfig` behavior directly without mutating
   `SMTP_FROM` or `YONA_SITE_NAME`; shared mail delivery assertions serialize
   only the test outbox through `auth_outbox_lock`.
+- 2026-06-20 runtime DI note: site-admin SMTP contract tests now assert mail
+  option and sender derivation from explicit `AppRuntimeConfig.smtp` snapshots
+  instead of mutating SMTP/YONA_SMTP process env aliases around route setup.
+  Site-admin mail send, recipient lookup, configured/unconfigured option
+  states, sender domain/hostname fallback, and from override coverage remain
+  route-level parity checks without `smtp_env_lock`.
 
 ## Wave 0 Exit Snapshot
 
