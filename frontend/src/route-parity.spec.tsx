@@ -49,6 +49,7 @@ import {
 } from "./routes/-pull-request-views";
 import {
   ProjectChangeVcsPage,
+  ProjectForkPage,
   ProjectStatisticsPage,
   ProjectTransferPage,
   ProjectWebhooksPage,
@@ -5415,8 +5416,40 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("project.name.alert");
     expect(viewSource).toContain("project.shareOption");
     expect(viewSource).not.toContain("project.fork.help");
+    expect(viewSource).not.toContain("project.fork");
     expect(viewSource).not.toContain("project.name.help");
     expect(viewSource).not.toContain("project.scope.");
+
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const projectDetail: ProjectDetailViewModel = {
+      enrollmentRequested: false,
+      isFavorited: false,
+      organizationName: "",
+      overview: "",
+      ownerName: "yona",
+      projectName: "projectYobi",
+      projectScope: "public",
+      showCode: true,
+      viewerCanEnroll: false,
+      viewerCanUpdate: true,
+    };
+    const html = renderToStaticMarkup(
+      <ProjectForkPage
+        detail={projectDetail}
+        forkOptions={{
+          canFork: true,
+          existingForks: [],
+          ownerOptions: [{ organization: false, ownerName: "yona", selected: true }],
+          selected: { ownerName: "yona", projectName: "projectYobi", projectScope: "public" },
+          source: { isForked: false },
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    expect(html).toContain("<h4>yona / projectYobi fork</h4>");
+    expect(html).toContain('<button class="ybtn ybtn-info" type="submit">');
+    expect(html).toContain('<i class="yobicon-fork"></i> fork');
+    expect(html).not.toContain("project.fork");
   });
 
   it("requires project statistics route to preserve the legacy under-construction shell", () => {

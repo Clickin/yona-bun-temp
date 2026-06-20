@@ -2555,7 +2555,9 @@ export function ProjectForkPage(props: {
               <input name="owner" type="hidden" value={owner} />
               <fieldset>
                 <legend>
-                  <h4>{`${detail.ownerName} / ${detail.projectName} fork`}</h4>
+                  <h4>
+                    {detail.ownerName} / {detail.projectName} fork
+                  </h4>
                 </legend>
                 <div className="well" id="helpMessage">
                   <div className="row-fluid">
@@ -2699,7 +2701,7 @@ export function ProjectForkPage(props: {
                     disabled={!canSubmit || props.pending}
                     type="submit"
                   >
-                    <i className="yobicon-fork" /> project.fork
+                    <i className="yobicon-fork" /> fork
                   </button>
                   <a
                     className="ybtn"
