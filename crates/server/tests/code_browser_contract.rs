@@ -1732,6 +1732,7 @@ async fn rest_branch_mutation_requires_project_update_permission() {
 
 #[tokio::test]
 async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
+    // Guards direct code file routes using the app-scoped code service snapshot.
     let data_dir = tempdir().expect("yona data");
     let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

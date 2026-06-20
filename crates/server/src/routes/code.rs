@@ -344,50 +344,20 @@ pub(crate) fn rest_routes(
 
 pub(crate) fn routes(
     service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    _session_manager: SessionManager,
+    _backend: PilotBackend,
+    _base_path: String,
 ) -> Router {
-    let data_root = service.data_root.clone();
-    let raw_code_backend = backend.clone();
-    let raw_code_session_manager = session_manager.clone();
-    let raw_code_base_path = base_path.clone();
-    let raw_code_data_root = data_root.clone();
-    let open_code_backend = backend.clone();
-    let open_code_session_manager = session_manager.clone();
-    let open_code_base_path = base_path.clone();
-    let open_code_data_root = data_root.clone();
-    let image_code_backend = backend.clone();
-    let image_code_session_manager = session_manager.clone();
-    let image_code_base_path = base_path.clone();
-    let image_code_data_root = data_root.clone();
-    let archive_code_backend = backend.clone();
-    let archive_code_session_manager = session_manager.clone();
-    let archive_code_data_root = data_root.clone();
-    let code_ajax_backend = backend.clone();
-    let code_ajax_session_manager = session_manager.clone();
-    let code_ajax_base_path = base_path.clone();
-    let code_ajax_data_root = data_root.clone();
-    let code_ajax_root_backend = backend.clone();
-    let code_ajax_root_session_manager = session_manager.clone();
-    let code_ajax_root_base_path = base_path.clone();
-    let code_ajax_root_data_root = data_root.clone();
-    let code_ajax_root_slash_backend = backend.clone();
-    let code_ajax_root_slash_session_manager = session_manager.clone();
-    let code_ajax_root_slash_base_path = base_path.clone();
-    let code_ajax_root_slash_data_root = data_root.clone();
-    let code_ajax_branch_backend = backend.clone();
-    let code_ajax_branch_session_manager = session_manager.clone();
-    let code_ajax_branch_base_path = base_path.clone();
-    let code_ajax_branch_data_root = data_root.clone();
-    let code_ajax_branch_root_backend = backend.clone();
-    let code_ajax_branch_root_session_manager = session_manager.clone();
-    let code_ajax_branch_root_base_path = base_path.clone();
-    let code_ajax_branch_root_data_root = data_root.clone();
-    let code_ajax_branch_root_slash_backend = backend.clone();
-    let code_ajax_branch_root_slash_session_manager = session_manager.clone();
-    let code_ajax_branch_root_slash_base_path = base_path.clone();
-    let code_ajax_branch_root_slash_data_root = data_root;
+    let raw_code_service = service.clone();
+    let open_code_service = service.clone();
+    let image_code_service = service.clone();
+    let archive_code_service = service.clone();
+    let code_ajax_service = service.clone();
+    let code_ajax_root_service = service.clone();
+    let code_ajax_root_slash_service = service.clone();
+    let code_ajax_branch_service = service.clone();
+    let code_ajax_branch_root_service = service.clone();
+    let code_ajax_branch_root_slash_service = service.clone();
     let direct_commit_comment_create_service = service.clone();
     let direct_commit_comment_delete_service = service;
 
@@ -410,10 +380,7 @@ pub(crate) fn routes(
                             revision,
                             path,
                             DirectCodeFileMode::Raw,
-                            raw_code_session_manager.clone(),
-                            raw_code_backend.clone(),
-                            raw_code_base_path.clone(),
-                            raw_code_data_root.clone(),
+                            raw_code_service.clone(),
                         )
                         .await
                     }
@@ -438,10 +405,7 @@ pub(crate) fn routes(
                             revision,
                             path,
                             DirectCodeFileMode::Open,
-                            open_code_session_manager.clone(),
-                            open_code_backend.clone(),
-                            open_code_base_path.clone(),
-                            open_code_data_root.clone(),
+                            open_code_service.clone(),
                         )
                         .await
                     }
@@ -466,10 +430,7 @@ pub(crate) fn routes(
                             revision,
                             path,
                             DirectCodeFileMode::Image,
-                            image_code_session_manager.clone(),
-                            image_code_backend.clone(),
-                            image_code_base_path.clone(),
-                            image_code_data_root.clone(),
+                            image_code_service.clone(),
                         )
                         .await
                     }
@@ -487,9 +448,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             revision,
-                            archive_code_session_manager.clone(),
-                            archive_code_backend.clone(),
-                            archive_code_data_root.clone(),
+                            archive_code_service.clone(),
                         )
                         .await
                     }
@@ -508,10 +467,7 @@ pub(crate) fn routes(
                             project,
                             None,
                             path,
-                            code_ajax_session_manager.clone(),
-                            code_ajax_backend.clone(),
-                            code_ajax_base_path.clone(),
-                            code_ajax_data_root.clone(),
+                            code_ajax_service.clone(),
                         )
                         .await
                     }
@@ -529,10 +485,7 @@ pub(crate) fn routes(
                             project,
                             None,
                             String::new(),
-                            code_ajax_root_session_manager.clone(),
-                            code_ajax_root_backend.clone(),
-                            code_ajax_root_base_path.clone(),
-                            code_ajax_root_data_root.clone(),
+                            code_ajax_root_service.clone(),
                         )
                         .await
                     }
@@ -550,10 +503,7 @@ pub(crate) fn routes(
                             project,
                             None,
                             String::new(),
-                            code_ajax_root_slash_session_manager.clone(),
-                            code_ajax_root_slash_backend.clone(),
-                            code_ajax_root_slash_base_path.clone(),
-                            code_ajax_root_slash_data_root.clone(),
+                            code_ajax_root_slash_service.clone(),
                         )
                         .await
                     }
@@ -577,10 +527,7 @@ pub(crate) fn routes(
                             project,
                             Some(branch),
                             path,
-                            code_ajax_branch_session_manager.clone(),
-                            code_ajax_branch_backend.clone(),
-                            code_ajax_branch_base_path.clone(),
-                            code_ajax_branch_data_root.clone(),
+                            code_ajax_branch_service.clone(),
                         )
                         .await
                     }
@@ -599,10 +546,7 @@ pub(crate) fn routes(
                             project,
                             Some(branch),
                             String::new(),
-                            code_ajax_branch_root_session_manager.clone(),
-                            code_ajax_branch_root_backend.clone(),
-                            code_ajax_branch_root_base_path.clone(),
-                            code_ajax_branch_root_data_root.clone(),
+                            code_ajax_branch_root_service.clone(),
                         )
                         .await
                     }
@@ -621,10 +565,7 @@ pub(crate) fn routes(
                             project,
                             Some(branch),
                             String::new(),
-                            code_ajax_branch_root_slash_session_manager.clone(),
-                            code_ajax_branch_root_slash_backend.clone(),
-                            code_ajax_branch_root_slash_base_path.clone(),
-                            code_ajax_branch_root_slash_data_root.clone(),
+                            code_ajax_branch_root_slash_service.clone(),
                         )
                         .await
                     }
@@ -921,15 +862,13 @@ pub(crate) async fn direct_code_ajax_compat(
     project_name: String,
     branch: Option<String>,
     path: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let authorization = match repository
@@ -952,7 +891,7 @@ pub(crate) async fn direct_code_ajax_compat(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = match yona_rust_vcs::read_code_browser(
         &repo_path,
         branch.as_deref().filter(|value| !value.trim().is_empty()),
@@ -966,20 +905,24 @@ pub(crate) async fn direct_code_ajax_compat(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
-        &base_path,
+        &service.base_path,
     );
     if let Err(error) = enrich_code_browser_author_metadata(
         repository,
         authorization.project.id,
         &mut response,
-        &base_path,
+        &service.base_path,
     )
     .await
     {
         return error.into_response();
     }
 
-    Json(legacy_code_ajax_json_from_rest(&base_path, response)).into_response()
+    Json(legacy_code_ajax_json_from_rest(
+        &service.base_path,
+        response,
+    ))
+    .into_response()
 }
 
 pub(crate) async fn direct_code_file(
@@ -989,15 +932,13 @@ pub(crate) async fn direct_code_file(
     revision: String,
     path: String,
     mode: DirectCodeFileMode,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let authorization = match repository
@@ -1020,12 +961,12 @@ pub(crate) async fn direct_code_file(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     match yona_rust_vcs::read_file_bytes(&repo_path, &revision, &path) {
         Ok(file) => direct_code_file_response(file, mode),
         Err(VcsError::NotFound) if mode == DirectCodeFileMode::Raw => {
             direct_code_raw_missing_redirect(
-                &base_path,
+                &service.base_path,
                 &owner_name,
                 &project_name,
                 &revision,
@@ -1158,14 +1099,13 @@ pub(crate) async fn direct_code_archive(
     owner_name: String,
     project_name: String,
     revision: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let authorization = match repository
@@ -1188,7 +1128,7 @@ pub(crate) async fn direct_code_archive(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     match yona_rust_vcs::read_archive_zip(&repo_path, &revision) {
         Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
         Err(error) => direct_code_file_error(error),

@@ -362,6 +362,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
 async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting) parity
     // through the app-scoped board route integration config snapshot.
+    // Also guards board posting service snapshot use for runtime config DI.
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let (app, _, _) = build_app_with_repository().await;

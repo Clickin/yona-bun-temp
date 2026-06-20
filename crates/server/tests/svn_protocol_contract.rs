@@ -501,6 +501,7 @@ fn basic(login_id: &str, password: &str) -> String {
 
 #[tokio::test]
 async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
+    // Guards SVN asset fallback dispatch using the app-scoped service snapshot.
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

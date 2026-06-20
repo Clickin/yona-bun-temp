@@ -3,10 +3,9 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 
-use crate::session::SessionManager;
 use crate::{
     internal_error, smart_http_authorization, smart_http_basic_challenge_response,
-    smart_http_principal_from_headers, AuthUiConfig, PilotBackend, RestRouteError,
+    smart_http_principal_from_headers, PilotBackend, PilotServiceImpl, RestRouteError,
     SmartHttpAccessFailure, SmartHttpPermission,
 };
 mod activity;
@@ -46,15 +45,8 @@ pub(crate) struct SvnProtocolRoute {
     svn_path: String,
 }
 
-pub(crate) async fn direct_request(
-    request: Request,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    base_path: String,
-    data_root: std::path::PathBuf,
-) -> Response {
-    let Some(mut route) = route_from_path(request.uri().path(), &base_path) else {
+pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) -> Response {
+    let Some(mut route) = route_from_path(request.uri().path(), &service.base_path) else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let (parts, body) = request.into_parts();
@@ -73,14 +65,14 @@ pub(crate) async fn direct_request(
     } else {
         SmartHttpPermission::Write
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let principal = match smart_http_principal_from_headers(
         &parts.headers,
-        &session_manager,
+        &service.session_manager,
         repository,
-        &auth_ui,
+        &service.auth_ui,
     )
     .await
     {
@@ -112,7 +104,8 @@ pub(crate) async fn direct_request(
         }
     }
 
-    let repo_path = yona_rust_vcs::svn_repository_path(&data_root, authorization.project.id);
+    let repo_path =
+        yona_rust_vcs::svn_repository_path(&service.data_root, authorization.project.id);
     if !repo_path.exists() || !repo_path.is_dir() {
         return StatusCode::NOT_FOUND.into_response();
     }

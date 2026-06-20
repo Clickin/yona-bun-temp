@@ -470,6 +470,7 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
 
 #[tokio::test]
 async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mutation() {
+    // Guards Smart HTTP asset fallback dispatch using the app-scoped service snapshot.
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, _) = build_app_with_app_config(AppRuntimeConfig {
         auth_ui: AuthUiConfig {

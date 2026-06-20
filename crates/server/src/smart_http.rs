@@ -13,7 +13,7 @@ use crate::{
     absolute_app_url, base_path_href, confirmation_session_required_from_config,
     dispatch_pull_request_webhooks, internal_error, map_project_scope, persistence,
     project_webhook_type_label, record_project_webhook_delivery, AuthUiConfig, ConnectError,
-    PilotBackend, PilotRepository, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
+    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver_webhook_with_config, IntegrationConfig, OutboundWebhook};
@@ -109,15 +109,9 @@ impl SmartHttpPushSummary {
 
 pub(crate) async fn direct_smart_http_request(
     request: Request,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    integrations: IntegrationConfig,
-    base_path: String,
-    public_origin: String,
-    data_root: std::path::PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
-    let Some(route) = route_from_path(request.uri().path(), &base_path) else {
+    let Some(route) = route_from_path(request.uri().path(), &service.base_path) else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let (parts, body) = request.into_parts();
@@ -133,14 +127,14 @@ pub(crate) async fn direct_smart_http_request(
         return (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response();
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let principal = match smart_http_principal_from_headers(
         &parts.headers,
-        &session_manager,
+        &service.session_manager,
         repository,
-        &auth_ui,
+        &service.auth_ui,
     )
     .await
     {
@@ -191,7 +185,7 @@ pub(crate) async fn direct_smart_http_request(
         return (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response();
     }
 
-    let repo_root = data_root.join("repo");
+    let repo_root = service.data_root.join("repo");
     let path_info = format!("/{}.git/{}", authorization.project.id, route.git_path);
     let content_type = parts
         .headers
@@ -202,7 +196,7 @@ pub(crate) async fn direct_smart_http_request(
         .get("git-protocol")
         .and_then(|value| value.to_str().ok());
     let remote_addr = smart_http_remote_addr(&parts.headers);
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let is_receive_pack_post = method == "POST" && route.git_path == "git-receive-pack";
     let before_refs = if is_receive_pack_post {
         match yona_rust_vcs::read_head_refs(&repo_path) {
@@ -237,9 +231,9 @@ pub(crate) async fn direct_smart_http_request(
                         actor,
                         &repo_path,
                         before_refs,
-                        &public_origin,
-                        &base_path,
-                        &integrations,
+                        &service.public_origin,
+                        &service.base_path,
+                        &service.integrations,
                     )
                     .await;
                 }

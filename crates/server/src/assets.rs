@@ -10,11 +10,7 @@ use crate::excel_export::{
     direct_review_excel_route_from_request,
 };
 use crate::smart_http::{direct_smart_http_request, route_from_path as smart_http_route_from_path};
-use crate::{
-    session::SessionManager, svn_protocol, AssetMode, AuthUiConfig, BrowserRuntimeConfig,
-    PilotBackend,
-};
-use yona_rust_integrations::IntegrationConfig;
+use crate::{svn_protocol, AssetMode, BrowserRuntimeConfig, PilotServiceImpl};
 
 mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
@@ -24,14 +20,9 @@ pub(crate) fn apply_asset_routes(
     mut base_router: Router,
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    integrations: IntegrationConfig,
-    public_origin: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Router {
+    let base_path = service.base_path.clone();
     match assets {
         AssetMode::Filesystem(asset_root) => {
             let asset_root_for_assets = asset_root.clone();
@@ -44,13 +35,8 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let asset_root_for_two_segment_fallback = asset_root;
             let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
-            let backend_for_fallback = backend;
-            let session_manager_for_fallback = session_manager;
-            let auth_ui_for_fallback = auth_ui;
-            let integrations_for_fallback = integrations;
+            let service_for_fallback = service;
             let base_path_for_fallback = base_path.clone();
-            let public_origin_for_fallback = public_origin;
-            let data_root_for_fallback = data_root;
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -95,25 +81,15 @@ pub(crate) fn apply_asset_routes(
                 .fallback(move |request: Request| {
                     let asset_root = asset_root_for_fallback.clone();
                     let browser_runtime = browser_runtime_for_fallback.clone();
-                    let session_manager = session_manager_for_fallback.clone();
-                    let backend = backend_for_fallback.clone();
-                    let auth_ui = auth_ui_for_fallback.clone();
-                    let integrations = integrations_for_fallback.clone();
+                    let service = service_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
-                    let public_origin = public_origin_for_fallback.clone();
-                    let data_root = data_root_for_fallback.clone();
                     async move {
                         serve_filesystem_or_smart_http_fallback(
                             request,
                             asset_root,
                             browser_runtime,
-                            session_manager,
-                            backend,
-                            auth_ui,
-                            integrations,
                             base_path,
-                            public_origin,
-                            data_root,
+                            service,
                         )
                         .await
                     }
@@ -125,13 +101,8 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_fallback = browser_runtime.clone();
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let browser_runtime_for_two_segment_fallback = browser_runtime;
-            let backend_for_fallback = backend;
-            let session_manager_for_fallback = session_manager;
-            let auth_ui_for_fallback = auth_ui;
-            let integrations_for_fallback = integrations;
+            let service_for_fallback = service;
             let base_path_for_fallback = base_path.clone();
-            let public_origin_for_fallback = public_origin;
-            let data_root_for_fallback = data_root;
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -167,58 +138,26 @@ pub(crate) fn apply_asset_routes(
                 )
                 .fallback(move |request: Request| {
                     let browser_runtime = browser_runtime_for_fallback.clone();
-                    let session_manager = session_manager_for_fallback.clone();
-                    let backend = backend_for_fallback.clone();
-                    let auth_ui = auth_ui_for_fallback.clone();
-                    let integrations = integrations_for_fallback.clone();
+                    let service = service_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
-                    let public_origin = public_origin_for_fallback.clone();
-                    let data_root = data_root_for_fallback.clone();
                     async move {
                         serve_embedded_or_smart_http_fallback(
                             request,
                             browser_runtime,
-                            session_manager,
-                            backend,
-                            auth_ui,
-                            integrations,
                             base_path,
-                            public_origin,
-                            data_root,
+                            service,
                         )
                         .await
                     }
                 })
         }
         AssetMode::None => {
-            let backend_for_fallback = backend;
-            let session_manager_for_fallback = session_manager;
-            let auth_ui_for_fallback = auth_ui;
-            let integrations_for_fallback = integrations;
+            let service_for_fallback = service;
             let base_path_for_fallback = base_path;
-            let public_origin_for_fallback = public_origin;
-            let data_root_for_fallback = data_root;
             base_router.fallback(move |request: Request| {
-                let session_manager = session_manager_for_fallback.clone();
-                let backend = backend_for_fallback.clone();
-                let auth_ui = auth_ui_for_fallback.clone();
-                let integrations = integrations_for_fallback.clone();
+                let service = service_for_fallback.clone();
                 let base_path = base_path_for_fallback.clone();
-                let public_origin = public_origin_for_fallback.clone();
-                let data_root = data_root_for_fallback.clone();
-                async move {
-                    smart_http_or_not_found(
-                        request,
-                        session_manager,
-                        backend,
-                        auth_ui,
-                        integrations,
-                        base_path,
-                        public_origin,
-                        data_root,
-                    )
-                    .await
-                }
+                async move { smart_http_or_not_found(request, base_path, service).await }
             })
         }
     }
@@ -267,13 +206,8 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     request: Request,
     asset_root: PathBuf,
     browser_runtime: BrowserRuntimeConfig,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    integrations: IntegrationConfig,
     base_path: String,
-    public_origin: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
     let method = request.method().clone();
     if let Some(route) = direct_issue_excel_route_from_request(
@@ -287,8 +221,8 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
@@ -303,34 +237,16 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            base_path,
-            data_root,
-        )
-        .await;
+        return svn_protocol::direct_request(request, service).await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            integrations,
-            base_path,
-            public_origin,
-            data_root,
-        )
-        .await;
+        return direct_smart_http_request(request, service).await;
     }
     serve_filesystem_fallback(asset_root, method, browser_runtime).await
 }
@@ -338,13 +254,8 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
 pub(crate) async fn serve_embedded_or_smart_http_fallback(
     request: Request,
     browser_runtime: BrowserRuntimeConfig,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    integrations: IntegrationConfig,
     base_path: String,
-    public_origin: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
     let method = request.method().clone();
     if let Some(route) = direct_issue_excel_route_from_request(
@@ -358,8 +269,8 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
@@ -374,47 +285,24 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            base_path,
-            data_root,
-        )
-        .await;
+        return svn_protocol::direct_request(request, service).await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            integrations,
-            base_path,
-            public_origin,
-            data_root,
-        )
-        .await;
+        return direct_smart_http_request(request, service).await;
     }
     serve_embedded_fallback(method, browser_runtime).await
 }
 
 pub(crate) async fn smart_http_or_not_found(
     request: Request,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    auth_ui: AuthUiConfig,
-    integrations: IntegrationConfig,
     base_path: String,
-    public_origin: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
     if let Some(route) = direct_issue_excel_route_from_request(
         request.method(),
@@ -427,8 +315,8 @@ pub(crate) async fn smart_http_or_not_found(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
@@ -443,34 +331,16 @@ pub(crate) async fn smart_http_or_not_found(
             route.owner_name,
             route.project_name,
             route.query,
-            session_manager,
-            backend,
+            service.session_manager.clone(),
+            service.backend.clone(),
         )
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            base_path,
-            data_root,
-        )
-        .await;
+        return svn_protocol::direct_request(request, service).await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(
-            request,
-            session_manager,
-            backend,
-            auth_ui,
-            integrations,
-            base_path,
-            public_origin,
-            data_root,
-        )
-        .await;
+        return direct_smart_http_request(request, service).await;
     }
     axum::http::StatusCode::NOT_FOUND.into_response()
 }
