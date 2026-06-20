@@ -1177,6 +1177,20 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   issue-template commits, online file edits, ACL/watch/comment coverage, and
   concurrent post-number allocation, preserving legacy board VCS behavior while
   removing the board-level global env lock.
+- 2026-06-20 runtime DI note: code browser, history, commit detail, compare,
+  branch list/mutation, direct raw/open/image/archive, and legacy AJAX code
+  routes now resolve Git repositories from the app-scoped `data_root` snapshot
+  instead of `YONA_DATA`. The code browser contract injects per-test data roots
+  through `AppRuntimeConfig` for REST, RPC, and direct legacy code paths,
+  removing the code-browser runtime config mutex while preserving legacy Git
+  repository layout and branch/commit/file behavior.
+- 2026-06-20 runtime DI note: pull-request form options, merge preview, merge
+  accept, source-branch delete/restore, changes diff, pushed-branch projection,
+  detail source-branch state, and review-comment detail projections now use the
+  app-scoped `data_root` snapshot instead of `YONA_DATA` for Git repository
+  lookup. The pull-request mutation contract injects per-test data roots through
+  `AppRuntimeConfig`; its remaining test lock is only for the process-global
+  webhook outbox, not runtime config.
 
 ## Wave 0 Exit Snapshot
 

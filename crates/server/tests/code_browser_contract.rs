@@ -11,51 +11,57 @@ use serde_json::json;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::{original_email, AppRepository};
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
-async fn build_app_with_repository() -> (axum::Router, AppRepository) {
+async fn build_app_with_data_root(data_root: &Path) -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db);
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo)
 }
 
-async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, DatabaseConnection) {
+async fn build_app_with_data_root_and_db(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo, db)
@@ -329,12 +335,8 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
 
 #[tokio::test]
 async fn rest_project_create_provisions_empty_bare_git_repository() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository_and_db().await;
+    let (app, repo, db) = build_app_with_data_root_and_db(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
 
     let response = response_json(
@@ -566,12 +568,8 @@ fn bare_repository_head_commit_id(yona_data: &Path, project_id: i64) -> String {
 
 #[tokio::test]
 async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "author").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
@@ -661,12 +659,8 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
 
 #[tokio::test]
 async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "author").await;
     assert!(repo
@@ -736,12 +730,8 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
 
 #[tokio::test]
 async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -809,12 +799,8 @@ async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
 
 #[tokio::test]
 async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "author").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
@@ -888,12 +874,8 @@ async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
 #[tokio::test]
 async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links() {
     // Guards shared code route utility handling for renderable Markdown paths.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -967,12 +949,8 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
 
 #[tokio::test]
 async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "second").await;
     assert!(repo
@@ -1038,12 +1016,8 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
 
 #[tokio::test]
 async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1111,12 +1085,8 @@ async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
 #[tokio::test]
 // Guards route-utils-owned project resource create authorization for commit comments.
 async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository_and_db().await;
+    let (app, repo, db) = build_app_with_data_root_and_db(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let linked_issue = response_json(
@@ -1415,12 +1385,8 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
 
 #[tokio::test]
 async fn rest_commit_comment_create_requires_authenticated_session() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1447,12 +1413,8 @@ async fn rest_commit_comment_create_requires_authenticated_session() {
 
 #[tokio::test]
 async fn rest_commit_comment_allows_legacy_guest_nonmember_on_public_project() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -1494,12 +1456,8 @@ async fn rest_commit_comment_allows_legacy_guest_nonmember_on_public_project() {
 
 #[tokio::test]
 async fn rest_commit_detail_reports_missing_commit_as_not_found() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1521,12 +1479,8 @@ async fn rest_commit_detail_reports_missing_commit_as_not_found() {
 
 #[tokio::test]
 async fn rest_compare_reads_commit_pair_and_diff_from_git_repo() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1575,12 +1529,8 @@ async fn rest_compare_reads_commit_pair_and_diff_from_git_repo() {
 
 #[tokio::test]
 async fn rest_compare_reports_missing_commit_as_not_found() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1603,12 +1553,8 @@ async fn rest_compare_reports_missing_commit_as_not_found() {
 
 #[tokio::test]
 async fn rest_branch_list_renders_default_branch_first_with_legacy_actions() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1666,12 +1612,8 @@ async fn rest_branch_list_renders_default_branch_first_with_legacy_actions() {
 
 #[tokio::test]
 async fn rest_branch_default_mutation_moves_git_head() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1720,12 +1662,8 @@ async fn rest_branch_default_mutation_moves_git_head() {
 
 #[tokio::test]
 async fn rest_branch_delete_removes_non_default_branch_and_rejects_default() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1766,12 +1704,8 @@ async fn rest_branch_delete_removes_non_default_branch_and_rejects_default() {
 
 #[tokio::test]
 async fn rest_branch_mutation_requires_project_update_permission() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let project = repo
@@ -1797,12 +1731,8 @@ async fn rest_branch_mutation_requires_project_update_permission() {
 
 #[tokio::test]
 async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1891,12 +1821,8 @@ async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
 
 #[tokio::test]
 async fn direct_code_archive_download_streams_branch_zip() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -1933,12 +1859,8 @@ async fn direct_code_archive_download_streams_branch_zip() {
 
 #[tokio::test]
 async fn direct_code_file_and_archive_routes_decode_legacy_encoded_branch_names() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -2001,12 +1923,8 @@ async fn direct_code_file_and_archive_routes_decode_legacy_encoded_branch_names(
 
 #[tokio::test]
 async fn direct_code_file_routes_redirect_missing_raw_and_reject_path_traversal() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -2056,12 +1974,8 @@ async fn direct_code_file_routes_redirect_missing_raw_and_reject_path_traversal(
 
 #[tokio::test]
 async fn code_browser_reports_no_head_for_missing_repository() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -2097,12 +2011,8 @@ async fn code_browser_reports_no_head_for_missing_repository() {
 
 #[tokio::test]
 async fn rest_code_browser_rejects_path_traversal() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
@@ -2124,12 +2034,8 @@ async fn rest_code_browser_rejects_path_traversal() {
 
 #[tokio::test]
 async fn code_browser_rejects_path_traversal() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo

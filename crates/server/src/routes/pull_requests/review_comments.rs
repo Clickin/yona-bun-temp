@@ -165,6 +165,7 @@ pub(super) async fn rest_create_pull_request_comment(
     .await;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -194,6 +195,7 @@ pub(super) async fn rest_update_pull_request_comment(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -238,6 +240,7 @@ pub(super) async fn rest_update_pull_request_comment(
         .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -266,6 +269,7 @@ pub(super) async fn rest_delete_pull_request_comment(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -302,6 +306,7 @@ pub(super) async fn rest_delete_pull_request_comment(
         .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -331,6 +336,7 @@ pub(super) async fn rest_update_pull_request_thread_state(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,

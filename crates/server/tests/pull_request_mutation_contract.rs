@@ -16,32 +16,40 @@ use yona_rust_integrations::{
 };
 use yona_rust_persistence::{webhook_thread, AppRepository};
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
 
-static YONA_DATA_TEST_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+static TEST_WEBHOOK_OUTBOX_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
 
-async fn lock_yona_data_tests() -> tokio::sync::MutexGuard<'static, ()> {
-    YONA_DATA_TEST_LOCK
+async fn lock_test_webhook_outbox() -> tokio::sync::MutexGuard<'static, ()> {
+    TEST_WEBHOOK_OUTBOX_LOCK
         .get_or_init(|| tokio::sync::Mutex::new(()))
         .lock()
         .await
 }
 
-async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+async fn build_app_with_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
     );
 
     (app, app_repo, db)
@@ -383,13 +391,12 @@ fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
 
 #[tokio::test]
 async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
-    let _yona_data_guard = lock_yona_data_tests().await;
+    let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("watchers-data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "watchowner").await;
     let (commenter_csrf, commenter_cookie, _) = register_user(app.clone(), "watchcommenter").await;
     let (project_watcher_csrf, project_watcher_cookie, project_watcher_id) =
@@ -562,13 +569,12 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
 
 #[tokio::test]
 async fn pull_request_review_comment_allows_legacy_guest_nonmember_on_public_project() {
-    let _yona_data_guard = lock_yona_data_tests().await;
+    let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, _db) = build_app_with_repository().await;
+    let (app, repo, _db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, _owner_id) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
     create_project(
@@ -644,13 +650,12 @@ async fn pull_request_review_comment_allows_legacy_guest_nonmember_on_public_pro
 
 #[tokio::test]
 async fn pull_request_create_rejects_legacy_project_guest_nonmember() {
-    let _yona_data_guard = lock_yona_data_tests().await;
+    let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("guest-pr-create-data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, _db) = build_app_with_repository().await;
+    let (app, repo, _db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, _owner_id) = register_user(app.clone(), "owner").await;
     let (outsider_csrf, outsider_cookie, _outsider_id) =
         register_user(app.clone(), "outsider").await;
@@ -710,13 +715,12 @@ async fn pull_request_create_rejects_legacy_project_guest_nonmember() {
 
 #[tokio::test]
 async fn pull_request_state_notifications_include_legacy_review_comment_watchers() {
-    let _yona_data_guard = lock_yona_data_tests().await;
+    let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("notification-watchers-data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "notifyowner").await;
     let (commenter_csrf, commenter_cookie, commenter_id) =
         register_user(app.clone(), "notifycommenter").await;
@@ -855,16 +859,15 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
 
 #[tokio::test]
 async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
+    let _outbox_guard = lock_test_webhook_outbox().await;
     // PR webhooks share the projects/webhooks.rs dispatch and Hangout thread
     // persistence path, including the app-scoped webhook IntegrationConfig
     // snapshot passed through pull-request route fan-out.
-    let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("hangout-webhook-data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "hangoutowner").await;
     create_project(
         app.clone(),
@@ -994,13 +997,12 @@ async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
 // routing plus direct PR wrapper construction through the shared PilotServiceImpl
 // runtime snapshot boundary.
 async fn pull_request_interaction_surface_mutates_state_review_comments_threads_and_events() {
-    let _yona_data_guard = lock_yona_data_tests().await;
+    let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("data");
     fs::create_dir_all(&data_root).unwrap();
-    std::env::set_var("YONA_DATA", &data_root);
     clear_test_webhook_outbox();
 
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(&data_root).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (reviewer_csrf, reviewer_cookie, reviewer_id) =
         register_user(app.clone(), "reviewer").await;

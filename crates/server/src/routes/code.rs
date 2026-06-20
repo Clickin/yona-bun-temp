@@ -8,6 +8,7 @@ use axum::{
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
@@ -24,10 +25,9 @@ use crate::{
     require_valid_csrf, rest_commit_thread_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
-    session::SessionManager, workspace_avatar_url, yona_data_root, ConnectError,
-    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotServiceImpl,
-    ProjectCreatableResource, RestIssueReferenceMetadata, RestMentionReferenceMetadata,
-    RestReviewThread, RestRouteError,
+    session::SessionManager, workspace_avatar_url, ConnectError, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotServiceImpl, ProjectCreatableResource,
+    RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
 
 pub(crate) fn rest_routes(
@@ -36,6 +36,7 @@ pub(crate) fn rest_routes(
     backend: PilotBackend,
     base_path: String,
 ) -> Router {
+    let data_root = service.data_root.clone();
     Router::new()
         .route(
             "/projects/{owner_name}/{project_name}/code",
@@ -43,12 +44,14 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeBrowserQuery>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_read_code_browser(
                             headers,
@@ -58,6 +61,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            data_root,
                         )
                         .await
                     }
@@ -70,12 +74,14 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeHistoryQuery>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_read_code_history(
                             headers,
@@ -85,6 +91,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            data_root,
                         )
                         .await
                     }
@@ -97,6 +104,7 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, commit_id)): Path<(
                     String,
@@ -107,6 +115,7 @@ pub(crate) fn rest_routes(
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_read_code_commit_detail(
                             headers,
@@ -117,6 +126,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            data_root,
                         )
                         .await
                     }
@@ -259,6 +269,7 @@ pub(crate) fn rest_routes(
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, revision_range)): Path<(
                     String,
@@ -267,6 +278,7 @@ pub(crate) fn rest_routes(
                 )>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_read_code_compare(
                             headers,
@@ -275,6 +287,7 @@ pub(crate) fn rest_routes(
                             revision_range,
                             session_manager,
                             backend,
+                            data_root,
                         )
                         .await
                     }
@@ -286,10 +299,12 @@ pub(crate) fn rest_routes(
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_read_code_branches(
                             headers,
@@ -297,6 +312,7 @@ pub(crate) fn rest_routes(
                             project_name,
                             session_manager,
                             backend,
+                            data_root,
                         )
                         .await
                     }
@@ -305,11 +321,13 @@ pub(crate) fn rest_routes(
             .delete({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let data_root = data_root.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestCodeBranchMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_delete_code_branch(
                             headers,
@@ -318,6 +336,7 @@ pub(crate) fn rest_routes(
                             body,
                             session_manager,
                             backend,
+                            data_root,
                         )
                         .await
                     }
@@ -329,11 +348,13 @@ pub(crate) fn rest_routes(
             post({
                 let session_manager = session_manager;
                 let backend = backend;
+                let data_root = data_root;
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestCodeBranchMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let data_root = data_root.clone();
                     async move {
                         rest_set_default_code_branch(
                             headers,
@@ -342,6 +363,7 @@ pub(crate) fn rest_routes(
                             body,
                             session_manager,
                             backend,
+                            data_root,
                         )
                         .await
                     }
@@ -356,35 +378,46 @@ pub(crate) fn routes(
     backend: PilotBackend,
     base_path: String,
 ) -> Router {
+    let data_root = service.data_root.clone();
     let raw_code_backend = backend.clone();
     let raw_code_session_manager = session_manager.clone();
     let raw_code_base_path = base_path.clone();
+    let raw_code_data_root = data_root.clone();
     let open_code_backend = backend.clone();
     let open_code_session_manager = session_manager.clone();
     let open_code_base_path = base_path.clone();
+    let open_code_data_root = data_root.clone();
     let image_code_backend = backend.clone();
     let image_code_session_manager = session_manager.clone();
     let image_code_base_path = base_path.clone();
+    let image_code_data_root = data_root.clone();
     let archive_code_backend = backend.clone();
     let archive_code_session_manager = session_manager.clone();
+    let archive_code_data_root = data_root.clone();
     let code_ajax_backend = backend.clone();
     let code_ajax_session_manager = session_manager.clone();
     let code_ajax_base_path = base_path.clone();
+    let code_ajax_data_root = data_root.clone();
     let code_ajax_root_backend = backend.clone();
     let code_ajax_root_session_manager = session_manager.clone();
     let code_ajax_root_base_path = base_path.clone();
+    let code_ajax_root_data_root = data_root.clone();
     let code_ajax_root_slash_backend = backend.clone();
     let code_ajax_root_slash_session_manager = session_manager.clone();
     let code_ajax_root_slash_base_path = base_path.clone();
+    let code_ajax_root_slash_data_root = data_root.clone();
     let code_ajax_branch_backend = backend.clone();
     let code_ajax_branch_session_manager = session_manager.clone();
     let code_ajax_branch_base_path = base_path.clone();
+    let code_ajax_branch_data_root = data_root.clone();
     let code_ajax_branch_root_backend = backend.clone();
     let code_ajax_branch_root_session_manager = session_manager.clone();
     let code_ajax_branch_root_base_path = base_path.clone();
+    let code_ajax_branch_root_data_root = data_root.clone();
     let code_ajax_branch_root_slash_backend = backend.clone();
     let code_ajax_branch_root_slash_session_manager = session_manager.clone();
     let code_ajax_branch_root_slash_base_path = base_path.clone();
+    let code_ajax_branch_root_slash_data_root = data_root;
     let direct_commit_comment_create_service = service.clone();
     let direct_commit_comment_delete_service = service;
 
@@ -410,6 +443,7 @@ pub(crate) fn routes(
                             raw_code_session_manager.clone(),
                             raw_code_backend.clone(),
                             raw_code_base_path.clone(),
+                            raw_code_data_root.clone(),
                         )
                         .await
                     }
@@ -437,6 +471,7 @@ pub(crate) fn routes(
                             open_code_session_manager.clone(),
                             open_code_backend.clone(),
                             open_code_base_path.clone(),
+                            open_code_data_root.clone(),
                         )
                         .await
                     }
@@ -464,6 +499,7 @@ pub(crate) fn routes(
                             image_code_session_manager.clone(),
                             image_code_backend.clone(),
                             image_code_base_path.clone(),
+                            image_code_data_root.clone(),
                         )
                         .await
                     }
@@ -483,6 +519,7 @@ pub(crate) fn routes(
                             revision,
                             archive_code_session_manager.clone(),
                             archive_code_backend.clone(),
+                            archive_code_data_root.clone(),
                         )
                         .await
                     }
@@ -504,6 +541,7 @@ pub(crate) fn routes(
                             code_ajax_session_manager.clone(),
                             code_ajax_backend.clone(),
                             code_ajax_base_path.clone(),
+                            code_ajax_data_root.clone(),
                         )
                         .await
                     }
@@ -524,6 +562,7 @@ pub(crate) fn routes(
                             code_ajax_root_session_manager.clone(),
                             code_ajax_root_backend.clone(),
                             code_ajax_root_base_path.clone(),
+                            code_ajax_root_data_root.clone(),
                         )
                         .await
                     }
@@ -544,6 +583,7 @@ pub(crate) fn routes(
                             code_ajax_root_slash_session_manager.clone(),
                             code_ajax_root_slash_backend.clone(),
                             code_ajax_root_slash_base_path.clone(),
+                            code_ajax_root_slash_data_root.clone(),
                         )
                         .await
                     }
@@ -570,6 +610,7 @@ pub(crate) fn routes(
                             code_ajax_branch_session_manager.clone(),
                             code_ajax_branch_backend.clone(),
                             code_ajax_branch_base_path.clone(),
+                            code_ajax_branch_data_root.clone(),
                         )
                         .await
                     }
@@ -591,6 +632,7 @@ pub(crate) fn routes(
                             code_ajax_branch_root_session_manager.clone(),
                             code_ajax_branch_root_backend.clone(),
                             code_ajax_branch_root_base_path.clone(),
+                            code_ajax_branch_root_data_root.clone(),
                         )
                         .await
                     }
@@ -612,6 +654,7 @@ pub(crate) fn routes(
                             code_ajax_branch_root_slash_session_manager.clone(),
                             code_ajax_branch_root_slash_backend.clone(),
                             code_ajax_branch_root_slash_base_path.clone(),
+                            code_ajax_branch_root_slash_data_root.clone(),
                         )
                         .await
                     }
@@ -911,6 +954,7 @@ pub(crate) async fn direct_code_ajax_compat(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Response {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -938,7 +982,7 @@ pub(crate) async fn direct_code_ajax_compat(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = match yona_rust_vcs::read_code_browser(
         &repo_path,
         branch.as_deref().filter(|value| !value.trim().is_empty()),
@@ -978,6 +1022,7 @@ pub(crate) async fn direct_code_file(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Response {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -1005,7 +1050,7 @@ pub(crate) async fn direct_code_file(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     match yona_rust_vcs::read_file_bytes(&repo_path, &revision, &path) {
         Ok(file) => direct_code_file_response(file, mode),
         Err(VcsError::NotFound) if mode == DirectCodeFileMode::Raw => {
@@ -1145,6 +1190,7 @@ pub(crate) async fn direct_code_archive(
     revision: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Response {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -1172,7 +1218,7 @@ pub(crate) async fn direct_code_archive(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     match yona_rust_vcs::read_archive_zip(&repo_path, &revision) {
         Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
         Err(error) => direct_code_file_error(error),
@@ -1262,6 +1308,7 @@ async fn rest_read_code_browser(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeBrowserResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -1294,7 +1341,7 @@ async fn rest_read_code_browser(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_code_browser(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
@@ -1447,6 +1494,7 @@ async fn rest_read_code_history(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeHistoryResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -1479,7 +1527,7 @@ async fn rest_read_code_history(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let mut snapshot = yona_rust_vcs::read_code_history(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
@@ -1541,6 +1589,7 @@ async fn rest_read_code_commit_detail(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -1581,6 +1630,7 @@ async fn rest_read_code_commit_detail(
             &commit_id,
             &query,
             &base_path,
+            &data_root,
         )
         .await?,
     ))
@@ -1593,8 +1643,9 @@ async fn rest_code_commit_detail_response(
     commit_id: &str,
     query: &RestCodeCommitDetailQuery,
     base_path: &str,
+    data_root: &PathBuf,
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
     let mut snapshot = yona_rust_vcs::read_commit_detail(
         &repo_path,
         commit_id,
@@ -1755,6 +1806,7 @@ async fn rest_create_commit_discussion_comment(
         &commit_id,
         &query,
         &service.base_path,
+        &service.data_root,
     )
     .await?;
     if !current.permissions.can_comment {
@@ -1789,6 +1841,7 @@ async fn rest_create_commit_discussion_comment(
             &commit_id,
             &query,
             &service.base_path,
+            &service.data_root,
         )
         .await?,
     ))
@@ -1822,6 +1875,7 @@ pub(crate) async fn rest_update_commit_discussion_thread_state(
         &commit_id,
         &query,
         &service.base_path,
+        &service.data_root,
     )
     .await?;
     let thread = current
@@ -1893,6 +1947,7 @@ async fn rest_update_commit_discussion_comment(
         &commit_id,
         &query,
         &service.base_path,
+        &service.data_root,
     )
     .await?;
     let comment = current
@@ -1934,6 +1989,7 @@ async fn rest_update_commit_discussion_comment(
             &commit_id,
             &query,
             &service.base_path,
+            &service.data_root,
         )
         .await?,
     ))
@@ -1966,6 +2022,7 @@ async fn rest_delete_commit_discussion_comment(
         &commit_id,
         &query,
         &service.base_path,
+        &service.data_root,
     )
     .await?;
     let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
@@ -2000,6 +2057,7 @@ async fn rest_delete_commit_discussion_comment(
             &commit_id,
             &query,
             &service.base_path,
+            &service.data_root,
         )
         .await?,
     ))
@@ -2012,6 +2070,7 @@ async fn rest_read_code_compare(
     revision_range: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeCompareResponse>, RestRouteError> {
     let Some((rev_a, rev_b)) = revision_range.split_once("..") else {
         return Err(RestRouteError::bad_request(
@@ -2049,7 +2108,7 @@ async fn rest_read_code_compare(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2067,6 +2126,7 @@ async fn rest_read_code_branches(
     project_name: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -2078,7 +2138,7 @@ async fn rest_read_code_branches(
     };
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_branch_list(&repo_path)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2099,6 +2159,7 @@ async fn rest_set_default_code_branch(
     body: RestCodeBranchMutationBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -2120,7 +2181,7 @@ async fn rest_set_default_code_branch(
             ConnectError::permission_denied("branch default update is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::set_default_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2141,6 +2202,7 @@ async fn rest_delete_code_branch(
     body: RestCodeBranchMutationBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -2162,7 +2224,7 @@ async fn rest_delete_code_branch(
             ConnectError::permission_denied("branch delete is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::delete_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;

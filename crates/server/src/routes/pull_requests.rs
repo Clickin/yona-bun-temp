@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use yona_rust_integrations::IntegrationConfig;
 use yona_rust_vcs::{CodeCommitFileDiffRecord, VcsError};
 
@@ -19,7 +20,7 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, session::SessionManager,
-    visible_code_projects_for_organization, yona_data_root, ConnectError, MarkdownIssueReference,
+    visible_code_projects_for_organization, ConnectError, MarkdownIssueReference,
     MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
     RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
@@ -134,6 +135,7 @@ async fn direct_pull_request_state(
     pull_request_number: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    data_root: PathBuf,
 ) -> Response {
     let PilotBackend::Repository(repository) = backend else {
         return StatusCode::NOT_FOUND.into_response();
@@ -157,7 +159,9 @@ async fn direct_pull_request_state(
         }
     };
     let source_branch_state =
-        match rest_pull_request_source_branch_state(&repository, &record, actor_id).await {
+        match rest_pull_request_source_branch_state(&data_root, &repository, &record, actor_id)
+            .await
+        {
             Ok(state) => state,
             Err(error) => return RestRouteError::from_connect_error(error).into_response(),
         };
@@ -560,6 +564,7 @@ pub(crate) fn routes(
     let thread_close_service = service.clone();
     let pull_request_accept_service = service.clone();
     let pull_request_delete_source_branch_service = service.clone();
+    let pull_request_state_data_root = service.data_root.clone();
     let pull_request_restore_source_branch_service = service;
     let pull_request_state_backend = backend;
     let pull_request_state_session_manager = session_manager;
@@ -678,6 +683,7 @@ pub(crate) fn routes(
                             pull_request_number,
                             pull_request_state_session_manager.clone(),
                             pull_request_state_backend.clone(),
+                            pull_request_state_data_root.clone(),
                         )
                         .await
                     }
@@ -1315,6 +1321,7 @@ fn rest_pull_request_list_from_record(
 }
 
 fn rest_project_pull_request_list_from_record(
+    data_root: &PathBuf,
     record: persistence::PullRequestListRecord,
 ) -> RestPullRequestListResponse {
     RestPullRequestListResponse {
@@ -1337,7 +1344,7 @@ fn rest_project_pull_request_list_from_record(
         recently_pushed_branches: record
             .recently_pushed_branches
             .into_iter()
-            .map(rest_pull_request_pushed_branch_from_record)
+            .map(|record| rest_pull_request_pushed_branch_from_record(data_root, record))
             .collect(),
         sent_count: record.sent_count,
         total_count: record.total_count,
@@ -1345,11 +1352,12 @@ fn rest_project_pull_request_list_from_record(
 }
 
 fn rest_pull_request_pushed_branch_from_record(
+    data_root: &PathBuf,
     record: persistence::PullRequestPushedBranchRecord,
 ) -> RestPullRequestPushedBranch {
     RestPullRequestPushedBranch {
         branch_name: record.branch_name,
-        default_branch: default_branch_for_project_id(record.default_branch_project_id),
+        default_branch: default_branch_for_project_id(data_root, record.default_branch_project_id),
         id: record.id,
         owner_name: record.owner_name,
         project_name: record.project_name,
@@ -1358,8 +1366,8 @@ fn rest_pull_request_pushed_branch_from_record(
     }
 }
 
-fn default_branch_for_project_id(project_id: i64) -> String {
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+fn default_branch_for_project_id(data_root: &PathBuf, project_id: i64) -> String {
+    let repo_path = yona_rust_vcs::repository_path(data_root, project_id);
     yona_rust_vcs::read_branch_list(&repo_path)
         .ok()
         .map(|snapshot| snapshot.default_branch)
@@ -1569,6 +1577,7 @@ fn rest_pull_request_changed_file_from_vcs_record(
 }
 
 async fn rest_pull_request_detail_from_record_with_repository_issue_references(
+    data_root: &PathBuf,
     repository: &PilotRepository,
     record: persistence::PullRequestDetailRecord,
     authorization: &persistence::ProjectAuthorizationRecord,
@@ -1576,7 +1585,7 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
     base_path: &str,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let source_branch_state =
-        rest_pull_request_source_branch_state(repository, &record, actor_id).await?;
+        rest_pull_request_source_branch_state(data_root, repository, &record, actor_id).await?;
     let mut markdowns = vec![record.body_markdown.as_str()];
     for thread in &record.threads {
         markdowns.extend(
@@ -1602,6 +1611,7 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
 }
 
 async fn rest_pull_request_source_branch_state(
+    data_root: &PathBuf,
     repository: &PilotRepository,
     record: &persistence::PullRequestDetailRecord,
     actor_id: Option<i64>,
@@ -1617,7 +1627,7 @@ async fn rest_pull_request_source_branch_state(
         return Ok(RestPullRequestSourceBranchState::default());
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, source_project.id);
     let snapshot = yona_rust_vcs::read_branch_list(&repo_path).map_err(code_browser_error)?;
     let branch = snapshot
         .branches
@@ -1888,10 +1898,11 @@ async fn rest_pull_request_project_options(
 }
 
 fn rest_pull_request_branch_options(
+    data_root: &PathBuf,
     project: &persistence::ProjectRecord,
     selected_branch: &str,
 ) -> Result<(Vec<RestPullRequestBranchOption>, String), RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+    let repo_path = yona_rust_vcs::repository_path(data_root, project.id);
     let branches = yona_rust_vcs::list_repository_branches(&repo_path)
         .map_err(rest_pull_request_branch_error)?;
     if branches.is_empty() {
@@ -1949,6 +1960,7 @@ fn require_pull_request_create_allowed(
 }
 
 async fn rest_pull_request_detail_response(
+    data_root: &PathBuf,
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
@@ -1965,6 +1977,7 @@ async fn rest_pull_request_detail_response(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     rest_pull_request_detail_from_record_with_repository_issue_references(
+        data_root,
         repository,
         record,
         &authorization,
@@ -2013,10 +2026,16 @@ pub(crate) async fn rest_read_pull_request_create_form_options(
         target_authorization.project.id,
     )
     .await?;
-    let (from_branches, selected_from_branch) =
-        rest_pull_request_branch_options(&from_authorization.project, &query.from_branch)?;
-    let (to_branches, selected_to_branch) =
-        rest_pull_request_branch_options(&to_authorization.project, &query.to_branch)?;
+    let (from_branches, selected_from_branch) = rest_pull_request_branch_options(
+        &service.data_root,
+        &from_authorization.project,
+        &query.from_branch,
+    )?;
+    let (to_branches, selected_to_branch) = rest_pull_request_branch_options(
+        &service.data_root,
+        &to_authorization.project,
+        &query.to_branch,
+    )?;
 
     Ok(Json(RestPullRequestFormOptionsResponse {
         from_branches,
@@ -2062,6 +2081,7 @@ pub(crate) async fn rest_read_pull_request_edit_form_options(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let pull_request = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2089,10 +2109,13 @@ pub(crate) async fn rest_read_pull_request_edit_form_options(
     rest_require_pull_request_option_project(repository, to_project.id, Some(actor.id)).await?;
     let project_options =
         rest_pull_request_project_options(repository, Some(actor.id), to_project.id).await?;
-    let (from_branches, selected_from_branch) =
-        rest_pull_request_branch_options(&from_project, &pull_request.from_branch)?;
+    let (from_branches, selected_from_branch) = rest_pull_request_branch_options(
+        &service.data_root,
+        &from_project,
+        &pull_request.from_branch,
+    )?;
     let (to_branches, selected_to_branch) =
-        rest_pull_request_branch_options(&to_project, &pull_request.to_branch)?;
+        rest_pull_request_branch_options(&service.data_root, &to_project, &pull_request.to_branch)?;
 
     Ok(Json(RestPullRequestFormOptionsResponse {
         from_branches,
@@ -2161,15 +2184,21 @@ pub(crate) async fn rest_read_pull_request_merge_result(
             .await?;
     let to_authorization =
         rest_require_pull_request_option_project(repository, to_project_id, Some(actor.id)).await?;
-    let (_, selected_from_branch) =
-        rest_pull_request_branch_options(&from_authorization.project, &query.from_branch)?;
-    let (_, selected_to_branch) =
-        rest_pull_request_branch_options(&to_authorization.project, &query.to_branch)?;
+    let (_, selected_from_branch) = rest_pull_request_branch_options(
+        &service.data_root,
+        &from_authorization.project,
+        &query.from_branch,
+    )?;
+    let (_, selected_to_branch) = rest_pull_request_branch_options(
+        &service.data_root,
+        &to_authorization.project,
+        &query.to_branch,
+    )?;
 
     let source_repo_path =
-        yona_rust_vcs::repository_path(&yona_data_root(), from_authorization.project.id);
+        yona_rust_vcs::repository_path(&service.data_root, from_authorization.project.id);
     let target_repo_path =
-        yona_rust_vcs::repository_path(&yona_data_root(), to_authorization.project.id);
+        yona_rust_vcs::repository_path(&service.data_root, to_authorization.project.id);
     let preview = yona_rust_vcs::preview_pull_request_merge(
         &source_repo_path,
         &target_repo_path,
@@ -2232,8 +2261,16 @@ pub(crate) async fn rest_create_pull_request(
     let to_authorization =
         rest_require_pull_request_option_project(repository, body.to_project_id, Some(actor.id))
             .await?;
-    rest_pull_request_branch_options(&from_authorization.project, &body.from_branch)?;
-    rest_pull_request_branch_options(&to_authorization.project, &body.to_branch)?;
+    rest_pull_request_branch_options(
+        &service.data_root,
+        &from_authorization.project,
+        &body.from_branch,
+    )?;
+    rest_pull_request_branch_options(
+        &service.data_root,
+        &to_authorization.project,
+        &body.to_branch,
+    )?;
 
     let detail = repository
         .create_pull_request(persistence::CreatePullRequestInput {
@@ -2271,6 +2308,7 @@ pub(crate) async fn rest_create_pull_request(
     };
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &to_authorization,
@@ -2301,6 +2339,7 @@ pub(crate) async fn rest_update_pull_request(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2332,6 +2371,7 @@ pub(crate) async fn rest_update_pull_request(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2360,6 +2400,7 @@ pub(crate) async fn rest_update_pull_request_state(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2402,6 +2443,7 @@ pub(crate) async fn rest_update_pull_request_state(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2429,6 +2471,7 @@ pub(crate) async fn rest_accept_pull_request(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let (record, authorization) = accept_pull_request_for_actor(
+        &service.data_root,
         repository,
         &actor,
         owner_name,
@@ -2441,6 +2484,7 @@ pub(crate) async fn rest_accept_pull_request(
     .await?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2453,6 +2497,7 @@ pub(crate) async fn rest_accept_pull_request(
 }
 
 async fn accept_pull_request_for_actor(
+    data_root: &PathBuf,
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     owner_name: String,
@@ -2469,6 +2514,7 @@ async fn accept_pull_request_for_actor(
     RestRouteError,
 > {
     let current = rest_pull_request_detail_response(
+        data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2502,9 +2548,8 @@ async fn accept_pull_request_for_actor(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), from_project.id);
-    let target_repo_path =
-        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let source_repo_path = yona_rust_vcs::repository_path(data_root, from_project.id);
+    let target_repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
     let merge = yona_rust_vcs::merge_pull_request(
         &source_repo_path,
         &target_repo_path,
@@ -2563,6 +2608,7 @@ pub(crate) async fn rest_delete_pull_request_source_branch(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2585,7 +2631,7 @@ pub(crate) async fn rest_delete_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    let source_repo_path = yona_rust_vcs::repository_path(&service.data_root, source_project.id);
     yona_rust_vcs::delete_branch(&source_repo_path, &current.from_branch)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2607,6 +2653,7 @@ pub(crate) async fn rest_delete_pull_request_source_branch(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2634,6 +2681,7 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2656,9 +2704,9 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    let source_repo_path = yona_rust_vcs::repository_path(&service.data_root, source_project.id);
     let target_repo_path =
-        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+        yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     yona_rust_vcs::restore_branch_from_merge(
         &source_repo_path,
         &target_repo_path,
@@ -2685,6 +2733,7 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2713,6 +2762,7 @@ pub(crate) async fn rest_set_pull_request_review(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2757,6 +2807,7 @@ pub(crate) async fn rest_set_pull_request_review(
     .await;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2785,6 +2836,7 @@ pub(crate) async fn rest_set_pull_request_watch(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let current = rest_pull_request_detail_response(
+        &service.data_root,
         repository,
         &owner_name,
         &project_name,
@@ -2822,6 +2874,7 @@ pub(crate) async fn rest_set_pull_request_watch(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2853,7 +2906,10 @@ pub(crate) async fn rest_list_project_pull_requests(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(rest_project_pull_request_list_from_record(record)))
+    Ok(Json(rest_project_pull_request_list_from_record(
+        &service.data_root,
+        record,
+    )))
 }
 
 pub(crate) async fn rest_read_pull_request_detail(
@@ -2875,6 +2931,7 @@ pub(crate) async fn rest_read_pull_request_detail(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
+            &service.data_root,
             repository,
             record,
             &authorization,
@@ -2945,6 +3002,7 @@ pub(crate) async fn rest_read_pull_request_changes(
     let merged_commit_id_from = record.merged_commit_id_from.clone();
     let merged_commit_id_to = record.merged_commit_id_to.clone();
     let detail = rest_pull_request_detail_from_record_with_repository_issue_references(
+        &service.data_root,
         repository,
         record,
         &authorization,
@@ -2953,7 +3011,7 @@ pub(crate) async fn rest_read_pull_request_changes(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let diff = if merged_commit_id_from.trim().is_empty() || merged_commit_id_to.trim().is_empty() {
         yona_rust_vcs::PullRequestDiffSnapshot {
             commits: Vec::new(),
