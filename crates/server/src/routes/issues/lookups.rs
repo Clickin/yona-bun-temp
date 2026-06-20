@@ -2,8 +2,8 @@ use axum::{http::HeaderMap, Json};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    internal_error, persistence, require_project_read, session::SessionManager, ConnectError,
-    ErrorCode, PilotBackend, PilotRepository, RestIssueAssignableUsersQuery, RestRouteError,
+    internal_error, persistence, require_project_read, ConnectError, ErrorCode, PilotBackend,
+    PilotRepository, PilotServiceImpl, RestIssueAssignableUsersQuery, RestRouteError,
 };
 
 use super::read_issue_access;
@@ -99,20 +99,20 @@ pub(super) async fn rest_list_issue_parent_options(
     owner_name: String,
     project_name: String,
     query: RestIssueParentOptionsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueParentOptionsResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
             "invalid issue parent options request",
         ));
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue parent options require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -161,8 +161,7 @@ pub(super) async fn rest_list_project_assignable_users(
     owner_name: String,
     project_name: String,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueAssignableUsersResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -170,12 +169,13 @@ pub(super) async fn rest_list_project_assignable_users(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project assignable users require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -204,8 +204,7 @@ pub(super) async fn rest_list_issue_assignable_users(
     project_name: String,
     issue_number: i64,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueAssignableUsersResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
         return Err(RestRouteError::bad_request(
@@ -213,12 +212,13 @@ pub(super) async fn rest_list_issue_assignable_users(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue assignable users require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     read_issue_access(
@@ -254,8 +254,7 @@ pub(super) async fn rest_list_issue_sharable_users(
     project_name: String,
     issue_number: i64,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueAssignableUsersResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
         return Err(RestRouteError::bad_request(
@@ -263,12 +262,13 @@ pub(super) async fn rest_list_issue_sharable_users(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue sharable users require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     read_issue_access(
@@ -323,8 +323,7 @@ pub(super) async fn rest_list_issue_mention_users(
     project_name: String,
     issue_number: i64,
     query: RestIssueMentionUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueMentionUsersResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
         return Err(RestRouteError::bad_request(
@@ -341,12 +340,13 @@ pub(super) async fn rest_list_issue_mention_users(
         return Err(RestRouteError::bad_request("invalid issue mention context"));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "issue mention users require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     read_issue_access(
@@ -436,8 +436,7 @@ pub(super) async fn rest_list_project_issue_references(
     owner_name: String,
     project_name: String,
     query: RestProjectIssueReferencesQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestProjectIssueReferencesResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -445,12 +444,13 @@ pub(super) async fn rest_list_project_issue_references(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project issue references require repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)

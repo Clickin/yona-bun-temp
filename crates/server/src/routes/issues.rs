@@ -896,21 +896,18 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         .route(
             "/projects/{owner_name}/{project_name}/issues/parent-options",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestIssueParentOptionsQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_issue_parent_options(
                             headers,
                             owner_name,
                             project_name,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1299,16 +1296,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_project_assignable_users(
                             headers,
                             owner_name,
                             project_name,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1322,16 +1317,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestProjectIssueReferencesQuery>| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_project_issue_references(
                             headers,
                             owner_name,
                             project_name,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1345,8 +1338,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_issue_assignable_users(
                             headers,
@@ -1354,8 +1346,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1369,8 +1360,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Query(query): Query<RestIssueAssignableUsersQuery>| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_issue_sharable_users(
                             headers,
@@ -1378,8 +1368,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1393,8 +1382,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Query(query): Query<RestIssueMentionUsersQuery>| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
+                    let service = service.clone();
                     async move {
                         rest_list_issue_mention_users(
                             headers,
@@ -1402,8 +1390,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             query,
-                            session_manager,
-                            backend,
+                            service,
                         )
                         .await
                     }
@@ -1815,39 +1802,22 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
 
-    let legacy_issue_label_backend = backend.clone();
-    let legacy_issue_label_session_manager = session_manager.clone();
-    let legacy_issue_weight_up_backend = backend.clone();
-    let legacy_issue_weight_up_session_manager = session_manager.clone();
-    let legacy_issue_weight_down_backend = backend.clone();
-    let legacy_issue_weight_down_session_manager = session_manager.clone();
-    let legacy_issue_content_backend = backend.clone();
-    let legacy_issue_content_session_manager = session_manager.clone();
-    let legacy_issue_detect_change_backend = backend.clone();
-    let legacy_issue_detect_change_session_manager = session_manager.clone();
-    let legacy_issue_read_backend = backend.clone();
-    let legacy_issue_read_session_manager = session_manager.clone();
-    let legacy_issue_update_backend = backend.clone();
-    let legacy_issue_update_session_manager = session_manager.clone();
-    let legacy_issue_state_backend = backend.clone();
-    let legacy_issue_state_session_manager = session_manager.clone();
-    let legacy_issue_assignee_backend = backend.clone();
-    let legacy_issue_assignee_session_manager = session_manager.clone();
-    let legacy_issue_share_backend = backend.clone();
-    let legacy_issue_share_session_manager = session_manager.clone();
-    let legacy_issue_find_sharer_backend = backend.clone();
-    let legacy_issue_find_sharer_session_manager = session_manager.clone();
-    let legacy_issue_assignable_backend = backend.clone();
-    let legacy_issue_assignable_session_manager = session_manager.clone();
-    let legacy_issue_sharable_backend = backend.clone();
-    let legacy_issue_sharable_session_manager = session_manager.clone();
-    let legacy_issue_comment_backend = backend.clone();
-    let legacy_issue_comment_session_manager = session_manager.clone();
-    let legacy_issue_comment_base_path = base_path.clone();
-    let legacy_issue_comment_receivers_backend = backend.clone();
-    let legacy_issue_comment_receivers_session_manager = session_manager.clone();
-    let legacy_issue_comment_update_backend = backend.clone();
-    let legacy_issue_comment_update_session_manager = session_manager.clone();
+    let legacy_issue_label_service = service.clone();
+    let legacy_issue_weight_up_service = service.clone();
+    let legacy_issue_weight_down_service = service.clone();
+    let legacy_issue_content_service = service.clone();
+    let legacy_issue_detect_change_service = service.clone();
+    let legacy_issue_read_service = service.clone();
+    let legacy_issue_update_service = service.clone();
+    let legacy_issue_state_service = service.clone();
+    let legacy_issue_assignee_service = service.clone();
+    let legacy_issue_share_service = service.clone();
+    let legacy_issue_find_sharer_service = service.clone();
+    let legacy_issue_assignable_service = service.clone();
+    let legacy_issue_sharable_service = service.clone();
+    let legacy_issue_comment_service = service.clone();
+    let legacy_issue_comment_receivers_service = service.clone();
+    let legacy_issue_comment_update_service = service.clone();
     let issue_comment_create_backend = backend.clone();
     let issue_comment_create_session_manager = session_manager.clone();
     let issue_comment_create_base_path = base_path.clone();
@@ -1864,29 +1834,17 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let comment_unvote_backend = backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
-    let label_list_backend = backend.clone();
-    let label_list_session_manager = session_manager.clone();
-    let label_create_backend = backend.clone();
-    let label_create_session_manager = session_manager.clone();
-    let label_css_backend = backend.clone();
-    let label_css_session_manager = session_manager.clone();
-    let label_update_backend = backend.clone();
-    let label_update_session_manager = session_manager.clone();
-    let label_delete_backend = backend.clone();
-    let label_delete_session_manager = session_manager.clone();
-    let label_copy_backend = backend.clone();
-    let label_copy_session_manager = session_manager.clone();
-    let label_copy_base_path = base_path.clone();
-    let category_list_backend = backend.clone();
-    let category_list_session_manager = session_manager.clone();
-    let category_create_backend = backend.clone();
-    let category_create_session_manager = session_manager.clone();
-    let category_update_backend = backend.clone();
-    let category_update_session_manager = session_manager.clone();
-    let category_read_backend = backend.clone();
-    let category_read_session_manager = session_manager.clone();
-    let category_delete_backend = backend;
-    let category_delete_session_manager = session_manager;
+    let label_list_service = service.clone();
+    let label_create_service = service.clone();
+    let label_css_service = service.clone();
+    let label_update_service = service.clone();
+    let label_delete_service = service.clone();
+    let label_copy_service = service.clone();
+    let category_list_service = service.clone();
+    let category_create_service = service.clone();
+    let category_update_service = service.clone();
+    let category_read_service = service.clone();
+    let category_delete_service = service.clone();
 
     Router::new()
         .route(
@@ -1902,8 +1860,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_label_session_manager.clone(),
-                            legacy_issue_label_backend.clone(),
+                            legacy_issue_label_service.clone(),
                         )
                         .await
                     }
@@ -1922,8 +1879,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             1,
-                            legacy_issue_weight_up_session_manager.clone(),
-                            legacy_issue_weight_up_backend.clone(),
+                            legacy_issue_weight_up_service.clone(),
                         )
                         .await
                     }
@@ -1942,8 +1898,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             -1,
-                            legacy_issue_weight_down_session_manager.clone(),
-                            legacy_issue_weight_down_backend.clone(),
+                            legacy_issue_weight_down_service.clone(),
                         )
                         .await
                     }
@@ -1963,8 +1918,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_content_session_manager.clone(),
-                            legacy_issue_content_backend.clone(),
+                            legacy_issue_content_service.clone(),
                         )
                         .await
                     }
@@ -1984,8 +1938,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_detect_change_session_manager.clone(),
-                            legacy_issue_detect_change_backend.clone(),
+                            legacy_issue_detect_change_service.clone(),
                         )
                         .await
                     }
@@ -2003,8 +1956,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project_name,
                             number,
-                            legacy_issue_read_session_manager.clone(),
-                            legacy_issue_read_backend.clone(),
+                            legacy_issue_read_service.clone(),
                         )
                         .await
                     }
@@ -2024,8 +1976,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_update_session_manager.clone(),
-                            legacy_issue_update_backend.clone(),
+                            legacy_issue_update_service.clone(),
                         )
                         .await
                     }
@@ -2045,8 +1996,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_state_session_manager.clone(),
-                            legacy_issue_state_backend.clone(),
+                            legacy_issue_state_service.clone(),
                         )
                         .await
                     }
@@ -2066,8 +2016,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_assignee_session_manager.clone(),
-                            legacy_issue_assignee_backend.clone(),
+                            legacy_issue_assignee_service.clone(),
                         )
                         .await
                     }
@@ -2087,8 +2036,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_share_session_manager.clone(),
-                            legacy_issue_share_backend.clone(),
+                            legacy_issue_share_service.clone(),
                         )
                         .await
                     }
@@ -2108,8 +2056,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             query,
-                            legacy_issue_find_sharer_session_manager.clone(),
-                            legacy_issue_find_sharer_backend.clone(),
+                            legacy_issue_find_sharer_service.clone(),
                         )
                         .await
                     }
@@ -2129,8 +2076,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             query,
-                            legacy_issue_assignable_session_manager.clone(),
-                            legacy_issue_assignable_backend.clone(),
+                            legacy_issue_assignable_service.clone(),
                         )
                         .await
                     }
@@ -2150,8 +2096,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             query,
-                            legacy_issue_sharable_session_manager.clone(),
-                            legacy_issue_sharable_backend.clone(),
+                            legacy_issue_sharable_service.clone(),
                         )
                         .await
                     }
@@ -2171,9 +2116,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_comment_session_manager.clone(),
-                            legacy_issue_comment_backend.clone(),
-                            legacy_issue_comment_base_path.clone(),
+                            legacy_issue_comment_service.clone(),
                         )
                         .await
                     }
@@ -2199,8 +2142,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             body,
-                            legacy_issue_comment_update_session_manager.clone(),
-                            legacy_issue_comment_update_backend.clone(),
+                            legacy_issue_comment_update_service.clone(),
                         )
                         .await
                     }
@@ -2220,8 +2162,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_issue_comment_receivers_session_manager.clone(),
-                            legacy_issue_comment_receivers_backend.clone(),
+                            legacy_issue_comment_receivers_service.clone(),
                         )
                         .await
                     }
@@ -2368,8 +2309,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             headers,
                             owner,
                             project,
-                            label_list_session_manager.clone(),
-                            label_list_backend.clone(),
+                            label_list_service.clone(),
                         )
                         .await
                     }
@@ -2385,8 +2325,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project,
                             form,
-                            label_create_session_manager.clone(),
-                            label_create_backend.clone(),
+                            label_create_service.clone(),
                         )
                         .await
                     }
@@ -2402,8 +2341,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             headers,
                             owner,
                             project,
-                            label_css_session_manager.clone(),
-                            label_css_backend.clone(),
+                            label_css_service.clone(),
                         )
                         .await
                     }
@@ -2423,8 +2361,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             label_id,
                             form,
-                            label_update_session_manager.clone(),
-                            label_update_backend.clone(),
+                            label_update_service.clone(),
                         )
                         .await
                     }
@@ -2444,8 +2381,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             label_id,
                             form,
-                            label_delete_session_manager.clone(),
-                            label_delete_backend.clone(),
+                            label_delete_service.clone(),
                         )
                         .await
                     }
@@ -2464,9 +2400,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project,
                             form,
-                            label_copy_session_manager.clone(),
-                            label_copy_backend.clone(),
-                            label_copy_base_path.clone(),
+                            label_copy_service.clone(),
                         )
                         .await
                     }
@@ -2482,8 +2416,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             headers,
                             owner,
                             project,
-                            category_list_session_manager.clone(),
-                            category_list_backend.clone(),
+                            category_list_service.clone(),
                         )
                         .await
                     }
@@ -2499,8 +2432,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project,
                             form,
-                            category_create_session_manager.clone(),
-                            category_create_backend.clone(),
+                            category_create_service.clone(),
                         )
                         .await
                     }
@@ -2518,8 +2450,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project,
                             category_id,
-                            category_read_session_manager.clone(),
-                            category_read_backend.clone(),
+                            category_read_service.clone(),
                         )
                         .await
                     }
@@ -2536,8 +2467,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project,
                             category_id,
                             form,
-                            category_update_session_manager.clone(),
-                            category_update_backend.clone(),
+                            category_update_service.clone(),
                         )
                         .await
                     }
@@ -2552,8 +2482,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             owner,
                             project,
                             category_id,
-                            category_delete_session_manager.clone(),
-                            category_delete_backend.clone(),
+                            category_delete_service.clone(),
                         )
                         .await
                     }

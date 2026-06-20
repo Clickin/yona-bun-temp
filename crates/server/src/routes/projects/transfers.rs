@@ -4,14 +4,12 @@ pub(super) async fn direct_accept_project_transfer(
     headers: HeaderMap,
     transfer_id: i64,
     confirm_key: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let session = match require_session(&session_manager, &headers) {
+    let session = match require_session(&service.session_manager, &headers) {
         Ok(session) => session,
         Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
     };
@@ -58,7 +56,7 @@ pub(super) async fn direct_accept_project_transfer(
 
     match repository.accept_project_transfer(transfer.id).await {
         Ok(Some(project)) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{}/{}", project.owner_name, project.project_name),
         ),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),

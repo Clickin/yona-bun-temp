@@ -427,18 +427,16 @@ pub(super) async fn direct_create_project_milestone(
     owner: String,
     project: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let session = match direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
+        &service.session_manager,
         &repository,
         true,
     )
@@ -461,7 +459,7 @@ pub(super) async fn direct_create_project_milestone(
     }
     match repository.create_project_milestone(input).await {
         Ok(Some(milestone)) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/milestone/{}", milestone.id),
         ),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
@@ -475,18 +473,16 @@ pub(super) async fn direct_update_project_milestone(
     project: String,
     milestone_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let session = match direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
+        &service.session_manager,
         &repository,
         true,
     )
@@ -515,7 +511,7 @@ pub(super) async fn direct_update_project_milestone(
         .await
     {
         Ok(Some(milestone)) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/milestone/{}", milestone.id),
         ),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
@@ -529,18 +525,16 @@ pub(super) async fn direct_update_project_milestone_state(
     project: String,
     milestone_id: i64,
     state: &str,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
+        &service.session_manager,
         &repository,
         true,
     )
@@ -553,7 +547,7 @@ pub(super) async fn direct_update_project_milestone_state(
         .await
     {
         Ok(Some(milestone)) => redirect_to(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/milestone/{}", milestone.id),
         ),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
@@ -566,18 +560,16 @@ pub(super) async fn direct_delete_project_milestone(
     owner: String,
     project: String,
     milestone_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
+        &service.session_manager,
         &repository,
         true,
     )
@@ -589,7 +581,10 @@ pub(super) async fn direct_delete_project_milestone(
         .delete_project_milestone(&owner, &project, milestone_id)
         .await
     {
-        Ok(true) => redirect_to(&base_path, &format!("/{owner}/{project}/milestones")),
+        Ok(true) => redirect_to(
+            &service.base_path,
+            &format!("/{owner}/{project}/milestones"),
+        ),
         Ok(false) => StatusCode::NOT_FOUND.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
@@ -600,8 +595,7 @@ pub(super) async fn legacy_external_create_milestones(
     owner: String,
     project_name: String,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let Some(milestones) =
         legacy_json_find_value(&body, "milestones").and_then(|value| value.as_array())
@@ -614,17 +608,21 @@ pub(super) async fn legacy_external_create_milestones(
         )
             .into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("milestones require repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let authorization =
         match require_project_read(repository, &owner, &project_name, Some(actor_id)).await {
             Ok(authorization) => authorization,

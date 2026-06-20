@@ -3571,7 +3571,8 @@ async fn organization_review_search_matches_legacy_group_scope_and_visibility() 
 }
 
 #[tokio::test]
-// Guards search route reuse of route-utils-owned query decoding and identifier normalization.
+// Guards search route reuse of route-utils-owned query decoding, identifier
+// normalization, and app-scoped service snapshot access.
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;

@@ -11,8 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     base_path_href, direct_toggle_workspace_notification, escape_html_attr, escape_html_text,
     format_project_date_label, internal_error, persistence, redirect_to, require_project_read,
-    require_session, session::SessionManager, ConnectError, PilotBackend, PilotServiceImpl,
-    RestRouteError,
+    require_session, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -68,23 +67,11 @@ struct RestNotificationsResponse {
     total: u32,
 }
 
-pub(crate) fn routes(
-    service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Router {
-    let notification_session_manager = session_manager.clone();
-    let notification_backend = backend.clone();
-    let notification_base_path = base_path.clone();
-    let watch_session_manager = session_manager.clone();
-    let watch_backend = backend.clone();
-    let unwatch_get_session_manager = session_manager.clone();
-    let unwatch_get_backend = backend.clone();
-    let unwatch_get_base_path = base_path.clone();
-    let unwatch_post_session_manager = session_manager.clone();
-    let unwatch_post_backend = backend.clone();
-    let unwatch_post_base_path = base_path.clone();
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+    let notification_service = service.clone();
+    let watch_service = service.clone();
+    let unwatch_get_service = service.clone();
+    let unwatch_post_service = service.clone();
     let direct_notification_toggle_service = service;
 
     Router::new()
@@ -92,19 +79,8 @@ pub(crate) fn routes(
             "/notification",
             get(
                 move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
-                    let session_manager = notification_session_manager.clone();
-                    let backend = notification_backend.clone();
-                    let base_path = notification_base_path.clone();
-                    async move {
-                        direct_notification_partial(
-                            headers,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                        )
-                        .await
-                    }
+                    let service = notification_service.clone();
+                    async move { direct_notification_partial(headers, query, service).await }
                 },
             ),
         )
@@ -112,12 +88,10 @@ pub(crate) fn routes(
             "/noti/toggle/{project_id}/{noti_type}",
             post(
                 move |headers: HeaderMap, Path((project_id, noti_type)): Path<(i64, String)>| {
+                    let service = direct_notification_toggle_service.clone();
                     async move {
                         direct_toggle_workspace_notification(
-                            headers,
-                            project_id,
-                            noti_type,
-                            direct_notification_toggle_service.clone(),
+                            headers, project_id, noti_type, service,
                         )
                         .await
                     }
@@ -127,68 +101,40 @@ pub(crate) fn routes(
         .route(
             "/watch",
             post(
-                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
-                    direct_legacy_watch(
-                        headers,
-                        query,
-                        watch_session_manager.clone(),
-                        watch_backend.clone(),
-                    )
-                    .await
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
+                    let service = watch_service.clone();
+                    async move { direct_legacy_watch(headers, query, service).await }
                 },
             ),
         )
         .route(
             "/unwatch",
             get(
-                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
-                    direct_legacy_unwatch(
-                        headers,
-                        query,
-                        unwatch_get_session_manager.clone(),
-                        unwatch_get_backend.clone(),
-                        unwatch_get_base_path.clone(),
-                    )
-                    .await
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
+                    let service = unwatch_get_service.clone();
+                    async move { direct_legacy_unwatch(headers, query, service).await }
                 },
             ),
         )
         .route(
             "/unwatch",
             post(
-                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
-                    direct_legacy_unwatch(
-                        headers,
-                        query,
-                        unwatch_post_session_manager.clone(),
-                        unwatch_post_backend.clone(),
-                        unwatch_post_base_path.clone(),
-                    )
-                    .await
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
+                    let service = unwatch_post_service.clone();
+                    async move { direct_legacy_unwatch(headers, query, service).await }
                 },
             ),
         )
 }
 
-pub(crate) fn rest_routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Router {
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new().route(
         "/notifications",
         get({
-            let session_manager = session_manager.clone();
-            let backend = backend.clone();
-            let base_path = base_path.clone();
+            let service = service.clone();
             move |headers: HeaderMap, Query(query): Query<RestNotificationsQuery>| {
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                async move {
-                    rest_list_notifications(headers, query, session_manager, backend, base_path)
-                        .await
-                }
+                let service = service.clone();
+                async move { rest_list_notifications(headers, query, service).await }
             }
         }),
     )
@@ -233,18 +179,16 @@ fn rest_notifications_response(
 async fn rest_list_notifications(
     headers: HeaderMap,
     query: RestNotificationsQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestNotificationsResponse>, RestRouteError> {
-    let session =
-        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
     let Some(user_id) = session.user_id else {
         return Err(RestRouteError::from_connect_error(
             ConnectError::unauthenticated("missing pilot user"),
         ));
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "notifications require repository backend",
         ));
@@ -254,15 +198,16 @@ async fn rest_list_notifications(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(rest_notifications_response(record, &base_path)))
+    Ok(Json(rest_notifications_response(
+        record,
+        &service.base_path,
+    )))
 }
 
 async fn direct_notification_partial(
     headers: HeaderMap,
     query: DirectNotificationPartialQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let from = query.from.unwrap_or(0);
     let size = query
@@ -270,7 +215,8 @@ async fn direct_notification_partial(
         .or(query.limit)
         .filter(|size| *size > 0)
         .unwrap_or(20);
-    let Some(user_id) = session_manager
+    let Some(user_id) = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id)
     else {
@@ -278,11 +224,11 @@ async fn direct_notification_partial(
             &[],
             from,
             size,
-            &base_path,
+            &service.base_path,
         ))
         .into_response();
     };
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("notifications require repository backend")
             .into_response();
     };
@@ -294,7 +240,7 @@ async fn direct_notification_partial(
             &record.items,
             from,
             size,
-            &base_path,
+            &service.base_path,
         ))
         .into_response(),
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
@@ -304,9 +250,7 @@ async fn direct_notification_partial(
 async fn direct_legacy_unwatch(
     headers: HeaderMap,
     Query(query): Query<LegacyResourceQuery>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let resource_type = query.resource_type.unwrap_or_default();
     let resource_id = query.resource_id.unwrap_or_default();
@@ -314,21 +258,21 @@ async fn direct_legacy_unwatch(
         return RestRouteError::bad_request("resource.type and resource.id are required")
             .into_response();
     }
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&base_path_href(
-            &base_path,
+            &service.base_path,
             "/users/loginform?redirectUrl=%2Fnotification",
         ))
         .into_response();
     };
     let Some(user_id) = session.user_id else {
         return Redirect::to(&base_path_href(
-            &base_path,
+            &service.base_path,
             "/users/loginform?redirectUrl=%2Fnotification",
         ))
         .into_response();
     };
-    let repository = match backend {
+    let repository = match &service.backend {
         PilotBackend::Repository(repository) => repository,
         PilotBackend::Static => {
             return RestRouteError::not_implemented("unwatch requires repository backend")
@@ -344,7 +288,7 @@ async fn direct_legacy_unwatch(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
     if let Err(error) = require_project_read(
-        &repository,
+        repository,
         &target.owner_name,
         &target.project_name,
         Some(user_id),
@@ -358,7 +302,7 @@ async fn direct_legacy_unwatch(
         .await
     {
         Ok(()) if legacy_prefers_json(&headers) => StatusCode::OK.into_response(),
-        Ok(()) => redirect_to(&base_path, &target.target_path),
+        Ok(()) => redirect_to(&service.base_path, &target.target_path),
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
 }
@@ -366,8 +310,7 @@ async fn direct_legacy_unwatch(
 async fn direct_legacy_watch(
     headers: HeaderMap,
     Query(query): Query<LegacyResourceQuery>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let resource_type = query.resource_type.unwrap_or_default();
     let resource_id = query.resource_id.unwrap_or_default();
@@ -375,13 +318,14 @@ async fn direct_legacy_watch(
         return RestRouteError::bad_request("resource.type and resource.id are required")
             .into_response();
     }
-    let Some(user_id) = session_manager
+    let Some(user_id) = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id)
     else {
         return (StatusCode::FORBIDDEN, "Anonymous cannot watch it.").into_response();
     };
-    let repository = match backend {
+    let repository = match &service.backend {
         PilotBackend::Repository(repository) => repository,
         PilotBackend::Static => {
             return RestRouteError::not_implemented("watch requires repository backend")
@@ -397,7 +341,7 @@ async fn direct_legacy_watch(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
     if require_project_read(
-        &repository,
+        repository,
         &target.owner_name,
         &target.project_name,
         Some(user_id),

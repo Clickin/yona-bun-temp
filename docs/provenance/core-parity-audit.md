@@ -1271,6 +1271,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   longer mutate `SMTP_FROM` around the transfer flow. The transfer form,
   request mail, direct accept link, permission, alias, and repository move
   parity checks remain in the same contract with only test outbox serialization.
+- 2026-06-21 runtime DI note: search REST routes, generic legacy comment
+  deletion, notification list/watch/unwatch routes, issue lookup/label/legacy
+  external child routes, and project milestone/transfer-accept direct handlers
+  now receive the app-scoped `PilotServiceImpl` snapshot instead of separately
+  threaded session/backend/base-path fragments. Existing route contracts keep
+  the same legacy URLs, redirect/status behavior, and payload shapes while
+  narrowing the remaining service-fragment threading queue.
 
 ## Wave 0 Exit Snapshot
 

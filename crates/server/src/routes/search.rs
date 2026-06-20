@@ -10,23 +10,21 @@ use yona_rust_search::SearchType;
 
 use crate::{
     decode_query_component, internal_error, normalize_identifier, parse_rest_query_u32,
-    persistence, require_project_read, session::SessionManager, PilotBackend, PilotRepository,
+    persistence, require_project_read, PilotBackend, PilotRepository, PilotServiceImpl,
     RestRouteError,
 };
 
-pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
             "/search",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap, RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_global(headers, query, session_manager, backend).await
+                        rest_search_global(headers, query, service).await
                     }
                 }
             }),
@@ -34,24 +32,14 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
         .route(
             "/projects/{owner_name}/{project_name}/search",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_project(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
+                        rest_search_project(headers, owner_name, project_name, query, service).await
                     }
                 }
             }),
@@ -59,23 +47,14 @@ pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> 
         .route(
             "/organizations/{organization_name}/search",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path(organization_name): Path<String>,
                       RawQuery(raw_query): RawQuery| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
+                    let service = service.clone();
                     async move {
                         let query = RestSearchQuery::from_raw_query(raw_query.as_deref())?;
-                        rest_search_organization(
-                            headers,
-                            organization_name,
-                            query,
-                            session_manager,
-                            backend,
-                        )
-                        .await
+                        rest_search_organization(headers, organization_name, query, service).await
                     }
                 }
             }),
@@ -127,15 +106,15 @@ impl RestSearchQuery {
 async fn rest_search_global(
     headers: HeaderMap,
     query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "search requires repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     rest_search_with_input(
@@ -160,8 +139,7 @@ async fn rest_search_project(
     owner_name: String,
     project_name: String,
     query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request("invalid search project scope"));
@@ -172,12 +150,13 @@ async fn rest_search_project(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "search requires repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
@@ -204,8 +183,7 @@ async fn rest_search_organization(
     headers: HeaderMap,
     organization_name: String,
     query: RestSearchQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
     if organization_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -213,12 +191,13 @@ async fn rest_search_organization(
         ));
     }
 
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "search requires repository backend",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let authorization = repository

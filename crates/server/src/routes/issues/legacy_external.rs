@@ -7,23 +7,25 @@ pub(super) async fn legacy_external_create_issue_comment(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_issue_comment_create_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue comments require repository backend")
             .into_response();
     };
     let token_request = legacy_external_api_token_from_headers(&headers).is_some();
-    let request_user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let request_user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -139,7 +141,10 @@ pub(super) async fn legacy_external_create_issue_comment(
             "status": 201,
             "location": format!(
                 "{}#comment-{}",
-                base_path_href(&base_path, &format!("/{owner}/{project_name}/issue/{number}")),
+                base_path_href(
+                    &service.base_path,
+                    &format!("/{owner}/{project_name}/issue/{number}")
+                ),
                 comment_id,
             ),
         })),
@@ -153,20 +158,23 @@ pub(super) async fn legacy_external_update_issue_labels(
     project_name: String,
     number: i64,
     body: Vec<serde_json::Value>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue labels require repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -200,23 +208,26 @@ pub(super) async fn legacy_external_update_issue_weight(
     project_name: String,
     number: i64,
     delta: i16,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if number <= 0 {
         return RestRouteError::bad_request("invalid issue weight request").into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue weight requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -255,20 +266,23 @@ pub(super) async fn legacy_external_read_issue(
     owner: String,
     project_name: String,
     number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue read requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -290,21 +304,24 @@ pub(super) async fn legacy_external_update_issue(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_issue_update_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue update requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -409,21 +426,24 @@ pub(super) async fn legacy_external_detect_issue_change(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_issue_detect_change_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue detectChange requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -465,22 +485,25 @@ pub(super) async fn legacy_external_issue_comment_notification_receivers(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "issue comment receivers require repository backend",
         )
         .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     if let Err(error) =
         read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await
     {
@@ -545,21 +568,24 @@ pub(super) async fn legacy_external_update_issue_content(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_content_update_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue content requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -613,20 +639,23 @@ pub(super) async fn legacy_external_update_issue_state(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue state requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -678,20 +707,23 @@ pub(super) async fn legacy_external_update_issue_assignee(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue assignee requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -762,20 +794,23 @@ pub(super) async fn legacy_external_update_issue_sharer(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue sharer requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -915,17 +950,17 @@ pub(super) async fn legacy_external_find_issue_sharer(
     project_name: String,
     number: i64,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue sharer lookup requires repository backend")
             .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let access = match read_issue_access(repository, &owner, &project_name, number, actor_id).await
@@ -1126,21 +1161,24 @@ pub(super) async fn legacy_external_update_issue_comment(
     number: i64,
     comment_id: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_content_update_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue comment update requires repository backend")
             .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -1240,19 +1278,19 @@ pub(super) async fn legacy_external_issue_assignable_users(
     project_name: String,
     number: i64,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "issue assignable users require repository backend",
         )
         .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     if let Err(error) = read_issue_access(repository, &owner, &project_name, number, actor_id).await
@@ -1284,17 +1322,17 @@ pub(super) async fn legacy_external_issue_sharable_users(
     project_name: String,
     number: i64,
     query: RestIssueAssignableUsersQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
         return StatusCode::NOT_ACCEPTABLE.into_response();
     }
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("issue sharable users require repository backend")
             .into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     if let Err(error) = read_issue_access(repository, &owner, &project_name, number, actor_id).await

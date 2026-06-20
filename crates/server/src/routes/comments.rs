@@ -10,20 +10,14 @@ use crate::routes::utils::{
     internal_error, project_update_allowed, require_authenticated_user, require_session,
     require_valid_csrf, rest_require_project_code_read,
 };
-use crate::{persistence, session::SessionManager, PilotBackend, RestRouteError};
+use crate::{persistence, PilotBackend, PilotServiceImpl, RestRouteError};
 
-pub(crate) fn routes(session_manager: SessionManager, backend: PilotBackend) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new().route(
         "/comments/{comment_type}/{comment_id}",
         delete(
             move |headers: HeaderMap, Path((comment_type, comment_id)): Path<(String, i64)>| {
-                direct_delete_legacy_comment(
-                    headers,
-                    comment_type,
-                    comment_id,
-                    session_manager.clone(),
-                    backend.clone(),
-                )
+                direct_delete_legacy_comment(headers, comment_type, comment_id, service.clone())
             },
         ),
     )
@@ -33,21 +27,12 @@ async fn direct_delete_legacy_comment(
     headers: HeaderMap,
     comment_type: String,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if !matches!(comment_type.as_str(), "code_comment" | "review_comment") {
         return StatusCode::BAD_REQUEST.into_response();
     }
-    match delete_legacy_review_comment(
-        &headers,
-        &comment_type,
-        comment_id,
-        session_manager,
-        backend,
-    )
-    .await
-    {
+    match delete_legacy_review_comment(&headers, &comment_type, comment_id, service).await {
         Ok(()) => StatusCode::OK.into_response(),
         Err(error) => error.into_response(),
     }
@@ -57,14 +42,13 @@ async fn delete_legacy_review_comment(
     headers: &HeaderMap,
     comment_type: &str,
     comment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<(), RestRouteError> {
-    let session =
-        require_session(&session_manager, headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, headers, &session)
+    let session = require_session(&service.session_manager, headers)
         .map_err(RestRouteError::from_connect_error)?;
-    let PilotBackend::Repository(repository) = &backend else {
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "comment delete requires repository backend",
         ));

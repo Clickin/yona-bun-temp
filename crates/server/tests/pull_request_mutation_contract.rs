@@ -1619,6 +1619,8 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         json!({}),
     )
     .await;
+    // The generic legacy comment delete route uses the app-scoped service
+    // snapshot while preserving the legacy empty-body OK response.
     assert_eq!(ranged_deleted.status(), StatusCode::OK);
     assert!(response_text(ranged_deleted).await.is_empty());
 

@@ -2415,28 +2415,15 @@ pub(crate) fn routes(
     let legacy_title_heads_session_manager = session_manager.clone();
     let legacy_project_assignable_backend = backend.clone();
     let legacy_project_assignable_session_manager = session_manager.clone();
-    let legacy_milestone_backend = backend.clone();
-    let legacy_milestone_session_manager = session_manager.clone();
-    let milestone_create_backend = backend.clone();
-    let milestone_create_session_manager = session_manager.clone();
-    let milestone_create_base_path = base_path.clone();
-    let milestone_update_backend = backend.clone();
-    let milestone_update_session_manager = session_manager.clone();
-    let milestone_update_base_path = base_path.clone();
-    let milestone_delete_backend = backend.clone();
-    let milestone_delete_session_manager = session_manager.clone();
-    let milestone_delete_base_path = base_path.clone();
-    let milestone_open_backend = backend.clone();
-    let milestone_open_session_manager = session_manager.clone();
-    let milestone_open_base_path = base_path.clone();
-    let milestone_close_backend = backend.clone();
-    let milestone_close_session_manager = session_manager.clone();
-    let milestone_close_base_path = base_path.clone();
+    let legacy_milestone_service = service.clone();
+    let milestone_create_service = service.clone();
+    let milestone_update_service = service.clone();
+    let milestone_delete_service = service.clone();
+    let milestone_open_service = service.clone();
+    let milestone_close_service = service.clone();
     let pushed_branch_delete_backend = backend.clone();
     let pushed_branch_delete_session_manager = session_manager.clone();
-    let transfer_accept_backend = backend.clone();
-    let transfer_accept_session_manager = session_manager.clone();
-    let transfer_accept_base_path = base_path.clone();
+    let transfer_accept_service = service.clone();
     let direct_clone_service = service.clone();
     let markdown_render_backend = backend.clone();
     let markdown_render_session_manager = session_manager.clone();
@@ -2465,8 +2452,7 @@ pub(crate) fn routes(
                             owner,
                             project_name,
                             body,
-                            legacy_milestone_session_manager.clone(),
-                            legacy_milestone_backend.clone(),
+                            legacy_milestone_service.clone(),
                         )
                         .await
                     }
@@ -2485,9 +2471,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             form,
-                            milestone_create_session_manager.clone(),
-                            milestone_create_backend.clone(),
-                            milestone_create_base_path.clone(),
+                            milestone_create_service.clone(),
                         )
                         .await
                     }
@@ -2507,9 +2491,7 @@ pub(crate) fn routes(
                             project,
                             milestone_id,
                             form,
-                            milestone_update_session_manager.clone(),
-                            milestone_update_backend.clone(),
-                            milestone_update_base_path.clone(),
+                            milestone_update_service.clone(),
                         )
                         .await
                     }
@@ -2527,9 +2509,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             milestone_id,
-                            milestone_delete_session_manager.clone(),
-                            milestone_delete_backend.clone(),
-                            milestone_delete_base_path.clone(),
+                            milestone_delete_service.clone(),
                         )
                         .await
                     }
@@ -2548,9 +2528,7 @@ pub(crate) fn routes(
                             project,
                             milestone_id,
                             "open",
-                            milestone_open_session_manager.clone(),
-                            milestone_open_backend.clone(),
-                            milestone_open_base_path.clone(),
+                            milestone_open_service.clone(),
                         )
                         .await
                     }
@@ -2569,9 +2547,7 @@ pub(crate) fn routes(
                             project,
                             milestone_id,
                             "closed",
-                            milestone_close_session_manager.clone(),
-                            milestone_close_backend.clone(),
-                            milestone_close_base_path.clone(),
+                            milestone_close_service.clone(),
                         )
                         .await
                     }
@@ -3044,9 +3020,7 @@ pub(crate) fn routes(
                             headers,
                             transfer_id,
                             confirm_key,
-                            transfer_accept_session_manager.clone(),
-                            transfer_accept_backend.clone(),
-                            transfer_accept_base_path.clone(),
+                            transfer_accept_service.clone(),
                         )
                         .await
                     }

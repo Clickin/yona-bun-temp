@@ -63,16 +63,16 @@ pub(crate) async fn direct_list_issue_labels(
     headers: HeaderMap,
     owner: String,
     project: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    if require_project_read(&repository, &owner, &project, actor_id)
+    if require_project_read(repository, &owner, &project, actor_id)
         .await
         .is_err()
     {
@@ -91,18 +91,17 @@ pub(crate) async fn direct_create_issue_label(
     owner: String,
     project: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -142,16 +141,16 @@ pub(crate) async fn direct_issue_label_css(
     headers: HeaderMap,
     owner: String,
     project: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    if require_project_read(&repository, &owner, &project, actor_id)
+    if require_project_read(repository, &owner, &project, actor_id)
         .await
         .is_err()
     {
@@ -204,18 +203,17 @@ pub(crate) async fn direct_update_issue_label(
     project: String,
     label_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -252,21 +250,20 @@ pub(crate) async fn direct_delete_issue_label(
     project: String,
     label_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     if form_value(&form, &["_method"]).to_ascii_lowercase() != "delete" {
         return StatusCode::BAD_REQUEST.into_response();
     }
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -288,26 +285,24 @@ pub(crate) async fn direct_copy_issue_labels(
     owner: String,
     project: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let redirect_response = || {
         Redirect::to(&base_path_href(
-            &base_path,
+            &service.base_path,
             &format!("/{owner}/{project}/issue/labelsform"),
         ))
         .into_response()
     };
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let session = match direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -320,7 +315,7 @@ pub(crate) async fn direct_copy_issue_labels(
     if from_owner.is_empty() || from_project.is_empty() {
         return redirect_response();
     }
-    if require_project_read(&repository, from_owner, from_project, session.user_id)
+    if require_project_read(repository, from_owner, from_project, session.user_id)
         .await
         .is_ok()
     {
@@ -339,16 +334,16 @@ pub(crate) async fn direct_list_issue_label_categories(
     headers: HeaderMap,
     owner: String,
     project: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    if require_project_read(&repository, &owner, &project, actor_id)
+    if require_project_read(repository, &owner, &project, actor_id)
         .await
         .is_err()
     {
@@ -374,16 +369,16 @@ pub(crate) async fn direct_read_issue_label_category(
     owner: String,
     project: String,
     category_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    if require_project_read(&repository, &owner, &project, actor_id)
+    if require_project_read(repository, &owner, &project, actor_id)
         .await
         .is_err()
     {
@@ -407,18 +402,17 @@ pub(crate) async fn direct_create_issue_label_category(
     owner: String,
     project: String,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -449,18 +443,17 @@ pub(crate) async fn direct_update_issue_label_category(
     project: String,
     category_id: i64,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
@@ -488,18 +481,17 @@ pub(crate) async fn direct_delete_issue_label_category(
     owner: String,
     project: String,
     category_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
     if let Err(response) = direct_project_update_allowed(
         &headers,
         &owner,
         &project,
-        &session_manager,
-        &repository,
+        &service.session_manager,
+        repository,
         true,
     )
     .await
