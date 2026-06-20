@@ -7,23 +7,30 @@ use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router, create_router_with_app_repository, create_router_with_filesystem_assets,
-    RuntimeConfig,
+    create_router, create_router_with_filesystem_assets,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_repository_and_app_config(AppRuntimeConfig::default()).await
+}
+
+async fn build_app_with_repository_and_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        app_config,
     );
 
     (app, app_repo, db)
@@ -441,7 +448,11 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
 
 #[tokio::test]
 async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
-    let (app, _, _) = build_app_with_repository().await;
+    let (app, _, _) = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        site_name: "Legacy Yona".to_string(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let cookie_header = register_user(app.clone(), "migrator").await;
 
     let response = app
@@ -466,6 +477,7 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
     assert!(content_type.contains("text/html"));
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("<title>Legacy Yona</title>"));
     assert!(html.contains("yobi-migration"));
     assert!(html.contains("Yona to Github"));
     assert!(html.contains("Source 프로젝트를 선택해 주세요"));

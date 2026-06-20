@@ -115,7 +115,7 @@ Interpretation:
 - [x] Notification mail reply parity now sets legacy-style `Reply-To` plus-address details for reply-capable issue/board/review resources when `YONA_MAILBOX_IMAP_ADDRESS` is configured, maps comment notifications to their parent issue/post/review-thread detail, and uses the legacy reply-capable view-link copy in the HTML body.
 - [x] REST-pivot cleanup pruned private server-side RPC/proto compatibility helpers that no active route or trait used, restoring warning-free `cargo check --workspace` for the committed server surface.
 - [x] Repository layer for implemented vertical slices
-- [x] Production migration/import shell and scoped data export/import coverage for the current app-runtime surface; the legacy `/migration` route surface now returns a disabled compatibility shell/forbidden export boundary, site-admin `yobi-data` export/import and legacy external API descriptor inventory exist, while full production migration hardening remains follow-up.
+- [x] Production migration/import shell and scoped data export/import coverage for the current app-runtime surface; the legacy `/migration` route surface now returns a disabled compatibility shell/forbidden export boundary with the legacy `migrationPageLayout(utils.Config.getSiteName)` site-name title scalar, site-admin `yobi-data` export/import and legacy external API descriptor inventory exist, while full production migration hardening remains follow-up.
 - [x] H2 compatibility replaced by a standalone Java H2-to-SQLite conversion tool path; Rust runtime support stays SQLite/MySQL/PostgreSQL only.
 - Follow-up: full operational hardening beyond the current single-binary/runtime verification scope.
 

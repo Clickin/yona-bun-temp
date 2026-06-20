@@ -9,10 +9,10 @@ use std::collections::HashMap;
 
 use crate::assets::serve_frontend_page;
 use crate::{
-    base_path_href, headers_with_form_csrf, legacy_external_api_hello, map_project_scope,
-    persistence, redirect_to, repository_provisioning_lock, require_session, require_valid_csrf,
-    rest_project_menu_settings, session::SessionManager, yona_data_root, AssetMode,
-    BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
+    base_path_href, escape_html_text, headers_with_form_csrf, legacy_external_api_hello,
+    map_project_scope, persistence, redirect_to, repository_provisioning_lock, require_session,
+    require_valid_csrf, rest_project_menu_settings, session::SessionManager, yona_data_root,
+    AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,
@@ -59,6 +59,7 @@ pub(crate) async fn direct_legacy_migration_disabled(
     headers: HeaderMap,
     session_manager: SessionManager,
     base_path: String,
+    site_name: String,
 ) -> Response {
     if session_manager
         .read_session_from_headers(&headers)
@@ -73,12 +74,13 @@ pub(crate) async fn direct_legacy_migration_disabled(
     }
 
     let guide_href = base_path_href(&base_path, "/sites/data");
+    let escaped_site_name = escape_html_text(&site_name);
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Migration</title>
+<title>{escaped_site_name}</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -339,6 +341,7 @@ pub(crate) fn routes(
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
     base_path: String,
+    site_name: String,
     project_default_scope: String,
 ) -> Router {
     let legacy_api_index_assets = assets.clone();
@@ -353,6 +356,7 @@ pub(crate) fn routes(
     let project_import_default_scope = project_default_scope;
     let legacy_migration_session_manager = session_manager.clone();
     let legacy_migration_base_path = base_path.clone();
+    let legacy_migration_site_name = site_name;
     let legacy_migration_json_session_manager = session_manager;
     let legacy_migration_json_base_path = base_path;
 
@@ -403,8 +407,10 @@ pub(crate) fn routes(
             get(move |headers: HeaderMap| {
                 let session_manager = legacy_migration_session_manager.clone();
                 let base_path = legacy_migration_base_path.clone();
+                let site_name = legacy_migration_site_name.clone();
                 async move {
-                    direct_legacy_migration_disabled(headers, session_manager, base_path).await
+                    direct_legacy_migration_disabled(headers, session_manager, base_path, site_name)
+                        .await
                 }
             }),
         )

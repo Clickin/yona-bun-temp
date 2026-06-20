@@ -215,7 +215,7 @@ pub(crate) fn app_routes(
             browser_runtime.clone(),
             base_path.clone(),
             public_origin.clone(),
-            site_name,
+            site_name.clone(),
             smtp.clone(),
         ))
         .nest("/api/v1", rest_router)
@@ -225,6 +225,7 @@ pub(crate) fn app_routes(
             assets,
             browser_runtime,
             base_path.clone(),
+            site_name,
             project_default_scope,
         ))
         .merge(workspace_routes(
