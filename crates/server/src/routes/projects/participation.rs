@@ -264,18 +264,8 @@ pub(super) async fn direct_toggle_project_watch(
     owner_name: String,
     project_name: String,
     watching: bool,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_toggle_project_watch(headers, owner_name, project_name, watching, service).await {
         Ok(_) => StatusCode::OK.into_response(),
         Err(error) => error.into_response(),
@@ -287,18 +277,8 @@ pub(super) async fn direct_enroll_project(
     owner_name: String,
     project_name: String,
     enrolling: bool,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     let response = if enrolling {
         rest_enroll_project(headers, owner_name, project_name, service).await
     } else {

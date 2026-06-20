@@ -283,6 +283,8 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         None,
     )
     .await;
+    // The legacy direct changeVCS alias shares the app-scoped service/runtime
+    // config with the REST mutation path.
     assert_eq!(changed.status(), StatusCode::NO_CONTENT);
     assert_eq!(
         changed.headers().get(http::header::LOCATION).unwrap(),

@@ -213,7 +213,8 @@ fn member<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
 #[tokio::test]
 // Guards the `routes/projects/members.rs` REST membership module: add,
 // directory projection, role update, self-leave, and delete authorization stay
-// together while route registration remains in the parent project module.
+// together while route registration remains in the parent project module. The
+// legacy direct aliases also reuse the app-scoped service/runtime config.
 async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;

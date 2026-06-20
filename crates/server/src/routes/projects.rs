@@ -1837,22 +1837,12 @@ async fn direct_update_project_overview(
     owner_name: String,
     project_name: String,
     body: Bytes,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let Ok(body) = serde_json::from_slice::<RestProjectOverviewBody>(&body) else {
         return RestRouteError::bad_request("overview is required").into_response();
     };
     let overview = body.overview.trim().to_string();
-    let service = PilotServiceImpl {
-        base_path: String::new(),
-        public_origin: String::new(),
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp: SmtpRuntimeConfig::from_env(),
-    };
     match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
         Err(error) => error.into_response(),
@@ -2400,33 +2390,22 @@ pub(crate) fn routes(
     backend: PilotBackend,
     base_path: String,
 ) -> Router {
-    let direct_project_watch_backend = backend.clone();
-    let direct_project_watch_session_manager = session_manager.clone();
-    let direct_project_unwatch_backend = backend.clone();
-    let direct_project_unwatch_session_manager = session_manager.clone();
-    let direct_project_enroll_backend = backend.clone();
-    let direct_project_enroll_session_manager = session_manager.clone();
-    let direct_project_cancel_enroll_backend = backend.clone();
-    let direct_project_cancel_enroll_session_manager = session_manager.clone();
+    let direct_project_watch_service = service.clone();
+    let direct_project_unwatch_service = service.clone();
+    let direct_project_enroll_service = service.clone();
+    let direct_project_cancel_enroll_service = service.clone();
     let direct_project_labels_backend = backend.clone();
     let direct_project_labels_session_manager = session_manager.clone();
     let direct_project_label_attach_backend = backend.clone();
     let direct_project_label_attach_session_manager = session_manager.clone();
     let direct_project_label_detach_backend = backend.clone();
     let direct_project_label_detach_session_manager = session_manager.clone();
-    let direct_project_change_vcs_backend = backend.clone();
-    let direct_project_change_vcs_session_manager = session_manager.clone();
-    let direct_project_member_add_backend = backend.clone();
-    let direct_project_member_add_session_manager = session_manager.clone();
-    let direct_project_member_update_backend = backend.clone();
-    let direct_project_member_update_session_manager = session_manager.clone();
-    let direct_project_member_delete_backend = backend.clone();
-    let direct_project_member_delete_session_manager = session_manager.clone();
-    let direct_project_webhook_create_backend = backend.clone();
-    let direct_project_webhook_create_session_manager = session_manager.clone();
-    let direct_project_webhook_create_base_path = base_path.clone();
-    let direct_project_webhook_delete_backend = backend.clone();
-    let direct_project_webhook_delete_session_manager = session_manager.clone();
+    let direct_project_change_vcs_service = service.clone();
+    let direct_project_member_add_service = service.clone();
+    let direct_project_member_update_service = service.clone();
+    let direct_project_member_delete_service = service.clone();
+    let direct_project_webhook_create_service = service.clone();
+    let direct_project_webhook_delete_service = service.clone();
     let direct_project_transfer_request_service = service.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
@@ -2458,9 +2437,7 @@ pub(crate) fn routes(
     let transfer_accept_backend = backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
-    let direct_clone_backend = backend.clone();
-    let direct_clone_session_manager = session_manager.clone();
-    let direct_clone_base_path = base_path.clone();
+    let direct_clone_service = service.clone();
     let markdown_render_backend = backend.clone();
     let markdown_render_session_manager = session_manager.clone();
     let markdown_render_base_path = base_path.clone();
@@ -2473,8 +2450,7 @@ pub(crate) fn routes(
     let go_convention_backend = backend.clone();
     let go_convention_session_manager = session_manager.clone();
     let go_convention_base_path = base_path.clone();
-    let project_overview_update_backend = backend;
-    let project_overview_update_session_manager = session_manager;
+    let project_overview_update_service = service;
 
     Router::new()
         .route(
@@ -2692,8 +2668,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             true,
-                            direct_project_watch_session_manager.clone(),
-                            direct_project_watch_backend.clone(),
+                            direct_project_watch_service.clone(),
                         )
                         .await
                     }
@@ -2711,8 +2686,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             false,
-                            direct_project_unwatch_session_manager.clone(),
-                            direct_project_unwatch_backend.clone(),
+                            direct_project_unwatch_service.clone(),
                         )
                         .await
                     }
@@ -2730,8 +2704,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             true,
-                            direct_project_enroll_session_manager.clone(),
-                            direct_project_enroll_backend.clone(),
+                            direct_project_enroll_service.clone(),
                         )
                         .await
                     }
@@ -2749,8 +2722,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             false,
-                            direct_project_cancel_enroll_session_manager.clone(),
-                            direct_project_cancel_enroll_backend.clone(),
+                            direct_project_cancel_enroll_service.clone(),
                         )
                         .await
                     }
@@ -2823,8 +2795,7 @@ pub(crate) fn routes(
                             headers,
                             owner_name,
                             project_name,
-                            direct_project_change_vcs_session_manager.clone(),
-                            direct_project_change_vcs_backend.clone(),
+                            direct_project_change_vcs_service.clone(),
                         )
                         .await
                     }
@@ -2843,8 +2814,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             form,
-                            direct_project_member_add_session_manager.clone(),
-                            direct_project_member_add_backend.clone(),
+                            direct_project_member_add_service.clone(),
                         )
                         .await
                     }
@@ -2864,8 +2834,7 @@ pub(crate) fn routes(
                             project_name,
                             user_id,
                             form,
-                            direct_project_member_update_session_manager.clone(),
-                            direct_project_member_update_backend.clone(),
+                            direct_project_member_update_service.clone(),
                         )
                         .await
                     }
@@ -2883,8 +2852,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             user_id,
-                            direct_project_member_delete_session_manager.clone(),
-                            direct_project_member_delete_backend.clone(),
+                            direct_project_member_delete_service.clone(),
                         )
                         .await
                     }
@@ -2903,9 +2871,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             form,
-                            direct_project_webhook_create_base_path.clone(),
-                            direct_project_webhook_create_session_manager.clone(),
-                            direct_project_webhook_create_backend.clone(),
+                            direct_project_webhook_create_service.clone(),
                         )
                         .await
                     }
@@ -2923,8 +2889,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             webhook_id,
-                            direct_project_webhook_delete_session_manager.clone(),
-                            direct_project_webhook_delete_backend.clone(),
+                            direct_project_webhook_delete_service.clone(),
                         )
                         .await
                     }
@@ -3043,8 +3008,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             body,
-                            project_overview_update_session_manager.clone(),
-                            project_overview_update_backend.clone(),
+                            project_overview_update_service.clone(),
                         )
                         .await
                     }
@@ -3095,15 +3059,7 @@ pub(crate) fn routes(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Form(form): Form<HashMap<String, String>>| {
-                    let service = PilotServiceImpl {
-                        base_path: direct_clone_base_path.clone(),
-                        public_origin: String::new(),
-                        session_manager: direct_clone_session_manager.clone(),
-                        backend: direct_clone_backend.clone(),
-                        project_default_scope: "public".to_string(),
-                        auth_ui: AuthUiConfig::from_env(),
-                        smtp: SmtpRuntimeConfig::from_env(),
-                    };
+                    let service = direct_clone_service.clone();
                     async move {
                         direct_clone_project(headers, owner_name, project_name, form, service).await
                     }

@@ -936,7 +936,8 @@ async fn project_webhooks_persist_hangout_thread_names_for_resource_followups() 
 #[tokio::test]
 async fn project_webhooks_require_update_and_manage_crud() {
     // Keeps the route-owned webhook CRUD module covered after the
-    // projects.rs -> projects/webhooks.rs split.
+    // projects.rs -> projects/webhooks.rs split. The direct CRUD aliases reuse
+    // the app-scoped service/runtime config for redirects and persistence.
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
