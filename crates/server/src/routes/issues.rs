@@ -930,12 +930,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
                     async move {
                         rest_update_issue(
                             headers,
@@ -946,6 +948,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -3101,6 +3104,7 @@ pub(crate) async fn rest_update_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -3134,7 +3138,7 @@ pub(crate) async fn rest_update_issue(
     }
     let issue = repository
         .update_issue(persistence::UpdateIssueInput {
-            actor_login_id: actor.login_id,
+            actor_login_id: actor.login_id.clone(),
             issue_number,
             owner_name,
             project_name,
@@ -3145,6 +3149,19 @@ pub(crate) async fn rest_update_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    if !issue.is_draft && existing.body_markdown != issue.body_markdown {
+        dispatch_issue_webhooks(
+            repository,
+            &issue,
+            &actor,
+            "ISSUE_BODY_CHANGED",
+            &issue.body_markdown,
+            None,
+            &public_origin,
+            &base_path,
+        )
+        .await;
+    }
     Ok(Json(
         rest_issue_detail_response_from_record_with_authorization_issue_references(
             repository,

@@ -575,6 +575,108 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
 }
 
 #[tokio::test]
+async fn project_webhooks_enqueue_legacy_issue_body_changed_payloads_for_non_json_hooks() {
+    // Guards legacy NotificationEvent.afterIssueBodyChanged -> Webhook fan-out.
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_webhook_retry_env();
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-body",
+                "secret": "body-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-json",
+                "secret": "json-secret",
+                "webhookType": "JSON",
+                "gitPush": true,
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Issue body webhook parity",
+                "bodyMarkdown": "Original issue body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    clear_test_webhook_outbox();
+
+    let updated = ok_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Issue body webhook parity",
+                "bodyMarkdown": "Updated issue body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["bodyMarkdown"], "Updated issue body");
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    let delivery = &deliveries[0];
+    assert_eq!(delivery.payload_url, "https://hooks.example/issue-body");
+    assert_eq!(delivery.event_type, "ISSUE_BODY_CHANGED");
+    assert_eq!(delivery.webhook_type, "SIMPLE");
+    assert!(delivery
+        .headers
+        .iter()
+        .any(|header| header.name == "Authorization" && header.value == "token body-secret "));
+    let payload: Value = serde_json::from_str(&delivery.body).expect("issue body webhook payload");
+    let text = payload["text"].as_str().unwrap_or_default();
+    assert!(text.contains("[projectYobi] owner"));
+    assert!(text.contains("notification.type.issue.body.changed"));
+    assert!(text.contains("/yona/owner/projectYobi/issue/1|#1: Issue body webhook parity"));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn project_webhooks_retry_transient_delivery_failures_once_configured() {
     let _guard = yona_data_env_lock()
         .lock()
