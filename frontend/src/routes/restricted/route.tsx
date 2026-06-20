@@ -8,8 +8,8 @@ export const Route = createFileRoute("/restricted")({
 });
 
 function RestrictedRouteComponent() {
-  useDocumentTitle("Yona");
-  const { bootstrapping, currentSession } = useAppRuntime();
+  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  useDocumentTitle(runtimeConfig.siteName ?? "Yona");
   const canRender = useRequireAuthenticatedRoute("/restricted");
 
   if (bootstrapping || !canRender || !currentSession || currentSession.isAnonymous) {

@@ -268,12 +268,13 @@ const DOMAIN_BUCKETS = [
     implementationPatterns: [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
       /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
+      /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
       /^frontend\/.*auth/i,
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
       /^crates\/persistence\/.*(auth|user|session|workspace)/i,
     ],
-    testKeywords: ["auth", "login", "register", "password", "restricted", "session"],
+    testKeywords: ["auth", "login", "register", "password", "restricted", "session", "route-parity"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/legacy-porting-progress.md",
@@ -494,6 +495,7 @@ const DOMAIN_BUCKETS = [
     testKeywords: [
       "runtime_config",
       "runtime-config",
+      "main",
       "auth",
       "project",
       "sqlite",

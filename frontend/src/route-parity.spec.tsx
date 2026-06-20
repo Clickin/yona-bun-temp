@@ -186,6 +186,13 @@ describe("file-route parity harness", () => {
     const homeRouteSource = fs.readFileSync(path.resolve(__dirname, "routes/index.tsx"), "utf8");
     expect(homeRouteSource).toContain('useDocumentTitle(runtimeConfig.siteName ?? "Yona")');
     expect(homeRouteSource).not.toContain('useDocumentTitle("Yona")');
+
+    const restrictedRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/restricted/route.tsx"),
+      "utf8",
+    );
+    expect(restrictedRouteSource).toContain('useDocumentTitle(runtimeConfig.siteName ?? "Yona")');
+    expect(restrictedRouteSource).not.toContain('useDocumentTitle("Yona")');
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {

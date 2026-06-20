@@ -15,7 +15,7 @@ export function createApp(options: CreateAppOptions = {}) {
   return {
     router,
     runtimeConfig,
-    title: "Yona",
+    title: runtimeConfig.siteName ?? "Yona",
   };
 }
 

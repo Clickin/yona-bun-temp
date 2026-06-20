@@ -14,4 +14,16 @@ describe("createApp", () => {
     expect(app.router.options.basepath).toBe("/yona");
     expect(app.title).toBe("Yona");
   });
+
+  it("uses the runtime site name as the app title fallback", () => {
+    const app = createApp({
+      runtimeConfig: {
+        apiBaseUrl: "/yona/api",
+        basePath: "/yona",
+        siteName: "Legacy Yona",
+      },
+    });
+
+    expect(app.title).toBe("Legacy Yona");
+  });
 });
