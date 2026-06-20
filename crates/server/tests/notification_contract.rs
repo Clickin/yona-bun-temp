@@ -184,6 +184,31 @@ fn restore_env_var(name: &str, value: Option<String>) {
     }
 }
 
+struct EnvVarRestore {
+    name: &'static str,
+    previous: Option<String>,
+}
+
+impl EnvVarRestore {
+    fn remove(name: &'static str) -> Self {
+        let previous = std::env::var(name).ok();
+        std::env::remove_var(name);
+        Self { name, previous }
+    }
+
+    fn set(name: &'static str, value: &str) -> Self {
+        let previous = std::env::var(name).ok();
+        std::env::set_var(name, value);
+        Self { name, previous }
+    }
+}
+
+impl Drop for EnvVarRestore {
+    fn drop(&mut self) {
+        restore_env_var(self.name, self.previous.clone());
+    }
+}
+
 async fn response_json(response: Response<Body>) -> serde_json::Value {
     let status = response.status();
     let text = response_text(response).await;
@@ -1924,6 +1949,8 @@ async fn notification_contract_groups_bcc_mail_by_recipient_language() {
 
 #[tokio::test]
 async fn notification_contract_merges_same_sender_resource_events_within_draft_time() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    let _env = EnvVarRestore::remove("YONA_NOTIFICATION_DRAFT_TIME");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
@@ -2017,7 +2044,7 @@ async fn notification_contract_merges_same_sender_resource_events_within_draft_t
 #[tokio::test]
 async fn notification_contract_honors_configured_issue_event_draft_time_override() {
     let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::set_var("YONA_ISSUE_EVENT_DRAFT_TIME", "0");
+    let _env = EnvVarRestore::set("YONA_ISSUE_EVENT_DRAFT_TIME", "0");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
@@ -2056,11 +2083,12 @@ async fn notification_contract_honors_configured_issue_event_draft_time_override
             .unwrap(),
         2
     );
-    std::env::remove_var("YONA_ISSUE_EVENT_DRAFT_TIME");
 }
 
 #[tokio::test]
 async fn notification_contract_merges_issue_events_within_issue_event_draft_time() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    let _env = EnvVarRestore::remove("YONA_ISSUE_EVENT_DRAFT_TIME");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
@@ -2104,7 +2132,7 @@ async fn notification_contract_merges_issue_events_within_issue_event_draft_time
 #[tokio::test]
 async fn notification_contract_honors_configured_draft_time_override() {
     let _guard = notification_mail_env_lock().lock().unwrap();
-    std::env::set_var("YONA_NOTIFICATION_DRAFT_TIME", "0");
+    let _env = EnvVarRestore::set("YONA_NOTIFICATION_DRAFT_TIME", "0");
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _guest_cookie, _) = register_user(app.clone(), "guest").await;
@@ -2145,5 +2173,4 @@ async fn notification_contract_honors_configured_draft_time_override() {
             .unwrap(),
         2
     );
-    std::env::remove_var("YONA_NOTIFICATION_DRAFT_TIME");
 }
