@@ -518,6 +518,8 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
 #[tokio::test]
 // Guards runtime_config registry DI across REST and app route assembly.
 async fn runtime_config_registry_scopes_app_config_without_env_mutation() {
+    // Guards auth capability route assembly reading the per-router service snapshot,
+    // without a RuntimeRegistry argument on REST route registration.
     let (app, _, _) = build_app_with_repository_and_app_config(AppRuntimeConfig {
         auth_ui: AuthUiConfig {
             login_id_placeholder: "registry-login".to_string(),

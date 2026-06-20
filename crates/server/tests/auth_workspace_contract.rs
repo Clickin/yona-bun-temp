@@ -501,7 +501,7 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
 }
 
 #[tokio::test]
-// Guards auth route-owned session/sign-in/sign-out helpers plus auth capability, identifier, and error adapters.
+// Guards auth route-owned session/sign-in/sign-out helpers plus service-snapshot auth capability adapters.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;

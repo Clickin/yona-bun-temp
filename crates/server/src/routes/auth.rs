@@ -18,7 +18,7 @@ use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
+    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode,
     BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
     LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
@@ -50,7 +50,7 @@ pub(crate) struct RestVerifyUserRequest {
     verification_code: String,
 }
 
-pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
             "/session",
@@ -65,10 +65,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> R
         .route(
             "/auth/capabilities",
             get({
-                let auth_ui = auth_ui.clone();
+                let service = service.clone();
                 move |headers: HeaderMap| {
-                    let auth_ui = auth_ui.clone();
-                    async move { rest_read_auth_ui_capabilities(headers, auth_ui).await }
+                    let service = service.clone();
+                    async move { rest_read_auth_ui_capabilities(headers, service).await }
                 }
             }),
         )
@@ -116,11 +116,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> R
 
 pub(crate) async fn rest_read_auth_ui_capabilities(
     headers: HeaderMap,
-    auth_ui: AuthUiConfig,
+    service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let request = ReadAuthUiCapabilitiesRequest::default();
     let _request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
-    let payload = auth_ui_capabilities_from_config(&auth_ui);
+    let payload = auth_ui_capabilities_from_config(&service.auth_ui);
     Ok(rest_json_response(payload, Context::new(headers)))
 }
 

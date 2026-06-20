@@ -177,7 +177,7 @@ fn build_router_with_app_config(
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let anonymous_gate_allow_anonymous_access = allow_anonymous_access;
-    let rest_router = routes::rest_api_routes(pilot_service.clone(), runtime.clone());
+    let rest_router = routes::rest_api_routes(pilot_service.clone());
 
     let mut base_router = routes::app_routes(
         pilot_service.clone(),

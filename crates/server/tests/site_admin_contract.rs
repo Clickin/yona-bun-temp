@@ -2583,7 +2583,7 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 
 #[tokio::test]
 async fn site_admin_update_status_follows_legacy_update_view_branches() {
-    // Guards site-admin update status using the app-scoped update config snapshot.
+    // Guards site-admin update status using the app-scoped service update config snapshot.
     let (app, _repo, db) = build_app_with_site_update_config(SiteUpdateConfig::default()).await;
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;

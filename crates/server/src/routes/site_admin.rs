@@ -577,8 +577,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move {
-                        let site_update = service.site_update.clone();
-                        rest_read_site_update(headers, service, site_update).await
+                        rest_read_site_update(headers, service).await
                     }
                 }
             }),
@@ -590,8 +589,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move {
-                        let site_update = service.site_update.clone();
-                        rest_download_site_update(headers, service, site_update).await
+                        rest_download_site_update(headers, service).await
                     }
                 }
             }),
@@ -603,8 +601,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move {
-                        let site_update = service.site_update.clone();
-                        rest_download_site_update_file(headers, service, site_update).await
+                        rest_download_site_update_file(headers, service).await
                     }
                 }
             }),

@@ -147,11 +147,11 @@ pub(crate) use workspace::{
     workspace_profile_update, workspace_visited_projects_reset,
 };
 
-pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Router {
+pub(crate) fn rest_api_routes(service: PilotServiceImpl) -> Router {
     let pull_request_service = service.clone();
 
     let router = Router::new()
-        .merge(auth_rest_routes(service.clone(), runtime.auth_ui.clone()))
+        .merge(auth_rest_routes(service.clone()))
         .merge(user_rest_routes(service.clone()))
         .merge(site_admin_rest_routes(service.clone()))
         .merge(workspace_rest_routes(service.clone()))
@@ -165,7 +165,7 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistr
 
     #[cfg(debug_assertions)]
     {
-        router.merge(debug_routes(service, runtime.auth_ui))
+        router.merge(debug_routes(service))
     }
     #[cfg(not(debug_assertions))]
     {

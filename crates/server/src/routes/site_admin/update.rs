@@ -28,28 +28,25 @@ pub(super) struct RestSiteUpdateResponse {
 pub(super) async fn rest_read_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
 ) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    Ok(Json(rest_site_update_response(&site_update)))
+    Ok(Json(rest_site_update_response(&service.site_update)))
 }
 
 pub(crate) async fn rest_download_site_update(
     headers: HeaderMap,
     service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
 ) -> Result<Redirect, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    rest_site_update_download_redirect(&site_update)
+    rest_site_update_download_redirect(&service.site_update)
 }
 
 pub(crate) async fn rest_download_site_update_file(
     headers: HeaderMap,
     service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
 ) -> Result<Response, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, false).await?;
-    rest_site_update_download_file_response(&site_update)
+    rest_site_update_download_file_response(&service.site_update)
 }
 
 pub(super) fn rest_site_update_download_redirect(

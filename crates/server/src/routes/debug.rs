@@ -2,12 +2,12 @@ use axum::{extract::Path, http::HeaderMap, response::Response, routing::post, Js
 
 use crate::generated::yona::pilot::v1::*;
 use crate::{
-    auth_ui_capabilities_from_config, rest_json_response, rest_owned_view, AuthUiConfig, Context,
+    auth_ui_capabilities_from_config, rest_json_response, rest_owned_view, Context,
     PilotServiceImpl, RestRouteError,
 };
 
 #[cfg(debug_assertions)]
-pub(crate) fn routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new().route(
         "/_pilot/{method_name}",
         post(
@@ -15,8 +15,7 @@ pub(crate) fn routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> Router
                   Path(method_name): Path<String>,
                   Json(payload): Json<serde_json::Value>| {
                 let service = service.clone();
-                let auth_ui = auth_ui.clone();
-                async move { rest_debug_method(headers, method_name, payload, service, auth_ui).await }
+                async move { rest_debug_method(headers, method_name, payload, service).await }
             },
         ),
     )
@@ -27,7 +26,6 @@ pub(crate) async fn rest_debug_method(
     method_name: String,
     payload: serde_json::Value,
     service: PilotServiceImpl,
-    auth_ui: AuthUiConfig,
 ) -> Result<Response, RestRouteError> {
     macro_rules! call {
         ($method:ident, $request:ty, $view:ty) => {{
@@ -55,7 +53,7 @@ pub(crate) async fn rest_debug_method(
                     RestRouteError::bad_request(format!("invalid debug method request: {error}"))
                 })?;
             Ok(rest_json_response(
-                auth_ui_capabilities_from_config(&auth_ui),
+                auth_ui_capabilities_from_config(&service.auth_ui),
                 Context::new(headers),
             ))
         }
