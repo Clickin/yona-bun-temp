@@ -14,7 +14,6 @@ use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
@@ -25,11 +24,6 @@ use yona_rust_pilot_server::{
 };
 
 mod rest_test_support;
-
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
 
 fn svn_tools_available() -> bool {
     Command::new(yona_rust_vcs::svn_executable("svnadmin"))
@@ -291,10 +285,6 @@ fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> 
         return None;
     }
     Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
-}
-
-async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
-    build_app_with_app_config(AppRuntimeConfig::default()).await
 }
 
 async fn build_app_with_data_root(
@@ -2872,12 +2862,8 @@ async fn svn_protocol_external_client_can_info_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -2906,12 +2892,8 @@ async fn svn_protocol_external_client_can_ls_cat_and_log_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3004,12 +2986,8 @@ async fn svn_protocol_external_client_can_ls_recursive_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3049,12 +3027,8 @@ async fn svn_protocol_external_client_can_log_verbose_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3115,12 +3089,8 @@ async fn svn_protocol_external_client_can_read_mergeinfo() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3170,12 +3140,8 @@ async fn svn_protocol_external_client_can_blame_public_file() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3215,12 +3181,8 @@ async fn svn_protocol_external_client_can_diff_public_file() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3314,12 +3276,8 @@ async fn svn_protocol_external_client_can_checkout_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3362,12 +3320,8 @@ async fn svn_protocol_external_client_can_checkout_depth_empty() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3421,12 +3375,8 @@ async fn svn_protocol_external_client_can_deepen_depth_empty_checkout() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3494,12 +3444,8 @@ async fn svn_protocol_external_client_can_update_depth_empty_checkout_to_files()
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3564,12 +3510,8 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_files() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3638,12 +3580,8 @@ async fn svn_protocol_external_client_can_exclude_child_directory_depth() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3703,12 +3641,8 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_empty() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3779,12 +3713,8 @@ async fn svn_protocol_external_client_can_checkout_depth_files() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3837,12 +3767,8 @@ async fn svn_protocol_external_client_can_checkout_depth_immediates() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3905,12 +3831,8 @@ async fn svn_protocol_external_client_can_switch_working_copy_directory() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -3995,12 +3917,8 @@ async fn svn_protocol_external_client_can_export_public_project() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4048,12 +3966,8 @@ async fn svn_protocol_external_client_can_checkout_requested_revision() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4137,12 +4051,8 @@ async fn svn_protocol_external_client_can_commit_file_update() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4195,12 +4105,8 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4292,12 +4198,8 @@ async fn svn_protocol_external_client_can_update_to_older_revision_and_back_to_h
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4384,12 +4286,8 @@ async fn svn_protocol_external_client_can_update_after_remote_delete() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4474,12 +4372,8 @@ async fn svn_protocol_external_client_reports_conflict_on_update() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4575,12 +4469,8 @@ async fn svn_protocol_external_client_can_add_file_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4642,12 +4532,8 @@ async fn svn_protocol_external_client_can_delete_file_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4709,12 +4595,8 @@ async fn svn_protocol_external_client_can_delete_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4764,12 +4646,8 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4838,12 +4716,8 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4899,12 +4773,8 @@ async fn svn_protocol_external_client_can_import_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -4965,12 +4835,8 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5230,12 +5096,8 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5303,12 +5165,8 @@ async fn svn_protocol_external_client_can_copy_file_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5373,12 +5231,8 @@ async fn svn_protocol_external_client_can_copy_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5430,12 +5284,8 @@ async fn svn_protocol_external_client_can_copy_directory_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5486,12 +5336,8 @@ async fn svn_protocol_external_client_can_move_file_and_commit() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5558,12 +5404,8 @@ async fn svn_protocol_external_client_can_move_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5620,12 +5462,8 @@ async fn svn_protocol_external_client_can_move_directory_direct_url() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5683,12 +5521,8 @@ async fn svn_protocol_root_and_default_vcc_propfind_honor_label_revision() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5740,12 +5574,8 @@ async fn svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metad
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5816,12 +5646,8 @@ async fn svn_protocol_baseline_propfind_maps_invalid_and_out_of_range_revisions(
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (_, youngest_revision) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5849,12 +5675,8 @@ async fn svn_protocol_baseline_propfind_maps_invalid_and_out_of_range_revisions(
 
 #[tokio::test]
 async fn svn_protocol_supports_checkout_merge_choreography() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
@@ -5996,12 +5818,8 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
 
 #[tokio::test]
 async fn svn_protocol_private_project_uses_basic_auth_challenge() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
     mark_project_as_svn(&repository, &db, data_dir.path()).await;

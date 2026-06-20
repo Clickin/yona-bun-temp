@@ -1226,6 +1226,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `YONA_DATA` under the async `yona_data_env_lock`. Global/project issue,
   posting, milestone, comment, review, user, and project search parity
   assertions remain unchanged while runtime config env serialization is removed.
+- 2026-06-20 runtime DI note: SVN protocol contract tests now inject per-test
+  repository storage through `AppRuntimeConfig.data_root` instead of mutating
+  `YONA_DATA` under `yona_data_env_lock`. Existing executable availability
+  skips, external SVN client smoke coverage, WebDAV REPORT/PROPFIND/LOCK/write
+  parity assertions, and repository path checks stay unchanged.
 
 ## Wave 0 Exit Snapshot
 
