@@ -191,6 +191,7 @@ fn build_router_with_app_config(
     );
 
     let mut base_router = routes::app_routes(
+        pilot_service.clone(),
         session_manager.clone(),
         route_backend.clone(),
         assets.clone(),

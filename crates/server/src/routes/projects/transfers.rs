@@ -230,34 +230,12 @@ pub(super) async fn rest_request_project_transfer(
     .into_response())
 }
 
-fn project_transfer_service(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-    smtp: SmtpRuntimeConfig,
-) -> PilotServiceImpl {
-    PilotServiceImpl {
-        base_path,
-        public_origin,
-        session_manager,
-        backend,
-        project_default_scope: "public".to_string(),
-        auth_ui: AuthUiConfig::from_env(),
-        smtp,
-    }
-}
-
 pub(super) async fn direct_request_project_transfer(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
     destination: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-    smtp: SmtpRuntimeConfig,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = RestProjectTransferBody { destination };
     match rest_request_project_transfer(
@@ -265,7 +243,7 @@ pub(super) async fn direct_request_project_transfer(
         owner_name.clone(),
         project_name.clone(),
         body,
-        project_transfer_service(session_manager, backend, base_path, public_origin, smtp),
+        service,
     )
     .await
     {

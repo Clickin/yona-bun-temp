@@ -2395,11 +2395,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
 }
 
 pub(crate) fn routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    smtp: SmtpRuntimeConfig,
 ) -> Router {
     let direct_project_watch_backend = backend.clone();
     let direct_project_watch_session_manager = session_manager.clone();
@@ -2428,11 +2427,7 @@ pub(crate) fn routes(
     let direct_project_webhook_create_base_path = base_path.clone();
     let direct_project_webhook_delete_backend = backend.clone();
     let direct_project_webhook_delete_session_manager = session_manager.clone();
-    let direct_project_transfer_request_backend = backend.clone();
-    let direct_project_transfer_request_session_manager = session_manager.clone();
-    let direct_project_transfer_request_base_path = base_path.clone();
-    let direct_project_transfer_request_public_origin = public_origin.clone();
-    let direct_project_transfer_request_smtp = smtp.clone();
+    let direct_project_transfer_request_service = service.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2948,11 +2943,7 @@ pub(crate) fn routes(
                             owner_name,
                             project_name,
                             query.get("owner").cloned().unwrap_or_default(),
-                            direct_project_transfer_request_session_manager.clone(),
-                            direct_project_transfer_request_backend.clone(),
-                            direct_project_transfer_request_base_path.clone(),
-                            direct_project_transfer_request_public_origin.clone(),
-                            direct_project_transfer_request_smtp.clone(),
+                            direct_project_transfer_request_service.clone(),
                         )
                         .await
                     }

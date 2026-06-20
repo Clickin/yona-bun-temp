@@ -207,6 +207,7 @@ pub(crate) fn rest_api_routes(
 }
 
 pub(crate) fn app_routes(
+    service: PilotServiceImpl,
     session_manager: SessionManager,
     backend: PilotBackend,
     assets: AssetMode,
@@ -274,11 +275,10 @@ pub(crate) fn app_routes(
         ))
         .merge(comment_routes(session_manager.clone(), backend.clone()))
         .merge(project_routes(
+            service.clone(),
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
-            public_origin.clone(),
-            smtp.clone(),
         ))
         .route(
             "/api/v1/{*rest_path}",
