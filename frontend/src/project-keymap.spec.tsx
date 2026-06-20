@@ -87,6 +87,34 @@ describe("project keymap help parity", () => {
     expect(html).toContain('<span class="help-inline">button.commentAndNextState.closed</span>');
   });
 
+  it("renders legacy board list and detail shortcuts", () => {
+    const listHtml = renderToStaticMarkup(
+      <ProjectMenu
+        activeMenu="board"
+        detail={projectDetail}
+        keymapMode="list"
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const detailHtml = renderToStaticMarkup(
+      <ProjectMenu
+        activeMenu="board"
+        detail={projectDetail}
+        keymapMode="detail"
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(listHtml).toContain("<h5>title.boardList</h5>");
+    expect(listHtml).toContain('<span class="help-inline">post.write</span>');
+    expect(listHtml).toContain('<span class="help-inline">button.prevPage</span>');
+    expect(listHtml).toContain('<span class="help-inline">button.nextPage</span>');
+    expect(detailHtml).toContain("<h5>title.boardDetail</h5>");
+    expect(detailHtml).toContain('<span class="help-inline">post.write</span>');
+    expect(detailHtml).toContain('<span class="help-inline">button.list</span>');
+    expect(detailHtml).toContain('<span class="help-inline">button.edit</span>');
+  });
+
   it("renders legacy Mac modifier keys from the Macintosh user agent", () => {
     withUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", () => {
       const html = renderToStaticMarkup(

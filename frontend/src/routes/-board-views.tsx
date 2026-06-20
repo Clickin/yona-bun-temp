@@ -604,7 +604,12 @@ export function ProjectBoardListPage(props: {
         <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       ) : null}
       {shellDetail ? (
-        <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+        <ProjectMenu
+          activeMenu="board"
+          detail={shellDetail}
+          keymapMode="list"
+          runtimeConfig={props.runtimeConfig}
+        />
       ) : null}
       <div className="page-wrap-outer">
         <div className="post-list project-page-wrap">
@@ -841,7 +846,12 @@ export function ProjectBoardDetailPage(props: {
   return (
     <main className="app-shell board-page">
       <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu
+        activeMenu="board"
+        detail={shellDetail}
+        keymapMode="detail"
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap board-view">
           <div className="board-header issue">
@@ -1576,7 +1586,7 @@ export function ProjectPostFormPage(props: {
     <main className="app-shell board-page">
       <h1 className="sr-only">{props.mode === "create" ? "post.write" : "post.modify"}</h1>
       <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="board" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <form

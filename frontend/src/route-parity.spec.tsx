@@ -2144,6 +2144,12 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('<a href="/yona/owner">owner</a>');
     expect(listHtml).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(listHtml).toContain('class="project-menu-outer"');
+    expect(listHtml).toContain('href="#helpKeys"');
+    expect(listHtml).toContain('class="modal hide fade keymap-help"');
+    expect(listHtml).toContain("<h5>title.boardList</h5>");
+    expect(listHtml).toContain('<span class="help-inline">post.write</span>');
+    expect(listHtml).toContain('<span class="help-inline">button.prevPage</span>');
+    expect(listHtml).toContain('<span class="help-inline">button.nextPage</span>');
     expect(listHtml).toContain('class="page-wrap-outer"');
     expect(listHtml).toContain('<div class="post-list project-page-wrap">');
     expect(listHtml).toContain('<div class="search-wrap underline board-toolbar">');
@@ -2344,6 +2350,12 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('class="app-shell board-page"');
     expect(detailHtml).toContain('class="project-header-outer"');
     expect(detailHtml).toContain('class="project-menu-outer"');
+    expect(detailHtml).toContain('href="#helpKeys"');
+    expect(detailHtml).toContain('class="modal hide fade keymap-help"');
+    expect(detailHtml).toContain("<h5>title.boardDetail</h5>");
+    expect(detailHtml).toContain('<span class="help-inline">post.write</span>');
+    expect(detailHtml).toContain('<span class="help-inline">button.list</span>');
+    expect(detailHtml).toContain('<span class="help-inline">button.edit</span>');
     expect(detailHtml).toContain('class="page-wrap-outer"');
     expect(detailHtml).toContain('<div class="project-page-wrap board-view">');
     expect(detailHtml).toContain('<div class="board-header issue">');
@@ -5323,7 +5335,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain("button.no");
     expect(html).not.toContain("project.transfer.alert");
     expect(html).not.toContain("<h1>project.transfer</h1>");
-    expect(html).not.toContain("button.confirm");
+    const transferModalHtml = html.slice(html.indexOf('id="alertTransfer"'));
+    expect(transferModalHtml).not.toContain("button.confirm");
   });
 
   it("requires project fork route to preserve legacy anchors and mutation wiring", () => {
