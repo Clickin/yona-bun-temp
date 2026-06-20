@@ -112,8 +112,9 @@ pub(crate) use routes::{
 };
 pub(crate) use state::{
     repository_provisioning_lock, yona_data_root, AssetMode, BrowserRuntimeConfig, ConnectError,
-    Context, ErrorCode, PilotBackend, PilotServiceImpl, LEGACY_LOGIN_INVALID_MESSAGE,
-    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH, SITE_UPDATE_NOTIFICATION_WATCHED,
+    Context, ErrorCode, PilotBackend, PilotServiceImpl, RuntimeRegistry,
+    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 pub mod runtime_config;
 mod server_config;

@@ -633,14 +633,14 @@ function matchesKeywordInPathOrContent(repoRoot, filePath, keywords) {
   return keywords.some((keyword) => fileText.includes(keyword.toLowerCase()));
 }
 
-function classifyCapability(filePath, changedFiles = []) {
+function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO_ROOT) {
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
   );
   if (
     markdownBucket &&
     isMarkdownSurfaceOptIn(filePath, changedFiles) &&
-    capabilityHasTestEvidence(markdownBucket, changedFiles) &&
+    capabilityHasTestEvidence(markdownBucket, changedFiles, repoRoot) &&
     capabilityHasProvenanceEvidence(markdownBucket, changedFiles)
   ) {
     return markdownBucket;
@@ -656,7 +656,7 @@ function classifyCapability(filePath, changedFiles = []) {
     if (
       bucket.id === "project-markdown-rendering" &&
       matchesAnyPattern(filePath, bucket.implementationPatterns) &&
-      capabilityHasTestEvidence(bucket, changedFiles) &&
+      capabilityHasTestEvidence(bucket, changedFiles, repoRoot) &&
       capabilityHasProvenanceEvidence(bucket, changedFiles)
     ) {
       return bucket;
@@ -783,7 +783,7 @@ export function evaluateParityGate({ changedFiles = [], repoRoot = DEFAULT_REPO_
   const unmappedImplementationFiles = [];
 
   for (const filePath of implementationFiles) {
-    const capability = classifyCapability(filePath, normalizedFiles);
+    const capability = classifyCapability(filePath, normalizedFiles, repoRoot);
     if (!capability) {
       unmappedImplementationFiles.push(filePath);
       continue;

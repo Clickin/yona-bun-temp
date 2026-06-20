@@ -8,7 +8,7 @@ use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router, create_router_with_filesystem_assets,
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
 };
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -513,6 +513,86 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
     assert!(html.contains("<a href=\"/yona/sites/data\">/sites/data</a>"));
     assert!(html.contains("error.forbidden.or.not.allowed"));
     assert!(!html.contains("window.__YONA_RUNTIME_CONFIG__"));
+}
+
+#[tokio::test]
+// Guards runtime_config registry DI across REST and app route assembly.
+async fn runtime_config_registry_scopes_app_config_without_env_mutation() {
+    let (app, _, _) = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        auth_ui: AuthUiConfig {
+            login_id_placeholder: "registry-login".to_string(),
+            password_placeholder: "registry-password".to_string(),
+            ..AuthUiConfig::default()
+        },
+        site_name: "Registry Yona".to_string(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (other_app, _, _) = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        auth_ui: AuthUiConfig {
+            login_id_placeholder: "other-login".to_string(),
+            password_placeholder: "other-password".to_string(),
+            ..AuthUiConfig::default()
+        },
+        site_name: "Other Yona".to_string(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+
+    let capabilities = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(capabilities.status(), StatusCode::OK);
+    let body = capabilities.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["loginIdPlaceholder"], "registry-login");
+    assert_eq!(json["passwordPlaceholder"], "registry-password");
+    let other_capabilities = other_app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(other_capabilities.status(), StatusCode::OK);
+    let body = other_capabilities
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["loginIdPlaceholder"], "other-login");
+    assert_eq!(json["passwordPlaceholder"], "other-password");
+
+    let cookie_header = register_user(app.clone(), "registry").await;
+    let migration = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration")
+                .header(http::header::COOKIE, cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(migration.status(), StatusCode::FORBIDDEN);
+    let body = migration.into_body().collect().await.unwrap().to_bytes();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("<title>Registry Yona</title>"));
+    assert!(!html.contains("Other Yona"));
 }
 
 #[tokio::test]

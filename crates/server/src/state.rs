@@ -8,7 +8,10 @@ use std::{
 
 use crate::runtime_config::normalize_base_path;
 use crate::session::SessionManager;
-use crate::{AuthUiConfig, PilotRepository, SmtpRuntimeConfig};
+use crate::{
+    AppRuntimeConfig, AuthUiConfig, PilotRepository, SiteUpdateConfig, SmtpRuntimeConfig,
+    TranslationProxyConfig,
+};
 
 pub(crate) static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 
@@ -113,6 +116,31 @@ pub(crate) fn yona_data_root() -> PathBuf {
 pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
+}
+
+#[derive(Clone)]
+pub(crate) struct RuntimeRegistry {
+    pub(crate) auth_ui: AuthUiConfig,
+    pub(crate) max_uploaded_file_size: usize,
+    pub(crate) project_default_scope: String,
+    pub(crate) site_name: String,
+    pub(crate) site_update: SiteUpdateConfig,
+    pub(crate) smtp: SmtpRuntimeConfig,
+    pub(crate) translation_proxy: TranslationProxyConfig,
+}
+
+impl RuntimeRegistry {
+    pub(crate) fn from_app_config(config: &AppRuntimeConfig) -> Self {
+        Self {
+            auth_ui: config.auth_ui.clone(),
+            max_uploaded_file_size: config.max_uploaded_file_size,
+            project_default_scope: config.project_default_scope.clone(),
+            site_name: config.site_name.clone(),
+            site_update: config.site_update.clone(),
+            smtp: config.smtp.clone(),
+            translation_proxy: config.translation_proxy.clone(),
+        }
+    }
 }
 
 #[derive(Clone)]

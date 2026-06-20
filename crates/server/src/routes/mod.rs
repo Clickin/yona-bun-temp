@@ -1,10 +1,7 @@
 use axum::{routing::any, Router};
 
 use crate::session::SessionManager;
-use crate::{
-    AssetMode, AuthUiConfig, BrowserRuntimeConfig, PilotBackend, PilotServiceImpl,
-    SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
-};
+use crate::{AssetMode, BrowserRuntimeConfig, PilotServiceImpl, RuntimeRegistry};
 
 mod auth;
 mod boards;
@@ -155,24 +152,19 @@ pub(crate) use workspace::{
     workspace_profile_update, workspace_visited_projects_reset,
 };
 
-pub(crate) fn rest_api_routes(
-    service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
-    smtp: SmtpRuntimeConfig,
-    auth_ui: AuthUiConfig,
-) -> Router {
+pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
     let pull_request_service = service.clone();
 
     let router = Router::new()
-        .merge(auth_rest_routes(service.clone(), auth_ui.clone()))
+        .merge(auth_rest_routes(service.clone(), runtime.auth_ui.clone()))
         .merge(user_rest_routes(service.clone()))
         .merge(site_admin_rest_routes(
             service.clone(),
-            site_update.clone(),
-            smtp.clone(),
+            runtime.site_update.clone(),
+            runtime.smtp.clone(),
         ))
         .merge(workspace_rest_routes(service.clone()))
         .merge(notification_rest_routes(
@@ -198,7 +190,7 @@ pub(crate) fn rest_api_routes(
 
     #[cfg(debug_assertions)]
     {
-        router.merge(debug_routes(service, auth_ui))
+        router.merge(debug_routes(service, runtime.auth_ui))
     }
     #[cfg(not(debug_assertions))]
     {
@@ -208,20 +200,15 @@ pub(crate) fn rest_api_routes(
 
 pub(crate) fn app_routes(
     service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
-    public_origin: String,
-    site_name: String,
-    project_default_scope: String,
-    translation_proxy: TranslationProxyConfig,
-    site_update: SiteUpdateConfig,
-    smtp: SmtpRuntimeConfig,
-    max_uploaded_file_size: usize,
+    runtime: RuntimeRegistry,
     rest_router: Router,
 ) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+    let public_origin = service.public_origin.clone();
     Router::new()
         .merge(auth_routes(
             session_manager.clone(),
@@ -230,8 +217,8 @@ pub(crate) fn app_routes(
             browser_runtime.clone(),
             base_path.clone(),
             public_origin.clone(),
-            site_name.clone(),
-            smtp.clone(),
+            runtime.site_name.clone(),
+            runtime.smtp.clone(),
         ))
         .nest("/api/v1", rest_router)
         .merge(legacy_runtime_routes(
@@ -240,21 +227,21 @@ pub(crate) fn app_routes(
             assets,
             browser_runtime,
             base_path.clone(),
-            site_name.clone(),
-            project_default_scope,
+            runtime.site_name.clone(),
+            runtime.project_default_scope.clone(),
         ))
         .merge(workspace_routes(
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
             public_origin.clone(),
-            smtp.clone(),
-            site_name,
+            runtime.smtp.clone(),
+            runtime.site_name.clone(),
         ))
         .merge(user_routes(
             session_manager.clone(),
             backend.clone(),
-            translation_proxy,
+            runtime.translation_proxy.clone(),
         ))
         .merge(board_routes(
             session_manager.clone(),
@@ -288,7 +275,7 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
-            max_uploaded_file_size,
+            runtime.max_uploaded_file_size,
         ))
         .merge(pull_request_routes(
             session_manager.clone(),
@@ -299,10 +286,10 @@ pub(crate) fn app_routes(
         .merge(site_admin_routes(
             session_manager.clone(),
             backend.clone(),
-            site_update,
-            smtp,
+            runtime.site_update,
+            runtime.smtp,
             base_path.clone(),
-            max_uploaded_file_size,
+            runtime.max_uploaded_file_size,
         ))
         .merge(code_routes(session_manager, backend, base_path))
 }
