@@ -133,18 +133,17 @@ async fn direct_pull_request_state(
     owner_name: String,
     project_name: String,
     pull_request_number: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     if let Err(error) =
-        rest_require_project_code_read(&repository, &owner_name, &project_name, actor_id).await
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await
     {
         return error.into_response();
     }
@@ -158,13 +157,17 @@ async fn direct_pull_request_state(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
-    let source_branch_state =
-        match rest_pull_request_source_branch_state(&data_root, &repository, &record, actor_id)
-            .await
-        {
-            Ok(state) => state,
-            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
-        };
+    let source_branch_state = match rest_pull_request_source_branch_state(
+        &service.data_root,
+        repository,
+        &record,
+        actor_id,
+    )
+    .await
+    {
+        Ok(state) => state,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
     let html = direct_pull_request_state_html(&record, &source_branch_state);
     if is_legacy_xhr(&headers) {
         let state = normalize_identifier(&record.state);
@@ -555,19 +558,13 @@ pub(crate) struct RestReviewThreadListResponse {
     total_count: u32,
 }
 
-pub(crate) fn routes(
-    service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let thread_open_service = service.clone();
     let thread_close_service = service.clone();
     let pull_request_accept_service = service.clone();
     let pull_request_delete_source_branch_service = service.clone();
-    let pull_request_state_data_root = service.data_root.clone();
-    let pull_request_restore_source_branch_service = service;
-    let pull_request_state_backend = backend;
-    let pull_request_state_session_manager = session_manager;
+    let pull_request_restore_source_branch_service = service.clone();
+    let pull_request_state_service = service;
 
     Router::new()
         .route(
@@ -681,9 +678,7 @@ pub(crate) fn routes(
                             owner,
                             project,
                             pull_request_number,
-                            pull_request_state_session_manager.clone(),
-                            pull_request_state_backend.clone(),
-                            pull_request_state_data_root.clone(),
+                            pull_request_state_service.clone(),
                         )
                         .await
                     }

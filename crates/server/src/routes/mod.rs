@@ -166,12 +166,7 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistr
         .merge(search_routes(session_manager.clone(), backend.clone()))
         .merge(issue_rest_routes(service.clone()))
         .merge(board_rest_routes(service.clone()))
-        .merge(code_rest_routes(
-            service.clone(),
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-        ))
+        .merge(code_rest_routes(service.clone()))
         .merge(project_rest_routes(service.clone()))
         .merge(pull_request_rest_routes(pull_request_service));
 
@@ -244,11 +239,7 @@ pub(crate) fn app_routes(
             any(|| async { rest_not_found_response() }),
         )
         .merge(file_routes(service.clone()))
-        .merge(pull_request_routes(
-            service.clone(),
-            session_manager.clone(),
-            backend.clone(),
-        ))
+        .merge(pull_request_routes(service.clone()))
         .merge(site_admin_routes(service.clone()))
         .merge(code_routes(service, session_manager, backend, base_path))
 }

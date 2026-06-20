@@ -8,7 +8,6 @@ use axum::{
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
@@ -30,40 +29,19 @@ use crate::{
     RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
 
-pub(crate) fn rest_routes(
-    service: PilotServiceImpl,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-) -> Router {
-    let data_root = service.data_root.clone();
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
             "/projects/{owner_name}/{project_name}/code",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeBrowserQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
-                        rest_read_code_browser(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                            data_root,
-                        )
-                        .await
+                        rest_read_code_browser(headers, owner_name, project_name, query, service)
+                            .await
                     }
                 }
             }),
@@ -71,29 +49,14 @@ pub(crate) fn rest_routes(
         .route(
             "/projects/{owner_name}/{project_name}/commits",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeHistoryQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
-                        rest_read_code_history(
-                            headers,
-                            owner_name,
-                            project_name,
-                            query,
-                            session_manager,
-                            backend,
-                            base_path,
-                            data_root,
-                        )
-                        .await
+                        rest_read_code_history(headers, owner_name, project_name, query, service)
+                            .await
                     }
                 }
             }),
@@ -101,10 +64,7 @@ pub(crate) fn rest_routes(
         .route(
             "/projects/{owner_name}/{project_name}/commit/{commit_id}",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let base_path = base_path.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, commit_id)): Path<(
                     String,
@@ -112,10 +72,7 @@ pub(crate) fn rest_routes(
                     String,
                 )>,
                       Query(query): Query<RestCodeCommitDetailQuery>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let base_path = base_path.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
                         rest_read_code_commit_detail(
                             headers,
@@ -123,10 +80,7 @@ pub(crate) fn rest_routes(
                             project_name,
                             commit_id,
                             query,
-                            session_manager,
-                            backend,
-                            base_path,
-                            data_root,
+                            service,
                         )
                         .await
                     }
@@ -267,27 +221,21 @@ pub(crate) fn rest_routes(
         .route(
             "/projects/{owner_name}/{project_name}/compare/{revision_range}",
             get({
-                let session_manager = session_manager.clone();
-                let backend = backend.clone();
-                let data_root = data_root.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, revision_range)): Path<(
                     String,
                     String,
                     String,
                 )>| {
-                    let session_manager = session_manager.clone();
-                    let backend = backend.clone();
-                    let data_root = data_root.clone();
+                    let service = service.clone();
                     async move {
                         rest_read_code_compare(
                             headers,
                             owner_name,
                             project_name,
                             revision_range,
-                            session_manager,
-                            backend,
-                            data_root,
+                            service,
                         )
                         .await
                     }
@@ -1215,15 +1163,13 @@ async fn rest_read_code_browser(
     owner_name: String,
     project_name: String,
     query: RestCodeBrowserQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeBrowserResponse>, RestRouteError> {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::from_connect_error(
             ConnectError::unimplemented("code browser requires repository backend"),
         ));
@@ -1251,7 +1197,7 @@ async fn rest_read_code_browser(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_code_browser(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
@@ -1264,7 +1210,7 @@ async fn rest_read_code_browser(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
-        &base_path,
+        &service.base_path,
     );
     for entry in &mut response.entries {
         if entry.author_email.trim().is_empty() {
@@ -1279,10 +1225,14 @@ async fn rest_read_code_browser(
             continue;
         };
         entry.author_login_id = author.login_id.clone();
-        entry.author_avatar_url =
-            workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
-                .await
-                .map_err(RestRouteError::from_connect_error)?;
+        entry.author_avatar_url = workspace_avatar_url(
+            repository,
+            author.id,
+            &author.email_address,
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     }
     if let Some(file) = response.file.as_mut() {
         if !file.author_email.trim().is_empty() {
@@ -1293,10 +1243,14 @@ async fn rest_read_code_browser(
                 .map_err(RestRouteError::from_connect_error)?
             {
                 file.author_login_id = author.login_id.clone();
-                file.author_avatar_url =
-                    workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
-                        .await
-                        .map_err(RestRouteError::from_connect_error)?;
+                file.author_avatar_url = workspace_avatar_url(
+                    repository,
+                    author.id,
+                    &author.email_address,
+                    &service.base_path,
+                )
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
             }
         }
         if !file.commit_id.trim().is_empty() {
@@ -1401,15 +1355,13 @@ async fn rest_read_code_history(
     owner_name: String,
     project_name: String,
     query: RestCodeHistoryQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeHistoryResponse>, RestRouteError> {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::from_connect_error(
             ConnectError::unimplemented("code history requires repository backend"),
         ));
@@ -1437,7 +1389,7 @@ async fn rest_read_code_history(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let mut snapshot = yona_rust_vcs::read_code_history(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
@@ -1481,10 +1433,14 @@ async fn rest_read_code_history(
             continue;
         };
         commit.author_login_id = author.login_id.clone();
-        commit.author_avatar_url =
-            workspace_avatar_url(repository, author.id, &author.email_address, &base_path)
-                .await
-                .map_err(RestRouteError::from_connect_error)?;
+        commit.author_avatar_url = workspace_avatar_url(
+            repository,
+            author.id,
+            &author.email_address,
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     }
 
     Ok(Json(response))
@@ -1496,15 +1452,13 @@ async fn rest_read_code_commit_detail(
     project_name: String,
     commit_id: String,
     query: RestCodeCommitDetailQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::from_connect_error(
             ConnectError::unimplemented("commit detail requires repository backend"),
         ));
@@ -1539,8 +1493,7 @@ async fn rest_read_code_commit_detail(
             actor_id,
             &commit_id,
             &query,
-            &base_path,
-            &data_root,
+            &service,
         )
         .await?,
     ))
@@ -1552,10 +1505,9 @@ async fn rest_code_commit_detail_response(
     actor_id: Option<i64>,
     commit_id: &str,
     query: &RestCodeCommitDetailQuery,
-    base_path: &str,
-    data_root: &PathBuf,
+    service: &PilotServiceImpl,
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let mut snapshot = yona_rust_vcs::read_commit_detail(
         &repo_path,
         commit_id,
@@ -1594,7 +1546,7 @@ async fn rest_code_commit_detail_response(
         actor_id,
         snapshot,
         threads,
-        base_path,
+        &service.base_path,
         &issue_references,
         &mention_references,
     ))
@@ -1715,8 +1667,7 @@ async fn rest_create_commit_discussion_comment(
         Some(actor.id),
         &commit_id,
         &query,
-        &service.base_path,
-        &service.data_root,
+        &service,
     )
     .await?;
     if !current.permissions.can_comment {
@@ -1750,8 +1701,7 @@ async fn rest_create_commit_discussion_comment(
             Some(actor.id),
             &commit_id,
             &query,
-            &service.base_path,
-            &service.data_root,
+            &service,
         )
         .await?,
     ))
@@ -1784,8 +1734,7 @@ pub(crate) async fn rest_update_commit_discussion_thread_state(
         Some(actor.id),
         &commit_id,
         &query,
-        &service.base_path,
-        &service.data_root,
+        &service,
     )
     .await?;
     let thread = current
@@ -1856,8 +1805,7 @@ async fn rest_update_commit_discussion_comment(
         Some(actor.id),
         &commit_id,
         &query,
-        &service.base_path,
-        &service.data_root,
+        &service,
     )
     .await?;
     let comment = current
@@ -1898,8 +1846,7 @@ async fn rest_update_commit_discussion_comment(
             Some(actor.id),
             &commit_id,
             &query,
-            &service.base_path,
-            &service.data_root,
+            &service,
         )
         .await?,
     ))
@@ -1931,8 +1878,7 @@ async fn rest_delete_commit_discussion_comment(
         Some(actor.id),
         &commit_id,
         &query,
-        &service.base_path,
-        &service.data_root,
+        &service,
     )
     .await?;
     let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
@@ -1966,8 +1912,7 @@ async fn rest_delete_commit_discussion_comment(
             Some(actor.id),
             &commit_id,
             &query,
-            &service.base_path,
-            &service.data_root,
+            &service,
         )
         .await?,
     ))
@@ -1978,19 +1923,18 @@ async fn rest_read_code_compare(
     owner_name: String,
     project_name: String,
     revision_range: String,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestCodeCompareResponse>, RestRouteError> {
     let Some((rev_a, rev_b)) = revision_range.split_once("..") else {
         return Err(RestRouteError::bad_request(
             "compare revision range must use revA..revB",
         ));
     };
-    let actor_id = session_manager
+    let actor_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::from_connect_error(
             ConnectError::unimplemented("compare requires repository backend"),
         ));
@@ -2018,7 +1962,7 @@ async fn rest_read_code_compare(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let snapshot = yona_rust_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;

@@ -610,6 +610,7 @@ async fn seed_pull_request_detail_rows(
 
 #[tokio::test]
 async fn pull_request_read_contract_serves_legacy_direct_state_helper() {
+    // Guards direct pull-request state routes using the app-scoped service snapshot.
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, outsider_cookie, outsider_id) = register_user(app.clone(), "outsider").await;

@@ -659,6 +659,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
 
 #[tokio::test]
 async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
+    // Guards REST code browser routes using the app-scoped code service snapshot.
     let data_dir = tempdir().expect("yona data");
     let (app, repo) = build_app_with_data_root(data_dir.path()).await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
