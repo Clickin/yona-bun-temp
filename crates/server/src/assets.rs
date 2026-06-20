@@ -309,8 +309,15 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
-            .await;
+        return svn_protocol::direct_request(
+            request,
+            session_manager,
+            backend,
+            auth_ui,
+            base_path,
+            data_root,
+        )
+        .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
@@ -373,8 +380,15 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
-            .await;
+        return svn_protocol::direct_request(
+            request,
+            session_manager,
+            backend,
+            auth_ui,
+            base_path,
+            data_root,
+        )
+        .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
@@ -435,8 +449,15 @@ pub(crate) async fn smart_http_or_not_found(
         .await;
     }
     if svn_protocol::route_from_path(request.uri().path(), &base_path).is_some() {
-        return svn_protocol::direct_request(request, session_manager, backend, auth_ui, base_path)
-            .await;
+        return svn_protocol::direct_request(
+            request,
+            session_manager,
+            backend,
+            auth_ui,
+            base_path,
+            data_root,
+        )
+        .await;
     }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(

@@ -20,7 +20,9 @@ use tokio::sync::oneshot;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+};
 
 mod rest_test_support;
 
@@ -292,18 +294,35 @@ fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> 
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_app_config(AppRuntimeConfig::default()).await
+}
+
+async fn build_app_with_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_root.to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await
+}
+
+async fn build_app_with_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: "http://localhost".to_string(),
         },
         app_repo.clone(),
+        app_config,
     );
 
     (app, app_repo, db)
@@ -492,12 +511,8 @@ fn basic(login_id: &str, password: &str) -> String {
 
 #[tokio::test]
 async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, youngest_revision) =
@@ -1035,12 +1050,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         return;
     }
 
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, db) = build_app_with_repository().await;
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;

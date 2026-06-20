@@ -1164,6 +1164,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   suite injects per-test data roots through `AppRuntimeConfig` and no longer
   serializes on a global `YONA_DATA` mutex, preserving upload-pack,
   receive-pack, authenticated push, and legacy post-receive side effects.
+- 2026-06-20 runtime DI note: SVN protocol dispatch now receives the same
+  router `data_root` snapshot through asset fallback dispatch instead of
+  resolving `YONA_DATA` inside the request handler. Focused SVN route/auth and
+  executable file-read contracts inject per-test data roots through
+  `AppRuntimeConfig`, preserving legacy DAV headers, project ACL handling, and
+  svnlook-backed repository file reads while reducing global env serialization.
 
 ## Wave 0 Exit Snapshot
 
