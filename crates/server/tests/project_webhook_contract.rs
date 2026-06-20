@@ -576,7 +576,7 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     clear_test_webhook_outbox();
     ok_json(
         rest(
-            app,
+            app.clone(),
             Method::PUT,
             "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
             Some(&owner_cookie),
@@ -598,6 +598,32 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     let state_text = state_payload["text"].as_str().unwrap_or_default();
     assert!(state_text.contains("notification.type.issue.state.changed"));
     assert!(state_text.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue"));
+
+    clear_test_webhook_outbox();
+    ok_json(
+        rest(
+            app,
+            Method::DELETE,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let deleted_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deleted_deliveries.len(), 1);
+    let deleted = &deleted_deliveries[0];
+    assert_eq!(deleted.payload_url, "https://hooks.example/simple");
+    assert_eq!(deleted.event_type, "RESOURCE_DELETED");
+    assert_eq!(deleted.webhook_type, "SIMPLE");
+    let deleted_payload: Value =
+        serde_json::from_str(&deleted.body).expect("deleted issue webhook payload");
+    let deleted_text = deleted_payload["text"].as_str().unwrap_or_default();
+    assert!(deleted_text.contains("notification.type.issue.deleted"));
+    assert!(deleted_text.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue"));
 
     clear_test_webhook_outbox();
 }

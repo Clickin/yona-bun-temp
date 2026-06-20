@@ -957,10 +957,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             .delete({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
                     async move {
                         rest_delete_issue(
                             headers,
@@ -969,6 +973,8 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             issue_number,
                             session_manager,
                             backend,
+                            base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -3227,6 +3233,8 @@ pub(crate) async fn rest_delete_issue(
     issue_number: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
 ) -> Result<Json<DeleteIssueResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -3262,6 +3270,19 @@ pub(crate) async fn rest_delete_issue(
         .map_err(RestRouteError::from_connect_error)?
     {
         return Err(RestRouteError::not_found("pilot issue not found"));
+    }
+    if !existing.is_draft {
+        dispatch_issue_webhooks(
+            repository,
+            &existing,
+            &actor,
+            "RESOURCE_DELETED",
+            &existing.body_markdown,
+            None,
+            &public_origin,
+            &base_path,
+        )
+        .await;
     }
     Ok(Json(DeleteIssueResponse {
         issue_number,

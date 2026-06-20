@@ -433,6 +433,97 @@ async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks()
 }
 
 #[tokio::test]
+async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
+    // Guards legacy NotificationEvent.afterResourceDeleted -> Webhook fan-out
+    // from the issue lifecycle delete route.
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue delete webhook parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-delete",
+                "secret": "delete-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Issue delete webhook parity",
+                "bodyMarkdown": "Issue delete body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app,
+            Method::DELETE,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    let delivery = &deliveries[0];
+    assert_eq!(delivery.event_type, "RESOURCE_DELETED");
+    assert_eq!(delivery.webhook_type, "SIMPLE");
+    let payload: serde_json::Value =
+        serde_json::from_str(&delivery.body).expect("issue delete webhook payload");
+    let text = payload["text"].as_str().unwrap_or_default();
+    assert!(text.contains("notification.type.issue.deleted"));
+    assert!(text.contains("/yona/owner/projectYobi/issue/1|#1: Issue delete webhook parity"));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     // Guards issue route-owned detail/state helpers, detail projections, REST response DTOs, mutation, issues/comments.rs, and issues/legacy_external.rs split.
     let (app, _) = build_app_with_repository().await;

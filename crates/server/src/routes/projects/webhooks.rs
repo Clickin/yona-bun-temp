@@ -136,6 +136,7 @@ fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
         "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
         "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
         "PULL_REQUEST_MERGED" => "pullRequest.event.message.merged",
+        "RESOURCE_DELETED" => "notification.type.issue.deleted",
         _ => event_type,
     }
 }
