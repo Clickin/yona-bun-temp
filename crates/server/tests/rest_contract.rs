@@ -1867,6 +1867,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(direct_non_guest_enroll.status(), StatusCode::BAD_REQUEST);
 
+    // Guards workspace legacy favorite adapters through the app-scoped service
+    // snapshot used by the `/-_-api/v1/favorite*` routes.
     let favorited = ok_json(
         rest(
             app.clone(),

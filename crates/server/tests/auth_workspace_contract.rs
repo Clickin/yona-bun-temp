@@ -2414,6 +2414,8 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
 
 #[tokio::test]
 async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
+    // Guards workspace sidebar/usermenu service-snapshot threading for the
+    // authenticated legacy fragment route.
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -2513,7 +2515,8 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
 
 #[tokio::test]
 async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
-    // Guards the legacy sidebar/usermenu HTML boundary now owned by routes/workspace/sidebar.rs.
+    // Guards the legacy sidebar/usermenu HTML boundary now owned by
+    // routes/workspace/sidebar.rs through the app-scoped service snapshot.
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {

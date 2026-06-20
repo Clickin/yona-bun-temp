@@ -8,8 +8,7 @@ use crate::generated::yona::pilot::v1::WorkspaceIssueItem;
 use crate::persistence::{self, PilotRepository};
 use crate::{
     base_path_href, escape_html_attr, escape_html_text, normalize_identifier,
-    require_authenticated_user, session::SessionManager, ConnectError, PilotBackend,
-    RestRouteError,
+    require_authenticated_user, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 use super::{filter_workspace_issue_items_by_read_acl, WORKSPACE_DAYS_AGO};
@@ -23,18 +22,18 @@ pub(super) struct DirectUserSidebarQuery {
 pub(super) async fn direct_user_sidebar(
     headers: HeaderMap,
     query: DirectUserSidebarQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
     site_name: String,
 ) -> Response {
-    let session_user_id = session_manager
+    let session_user_id = service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let iframe_path = legacy_sidebar_iframe_path(&base_path, query);
-    let authenticated_sidebar = match (backend, session_user_id) {
+    let iframe_path = legacy_sidebar_iframe_path(&service.base_path, query);
+    let authenticated_sidebar = match (&service.backend, session_user_id) {
         (PilotBackend::Repository(repository), Some(user_id)) => {
-            match render_legacy_authenticated_sidebar(&repository, user_id, &base_path).await {
+            match render_legacy_authenticated_sidebar(repository, user_id, &service.base_path).await
+            {
                 Ok(sidebar) => Some(sidebar),
                 Err(error) => return error.into_response(),
             }
@@ -50,7 +49,7 @@ pub(super) async fn direct_user_sidebar(
     (
         [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
         render_legacy_user_sidebar_page(
-            &base_path,
+            &service.base_path,
             &iframe_path,
             authenticated_sidebar.as_deref(),
             &site_name,
@@ -61,29 +60,29 @@ pub(super) async fn direct_user_sidebar(
 
 pub(super) async fn direct_user_menu_tab_content_list(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let repository = match backend {
+    let repository = match &service.backend {
         PilotBackend::Repository(repository) => repository,
         PilotBackend::Static => {
             return RestRouteError::not_implemented("usermenu requires repository backend")
                 .into_response();
         }
     };
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return RestRouteError::from_connect_error(ConnectError::unauthenticated(
             "missing authenticated session",
         ))
         .into_response();
     };
-    let actor = match require_authenticated_user(&repository, session.user_id).await {
+    let actor = match require_authenticated_user(repository, session.user_id).await {
         Ok(actor) => actor,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
     };
     let menu =
-        match render_legacy_usermenu_tab_content_for_actor(&repository, &actor, &base_path).await {
+        match render_legacy_usermenu_tab_content_for_actor(repository, &actor, &service.base_path)
+            .await
+        {
             Ok(menu) => menu,
             Err(error) => {
                 return error.into_response();

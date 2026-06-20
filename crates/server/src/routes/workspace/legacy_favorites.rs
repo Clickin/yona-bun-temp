@@ -8,27 +8,30 @@ use yona_rust_domain::{authorize_project_access, ProjectAccessFacts, ProjectOper
 
 use crate::{
     legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,
-    read_issue_access, session::SessionManager, ConnectError, PilotBackend, RestRouteError,
+    read_issue_access, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 use super::map_project_scope;
 
 pub(super) async fn legacy_external_favorite_projects(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("favorite projects require repository backend")
             .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
 
     let favorite_projects = match repository
         .list_legacy_favorite_projects_for_user(user_id)
@@ -62,20 +65,23 @@ pub(super) async fn legacy_external_favorite_projects(
 pub(super) async fn legacy_external_toggle_favorite_project(
     headers: HeaderMap,
     project_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("favorite project requires repository backend")
             .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let project = match repository.read_project_by_id(project_id).await {
         Ok(Some(project)) => project,
         Ok(None) => return RestRouteError::not_found("project not found").into_response(),
@@ -130,20 +136,23 @@ pub(super) async fn legacy_external_toggle_favorite_project(
 
 pub(super) async fn legacy_external_favorite_issues(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("favorite issues require repository backend")
             .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
 
     let favorite_issues = match repository
         .list_legacy_favorite_issues_for_user(user_id)
@@ -177,20 +186,23 @@ pub(super) async fn legacy_external_favorite_issues(
 pub(super) async fn legacy_external_toggle_favorite_issue(
     headers: HeaderMap,
     issue_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("favorite issue requires repository backend")
             .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let Some((owner_name, project_name, issue_number)) =
         (match repository.read_legacy_favorite_issue_target(issue_id).await {
             Ok(target) => target,
@@ -229,22 +241,25 @@ pub(super) async fn legacy_external_toggle_favorite_issue(
 
 pub(super) async fn legacy_external_favorite_organizations(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "favorite organizations require repository backend",
         )
         .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
 
     let favorite_organizations = match repository
         .list_legacy_favorite_organizations_for_user(user_id)
@@ -277,22 +292,25 @@ pub(super) async fn legacy_external_favorite_organizations(
 pub(super) async fn legacy_external_toggle_favorite_organization(
     headers: HeaderMap,
     organization_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "favorite organization requires repository backend",
         )
         .into_response();
     };
-    let user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let favored = match repository
         .toggle_favorite_organization(user_id, organization_id)
         .await

@@ -1028,114 +1028,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-async fn direct_legacy_external_favorite_projects(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_favorite_projects(
-        headers,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_legacy_external_toggle_favorite_project(
-    headers: HeaderMap,
-    project_id: i64,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_toggle_favorite_project(
-        headers,
-        project_id,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_legacy_external_favorite_issues(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_favorite_issues(
-        headers,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_legacy_external_toggle_favorite_issue(
-    headers: HeaderMap,
-    issue_id: i64,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_toggle_favorite_issue(
-        headers,
-        issue_id,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_legacy_external_favorite_organizations(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_favorite_organizations(
-        headers,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_legacy_external_toggle_favorite_organization(
-    headers: HeaderMap,
-    organization_id: i64,
-    service: PilotServiceImpl,
-) -> Response {
-    legacy_external_toggle_favorite_organization(
-        headers,
-        organization_id,
-        service.session_manager.clone(),
-        service.backend.clone(),
-    )
-    .await
-}
-
-async fn direct_user_sidebar_from_service(
-    headers: HeaderMap,
-    query: DirectUserSidebarQuery,
-    service: PilotServiceImpl,
-    site_name: String,
-) -> Response {
-    direct_user_sidebar(
-        headers,
-        query,
-        service.session_manager.clone(),
-        service.backend.clone(),
-        service.base_path.clone(),
-        site_name,
-    )
-    .await
-}
-
-async fn direct_user_menu_tab_content_list_from_service(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-) -> Response {
-    direct_user_menu_tab_content_list(
-        headers,
-        service.session_manager.clone(),
-        service.backend.clone(),
-        service.base_path.clone(),
-    )
-    .await
-}
-
 pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
     let reset_visited_service = service.clone();
     let default_login_page_service = service.clone();
@@ -1164,9 +1056,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             "/-_-api/v1/favoriteProjects",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_projects_list_service.clone();
-                async move {
-                    direct_legacy_external_favorite_projects(headers, service).await
-                }
+                async move { legacy_external_favorite_projects(headers, service).await }
             }),
         )
         .route(
@@ -1174,8 +1064,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
                 let service = legacy_favorite_project_toggle_service.clone();
                 async move {
-                    direct_legacy_external_toggle_favorite_project(headers, project_id, service)
-                        .await
+                    legacy_external_toggle_favorite_project(headers, project_id, service).await
                 }
             }),
         )
@@ -1183,27 +1072,21 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             "/-_-api/v1/favoriteIssues",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_issues_list_service.clone();
-                async move {
-                    direct_legacy_external_favorite_issues(headers, service).await
-                }
+                async move { legacy_external_favorite_issues(headers, service).await }
             }),
         )
         .route(
             "/-_-api/v1/favoriteIssues/{issue_id}",
             post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
                 let service = legacy_favorite_issue_toggle_service.clone();
-                async move {
-                    direct_legacy_external_toggle_favorite_issue(headers, issue_id, service).await
-                }
+                async move { legacy_external_toggle_favorite_issue(headers, issue_id, service).await }
             }),
         )
         .route(
             "/-_-api/v1/favoriteOrganizations",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_organizations_list_service.clone();
-                async move {
-                    direct_legacy_external_favorite_organizations(headers, service).await
-                }
+                async move { legacy_external_favorite_organizations(headers, service).await }
             }),
         )
         .route(
@@ -1212,12 +1095,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
                 move |headers: HeaderMap, Path(organization_id): Path<i64>| {
                     let service = legacy_favorite_organization_toggle_service.clone();
                     async move {
-                        direct_legacy_external_toggle_favorite_organization(
-                            headers,
-                            organization_id,
-                            service,
-                        )
-                        .await
+                        legacy_external_toggle_favorite_organization(headers, organization_id, service).await
                     }
                 },
             ),
@@ -1228,9 +1106,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
                 move |headers: HeaderMap, Query(query): Query<DirectUserSidebarQuery>| {
                     let service = user_sidebar_service.clone();
                     let site_name = user_sidebar_site_name.clone();
-                    async move {
-                        direct_user_sidebar_from_service(headers, query, service, site_name).await
-                    }
+                    async move { direct_user_sidebar(headers, query, service, site_name).await }
                 },
             ),
         )
@@ -1238,9 +1114,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             "/user/usermenuTabContentList",
             axum::routing::get(move |headers: HeaderMap| {
                 let service = usermenu_tab_service.clone();
-                async move {
-                    direct_user_menu_tab_content_list_from_service(headers, service).await
-                }
+                async move { direct_user_menu_tab_content_list(headers, service).await }
             }),
         )
         .route(
