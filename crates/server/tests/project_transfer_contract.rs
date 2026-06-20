@@ -10,8 +10,8 @@ use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{project_transfer, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_app_repository, create_router_with_repository_and_app_config,
-    AppRuntimeConfig, RuntimeConfig, SmtpRuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+    SmtpRuntimeConfig,
 };
 use yona_rust_vcs::repository_path;
 
@@ -20,10 +20,6 @@ mod rest_test_support;
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
-}
-
-async fn build_app_with_repository() -> (axum::Router, DatabaseConnection) {
-    build_app_with_repository_and_app_config(AppRuntimeConfig::default()).await
 }
 
 async fn build_app_with_repository_and_app_config(

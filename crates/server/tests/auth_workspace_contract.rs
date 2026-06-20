@@ -966,6 +966,7 @@ async fn rest_verify_user_confirms_pending_signup() {
 
 #[tokio::test]
 async fn register_requires_confirmation_session_from_runtime_config_without_env_mutation() {
+    let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
     let previous_signup_require_confirm = std::env::var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM").ok();
 
