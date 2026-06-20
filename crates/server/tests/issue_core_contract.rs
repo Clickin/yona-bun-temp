@@ -433,6 +433,126 @@ async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks()
 }
 
 #[tokio::test]
+async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
+    // Guards legacy IssueApp.massUpdate -> NotificationEvent.afterStateChanged
+    // webhook fan-out for every issue whose state actually changed.
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue mass update webhook parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-mass-update",
+                "secret": "mass-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "First mass update webhook issue",
+                "bodyMarkdown": "First issue body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Second mass update webhook issue",
+                "bodyMarkdown": "Second issue body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app,
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "state": "closed",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    let texts = deliveries
+        .iter()
+        .map(|delivery| {
+            assert_eq!(delivery.event_type, "ISSUE_STATE_CHANGED");
+            assert_eq!(delivery.webhook_type, "SIMPLE");
+            let payload: serde_json::Value =
+                serde_json::from_str(&delivery.body).expect("mass update webhook payload");
+            payload["text"].as_str().unwrap_or_default().to_string()
+        })
+        .collect::<Vec<_>>();
+    assert!(texts
+        .iter()
+        .all(|text| text.contains("notification.type.issue.state.changed")));
+    assert!(texts.iter().any(|text| {
+        text.contains("/yona/owner/projectYobi/issue/1|#1: First mass update webhook issue")
+    }));
+    assert!(texts.iter().any(|text| {
+        text.contains("/yona/owner/projectYobi/issue/2|#2: Second mass update webhook issue")
+    }));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
     // Guards legacy NotificationEvent.afterResourceDeleted -> Webhook fan-out
     // from the issue lifecycle delete route.

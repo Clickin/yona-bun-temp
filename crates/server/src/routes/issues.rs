@@ -856,12 +856,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestMassUpdateIssuesBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
                     async move {
                         rest_mass_update_issues(
                             headers,
@@ -871,6 +873,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -3355,6 +3358,7 @@ async fn rest_mass_update_issues(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Result<Json<MassUpdateIssuesResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -3372,6 +3376,8 @@ async fn rest_mass_update_issues(
         require_project_read(repository, &owner_name, &project_name, session.user_id)
             .await
             .map_err(RestRouteError::from_connect_error)?;
+    let requested_state = (!body.state.trim().is_empty()).then(|| body.state.trim().to_string());
+    let mut previous_states = std::collections::HashMap::new();
     for issue_number in body.issue_numbers.iter().copied() {
         let issue = repository
             .read_issue_detail(&owner_name, &project_name, issue_number)
@@ -3384,6 +3390,7 @@ async fn rest_mass_update_issues(
                 ConnectError::permission_denied("issue mass update is not allowed"),
             ));
         }
+        previous_states.insert(issue_number, issue.state.clone());
     }
     let updated_issues = repository
         .mass_update_issues(
@@ -3398,7 +3405,7 @@ async fn rest_mass_update_issues(
                 owner_name,
                 project_name,
                 remove_label_ids: body.remove_label_ids,
-                state: (!body.state.trim().is_empty()).then(|| body.state.trim().to_string()),
+                state: requested_state.clone(),
             },
             actor.id,
             &actor.login_id,
@@ -3407,11 +3414,29 @@ async fn rest_mass_update_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     let mut items = Vec::with_capacity(updated_issues.len());
-    for issue in updated_issues {
+    for issue in &updated_issues {
+        if !issue.is_draft
+            && requested_state.is_some()
+            && previous_states
+                .get(&issue.issue_number)
+                .is_some_and(|previous_state| previous_state != &issue.state)
+        {
+            dispatch_issue_webhooks(
+                repository,
+                issue,
+                &actor,
+                "ISSUE_STATE_CHANGED",
+                &issue.body_markdown,
+                None,
+                &public_origin,
+                &base_path,
+            )
+            .await;
+        }
         items.push(
             issue_detail_response_from_record_with_repository_issue_references(
                 repository,
-                &issue,
+                issue,
                 true,
                 true,
                 session.user_id,
