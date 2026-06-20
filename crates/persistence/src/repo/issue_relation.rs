@@ -129,9 +129,27 @@ impl AppRepository {
             .as_deref()
             .map(normalize_identity)
             .filter(|value| !value.is_empty());
+        let mut label_names = std::collections::HashMap::new();
+        for label_id in input
+            .add_label_ids
+            .iter()
+            .chain(input.remove_label_ids.iter())
+            .copied()
+        {
+            if !label_names.contains_key(&label_id) {
+                let Some(label) = issue_label::Entity::find_by_id(label_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Err(DbErr::Custom("Issue label not found.".to_string()));
+                };
+                label_names.insert(label_id, label.name.unwrap_or_default());
+            }
+        }
         let mut state_changes = Vec::new();
         let mut assignee_changes = Vec::new();
         let mut milestone_changes = Vec::new();
+        let mut label_changes = Vec::new();
         let txn = self.db.begin().await?;
         for (project_record, model, next_assignee_id) in &targets {
             let previous_state = issue_state_from_raw(model.state);
@@ -150,6 +168,8 @@ impl AppRepository {
             }
             active.updated_date = Set(Some(current_datetime()));
             let updated_model = active.update(&txn).await?;
+            let mut added_label_names = Vec::new();
+            let mut removed_label_names = Vec::new();
             for label_id in &input.add_label_ids {
                 if issue_issue_label::Entity::find_by_id((updated_model.id, *label_id))
                     .one(&txn)
@@ -162,12 +182,20 @@ impl AppRepository {
                     }
                     .insert(&txn)
                     .await?;
+                    if let Some(label_name) = label_names.get(label_id) {
+                        added_label_names.push(label_name.clone());
+                    }
                 }
             }
             for label_id in &input.remove_label_ids {
-                issue_issue_label::Entity::delete_by_id((updated_model.id, *label_id))
+                let result = issue_issue_label::Entity::delete_by_id((updated_model.id, *label_id))
                     .exec(&txn)
                     .await?;
+                if result.rows_affected > 0 {
+                    if let Some(label_name) = label_names.get(label_id) {
+                        removed_label_names.push(label_name.clone());
+                    }
+                }
             }
             if let Some(state) = requested_state.as_deref() {
                 if previous_state != state && !was_draft {
@@ -196,6 +224,13 @@ impl AppRepository {
                     updated_model.clone(),
                     old_milestone_id,
                     updated_model.milestone_id,
+                ));
+            }
+            if (!added_label_names.is_empty() || !removed_label_names.is_empty()) && !was_draft {
+                label_changes.push((
+                    updated_model.clone(),
+                    removed_label_names,
+                    added_label_names,
                 ));
             }
         }
@@ -284,6 +319,16 @@ impl AppRepository {
                 &old_value,
                 &new_value,
                 &receiver_ids,
+            )
+            .await?;
+        }
+        for (model, removed_label_names, added_label_names) in label_changes {
+            self.create_issue_event(
+                model.id,
+                actor_login_id,
+                "ISSUE_LABEL_CHANGED",
+                &removed_label_names.join(", "),
+                &added_label_names.join(", "),
             )
             .await?;
         }

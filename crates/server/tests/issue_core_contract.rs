@@ -507,6 +507,31 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
                 .and_then(|value| value.parse().ok())
         })
         .expect("milestone id");
+    let label = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/labels",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "categoryName": "Type",
+                "categoryIsExclusive": false,
+                "labelColor": "#f44336",
+                "labelName": "Bug"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let label_id = label["label"]["id"]
+        .as_i64()
+        .or_else(|| {
+            label["label"]["id"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("label id");
     response_json(
         rest(
             app.clone(),
@@ -643,7 +668,7 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
     }));
     let first_after_milestone = response_json(
         rest(
-            app,
+            app.clone(),
             Method::GET,
             "/yona/api/v1/projects/owner/projectYobi/issues/1",
             Some(&cookie),
@@ -671,6 +696,82 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
         .any(|item| item["eventType"] == "ISSUE_MILESTONE_CHANGED"));
 
     clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "addLabelIds": [label_id],
+            })),
+        )
+        .await,
+    )
+    .await;
+    let first_after_label_add = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(first_after_label_add["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["eventType"] == "ISSUE_LABEL_CHANGED"
+            && item["newValue"] == "Bug"
+            && item["oldValue"].as_str().unwrap_or_default().is_empty()));
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "removeLabelIds": [label_id],
+            })),
+        )
+        .await,
+    )
+    .await;
+    let first_after_label_remove = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let label_events = first_after_label_remove["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|item| item["eventType"] == "ISSUE_LABEL_CHANGED")
+        .collect::<Vec<_>>();
+    assert!(label_events.iter().any(|item| item["newValue"] == "Bug"
+        && item["oldValue"].as_str().unwrap_or_default().is_empty()));
+    assert!(label_events.iter().any(|item| item["newValue"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty()
+        && item["oldValue"] == "Bug"));
 }
 
 #[tokio::test]

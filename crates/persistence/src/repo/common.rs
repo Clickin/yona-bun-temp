@@ -605,6 +605,7 @@ pub(super) fn notification_event_uses_draft_merge(event_type: &str) -> bool {
     !matches!(
         event_type,
         "ISSUE_SHARER_CHANGED"
+            | "ISSUE_LABEL_CHANGED"
             | "MEMBER_ENROLL_REQUEST"
             | "MEMBER_ENROLL_ACCEPT"
             | "ORGANIZATION_MEMBER_ENROLL_REQUEST"
