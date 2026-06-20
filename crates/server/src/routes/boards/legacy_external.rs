@@ -9,8 +9,8 @@ use crate::{
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_date_string, legacy_external_label_id, legacy_external_parse_datetime,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids, legacy_json_find_value,
-    persistence, require_project_resource_create, session::SessionManager, ConnectError,
-    PilotBackend, PilotRepository, ProjectCreatableResource, RestRouteError,
+    persistence, require_project_resource_create, ConnectError, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestRouteError,
 };
 
 use super::{
@@ -95,9 +95,7 @@ pub(super) async fn legacy_external_create_board_postings(
     owner: String,
     project_name: String,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_board_postings_body_from_value(&body);
     let Some(posts) = body.posts else {
@@ -109,17 +107,21 @@ pub(super) async fn legacy_external_create_board_postings(
         )
             .into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("board postings require repository backend")
             .into_response();
     };
-    let request_user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let request_user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -186,9 +188,9 @@ pub(super) async fn legacy_external_create_board_postings(
             Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
         };
         created_posts.push(serde_json::json!({
-            "status": 201,
-            "location": base_path_href(
-                &base_path,
+                "status": 201,
+                "location": base_path_href(
+                &service.base_path,
                 &format!("/{}/{}/post/{}", owner, project_name, created.post_number),
             ),
         }));
@@ -203,23 +205,26 @@ pub(super) async fn legacy_external_update_board_posting_content(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_content_update_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "board posting content requires repository backend",
         )
         .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -301,24 +306,26 @@ pub(super) async fn legacy_external_create_board_posting_comment(
     project_name: String,
     number: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_board_comment_create_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "board posting comments require repository backend",
         )
         .into_response();
     };
-    let request_user_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, true)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let request_user_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        true,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -379,7 +386,10 @@ pub(super) async fn legacy_external_create_board_posting_comment(
             "status": 201,
             "location": format!(
                 "{}#comment-{}",
-                base_path_href(&base_path, &format!("/{owner}/{project_name}/post/{number}")),
+                base_path_href(
+                    &service.base_path,
+                    &format!("/{owner}/{project_name}/post/{number}")
+                ),
                 comment_id,
             ),
         })),
@@ -392,9 +402,9 @@ pub(super) async fn legacy_external_update_board_posting_labels(
     project_name: String,
     number: i64,
     body: Vec<serde_json::Value>,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("board posting labels require repository backend")
             .into_response();
     };
@@ -421,23 +431,26 @@ pub(super) async fn legacy_update_posting_comment(
     number: i64,
     comment_id: i64,
     body: serde_json::Value,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Response {
     let body = legacy_content_update_body_from_value(&body);
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented(
             "board posting comment update requires repository backend",
         )
         .into_response();
     };
-    let actor_id =
-        match legacy_external_authenticated_user_id(&headers, &session_manager, repository, false)
-            .await
-        {
-            Ok(user_id) => user_id,
-            Err(error) => return legacy_external_api_auth_error_response(error),
-        };
+    let actor_id = match legacy_external_authenticated_user_id(
+        &headers,
+        &service.session_manager,
+        repository,
+        false,
+    )
+    .await
+    {
+        Ok(user_id) => user_id,
+        Err(error) => return legacy_external_api_auth_error_response(error),
+    };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {

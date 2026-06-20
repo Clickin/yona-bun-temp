@@ -577,23 +577,13 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-
-    let legacy_board_posts_backend = backend.clone();
-    let legacy_board_posts_session_manager = session_manager.clone();
-    let legacy_board_posts_base_path = base_path.clone();
-    let legacy_board_content_backend = backend.clone();
-    let legacy_board_content_session_manager = session_manager.clone();
-    let legacy_board_comment_backend = backend.clone();
-    let legacy_board_comment_session_manager = session_manager.clone();
-    let legacy_board_comment_base_path = base_path.clone();
-    let legacy_board_label_backend = backend.clone();
+    let legacy_board_posts_service = service.clone();
+    let legacy_board_content_service = service.clone();
+    let legacy_board_comment_service = service.clone();
+    let legacy_board_label_service = service.clone();
     let board_comment_create_service = service.clone();
     let board_comment_update_service = service.clone();
-    let legacy_board_comment_update_backend = backend.clone();
-    let legacy_board_comment_update_session_manager = session_manager.clone();
+    let legacy_board_comment_update_service = service.clone();
     let board_comment_delete_service = service.clone();
 
     Router::new()
@@ -603,15 +593,14 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
                       Json(body): Json<serde_json::Value>| {
+                    let service = legacy_board_posts_service.clone();
                     async move {
                         legacy_external_create_board_postings(
                             headers,
                             owner,
                             project_name,
                             body,
-                            legacy_board_posts_session_manager.clone(),
-                            legacy_board_posts_backend.clone(),
-                            legacy_board_posts_base_path.clone(),
+                            service,
                         )
                         .await
                     }
@@ -624,6 +613,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
                       Json(body): Json<serde_json::Value>| {
+                    let service = legacy_board_content_service.clone();
                     async move {
                         legacy_external_update_board_posting_content(
                             headers,
@@ -631,8 +621,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_board_content_session_manager.clone(),
-                            legacy_board_content_backend.clone(),
+                            service,
                         )
                         .await
                     }
@@ -645,6 +634,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
                       Json(body): Json<serde_json::Value>| {
+                    let service = legacy_board_comment_service.clone();
                     async move {
                         legacy_external_create_board_posting_comment(
                             headers,
@@ -652,9 +642,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             number,
                             body,
-                            legacy_board_comment_session_manager.clone(),
-                            legacy_board_comment_backend.clone(),
-                            legacy_board_comment_base_path.clone(),
+                            service,
                         )
                         .await
                     }
@@ -666,13 +654,14 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             post(
                 move |Path((owner, project_name, number)): Path<(String, String, i64)>,
                       Json(body): Json<Vec<serde_json::Value>>| {
+                    let service = legacy_board_label_service.clone();
                     async move {
                         legacy_external_update_board_posting_labels(
                             owner,
                             project_name,
                             number,
                             body,
-                            legacy_board_label_backend.clone(),
+                            service,
                         )
                         .await
                     }
@@ -736,16 +725,10 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                     i64,
                 )>,
                       Json(body): Json<serde_json::Value>| {
+                    let service = legacy_board_comment_update_service.clone();
                     async move {
                         legacy_update_posting_comment(
-                            headers,
-                            owner,
-                            project,
-                            number,
-                            comment_id,
-                            body,
-                            legacy_board_comment_update_session_manager.clone(),
-                            legacy_board_comment_update_backend.clone(),
+                            headers, owner, project, number, comment_id, body, service,
                         )
                         .await
                     }
