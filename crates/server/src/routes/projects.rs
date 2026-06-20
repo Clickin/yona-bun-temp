@@ -99,8 +99,8 @@ use vcs::{
     reset_project_repository_storage, rest_change_project_vcs, rest_read_project_change_vcs,
 };
 pub(crate) use webhooks::{
-    dispatch_issue_webhooks, dispatch_posting_webhooks, dispatch_pull_request_webhooks,
-    project_webhook_type_label, record_project_webhook_delivery,
+    dispatch_issue_webhooks, dispatch_posting_comment_webhooks, dispatch_posting_webhooks,
+    dispatch_pull_request_webhooks, project_webhook_type_label, record_project_webhook_delivery,
 };
 use webhooks::{
     rest_create_project_webhook, rest_delete_project_webhook, rest_read_project_webhooks,

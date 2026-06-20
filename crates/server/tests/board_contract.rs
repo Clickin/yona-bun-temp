@@ -412,6 +412,123 @@ async fn board_post_create_dispatches_legacy_new_posting_webhooks() {
 }
 
 #[tokio::test]
+async fn board_comment_create_and_update_dispatch_legacy_webhooks() {
+    // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_COMMENT/COMMENT_UPDATED, Comment)
+    // parity for board posting comments.
+    clear_test_webhook_outbox();
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/board-comment",
+                "secret": "comment-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/board-json",
+                "secret": "json-secret",
+                "webhookType": "JSON",
+                "gitPush": true
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Board comment webhook parity",
+                "bodyMarkdown": "Created before comment webhook test"
+            })),
+        )
+        .await,
+    )
+    .await;
+    clear_test_webhook_outbox();
+
+    let commented = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "First board comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"].as_str().unwrap();
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].event_type, "NEW_COMMENT");
+    assert_eq!(deliveries[0].webhook_type, "SIMPLE");
+    let payload: serde_json::Value =
+        serde_json::from_str(&deliveries[0].body).expect("comment webhook payload");
+    let text = payload["text"].as_str().unwrap_or_default();
+    assert!(text.contains("notification.type.new.comment"));
+    assert!(text.contains(&format!(
+        "/yona/owner/projectYobi/post/1#comment-{comment_id}|#1: Board comment webhook parity"
+    )));
+    clear_test_webhook_outbox();
+
+    ok_json(
+        rest(
+            app,
+            Method::PATCH,
+            &format!("/yona/api/v1/projects/owner/projectYobi/posts/1/comments/{comment_id}"),
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Updated board comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let updated_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(updated_deliveries.len(), 1);
+    assert_eq!(updated_deliveries[0].event_type, "COMMENT_UPDATED");
+    let updated_payload: serde_json::Value =
+        serde_json::from_str(&updated_deliveries[0].body).expect("comment update webhook payload");
+    let updated_text = updated_payload["text"].as_str().unwrap_or_default();
+    assert!(updated_text.contains("notification.type.comment.updated"));
+    assert!(updated_text.contains(&format!(
+        "/yona/owner/projectYobi/post/1#comment-{comment_id}|#1: Board comment webhook parity"
+    )));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 // Guards the board route-module body DTO and adapter split for README/online-commit posting.
 async fn board_readme_posting_commits_git_readme_file() {
     let _guard = yona_data_env_lock()

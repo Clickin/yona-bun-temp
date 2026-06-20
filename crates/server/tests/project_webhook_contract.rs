@@ -251,6 +251,173 @@ async fn project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hoo
 }
 
 #[tokio::test]
+async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks() {
+    // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_COMMENT/COMMENT_UPDATED, Comment)
+    // for board posting comments through the project-owned webhook dispatch module.
+    clear_webhook_retry_env();
+    clear_test_webhook_outbox();
+    let (app, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/comment-simple",
+                "secret": "comment-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/comment-slack",
+                "secret": "",
+                "webhookType": "DETAIL_SLACK",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/comment-json",
+                "secret": "json-secret",
+                "webhookType": "JSON",
+                "gitPush": true,
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let created_post = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Board comment webhook parity",
+                "bodyMarkdown": "Created before comment webhook test",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created_post["postNumber"], "1");
+    clear_test_webhook_outbox();
+
+    let commented = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "First board comment body",
+            })),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"].as_str().expect("comment id");
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    assert!(deliveries
+        .iter()
+        .all(|delivery| delivery.event_type == "NEW_COMMENT"));
+    let simple = deliveries
+        .iter()
+        .find(|delivery| delivery.webhook_type == "SIMPLE")
+        .expect("simple comment webhook");
+    assert_eq!(simple.payload_url, "https://hooks.example/comment-simple");
+    assert!(simple
+        .headers
+        .iter()
+        .any(|header| header.name == "Authorization" && header.value == "token comment-secret "));
+    let simple_payload: Value =
+        serde_json::from_str(&simple.body).expect("simple comment webhook payload");
+    let simple_text = simple_payload["text"].as_str().unwrap_or_default();
+    assert!(simple_text.contains("[projectYobi] owner"));
+    assert!(simple_text.contains("notification.type.new.comment"));
+    assert!(simple_text.contains(&format!(
+        "/yona/owner/projectYobi/post/1#comment-{comment_id}|#1: Board comment webhook parity"
+    )));
+
+    let slack = deliveries
+        .iter()
+        .find(|delivery| delivery.webhook_type == "DETAIL_SLACK")
+        .expect("slack comment webhook");
+    let slack_payload: Value =
+        serde_json::from_str(&slack.body).expect("slack comment webhook payload");
+    assert_eq!(
+        slack_payload["attachments"][0]["text"],
+        "First board comment body"
+    );
+    assert_eq!(slack_payload["attachments"][0]["fields"], Value::Null);
+    clear_test_webhook_outbox();
+
+    ok_json(
+        rest(
+            app,
+            Method::PATCH,
+            &format!("/yona/api/v1/projects/owner/projectYobi/posts/1/comments/{comment_id}"),
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Updated board comment body",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let updated_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(updated_deliveries.len(), 2);
+    assert!(updated_deliveries
+        .iter()
+        .all(|delivery| delivery.event_type == "COMMENT_UPDATED"));
+    let updated_simple = updated_deliveries
+        .iter()
+        .find(|delivery| delivery.webhook_type == "SIMPLE")
+        .expect("updated simple comment webhook");
+    let updated_payload: Value =
+        serde_json::from_str(&updated_simple.body).expect("updated comment webhook payload");
+    let updated_text = updated_payload["text"].as_str().unwrap_or_default();
+    assert!(updated_text.contains("notification.type.comment.updated"));
+    assert!(updated_text.contains(&format!(
+        "/yona/owner/projectYobi/post/1#comment-{comment_id}|#1: Board comment webhook parity"
+    )));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     // Keeps the route-owned webhook dispatch module covered after the
     // projects.rs -> projects/webhooks.rs split.

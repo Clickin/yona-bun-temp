@@ -11,11 +11,11 @@ use yona_rust_vcs::VcsError;
 
 use crate::{
     code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
-    dispatch_posting_webhooks, form_value, gravatar_url, headers_with_form_csrf, internal_error,
-    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    optional_i64_string, parse_rest_query_i64, parse_rest_query_u32, persistence,
-    project_resource_create_allowed, project_update_allowed, redirect_to,
-    require_authenticated_user, require_project_read, require_project_resource_create,
+    dispatch_posting_comment_webhooks, dispatch_posting_webhooks, form_value, gravatar_url,
+    headers_with_form_csrf, internal_error, markdown_issue_references_for_project,
+    markdown_mention_references, normalize_identifier, optional_i64_string, parse_rest_query_i64,
+    parse_rest_query_u32, persistence, project_resource_create_allowed, project_update_allowed,
+    redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     session::SessionManager, visible_projects_for_organization, yona_data_root, ConnectError,
@@ -1893,6 +1893,23 @@ async fn rest_create_posting_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
+    if let Some(comment) = posting
+        .comments
+        .iter()
+        .filter(|comment| comment.author_id == Some(actor.id))
+        .max_by_key(|comment| comment.id)
+    {
+        dispatch_posting_comment_webhooks(
+            repository,
+            &posting,
+            comment,
+            &actor,
+            "NEW_COMMENT",
+            "",
+            &base_path,
+        )
+        .await;
+    }
     Ok(Json(
         rest_post_detail_response_from_record_with_access_issue_references(
             repository,
@@ -1974,6 +1991,22 @@ async fn rest_update_posting_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("posting comment not found"))?;
+    if let Some(comment) = posting
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+    {
+        dispatch_posting_comment_webhooks(
+            repository,
+            &posting,
+            comment,
+            &actor,
+            "COMMENT_UPDATED",
+            "",
+            &base_path,
+        )
+        .await;
+    }
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
