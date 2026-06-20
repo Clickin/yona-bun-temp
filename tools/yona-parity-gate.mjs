@@ -365,7 +365,16 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*project/i,
       /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],
-    testKeywords: ["project", "projects", "enroll", "enrollment", "milestone", "route-parity"],
+    testKeywords: [
+      "project",
+      "projects",
+      "enroll",
+      "enrollment",
+      "milestone",
+      "route-parity",
+      "wave2a",
+      "container-parity",
+    ],
     provenanceDocs: [
       "docs/provenance/phase-0b/project.md",
       "docs/provenance/phase-0b/milestone.md",

@@ -147,6 +147,18 @@ describe("wave 2A container parity", () => {
     expect(html).toContain(">project.history.recent<");
     expect(html).not.toContain(">Recent history<");
     expect(html).not.toContain(">Dashboard<");
+    expect(html).toContain('href="#helpKeys"');
+    expect(html).toContain('class="modal hide fade keymap-help"');
+    expect(html).toContain(">title.keymap</a>");
+    expect(html).toContain("<h5>project.projects</h5>");
+    expect(html).toContain('<span class="help-inline">menu.home</span>');
+    expect(html).toContain('<span class="help-inline">menu.board</span>');
+    expect(html).toContain('<span class="help-inline">menu.issue</span>');
+    expect(html).toContain('<span class="help-inline">menu.code</span>');
+    expect(html).toContain('<span class="help-inline">menu.pullRequest</span>');
+    expect(html).toContain('<span class="help-inline">project.setting</span>');
+    expect(html).toContain('<span class="help-inline">site.search</span>');
+    expect(html).toContain('<span class="help-inline">button.submitForm</span>');
     expect(html).toContain('<span class="menu-name">menu.issue</span>');
     expect(html).toContain('<span class="project-menu-count">12</span>');
     expect(html).toContain('<span class="menu-name">menu.pullRequest</span>');

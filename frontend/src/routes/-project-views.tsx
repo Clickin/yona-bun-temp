@@ -469,16 +469,18 @@ function projectShellDetail(input: {
   };
 }
 
+type ProjectMenuActive =
+  | "home"
+  | "code"
+  | "issue"
+  | "pullRequest"
+  | "review"
+  | "milestone"
+  | "board"
+  | "settings";
+
 export function ProjectMenu(props: {
-  activeMenu?:
-    | "home"
-    | "code"
-    | "issue"
-    | "pullRequest"
-    | "review"
-    | "milestone"
-    | "board"
-    | "settings";
+  activeMenu?: ProjectMenuActive;
   detail: ProjectDetailViewModel;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -586,8 +588,106 @@ export function ProjectMenu(props: {
           </div>
         ) : null}
       </div>
+      <ProjectKeymapHelp detail={detail} section={props.activeMenu ?? "home"} />
     </div>
   );
+}
+
+function ProjectKeymapHelp(props: { detail: ProjectDetailViewModel; section: ProjectMenuActive }) {
+  const { detail, section } = props;
+  const canUseAdmin = detail.showAdmin || detail.viewerCanUpdate;
+
+  return (
+    <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
+      <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpKeys">
+        title.keymap
+      </a>
+
+      <div className="modal hide fade keymap-help" id="helpKeys" role="dialog" tabIndex={-1}>
+        <div className="row-fluid">
+          <div className="span3">
+            <h5>project.projects</h5>
+
+            <ProjectKeymapRow keys={["H"]} label="menu.home" />
+            {detail.showBoard ? <ProjectKeymapRow keys={["B"]} label="menu.board" /> : null}
+            {detail.showIssue ? <ProjectKeymapRow keys={["I"]} label="menu.issue" /> : null}
+            {detail.showCode ? <ProjectKeymapRow keys={["C"]} label="menu.code" /> : null}
+            {detail.showMilestone ? <ProjectKeymapRow keys={["M"]} label="milestone" /> : null}
+            {detail.showPullRequest ? (
+              <ProjectKeymapRow keys={["P"]} label="menu.pullRequest" />
+            ) : null}
+            {canUseAdmin ? <ProjectKeymapRow keys={["Q"]} label="project.setting" /> : null}
+          </div>
+
+          <div className="span9">
+            <div className="row-fluid">
+              <div className="span5">
+                <h5>{projectKeymapSectionTitle(section)}</h5>
+                {section === "board" ? <ProjectKeymapRow keys={["N"]} label="post.write" /> : null}
+                {section === "issue" ? (
+                  <ProjectKeymapRow keys={["N"]} label="issue.menu.new" />
+                ) : null}
+                <ProjectKeymapRow keys={["\u2190"]} label="button.prevPage" />
+                <ProjectKeymapRow keys={["\u2192"]} label="button.nextPage" />
+              </div>
+
+              <div className="span7">
+                <h5>site</h5>
+                <ProjectKeymapRow keys={["A"]} label="issue.myIssue" />
+                <ProjectKeymapRow keys={["U"]} label="userinfo.profile" />
+                <ProjectKeymapRow keys={["F"]} label="user.menu" />
+                <ProjectKeymapRow keys={["ALT", "S"]} label="site.search" />
+                <ProjectKeymapRow keys={["CTRL", "ENTER"]} label="button.submitForm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="actrow">
+          <button className="ybtn ybtn-info" data-dismiss="modal" type="button">
+            button.confirm
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ProjectKeymapRow(props: { keys: string[]; label: string }) {
+  return (
+    <>
+      {props.keys.map((key, index) => (
+        <React.Fragment key={`${props.label}:${key}`}>
+          {index > 0 ? " + " : null}
+          <span className="ybtn ybtn-small">{key}</span>
+        </React.Fragment>
+      ))}
+      <span className="help-inline">{props.label}</span>
+      <br />
+    </>
+  );
+}
+
+function projectKeymapSectionTitle(section: ProjectMenuActive) {
+  switch (section) {
+    case "board":
+      return "title.boardList";
+    case "code":
+      return "menu.code";
+    case "issue":
+      return "title.issueList";
+    case "milestone":
+      return "milestone";
+    case "pullRequest":
+      return "menu.pullRequest";
+    case "review":
+      return "menu.review";
+    case "settings":
+      return "project.setting";
+    case "home":
+    default:
+      return "title.projectHome";
+  }
 }
 
 export function ProjectHeader(props: {
