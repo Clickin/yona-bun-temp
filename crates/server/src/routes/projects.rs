@@ -97,8 +97,8 @@ pub(crate) use participation::{
     project_enroll, project_enroll_cancel, project_favorite_toggle, project_watch_toggle,
 };
 use transfers::{
-    direct_accept_project_transfer, rest_read_project_transfer, rest_request_project_transfer,
-    RestProjectTransferBody,
+    direct_accept_project_transfer, direct_request_project_transfer, rest_read_project_transfer,
+    rest_request_project_transfer, RestProjectTransferBody,
 };
 pub(crate) use vcs::delete_project_repository_storage;
 use vcs::{
@@ -2398,6 +2398,8 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
+    smtp: SmtpRuntimeConfig,
 ) -> Router {
     let direct_project_watch_backend = backend.clone();
     let direct_project_watch_session_manager = session_manager.clone();
@@ -2426,6 +2428,11 @@ pub(crate) fn routes(
     let direct_project_webhook_create_base_path = base_path.clone();
     let direct_project_webhook_delete_backend = backend.clone();
     let direct_project_webhook_delete_session_manager = session_manager.clone();
+    let direct_project_transfer_request_backend = backend.clone();
+    let direct_project_transfer_request_session_manager = session_manager.clone();
+    let direct_project_transfer_request_base_path = base_path.clone();
+    let direct_project_transfer_request_public_origin = public_origin.clone();
+    let direct_project_transfer_request_smtp = smtp.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2923,6 +2930,29 @@ pub(crate) fn routes(
                             webhook_id,
                             direct_project_webhook_delete_session_manager.clone(),
                             direct_project_webhook_delete_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/transfer",
+            put(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<HashMap<String, String>>| {
+                    async move {
+                        direct_request_project_transfer(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query.get("owner").cloned().unwrap_or_default(),
+                            direct_project_transfer_request_session_manager.clone(),
+                            direct_project_transfer_request_backend.clone(),
+                            direct_project_transfer_request_base_path.clone(),
+                            direct_project_transfer_request_public_origin.clone(),
+                            direct_project_transfer_request_smtp.clone(),
                         )
                         .await
                     }

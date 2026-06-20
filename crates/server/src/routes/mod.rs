@@ -277,6 +277,8 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
             base_path.clone(),
+            public_origin.clone(),
+            smtp.clone(),
         ))
         .route(
             "/api/v1/{*rest_path}",

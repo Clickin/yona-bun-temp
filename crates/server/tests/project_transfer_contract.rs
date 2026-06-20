@@ -270,40 +270,54 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     .await;
     assert_eq!(forbidden_create.status(), StatusCode::FORBIDDEN);
 
-    let requested = ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/api/v1/owners/owner/projects/projectYobi/transfer",
-            Some(&owner_cookie),
-            Some(&owner_csrf),
-            Some(json!({ "destination": "recipient" })),
-        )
-        .await,
+    let direct_requested = rest(
+        app.clone(),
+        Method::PUT,
+        "/yona/owner/projectYobi/transfer?owner=recipient",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        None,
     )
     .await;
-    let transfer_id = requested["transferId"].as_i64().expect("transfer id");
-    assert_eq!(requested["destination"], "recipient");
-    assert_eq!(requested["newProjectName"], "projectYobi");
-    assert_eq!(requested["redirectPath"], "/owner/projectYobi");
+    assert_eq!(direct_requested.status(), StatusCode::NO_CONTENT);
     assert_eq!(
-        requested["acceptPath"],
-        format!(
-            "/project/transfer/{transfer_id}/{}",
-            requested["confirmKey"].as_str().unwrap()
-        )
+        direct_requested
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/owner/projectYobi"
     );
+    assert_eq!(response_text(direct_requested).await, "");
 
-    let row = project_transfer::Entity::find_by_id(transfer_id)
+    let row = project_transfer::Entity::find()
         .one(&db)
         .await
         .expect("transfer lookup")
         .expect("transfer row");
+    let transfer_id = row.id;
     assert_eq!(row.destination.as_deref(), Some("recipient"));
     assert_eq!(row.accepted, Some(0));
     assert_eq!(row.new_project_name.as_deref(), Some("projectYobi"));
     let confirm_key = row.confirm_key.clone().expect("confirm key");
     assert_eq!(confirm_key.len(), 50);
+
+    let requested = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/transfer",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(requested["ownerName"], "owner");
+    assert_eq!(requested["projectName"], "projectYobi");
+    assert_eq!(requested["viewerCanTransfer"], true);
     let outbox = snapshot_test_outbox();
     let smtp_from_after_request = std::env::var("SMTP_FROM").ok();
     restore_env_var("SMTP_FROM", previous_smtp_from);
