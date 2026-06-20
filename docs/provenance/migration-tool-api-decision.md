@@ -68,4 +68,4 @@ The migration tool should have explicit source/target modes:
 - Mapping and validation live in `crates/migration` and tool code, where
   version-specific compatibility belongs.
 - The already implemented app-owned helpers remain app-owned:
-  `hello`, favorite helpers, and translation.
+  `hello`, favorite helpers, translation, and the watcher list helper.

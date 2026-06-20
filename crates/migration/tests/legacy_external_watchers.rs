@@ -9,7 +9,7 @@ fn watcher_fixtures_cover_only_watcher_api_external_route() {
     let expected = [(
         "GET",
         "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
-        MigrationDirection::Deferred,
+        MigrationDirection::AppOwned,
     )];
 
     assert_eq!(fixtures().len(), expected.len());
@@ -37,7 +37,7 @@ fn watcher_projection_preserves_type_query_and_limit_metadata() {
 
     assert_eq!(fixture.legacy_controller, "controllers.api.WatcherApi");
     assert_eq!(fixture.legacy_action, "getWatchers");
-    assert_eq!(fixture.direction, MigrationDirection::Deferred);
+    assert_eq!(fixture.direction, MigrationDirection::AppOwned);
     assert_eq!(fixture.auth, AuthRequirement::LegacyReadProjection);
     assert_eq!(
         fixture.request.path_fields,
@@ -52,7 +52,7 @@ fn watcher_projection_preserves_type_query_and_limit_metadata() {
 }
 
 #[test]
-fn watcher_route_remains_migrator_deferred_not_app_server_owned() {
+fn watcher_route_is_app_server_owned_runtime_helper() {
     let fixture = find_fixture(
         "GET",
         "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
@@ -64,13 +64,13 @@ fn watcher_route_remains_migrator_deferred_not_app_server_owned() {
     )
     .unwrap();
 
-    assert!(!fixture.app_server_owned);
+    assert!(fixture.app_server_owned);
     assert_eq!(
         fixture.direction.endpoint_status(),
-        EndpointStatus::MigratorDeferred
+        EndpointStatus::AppOwned
     );
-    assert_eq!(inventory.status, EndpointStatus::MigratorDeferred);
-    assert!(inventory.status.is_migrator_scope());
+    assert_eq!(inventory.status, EndpointStatus::AppOwned);
+    assert!(!inventory.status.is_migrator_scope());
 
     for app_owned_path in [
         "/-_-api/v1/favoriteProjects",

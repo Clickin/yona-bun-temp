@@ -7,13 +7,13 @@ pub enum AuthRequirement {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MigrationDirection {
-    Deferred,
+    AppOwned,
 }
 
 impl MigrationDirection {
     pub const fn endpoint_status(self) -> EndpointStatus {
         match self {
-            Self::Deferred => EndpointStatus::MigratorDeferred,
+            Self::AppOwned => EndpointStatus::AppOwned,
         }
     }
 }
@@ -75,7 +75,7 @@ pub const ENDPOINT_DESCRIPTORS: &[EndpointDescriptor] = &[EndpointDescriptor {
     method: "GET",
     path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
     source: source("controllers.api.WatcherApi", "getWatchers"),
-    status: EndpointStatus::MigratorDeferred,
+    status: EndpointStatus::AppOwned,
 }];
 
 const WATCHER_ENDPOINT_FIXTURES: &[WatcherEndpointFixture] = &[WatcherEndpointFixture {
@@ -83,7 +83,7 @@ const WATCHER_ENDPOINT_FIXTURES: &[WatcherEndpointFixture] = &[WatcherEndpointFi
     path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
     legacy_controller: "controllers.api.WatcherApi",
     legacy_action: "getWatchers",
-    direction: MigrationDirection::Deferred,
+    direction: MigrationDirection::AppOwned,
     auth: AuthRequirement::LegacyReadProjection,
     request: shape(
         &["owner", "projectName", "number"],
@@ -100,5 +100,5 @@ const WATCHER_ENDPOINT_FIXTURES: &[WatcherEndpointFixture] = &[WatcherEndpointFi
         &["totalWatchers", "watchersInList", "watchers", "name", "url"],
     ),
     list_limit: 100,
-    app_server_owned: false,
+    app_server_owned: true,
 }];

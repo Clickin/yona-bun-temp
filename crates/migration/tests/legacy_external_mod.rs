@@ -13,6 +13,10 @@ fn app_server_exceptions_are_marked_app_owned() {
         ("GET", "/-_-api/v1/favoriteOrganizations"),
         ("POST", "/-_-api/v1/favoriteOrganizations/:organizationId"),
         ("POST", "/-_-api/v1/translation"),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
+        ),
     ];
 
     for (method, path) in app_owned {
@@ -48,10 +52,6 @@ fn broader_legacy_external_endpoints_remain_migrator_scope() {
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
-        ),
-        (
-            "GET",
-            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
         ),
         ("PATCH", "/-_-api/v1/admin/users/:user"),
     ];
