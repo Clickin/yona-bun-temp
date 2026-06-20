@@ -36,10 +36,12 @@ fn rest_project_change_vcs_response(
     })
 }
 
-pub(crate) fn delete_project_repository_storage(project_id: i64) -> Result<(), RestRouteError> {
-    let data_root = yona_data_root();
-    let git_repo_path = yona_rust_vcs::repository_path(&data_root, project_id);
-    let svn_repo_path = yona_rust_vcs::svn_repository_path(&data_root, project_id);
+pub(crate) fn delete_project_repository_storage(
+    data_root: &std::path::Path,
+    project_id: i64,
+) -> Result<(), RestRouteError> {
+    let git_repo_path = yona_rust_vcs::repository_path(data_root, project_id);
+    let svn_repo_path = yona_rust_vcs::svn_repository_path(data_root, project_id);
     let _guard = repository_provisioning_lock()
         .lock()
         .map_err(|_| internal_error("repository provisioning lock poisoned"))
@@ -53,15 +55,16 @@ pub(crate) fn delete_project_repository_storage(project_id: i64) -> Result<(), R
 }
 
 pub(super) fn reset_project_repository_storage(
+    data_root: &std::path::Path,
     project_id: i64,
     vcs: &str,
 ) -> Result<(), RestRouteError> {
-    delete_project_repository_storage(project_id)?;
+    delete_project_repository_storage(data_root, project_id)?;
     let _guard = repository_provisioning_lock()
         .lock()
         .map_err(|_| internal_error("repository provisioning lock poisoned"))
         .map_err(RestRouteError::from_connect_error)?;
-    let repo_path = yona_rust_vcs::repository_path_for_vcs(&yona_data_root(), project_id, vcs);
+    let repo_path = yona_rust_vcs::repository_path_for_vcs(data_root, project_id, vcs);
     if vcs == "Subversion" {
         return yona_rust_vcs::create_svn_repository(&repo_path)
             .map_err(code_browser_error)
@@ -126,7 +129,7 @@ pub(super) async fn rest_change_project_vcs(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    reset_project_repository_storage(changed.id, &changed.vcs)?;
+    reset_project_repository_storage(&service.data_root, changed.id, &changed.vcs)?;
     let mut changed_authorization = authorization;
     changed_authorization.project = changed;
     Ok(Json(rest_project_change_vcs_response(

@@ -6,34 +6,37 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+};
 use yona_rust_vcs::repository_path;
 
 mod rest_test_support;
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
+async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_repository_and_app_config(AppRuntimeConfig::default()).await
 }
 
-async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
+async fn build_app_with_repository_and_app_config(
+    app_config: AppRuntimeConfig,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
+    let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
+        app_config,
     );
     (app, app_repo, db)
 }
@@ -280,12 +283,12 @@ fn head_commit(repo_path: &Path) -> String {
 // repository clone, origin persistence, and duplicate-name rejection stay
 // together while route registration remains in the parent project module.
 async fn project_fork_clones_bare_repository_and_records_origin() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repository, _db) = build_app_with_repository().await;
+    let (app, repository, _db) = build_app_with_repository_and_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (_, cloner_cookie) = register_user(app.clone(), "cloner").await;

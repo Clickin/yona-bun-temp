@@ -152,6 +152,7 @@ impl RuntimeRegistry {
 pub(crate) struct PilotServiceImpl {
     pub(crate) auth_ui: AuthUiConfig,
     pub(crate) base_path: String,
+    pub(crate) data_root: PathBuf,
     pub(crate) public_origin: String,
     pub(crate) integrations: IntegrationConfig,
     pub(crate) session_manager: SessionManager,

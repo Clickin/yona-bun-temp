@@ -1151,6 +1151,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   data root snapshot and assert the uploaded blob lands under that root. This
   preserves legacy `/files` behavior and moves the file storage slice away from
   process-global runtime config.
+- 2026-06-20 runtime DI note: project create/delete/change-vcs/fork storage
+  paths and project container README/history reads now use `PilotServiceImpl`'s
+  `data_root` snapshot instead of calling `YONA_DATA` at request time. Focused
+  project delete, change-vcs, and fork contract tests inject per-test data
+  roots through `AppRuntimeConfig`, removing their `YONA_DATA` mutex guards
+  while preserving legacy repository provisioning, cleanup, VCS reset, and fork
+  clone behavior.
 
 ## Wave 0 Exit Snapshot
 

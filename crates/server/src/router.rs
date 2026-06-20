@@ -154,6 +154,7 @@ fn build_router_with_app_config(
     let pilot_service = PilotServiceImpl {
         auth_ui: runtime.auth_ui.clone(),
         base_path: base_path.clone(),
+        data_root: runtime.data_root.clone(),
         public_origin: public_origin.clone(),
         integrations: runtime.integrations.clone(),
         session_manager: session_manager.clone(),

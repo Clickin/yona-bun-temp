@@ -203,7 +203,7 @@ async fn rest_project_home_history(
         .await
         .map_err(internal_error)?
     {
-        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+        let repo_path = yona_rust_vcs::repository_path(&service.data_root, project.id);
         for commit in yona_rust_vcs::read_project_history_commits(&repo_path, 10)
             .map_err(code_browser_error)?
         {
@@ -270,7 +270,7 @@ async fn rest_project_readme_file(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
     let mut readme = project_readme_file_from_git(
         &repo_path,
         &service.base_path,

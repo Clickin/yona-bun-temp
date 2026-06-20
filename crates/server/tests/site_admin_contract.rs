@@ -2173,7 +2173,12 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
 
 #[tokio::test]
 async fn site_admin_project_list_and_delete_follow_legacy_surface() {
-    let (app, repo, db) = build_app_with_repository().await;
+    let data_root = tempfile::tempdir().expect("site project data root");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_root.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -2211,6 +2216,11 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
         .await
         .expect("read beta project")
         .expect("beta project");
+    let beta_repo_path = yona_rust_vcs::repository_path(data_root.path(), beta_project.id);
+    assert!(
+        beta_repo_path.join("HEAD").is_file(),
+        "project create should provision repository under the app-config data root"
+    );
     let beta_logo = insert_attachment(
         &db,
         "PROJECT",
@@ -2284,6 +2294,10 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
         .await
         .expect("read deleted project")
         .is_none());
+    assert!(
+        !beta_repo_path.exists(),
+        "site-admin project delete should remove repository storage under the app-config data root"
+    );
 
     let empty = response_json(
         rest_get(
