@@ -111,17 +111,11 @@ pub(super) async fn legacy_external_create_board_postings(
         return RestRouteError::not_implemented("board postings require repository backend")
             .into_response();
     };
-    let request_user_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -214,17 +208,11 @@ pub(super) async fn legacy_external_update_board_posting_content(
         )
         .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -315,17 +303,11 @@ pub(super) async fn legacy_external_create_board_posting_comment(
         )
         .into_response();
     };
-    let request_user_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -440,17 +422,11 @@ pub(super) async fn legacy_update_posting_comment(
         )
         .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        false,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, false).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {

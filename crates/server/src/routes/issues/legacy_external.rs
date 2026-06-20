@@ -15,17 +15,11 @@ pub(super) async fn legacy_external_create_issue_comment(
             .into_response();
     };
     let token_request = legacy_external_api_token_from_headers(&headers).is_some();
-    let request_user_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let request_user_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let request_actor = match repository.find_user_by_id(request_user_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {
@@ -164,17 +158,11 @@ pub(super) async fn legacy_external_update_issue_labels(
         return RestRouteError::not_implemented("issue labels require repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -217,17 +205,11 @@ pub(super) async fn legacy_external_update_issue_weight(
         return RestRouteError::not_implemented("issue weight requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -272,17 +254,11 @@ pub(super) async fn legacy_external_read_issue(
         return RestRouteError::not_implemented("issue read requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        false,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, false).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -311,17 +287,11 @@ pub(super) async fn legacy_external_update_issue(
         return RestRouteError::not_implemented("issue update requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -433,17 +403,11 @@ pub(super) async fn legacy_external_detect_issue_change(
         return RestRouteError::not_implemented("issue detectChange requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        false,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, false).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -493,17 +457,11 @@ pub(super) async fn legacy_external_issue_comment_notification_receivers(
         )
         .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        false,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, false).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     if let Err(error) =
         read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await
     {
@@ -575,17 +533,11 @@ pub(super) async fn legacy_external_update_issue_content(
         return RestRouteError::not_implemented("issue content requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -645,17 +597,11 @@ pub(super) async fn legacy_external_update_issue_state(
         return RestRouteError::not_implemented("issue state requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -713,17 +659,11 @@ pub(super) async fn legacy_external_update_issue_assignee(
         return RestRouteError::not_implemented("issue assignee requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -800,17 +740,11 @@ pub(super) async fn legacy_external_update_issue_sharer(
         return RestRouteError::not_implemented("issue sharer requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let access =
         match read_issue_access(repository, &owner, &project_name, number, Some(actor_id)).await {
             Ok(access) => access,
@@ -1168,17 +1102,11 @@ pub(super) async fn legacy_external_update_issue_comment(
         return RestRouteError::not_implemented("issue comment update requires repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        false,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, false).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let actor = match repository.find_user_by_id(actor_id).await {
         Ok(Some(actor)) => actor,
         Ok(None) => {

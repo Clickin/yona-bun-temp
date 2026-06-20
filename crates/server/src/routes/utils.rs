@@ -2179,10 +2179,11 @@ pub(crate) async fn legacy_external_post_author(
 
 pub(crate) async fn legacy_external_authenticated_user_id(
     headers: &HeaderMap,
-    session_manager: &SessionManager,
+    service: &PilotServiceImpl,
     repository: &PilotRepository,
     require_csrf_for_session: bool,
 ) -> Result<i64, ConnectError> {
+    let session_manager = &service.session_manager;
     let session = session_manager.read_session_from_headers(headers);
     if let Some(session) = session.as_ref() {
         if let Some(user_id) = session.user_id {

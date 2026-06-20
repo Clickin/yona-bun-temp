@@ -1090,7 +1090,9 @@ async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
 
 #[tokio::test]
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
-    // Guards issue route-owned detail/state helpers, detail projections, REST response DTOs, mutation, issues/comments.rs, and issues/legacy_external.rs split.
+    // Guards issue route-owned detail/state helpers, detail projections, REST
+    // response DTOs, mutation, issues/comments.rs, issues/legacy_external.rs
+    // split, and the service-snapshot legacy external auth helper.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "reviewer").await;

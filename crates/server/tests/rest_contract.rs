@@ -1291,7 +1291,7 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 #[tokio::test]
 // Guards project-route-owned list/create/read/settings/container/update helpers
 // plus route-utils-owned project container, scope mapper, service-snapshot
-// update guard, and parser helpers.
+// update guard, legacy external auth helper, and parser helpers.
 async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (translation_api, translation_stub_path) =
         write_legacy_translation_stub_response("Translated **issue**");
@@ -5444,8 +5444,8 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
 }
 
 #[tokio::test]
-// Guards the user statistics REST DTO, mapper ownership split, and app-scoped
-// service snapshot access in the users route module.
+// Guards the user statistics REST DTO, mapper ownership split, app-scoped
+// service snapshot access in the users route module, and legacy external auth helper.
 async fn rest_user_statistics_counts_legacy_activity_rows() {
     let (app, repository) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

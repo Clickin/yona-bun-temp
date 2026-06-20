@@ -3328,17 +3328,11 @@ async fn legacy_project_create_labels(
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
-    let actor_id = match legacy_external_authenticated_user_id(
-        &headers,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(user_id) => user_id,
-        Err(error) => return legacy_external_api_auth_error_response(error),
-    };
+    let actor_id =
+        match legacy_external_authenticated_user_id(&headers, &service, repository, true).await {
+            Ok(user_id) => user_id,
+            Err(error) => return legacy_external_api_auth_error_response(error),
+        };
     let authorization =
         match require_project_read(repository, &owner, &project_name, Some(actor_id)).await {
             Ok(authorization) => authorization,
