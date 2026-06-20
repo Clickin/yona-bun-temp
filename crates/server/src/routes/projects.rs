@@ -105,13 +105,13 @@ use vcs::{
     direct_change_project_vcs, reset_project_repository_storage, rest_change_project_vcs,
     rest_read_project_change_vcs,
 };
+use webhooks::{
+    direct_create_project_webhook, direct_delete_project_webhook, rest_create_project_webhook,
+    rest_delete_project_webhook, rest_read_project_webhooks, RestProjectWebhookBody,
+};
 pub(crate) use webhooks::{
     dispatch_issue_webhooks, dispatch_posting_comment_webhooks, dispatch_posting_webhooks,
     dispatch_pull_request_webhooks, project_webhook_type_label, record_project_webhook_delivery,
-};
-use webhooks::{
-    rest_create_project_webhook, rest_delete_project_webhook, rest_read_project_webhooks,
-    RestProjectWebhookBody,
 };
 
 #[derive(Deserialize)]
@@ -2421,6 +2421,11 @@ pub(crate) fn routes(
     let direct_project_member_update_session_manager = session_manager.clone();
     let direct_project_member_delete_backend = backend.clone();
     let direct_project_member_delete_session_manager = session_manager.clone();
+    let direct_project_webhook_create_backend = backend.clone();
+    let direct_project_webhook_create_session_manager = session_manager.clone();
+    let direct_project_webhook_create_base_path = base_path.clone();
+    let direct_project_webhook_delete_backend = backend.clone();
+    let direct_project_webhook_delete_session_manager = session_manager.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2878,6 +2883,46 @@ pub(crate) fn routes(
                             user_id,
                             direct_project_member_delete_session_manager.clone(),
                             direct_project_member_delete_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/webhooks",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_create_project_webhook(
+                            headers,
+                            owner_name,
+                            project_name,
+                            form,
+                            direct_project_webhook_create_base_path.clone(),
+                            direct_project_webhook_create_session_manager.clone(),
+                            direct_project_webhook_create_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/webhooks/{webhook_id}",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, webhook_id)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_delete_project_webhook(
+                            headers,
+                            owner_name,
+                            project_name,
+                            webhook_id,
+                            direct_project_webhook_delete_session_manager.clone(),
+                            direct_project_webhook_delete_backend.clone(),
                         )
                         .await
                     }

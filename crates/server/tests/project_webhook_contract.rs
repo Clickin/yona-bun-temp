@@ -130,6 +130,34 @@ async fn rest(
     .unwrap()
 }
 
+async fn rest_form(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    form_body: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(
+            http::header::CONTENT_TYPE,
+            "application/x-www-form-urlencoded",
+        )
+        .header(http::header::ACCEPT, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(form_body.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rest_test_support::pilot_rest(
@@ -969,19 +997,31 @@ async fn project_webhooks_require_update_and_manage_crud() {
     .await;
     assert_eq!(invalid.status(), StatusCode::BAD_REQUEST);
 
+    let direct_created = rest_form(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/webhooks",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "payloadUrl=https%3A%2F%2Fhooks.example%2Fyona&secret=s3&webhookType=DETAIL_SLACK&gitPush=on",
+    )
+    .await;
+    assert_eq!(direct_created.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_created
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap(),
+        "/yona/owner/projectYobi/webhooks"
+    );
     let created = ok_json(
         rest(
             app.clone(),
-            Method::POST,
+            Method::GET,
             "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
             Some(&owner_cookie),
-            Some(&owner_csrf),
-            Some(json!({
-                "payloadUrl": "https://hooks.example/yona",
-                "secret": "s3",
-                "webhookType": "DETAIL_SLACK",
-                "gitPush": true,
-            })),
+            None,
+            None,
         )
         .await,
     )
@@ -1023,19 +1063,30 @@ async fn project_webhooks_require_update_and_manage_crud() {
     .await;
     assert_eq!(forbidden_create.status(), StatusCode::FORBIDDEN);
 
-    let deleted = ok_json(
+    let deleted = rest(
+        app.clone(),
+        Method::DELETE,
+        &format!("/yona/owner/projectYobi/webhooks/{created_id}"),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(deleted.status(), StatusCode::OK);
+    assert_eq!(response_text(deleted).await, "");
+    let deleted_list = ok_json(
         rest(
             app.clone(),
-            Method::DELETE,
-            &format!("/yona/api/v1/owners/owner/projects/projectYobi/webhooks/{created_id}"),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
             Some(&owner_cookie),
-            Some(&owner_csrf),
+            None,
             None,
         )
         .await,
     )
     .await;
-    assert_eq!(deleted["webhooks"].as_array().unwrap().len(), 0);
+    assert_eq!(deleted_list["webhooks"].as_array().unwrap().len(), 0);
     assert_eq!(
         webhook::Entity::find()
             .count(&db)

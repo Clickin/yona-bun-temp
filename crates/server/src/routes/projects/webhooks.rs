@@ -895,3 +895,75 @@ pub(super) async fn rest_delete_project_webhook(
     )?)
     .into_response())
 }
+
+fn project_webhook_service(
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> PilotServiceImpl {
+    PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
+    }
+}
+
+pub(super) async fn direct_create_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    form: HashMap<String, String>,
+    base_path: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let body = RestProjectWebhookBody {
+        git_push: form.contains_key("gitPush")
+            || form
+                .get("gitPush")
+                .is_some_and(|value| matches!(value.as_str(), "true" | "on" | "1")),
+        payload_url: form_value(&form, &["payloadUrl", "payload_url"]).to_string(),
+        secret: form_value(&form, &["secret"]).to_string(),
+        webhook_type: form_value(&form, &["webhookType", "webhook_type"]).to_string(),
+    };
+    match rest_create_project_webhook(
+        headers,
+        owner_name.clone(),
+        project_name.clone(),
+        body,
+        project_webhook_service(session_manager, backend),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner_name}/{project_name}/webhooks"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+pub(super) async fn direct_delete_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    webhook_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    match rest_delete_project_webhook(
+        headers,
+        owner_name,
+        project_name,
+        webhook_id,
+        project_webhook_service(session_manager, backend),
+    )
+    .await
+    {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
