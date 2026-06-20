@@ -605,6 +605,9 @@ function ProjectKeymapHelp(props: {
 }) {
   const { detail, mode, section } = props;
   const canUseAdmin = detail.showAdmin || detail.viewerCanUpdate;
+  const isMac = projectKeymapIsMacintosh();
+  const ctrlKey = isMac ? "\u2318" : "CTRL";
+  const searchKeys = isMac ? ["CTRL", "ALT", "S"] : ["ALT", "S"];
 
   return (
     <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
@@ -649,7 +652,7 @@ function ProjectKeymapHelp(props: {
                   </>
                 ) : null}
                 {section === "issue" && mode === "list" ? (
-                  <ProjectKeymapRow keys={["CTRL", "A"]} label="button.selectAll" />
+                  <ProjectKeymapRow keys={[ctrlKey, "A"]} label="button.selectAll" />
                 ) : null}
               </div>
 
@@ -658,8 +661,8 @@ function ProjectKeymapHelp(props: {
                 <ProjectKeymapRow keys={["A"]} label="issue.myIssue" />
                 <ProjectKeymapRow keys={["U"]} label="userinfo.profile" />
                 <ProjectKeymapRow keys={["F"]} label="user.menu" />
-                <ProjectKeymapRow keys={["ALT", "S"]} label="site.search" />
-                <ProjectKeymapRow keys={["CTRL", "ENTER"]} label="button.submitForm" />
+                <ProjectKeymapRow keys={searchKeys} label="site.search" />
+                <ProjectKeymapRow keys={[ctrlKey, "ENTER"]} label="button.submitForm" />
               </div>
             </div>
             {section === "issue" && mode === "detail" ? (
@@ -667,7 +670,7 @@ function ProjectKeymapHelp(props: {
                 <div className="span12">
                   <h5>search.menu.issue.comments</h5>
                   <ProjectKeymapRow
-                    keys={["SHIFT", "CTRL", "ENTER"]}
+                    keys={["SHIFT", ctrlKey, "ENTER"]}
                     label="button.commentAndNextState.closed"
                   />
                 </div>
@@ -683,6 +686,14 @@ function ProjectKeymapHelp(props: {
         </p>
       </div>
     </div>
+  );
+}
+
+function projectKeymapIsMacintosh() {
+  return (
+    typeof navigator !== "undefined" &&
+    typeof navigator.userAgent === "string" &&
+    navigator.userAgent.includes("Macintosh")
   );
 }
 

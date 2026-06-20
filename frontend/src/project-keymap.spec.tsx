@@ -30,6 +30,24 @@ const projectDetail: ProjectDetailViewModel = {
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
 
 describe("project keymap help parity", () => {
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+
+  function withUserAgent(userAgent: string, render: () => void) {
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: { userAgent },
+    });
+    try {
+      render();
+    } finally {
+      if (originalNavigator) {
+        Object.defineProperty(globalThis, "navigator", originalNavigator);
+      } else {
+        delete (globalThis as { navigator?: Navigator }).navigator;
+      }
+    }
+  }
+
   it("renders legacy issue list shortcuts", () => {
     const html = renderToStaticMarkup(
       <ProjectMenu
@@ -46,6 +64,8 @@ describe("project keymap help parity", () => {
     expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
     expect(html).toContain('<span class="help-inline">button.prevPage</span>');
     expect(html).toContain('<span class="help-inline">button.nextPage</span>');
+    expect(html).toContain('<span class="ybtn ybtn-small">CTRL</span> + <span');
+    expect(html).toContain('<span class="ybtn ybtn-small">ALT</span> + <span');
     expect(html).toContain('<span class="help-inline">button.selectAll</span>');
   });
 
@@ -65,5 +85,26 @@ describe("project keymap help parity", () => {
     expect(html).toContain('<span class="help-inline">button.edit</span>');
     expect(html).toContain("<h5>search.menu.issue.comments</h5>");
     expect(html).toContain('<span class="help-inline">button.commentAndNextState.closed</span>');
+  });
+
+  it("renders legacy Mac modifier keys from the Macintosh user agent", () => {
+    withUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", () => {
+      const html = renderToStaticMarkup(
+        <ProjectMenu
+          activeMenu="issue"
+          detail={projectDetail}
+          keymapMode="detail"
+          runtimeConfig={runtimeConfig}
+        />,
+      );
+
+      expect(html).toContain('<span class="ybtn ybtn-small">\u2318</span> + <span');
+      expect(html).toContain(
+        '<span class="ybtn ybtn-small">CTRL</span> + <span class="ybtn ybtn-small">ALT</span> + <span class="ybtn ybtn-small">S</span>',
+      );
+      expect(html).toContain(
+        '<span class="ybtn ybtn-small">SHIFT</span> + <span class="ybtn ybtn-small">\u2318</span> + <span class="ybtn ybtn-small">ENTER</span>',
+      );
+    });
   });
 });
