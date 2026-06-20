@@ -995,7 +995,7 @@ async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
 #[tokio::test]
 // Guards routes/pull_requests/review_comments.rs review comment/thread mutation
 // routing plus direct PR wrapper construction through the shared PilotServiceImpl
-// runtime snapshot boundary.
+// runtime snapshot boundary, including PR VCS helper storage/config access.
 async fn pull_request_interaction_surface_mutates_state_review_comments_threads_and_events() {
     let _outbox_guard = lock_test_webhook_outbox().await;
     let data_root = temp_path("data");
