@@ -1902,7 +1902,9 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain(
       'className={`site-guide-outer${visible ? "" : " hide"}`}',
     );
-    expect(notificationRouteSource).toContain("app.welcome ${siteName} - app.description");
+    expect(notificationRouteSource).toContain(
+      "Tada! Welcome to ${siteName}! - Web-based platform for collaborative software development",
+    );
     expect(notificationRouteSource).toContain("welcome-table table borderless");
     expect(notificationRouteSource).toContain("button.newProject");
     expect(notificationRouteSource).toContain("title.newOrganization");
@@ -1959,10 +1961,20 @@ describe("file-route parity harness", () => {
   });
 
   it("renders the legacy notification welcome guide shell", () => {
+    const legacyMessages = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/conf/messages"),
+      "utf8",
+    );
     const html = renderToStaticMarkup(<NotificationWelcomeGuide basePath="/yona" />);
 
+    expect(legacyMessages).toContain("app.welcome = Tada! Welcome to {0}!");
+    expect(legacyMessages).toContain(
+      "app.description = Web-based platform for collaborative software development",
+    );
     expect(html).toContain('class="site-guide-outer"');
-    expect(html).toContain("app.welcome Yona - app.description");
+    expect(html).toContain(
+      "Tada! Welcome to Yona! - Web-based platform for collaborative software development",
+    );
     expect(html).toContain('class="welcome-table table borderless"');
     expect(html).toContain('href="/yona/projects/new"');
     expect(html).toContain(">button.newProject</a>");
@@ -1983,8 +1995,11 @@ describe("file-route parity harness", () => {
       <NotificationWelcomeGuide basePath="/yona" siteName="Legacy Yona" />,
     );
 
-    expect(html).toContain("app.welcome Legacy Yona - app.description");
-    expect(html).not.toContain("app.welcome Yona - app.description");
+    expect(html).toContain(
+      "Tada! Welcome to Legacy Yona! - Web-based platform for collaborative software development",
+    );
+    expect(html).not.toContain("Tada! Welcome to Yona!");
+    expect(html).not.toContain("app.welcome Legacy Yona - app.description");
   });
 
   it("requires real board routes and board API wiring instead of placeholders", () => {

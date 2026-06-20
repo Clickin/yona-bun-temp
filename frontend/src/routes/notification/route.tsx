@@ -322,7 +322,7 @@ export function NotificationWelcomeGuide({
     <>
       <div className={`site-guide-outer${visible ? "" : " hide"}`}>
         <h3>
-          <span>{`app.welcome ${siteName} - app.description`}</span>
+          <span>{`Tada! Welcome to ${siteName}! - Web-based platform for collaborative software development`}</span>
         </h3>
         <table className="welcome-table table borderless">
           <tbody>
