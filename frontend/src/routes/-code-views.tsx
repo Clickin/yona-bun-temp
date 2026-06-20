@@ -163,11 +163,12 @@ function isSvnProject(detail: ProjectDetailViewModel) {
   );
 }
 
-function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel }) {
+function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel; runtimeConfig: RuntimeConfig }) {
   const detail = props.detail;
   const projectName = detail.projectName || "project";
   const cloneUrl = codeCloneUrl(detail);
   const isSvn = isSvnProject(detail);
+  const siteName = props.runtimeConfig.siteName ?? "Yona";
 
   return (
     <div className="row-fluid code-nohead-wrap">
@@ -178,7 +179,7 @@ function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel }) {
         {detail.viewerCanUpdate ? (
           isSvn ? (
             <>
-              <h5>code.nohead.svn.clone</h5>
+              <h5>code.nohead.svn.clone {siteName}</h5>
               <pre>
                 <code>{`svn co ${cloneUrl}
 cd ${projectName}/
@@ -189,27 +190,27 @@ svn commit -m "first commit"`}</code>
             </>
           ) : (
             <>
-              <h5>code.nohead.clone</h5>
+              <h5>code.nohead.clone {siteName}</h5>
               <pre>
                 <code>{`git clone ${cloneUrl} ${projectName}
 cd ${projectName}/
 echo "# ${projectName}" > README.md
 git add README.md
-git commit -m "Hello Yona"
+git commit -m "Hello ${siteName}"
 git push origin master`}</code>
               </pre>
-              <h5>code.nohead.init</h5>
+              <h5>code.nohead.init {siteName}</h5>
               <pre>
                 <code>{`mkdir ${projectName}
 cd ${projectName}/
 echo "# ${projectName}" > README.md
 git init
 git add README.md
-git commit -m "Hello Yona"
+git commit -m "Hello ${siteName}"
 git remote add origin ${cloneUrl}
 git push origin master`}</code>
               </pre>
-              <h5>code.nohead.remote</h5>
+              <h5>code.nohead.remote {siteName}</h5>
               <pre>
                 <code>{`git remote add origin ${cloneUrl}
 git push origin master`}</code>
@@ -671,7 +672,7 @@ export function CodeBrowserPage(props: {
               </nav>
             ) : null}
             {code?.noHead ? (
-              <CodeNoHeadBlock detail={detail} />
+              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
             ) : (
               <>
                 <div className="code-browse-header">
@@ -868,7 +869,7 @@ export function CodeCommitDetailPage(props: {
               </a>
             </nav>
             {commitDetail?.noHead ? (
-              <CodeNoHeadBlock detail={detail} />
+              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
             ) : (
               <CodeCommitDiffView
                 commitDetail={commitDetail}
@@ -913,7 +914,7 @@ export function CodeComparePage(props: {
         <div className="project-page-wrap">
           <div className="code-browse-wrap">
             {compare?.noHead ? (
-              <CodeNoHeadBlock detail={detail} />
+              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
             ) : (
               <>
                 <p className="commitInfo">
@@ -1002,7 +1003,7 @@ export function CodeBranchListPage(props: {
                 </li>
               </ul>
               {branchList?.noHead ? (
-                <CodeNoHeadBlock detail={detail} />
+                <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
               ) : (
                 <CodeBranchTable
                   branchList={branchList}
@@ -1880,7 +1881,7 @@ export function CodeHistoryPage(props: {
         <div className="project-page-wrap">
           <section className="code-browse-wrap">
             {history?.noHead ? (
-              <CodeNoHeadBlock detail={detail} />
+              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
             ) : (
               <>
                 {selectedPath ? (
