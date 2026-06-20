@@ -499,6 +499,132 @@ async fn issue_mention_contract_suggests_contextual_users_and_filters_private_se
 }
 
 #[tokio::test]
+async fn issue_mention_contract_serves_legacy_project_mention_list_helpers() {
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "project-member").await;
+    let (_, _, org_member_id) = register_user(app.clone(), "org-member").await;
+    let (_, outsider_cookie, _) = register_user(app.clone(), "outsider").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "weblabs",
+                "description": "Web labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("weblabs")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "weblabs",
+        "privateYobi",
+        "private",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("weblabs", "privateYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "weblabs",
+        "privateYobi",
+        "Legacy mention target",
+        "body",
+    )
+    .await;
+
+    let users = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/weblabs/privateYobi/mentionList?number=1&resourceType=ISSUE_POST&mentionType=user&query=",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let user_items = users["result"].as_array().unwrap();
+    assert!(user_items
+        .iter()
+        .any(|item| item["loginid"] == "owner" && item["name"] == "owner"));
+    assert!(user_items
+        .iter()
+        .any(|item| item["loginid"] == "project-member"));
+    assert!(user_items
+        .iter()
+        .any(|item| item["loginid"] == "weblabs/privateYobi"
+            && item["name"] == "@project all:"
+            && item["searchText"] == "weblabs/privateYobi/project/member/all"));
+    assert!(user_items.iter().any(|item| item["loginid"] == "weblabs"
+        && item["name"] == "@group all: "
+        && item["searchText"] == "weblabs/group/org/member/all"));
+
+    let issues = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/weblabs/privateYobi/mentionList?mentionType=issue&query=Legacy",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(issues["result"].as_array().unwrap().iter().any(|item| {
+        item["issueNo"] == "1"
+            && item["title"] == "Legacy mention target"
+            && item["name"] == "1Legacy mention target"
+    }));
+
+    let commit_diff_alias = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/weblabs/privateYobi/mentionListAtCommitDiff?mentionType=user&query=project-member&commitId=abc123",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(commit_diff_alias["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["loginid"] == "project-member"));
+
+    let denied = rest(
+        app,
+        Method::GET,
+        "/yona/weblabs/privateYobi/mentionListAtPullRequest?mentionType=issue&pullRequestId=1",
+        Some(&outsider_cookie),
+    )
+    .await;
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn issue_mention_contract_indexes_issue_body_mentions_and_notifies_new_active_users() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;

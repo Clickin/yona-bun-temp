@@ -380,6 +380,7 @@ const DOMAIN_BUCKETS = [
       "enrollment",
       "keymap",
       "milestone",
+      "mention",
       "route-parity",
       "wave2a",
       "container-parity",

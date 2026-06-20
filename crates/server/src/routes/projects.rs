@@ -28,8 +28,9 @@ use crate::{
     project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
     project_update_allowed, redirect_to, repository_provisioning_lock, require_authenticated_user,
     require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
-    rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    resolve_issue_reference_search_project, rest_json_response,
+    rest_mention_reference_metadata_from_resolved, rest_owned_view, rest_repository,
+    rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
     session::SessionManager, yona_data_root, AuthUiConfig, ConnectError, Context, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
     RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
@@ -121,6 +122,20 @@ struct DirectMarkdownRenderBody {
 struct DirectMarkdownRenderResponse {
     body_markdown: String,
     breaks: bool,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct DirectMentionListQuery {
+    number: Option<i64>,
+    resource_type: Option<String>,
+    query: Option<String>,
+    mention_type: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirectMentionListResponse {
+    result: Vec<HashMap<String, String>>,
 }
 
 pub(crate) async fn project_detail_read(
@@ -656,6 +671,192 @@ async fn direct_delete_project_pushed_branch(
         Ok(_) => StatusCode::OK.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
+}
+
+fn direct_mention_user_item(
+    login_id: impl Into<String>,
+    name: impl Into<String>,
+    search_text: impl Into<String>,
+    image: impl Into<String>,
+) -> HashMap<String, String> {
+    let mut item = HashMap::new();
+    item.insert("loginid".to_string(), login_id.into());
+    item.insert("name".to_string(), name.into());
+    item.insert("searchText".to_string(), search_text.into());
+    item.insert("image".to_string(), image.into());
+    item
+}
+
+fn direct_mention_project_item(project: &persistence::ProjectRecord) -> HashMap<String, String> {
+    let login_id = format!("{}/{}", project.owner_name, project.project_name);
+    let mut item = direct_mention_user_item(
+        login_id.clone(),
+        "@project all:",
+        format!("{login_id}/project/member/all"),
+        String::new(),
+    );
+    item.insert("username".to_string(), project.project_name.clone());
+    item
+}
+
+fn direct_mention_organization_item(organization_name: &str) -> HashMap<String, String> {
+    let mut item = direct_mention_user_item(
+        organization_name,
+        "@group all: ",
+        format!("{organization_name}/group/org/member/all"),
+        String::new(),
+    );
+    item.insert("username".to_string(), organization_name.to_string());
+    item
+}
+
+fn direct_mention_text_matches(item: &HashMap<String, String>, query: &str) -> bool {
+    let query = query.trim();
+    if query.is_empty() {
+        return true;
+    }
+    let normalized_query = query.to_ascii_lowercase();
+    item.values()
+        .any(|value| value.to_ascii_lowercase().contains(&normalized_query))
+}
+
+fn append_direct_project_mention_targets(
+    project: &persistence::ProjectRecord,
+    query: &str,
+    items: &mut Vec<HashMap<String, String>>,
+) {
+    let project_item = direct_mention_project_item(project);
+    if direct_mention_text_matches(&project_item, query) {
+        items.push(project_item);
+    }
+    if let Some(organization_name) = project.organization_name.as_deref() {
+        let organization_item = direct_mention_organization_item(organization_name);
+        if direct_mention_text_matches(&organization_item, query) {
+            items.push(organization_item);
+        }
+    }
+}
+
+async fn direct_project_mention_list(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: DirectMentionListQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization =
+        match require_project_read(&repository, &owner_name, &project_name, actor_id).await {
+            Ok(authorization) => authorization,
+            Err(error) => return direct_status_from_connect_error(error).into_response(),
+        };
+
+    let mention_type = query.mention_type.as_deref().unwrap_or_default();
+    let needle = query.query.as_deref().unwrap_or_default().trim();
+    let result = if mention_type.eq_ignore_ascii_case("issue") {
+        let search_project =
+            match resolve_issue_reference_search_project(&repository, &authorization, actor_id)
+                .await
+            {
+                Ok(project) => project,
+                Err(error) => return direct_status_from_connect_error(error).into_response(),
+            };
+        match repository
+            .list_project_issue_references(search_project.id, needle, 10)
+            .await
+        {
+            Ok(record) => record
+                .items
+                .into_iter()
+                .map(|issue| {
+                    let issue_number = issue.issue_number.to_string();
+                    let mut item = HashMap::new();
+                    item.insert("name".to_string(), format!("{issue_number}{}", issue.title));
+                    item.insert("issueNo".to_string(), issue_number);
+                    item.insert("title".to_string(), issue.title);
+                    item
+                })
+                .collect::<Vec<_>>(),
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        }
+    } else if mention_type.eq_ignore_ascii_case("user") {
+        let mut items = Vec::new();
+        let issue_number = query.number.unwrap_or_default();
+        let is_issue_post = query
+            .resource_type
+            .as_deref()
+            .is_some_and(|resource_type| resource_type.eq_ignore_ascii_case("ISSUE_POST"));
+        if issue_number > 0 && is_issue_post {
+            match repository
+                .list_issue_mention_users(
+                    &owner_name,
+                    &project_name,
+                    issue_number,
+                    actor_id,
+                    needle,
+                    "issue-comment",
+                    20,
+                )
+                .await
+            {
+                Ok(Some(record)) => {
+                    items.extend(record.items.into_iter().map(|user| {
+                        if user.item_type == "project" {
+                            direct_mention_project_item(&authorization.project)
+                        } else if user.item_type == "organization" {
+                            direct_mention_organization_item(&user.login_id)
+                        } else {
+                            direct_mention_user_item(
+                                user.login_id,
+                                user.display_name,
+                                user.search_text,
+                                user.avatar_url,
+                            )
+                        }
+                    }));
+                }
+                Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+        } else {
+            match repository
+                .list_project_assignable_users(&owner_name, &project_name, actor_id, needle, "", 20)
+                .await
+            {
+                Ok(Some(record)) => {
+                    items.extend(record.items.into_iter().map(|user| {
+                        direct_mention_user_item(
+                            user.login_id.clone(),
+                            user.display_name.clone(),
+                            format!(
+                                "{}{}{}",
+                                user.display_name, user.pure_name_only, user.login_id
+                            ),
+                            user.avatar_url,
+                        )
+                    }));
+                    append_direct_project_mention_targets(
+                        &authorization.project,
+                        needle,
+                        &mut items,
+                    );
+                }
+                Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+        }
+        items
+    } else {
+        Vec::new()
+    };
+
+    Json(DirectMentionListResponse { result }).into_response()
 }
 
 async fn direct_render_markdown(
@@ -2130,6 +2331,12 @@ pub(crate) fn routes(
     let markdown_render_backend = backend.clone();
     let markdown_render_session_manager = session_manager.clone();
     let markdown_render_base_path = base_path.clone();
+    let mention_list_backend = backend.clone();
+    let mention_list_session_manager = session_manager.clone();
+    let commit_diff_mention_list_backend = backend.clone();
+    let commit_diff_mention_list_session_manager = session_manager.clone();
+    let pull_request_mention_list_backend = backend.clone();
+    let pull_request_mention_list_session_manager = session_manager.clone();
     let project_overview_update_backend = backend;
     let project_overview_update_session_manager = session_manager;
 
@@ -2370,6 +2577,66 @@ pub(crate) fn routes(
                             false,
                             direct_project_unwatch_session_manager.clone(),
                             direct_project_unwatch_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/mentionList",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<DirectMentionListQuery>| {
+                    async move {
+                        direct_project_mention_list(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            mention_list_session_manager.clone(),
+                            mention_list_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/mentionListAtCommitDiff",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<DirectMentionListQuery>| {
+                    async move {
+                        direct_project_mention_list(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            commit_diff_mention_list_session_manager.clone(),
+                            commit_diff_mention_list_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/mentionListAtPullRequest",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<DirectMentionListQuery>| {
+                    async move {
+                        direct_project_mention_list(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            pull_request_mention_list_session_manager.clone(),
+                            pull_request_mention_list_backend.clone(),
                         )
                         .await
                     }
