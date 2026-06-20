@@ -1244,6 +1244,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   Site-admin mail send, recipient lookup, configured/unconfigured option
   states, sender domain/hostname fallback, and from override coverage remain
   route-level parity checks without `smtp_env_lock`.
+- 2026-06-20 runtime DI note: notification mail contract tests now use startup
+  snapshot maps and explicit `NotificationMailDeliveryConfig` values for
+  scheduler and delivery behavior instead of mutating `SMTP_FROM` or
+  notification mail env vars around test execution. The remaining
+  serialization is scoped to the shared test mail outbox through
+  `notification_outbox_lock`.
 
 ## Wave 0 Exit Snapshot
 
