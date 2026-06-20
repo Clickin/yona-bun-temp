@@ -1017,17 +1017,19 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain("Crop Avatar");
   });
 
-  it("uses legacy message keys for avatar upload validation errors", () => {
+  it("uses legacy message keys for user-profile workspace avatar upload validation errors", () => {
     const routeSource = fs.readFileSync(
       path.resolve(__dirname, "routes/user/editform/index.tsx"),
       "utf8",
     );
-
     expect(workspaceAvatarUploadErrorForMimeType("image/png")).toBeNull();
     expect(workspaceAvatarUploadErrorForMimeType("text/plain")).toBe("user.avatar.onlyImage");
     expect(workspaceAvatarUploadErrorForMimeType("")).toBe("user.avatar.onlyImage");
     expect(routeSource).toContain("user.avatar.uploadError");
-    expect(routeSource).not.toContain("Avatar upload failed.");
+    expect(routeSource).not.toContain("Avatar upload failed");
+    expect(routeSource).not.toContain(
+      'setErrorMessage(error instanceof Error ? error.message : "user.avatar.uploadError")',
+    );
   });
 
   it("keeps workspace settings mutation fallbacks on legacy scalar keys", () => {

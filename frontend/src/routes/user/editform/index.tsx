@@ -48,7 +48,7 @@ function EditProfileRouteComponent() {
         try {
           return await uploadProfileAvatar(runtimeConfig, filename, blob);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "user.avatar.uploadError");
+          setErrorMessage("user.avatar.uploadError");
           throw error;
         }
       }}
