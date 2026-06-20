@@ -1893,7 +1893,7 @@ pub(crate) async fn rest_read_workspace_overview(
     Ok(rest_json_response(payload, ctx))
 }
 
-pub(crate) async fn rest_list_workspace_files(
+async fn rest_list_workspace_files(
     headers: HeaderMap,
     query: RestWorkspaceFilesQuery,
     service: PilotServiceImpl,

@@ -70,8 +70,8 @@ pub(crate) use organizations::{
     organization_admin_read, organization_container_read, organization_create, organization_delete,
     organization_detail_read, organization_enroll, organization_enroll_cancel,
     organization_enrollment_accept, organization_leave, organization_list, organization_member_add,
-    organization_member_delete, organization_member_role_update, organization_members_read,
-    organization_settings_read, organization_update,
+    organization_member_delete, organization_member_role_update, organization_settings_read,
+    organization_update,
 };
 use organizations::{
     rest_accept_organization_enrollment, rest_add_organization_member,
@@ -1013,7 +1013,7 @@ pub(crate) async fn rest_list_projects(
     Ok(rest_json_response(payload, ctx))
 }
 
-pub(crate) async fn rest_create_project(
+async fn rest_create_project(
     headers: HeaderMap,
     owner_name: String,
     body: RestProjectCreateBody,
@@ -1089,7 +1089,7 @@ pub(crate) async fn rest_create_project(
     Ok(rest_json_response(payload, ctx))
 }
 
-pub(crate) async fn rest_project_create_form_options(
+async fn rest_project_create_form_options(
     headers: HeaderMap,
     query: RestProjectCreateFormOptionsQuery,
     service: PilotServiceImpl,
@@ -1305,7 +1305,7 @@ async fn rest_require_project_update(
     Ok(authorization)
 }
 
-pub(crate) async fn rest_update_project(
+async fn rest_update_project(
     headers: HeaderMap,
     current_owner_name: String,
     current_project_name: String,

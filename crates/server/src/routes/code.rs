@@ -1206,7 +1206,7 @@ fn direct_code_raw_missing_redirect(
     Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
 }
 
-pub(crate) async fn rest_read_code_browser(
+async fn rest_read_code_browser(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1391,7 +1391,7 @@ async fn enrich_code_browser_author_metadata(
     Ok(())
 }
 
-pub(crate) async fn rest_read_code_history(
+async fn rest_read_code_history(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1484,7 +1484,7 @@ pub(crate) async fn rest_read_code_history(
     Ok(Json(response))
 }
 
-pub(crate) async fn rest_read_code_commit_detail(
+async fn rest_read_code_commit_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1591,7 +1591,7 @@ async fn rest_code_commit_detail_response(
     ))
 }
 
-pub(crate) async fn rest_create_commit_discussion_comment(
+async fn rest_create_commit_discussion_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1737,7 +1737,7 @@ pub(crate) async fn rest_update_commit_discussion_thread_state(
     )))
 }
 
-pub(crate) async fn rest_update_commit_discussion_comment(
+async fn rest_update_commit_discussion_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1811,7 +1811,7 @@ pub(crate) async fn rest_update_commit_discussion_comment(
     ))
 }
 
-pub(crate) async fn rest_delete_commit_discussion_comment(
+async fn rest_delete_commit_discussion_comment(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1877,7 +1877,7 @@ pub(crate) async fn rest_delete_commit_discussion_comment(
     ))
 }
 
-pub(crate) async fn rest_read_code_compare(
+async fn rest_read_code_compare(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1933,7 +1933,7 @@ pub(crate) async fn rest_read_code_compare(
     )))
 }
 
-pub(crate) async fn rest_read_code_branches(
+async fn rest_read_code_branches(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -1964,7 +1964,7 @@ pub(crate) async fn rest_read_code_branches(
     )))
 }
 
-pub(crate) async fn rest_set_default_code_branch(
+async fn rest_set_default_code_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -2006,7 +2006,7 @@ pub(crate) async fn rest_set_default_code_branch(
     )))
 }
 
-pub(crate) async fn rest_delete_code_branch(
+async fn rest_delete_code_branch(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,

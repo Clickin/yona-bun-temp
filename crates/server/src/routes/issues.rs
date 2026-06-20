@@ -87,8 +87,7 @@ use lookups::{
     RestIssueMentionUsersQuery, RestIssueParentOptionsQuery, RestProjectIssueReferencesQuery,
 };
 pub(crate) use meta::{
-    issue_assignment_mutation, issue_comment_participation_mutation, issue_favorite_toggle,
-    issue_participation_mutation,
+    issue_comment_participation_mutation, issue_favorite_toggle, issue_participation_mutation,
 };
 use meta::{
     rest_assign_issue, rest_issue_comment_participation, rest_issue_participation,
@@ -2537,7 +2536,7 @@ pub(crate) fn routes(
         )
 }
 
-pub(crate) async fn rest_list_project_issues(
+async fn rest_list_project_issues(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -2596,7 +2595,7 @@ pub(crate) async fn rest_list_project_issues(
     }))
 }
 
-pub(crate) async fn rest_list_organization_issues(
+async fn rest_list_organization_issues(
     headers: HeaderMap,
     organization_name: String,
     query: RestOrganizationIssuesQuery,
@@ -2880,7 +2879,7 @@ pub(crate) async fn rest_read_direct_issue_form_options(
     }))
 }
 
-pub(crate) async fn rest_read_issue_detail(
+async fn rest_read_issue_detail(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -2921,7 +2920,7 @@ pub(crate) async fn rest_read_issue_detail(
     ))
 }
 
-pub(crate) async fn rest_update_issue_state(
+async fn rest_update_issue_state(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -3007,7 +3006,7 @@ pub(crate) async fn rest_update_issue_state(
     ))
 }
 
-pub(crate) async fn rest_create_issue(
+async fn rest_create_issue(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -3126,7 +3125,7 @@ pub(crate) async fn rest_create_issue(
     ))
 }
 
-pub(crate) async fn rest_update_issue(
+async fn rest_update_issue(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -3300,7 +3299,7 @@ pub(crate) async fn rest_delete_issue(
     }))
 }
 
-pub(crate) async fn rest_update_issue_weight(
+async fn rest_update_issue_weight(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
@@ -4266,7 +4265,7 @@ pub(crate) fn issue_detail_response_from_access(
     )
 }
 
-pub(crate) async fn rest_issue_detail_response_from_access_with_repository_issue_references(
+async fn rest_issue_detail_response_from_access_with_repository_issue_references(
     repository: &PilotRepository,
     access: &IssueAccessContext,
     viewer_id: Option<i64>,

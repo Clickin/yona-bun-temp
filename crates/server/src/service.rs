@@ -156,14 +156,6 @@ impl PilotServiceImpl {
         organization_settings_read(self, ctx, request).await
     }
 
-    pub(crate) async fn read_organization_members(
-        &self,
-        ctx: Context,
-        request: OwnedView<ReadOrganizationMembersRequestView<'static>>,
-    ) -> Result<(ReadOrganizationMembersResponse, Context), ConnectError> {
-        organization_members_read(self, ctx, request).await
-    }
-
     pub(crate) async fn read_organization_admin(
         &self,
         ctx: Context,
@@ -300,14 +292,6 @@ impl PilotServiceImpl {
         project_watch_toggle(self, ctx, request).await
     }
 
-    pub(crate) async fn update_project(
-        &self,
-        ctx: Context,
-        request: OwnedView<UpdateProjectRequestView<'static>>,
-    ) -> Result<(ProjectDetail, Context), ConnectError> {
-        project_update(self, ctx, request).await
-    }
-
     pub(crate) async fn enroll_project(
         &self,
         ctx: Context,
@@ -442,14 +426,6 @@ impl PilotServiceImpl {
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
         issue_favorite_toggle(self, ctx, request).await
-    }
-
-    pub(crate) async fn assign_issue(
-        &self,
-        ctx: Context,
-        request: OwnedView<AssignIssueRequestView<'static>>,
-    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        issue_assignment_mutation(self, ctx, request).await
     }
 
     pub(crate) async fn list_project_labels(
