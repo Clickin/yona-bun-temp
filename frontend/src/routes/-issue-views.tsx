@@ -282,7 +282,7 @@ function IssueDetailVoters(props: {
                 .join("<br>")}
             >
               <a data-toggle="modal" href="#voters">
-                {`issue.voters.more ${hiddenCount}`}
+                {`and ${hiddenCount} others`}
               </a>
             </li>
           ) : null}

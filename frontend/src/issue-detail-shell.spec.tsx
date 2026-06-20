@@ -115,10 +115,31 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
               userId: 3,
               userLabel: "Nori User",
             },
+            {
+              avatarUrl: "https://cdn.yona/avatar-rio.png",
+              emailAddress: "rio@yona.test",
+              loginId: "rio",
+              userId: 4,
+              userLabel: "Rio User",
+            },
+            {
+              avatarUrl: "https://cdn.yona/avatar-mina.png",
+              emailAddress: "mina@yona.test",
+              loginId: "mina",
+              userId: 5,
+              userLabel: "Mina User",
+            },
+            {
+              avatarUrl: "https://cdn.yona/avatar-jo.png",
+              emailAddress: "jo@yona.test",
+              loginId: "jo",
+              userId: 6,
+              userLabel: "Jo User",
+            },
           ],
           labels: [{ color: "#f44336", id: 5, name: "bug" }],
           viewerCanUpdate: true,
-          voterCount: 2,
+          voterCount: 5,
           watcherCount: 3,
           weight: 3,
         }}
@@ -188,6 +209,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("button.copy.email");
     expect(html).toContain("Door User &lt;door@yona.test&gt;;");
     expect(html).toContain("Nori User &lt;nori@yona.test&gt;;");
+    expect(html).toContain("Rio User &lt;rio@yona.test&gt;;");
+    expect(html).toContain("and 2 others");
+    expect(html).not.toContain("issue.voters.more 2");
     expect(html).not.toContain("Voters: 2");
     expect(html).not.toContain("Unvote");
     expect(html).toContain('<div class="watcher-list"></div>');
