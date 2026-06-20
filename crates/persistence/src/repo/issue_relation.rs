@@ -166,6 +166,9 @@ impl AppRepository {
             if input.milestone_update {
                 active.milestone_id = Set(input.milestone_id.filter(|value| *value > 0));
             }
+            if input.due_date_update {
+                active.due_date = Set(input.due_date);
+            }
             active.updated_date = Set(Some(current_datetime()));
             let updated_model = active.update(&txn).await?;
             let mut added_label_names = Vec::new();

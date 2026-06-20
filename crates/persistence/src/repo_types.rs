@@ -912,6 +912,8 @@ pub struct MassUpdateIssuesInput {
     pub add_label_ids: Vec<i64>,
     pub assignee_login_id: Option<String>,
     pub assignee_update: bool,
+    pub due_date: Option<DateTime>,
+    pub due_date_update: bool,
     pub issue_numbers: Vec<i64>,
     pub milestone_id: Option<i64>,
     pub milestone_update: bool,

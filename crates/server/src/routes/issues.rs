@@ -149,6 +149,10 @@ struct RestMassUpdateIssuesBody {
     add_label_ids: Vec<i64>,
     assignee_login_id: String,
     assignee_update: bool,
+    #[serde(alias = "due_date")]
+    due_date: String,
+    #[serde(alias = "dueDateChanged", alias = "is_due_date_changed")]
+    is_due_date_changed: bool,
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
@@ -3377,6 +3381,11 @@ async fn rest_mass_update_issues(
             .await
             .map_err(RestRouteError::from_connect_error)?;
     let requested_state = (!body.state.trim().is_empty()).then(|| body.state.trim().to_string());
+    let due_date = if body.is_due_date_changed {
+        parse_milestone_due_date(&body.due_date).map_err(RestRouteError::from_connect_error)?
+    } else {
+        None
+    };
     let mut previous_states = std::collections::HashMap::new();
     let mut previous_assignees = std::collections::HashMap::new();
     let mut previous_milestones = std::collections::HashMap::new();
@@ -3405,6 +3414,8 @@ async fn rest_mass_update_issues(
                 assignee_login_id: (!body.assignee_login_id.trim().is_empty())
                     .then(|| body.assignee_login_id.trim().to_string()),
                 assignee_update: body.assignee_update,
+                due_date,
+                due_date_update: body.is_due_date_changed,
                 issue_numbers: body.issue_numbers,
                 milestone_id: body.milestone_id.filter(|value| *value > 0),
                 milestone_update: body.milestone_update,

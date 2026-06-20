@@ -57,6 +57,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - `IssueAppTest.postByNonmember` and `commentByNonmember` are translated as authenticated public-project create/comment permission in `crates/server/tests/issue_core_contract.rs`.
 - `IssueAppTest.editBy*` and `deleteBy*` are translated as issue-specific mutation guard: author, assignee, project member, project manager, organization admin, or site admin can mutate; public-project outsider cannot edit another user's issue.
 - `IssueTest.watchDefault`, watch/unwatch, vote, comment timeline, and Markdown/XSS expectations are covered by `issue_core_contract_creates_reads_comments_and_sanitizes_markdown`.
+- Legacy `IssueMassUpdate.isDueDateChanged` / `dueDate` is translated through `/api/v1/projects/:owner/:project/issues/mass-update`; Rust parses the same YYYY-MM-DD scalar used by issue create/edit and applies it to each selected issue without inventing a separate event type.
 
 ## Phase 2E Issue Sharer Translation Rule
 

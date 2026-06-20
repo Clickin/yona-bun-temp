@@ -434,6 +434,96 @@ async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks()
 }
 
 #[tokio::test]
+async fn issue_core_contract_mass_update_updates_due_dates() {
+    // Guards legacy IssueMassUpdate.isDueDateChanged / dueDate scalar parity.
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue mass update due date parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    for title in ["First due date issue", "Second due date issue"] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                "/yona/api/v1/projects/owner/projectYobi/issues",
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({
+                    "title": title,
+                    "bodyMarkdown": "Mass-update due date body",
+                })),
+            )
+            .await,
+        )
+        .await;
+    }
+
+    let mass_updated = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "isDueDateChanged": true,
+                "dueDate": "2026-05-09"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let items = mass_updated["items"].as_array().expect("mass-update items");
+    assert_eq!(items.len(), 2);
+    assert!(items.iter().any(|item| item["issueNumber"] == "1"));
+    assert!(items.iter().any(|item| item["issueNumber"] == "2"));
+
+    let first_detail = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(first_detail["dueDateLabel"], "2026-05-09");
+
+    let second_detail = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(second_detail["dueDateLabel"], "2026-05-09");
+}
+
+#[tokio::test]
 async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_milestone_webhooks() {
     // Guards legacy IssueApp.massUpdate -> NotificationEvent.afterStateChanged
     // webhook fan-out for every issue whose state actually changed.
