@@ -135,7 +135,7 @@ tests.
 | Issues/comments | `crates/migration/src/legacy_external/issues.rs` | `crates/migration/tests/legacy_external_issues.rs` | Issue bulk import/export, comments, labels, assignee/share/weight/change-detection compatibility needed by migration. |
 | Board/posts/comments | `crates/migration/src/legacy_external/boards.rs` | `crates/migration/tests/legacy_external_boards.rs` | Board post/comment import and post-label compatibility. |
 | Milestones | `crates/migration/src/legacy_external/milestones.rs` | `crates/migration/tests/legacy_external_milestones.rs` | Milestone import compatibility. |
-| Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Watcher export compatibility only; favorites stay app-owned direct helpers unless a migrator snapshot needs read-only projection. |
+| Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Keep the watcher list helper classified as app-owned runtime compatibility while preventing favorite helpers from leaking into WatcherApi migration fixtures; broader watcher/favorite export snapshots remain future migrator scope only if a migration tool needs them. |
 | Module wiring | `crates/migration/src/legacy_external/mod.rs` | `crates/migration/tests/legacy_external_mod.rs` | Shared request/response fixtures and module registration for migration tooling, without app-server route mounting. |
 
 ## Consistency Notes
