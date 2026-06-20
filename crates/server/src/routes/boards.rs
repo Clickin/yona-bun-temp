@@ -828,7 +828,6 @@ fn rest_board_attachment_from_record(
 
 fn rest_post_comment_from_record(
     comment: &persistence::PostingCommentRecord,
-    _base_path: &str,
     _owner_name: &str,
     _project_name: &str,
     issue_references: &[MarkdownIssueReference],
@@ -990,7 +989,6 @@ fn rest_post_detail_response_from_record_with_references(
             .map(|comment| {
                 rest_post_comment_from_record(
                     comment,
-                    base_path,
                     &posting.owner_name,
                     &posting.project_name,
                     issue_references,
@@ -1500,7 +1498,6 @@ async fn rest_create_posting(
             &authorization,
             &online_commit,
             &actor,
-            &service.base_path,
         )?;
         return Ok(Json(RestPostMutationResponse::OnlineCommit(response)));
     }
@@ -2189,7 +2186,6 @@ fn create_online_commit_from_posting_form(
     authorization: &persistence::ProjectAuthorizationRecord,
     input: &RestPostOnlineCommitInput,
     actor: &persistence::AppUserRecord,
-    _base_path: &str,
 ) -> Result<RestPostOnlineCommitResponse, RestRouteError> {
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Err(RestRouteError::bad_request(

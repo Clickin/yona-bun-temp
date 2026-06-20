@@ -180,9 +180,6 @@ pub(crate) fn app_routes(
     runtime: RuntimeRegistry,
     rest_router: Router,
 ) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
     Router::new()
         .merge(auth_routes(
             service.clone(),
@@ -210,7 +207,7 @@ pub(crate) fn app_routes(
         .merge(file_routes(service.clone()))
         .merge(pull_request_routes(service.clone()))
         .merge(site_admin_routes(service.clone()))
-        .merge(code_routes(service, session_manager, backend, base_path))
+        .merge(code_routes(service))
 }
 
 pub(crate) fn static_compat_routes() -> Router {

@@ -1320,7 +1320,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     )
     .await;
     // Direct commit discussion aliases reuse the app-scoped service/runtime
-    // config registered by code routes.
+    // config registered by code routes without session/backend/base-path fragments.
     assert_eq!(direct_created.status(), StatusCode::SEE_OTHER);
     assert_eq!(
         direct_created

@@ -24,9 +24,9 @@ use crate::{
     require_valid_csrf, rest_commit_thread_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
-    session::SessionManager, workspace_avatar_url, ConnectError, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotServiceImpl, ProjectCreatableResource,
-    RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
+    workspace_avatar_url, ConnectError, MarkdownIssueReference, MarkdownMentionReference,
+    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestIssueReferenceMetadata,
+    RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
@@ -290,12 +290,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(
-    service: PilotServiceImpl,
-    _session_manager: SessionManager,
-    _backend: PilotBackend,
-    _base_path: String,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let raw_code_service = service.clone();
     let open_code_service = service.clone();
     let image_code_service = service.clone();
