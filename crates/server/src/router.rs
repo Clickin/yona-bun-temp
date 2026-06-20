@@ -194,6 +194,7 @@ fn build_router_with_app_config(
         runtime.auth_ui.clone(),
         runtime.integrations.clone(),
         public_origin.clone(),
+        runtime.data_root.clone(),
     );
 
     base_router = base_router.layer(from_fn(move |request: Request, next: Next| {

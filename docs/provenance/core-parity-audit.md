@@ -1158,6 +1158,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   roots through `AppRuntimeConfig`, removing their `YONA_DATA` mutex guards
   while preserving legacy repository provisioning, cleanup, VCS reset, and fork
   clone behavior.
+- 2026-06-20 runtime DI note: Smart HTTP git backend routing now receives the
+  router `data_root` snapshot through asset fallback dispatch instead of
+  resolving `YONA_DATA` inside the request handler. The smart-http contract
+  suite injects per-test data roots through `AppRuntimeConfig` and no longer
+  serializes on a global `YONA_DATA` mutex, preserving upload-pack,
+  receive-pack, authenticated push, and legacy post-receive side effects.
 
 ## Wave 0 Exit Snapshot
 

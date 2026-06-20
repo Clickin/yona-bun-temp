@@ -8,7 +8,6 @@ use serde_json::json;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
@@ -20,34 +19,20 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_app_repository, create_router_with_repository_and_app_config,
-    AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
 };
 use yona_rust_vcs::MAX_SMART_HTTP_RPC_BYTES;
 
 mod rest_test_support;
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-}
-
-async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
-    let db = Database::connect("sqlite::memory:")
-        .await
-        .expect("sqlite connection");
-    Migrator::fresh(&db).await.expect("fresh migration");
-    let app_repo = AppRepository::new(db.clone());
-    let app = create_router_with_app_repository(
-        RuntimeConfig {
-            allow_anonymous_access: true,
-            base_path: "/yona".to_string(),
-            public_origin: "http://localhost".to_string(),
-        },
-        app_repo.clone(),
-    );
-
-    (app, app_repo, db)
+async fn build_app_with_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_root.to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await
 }
 
 async fn build_app_with_app_config(
@@ -343,12 +328,8 @@ async fn spawn_app_server(app: axum::Router) -> (String, oneshot::Sender<()>) {
 
 #[tokio::test]
 async fn smart_http_advertises_public_upload_pack_for_clone_url() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let project = repo
@@ -385,12 +366,8 @@ async fn smart_http_advertises_public_upload_pack_for_clone_url() {
 
 #[tokio::test]
 async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let project = repo
@@ -439,12 +416,8 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
 #[tokio::test]
 // Guards Smart HTTP reuse of route-utils-owned confirmation-session and project ACL helpers.
 async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _, member_id) = register_user(app.clone(), "member").await;
     register_user(app.clone(), "outsider").await;
@@ -497,16 +470,13 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
 
 #[tokio::test]
 async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mutation() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, _) = build_app_with_app_config(AppRuntimeConfig {
         auth_ui: AuthUiConfig {
             signup_require_confirm: true,
             ..AuthUiConfig::default()
         },
+        data_root: data_dir.path().to_path_buf(),
         ..AppRuntimeConfig::default()
     })
     .await;
@@ -576,12 +546,8 @@ async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mut
 
 #[tokio::test]
 async fn smart_http_receive_pack_rejects_oversized_content_length_before_git_execution() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _, member_id) = register_user(app.clone(), "member").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -623,12 +589,8 @@ async fn smart_http_receive_pack_rejects_oversized_content_length_before_git_exe
 
 #[tokio::test]
 async fn smart_http_supports_real_git_clone_and_authenticated_push() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, _) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, _, member_id) = register_user(app.clone(), "member").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -720,13 +682,9 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
 #[tokio::test]
 // Guards Smart HTTP webhook payload reuse of the route-utils-owned absolute app URL helper.
 async fn smart_http_push_records_legacy_post_receive_side_effects() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, _, member_id) = register_user(app.clone(), "member").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -859,13 +817,9 @@ async fn smart_http_push_records_legacy_post_receive_side_effects() {
 
 #[tokio::test]
 async fn smart_http_push_records_pull_request_commit_changed_side_effects() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, _, member_id) = register_user(app.clone(), "member").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;

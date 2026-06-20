@@ -30,6 +30,7 @@ pub(crate) fn apply_asset_routes(
     auth_ui: AuthUiConfig,
     integrations: IntegrationConfig,
     public_origin: String,
+    data_root: PathBuf,
 ) -> Router {
     match assets {
         AssetMode::Filesystem(asset_root) => {
@@ -49,6 +50,7 @@ pub(crate) fn apply_asset_routes(
             let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
+            let data_root_for_fallback = data_root;
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -99,6 +101,7 @@ pub(crate) fn apply_asset_routes(
                     let integrations = integrations_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
+                    let data_root = data_root_for_fallback.clone();
                     async move {
                         serve_filesystem_or_smart_http_fallback(
                             request,
@@ -110,6 +113,7 @@ pub(crate) fn apply_asset_routes(
                             integrations,
                             base_path,
                             public_origin,
+                            data_root,
                         )
                         .await
                     }
@@ -127,6 +131,7 @@ pub(crate) fn apply_asset_routes(
             let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
+            let data_root_for_fallback = data_root;
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -168,6 +173,7 @@ pub(crate) fn apply_asset_routes(
                     let integrations = integrations_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
+                    let data_root = data_root_for_fallback.clone();
                     async move {
                         serve_embedded_or_smart_http_fallback(
                             request,
@@ -178,6 +184,7 @@ pub(crate) fn apply_asset_routes(
                             integrations,
                             base_path,
                             public_origin,
+                            data_root,
                         )
                         .await
                     }
@@ -190,6 +197,7 @@ pub(crate) fn apply_asset_routes(
             let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path;
             let public_origin_for_fallback = public_origin;
+            let data_root_for_fallback = data_root;
             base_router.fallback(move |request: Request| {
                 let session_manager = session_manager_for_fallback.clone();
                 let backend = backend_for_fallback.clone();
@@ -197,6 +205,7 @@ pub(crate) fn apply_asset_routes(
                 let integrations = integrations_for_fallback.clone();
                 let base_path = base_path_for_fallback.clone();
                 let public_origin = public_origin_for_fallback.clone();
+                let data_root = data_root_for_fallback.clone();
                 async move {
                     smart_http_or_not_found(
                         request,
@@ -206,6 +215,7 @@ pub(crate) fn apply_asset_routes(
                         integrations,
                         base_path,
                         public_origin,
+                        data_root,
                     )
                     .await
                 }
@@ -263,6 +273,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
+    data_root: PathBuf,
 ) -> Response {
     let method = request.method().clone();
     if let Some(route) = direct_issue_excel_route_from_request(
@@ -310,6 +321,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             integrations,
             base_path,
             public_origin,
+            data_root,
         )
         .await;
     }
@@ -325,6 +337,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
     integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
+    data_root: PathBuf,
 ) -> Response {
     let method = request.method().clone();
     if let Some(route) = direct_issue_excel_route_from_request(
@@ -372,6 +385,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             integrations,
             base_path,
             public_origin,
+            data_root,
         )
         .await;
     }
@@ -386,6 +400,7 @@ pub(crate) async fn smart_http_or_not_found(
     integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
+    data_root: PathBuf,
 ) -> Response {
     if let Some(route) = direct_issue_excel_route_from_request(
         request.method(),
@@ -432,6 +447,7 @@ pub(crate) async fn smart_http_or_not_found(
             integrations,
             base_path,
             public_origin,
+            data_root,
         )
         .await;
     }
