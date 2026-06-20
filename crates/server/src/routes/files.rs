@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::{
-    base_path_href, persistence, project_read_allowed, random_storage_token,
-    session::SessionManager, PilotBackend, PilotServiceImpl,
+    base_path_href, persistence, project_read_allowed, random_storage_token, PilotBackend,
+    PilotServiceImpl,
 };
 
 fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
@@ -215,17 +215,15 @@ async fn attachment_container_read_allowed(
 pub(crate) async fn list_uploaded_files(
     headers: HeaderMap,
     query: AttachmentListQuery,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
     let Some(actor_id) = session.user_id else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let Ok(Some(actor)) = repository.find_user_by_id(actor_id).await else {
@@ -273,7 +271,7 @@ pub(crate) async fn list_uploaded_files(
                 .into_iter()
                 .filter(|record| record.container_type == "USER" && record.container_id == actor.id)
                 .filter(|record| record.owner_login_id == actor.login_id)
-                .map(|record| attachment_upload_response(record, &base_path))
+                .map(|record| attachment_upload_response(record, &service.base_path))
                 .collect(),
             Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
@@ -284,7 +282,7 @@ pub(crate) async fn list_uploaded_files(
     Json(AttachmentListResponse {
         attachments: attachments
             .into_iter()
-            .map(|record| attachment_upload_response(record, &base_path))
+            .map(|record| attachment_upload_response(record, &service.base_path))
             .collect(),
         temp_files,
     })
@@ -294,22 +292,19 @@ pub(crate) async fn list_uploaded_files(
 pub(crate) async fn upload_file(
     headers: HeaderMap,
     mut multipart: Multipart,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
     service: PilotServiceImpl,
 ) -> Response {
     let data_root = service.data_root.clone();
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
-    if !session_manager.validate_csrf(&headers, &session) {
+    if !service.session_manager.validate_csrf(&headers, &session) {
         return StatusCode::FORBIDDEN.into_response();
     }
     let Some(user_id) = session.user_id else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let Ok(Some(user)) = repository.find_user_by_id(user_id).await else {
@@ -363,7 +358,7 @@ pub(crate) async fn upload_file(
             mime_type,
             name: file_name,
             size: bytes.len() as i64,
-            url: base_path_href(&base_path, &format!("/files/{}", attachment.id)),
+            url: base_path_href(&service.base_path, &format!("/files/{}", attachment.id)),
         };
         return (StatusCode::CREATED, Json(response)).into_response();
     }
@@ -375,12 +370,10 @@ pub(crate) async fn get_uploaded_file(
     headers: HeaderMap,
     attachment_id: i64,
     raw_query: Option<String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
     service: PilotServiceImpl,
 ) -> Response {
     let data_root = service.data_root.clone();
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let Ok(Some(attachment)) = repository.read_attachment_by_id(attachment_id).await else {
@@ -388,7 +381,8 @@ pub(crate) async fn get_uploaded_file(
     };
     let is_avatar = attachment.container_type == "USER_AVATAR";
     if !is_avatar {
-        let actor_id = session_manager
+        let actor_id = service
+            .session_manager
             .read_session_from_headers(&headers)
             .and_then(|session| session.user_id);
         match attachment_container_read_allowed(
@@ -467,21 +461,19 @@ pub(crate) async fn get_uploaded_file(
 pub(crate) async fn delete_uploaded_file(
     headers: HeaderMap,
     attachment_id: i64,
-    session_manager: SessionManager,
-    backend: PilotBackend,
     service: PilotServiceImpl,
 ) -> Response {
     let data_root = service.data_root.clone();
-    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
-    if !session_manager.validate_csrf(&headers, &session) {
+    if !service.session_manager.validate_csrf(&headers, &session) {
         return StatusCode::FORBIDDEN.into_response();
     }
     let Some(actor_id) = session.user_id else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_IMPLEMENTED.into_response();
     };
     let Ok(Some(actor)) = repository.find_user_by_id(actor_id).await else {
@@ -517,31 +509,12 @@ pub(crate) async fn delete_uploaded_file(
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
-    let session_manager = service.session_manager.clone();
-    let backend = service.backend.clone();
-    let base_path = service.base_path.clone();
-
-    let file_session_manager = session_manager.clone();
-    let file_backend = backend.clone();
-    let file_base_path = base_path.clone();
     let file_service = service.clone();
-    let file_list_session_manager = session_manager.clone();
-    let file_list_backend = backend.clone();
-    let file_list_base_path = base_path.clone();
-    let file_read_session_manager = session_manager.clone();
-    let file_read_backend = backend.clone();
+    let file_list_service = service.clone();
     let file_read_service = service.clone();
-    let file_read_trailing_session_manager = session_manager.clone();
-    let file_read_trailing_backend = backend.clone();
     let file_read_trailing_service = service.clone();
-    let file_delete_post_session_manager = session_manager.clone();
-    let file_delete_post_backend = backend.clone();
     let file_delete_post_service = service.clone();
-    let file_delete_post_trailing_session_manager = session_manager.clone();
-    let file_delete_post_trailing_backend = backend.clone();
     let file_delete_post_trailing_service = service.clone();
-    let file_delete_session_manager = session_manager;
-    let file_delete_backend = backend;
     let file_delete_service = service;
 
     Router::new()
@@ -550,29 +523,12 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             get(
                 move |headers: HeaderMap, Query(query): Query<AttachmentListQuery>| {
                     async move {
-                        list_uploaded_files(
-                            headers,
-                            query,
-                            file_list_session_manager.clone(),
-                            file_list_backend.clone(),
-                            file_list_base_path.clone(),
-                        )
-                        .await
+                        list_uploaded_files(headers, query, file_list_service.clone()).await
                     }
                 },
             )
             .post(move |headers: HeaderMap, multipart: Multipart| {
-                async move {
-                    upload_file(
-                        headers,
-                        multipart,
-                        file_session_manager.clone(),
-                        file_backend.clone(),
-                        file_base_path.clone(),
-                        file_service.clone(),
-                    )
-                    .await
-                }
+                async move { upload_file(headers, multipart, file_service.clone()).await }
             }),
         )
         .route(
@@ -580,41 +536,15 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             get(
                 move |headers: HeaderMap, Path(id): Path<i64>, RawQuery(raw_query): RawQuery| {
                     async move {
-                        get_uploaded_file(
-                            headers,
-                            id,
-                            raw_query,
-                            file_read_session_manager.clone(),
-                            file_read_backend.clone(),
-                            file_read_service.clone(),
-                        )
-                        .await
+                        get_uploaded_file(headers, id, raw_query, file_read_service.clone()).await
                     }
                 },
             )
             .post(move |headers: HeaderMap, Path(id): Path<i64>| {
-                async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_post_session_manager.clone(),
-                        file_delete_post_backend.clone(),
-                        file_delete_post_service.clone(),
-                    )
-                    .await
-                }
+                async move { delete_uploaded_file(headers, id, file_delete_post_service.clone()).await }
             })
             .delete(move |headers: HeaderMap, Path(id): Path<i64>| {
-                async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_session_manager.clone(),
-                        file_delete_backend.clone(),
-                        file_delete_service.clone(),
-                    )
-                    .await
-                }
+                async move { delete_uploaded_file(headers, id, file_delete_service.clone()).await }
             }),
         )
         .route(
@@ -626,8 +556,6 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             headers,
                             id,
                             raw_query,
-                            file_read_trailing_session_manager.clone(),
-                            file_read_trailing_backend.clone(),
                             file_read_trailing_service.clone(),
                         )
                         .await
@@ -636,14 +564,8 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             )
             .post(move |headers: HeaderMap, Path(id): Path<i64>| {
                 async move {
-                    delete_uploaded_file(
-                        headers,
-                        id,
-                        file_delete_post_trailing_session_manager.clone(),
-                        file_delete_post_trailing_backend.clone(),
-                        file_delete_post_trailing_service.clone(),
-                    )
-                    .await
+                    delete_uploaded_file(headers, id, file_delete_post_trailing_service.clone())
+                        .await
                 }
             }),
         )

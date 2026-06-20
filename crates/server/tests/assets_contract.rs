@@ -771,6 +771,9 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
 
 #[tokio::test]
 async fn file_upload_requires_auth_and_preserves_general_attachments_under_legacy_default_limit() {
+    // Guards file route service-snapshot threading for upload/list/read/delete:
+    // base path, session, repository backend, upload limit, and data root come
+    // from the per-router AppRuntimeConfig-backed service.
     let data_root = tempdir().expect("file upload data root");
     let (app, repo, _) = build_auth_router_with_app_config(AppRuntimeConfig {
         data_root: data_root.path().to_path_buf(),
