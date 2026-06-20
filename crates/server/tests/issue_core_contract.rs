@@ -224,6 +224,20 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
         .await,
     )
     .await;
+    let listed = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(listed["totalCount"], 1);
+    assert_eq!(listed["items"][0]["title"], "Issue body webhook parity");
     clear_test_webhook_outbox();
 
     response_json(

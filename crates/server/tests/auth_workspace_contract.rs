@@ -597,6 +597,22 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let current_json = response_text(current).await;
     assert!(current_json.contains("\"loginId\":\"door\""));
 
+    let bootstrap_session = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/auth/session")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bootstrap_session.status(), StatusCode::OK);
+    let bootstrap_session_json = response_text(bootstrap_session).await;
+    assert!(bootstrap_session_json.contains("\"loginId\":\"door\""));
+
     let verify = app
         .clone()
         .oneshot(

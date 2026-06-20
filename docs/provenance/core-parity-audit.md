@@ -1096,6 +1096,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `pnpm --dir frontend exec vitest run src/runtime-config.spec.ts src/route-parity.spec.tsx`
   and
   `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test assets_contract embedded_assets_support_base_path_injection_and_spa_fallback`.
+- 2026-06-20 build/check diet note: release-only stale `_pilot` debug facade
+  exports are now gated behind `debug_assertions` while the production REST and
+  direct legacy routes keep their existing module-local handlers. This is
+  behavior-neutral for app-facing parity and removes release-image dead-code
+  warnings found by `pnpm smoke:docker`; `_pilot` debug facade behavior remains
+  compiled and covered in debug/test builds. Verification passed with
+  `pnpm agent:cargo -- --outside-sandbox build --release -p yona-rust-pilot-server`
+  without warning lines, `pnpm agent:cargo -- --outside-sandbox check -p yona-rust-pilot-server --tests`,
+  `pnpm smoke:embedded-assets`, `pnpm smoke:docker`, and focused
+  `auth_workspace_contract::register_requires_confirmation_session_from_runtime_config_without_env_mutation`.
 
 ## Wave 0 Exit Snapshot
 

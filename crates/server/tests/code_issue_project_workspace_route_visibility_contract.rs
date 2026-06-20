@@ -71,3 +71,24 @@ fn stale_service_facade_wrappers_do_not_return() {
         );
     }
 }
+
+#[test]
+fn debug_facade_exports_stay_debug_only_after_route_split() {
+    let debug_participation_exports = PROJECT_ROUTES
+        .split("#[cfg(debug_assertions)]\npub(crate) use participation::{")
+        .nth(1)
+        .and_then(|tail| tail.split("};").next())
+        .expect("debug-only project participation export block");
+
+    for export in [
+        "project_enroll",
+        "project_enroll_cancel",
+        "project_favorite_toggle",
+        "project_watch_toggle",
+    ] {
+        assert!(
+            debug_participation_exports.contains(export),
+            "{export} should remain available to debug _pilot routes without release exports"
+        );
+    }
+}

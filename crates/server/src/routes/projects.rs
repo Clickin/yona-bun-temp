@@ -66,6 +66,7 @@ pub(crate) use milestones::{
     project_milestone_create, project_milestone_delete, project_milestone_list,
     project_milestone_read, project_milestone_state_mutation, project_milestone_update,
 };
+#[cfg(debug_assertions)]
 pub(crate) use organizations::{
     organization_admin_read, organization_container_read, organization_create, organization_delete,
     organization_detail_read, organization_enroll, organization_enroll_cancel,
@@ -82,13 +83,14 @@ use organizations::{
     rest_update_organization, rest_update_organization_member_role, RestOrganizationBody,
     RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
 };
+pub(crate) use participation::recent_project_visit_record;
 use participation::{
     direct_toggle_project_watch, rest_cancel_enroll_project, rest_enroll_project,
     rest_toggle_favorite_project, rest_toggle_project_watch,
 };
+#[cfg(debug_assertions)]
 pub(crate) use participation::{
     project_enroll, project_enroll_cancel, project_favorite_toggle, project_watch_toggle,
-    recent_project_visit_record,
 };
 use transfers::{
     direct_accept_project_transfer, rest_read_project_transfer, rest_request_project_transfer,

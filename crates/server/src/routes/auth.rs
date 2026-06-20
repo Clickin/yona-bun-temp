@@ -12,15 +12,16 @@ use std::collections::HashMap;
 
 use crate::assets::serve_frontend_page;
 use crate::generated::yona::pilot::v1::*;
+#[cfg(debug_assertions)]
+use crate::resolve_current_session_response;
 use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
-    percent_encode_uri_component, require_session, require_valid_csrf,
-    resolve_current_session_response, rest_json_response, rest_owned_view,
-    rest_read_current_session, send_password_reset_mail, session::SessionManager, AssetMode,
-    AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotServiceImpl,
-    RestRouteError, SmtpRuntimeConfig, LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE,
-    LEGACY_MIN_PASSWORD_LENGTH,
+    percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
+    rest_owned_view, rest_read_current_session, send_password_reset_mail, session::SessionManager,
+    AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, PilotBackend,
+    PilotServiceImpl, RestRouteError, SmtpRuntimeConfig, LEGACY_LOGIN_INVALID_MESSAGE,
+    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -190,6 +191,7 @@ pub(crate) async fn rest_sign_out(
     Ok(rest_json_response(payload, ctx))
 }
 
+#[cfg(debug_assertions)]
 pub(crate) async fn auth_session_read(
     service: &PilotServiceImpl,
     ctx: Context,

@@ -24,12 +24,13 @@ mod users;
 mod utils;
 mod workspace;
 
+#[cfg(debug_assertions)]
+pub(crate) use auth::auth_session_read;
+pub(crate) use auth::auth_sign_in_with_password;
 pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
-pub(crate) use auth::{
-    auth_register_with_password, auth_session_read, auth_sign_in_with_password, auth_sign_out,
-    auth_verify_user,
-};
+#[cfg(debug_assertions)]
+pub(crate) use auth::{auth_register_with_password, auth_sign_out, auth_verify_user};
 pub(crate) use boards::read_posting_access;
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;
@@ -45,17 +46,20 @@ pub(crate) use files::{
 pub(crate) use issues::rest_routes as issue_rest_routes;
 pub(crate) use issues::routes as issue_routes;
 pub(crate) use issues::{
-    issue_attachment_from_record, issue_comment_participation_mutation, issue_detail_read,
-    issue_favorite_toggle, issue_milestone_from_record,
-    issue_milestone_from_record_with_issue_references, issue_participation_mutation,
-    issue_state_update, legacy_external_assignable_users_result, legacy_external_label_id,
-    organization_issues_list, project_issues_list, project_label_categories_list,
-    project_label_category_create, project_label_category_delete, project_label_category_update,
-    project_label_create, project_label_delete, project_label_update, project_labels_list,
-    read_issue_access, resolve_issue_reference_search_project, rest_list_user_issues,
+    issue_attachment_from_record, issue_comment_participation_mutation, issue_favorite_toggle,
+    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
+    issue_participation_mutation, legacy_external_assignable_users_result,
+    legacy_external_label_id, project_label_categories_list, project_label_category_create,
+    project_label_category_delete, project_label_category_update, project_label_create,
+    project_label_delete, project_label_update, project_labels_list, read_issue_access,
+    resolve_issue_reference_search_project, rest_list_user_issues,
     rest_project_issue_filter_from_query, rest_read_direct_issue_form_options,
     visible_user_issue_items, RestDirectIssueFormQuery, RestProjectIssuesQuery,
     RestUserIssuesQuery,
+};
+#[cfg(debug_assertions)]
+pub(crate) use issues::{
+    issue_detail_read, issue_state_update, organization_issues_list, project_issues_list,
 };
 pub(crate) use legacy_runtime::routes as legacy_runtime_routes;
 pub(crate) use notifications::rest_routes as notification_rest_routes;
@@ -64,18 +68,21 @@ pub(crate) use projects::rest_routes as project_rest_routes;
 pub(crate) use projects::routes as project_routes;
 pub(crate) use projects::{
     delete_project_repository_storage, dispatch_issue_webhooks, dispatch_posting_comment_webhooks,
-    dispatch_posting_webhooks, dispatch_pull_request_webhooks, organization_admin_read,
-    organization_container_read, organization_create, organization_delete,
+    dispatch_posting_webhooks, dispatch_pull_request_webhooks, project_milestone_create,
+    project_milestone_delete, project_milestone_list, project_milestone_read,
+    project_milestone_state_mutation, project_milestone_update, project_webhook_type_label,
+    recent_project_visit_record, record_project_webhook_delivery, rest_delete_project_member,
+    rest_project_menu_settings,
+};
+#[cfg(debug_assertions)]
+pub(crate) use projects::{
+    organization_admin_read, organization_container_read, organization_create, organization_delete,
     organization_detail_read, organization_enroll, organization_enroll_cancel,
     organization_enrollment_accept, organization_leave, organization_list, organization_member_add,
     organization_member_delete, organization_member_role_update, organization_settings_read,
     organization_update, project_container_read, project_create, project_detail_read,
     project_enroll, project_enroll_cancel, project_favorite_toggle, project_list,
-    project_milestone_create, project_milestone_delete, project_milestone_list,
-    project_milestone_read, project_milestone_state_mutation, project_milestone_update,
     project_overview_update, project_settings_read, project_watch_toggle,
-    project_webhook_type_label, recent_project_visit_record, record_project_webhook_delivery,
-    rest_delete_project_member, rest_project_menu_settings,
 };
 pub(crate) use pull_requests::rest_routes as pull_request_rest_routes;
 pub(crate) use pull_requests::routes as pull_request_routes;
@@ -135,11 +142,15 @@ pub(crate) use workspace::routes as workspace_routes;
 pub(crate) use workspace::{
     direct_toggle_workspace_notification, filter_workspace_issue_items_by_read_acl_for_viewer,
     filter_workspace_member_projects_by_read_acl_for_viewer,
-    filter_workspace_pull_request_items_by_read_acl_for_viewer, workspace_api_token_reset,
-    workspace_avatar_url, workspace_default_landing_path_set, workspace_email_add,
+    filter_workspace_pull_request_items_by_read_acl_for_viewer, workspace_avatar_url,
+    workspace_profile_from_record,
+};
+#[cfg(debug_assertions)]
+pub(crate) use workspace::{
+    workspace_api_token_reset, workspace_default_landing_path_set, workspace_email_add,
     workspace_email_delete, workspace_email_validation_send, workspace_main_email_set,
     workspace_notification_toggle, workspace_overview_read, workspace_password_change,
-    workspace_profile_from_record, workspace_profile_update, workspace_visited_projects_reset,
+    workspace_profile_update, workspace_visited_projects_reset,
 };
 
 pub(crate) fn rest_api_routes(

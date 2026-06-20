@@ -9,14 +9,15 @@ use buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[cfg(debug_assertions)]
+use super::utils::organization_issue_list_item_to_proto;
 use super::utils::{
     accepts_legacy_json, base_path_href, gravatar_url, legacy_content_update_body_from_value,
     legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value,
-    organization_issue_list_item_to_proto, project_issue_list_item_to_proto,
+    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_proto,
 };
 use crate::generated::yona::pilot::v1::*;
 use crate::{
@@ -306,6 +307,7 @@ struct RestIssueMutationBody {
     title: String,
 }
 
+#[cfg(debug_assertions)]
 pub(crate) fn issue_list_filter_from_request(
     request: &ListProjectIssuesRequestView<'_>,
 ) -> persistence::IssueListFilter {
@@ -323,6 +325,7 @@ pub(crate) fn issue_list_filter_from_request(
     }
 }
 
+#[cfg(debug_assertions)]
 pub(crate) async fn organization_issues_list(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -420,6 +423,7 @@ pub(crate) async fn organization_issues_list(
     ))
 }
 
+#[cfg(debug_assertions)]
 pub(crate) async fn project_issues_list(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -492,6 +496,7 @@ pub(crate) async fn project_issues_list(
     ))
 }
 
+#[cfg(debug_assertions)]
 pub(crate) async fn issue_detail_read(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -533,6 +538,7 @@ pub(crate) async fn issue_detail_read(
     Ok((pilot_issue_response("open"), ctx))
 }
 
+#[cfg(debug_assertions)]
 pub(crate) async fn issue_state_update(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -607,6 +613,7 @@ pub(crate) async fn issue_state_update(
     Ok((pilot_issue_response(request.state), ctx))
 }
 
+#[cfg(debug_assertions)]
 fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
     ReadIssueDetailResponse {
         owner_name: "pilot".to_string(),

@@ -4,6 +4,7 @@ use crate::generated::yona::pilot::v1::*;
 use crate::*;
 
 impl PilotServiceImpl {
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_current_session(
         &self,
         ctx: Context,
@@ -20,6 +21,7 @@ impl PilotServiceImpl {
         auth_sign_in_with_password(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn register_with_password(
         &self,
         ctx: Context,
@@ -28,6 +30,7 @@ impl PilotServiceImpl {
         auth_register_with_password(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn verify_user(
         &self,
         ctx: Context,
@@ -36,6 +39,7 @@ impl PilotServiceImpl {
         auth_verify_user(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn sign_out(
         &self,
         ctx: Context,
@@ -44,6 +48,7 @@ impl PilotServiceImpl {
         auth_sign_out(self, ctx).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_workspace_overview(
         &self,
         ctx: Context,
@@ -52,6 +57,7 @@ impl PilotServiceImpl {
         workspace_overview_read(self, ctx).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn set_default_landing_path(
         &self,
         ctx: Context,
@@ -60,6 +66,7 @@ impl PilotServiceImpl {
         workspace_default_landing_path_set(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn update_profile(
         &self,
         ctx: Context,
@@ -68,6 +75,7 @@ impl PilotServiceImpl {
         workspace_profile_update(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn change_password(
         &self,
         ctx: Context,
@@ -76,6 +84,7 @@ impl PilotServiceImpl {
         workspace_password_change(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn reset_visited_projects(
         &self,
         ctx: Context,
@@ -84,6 +93,7 @@ impl PilotServiceImpl {
         workspace_visited_projects_reset(self, ctx).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn add_workspace_email(
         &self,
         ctx: Context,
@@ -92,6 +102,7 @@ impl PilotServiceImpl {
         workspace_email_add(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn delete_workspace_email(
         &self,
         ctx: Context,
@@ -100,6 +111,7 @@ impl PilotServiceImpl {
         workspace_email_delete(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn send_workspace_email_validation(
         &self,
         ctx: Context,
@@ -108,6 +120,7 @@ impl PilotServiceImpl {
         workspace_email_validation_send(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn set_main_workspace_email(
         &self,
         ctx: Context,
@@ -116,6 +129,7 @@ impl PilotServiceImpl {
         workspace_main_email_set(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn reset_api_token(
         &self,
         ctx: Context,
@@ -124,6 +138,7 @@ impl PilotServiceImpl {
         workspace_api_token_reset(self, ctx).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn toggle_workspace_notification(
         &self,
         ctx: Context,
@@ -132,6 +147,7 @@ impl PilotServiceImpl {
         workspace_notification_toggle(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn create_organization(
         &self,
         ctx: Context,
@@ -140,6 +156,7 @@ impl PilotServiceImpl {
         organization_create(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_organization_detail(
         &self,
         ctx: Context,
@@ -148,6 +165,7 @@ impl PilotServiceImpl {
         organization_detail_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_organization_settings(
         &self,
         ctx: Context,
@@ -156,6 +174,7 @@ impl PilotServiceImpl {
         organization_settings_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_organization_admin(
         &self,
         ctx: Context,
@@ -164,6 +183,7 @@ impl PilotServiceImpl {
         organization_admin_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_organization_container(
         &self,
         ctx: Context,
@@ -172,6 +192,7 @@ impl PilotServiceImpl {
         organization_container_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn update_organization(
         &self,
         ctx: Context,
@@ -180,6 +201,7 @@ impl PilotServiceImpl {
         organization_update(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn add_organization_member(
         &self,
         ctx: Context,
@@ -188,6 +210,7 @@ impl PilotServiceImpl {
         organization_member_add(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn update_organization_member_role(
         &self,
         ctx: Context,
@@ -196,6 +219,7 @@ impl PilotServiceImpl {
         organization_member_role_update(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn delete_organization_member(
         &self,
         ctx: Context,
@@ -204,6 +228,7 @@ impl PilotServiceImpl {
         organization_member_delete(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn accept_organization_enrollment(
         &self,
         ctx: Context,
@@ -212,6 +237,7 @@ impl PilotServiceImpl {
         organization_enrollment_accept(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn enroll_organization(
         &self,
         ctx: Context,
@@ -220,6 +246,7 @@ impl PilotServiceImpl {
         organization_enroll(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn cancel_enroll_organization(
         &self,
         ctx: Context,
@@ -228,6 +255,7 @@ impl PilotServiceImpl {
         organization_enroll_cancel(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn leave_organization(
         &self,
         ctx: Context,
@@ -236,6 +264,7 @@ impl PilotServiceImpl {
         organization_leave(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn delete_organization(
         &self,
         ctx: Context,
@@ -244,6 +273,7 @@ impl PilotServiceImpl {
         organization_delete(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn create_project(
         &self,
         ctx: Context,
@@ -252,6 +282,7 @@ impl PilotServiceImpl {
         project_create(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_project_detail(
         &self,
         ctx: Context,
@@ -260,6 +291,7 @@ impl PilotServiceImpl {
         project_detail_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_project_settings(
         &self,
         ctx: Context,
@@ -268,6 +300,7 @@ impl PilotServiceImpl {
         project_settings_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_project_container(
         &self,
         ctx: Context,
@@ -276,6 +309,7 @@ impl PilotServiceImpl {
         project_container_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn update_project_overview(
         &self,
         ctx: Context,
@@ -284,6 +318,7 @@ impl PilotServiceImpl {
         project_overview_update(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn toggle_project_watch(
         &self,
         ctx: Context,
@@ -292,6 +327,7 @@ impl PilotServiceImpl {
         project_watch_toggle(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn enroll_project(
         &self,
         ctx: Context,
@@ -300,6 +336,7 @@ impl PilotServiceImpl {
         project_enroll(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn cancel_enroll_project(
         &self,
         ctx: Context,
@@ -308,6 +345,7 @@ impl PilotServiceImpl {
         project_enroll_cancel(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn toggle_favorite_project(
         &self,
         ctx: Context,
@@ -324,6 +362,7 @@ impl PilotServiceImpl {
         recent_project_visit_record(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn list_projects(
         &self,
         ctx: Context,
@@ -332,6 +371,7 @@ impl PilotServiceImpl {
         project_list(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn list_organizations(
         &self,
         ctx: Context,
@@ -340,6 +380,7 @@ impl PilotServiceImpl {
         organization_list(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn list_organization_issues(
         &self,
         ctx: Context,
@@ -348,6 +389,7 @@ impl PilotServiceImpl {
         organization_issues_list(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn list_project_issues(
         &self,
         ctx: Context,
@@ -356,6 +398,7 @@ impl PilotServiceImpl {
         project_issues_list(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn read_issue_detail(
         &self,
         ctx: Context,
@@ -364,6 +407,7 @@ impl PilotServiceImpl {
         issue_detail_read(self, ctx, request).await
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) async fn update_issue_state(
         &self,
         ctx: Context,

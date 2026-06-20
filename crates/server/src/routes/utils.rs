@@ -13,14 +13,15 @@ use std::{collections::HashMap, time::SystemTime};
 use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
+#[cfg(debug_assertions)]
+use crate::generated::yona::pilot::v1::OrganizationIssueListItem;
 use crate::{
     generated::yona::pilot::v1::{
         IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
         OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
-        OrganizationIssueListItem, OrganizationMemberSummary, OrganizationProjectCard,
-        OrganizationRoleOption, ProjectContainer, ProjectDetail, ProjectIssueListItem,
-        ProjectMemberSummary, ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse,
-        ReadCurrentSessionResponse,
+        OrganizationMemberSummary, OrganizationProjectCard, OrganizationRoleOption,
+        ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
+        ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
     },
     persistence,
     session::{Session, SessionManager},
@@ -987,6 +988,7 @@ pub(crate) fn project_issue_list_item_to_proto(
     }
 }
 
+#[cfg(debug_assertions)]
 pub(crate) fn organization_issue_list_item_to_proto(
     item: persistence::ProjectIssueListItemRecord,
 ) -> OrganizationIssueListItem {
