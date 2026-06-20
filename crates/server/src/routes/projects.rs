@@ -101,7 +101,8 @@ use transfers::{
 };
 pub(crate) use vcs::delete_project_repository_storage;
 use vcs::{
-    reset_project_repository_storage, rest_change_project_vcs, rest_read_project_change_vcs,
+    direct_change_project_vcs, reset_project_repository_storage, rest_change_project_vcs,
+    rest_read_project_change_vcs,
 };
 pub(crate) use webhooks::{
     dispatch_issue_webhooks, dispatch_posting_comment_webhooks, dispatch_posting_webhooks,
@@ -2411,6 +2412,8 @@ pub(crate) fn routes(
     let direct_project_label_attach_session_manager = session_manager.clone();
     let direct_project_label_detach_backend = backend.clone();
     let direct_project_label_detach_session_manager = session_manager.clone();
+    let direct_project_change_vcs_backend = backend.clone();
+    let direct_project_change_vcs_session_manager = session_manager.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2790,6 +2793,24 @@ pub(crate) fn routes(
                             form,
                             direct_project_label_detach_session_manager.clone(),
                             direct_project_label_detach_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/changeVCS",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_change_project_vcs(
+                            headers,
+                            owner_name,
+                            project_name,
+                            direct_project_change_vcs_session_manager.clone(),
+                            direct_project_change_vcs_backend.clone(),
                         )
                         .await
                     }

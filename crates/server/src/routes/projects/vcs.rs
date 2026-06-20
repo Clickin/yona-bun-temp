@@ -135,3 +135,30 @@ pub(super) async fn rest_change_project_vcs(
     )?)
     .into_response())
 }
+
+pub(super) async fn direct_change_project_vcs(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
+    };
+    match rest_change_project_vcs(headers, owner_name.clone(), project_name.clone(), service).await
+    {
+        Ok(_) => (
+            StatusCode::NO_CONTENT,
+            [("Location", format!("/{owner_name}/{project_name}"))],
+        )
+            .into_response(),
+        Err(error) => error.into_response(),
+    }
+}

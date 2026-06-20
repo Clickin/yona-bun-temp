@@ -250,7 +250,7 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         let missing_svn = rest(
             app.clone(),
             Method::POST,
-            "/yona/api/v1/owners/owner/projects/projectYobi/change-vcs",
+            "/yona/owner/projectYobi/changeVCS",
             Some(&owner_cookie),
             Some(&owner_csrf),
             None,
@@ -274,21 +274,21 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         return;
     }
 
-    let changed = ok_json(
-        rest(
-            app.clone(),
-            Method::POST,
-            "/yona/api/v1/owners/owner/projects/projectYobi/change-vcs",
-            Some(&owner_cookie),
-            Some(&owner_csrf),
-            None,
-        )
-        .await,
+    let changed = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/changeVCS",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        None,
     )
     .await;
-    assert_eq!(changed["currentVcs"], "Subversion");
-    assert_eq!(changed["nextVcs"], "GIT");
-    assert_eq!(changed["redirectPath"], "/owner/projectYobi");
+    assert_eq!(changed.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        changed.headers().get(http::header::LOCATION).unwrap(),
+        "/owner/projectYobi"
+    );
+    assert_eq!(response_text(changed).await, "");
     assert!(
         !repo_path.exists(),
         "change VCS to SVN should remove the previous Git repository storage"
