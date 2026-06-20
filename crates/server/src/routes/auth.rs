@@ -332,6 +332,7 @@ pub(crate) async fn auth_register_with_password(
             &service.public_origin,
             &service.base_path,
             &service.smtp.default_from(),
+            &service.integrations,
         )?;
     }
 
@@ -406,6 +407,7 @@ pub(crate) async fn direct_request_reset_password_email(
     public_origin: String,
     site_name: String,
     from: String,
+    integrations: yona_rust_integrations::IntegrationConfig,
 ) -> Response {
     let session = session_manager.ensure_anonymous_session(&headers);
     let redirect_path = match &backend {
@@ -435,6 +437,7 @@ pub(crate) async fn direct_request_reset_password_email(
                             &base_path,
                             &site_name,
                             &from,
+                            &integrations,
                         );
                     }
                     "/lostPassword?requested=1"
@@ -844,6 +847,7 @@ pub(crate) fn routes(
     let legacy_signup_page_assets = assets.clone();
     let legacy_signup_page_browser_runtime = browser_runtime.clone();
     let direct_login_service = service.clone();
+    let lost_password_integrations = service.integrations.clone();
     let direct_signup_service = service;
     let signup_name_validator_backend = backend.clone();
     let signup_email_validator_backend = backend.clone();
@@ -976,6 +980,7 @@ pub(crate) fn routes(
                         lost_password_public_origin.clone(),
                         lost_password_site_name.clone(),
                         lost_password_from.clone(),
+                        lost_password_integrations.clone(),
                     )
                     .await
                 },

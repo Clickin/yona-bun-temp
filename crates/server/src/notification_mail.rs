@@ -1,7 +1,8 @@
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use std::time::{Duration, SystemTime};
 use yona_rust_integrations::{
-    deliver, notification_mail_batches, NotificationMailRecipient, OutboundMail,
+    deliver_with_config, notification_mail_batches, IntegrationConfig, NotificationMailRecipient,
+    OutboundMail,
 };
 
 use crate::persistence::PilotRepository;
@@ -50,6 +51,7 @@ pub struct NotificationMailDeliveryConfig {
     pub allowed_domains: Vec<String>,
     pub default_from: String,
     pub hide_address: bool,
+    pub integrations: IntegrationConfig,
     pub recipient_limit: Option<usize>,
     pub reply_to_address: Option<String>,
     pub site_name: String,
@@ -61,6 +63,7 @@ impl Default for NotificationMailDeliveryConfig {
             allowed_domains: Vec::new(),
             default_from: "noreply@yona.local".to_string(),
             hide_address: false,
+            integrations: IntegrationConfig::default(),
             recipient_limit: None,
             reply_to_address: None,
             site_name: "Yona".to_string(),
@@ -79,6 +82,7 @@ impl NotificationMailDeliveryConfig {
             ),
             default_from: SmtpRuntimeConfig::from_startup(config).default_from(),
             hide_address: config.notification_mail_hide_address.unwrap_or(false),
+            integrations: crate::app_config::integration_config_from_startup(config),
             recipient_limit: config.notification_mail_recipient_limit,
             reply_to_address: config.mailbox_imap_address.clone(),
             site_name: site_name_from_option(config.site_name.as_deref()),
@@ -709,15 +713,18 @@ pub async fn deliver_due_notification_mails(
                 .collect::<Vec<_>>();
             let reply_to = notification_mail_reply_to(&item, delivery_config);
             for recipient in batch.to {
-                deliver(OutboundMail {
-                    bcc: bcc.clone(),
-                    body: body.clone(),
-                    from: delivery_config.default_from.clone(),
-                    html: true,
-                    reply_to: reply_to.clone(),
-                    subject: subject.clone(),
-                    to: recipient.email,
-                })
+                deliver_with_config(
+                    OutboundMail {
+                        bcc: bcc.clone(),
+                        body: body.clone(),
+                        from: delivery_config.default_from.clone(),
+                        html: true,
+                        reply_to: reply_to.clone(),
+                        subject: subject.clone(),
+                        to: recipient.email,
+                    },
+                    &delivery_config.integrations,
+                )
                 .map_err(|error| error.to_string())?;
                 delivered += 1;
             }

@@ -34,7 +34,7 @@ slice lands instead of re-running broad repository searches every turn.
 | done | Site admin SMTP/runtime config | `crates/server/tests/site_admin_contract.rs` | Converted. Site-admin SMTP route behavior tests use explicit `AppRuntimeConfig.smtp`; process env mutation and `smtp_env_lock` were removed. | Remaining env reads are read-only assertions that app config does not mutate process env. |
 | done | Notification mail runtime config | `crates/server/tests/notification_contract.rs` | Converted. Notification scheduler and delivery tests use startup snapshot maps and explicit `NotificationMailDeliveryConfig`; process env mutation and `notification_mail_env_lock` were removed. | Shared mail delivery assertions use `notification_outbox_lock` only for the test outbox. |
 | done | Project transfer mail config | `crates/server/tests/project_transfer_contract.rs` | Converted. Project transfer mail tests use explicit `AppRuntimeConfig.smtp`; process env mutation and restore helper were removed. | Shared transfer-mail assertion uses a test outbox lock only for the outbox. |
-| 9 | Integrations env-backed convenience functions | `crates/integrations/src/lib.rs` | Public helpers such as `deliver`, `deliver_webhook`, `smtp_enabled`, and `*_from_env` call `IntegrationConfig::from_env()`. | Audit call sites. Prefer `*_with_config` APIs from app/runtime paths; keep env-backed helpers only as startup/legacy compatibility wrappers if still needed. |
+| done | Integrations env-backed convenience functions | `crates/integrations/src/lib.rs` | Converted. Server runtime mail and webhook paths use injected `IntegrationConfig` snapshots and `*_with_config` APIs; env-backed helpers remain compatibility wrappers with no server runtime call sites. | Startup config now snapshots SMTP/webhook integration keys once, and notification/site-admin/auth/workspace/project-transfer mail paths receive the app-scoped snapshot. |
 
 ## Startup Env Parser Exception
 
@@ -49,8 +49,9 @@ Current source env accesses are concentrated in:
 - `crates/server/src/main.rs`: calls `load_startup_config_from_env()`.
 - `crates/server/src/runtime_config.rs`: owns startup env parsing and the
   temporary compatibility env bridge.
-- `crates/integrations/src/lib.rs`: still exposes env-backed convenience
-  wrappers around `IntegrationConfig::from_env()`.
+- `crates/integrations/src/lib.rs`: still exposes env-backed compatibility
+  wrappers around `IntegrationConfig::from_env()`, but server runtime call sites
+  use injected `IntegrationConfig` values.
 
 ## Already Converted Notes
 

@@ -1664,6 +1664,7 @@ async fn direct_send_workspace_email_validation(
                         &public_origin,
                         &base_path,
                         default_from.as_str(),
+                        &service.integrations,
                     );
                 }
                 "/user/editform/emails?validation=sent"

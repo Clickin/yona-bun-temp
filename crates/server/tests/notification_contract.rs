@@ -973,6 +973,7 @@ fn notification_delivery_config_from_startup_uses_smtp_sender_snapshot_without_e
                 "SMTP_FROM".to_string(),
                 "startup-notify@example.com".to_string(),
             ),
+            ("YONA_SMTP_SSL".to_string(), "false".to_string()),
             (
                 "YONA_ALLOWED_MAIL_DOMAINS".to_string(),
                 "allowed.example.com".to_string(),
@@ -988,6 +989,13 @@ fn notification_delivery_config_from_startup_uses_smtp_sender_snapshot_without_e
     assert_eq!(
         delivery_config.allowed_domains,
         vec!["allowed.example.com".to_string()]
+    );
+    assert_eq!(
+        delivery_config
+            .integrations
+            .smtp_delivery_config()
+            .ssl_enabled,
+        Some(false)
     );
 }
 
@@ -1546,6 +1554,7 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
             allowed_domains: vec!["allowed.example.com".to_string()],
             default_from: "configured-notify@example.com".to_string(),
             hide_address: false,
+            integrations: yona_rust_integrations::IntegrationConfig::default(),
             recipient_limit: None,
             reply_to_address: Some("noreply@yona.example".to_string()),
             site_name: "Yona".to_string(),

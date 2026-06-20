@@ -2975,6 +2975,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].from, "site-admin@yona.local");
     assert_eq!(outbox[0].to, "receiver@example.com");
+    assert_eq!(outbox[0].bcc, Vec::<String>::new());
     assert_eq!(outbox[0].subject, "Test subject");
     assert_eq!(outbox[0].body, "Test body");
     assert!(!outbox[0].html);
@@ -3000,6 +3001,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     assert_eq!(outbox.len(), 2);
     assert_eq!(outbox[1].from, "site-admin@yona.local");
     assert_eq!(outbox[1].to, "direct@example.com");
+    assert_eq!(outbox[1].bcc, Vec::<String>::new());
     assert_eq!(outbox[1].subject, "Direct subject");
     assert_eq!(outbox[1].body, "Direct body");
     assert!(!outbox[1].html);

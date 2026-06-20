@@ -163,8 +163,31 @@ impl AppRuntimeConfig {
     }
 }
 
-fn integration_config_from_startup(config: &runtime_config::StartupConfig) -> IntegrationConfig {
+pub(crate) fn integration_config_from_startup(
+    config: &runtime_config::StartupConfig,
+) -> IntegrationConfig {
     let mut pairs = Vec::new();
+    if let Some(host) = &config.smtp_host {
+        pairs.push(("YONA_SMTP_HOST".to_string(), host.clone()));
+    }
+    if let Some(port) = config.smtp_port {
+        pairs.push(("YONA_SMTP_PORT".to_string(), port.to_string()));
+    }
+    if let Some(ssl) = config.smtp_ssl {
+        pairs.push(("YONA_SMTP_SSL".to_string(), ssl.to_string()));
+    }
+    if let Some(user) = &config.smtp_user {
+        pairs.push(("YONA_SMTP_USER".to_string(), user.clone()));
+    }
+    if let Some(password) = &config.smtp_password {
+        pairs.push(("YONA_SMTP_PASSWORD".to_string(), password.clone()));
+    }
+    if let Some(domain) = &config.smtp_domain {
+        pairs.push(("YONA_SMTP_DOMAIN".to_string(), domain.clone()));
+    }
+    if let Some(from) = &config.smtp_from {
+        pairs.push(("YONA_SMTP_FROM".to_string(), from.clone()));
+    }
     if let Some(delivery_retries) = config.webhook_delivery_retries {
         pairs.push((
             "YONA_WEBHOOK_DELIVERY_RETRIES".to_string(),

@@ -10,7 +10,7 @@ use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, time::SystemTime};
-use yona_rust_integrations::{deliver, OutboundMail};
+use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 #[cfg(debug_assertions)]
@@ -355,21 +355,25 @@ pub(crate) fn send_signup_verification_mail(
     public_origin: &str,
     base_path: &str,
     from: &str,
+    integrations: &IntegrationConfig,
 ) -> Result<(), ConnectError> {
     let verify_url = absolute_app_url(
         public_origin,
         base_path,
         &format!("/verify/{login_id}/{verification_code}"),
     );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
-        from: from.to_string(),
-        html: false,
-        reply_to: None,
-        subject: "New Sign-up Confirm".to_string(),
-        to: to.to_string(),
-    })
+    deliver_with_config(
+        OutboundMail {
+            bcc: Vec::new(),
+            body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
+            from: from.to_string(),
+            html: false,
+            reply_to: None,
+            subject: "New Sign-up Confirm".to_string(),
+            to: to.to_string(),
+        },
+        integrations,
+    )
     .map_err(internal_error)
 }
 
@@ -380,21 +384,27 @@ pub(crate) fn send_password_reset_mail(
     base_path: &str,
     site_name: &str,
     from: &str,
+    integrations: &IntegrationConfig,
 ) -> Result<(), ConnectError> {
     let reset_url = absolute_app_url(
         public_origin,
         base_path,
         &format!("/resetPassword?s={verification_code}"),
     );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
-        from: from.to_string(),
-        html: false,
-        reply_to: None,
-        subject: format!("[{}] Password reset request", site_name),
-        to: to.to_string(),
-    })
+    deliver_with_config(
+        OutboundMail {
+            bcc: Vec::new(),
+            body: format!(
+                "Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"
+            ),
+            from: from.to_string(),
+            html: false,
+            reply_to: None,
+            subject: format!("[{}] Password reset request", site_name),
+            to: to.to_string(),
+        },
+        integrations,
+    )
     .map_err(internal_error)
 }
 
@@ -405,21 +415,25 @@ pub(crate) fn send_workspace_email_validation_mail(
     public_origin: &str,
     base_path: &str,
     from: &str,
+    integrations: &IntegrationConfig,
 ) -> Result<(), ConnectError> {
     let confirm_url = absolute_app_url(
         public_origin,
         base_path,
         &format!("/user/email/confirm/{email_id}/{token}"),
     );
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
-        from: from.to_string(),
-        html: false,
-        reply_to: None,
-        subject: "Validation email".to_string(),
-        to: to.to_string(),
-    })
+    deliver_with_config(
+        OutboundMail {
+            bcc: Vec::new(),
+            body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
+            from: from.to_string(),
+            html: false,
+            reply_to: None,
+            subject: "Validation email".to_string(),
+            to: to.to_string(),
+        },
+        integrations,
+    )
     .map_err(internal_error)
 }
 
@@ -431,6 +445,7 @@ pub(crate) async fn send_project_transfer_request_mail(
     public_origin: &str,
     base_path: &str,
     from: &str,
+    integrations: &IntegrationConfig,
 ) -> Result<(), String> {
     let mut recipients = Vec::new();
     if let Some(user) = repository
@@ -476,15 +491,18 @@ pub(crate) async fn send_project_transfer_request_mail(
         authorization.project.project_name, sender.login_id
     );
     for to in recipients.into_iter().filter(|to| !to.trim().is_empty()) {
-        let _ = deliver(OutboundMail {
-            bcc: Vec::new(),
-            body: body.clone(),
-            from: from.to_string(),
-            html: false,
-            reply_to: None,
-            subject: subject.clone(),
-            to,
-        });
+        let _ = deliver_with_config(
+            OutboundMail {
+                bcc: Vec::new(),
+                body: body.clone(),
+                from: from.to_string(),
+                html: false,
+                reply_to: None,
+                subject: subject.clone(),
+                to,
+            },
+            integrations,
+        );
     }
     Ok(())
 }

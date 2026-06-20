@@ -13,7 +13,7 @@ use http::HeaderValue;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path as StdPath, sync::atomic::Ordering};
 use yona_rust_domain::ProjectScope;
-use yona_rust_integrations::{deliver, OutboundMail};
+use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
 
 use crate::persistence::PilotRepository;
 use crate::{
@@ -627,10 +627,14 @@ pub(crate) fn rest_routes(
             post({
                 let service = service.clone();
                 let smtp = smtp.clone();
+                let integrations = service.integrations.clone();
                 move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
                     let service = service.clone();
                     let smtp = smtp.clone();
-                    async move { rest_send_site_test_mail(headers, body, service, smtp).await }
+                    let integrations = integrations.clone();
+                    async move {
+                        rest_send_site_test_mail(headers, body, service, smtp, integrations).await
+                    }
                 }
             }),
         )
@@ -673,6 +677,7 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
     let site_set_avatar_service = service.clone();
     let site_mail_send_service = service.clone();
     let site_mail_send_smtp = service.smtp.clone();
+    let site_mail_send_integrations = service.integrations.clone();
     let site_mail_list_service = service.clone();
     let site_export_service = service.clone();
     let site_import_service = service;
@@ -751,6 +756,7 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
                         body,
                         site_mail_send_service.clone(),
                         site_mail_send_smtp.clone(),
+                        site_mail_send_integrations.clone(),
                     )
                     .await
                 }
@@ -1096,6 +1102,7 @@ async fn direct_send_site_mail(
     body: Bytes,
     service: PilotServiceImpl,
     smtp: SmtpRuntimeConfig,
+    integrations: IntegrationConfig,
 ) -> Response {
     let base_path = service.base_path.clone();
     let form = direct_site_mail_form(&body);
@@ -1106,7 +1113,7 @@ async fn direct_send_site_mail(
         subject: form.get("subject").cloned().unwrap_or_default(),
         body: form.get("body").cloned().unwrap_or_default(),
     };
-    match rest_send_site_test_mail(headers, body, service, smtp).await {
+    match rest_send_site_test_mail(headers, body, service, smtp, integrations).await {
         Ok(_) => {
             Redirect::to(&base_path_href(&base_path, "/sites/mail?sended=true")).into_response()
         }
@@ -2727,21 +2734,25 @@ async fn rest_send_site_test_mail(
     body: RestSiteMailSendBody,
     service: PilotServiceImpl,
     smtp: SmtpRuntimeConfig,
+    integrations: IntegrationConfig,
 ) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
     rest_require_site_admin_repository(&service, &headers, true).await?;
     let from = required_site_mail_field(body.from, "from")?;
     let to = required_site_mail_field(body.to, "to")?;
     let subject = required_site_mail_field(body.subject, "subject")?;
     let body = required_site_mail_field(body.body, "body")?;
-    deliver(OutboundMail {
-        bcc: Vec::new(),
-        body,
-        from,
-        html: false,
-        reply_to: None,
-        subject,
-        to,
-    })
+    deliver_with_config(
+        OutboundMail {
+            bcc: Vec::new(),
+            body,
+            from,
+            html: false,
+            reply_to: None,
+            subject,
+            to,
+        },
+        &integrations,
+    )
     .map_err(RestRouteError::internal)?;
 
     Ok(Json(rest_site_mail_options(true, &smtp)))
