@@ -722,7 +722,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
 }
 
 #[tokio::test]
-// Guards app-scoped data-root injection and repository provisioning lock.
+// Guards app-scoped service data-root injection and repository provisioning lock.
 async fn legacy_init_redirects_home_and_recreates_project_repositories() {
     let data_root = tempdir().expect("data root");
     let (app, repository, _) = build_auth_router_with_app_config(AppRuntimeConfig {

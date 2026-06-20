@@ -362,6 +362,7 @@ fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) 
 
 #[tokio::test]
 async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_errors() {
+    // Guards legacy /_import storage/default-scope access through the app-scoped service snapshot.
     let yona_data = temp_yona_data_root();
     let source_dir = tempdir().expect("source repo tempdir");
     let source_repo = source_dir.path().join("source.git");

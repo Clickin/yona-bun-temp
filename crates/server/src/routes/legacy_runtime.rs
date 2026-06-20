@@ -6,29 +6,25 @@ use axum::{
     Router,
 };
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, escape_html_text, headers_with_form_csrf, legacy_external_api_hello,
     map_project_scope, persistence, redirect_to, repository_provisioning_lock, require_session,
-    require_valid_csrf, rest_project_menu_settings, session::SessionManager, AssetMode,
-    BrowserRuntimeConfig, PilotBackend, PilotRepository, RestRouteError,
+    require_valid_csrf, rest_project_menu_settings, AssetMode, BrowserRuntimeConfig, PilotBackend,
+    PilotRepository, PilotServiceImpl, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,
 };
 
-pub(crate) async fn direct_legacy_init(
-    backend: PilotBackend,
-    base_path: String,
-    data_root: PathBuf,
-) -> Response {
-    if let PilotBackend::Repository(repository) = backend {
-        make_legacy_test_repositories(&repository, &data_root).await;
+pub(crate) async fn direct_legacy_init(service: PilotServiceImpl) -> Response {
+    if let PilotBackend::Repository(repository) = &service.backend {
+        make_legacy_test_repositories(repository, &service.data_root).await;
     }
 
-    Redirect::to(&base_path_href(&base_path, "/")).into_response()
+    Redirect::to(&base_path_href(&service.base_path, "/")).into_response()
 }
 
 pub(crate) async fn direct_legacy_fake() -> Response {
@@ -65,24 +61,23 @@ async fn make_legacy_test_repositories(repository: &PilotRepository, data_root: 
 
 pub(crate) async fn direct_legacy_migration_disabled(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    base_path: String,
-    site_name: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    if session_manager
+    if service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id)
         .is_none()
     {
         return Redirect::to(&base_path_href(
-            &base_path,
+            &service.base_path,
             "/users/loginform?redirectUrl=%2Fmigration",
         ))
         .into_response();
     }
 
-    let guide_href = base_path_href(&base_path, "/sites/data");
-    let escaped_site_name = escape_html_text(&site_name);
+    let guide_href = base_path_href(&service.base_path, "/sites/data");
+    let escaped_site_name = escape_html_text(&service.site_name);
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
@@ -139,16 +134,16 @@ pub(crate) async fn direct_legacy_migration_disabled(
 
 pub(crate) async fn direct_legacy_migration_json_disabled(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    base_path: String,
+    service: PilotServiceImpl,
 ) -> Response {
-    if session_manager
+    if service
+        .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id)
         .is_none()
     {
         return Redirect::to(&base_path_href(
-            &base_path,
+            &service.base_path,
             "/users/loginform?redirectUrl=%2Fmigration",
         ))
         .into_response();
@@ -160,24 +155,20 @@ pub(crate) async fn direct_legacy_migration_json_disabled(
 pub(crate) async fn direct_import_project(
     headers: HeaderMap,
     form: HashMap<String, String>,
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    project_default_scope: String,
-    data_root: PathBuf,
+    service: PilotServiceImpl,
 ) -> Response {
     let headers = headers_with_form_csrf(headers, &form);
-    let session = match require_session(&session_manager, &headers) {
+    let session = match require_session(&service.session_manager, &headers) {
         Ok(session) => session,
         Err(_) => return legacy_plain_response(StatusCode::FORBIDDEN, "forbidden"),
     };
-    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
+    if require_valid_csrf(&service.session_manager, &headers, &session).is_err() {
         return legacy_plain_response(StatusCode::FORBIDDEN, "forbidden");
     }
     let Some(actor_id) = session.user_id else {
         return legacy_plain_response(StatusCode::FORBIDDEN, "forbidden");
     };
-    let PilotBackend::Repository(repository) = &backend else {
+    let PilotBackend::Repository(repository) = &service.backend else {
         return RestRouteError::not_implemented("project import requires repository backend")
             .into_response();
     };
@@ -206,7 +197,7 @@ pub(crate) async fn direct_import_project(
     let request_scope = direct_form_value(&form, "projectScope");
     let default_scope;
     let scope_value = if request_scope.is_empty() {
-        default_scope = project_default_scope;
+        default_scope = service.project_default_scope.clone();
         default_scope.as_str()
     } else {
         request_scope.as_str()
@@ -262,7 +253,7 @@ pub(crate) async fn direct_import_project(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
 
-    let repo_path = yona_rust_vcs::repository_path(&data_root, created.id);
+    let repo_path = yona_rust_vcs::repository_path(&service.data_root, created.id);
     let clone_result = {
         let _guard = match repository_provisioning_lock().lock() {
             Ok(guard) => guard,
@@ -307,7 +298,7 @@ pub(crate) async fn direct_import_project(
     }
 
     redirect_to(
-        &base_path,
+        &service.base_path,
         &format!("/{}/{}", created.owner_name, created.project_name),
     )
 }
@@ -345,32 +336,18 @@ fn legacy_plain_response(status: StatusCode, body: &str) -> Response {
 }
 
 pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
-    base_path: String,
-    site_name: String,
-    project_default_scope: String,
-    data_root: PathBuf,
 ) -> Router {
     let legacy_api_index_assets = assets.clone();
     let legacy_api_index_browser_runtime = browser_runtime.clone();
     let legacy_api_v1_index_assets = assets;
     let legacy_api_v1_index_browser_runtime = browser_runtime;
-    let legacy_init_backend = backend.clone();
-    let legacy_init_base_path = base_path.clone();
-    let legacy_init_data_root = data_root.clone();
-    let project_import_session_manager = session_manager.clone();
-    let project_import_backend = backend;
-    let project_import_base_path = base_path.clone();
-    let project_import_default_scope = project_default_scope;
-    let project_import_data_root = data_root;
-    let legacy_migration_session_manager = session_manager.clone();
-    let legacy_migration_base_path = base_path.clone();
-    let legacy_migration_site_name = site_name;
-    let legacy_migration_json_session_manager = session_manager;
-    let legacy_migration_json_base_path = base_path;
+    let legacy_init_service = service.clone();
+    let project_import_service = service.clone();
+    let legacy_migration_service = service.clone();
+    let legacy_migration_json_service = service;
 
     Router::new()
         .route("/", post(direct_legacy_fake))
@@ -394,49 +371,30 @@ pub(crate) fn routes(
         .route(
             "/_init",
             get(move || {
-                let backend = legacy_init_backend.clone();
-                let base_path = legacy_init_base_path.clone();
-                let data_root = legacy_init_data_root.clone();
-                async move { direct_legacy_init(backend, base_path, data_root).await }
+                let service = legacy_init_service.clone();
+                async move { direct_legacy_init(service).await }
             }),
         )
         .route(
             "/_import",
             post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
-                    direct_import_project(
-                        headers,
-                        form,
-                        project_import_session_manager.clone(),
-                        project_import_backend.clone(),
-                        project_import_base_path.clone(),
-                        project_import_default_scope.clone(),
-                        project_import_data_root.clone(),
-                    )
-                    .await
+                    direct_import_project(headers, form, project_import_service.clone()).await
                 },
             ),
         )
         .route(
             "/migration",
             get(move |headers: HeaderMap| {
-                let session_manager = legacy_migration_session_manager.clone();
-                let base_path = legacy_migration_base_path.clone();
-                let site_name = legacy_migration_site_name.clone();
-                async move {
-                    direct_legacy_migration_disabled(headers, session_manager, base_path, site_name)
-                        .await
-                }
+                let service = legacy_migration_service.clone();
+                async move { direct_legacy_migration_disabled(headers, service).await }
             }),
         )
         .route(
             "/migration/{*legacy_path}",
             get(move |headers: HeaderMap| {
-                let session_manager = legacy_migration_json_session_manager.clone();
-                let base_path = legacy_migration_json_base_path.clone();
-                async move {
-                    direct_legacy_migration_json_disabled(headers, session_manager, base_path).await
-                }
+                let service = legacy_migration_json_service.clone();
+                async move { direct_legacy_migration_json_disabled(headers, service).await }
             }),
         )
 }
