@@ -149,6 +149,7 @@ struct RestMassUpdateIssuesBody {
     add_label_ids: Vec<i64>,
     assignee_login_id: String,
     assignee_update: bool,
+    delete: bool,
     #[serde(alias = "due_date")]
     due_date: String,
     #[serde(alias = "dueDateChanged", alias = "is_due_date_changed")]
@@ -3389,6 +3390,7 @@ async fn rest_mass_update_issues(
     let mut previous_states = std::collections::HashMap::new();
     let mut previous_assignees = std::collections::HashMap::new();
     let mut previous_milestones = std::collections::HashMap::new();
+    let mut target_issues = Vec::new();
     for issue_number in body.issue_numbers.iter().copied() {
         let issue = repository
             .read_issue_detail(&owner_name, &project_name, issue_number)
@@ -3396,6 +3398,10 @@ async fn rest_mass_update_issues(
             .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?
             .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+        if issue.is_draft {
+            target_issues.push(issue);
+            continue;
+        }
         if !issue_can_mutate(&authorization, &issue, &actor) {
             return Err(RestRouteError::from_connect_error(
                 ConnectError::permission_denied("issue mass update is not allowed"),
@@ -3404,6 +3410,32 @@ async fn rest_mass_update_issues(
         previous_states.insert(issue_number, issue.state.clone());
         previous_assignees.insert(issue_number, issue.assignee_login_id.clone());
         previous_milestones.insert(issue_number, issue.milestone_id);
+        target_issues.push(issue);
+    }
+    if body.delete {
+        for issue in target_issues.iter().filter(|issue| !issue.is_draft) {
+            if repository
+                .delete_issue(&owner_name, &project_name, issue.issue_number)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+            {
+                dispatch_issue_webhooks(
+                    repository,
+                    issue,
+                    &actor,
+                    "RESOURCE_DELETED",
+                    &issue.body_markdown,
+                    None,
+                    &public_origin,
+                    &base_path,
+                )
+                .await;
+            }
+        }
+        return Ok(Json(MassUpdateIssuesResponse {
+            ..Default::default()
+        }));
     }
     let assignee_update = body.assignee_update;
     let milestone_update = body.milestone_update;

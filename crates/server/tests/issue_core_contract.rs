@@ -524,6 +524,114 @@ async fn issue_core_contract_mass_update_updates_due_dates() {
 }
 
 #[tokio::test]
+async fn issue_core_contract_mass_update_deletes_selected_issues() {
+    // Guards legacy IssueMassUpdate.delete bulk deletion over selected non-draft issues.
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue mass update delete parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/issue-mass-delete",
+                "secret": "mass-delete-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    for title in ["First mass delete issue", "Second mass delete issue"] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                "/yona/api/v1/projects/owner/projectYobi/issues",
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({
+                    "title": title,
+                    "bodyMarkdown": "Mass-update delete body",
+                })),
+            )
+            .await,
+        )
+        .await;
+    }
+    clear_test_webhook_outbox();
+
+    let mass_deleted = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "delete": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert!(mass_deleted
+        .get("items")
+        .and_then(|items| items.as_array())
+        .is_none_or(Vec::is_empty));
+
+    for issue_number in [1, 2] {
+        let detail = rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/projectYobi/issues/{issue_number}"),
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await;
+        assert_eq!(detail.status(), StatusCode::NOT_FOUND);
+    }
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    assert!(deliveries.iter().all(|delivery| {
+        delivery.event_type == "RESOURCE_DELETED" && delivery.webhook_type == "SIMPLE"
+    }));
+
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_milestone_webhooks() {
     // Guards legacy IssueApp.massUpdate -> NotificationEvent.afterStateChanged
     // webhook fan-out for every issue whose state actually changed.

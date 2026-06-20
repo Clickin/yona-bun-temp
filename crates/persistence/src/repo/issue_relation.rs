@@ -154,6 +154,9 @@ impl AppRepository {
         for (project_record, model, next_assignee_id) in &targets {
             let previous_state = issue_state_from_raw(model.state);
             let was_draft = model.is_draft.unwrap_or_default() != 0;
+            if was_draft {
+                continue;
+            }
             let old_assignee_id = model.assignee_id;
             let old_milestone_id = model.milestone_id;
             let mut active = issue::ActiveModel::from(model.clone());
@@ -201,7 +204,7 @@ impl AppRepository {
                 }
             }
             if let Some(state) = requested_state.as_deref() {
-                if previous_state != state && !was_draft {
+                if previous_state != state {
                     state_changes.push((
                         project_record.clone(),
                         updated_model.clone(),
@@ -210,7 +213,7 @@ impl AppRepository {
                     ));
                 }
             }
-            if input.assignee_update && old_assignee_id != updated_model.assignee_id && !was_draft {
+            if input.assignee_update && old_assignee_id != updated_model.assignee_id {
                 assignee_changes.push((
                     project_record.clone(),
                     updated_model.clone(),
@@ -218,10 +221,7 @@ impl AppRepository {
                     updated_model.assignee_id,
                 ));
             }
-            if input.milestone_update
-                && old_milestone_id != updated_model.milestone_id
-                && !was_draft
-            {
+            if input.milestone_update && old_milestone_id != updated_model.milestone_id {
                 milestone_changes.push((
                     project_record.clone(),
                     updated_model.clone(),
@@ -229,7 +229,7 @@ impl AppRepository {
                     updated_model.milestone_id,
                 ));
             }
-            if (!added_label_names.is_empty() || !removed_label_names.is_empty()) && !was_draft {
+            if !added_label_names.is_empty() || !removed_label_names.is_empty() {
                 label_changes.push((
                     updated_model.clone(),
                     removed_label_names,
