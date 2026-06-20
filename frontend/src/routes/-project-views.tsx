@@ -482,6 +482,7 @@ type ProjectMenuActive =
 export function ProjectMenu(props: {
   activeMenu?: ProjectMenuActive;
   detail: ProjectDetailViewModel;
+  keymapMode?: "detail" | "list";
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
@@ -588,13 +589,21 @@ export function ProjectMenu(props: {
           </div>
         ) : null}
       </div>
-      <ProjectKeymapHelp detail={detail} section={props.activeMenu ?? "home"} />
+      <ProjectKeymapHelp
+        detail={detail}
+        mode={props.keymapMode}
+        section={props.activeMenu ?? "home"}
+      />
     </div>
   );
 }
 
-function ProjectKeymapHelp(props: { detail: ProjectDetailViewModel; section: ProjectMenuActive }) {
-  const { detail, section } = props;
+function ProjectKeymapHelp(props: {
+  detail: ProjectDetailViewModel;
+  mode?: "detail" | "list";
+  section: ProjectMenuActive;
+}) {
+  const { detail, mode, section } = props;
   const canUseAdmin = detail.showAdmin || detail.viewerCanUpdate;
 
   return (
@@ -622,13 +631,26 @@ function ProjectKeymapHelp(props: { detail: ProjectDetailViewModel; section: Pro
           <div className="span9">
             <div className="row-fluid">
               <div className="span5">
-                <h5>{projectKeymapSectionTitle(section)}</h5>
+                <h5>{projectKeymapSectionTitle(section, mode)}</h5>
                 {section === "board" ? <ProjectKeymapRow keys={["N"]} label="post.write" /> : null}
                 {section === "issue" ? (
                   <ProjectKeymapRow keys={["N"]} label="issue.menu.new" />
                 ) : null}
-                <ProjectKeymapRow keys={["\u2190"]} label="button.prevPage" />
-                <ProjectKeymapRow keys={["\u2192"]} label="button.nextPage" />
+                {mode === "detail" ? (
+                  <>
+                    <ProjectKeymapRow keys={["L"]} label="button.list" />
+                    <ProjectKeymapRow keys={["E"]} label="button.edit" />
+                  </>
+                ) : null}
+                {mode === "list" ? (
+                  <>
+                    <ProjectKeymapRow keys={["\u2190"]} label="button.prevPage" />
+                    <ProjectKeymapRow keys={["\u2192"]} label="button.nextPage" />
+                  </>
+                ) : null}
+                {section === "issue" && mode === "list" ? (
+                  <ProjectKeymapRow keys={["CTRL", "A"]} label="button.selectAll" />
+                ) : null}
               </div>
 
               <div className="span7">
@@ -640,6 +662,17 @@ function ProjectKeymapHelp(props: { detail: ProjectDetailViewModel; section: Pro
                 <ProjectKeymapRow keys={["CTRL", "ENTER"]} label="button.submitForm" />
               </div>
             </div>
+            {section === "issue" && mode === "detail" ? (
+              <div className="row-fluid mt20">
+                <div className="span12">
+                  <h5>search.menu.issue.comments</h5>
+                  <ProjectKeymapRow
+                    keys={["SHIFT", "CTRL", "ENTER"]}
+                    label="button.commentAndNextState.closed"
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -668,14 +701,14 @@ function ProjectKeymapRow(props: { keys: string[]; label: string }) {
   );
 }
 
-function projectKeymapSectionTitle(section: ProjectMenuActive) {
+function projectKeymapSectionTitle(section: ProjectMenuActive, mode?: "detail" | "list") {
   switch (section) {
     case "board":
-      return "title.boardList";
+      return mode === "detail" ? "title.boardDetail" : "title.boardList";
     case "code":
       return "menu.code";
     case "issue":
-      return "title.issueList";
+      return mode === "detail" ? "title.issueDetail" : "title.issueList";
     case "milestone":
       return "milestone";
     case "pullRequest":

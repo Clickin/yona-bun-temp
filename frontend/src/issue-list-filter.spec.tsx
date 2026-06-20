@@ -105,6 +105,13 @@ describe("project issue list filters", () => {
     expect(html).toContain('<a href="/yona/admin">admin</a>');
     expect(html).toContain('<a href="/yona/admin/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('href="#helpKeys"');
+    expect(html).toContain('class="modal hide fade keymap-help"');
+    expect(html).toContain("<h5>title.issueList</h5>");
+    expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
+    expect(html).toContain('<span class="help-inline">button.prevPage</span>');
+    expect(html).toContain('<span class="help-inline">button.nextPage</span>');
+    expect(html).toContain('<span class="help-inline">button.selectAll</span>');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');

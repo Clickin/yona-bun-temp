@@ -602,7 +602,12 @@ export function ProjectIssueListPage(props: {
   return (
     <main className="app-shell issue-list-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu
+        activeMenu="issue"
+        detail={detail}
+        keymapMode="list"
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="row-fluid issue-list-wrap" {...pjaxContainerAttr}>
@@ -1493,7 +1498,12 @@ export function ProjectIssueDetailPage(props: {
   return (
     <main className="app-shell issue-detail-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu
+        activeMenu="issue"
+        detail={detail}
+        keymapMode="detail"
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap board-view">
           <header className="board-header issue">

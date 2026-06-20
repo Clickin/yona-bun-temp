@@ -158,6 +158,14 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('<a href="/yona/owner">owner</a>');
     expect(html).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('href="#helpKeys"');
+    expect(html).toContain('class="modal hide fade keymap-help"');
+    expect(html).toContain("<h5>title.issueDetail</h5>");
+    expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
+    expect(html).toContain('<span class="help-inline">button.list</span>');
+    expect(html).toContain('<span class="help-inline">button.edit</span>');
+    expect(html).toContain("<h5>search.menu.issue.comments</h5>");
+    expect(html).toContain('<span class="help-inline">button.commentAndNextState.closed</span>');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("<p>owner/projectYobi</p>");
