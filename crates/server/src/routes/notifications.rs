@@ -75,9 +75,14 @@ pub(crate) fn routes(
     let notification_session_manager = session_manager.clone();
     let notification_backend = backend.clone();
     let notification_base_path = base_path.clone();
-    let unwatch_session_manager = session_manager.clone();
-    let unwatch_backend = backend.clone();
-    let unwatch_base_path = base_path.clone();
+    let watch_session_manager = session_manager.clone();
+    let watch_backend = backend.clone();
+    let unwatch_get_session_manager = session_manager.clone();
+    let unwatch_get_backend = backend.clone();
+    let unwatch_get_base_path = base_path.clone();
+    let unwatch_post_session_manager = session_manager.clone();
+    let unwatch_post_backend = backend.clone();
+    let unwatch_post_base_path = base_path.clone();
     let direct_notification_toggle_session_manager = session_manager.clone();
     let direct_notification_toggle_backend = backend.clone();
 
@@ -120,15 +125,44 @@ pub(crate) fn routes(
             ),
         )
         .route(
+            "/watch",
+            post(
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
+                    direct_legacy_watch(
+                        headers,
+                        query,
+                        watch_session_manager.clone(),
+                        watch_backend.clone(),
+                    )
+                    .await
+                },
+            ),
+        )
+        .route(
             "/unwatch",
             get(
                 move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
                     direct_legacy_unwatch(
                         headers,
                         query,
-                        unwatch_session_manager.clone(),
-                        unwatch_backend.clone(),
-                        unwatch_base_path.clone(),
+                        unwatch_get_session_manager.clone(),
+                        unwatch_get_backend.clone(),
+                        unwatch_get_base_path.clone(),
+                    )
+                    .await
+                },
+            ),
+        )
+        .route(
+            "/unwatch",
+            post(
+                move |headers: HeaderMap, query: Query<LegacyResourceQuery>| async move {
+                    direct_legacy_unwatch(
+                        headers,
+                        query,
+                        unwatch_post_session_manager.clone(),
+                        unwatch_post_backend.clone(),
+                        unwatch_post_base_path.clone(),
                     )
                     .await
                 },
@@ -325,6 +359,59 @@ async fn direct_legacy_unwatch(
     {
         Ok(()) if legacy_prefers_json(&headers) => StatusCode::OK.into_response(),
         Ok(()) => redirect_to(&base_path, &target.target_path),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_legacy_watch(
+    headers: HeaderMap,
+    Query(query): Query<LegacyResourceQuery>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let resource_type = query.resource_type.unwrap_or_default();
+    let resource_id = query.resource_id.unwrap_or_default();
+    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
+        return RestRouteError::bad_request("resource.type and resource.id are required")
+            .into_response();
+    }
+    let Some(user_id) = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id)
+    else {
+        return (StatusCode::FORBIDDEN, "Anonymous cannot watch it.").into_response();
+    };
+    let repository = match backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("watch requires repository backend")
+                .into_response();
+        }
+    };
+    let target = match repository
+        .resolve_legacy_resource_target(&resource_type, &resource_id)
+        .await
+    {
+        Ok(Some(target)) => target,
+        Ok(None) => return RestRouteError::not_found("resource not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if require_project_read(
+        &repository,
+        &target.owner_name,
+        &target.project_name,
+        Some(user_id),
+    )
+    .await
+    .is_err()
+    {
+        return (StatusCode::FORBIDDEN, "You have no permission to watch it.").into_response();
+    }
+    match repository
+        .watch_notification_resource(user_id, &resource_type, &resource_id)
+        .await
+    {
+        Ok(()) => StatusCode::OK.into_response(),
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
 }

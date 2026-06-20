@@ -194,6 +194,41 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn watch_notification_resource(
+        &self,
+        user_id: i64,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<(), DbErr> {
+        let resource_types = notification_unwatch_resource_types(resource_type);
+        for resource_type in resource_types {
+            if watch::Entity::find()
+                .filter(watch::Column::UserId.eq(Some(user_id)))
+                .filter(watch::Column::ResourceType.eq(Some(resource_type.clone())))
+                .filter(watch::Column::ResourceId.eq(Some(resource_id.to_string())))
+                .one(&self.db)
+                .await?
+                .is_none()
+            {
+                watch::ActiveModel {
+                    id: NotSet,
+                    user_id: Set(Some(user_id)),
+                    resource_type: Set(Some(resource_type.clone())),
+                    resource_id: Set(Some(resource_id.to_string())),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+            unwatch::Entity::delete_many()
+                .filter(unwatch::Column::UserId.eq(Some(user_id)))
+                .filter(unwatch::Column::ResourceType.eq(Some(resource_type)))
+                .filter(unwatch::Column::ResourceId.eq(Some(resource_id.to_string())))
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
     pub async fn resolve_legacy_resource_target(
         &self,
         resource_type: &str,

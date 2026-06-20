@@ -1112,6 +1112,39 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         .await
         .unwrap();
     assert_eq!(issue_unwatch_count, 1);
+
+    let direct_watch_response = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/watch?resource.type=issue_post&resource.id=1",
+        Some(&watcher_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(direct_watch_response.status(), StatusCode::OK);
+    assert!(direct_watch_response
+        .headers()
+        .get(http::header::LOCATION)
+        .is_none());
+    assert!(response_text(direct_watch_response).await.is_empty());
+    let issue_watch_count = watch::Entity::find()
+        .filter(watch::Column::UserId.eq(Some(watcher_id)))
+        .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+        .filter(watch::Column::ResourceId.eq(Some("1".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(issue_watch_count, 1);
+    let issue_unwatch_count_after_watch = unwatch::Entity::find()
+        .filter(unwatch::Column::UserId.eq(Some(watcher_id)))
+        .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+        .filter(unwatch::Column::ResourceId.eq(Some("1".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(issue_unwatch_count_after_watch, 0);
+
     clear_test_outbox();
     std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
     std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
