@@ -12,6 +12,7 @@ use crate::{
     AppRuntimeConfig, AuthUiConfig, PilotRepository, SiteUpdateConfig, SmtpRuntimeConfig,
     TranslationProxyConfig,
 };
+use yona_rust_integrations::IntegrationConfig;
 
 pub(crate) static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 
@@ -121,6 +122,7 @@ pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
 #[derive(Clone)]
 pub(crate) struct RuntimeRegistry {
     pub(crate) auth_ui: AuthUiConfig,
+    pub(crate) integrations: IntegrationConfig,
     pub(crate) max_uploaded_file_size: usize,
     pub(crate) project_default_scope: String,
     pub(crate) site_name: String,
@@ -133,6 +135,7 @@ impl RuntimeRegistry {
     pub(crate) fn from_app_config(config: &AppRuntimeConfig) -> Self {
         Self {
             auth_ui: config.auth_ui.clone(),
+            integrations: config.integrations.clone(),
             max_uploaded_file_size: config.max_uploaded_file_size,
             project_default_scope: config.project_default_scope.clone(),
             site_name: config.site_name.clone(),
@@ -148,6 +151,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) auth_ui: AuthUiConfig,
     pub(crate) base_path: String,
     pub(crate) public_origin: String,
+    pub(crate) integrations: IntegrationConfig,
     pub(crate) session_manager: SessionManager,
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,

@@ -1,4 +1,5 @@
 use super::*;
+use yona_rust_integrations::IntegrationConfig;
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -54,6 +55,7 @@ pub(super) async fn direct_create_issue_comment(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
+    integrations: IntegrationConfig,
 ) -> Response {
     match rest_create_issue_comment(
         headers_with_form_csrf(headers, &form),
@@ -65,6 +67,7 @@ pub(super) async fn direct_create_issue_comment(
         backend,
         base_path.clone(),
         public_origin,
+        integrations,
     )
     .await
     {
@@ -230,6 +233,7 @@ pub(super) async fn rest_create_issue_comment(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
+    integrations: IntegrationConfig,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -303,6 +307,7 @@ pub(super) async fn rest_create_issue_comment(
         (!target_fragment.is_empty()).then_some(target_fragment.as_str()),
         &public_origin,
         &base_path,
+        &integrations,
     )
     .await;
     Ok(Json(

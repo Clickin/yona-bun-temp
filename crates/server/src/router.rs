@@ -155,6 +155,7 @@ fn build_router_with_app_config(
         auth_ui: runtime.auth_ui.clone(),
         base_path: base_path.clone(),
         public_origin: public_origin.clone(),
+        integrations: runtime.integrations.clone(),
         session_manager: session_manager.clone(),
         backend: backend.clone(),
         project_default_scope: runtime.project_default_scope.clone(),
@@ -190,6 +191,7 @@ fn build_router_with_app_config(
         session_manager.clone(),
         route_backend.clone(),
         runtime.auth_ui.clone(),
+        runtime.integrations.clone(),
         public_origin.clone(),
     );
 

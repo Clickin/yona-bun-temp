@@ -16,7 +16,7 @@ use crate::{
     ConnectError, PilotBackend, PilotRepository, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
 use yona_rust_domain::ProjectScope;
-use yona_rust_integrations::{deliver_webhook, OutboundWebhook};
+use yona_rust_integrations::{deliver_webhook_with_config, IntegrationConfig, OutboundWebhook};
 use yona_rust_vcs::{
     GitHeadRefRecord, GitHttpBackendRequest, GitPushCommitRecord, VcsError,
     MAX_SMART_HTTP_RPC_BYTES,
@@ -112,6 +112,7 @@ pub(crate) async fn direct_smart_http_request(
     session_manager: SessionManager,
     backend: PilotBackend,
     auth_ui: AuthUiConfig,
+    integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -237,6 +238,7 @@ pub(crate) async fn direct_smart_http_request(
                         before_refs,
                         &public_origin,
                         &base_path,
+                        &integrations,
                     )
                     .await;
                 }
@@ -499,6 +501,7 @@ async fn record_smart_http_push_side_effects(
     before_refs: Vec<GitHeadRefRecord>,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(summary) = smart_http_push_summary(repo_path, before_refs) else {
         return;
@@ -526,6 +529,7 @@ async fn record_smart_http_push_side_effects(
         &summary,
         public_origin,
         base_path,
+        integrations,
     )
     .await;
     dispatch_git_push_webhooks(
@@ -535,6 +539,7 @@ async fn record_smart_http_push_side_effects(
         &summary,
         public_origin,
         base_path,
+        integrations,
     )
     .await;
 }
@@ -546,6 +551,7 @@ async fn record_pull_request_commit_changed_side_effects(
     summary: &SmartHttpPushSummary,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let branches = summary
         .updated_refs
@@ -592,6 +598,7 @@ async fn record_pull_request_commit_changed_side_effects(
             None,
             public_origin,
             base_path,
+            integrations,
         )
         .await;
     }
@@ -670,6 +677,7 @@ async fn dispatch_git_push_webhooks(
     summary: &SmartHttpPushSummary,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
         return;
@@ -685,13 +693,16 @@ async fn dispatch_git_push_webhooks(
             continue;
         }
         let webhook_type = project_webhook_type_label(webhook.webhook_type);
-        let delivery = deliver_webhook(OutboundWebhook {
-            body: body.clone(),
-            event_type: "NEW_COMMIT".to_string(),
-            payload_url: webhook.payload_url.clone(),
-            secret: webhook.secret.clone(),
-            webhook_type: webhook_type.clone(),
-        });
+        let delivery = deliver_webhook_with_config(
+            OutboundWebhook {
+                body: body.clone(),
+                event_type: "NEW_COMMIT".to_string(),
+                payload_url: webhook.payload_url.clone(),
+                secret: webhook.secret.clone(),
+                webhook_type: webhook_type.clone(),
+            },
+            integrations,
+        );
         record_project_webhook_delivery(
             repository,
             &webhook,

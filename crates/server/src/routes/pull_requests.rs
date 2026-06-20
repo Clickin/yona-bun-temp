@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use yona_rust_integrations::IntegrationConfig;
 use yona_rust_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::generated::yona::pilot::v1::IssueAttachment;
@@ -2261,6 +2262,7 @@ pub(crate) async fn rest_create_pull_request(
                 None,
                 &service.public_origin,
                 &service.base_path,
+                &service.integrations,
             )
             .await;
             record
@@ -2434,6 +2436,7 @@ pub(crate) async fn rest_accept_pull_request(
         pull_request_number,
         &service.public_origin,
         &service.base_path,
+        &service.integrations,
     )
     .await?;
     Ok(Json(
@@ -2457,6 +2460,7 @@ async fn accept_pull_request_for_actor(
     pull_request_number: i64,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) -> Result<
     (
         persistence::PullRequestDetailRecord,
@@ -2535,6 +2539,7 @@ async fn accept_pull_request_for_actor(
             None,
             public_origin,
             base_path,
+            integrations,
         )
         .await;
     }
@@ -2747,6 +2752,7 @@ pub(crate) async fn rest_set_pull_request_review(
         Some(reviewed),
         &service.public_origin,
         &service.base_path,
+        &service.integrations,
     )
     .await;
     Ok(Json(

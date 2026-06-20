@@ -1,5 +1,7 @@
 use super::*;
-use yona_rust_integrations::{deliver_webhook, OutboundWebhook, WebhookDeliveryOutcome};
+use yona_rust_integrations::{
+    deliver_webhook_with_config, IntegrationConfig, OutboundWebhook, WebhookDeliveryOutcome,
+};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -353,6 +355,7 @@ pub(crate) async fn dispatch_posting_webhooks(
     target_fragment: Option<&str>,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&posting.owner_name, &posting.project_name)
@@ -398,13 +401,16 @@ pub(crate) async fn dispatch_posting_webhooks(
         );
         let body = posting_webhook_payload(&webhook, &request_message, thread_name.as_deref());
         let request_body = body.clone();
-        let delivery = deliver_webhook(OutboundWebhook {
-            body,
-            event_type: event_type.to_string(),
-            payload_url: webhook.payload_url.clone(),
-            secret: webhook.secret.clone(),
-            webhook_type,
-        });
+        let delivery = deliver_webhook_with_config(
+            OutboundWebhook {
+                body,
+                event_type: event_type.to_string(),
+                payload_url: webhook.payload_url.clone(),
+                secret: webhook.secret.clone(),
+                webhook_type,
+            },
+            integrations,
+        );
         record_project_webhook_delivery(
             repository,
             &webhook,
@@ -436,6 +442,7 @@ pub(crate) async fn dispatch_posting_comment_webhooks(
     event_type: &str,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&posting.owner_name, &posting.project_name)
@@ -483,13 +490,16 @@ pub(crate) async fn dispatch_posting_comment_webhooks(
             thread_name.as_deref(),
         );
         let request_body = body.clone();
-        let delivery = deliver_webhook(OutboundWebhook {
-            body,
-            event_type: event_type.to_string(),
-            payload_url: webhook.payload_url.clone(),
-            secret: webhook.secret.clone(),
-            webhook_type,
-        });
+        let delivery = deliver_webhook_with_config(
+            OutboundWebhook {
+                body,
+                event_type: event_type.to_string(),
+                payload_url: webhook.payload_url.clone(),
+                secret: webhook.secret.clone(),
+                webhook_type,
+            },
+            integrations,
+        );
         record_project_webhook_delivery(
             repository,
             &webhook,
@@ -522,6 +532,7 @@ pub(crate) async fn dispatch_issue_webhooks(
     target_fragment: Option<&str>,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
@@ -573,13 +584,16 @@ pub(crate) async fn dispatch_issue_webhooks(
             thread_name.as_deref(),
         );
         let request_body = body.clone();
-        let delivery = deliver_webhook(OutboundWebhook {
-            body,
-            event_type: event_type.to_string(),
-            payload_url: webhook.payload_url.clone(),
-            secret: webhook.secret.clone(),
-            webhook_type,
-        });
+        let delivery = deliver_webhook_with_config(
+            OutboundWebhook {
+                body,
+                event_type: event_type.to_string(),
+                payload_url: webhook.payload_url.clone(),
+                secret: webhook.secret.clone(),
+                webhook_type,
+            },
+            integrations,
+        );
         record_project_webhook_delivery(
             repository,
             &webhook,
@@ -658,6 +672,7 @@ pub(crate) async fn dispatch_pull_request_webhooks(
     reviewed: Option<bool>,
     public_origin: &str,
     base_path: &str,
+    integrations: &IntegrationConfig,
 ) {
     let Ok(Some(project)) = repository
         .read_project_by_owner_and_name(&pull_request.owner_name, &pull_request.project_name)
@@ -723,13 +738,16 @@ pub(crate) async fn dispatch_pull_request_webhooks(
             thread_name.as_deref(),
         );
         let request_body = body.clone();
-        let delivery = deliver_webhook(OutboundWebhook {
-            body,
-            event_type: event_type.to_string(),
-            payload_url: webhook.payload_url.clone(),
-            secret: webhook.secret.clone(),
-            webhook_type,
-        });
+        let delivery = deliver_webhook_with_config(
+            OutboundWebhook {
+                body,
+                event_type: event_type.to_string(),
+                payload_url: webhook.payload_url.clone(),
+                secret: webhook.secret.clone(),
+                webhook_type,
+            },
+            integrations,
+        );
         record_project_webhook_delivery(
             repository,
             &webhook,

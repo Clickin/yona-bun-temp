@@ -14,6 +14,7 @@ use crate::{
     session::SessionManager, svn_protocol, AssetMode, AuthUiConfig, BrowserRuntimeConfig,
     PilotBackend,
 };
+use yona_rust_integrations::IntegrationConfig;
 
 mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
@@ -27,6 +28,7 @@ pub(crate) fn apply_asset_routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     auth_ui: AuthUiConfig,
+    integrations: IntegrationConfig,
     public_origin: String,
 ) -> Router {
     match assets {
@@ -44,6 +46,7 @@ pub(crate) fn apply_asset_routes(
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
             let auth_ui_for_fallback = auth_ui;
+            let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
 
@@ -93,6 +96,7 @@ pub(crate) fn apply_asset_routes(
                     let session_manager = session_manager_for_fallback.clone();
                     let backend = backend_for_fallback.clone();
                     let auth_ui = auth_ui_for_fallback.clone();
+                    let integrations = integrations_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
                     async move {
@@ -103,6 +107,7 @@ pub(crate) fn apply_asset_routes(
                             session_manager,
                             backend,
                             auth_ui,
+                            integrations,
                             base_path,
                             public_origin,
                         )
@@ -119,6 +124,7 @@ pub(crate) fn apply_asset_routes(
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
             let auth_ui_for_fallback = auth_ui;
+            let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path.clone();
             let public_origin_for_fallback = public_origin;
 
@@ -159,6 +165,7 @@ pub(crate) fn apply_asset_routes(
                     let session_manager = session_manager_for_fallback.clone();
                     let backend = backend_for_fallback.clone();
                     let auth_ui = auth_ui_for_fallback.clone();
+                    let integrations = integrations_for_fallback.clone();
                     let base_path = base_path_for_fallback.clone();
                     let public_origin = public_origin_for_fallback.clone();
                     async move {
@@ -168,6 +175,7 @@ pub(crate) fn apply_asset_routes(
                             session_manager,
                             backend,
                             auth_ui,
+                            integrations,
                             base_path,
                             public_origin,
                         )
@@ -179,12 +187,14 @@ pub(crate) fn apply_asset_routes(
             let backend_for_fallback = backend;
             let session_manager_for_fallback = session_manager;
             let auth_ui_for_fallback = auth_ui;
+            let integrations_for_fallback = integrations;
             let base_path_for_fallback = base_path;
             let public_origin_for_fallback = public_origin;
             base_router.fallback(move |request: Request| {
                 let session_manager = session_manager_for_fallback.clone();
                 let backend = backend_for_fallback.clone();
                 let auth_ui = auth_ui_for_fallback.clone();
+                let integrations = integrations_for_fallback.clone();
                 let base_path = base_path_for_fallback.clone();
                 let public_origin = public_origin_for_fallback.clone();
                 async move {
@@ -193,6 +203,7 @@ pub(crate) fn apply_asset_routes(
                         session_manager,
                         backend,
                         auth_ui,
+                        integrations,
                         base_path,
                         public_origin,
                     )
@@ -249,6 +260,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
     session_manager: SessionManager,
     backend: PilotBackend,
     auth_ui: AuthUiConfig,
+    integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -295,6 +307,7 @@ pub(crate) async fn serve_filesystem_or_smart_http_fallback(
             session_manager,
             backend,
             auth_ui,
+            integrations,
             base_path,
             public_origin,
         )
@@ -309,6 +322,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
     session_manager: SessionManager,
     backend: PilotBackend,
     auth_ui: AuthUiConfig,
+    integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -355,6 +369,7 @@ pub(crate) async fn serve_embedded_or_smart_http_fallback(
             session_manager,
             backend,
             auth_ui,
+            integrations,
             base_path,
             public_origin,
         )
@@ -368,6 +383,7 @@ pub(crate) async fn smart_http_or_not_found(
     session_manager: SessionManager,
     backend: PilotBackend,
     auth_ui: AuthUiConfig,
+    integrations: IntegrationConfig,
     base_path: String,
     public_origin: String,
 ) -> Response {
@@ -413,6 +429,7 @@ pub(crate) async fn smart_http_or_not_found(
             session_manager,
             backend,
             auth_ui,
+            integrations,
             base_path,
             public_origin,
         )

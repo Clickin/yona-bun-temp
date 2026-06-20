@@ -160,6 +160,7 @@ pub(super) async fn rest_create_pull_request_comment(
         None,
         &service.public_origin,
         &service.base_path,
+        &service.integrations,
     )
     .await;
     Ok(Json(

@@ -8,6 +8,7 @@ use crate::{
     project_default_scope_from_option, site_name_from_option, supported_languages_from_option,
     trimmed_option, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
+use yona_rust_integrations::IntegrationConfig;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeConfig {
@@ -29,6 +30,7 @@ impl Default for RuntimeConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
     pub auth_ui: AuthUiConfig,
+    pub integrations: IntegrationConfig,
     pub max_uploaded_file_size: usize,
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
@@ -133,6 +135,7 @@ impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
             auth_ui: AuthUiConfig::default(),
+            integrations: IntegrationConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
@@ -151,6 +154,7 @@ impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
             auth_ui: AuthUiConfig::from_startup(config),
+            integrations: integration_config_from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             project_default_menus: project_default_menus_from_option(
                 config.project_default_menus.as_deref(),
@@ -173,6 +177,7 @@ impl AppRuntimeConfig {
     pub(crate) fn from_env() -> Self {
         Self {
             auth_ui: AuthUiConfig::from_env(),
+            integrations: IntegrationConfig::from_env(),
             max_uploaded_file_size: configured_max_uploaded_file_size(),
             project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
@@ -188,6 +193,23 @@ impl AppRuntimeConfig {
             translation_proxy: TranslationProxyConfig::from_env(),
         }
     }
+}
+
+fn integration_config_from_startup(config: &runtime_config::StartupConfig) -> IntegrationConfig {
+    let mut pairs = Vec::new();
+    if let Some(delivery_retries) = config.webhook_delivery_retries {
+        pairs.push((
+            "YONA_WEBHOOK_DELIVERY_RETRIES".to_string(),
+            delivery_retries.to_string(),
+        ));
+    }
+    if let Some(allow_private_networks) = config.webhook_allow_private_networks {
+        pairs.push((
+            "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS".to_string(),
+            allow_private_networks.to_string(),
+        ));
+    }
+    IntegrationConfig::from_pairs(pairs)
 }
 
 impl SiteUpdateConfig {

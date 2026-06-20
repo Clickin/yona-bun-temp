@@ -1,7 +1,7 @@
 use std::{process::Command, time::Duration};
 
 use crate::runtime_config;
-use crate::server_config::{configured_command_parts, parse_legacy_bool, parse_legacy_duration_ms};
+use crate::server_config::{configured_command_parts, parse_legacy_duration_ms};
 
 pub async fn process_mailbox_parsed_message(
     repository: &yona_rust_persistence::AppRepository,

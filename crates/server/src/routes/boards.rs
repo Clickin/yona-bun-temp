@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use yona_rust_integrations::IntegrationConfig;
 use yona_rust_vcs::VcsError;
 
 use crate::{
@@ -348,6 +349,7 @@ pub(crate) fn rest_routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Router {
     Router::new()
         .route(
@@ -381,12 +383,14 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let integrations = integrations.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestPostMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let integrations = integrations.clone();
                     async move {
                         rest_create_posting(
                             headers,
@@ -396,6 +400,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            integrations,
                         )
                         .await
                     }
@@ -504,12 +509,14 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let integrations = integrations.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let integrations = integrations.clone();
                     async move {
                         rest_create_posting_comment(
                             headers,
@@ -520,6 +527,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            integrations,
                         )
                         .await
                     }
@@ -532,6 +540,7 @@ pub(crate) fn rest_routes(
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let integrations = integrations.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
                     String,
@@ -543,6 +552,7 @@ pub(crate) fn rest_routes(
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let integrations = integrations.clone();
                     async move {
                         rest_update_posting_comment(
                             headers,
@@ -554,6 +564,7 @@ pub(crate) fn rest_routes(
                             session_manager,
                             backend,
                             base_path,
+                            integrations,
                         )
                         .await
                     }
@@ -671,6 +682,7 @@ pub(crate) fn routes(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Router {
     let legacy_board_posts_backend = backend.clone();
     let legacy_board_posts_session_manager = session_manager.clone();
@@ -684,9 +696,11 @@ pub(crate) fn routes(
     let board_comment_create_backend = backend.clone();
     let board_comment_create_session_manager = session_manager.clone();
     let board_comment_create_base_path = base_path.clone();
+    let board_comment_create_integrations = integrations.clone();
     let board_comment_update_backend = backend.clone();
     let board_comment_update_session_manager = session_manager.clone();
     let board_comment_update_base_path = base_path.clone();
+    let board_comment_update_integrations = integrations;
     let legacy_board_comment_update_backend = backend.clone();
     let legacy_board_comment_update_session_manager = session_manager.clone();
     let board_comment_delete_backend = backend.clone();
@@ -792,6 +806,7 @@ pub(crate) fn routes(
                             board_comment_create_session_manager.clone(),
                             board_comment_create_backend.clone(),
                             board_comment_create_base_path.clone(),
+                            board_comment_create_integrations.clone(),
                         )
                         .await
                     }
@@ -820,6 +835,7 @@ pub(crate) fn routes(
                             board_comment_update_session_manager.clone(),
                             board_comment_update_backend.clone(),
                             board_comment_update_base_path.clone(),
+                            board_comment_update_integrations.clone(),
                         )
                         .await
                     }
@@ -1222,6 +1238,7 @@ async fn direct_create_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Response {
     match rest_create_posting_comment(
         headers_with_form_csrf(headers, &form),
@@ -1232,6 +1249,7 @@ async fn direct_create_posting_comment(
         session_manager,
         backend,
         base_path.clone(),
+        integrations,
     )
     .await
     {
@@ -1262,6 +1280,7 @@ async fn direct_update_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Response {
     match rest_update_posting_comment(
         headers_with_form_csrf(headers, &form),
@@ -1273,6 +1292,7 @@ async fn direct_update_posting_comment(
         session_manager,
         backend,
         base_path.clone(),
+        integrations,
     )
     .await
     {
@@ -1596,6 +1616,7 @@ async fn rest_create_posting(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Result<Json<RestPostMutationResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -1675,6 +1696,7 @@ async fn rest_create_posting(
         None,
         "",
         &base_path,
+        &integrations,
     )
     .await;
     Ok(Json(RestPostMutationResponse::Detail(
@@ -1848,6 +1870,7 @@ async fn rest_create_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -1907,6 +1930,7 @@ async fn rest_create_posting_comment(
             "NEW_COMMENT",
             "",
             &base_path,
+            &integrations,
         )
         .await;
     }
@@ -1939,6 +1963,7 @@ async fn rest_update_posting_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    integrations: IntegrationConfig,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -2004,6 +2029,7 @@ async fn rest_update_posting_comment(
             "COMMENT_UPDATED",
             "",
             &base_path,
+            &integrations,
         )
         .await;
     }
