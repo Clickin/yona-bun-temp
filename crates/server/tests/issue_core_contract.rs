@@ -174,6 +174,7 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "assigned").await;
     response_json(
         rpc(
             app.clone(),
@@ -433,7 +434,7 @@ async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks()
 }
 
 #[tokio::test]
-async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
+async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_milestone_webhooks() {
     // Guards legacy IssueApp.massUpdate -> NotificationEvent.afterStateChanged
     // webhook fan-out for every issue whose state actually changed.
     let _guard = yona_data_env_lock()
@@ -445,6 +446,7 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
 
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "assigned").await;
     response_json(
         rpc(
             app.clone(),
@@ -479,6 +481,32 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
         .await,
     )
     .await;
+    let milestone = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/milestones",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "v1.0",
+                "contentsMarkdown": "Ship mass-update webhook parity",
+                "dueDate": "2026-05-09",
+                "state": "open",
+                "attachmentIds": []
+            })),
+        )
+        .await,
+    )
+    .await;
+    let milestone_id = milestone["milestone"]["id"]
+        .as_i64()
+        .or_else(|| {
+            milestone["milestone"]["id"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("milestone id");
     response_json(
         rest(
             app.clone(),
@@ -513,7 +541,7 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
 
     response_json(
         rest(
-            app,
+            app.clone(),
             Method::POST,
             "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
             Some(&cookie),
@@ -548,6 +576,99 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_webhooks() {
     assert!(texts.iter().any(|text| {
         text.contains("/yona/owner/projectYobi/issue/2|#2: Second mass update webhook issue")
     }));
+
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "assigneeUpdate": true,
+                "assigneeLoginId": "assigned",
+            })),
+        )
+        .await,
+    )
+    .await;
+    let assignee_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(assignee_deliveries.len(), 2);
+    assert!(assignee_deliveries.iter().all(|delivery| {
+        delivery.event_type == "ISSUE_ASSIGNEE_CHANGED" && delivery.webhook_type == "SIMPLE"
+    }));
+    let first_after_assignee = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(first_after_assignee["assigneeLoginId"], "assigned");
+    assert!(first_after_assignee["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["eventType"] == "ISSUE_ASSIGNEE_CHANGED"));
+    clear_test_webhook_outbox();
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "milestoneUpdate": true,
+                "milestoneId": milestone_id,
+            })),
+        )
+        .await,
+    )
+    .await;
+    let milestone_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(milestone_deliveries.len(), 2);
+    assert!(milestone_deliveries.iter().all(|delivery| {
+        delivery.event_type == "ISSUE_MILESTONE_CHANGED" && delivery.webhook_type == "SIMPLE"
+    }));
+    let first_after_milestone = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        first_after_milestone["milestoneId"]
+            .as_i64()
+            .or_else(|| {
+                first_after_milestone["milestoneId"]
+                    .as_str()
+                    .and_then(|value| value.parse().ok())
+            })
+            .expect("issue milestone id"),
+        milestone_id
+    );
+    assert!(first_after_milestone["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["eventType"] == "ISSUE_MILESTONE_CHANGED"));
 
     clear_test_webhook_outbox();
 }

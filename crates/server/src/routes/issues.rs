@@ -3378,6 +3378,8 @@ async fn rest_mass_update_issues(
             .map_err(RestRouteError::from_connect_error)?;
     let requested_state = (!body.state.trim().is_empty()).then(|| body.state.trim().to_string());
     let mut previous_states = std::collections::HashMap::new();
+    let mut previous_assignees = std::collections::HashMap::new();
+    let mut previous_milestones = std::collections::HashMap::new();
     for issue_number in body.issue_numbers.iter().copied() {
         let issue = repository
             .read_issue_detail(&owner_name, &project_name, issue_number)
@@ -3391,7 +3393,11 @@ async fn rest_mass_update_issues(
             ));
         }
         previous_states.insert(issue_number, issue.state.clone());
+        previous_assignees.insert(issue_number, issue.assignee_login_id.clone());
+        previous_milestones.insert(issue_number, issue.milestone_id);
     }
+    let assignee_update = body.assignee_update;
+    let milestone_update = body.milestone_update;
     let updated_issues = repository
         .mass_update_issues(
             persistence::MassUpdateIssuesInput {
@@ -3415,23 +3421,58 @@ async fn rest_mass_update_issues(
         .map_err(RestRouteError::from_connect_error)?;
     let mut items = Vec::with_capacity(updated_issues.len());
     for issue in &updated_issues {
-        if !issue.is_draft
-            && requested_state.is_some()
-            && previous_states
-                .get(&issue.issue_number)
-                .is_some_and(|previous_state| previous_state != &issue.state)
-        {
-            dispatch_issue_webhooks(
-                repository,
-                issue,
-                &actor,
-                "ISSUE_STATE_CHANGED",
-                &issue.body_markdown,
-                None,
-                &public_origin,
-                &base_path,
-            )
-            .await;
+        if !issue.is_draft {
+            if requested_state.is_some()
+                && previous_states
+                    .get(&issue.issue_number)
+                    .is_some_and(|previous_state| previous_state != &issue.state)
+            {
+                dispatch_issue_webhooks(
+                    repository,
+                    issue,
+                    &actor,
+                    "ISSUE_STATE_CHANGED",
+                    &issue.body_markdown,
+                    None,
+                    &public_origin,
+                    &base_path,
+                )
+                .await;
+            }
+            if assignee_update
+                && previous_assignees
+                    .get(&issue.issue_number)
+                    .is_some_and(|previous_assignee| previous_assignee != &issue.assignee_login_id)
+            {
+                dispatch_issue_webhooks(
+                    repository,
+                    issue,
+                    &actor,
+                    "ISSUE_ASSIGNEE_CHANGED",
+                    &issue.body_markdown,
+                    None,
+                    &public_origin,
+                    &base_path,
+                )
+                .await;
+            }
+            if milestone_update
+                && previous_milestones
+                    .get(&issue.issue_number)
+                    .is_some_and(|previous_milestone| previous_milestone != &issue.milestone_id)
+            {
+                dispatch_issue_webhooks(
+                    repository,
+                    issue,
+                    &actor,
+                    "ISSUE_MILESTONE_CHANGED",
+                    &issue.body_markdown,
+                    None,
+                    &public_origin,
+                    &base_path,
+                )
+                .await;
+            }
         }
         items.push(
             issue_detail_response_from_record_with_repository_issue_references(

@@ -130,10 +130,14 @@ impl AppRepository {
             .map(normalize_identity)
             .filter(|value| !value.is_empty());
         let mut state_changes = Vec::new();
+        let mut assignee_changes = Vec::new();
+        let mut milestone_changes = Vec::new();
         let txn = self.db.begin().await?;
         for (project_record, model, next_assignee_id) in &targets {
             let previous_state = issue_state_from_raw(model.state);
             let was_draft = model.is_draft.unwrap_or_default() != 0;
+            let old_assignee_id = model.assignee_id;
+            let old_milestone_id = model.milestone_id;
             let mut active = issue::ActiveModel::from(model.clone());
             if let Some(state) = requested_state.as_deref() {
                 active.state = Set(Some(issue_state_to_raw(state)));
@@ -175,6 +179,25 @@ impl AppRepository {
                     ));
                 }
             }
+            if input.assignee_update && old_assignee_id != updated_model.assignee_id && !was_draft {
+                assignee_changes.push((
+                    project_record.clone(),
+                    updated_model.clone(),
+                    old_assignee_id,
+                    updated_model.assignee_id,
+                ));
+            }
+            if input.milestone_update
+                && old_milestone_id != updated_model.milestone_id
+                && !was_draft
+            {
+                milestone_changes.push((
+                    project_record.clone(),
+                    updated_model.clone(),
+                    old_milestone_id,
+                    updated_model.milestone_id,
+                ));
+            }
         }
         txn.commit().await?;
 
@@ -197,6 +220,69 @@ impl AppRepository {
                 "ISSUE_STATE_CHANGED",
                 &old_state,
                 &new_state,
+                &receiver_ids,
+            )
+            .await?;
+        }
+        for (project_record, model, old_assignee_id, new_assignee_id) in assignee_changes {
+            let old_value = old_assignee_id
+                .map(|value| value.to_string())
+                .unwrap_or_default();
+            let new_value = new_assignee_id
+                .map(|value| value.to_string())
+                .unwrap_or_default();
+            self.create_issue_event(
+                model.id,
+                actor_login_id,
+                "ISSUE_ASSIGNEE_CHANGED",
+                &old_value,
+                &new_value,
+            )
+            .await?;
+            let mut receiver_ids = self
+                .issue_notification_receiver_ids(&project_record, &model, "ISSUE_ASSIGNEE_CHANGED")
+                .await?;
+            if let Some(old_assignee_user_id) =
+                self.search_issue_assignee_user_id(old_assignee_id).await?
+            {
+                receiver_ids.push(old_assignee_user_id);
+            }
+            self.create_notification_event_for_receivers(
+                actor_id,
+                "issue",
+                &model.id.to_string(),
+                "ISSUE_ASSIGNEE_CHANGED",
+                &old_value,
+                &new_value,
+                &receiver_ids,
+            )
+            .await?;
+        }
+        for (project_record, model, old_milestone_id, new_milestone_id) in milestone_changes {
+            let old_value = old_milestone_id
+                .map(|value| value.to_string())
+                .unwrap_or_default();
+            let new_value = new_milestone_id
+                .map(|value| value.to_string())
+                .unwrap_or_default();
+            self.create_issue_event(
+                model.id,
+                actor_login_id,
+                "ISSUE_MILESTONE_CHANGED",
+                &old_value,
+                &new_value,
+            )
+            .await?;
+            let receiver_ids = self
+                .issue_notification_receiver_ids(&project_record, &model, "ISSUE_MILESTONE_CHANGED")
+                .await?;
+            self.create_notification_event_for_receivers(
+                actor_id,
+                "issue",
+                &model.id.to_string(),
+                "ISSUE_MILESTONE_CHANGED",
+                &old_value,
+                &new_value,
                 &receiver_ids,
             )
             .await?;

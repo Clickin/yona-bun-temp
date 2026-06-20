@@ -889,14 +889,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `crates/server/src/routes/projects/webhooks.rs`; route registration and the
   shared project update guard remain in the parent project route module. This
   preserves webhook management, legacy issue webhook payload delivery, issue
-  single/mass-update state, assignee/body/milestone-changed, and deleted-issue webhook delivery, PR Hangout follow-up threading, board
+  single/mass-update state, assignee, milestone-changed webhook delivery, body-changed webhook delivery, and deleted-issue webhook delivery, PR Hangout follow-up threading, board
   `NEW_POSTING` webhook fan-out, and board posting-comment `NEW_COMMENT` /
   `COMMENT_UPDATED` webhook fan-out covered by
   `project_webhook_contract::project_webhooks_require_update_and_manage_crud`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_issue_body_changed_payloads_for_non_json_hooks`,
   `issue_core_contract::issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks`,
-  `issue_core_contract::issue_core_contract_enqueues_legacy_mass_update_state_webhooks`,
+  `issue_core_contract::issue_core_contract_enqueues_legacy_mass_update_state_assignee_milestone_webhooks`,
   `issue_core_contract::issue_core_contract_enqueues_legacy_deleted_webhook_payload`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hooks`,
   `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`,
