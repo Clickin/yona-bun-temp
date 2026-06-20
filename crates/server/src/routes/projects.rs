@@ -57,6 +57,7 @@ use forks::{
 use home::rest_read_project_container;
 pub(crate) use members::rest_delete_project_member;
 use members::{
+    direct_add_project_member, direct_delete_project_member, direct_update_project_member_role,
     rest_add_project_member, rest_read_project_members, rest_update_project_member_role,
     RestProjectMemberBody, RestProjectMemberRoleBody,
 };
@@ -2414,6 +2415,12 @@ pub(crate) fn routes(
     let direct_project_label_detach_session_manager = session_manager.clone();
     let direct_project_change_vcs_backend = backend.clone();
     let direct_project_change_vcs_session_manager = session_manager.clone();
+    let direct_project_member_add_backend = backend.clone();
+    let direct_project_member_add_session_manager = session_manager.clone();
+    let direct_project_member_update_backend = backend.clone();
+    let direct_project_member_update_session_manager = session_manager.clone();
+    let direct_project_member_delete_backend = backend.clone();
+    let direct_project_member_delete_session_manager = session_manager.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2811,6 +2818,66 @@ pub(crate) fn routes(
                             project_name,
                             direct_project_change_vcs_session_manager.clone(),
                             direct_project_change_vcs_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/members",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_add_project_member(
+                            headers,
+                            owner_name,
+                            project_name,
+                            form,
+                            direct_project_member_add_session_manager.clone(),
+                            direct_project_member_add_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/member/{user_id}/edit",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, user_id)): Path<(String, String, i64)>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_update_project_member_role(
+                            headers,
+                            owner_name,
+                            project_name,
+                            user_id,
+                            form,
+                            direct_project_member_update_session_manager.clone(),
+                            direct_project_member_update_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/member/{user_id}/delete",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, user_id)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_delete_project_member(
+                            headers,
+                            owner_name,
+                            project_name,
+                            user_id,
+                            direct_project_member_delete_session_manager.clone(),
+                            direct_project_member_delete_backend.clone(),
                         )
                         .await
                     }

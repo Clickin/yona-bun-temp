@@ -438,3 +438,110 @@ pub(crate) async fn rest_delete_project_member(
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(payload).into_response())
 }
+
+fn project_member_service(
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> PilotServiceImpl {
+    PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+        project_default_scope: "public".to_string(),
+        auth_ui: AuthUiConfig::from_env(),
+        smtp: SmtpRuntimeConfig::from_env(),
+    }
+}
+
+pub(super) async fn direct_add_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let body = RestProjectMemberBody {
+        login_id: form_value(&form, &["loginId", "login_id"]).to_string(),
+    };
+    match rest_add_project_member(
+        headers,
+        owner_name,
+        project_name,
+        body,
+        project_member_service(session_manager, backend),
+    )
+    .await
+    {
+        Ok(_) => Json(serde_json::json!({})).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+pub(super) async fn direct_update_project_member_role(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let role = match form_value(&form, &["id", "role"]).trim() {
+        "1" => "manager",
+        "2" => "member",
+        role => role,
+    }
+    .to_string();
+    let body = RestProjectMemberRoleBody { role };
+    match rest_update_project_member_role(
+        headers,
+        owner_name,
+        project_name,
+        user_id,
+        body,
+        project_member_service(session_manager, backend),
+    )
+    .await
+    {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+pub(super) async fn direct_delete_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    match rest_delete_project_member(
+        headers,
+        owner_name,
+        project_name,
+        user_id,
+        project_member_service(session_manager, backend),
+    )
+    .await
+    {
+        Ok(response) => {
+            let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            let payload: serde_json::Value = serde_json::from_slice(&body).unwrap_or_else(|_| {
+                serde_json::json!({
+                    "redirectPath": null,
+                })
+            });
+            let location = payload
+                .get("redirectPath")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_else(|| "");
+            Json(serde_json::json!({ "location": location })).into_response()
+        }
+        Err(error) => error.into_response(),
+    }
+}

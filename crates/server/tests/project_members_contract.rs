@@ -118,6 +118,34 @@ async fn rest(
     .unwrap()
 }
 
+async fn rest_form(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    form_body: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(
+            http::header::CONTENT_TYPE,
+            "application/x-www-form-urlencoded",
+        )
+        .header(http::header::ACCEPT, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(form_body.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rest_test_support::pilot_rest(
@@ -235,14 +263,25 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
         .unwrap()
         .starts_with("https://www.gravatar.com/avatar/"));
 
+    let direct_added = rest_form(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/members",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "loginId=member",
+    )
+    .await;
+    assert_eq!(direct_added.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_added).await, "{}");
     let added = ok_json(
         rest(
             app.clone(),
-            Method::POST,
+            Method::GET,
             "/yona/api/v1/owners/owner/projects/projectYobi/members",
             Some(&owner_cookie),
-            Some(&owner_csrf),
-            Some(json!({ "loginId": "member" })),
+            None,
+            None,
         )
         .await,
     )
@@ -262,14 +301,25 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     .await;
     assert_eq!(duplicate.status(), StatusCode::BAD_REQUEST);
 
+    let direct_promoted = rest_form(
+        app.clone(),
+        Method::POST,
+        &format!("/yona/owner/projectYobi/member/{member_id}/edit"),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        "id=1",
+    )
+    .await;
+    assert_eq!(direct_promoted.status(), StatusCode::NO_CONTENT);
+    assert_eq!(response_text(direct_promoted).await, "");
     let promoted = ok_json(
         rest(
             app.clone(),
-            Method::PATCH,
-            &format!("/yona/api/v1/owners/owner/projects/projectYobi/members/{member_id}"),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/members",
             Some(&owner_cookie),
-            Some(&owner_csrf),
-            Some(json!({ "role": "manager" })),
+            None,
+            None,
         )
         .await,
     )
@@ -298,13 +348,28 @@ async fn project_member_management_preserves_legacy_add_role_delete_guards() {
     .await;
     assert_eq!(owner_delete.status(), StatusCode::FORBIDDEN);
 
+    let direct_removed = rest(
+        app.clone(),
+        Method::DELETE,
+        &format!("/yona/owner/projectYobi/member/{member_id}/delete"),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_removed.status(), StatusCode::OK);
+    let direct_removed_payload = response_text(direct_removed).await;
+    assert_eq!(
+        serde_json::from_str::<Value>(&direct_removed_payload).unwrap()["location"],
+        "/owner/projectYobi/members"
+    );
     let removed = ok_json(
         rest(
             app.clone(),
-            Method::DELETE,
-            &format!("/yona/api/v1/owners/owner/projects/projectYobi/members/{member_id}"),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/members",
             Some(&owner_cookie),
-            Some(&owner_csrf),
+            None,
             None,
         )
         .await,
