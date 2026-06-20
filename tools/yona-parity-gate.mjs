@@ -624,6 +624,15 @@ function matchesKeyword(filePath, keywords) {
   return keywords.some((keyword) => lowered.includes(keyword.toLowerCase()));
 }
 
+function matchesKeywordInPathOrContent(repoRoot, filePath, keywords) {
+  if (matchesKeyword(filePath, keywords)) {
+    return true;
+  }
+
+  const fileText = readTextFileIfPresent(repoRoot, filePath).toLowerCase();
+  return keywords.some((keyword) => fileText.includes(keyword.toLowerCase()));
+}
+
 function classifyCapability(filePath, changedFiles = []) {
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
@@ -666,10 +675,11 @@ function classifyCapability(filePath, changedFiles = []) {
   return null;
 }
 
-function capabilityHasTestEvidence(capability, changedFiles) {
+function capabilityHasTestEvidence(capability, changedFiles, repoRoot) {
   return changedFiles.some(
     (filePath) =>
-      TEST_FILE_PATTERN.test(filePath) && matchesKeyword(filePath, capability.testKeywords),
+      TEST_FILE_PATTERN.test(filePath) &&
+      matchesKeywordInPathOrContent(repoRoot, filePath, capability.testKeywords),
   );
 }
 
@@ -685,7 +695,7 @@ function evaluateCapability(capability, changedFiles, implementationFiles, repoR
     matchesAnyPattern(filePath, capability.implementationPatterns),
   );
   const evidence = {
-    tests: capabilityHasTestEvidence(capability, changedFiles),
+    tests: capabilityHasTestEvidence(capability, changedFiles, repoRoot),
     provenance: capabilityHasProvenanceEvidence(capability, changedFiles),
     legacyReference: hasLegacyReference(repoRoot, changedFiles),
   };

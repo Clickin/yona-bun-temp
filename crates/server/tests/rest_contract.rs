@@ -1704,6 +1704,41 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_eq!(canceled["ok"], true);
 
+    let direct_enrolled = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/enroll",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_enrolled.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_enrolled).await, "");
+
+    let direct_canceled = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/cancel/enroll",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_canceled.status(), StatusCode::OK);
+    assert_eq!(response_text(direct_canceled).await, "");
+
+    let direct_non_guest_enroll = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/owner/projectYobi/enroll",
+        Some(&visitor_cookie),
+        Some(&visitor_csrf),
+        None,
+    )
+    .await;
+    assert_eq!(direct_non_guest_enroll.status(), StatusCode::BAD_REQUEST);
+
     let favorited = ok_json(
         rest(
             app.clone(),

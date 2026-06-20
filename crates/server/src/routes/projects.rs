@@ -88,8 +88,8 @@ use organizations::{
 };
 pub(crate) use participation::recent_project_visit_record;
 use participation::{
-    direct_toggle_project_watch, rest_cancel_enroll_project, rest_enroll_project,
-    rest_toggle_favorite_project, rest_toggle_project_watch,
+    direct_enroll_project, direct_toggle_project_watch, rest_cancel_enroll_project,
+    rest_enroll_project, rest_toggle_favorite_project, rest_toggle_project_watch,
 };
 #[cfg(debug_assertions)]
 pub(crate) use participation::{
@@ -2401,6 +2401,10 @@ pub(crate) fn routes(
     let direct_project_watch_session_manager = session_manager.clone();
     let direct_project_unwatch_backend = backend.clone();
     let direct_project_unwatch_session_manager = session_manager.clone();
+    let direct_project_enroll_backend = backend.clone();
+    let direct_project_enroll_session_manager = session_manager.clone();
+    let direct_project_cancel_enroll_backend = backend.clone();
+    let direct_project_cancel_enroll_session_manager = session_manager.clone();
     let legacy_watchers_backend = backend.clone();
     let legacy_watchers_base_path = base_path.clone();
     let legacy_project_labels_backend = backend.clone();
@@ -2686,6 +2690,44 @@ pub(crate) fn routes(
                             false,
                             direct_project_unwatch_session_manager.clone(),
                             direct_project_unwatch_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/enroll",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_enroll_project(
+                            headers,
+                            owner_name,
+                            project_name,
+                            true,
+                            direct_project_enroll_session_manager.clone(),
+                            direct_project_enroll_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner_name}/{project_name}/cancel/enroll",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_enroll_project(
+                            headers,
+                            owner_name,
+                            project_name,
+                            false,
+                            direct_project_cancel_enroll_session_manager.clone(),
+                            direct_project_cancel_enroll_backend.clone(),
                         )
                         .await
                     }
