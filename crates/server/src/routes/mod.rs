@@ -232,13 +232,7 @@ pub(crate) fn app_routes(
             runtime.translation_proxy.clone(),
         ))
         .merge(board_routes(service.clone()))
-        .merge(issue_routes(
-            session_manager.clone(),
-            backend.clone(),
-            base_path.clone(),
-            public_origin.clone(),
-            runtime.integrations.clone(),
-        ))
+        .merge(issue_routes(service.clone()))
         .merge(static_compat_routes())
         .merge(notification_routes(
             service.clone(),

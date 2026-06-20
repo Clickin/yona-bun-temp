@@ -8,7 +8,6 @@ use axum::{
 use buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use yona_rust_integrations::IntegrationConfig;
 
 #[cfg(debug_assertions)]
 use super::utils::organization_issue_list_item_to_proto;
@@ -811,8 +810,6 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
-    let public_origin = service.public_origin.clone();
-    let integrations = service.integrations.clone();
 
     Router::new()
         .route(
@@ -842,16 +839,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestIssueMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_create_issue(
                             headers,
@@ -861,8 +856,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -875,16 +869,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestMassUpdateIssuesBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_mass_update_issues(
                             headers,
@@ -894,8 +886,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -955,16 +946,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_issue(
                             headers,
@@ -975,8 +964,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -986,15 +974,13 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_delete_issue(
                             headers,
@@ -1004,8 +990,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -1018,16 +1003,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueStateBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_update_issue_state(
                             headers,
@@ -1038,8 +1021,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -1100,16 +1082,14 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
-                let public_origin = public_origin.clone();
-                let integrations = integrations.clone();
+                let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
-                    let public_origin = public_origin.clone();
-                    let integrations = integrations.clone();
+                    let service = service.clone();
                     async move {
                         rest_create_issue_comment(
                             headers,
@@ -1120,8 +1100,7 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
-                            public_origin,
-                            integrations,
+                            service,
                         )
                         .await
                     }
@@ -1831,13 +1810,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(
-    session_manager: SessionManager,
-    backend: PilotBackend,
-    base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
-) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+
     let legacy_issue_label_backend = backend.clone();
     let legacy_issue_label_session_manager = session_manager.clone();
     let legacy_issue_weight_up_backend = backend.clone();
@@ -1874,8 +1851,7 @@ pub(crate) fn routes(
     let issue_comment_create_backend = backend.clone();
     let issue_comment_create_session_manager = session_manager.clone();
     let issue_comment_create_base_path = base_path.clone();
-    let issue_comment_create_public_origin = public_origin.clone();
-    let issue_comment_create_integrations = integrations;
+    let issue_comment_create_service = service.clone();
     let issue_comment_update_backend = backend.clone();
     let issue_comment_update_session_manager = session_manager.clone();
     let issue_comment_update_base_path = base_path.clone();
@@ -2268,8 +2244,7 @@ pub(crate) fn routes(
                             issue_comment_create_session_manager.clone(),
                             issue_comment_create_backend.clone(),
                             issue_comment_create_base_path.clone(),
-                            issue_comment_create_public_origin.clone(),
-                            issue_comment_create_integrations.clone(),
+                            issue_comment_create_service.clone(),
                         )
                         .await
                     }
@@ -2980,9 +2955,9 @@ async fn rest_update_issue_state(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
+    let public_origin = service.public_origin.clone();
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -3040,7 +3015,7 @@ async fn rest_update_issue_state(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3067,9 +3042,9 @@ async fn rest_create_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
+    let public_origin = service.public_origin.clone();
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -3161,7 +3136,7 @@ async fn rest_create_issue(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3189,9 +3164,9 @@ async fn rest_update_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
+    let public_origin = service.public_origin.clone();
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -3245,7 +3220,7 @@ async fn rest_update_issue(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3259,7 +3234,7 @@ async fn rest_update_issue(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3273,7 +3248,7 @@ async fn rest_update_issue(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3300,9 +3275,9 @@ pub(crate) async fn rest_delete_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<DeleteIssueResponse>, RestRouteError> {
+    let public_origin = service.public_origin.clone();
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -3348,7 +3323,7 @@ pub(crate) async fn rest_delete_issue(
             None,
             &public_origin,
             &base_path,
-            &integrations,
+            &service.integrations,
         )
         .await;
     }
@@ -3423,9 +3398,9 @@ async fn rest_mass_update_issues(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-    public_origin: String,
-    integrations: IntegrationConfig,
+    service: PilotServiceImpl,
 ) -> Result<Json<MassUpdateIssuesResponse>, RestRouteError> {
+    let public_origin = service.public_origin.clone();
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -3490,7 +3465,7 @@ async fn rest_mass_update_issues(
                     None,
                     &public_origin,
                     &base_path,
-                    &integrations,
+                    &service.integrations,
                 )
                 .await;
             }
@@ -3541,7 +3516,7 @@ async fn rest_mass_update_issues(
                     None,
                     &public_origin,
                     &base_path,
-                    &integrations,
+                    &service.integrations,
                 )
                 .await;
             }
@@ -3559,7 +3534,7 @@ async fn rest_mass_update_issues(
                     None,
                     &public_origin,
                     &base_path,
-                    &integrations,
+                    &service.integrations,
                 )
                 .await;
             }
@@ -3577,7 +3552,7 @@ async fn rest_mass_update_issues(
                     None,
                     &public_origin,
                     &base_path,
-                    &integrations,
+                    &service.integrations,
                 )
                 .await;
             }

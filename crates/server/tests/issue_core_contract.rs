@@ -190,7 +190,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 #[tokio::test]
 async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
     // Guards legacy NotificationEvent.afterIssueBodyChanged -> Webhook fan-out
-    // from the issue lifecycle route.
+    // from the issue lifecycle route using the app-scoped integration snapshot.
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
@@ -296,7 +296,7 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 #[tokio::test]
 async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks() {
     // Guards legacy NotificationEvent issue mutation webhook fan-out from the
-    // issue lifecycle routes.
+    // issue lifecycle routes using the app-scoped integration snapshot.
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
