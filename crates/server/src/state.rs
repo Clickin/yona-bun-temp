@@ -152,6 +152,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,
     pub(crate) site_name: String,
+    pub(crate) site_update: SiteUpdateConfig,
     pub(crate) smtp: SmtpRuntimeConfig,
 }
 

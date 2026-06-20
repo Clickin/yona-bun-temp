@@ -1800,6 +1800,7 @@ async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
 
 #[tokio::test]
 async fn site_admin_import_respects_configured_max_file_size_without_env_mutation() {
+    // Guards site-admin import using the app-scoped max upload size service snapshot.
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
         data_root: data_dir.path().to_path_buf(),
@@ -2580,6 +2581,7 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 
 #[tokio::test]
 async fn site_admin_update_status_follows_legacy_update_view_branches() {
+    // Guards site-admin update status using the app-scoped update config snapshot.
     let (app, _repo, db) = build_app_with_site_update_config(SiteUpdateConfig::default()).await;
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
@@ -2676,6 +2678,7 @@ async fn site_admin_update_status_decodes_plain_http_chunked_metadata() {
 
 #[tokio::test]
 async fn site_admin_update_download_redirects_through_app_owned_routes() {
+    // Guards REST and direct update download routes using the same service snapshot.
     let (app, _repo, db) = build_app_with_site_update_config(SiteUpdateConfig {
         current_version: "9.9.8".to_string(),
         latest_version: "v9.9.9".to_string(),

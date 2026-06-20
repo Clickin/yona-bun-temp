@@ -24,8 +24,8 @@ use crate::{
     project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
     rest_repository, site_export_filename_stamp, workspace_avatar_url, ConnectError,
-    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, RuntimeRegistry,
-    SiteUpdateConfig, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 use super::uploaded_file_path_with_root;
@@ -446,7 +446,7 @@ struct RestSiteImportResponse {
     unsupported_sections: Vec<String>,
 }
 
-pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConfig) -> Router {
+pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
             "/site/users",
@@ -574,11 +574,12 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
             "/site/update",
             get({
                 let service = service.clone();
-                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_read_site_update(headers, service, site_update).await }
+                    async move {
+                        let site_update = service.site_update.clone();
+                        rest_read_site_update(headers, service, site_update).await
+                    }
                 }
             }),
         )
@@ -586,11 +587,12 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
             "/site/update/download",
             get({
                 let service = service.clone();
-                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_download_site_update(headers, service, site_update).await }
+                    async move {
+                        let site_update = service.site_update.clone();
+                        rest_download_site_update(headers, service, site_update).await
+                    }
                 }
             }),
         )
@@ -598,11 +600,12 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
             "/site/update/download-file",
             get({
                 let service = service.clone();
-                let site_update = site_update.clone();
                 move |headers: HeaderMap| {
                     let service = service.clone();
-                    let site_update = site_update.clone();
-                    async move { rest_download_site_update_file(headers, service, site_update).await }
+                    async move {
+                        let site_update = service.site_update.clone();
+                        rest_download_site_update_file(headers, service, site_update).await
+                    }
                 }
             }),
         )
@@ -648,12 +651,10 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, site_update: SiteUpdateConf
         )
 }
 
-pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Router {
+pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let unwatch_service = service.clone();
     let site_update_download_service = service.clone();
-    let site_update_download_config = runtime.site_update.clone();
     let site_update_download_file_service = service.clone();
-    let site_update_download_file_config = runtime.site_update.clone();
     let site_toggle_admin_service = service.clone();
     let site_toggle_lock_service = service.clone();
     let site_toggle_guest_service = service.clone();
@@ -667,7 +668,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
     let site_mail_list_service = service.clone();
     let site_export_service = service.clone();
     let site_import_service = service;
-    let site_import_max_uploaded_file_size = runtime.max_uploaded_file_size;
 
     Router::new()
         .route(
@@ -690,7 +690,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
                         headers,
                         body,
                         site_import_service.clone(),
-                        site_import_max_uploaded_file_size,
                     )
                     .await
                 }
@@ -772,7 +771,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
                 direct_download_site_update(
                     headers,
                     site_update_download_service.clone(),
-                    site_update_download_config.clone(),
                 )
                 .await
             }),
@@ -783,7 +781,6 @@ pub(crate) fn routes(service: PilotServiceImpl, runtime: RuntimeRegistry) -> Rou
                 direct_download_site_update_file(
                     headers,
                     site_update_download_file_service.clone(),
-                    site_update_download_file_config.clone(),
                 )
                 .await
             }),
@@ -952,7 +949,6 @@ async fn direct_import_site_data(
     headers: HeaderMap,
     body: Bytes,
     service: PilotServiceImpl,
-    max_uploaded_file_size: usize,
 ) -> Response {
     let base_path = service.base_path.clone();
     let (form, payload, is_multipart, has_data_file) = direct_site_import_payload(&headers, &body);
@@ -960,7 +956,7 @@ async fn direct_import_site_data(
         return Redirect::to(&base_path_href(&base_path, "/sites/data")).into_response();
     }
     let headers = headers_with_form_csrf(headers, &form);
-    match rest_import_site_data(headers, &payload, service, max_uploaded_file_size).await {
+    match rest_import_site_data(headers, &payload, service).await {
         Ok(payload) => {
             let payload = payload.0;
             if is_multipart {
@@ -1269,13 +1265,9 @@ fn direct_site_user_delete_id(legacy_path: &str) -> Result<i64, RestRouteError> 
         .map_err(|_| RestRouteError::bad_request("invalid user id"))
 }
 
-async fn direct_download_site_update(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
-) -> Response {
+async fn direct_download_site_update(headers: HeaderMap, service: PilotServiceImpl) -> Response {
     match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_redirect(&site_update) {
+        Ok(_) => match rest_site_update_download_redirect(&service.site_update) {
             Ok(redirect) => redirect.into_response(),
             Err(error) => error.into_response(),
         },
@@ -1286,10 +1278,9 @@ async fn direct_download_site_update(
 async fn direct_download_site_update_file(
     headers: HeaderMap,
     service: PilotServiceImpl,
-    site_update: SiteUpdateConfig,
 ) -> Response {
     match rest_require_site_admin_repository(&service, &headers, false).await {
-        Ok(_) => match rest_site_update_download_file_response(&site_update) {
+        Ok(_) => match rest_site_update_download_file_response(&service.site_update) {
             Ok(response) => response,
             Err(error) => error.into_response(),
         },
@@ -1664,7 +1655,6 @@ async fn rest_import_site_data(
     headers: HeaderMap,
     payload: &str,
     service: PilotServiceImpl,
-    max_uploaded_file_size: usize,
 ) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
     let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let payload: RestSiteImportPayload = serde_json::from_str(payload)
@@ -1849,14 +1839,9 @@ async fn rest_import_site_data(
             skipped_milestones += 1;
             continue;
         }
-        let imported_attachments = rest_site_import_attachments(
-            &service.data_root,
-            repository,
-            &actor,
-            &milestone.attachments,
-            max_uploaded_file_size,
-        )
-        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(&service, repository, &actor, &milestone.attachments)
+                .await?;
         let contents_markdown = rewrite_site_import_file_links(
             &milestone.contents_markdown,
             &imported_attachments.link_rewrites,
@@ -1909,14 +1894,8 @@ async fn rest_import_site_data(
             &post.labels,
         )
         .await?;
-        let imported_attachments = rest_site_import_attachments(
-            &service.data_root,
-            repository,
-            &actor,
-            &post.attachments,
-            max_uploaded_file_size,
-        )
-        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(&service, repository, &actor, &post.attachments).await?;
         let body_markdown = rewrite_site_import_file_links(
             &post.body_markdown,
             &imported_attachments.link_rewrites,
@@ -1955,7 +1934,7 @@ async fn rest_import_site_data(
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
         rest_site_import_post_comments(
-            &service.data_root,
+            &service,
             repository,
             &post.owner_name,
             &post.project_name,
@@ -1963,7 +1942,6 @@ async fn rest_import_site_data(
             &post.comments,
             &actor,
             None,
-            max_uploaded_file_size,
         )
         .await?;
         imported_posts += 1;
@@ -2002,14 +1980,8 @@ async fn rest_import_site_data(
             &actor,
         )
         .await?;
-        let imported_attachments = rest_site_import_attachments(
-            &service.data_root,
-            repository,
-            &actor,
-            &issue.attachments,
-            max_uploaded_file_size,
-        )
-        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(&service, repository, &actor, &issue.attachments).await?;
         let body_markdown = rewrite_site_import_file_links(
             &issue.body_markdown,
             &imported_attachments.link_rewrites,
@@ -2065,7 +2037,7 @@ async fn rest_import_site_data(
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
         rest_site_import_issue_comments(
-            &service.data_root,
+            &service,
             repository,
             &issue.owner_name,
             &issue.project_name,
@@ -2073,7 +2045,6 @@ async fn rest_import_site_data(
             &issue.comments,
             &actor,
             None,
-            max_uploaded_file_size,
         )
         .await?;
         imported_issues += 1;
@@ -2099,7 +2070,7 @@ async fn rest_import_site_data(
 }
 
 async fn rest_site_import_post_comments(
-    data_root: &StdPath,
+    service: &PilotServiceImpl,
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
@@ -2107,7 +2078,6 @@ async fn rest_site_import_post_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
-    max_uploaded_file_size: usize,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -2117,14 +2087,8 @@ async fn rest_site_import_post_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments = rest_site_import_attachments(
-            data_root,
-            repository,
-            &actor,
-            &comment.attachments,
-            max_uploaded_file_size,
-        )
-        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -2148,7 +2112,7 @@ async fn rest_site_import_post_comments(
             .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
         {
             Box::pin(rest_site_import_post_comments(
-                data_root,
+                service,
                 repository,
                 owner_name,
                 project_name,
@@ -2156,7 +2120,6 @@ async fn rest_site_import_post_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
-                max_uploaded_file_size,
             ))
             .await?;
         }
@@ -2165,7 +2128,7 @@ async fn rest_site_import_post_comments(
 }
 
 async fn rest_site_import_issue_comments(
-    data_root: &StdPath,
+    service: &PilotServiceImpl,
     repository: &PilotRepository,
     owner_name: &str,
     project_name: &str,
@@ -2173,7 +2136,6 @@ async fn rest_site_import_issue_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
-    max_uploaded_file_size: usize,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -2183,14 +2145,8 @@ async fn rest_site_import_issue_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments = rest_site_import_attachments(
-            data_root,
-            repository,
-            &actor,
-            &comment.attachments,
-            max_uploaded_file_size,
-        )
-        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -2212,7 +2168,7 @@ async fn rest_site_import_issue_comments(
             .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
         {
             Box::pin(rest_site_import_issue_comments(
-                data_root,
+                service,
                 repository,
                 owner_name,
                 project_name,
@@ -2220,7 +2176,6 @@ async fn rest_site_import_issue_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
-                max_uploaded_file_size,
             ))
             .await?;
         }
@@ -2251,11 +2206,10 @@ struct RestSiteImportedAttachments {
 }
 
 async fn rest_site_import_attachments(
-    data_root: &StdPath,
+    service: &PilotServiceImpl,
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
-    max_uploaded_file_size: usize,
 ) -> Result<RestSiteImportedAttachments, RestRouteError> {
     let mut attachment_ids = Vec::new();
     let mut link_rewrites = Vec::new();
@@ -2276,7 +2230,7 @@ async fn rest_site_import_attachments(
                     "site.import.attachment.sizeMismatch",
                 ));
             }
-            if bytes.len() > max_uploaded_file_size {
+            if bytes.len() > service.max_uploaded_file_size {
                 return Err(RestRouteError::bad_request(
                     "site.import.attachment.tooLarge",
                 ));
@@ -2294,7 +2248,7 @@ async fn rest_site_import_attachments(
                 .then(|| detect_upload_mime_type(&file_name, None, &bytes))
                 .unwrap_or_else(|| attachment.mime_type.trim().to_string());
             let hash = random_storage_token();
-            let path = uploaded_file_path_with_root(data_root, &hash);
+            let path = uploaded_file_path_with_root(&service.data_root, &hash);
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent)
                     .map_err(|error| RestRouteError::internal(error.to_string()))?;

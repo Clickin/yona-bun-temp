@@ -156,10 +156,7 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl, runtime: RuntimeRegistr
     let router = Router::new()
         .merge(auth_rest_routes(service.clone(), runtime.auth_ui.clone()))
         .merge(user_rest_routes(service.clone()))
-        .merge(site_admin_rest_routes(
-            service.clone(),
-            runtime.site_update.clone(),
-        ))
+        .merge(site_admin_rest_routes(service.clone()))
         .merge(workspace_rest_routes(service.clone()))
         .merge(notification_rest_routes(
             session_manager.clone(),
@@ -256,7 +253,7 @@ pub(crate) fn app_routes(
             session_manager.clone(),
             backend.clone(),
         ))
-        .merge(site_admin_routes(service.clone(), runtime.clone()))
+        .merge(site_admin_routes(service.clone()))
         .merge(code_routes(service, session_manager, backend, base_path))
 }
 

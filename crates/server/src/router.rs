@@ -162,6 +162,7 @@ fn build_router_with_app_config(
         backend: backend.clone(),
         project_default_scope: runtime.project_default_scope.clone(),
         site_name: runtime.site_name.clone(),
+        site_update: runtime.site_update.clone(),
         smtp: runtime.smtp.clone(),
     };
     let route_backend = backend.clone();
