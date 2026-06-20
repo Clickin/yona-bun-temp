@@ -655,15 +655,8 @@ async fn direct_delete_project_pushed_branch(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner_name,
-        &project_name,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner_name, &project_name, &service, true).await
     {
         return response;
     }
@@ -3206,15 +3199,8 @@ async fn direct_attach_project_label(
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project_name,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project_name, &service, true).await
     {
         return response;
     }
@@ -3258,15 +3244,8 @@ async fn direct_detach_project_label(
         return RestRouteError::not_implemented("project labels require repository backend")
             .into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project_name,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project_name, &service, true).await
     {
         return response;
     }

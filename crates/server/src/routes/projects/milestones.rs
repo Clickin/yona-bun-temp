@@ -432,19 +432,11 @@ pub(super) async fn direct_create_project_milestone(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let session = match direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        &repository,
-        true,
-    )
-    .await
-    {
-        Ok(session) => session,
-        Err(response) => return response,
-    };
+    let session =
+        match direct_project_update_allowed(&headers, &owner, &project, &service, true).await {
+            Ok(session) => session,
+            Err(response) => return response,
+        };
     let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
         Ok(input) => input,
         Err(error) => return connect_error_to_status(error),
@@ -478,19 +470,11 @@ pub(super) async fn direct_update_project_milestone(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let session = match direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        &repository,
-        true,
-    )
-    .await
-    {
-        Ok(session) => session,
-        Err(response) => return response,
-    };
+    let session =
+        match direct_project_update_allowed(&headers, &owner, &project, &service, true).await {
+            Ok(session) => session,
+            Err(response) => return response,
+        };
     let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
         Ok(input) => input,
         Err(error) => return connect_error_to_status(error),
@@ -530,15 +514,8 @@ pub(super) async fn direct_update_project_milestone_state(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        &repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -565,15 +542,8 @@ pub(super) async fn direct_delete_project_milestone(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        &repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }

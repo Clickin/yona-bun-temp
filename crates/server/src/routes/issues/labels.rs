@@ -96,15 +96,8 @@ pub(crate) async fn direct_create_issue_label(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -208,15 +201,8 @@ pub(crate) async fn direct_update_issue_label(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -258,15 +244,8 @@ pub(crate) async fn direct_delete_issue_label(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -297,19 +276,11 @@ pub(crate) async fn direct_copy_issue_labels(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let session = match direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
-    {
-        Ok(session) => session,
-        Err(response) => return response,
-    };
+    let session =
+        match direct_project_update_allowed(&headers, &owner, &project, &service, true).await {
+            Ok(session) => session,
+            Err(response) => return response,
+        };
     let from_owner = form_value(&form, &["owner", "fromOwnerName"]).trim();
     let from_project = form_value(&form, &["projectName", "fromProjectName"]).trim();
     if from_owner.is_empty() || from_project.is_empty() {
@@ -407,15 +378,8 @@ pub(crate) async fn direct_create_issue_label_category(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -448,15 +412,8 @@ pub(crate) async fn direct_update_issue_label_category(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }
@@ -486,15 +443,8 @@ pub(crate) async fn direct_delete_issue_label_category(
     let PilotBackend::Repository(repository) = &service.backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
-        &headers,
-        &owner,
-        &project,
-        &service.session_manager,
-        repository,
-        true,
-    )
-    .await
+    if let Err(response) =
+        direct_project_update_allowed(&headers, &owner, &project, &service, true).await
     {
         return response;
     }

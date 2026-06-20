@@ -57,9 +57,8 @@ pub(crate) fn rest_routes(service: PilotServiceImpl, auth_ui: AuthUiConfig) -> R
             get({
                 let service = service.clone();
                 move |headers: HeaderMap| {
-                    let session_manager = service.session_manager.clone();
-                    let backend = service.backend.clone();
-                    async move { rest_read_current_session(headers, session_manager, backend).await }
+                    let service = service.clone();
+                    async move { rest_read_current_session(headers, service).await }
                 }
             }),
         )

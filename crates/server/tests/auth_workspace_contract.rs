@@ -87,6 +87,8 @@ async fn build_auth_router_with_configs(
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
+    // Guards `/api/auth/session` service-snapshot threading for anonymous session
+    // bootstrap, CSRF header, and set-cookie emission.
     let response = app
         .oneshot(
             Request::builder()

@@ -141,7 +141,8 @@ async fn create_public_project_named(
 }
 
 #[tokio::test]
-// Guards issue route-owned label/category RPC helpers and shared projections.
+// Guards issue route-owned label/category RPC/direct helpers, shared
+// projections, and the service-snapshot project update guard.
 async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;

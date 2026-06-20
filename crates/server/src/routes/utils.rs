@@ -647,11 +647,10 @@ pub(crate) fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Resp
 
 pub(crate) async fn rest_read_current_session(
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
+    service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = resolve_current_session_response(&backend, Some(&session))
+    let session = service.session_manager.ensure_anonymous_session(&headers);
+    let payload = resolve_current_session_response(&service.backend, Some(&session))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let mut response = Json(payload).into_response();
@@ -659,7 +658,7 @@ pub(crate) async fn rest_read_current_session(
         "X-CSRF-Token",
         session.csrf_token.parse().expect("csrf token header"),
     );
-    for cookie in session_manager.build_set_cookie_headers(&session) {
+    for cookie in service.session_manager.build_set_cookie_headers(&session) {
         response.headers_mut().append(
             axum::http::header::SET_COOKIE,
             cookie.parse().expect("set-cookie header"),
@@ -1614,19 +1613,21 @@ pub(crate) async fn direct_project_update_allowed(
     headers: &HeaderMap,
     owner: &str,
     project: &str,
-    session_manager: &SessionManager,
-    repository: &PilotRepository,
+    service: &PilotServiceImpl,
     check_csrf: bool,
 ) -> Result<Session, Response> {
-    let session = match require_session(session_manager, headers) {
+    let session = match require_session(&service.session_manager, headers) {
         Ok(session) => session,
         Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
     };
-    if check_csrf && require_valid_csrf(session_manager, headers, &session).is_err() {
+    if check_csrf && require_valid_csrf(&service.session_manager, headers, &session).is_err() {
         return Err(StatusCode::FORBIDDEN.into_response());
     }
     let Some(user_id) = session.user_id else {
         return Err(StatusCode::UNAUTHORIZED.into_response());
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(StatusCode::NOT_FOUND.into_response());
     };
     let authorization = match repository
         .read_project_authorization(owner, project, Some(user_id))

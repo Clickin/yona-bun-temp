@@ -1289,7 +1289,9 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
 }
 
 #[tokio::test]
-// Guards project-route-owned list/create/read/settings/container/update helpers plus route-utils-owned project container, scope mapper, update guard, and parser helpers.
+// Guards project-route-owned list/create/read/settings/container/update helpers
+// plus route-utils-owned project container, scope mapper, service-snapshot
+// update guard, and parser helpers.
 async fn rest_project_routes_cover_directory_views_and_mutations() {
     let (translation_api, translation_stub_path) =
         write_legacy_translation_stub_response("Translated **issue**");
