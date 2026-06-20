@@ -1215,6 +1215,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   mutating `YONA_DATA` under `yona_data_env_lock`. The legacy issue body,
   mutation, mass-update, and delete webhook parity checks stay on the same
   route/API coverage while removing runtime config env serialization.
+- 2026-06-20 runtime DI note: project webhook contract tests now inject
+  per-test repository storage through `AppRuntimeConfig.data_root` instead of
+  mutating `YONA_DATA` under `yona_data_env_lock`. The remaining serialization
+  in that contract is scoped to the shared test webhook outbox, not runtime
+  config, while board/issue webhook payload, retry, hangout-thread, and CRUD
+  parity coverage remains unchanged.
 
 ## Wave 0 Exit Snapshot
 

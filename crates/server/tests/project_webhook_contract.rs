@@ -19,7 +19,7 @@ use yona_rust_pilot_server::{
 
 mod rest_test_support;
 
-fn yona_data_env_lock() -> &'static Mutex<()> {
+fn webhook_outbox_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
 }
@@ -219,6 +219,7 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
 async fn project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_POSTING, Posting)
     // through the project-owned webhook dispatch module.
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let (app, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
@@ -299,6 +300,7 @@ async fn project_webhooks_enqueue_legacy_board_posting_payloads_for_non_json_hoo
 async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks() {
     // Guards legacy Webhook.sendRequestToPayloadUrl(NEW_COMMENT/COMMENT_UPDATED, Comment)
     // for board posting comments through the project-owned webhook dispatch module.
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let (app, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
@@ -465,13 +467,14 @@ async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hoo
 async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     // Keeps the route-owned webhook dispatch module covered after the
     // projects.rs -> projects/webhooks.rs split.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _db) = build_app_with_repository().await;
+    let (app, _db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
@@ -674,13 +677,14 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
 #[tokio::test]
 async fn project_webhooks_enqueue_legacy_issue_body_changed_payloads_for_non_json_hooks() {
     // Guards legacy NotificationEvent.afterIssueBodyChanged -> Webhook fan-out.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _db) = build_app_with_repository().await;
+    let (app, _db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
@@ -774,13 +778,11 @@ async fn project_webhooks_enqueue_legacy_issue_body_changed_payloads_for_non_jso
 
 #[tokio::test]
 async fn project_webhooks_retry_transient_delivery_failures_once_configured() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
         integrations: IntegrationConfig::from_pairs([("YONA_WEBHOOK_DELIVERY_RETRIES", "1")]),
         ..AppRuntimeConfig::default()
     })
@@ -843,13 +845,14 @@ async fn project_webhooks_retry_transient_delivery_failures_once_configured() {
 
 #[tokio::test]
 async fn project_webhooks_persist_hangout_thread_names_for_resource_followups() {
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, db) = build_app_with_repository().await;
+    let (app, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
@@ -952,13 +955,14 @@ async fn project_webhooks_require_update_and_manage_crud() {
     // Keeps the route-owned webhook CRUD module covered after the
     // projects.rs -> projects/webhooks.rs split. The direct CRUD aliases reuse
     // the app-scoped service/runtime config for redirects and persistence.
-    let _guard = yona_data_env_lock()
-        .lock()
-        .expect("serialize YONA_DATA mutation");
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
-    std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, db) = build_app_with_repository().await;
+    let (app, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
