@@ -16,7 +16,7 @@ import type {
   ProjectWebhookType,
   ProjectWatchersResponse,
 } from "../api/org-project";
-import { useLegacyMessages } from "../i18n";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { MarkdownRenderer } from "./-markdown-renderer";
 import type { ProjectDetailViewModel } from "./-view-models";
 
@@ -31,6 +31,16 @@ export function buildProjectHref(
 }
 
 type ProjectHomeTab = "dashboard" | "history" | "readme";
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  options: { args?: Array<number | string>; fallback?: string } = {},
+) {
+  const fallback = options.fallback ?? key;
+  return messages ? messages(key, { ...options, fallback }) : fallback;
+}
 
 function normalizeProjectHomeTab(value: string | undefined): ProjectHomeTab | null {
   const normalized = (value ?? "").trim().toLowerCase();
@@ -1881,6 +1891,7 @@ export function ProjectWatchersPage(props: {
 
 export function ProjectMembersPage(props: {
   detail: ProjectMembersResponse | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onAddMember?: (loginId: string) => void;
@@ -1928,14 +1939,14 @@ export function ProjectMembersPage(props: {
                 name="loginId"
                 onChange={(event) => setLoginId(event.target.value)}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
-                placeholder="project.members.addMember"
+                placeholder={legacyMessage(props.messages, "project.members.addMember")}
                 required
                 title="user.wrongloginId.alert"
                 type="text"
                 value={loginId}
               />
               <button className="ybtn ybtn-success" type="submit">
-                <i className="yobicon-addfriend" /> button.add
+                <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
               </button>
             </form>
           </div>
@@ -2008,7 +2019,7 @@ export function ProjectMembersPage(props: {
                         }}
                         type="button"
                       >
-                        button.delete
+                        {legacyMessage(props.messages, "button.delete")}
                       </button>
                     </>
                   )}
@@ -2020,7 +2031,9 @@ export function ProjectMembersPage(props: {
           {detail.enrollmentRequests.length > 0 ? (
             <>
               <legend>
-                <h3>{`project.member.enrollment.request (${detail.enrollmentRequests.length})`}</h3>
+                <h3>
+                  {`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}
+                </h3>
               </legend>
               <div className="row-fluid">
                 {detail.enrollmentRequests.map((request) => (
@@ -2053,7 +2066,8 @@ export function ProjectMembersPage(props: {
                         onClick={() => props.onAddMember?.(request.loginId)}
                         type="button"
                       >
-                        <i className="yobicon-addfriend" /> button.add
+                        <i className="yobicon-addfriend" />{" "}
+                        {legacyMessage(props.messages, "button.add")}
                       </button>
                     </div>
                   </div>
@@ -2069,6 +2083,7 @@ export function ProjectMembersPage(props: {
 
 export function ProjectWebhooksPage(props: {
   detail: ProjectWebhooksResponse | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   projectDetail?: ProjectDetailViewModel | null | undefined;
   runtimeConfig: RuntimeConfig;
@@ -2135,6 +2150,7 @@ export function ProjectWebhooksPage(props: {
           <ProjectSettingsSubMenu
             active="webhooks"
             detail={menuDetail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
           <div className="content-wrap frm-wrap">
@@ -2160,7 +2176,9 @@ export function ProjectWebhooksPage(props: {
                   });
                 }}
               >
-                <strong className="form-legend">project.webhook.new</strong>
+                <strong className="form-legend">
+                  {legacyMessage(props.messages, "project.webhook.new")}
+                </strong>
                 <div className="form-wrap form-actions">
                   <div>
                     <input
@@ -2176,7 +2194,7 @@ export function ProjectWebhooksPage(props: {
                         }));
                         setValidationMessage(null);
                       }}
-                      placeholder="project.webhook.payloadUrl"
+                      placeholder={legacyMessage(props.messages, "project.webhook.payloadUrl")}
                       type="text"
                       value={formState.payloadUrl}
                     />
@@ -2192,7 +2210,7 @@ export function ProjectWebhooksPage(props: {
                           secret: event.target.value,
                         }))
                       }
-                      placeholder="project.webhook.secret"
+                      placeholder={legacyMessage(props.messages, "project.webhook.secret")}
                       type="text"
                       value={formState.secret}
                     />
@@ -2201,7 +2219,7 @@ export function ProjectWebhooksPage(props: {
                       disabled={props.pending}
                       type="submit"
                     >
-                      project.webhook.add
+                      {legacyMessage(props.messages, "project.webhook.add")}
                     </button>
                   </div>
                   <div>
@@ -2234,16 +2252,16 @@ export function ProjectWebhooksPage(props: {
                         }
                         type="checkbox"
                       />
-                      {" project.webhook.includeGitPush"}
+                      {` ${legacyMessage(props.messages, "project.webhook.includeGitPush")}`}
                     </label>
                   </div>
                 </div>
                 {validationMessage ? (
                   <div className="alert alert-error" role="alert">
-                    {validationMessage}
+                    {legacyMessage(props.messages, validationMessage)}
                   </div>
                 ) : null}
-                <div>project.webhook.help</div>
+                <div>{legacyMessage(props.messages, "project.webhook.help")}</div>
               </form>
             ) : null}
 
@@ -2251,16 +2269,16 @@ export function ProjectWebhooksPage(props: {
               {detail.webhooks.length === 0 ? (
                 <div className="error-wrap">
                   <i className="ico ico-err1" />
-                  <p>project.webhook.list.empty</p>
+                  <p>{legacyMessage(props.messages, "project.webhook.list.empty")}</p>
                 </div>
               ) : (
                 <>
                   <div className="row-fluid list-head">
                     <div className="span5 payload-url">
-                      <strong>project.webhook.payloadUrl</strong>
+                      <strong>{legacyMessage(props.messages, "project.webhook.payloadUrl")}</strong>
                     </div>
                     <div className="span2 secret text-center">
-                      <strong>project.webhook.secret</strong>
+                      <strong>{legacyMessage(props.messages, "project.webhook.secret")}</strong>
                     </div>
                     <div className="span2 secret text-center">
                       <strong>Type of message</strong>
@@ -2301,7 +2319,7 @@ export function ProjectWebhooksPage(props: {
                           }}
                           type="button"
                         >
-                          button.delete
+                          {legacyMessage(props.messages, "button.delete")}
                         </button>
                       </div>
                     </div>
@@ -2355,6 +2373,7 @@ export function ProjectWebhooksPage(props: {
 
 export function ProjectTransferPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   onRequestTransfer?: (destination: string) => Promise<void>;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
@@ -2387,11 +2406,14 @@ export function ProjectTransferPage(props: {
           <ProjectSettingsSubMenu
             active="transfer"
             detail={detail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
           <div className="bubble-wrap gray wp">
             <div className="row-fluid">
-              <div className="cu-label">project.transfer.new.owner</div>
+              <div className="cu-label">
+                {legacyMessage(props.messages, "project.transfer.new.owner")}
+              </div>
               <div className="cu-desc">
                 <p>
                   <input
@@ -2409,23 +2431,33 @@ export function ProjectTransferPage(props: {
               </div>
             </div>
             <div className="row-fluid">
-              <div className="cu-label">project.transfer</div>
+              <div className="cu-label">{legacyMessage(props.messages, "project.transfer")}</div>
               <div className="cu-desc">
                 <ul>
                   <li className="notice">
-                    <strong>project.transfer.description1</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.transfer.description1")}
+                    </strong>
                   </li>
                   <li className="notice">
-                    <strong>project.transfer.description2</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.transfer.description2")}
+                    </strong>
                   </li>
                   <li className="notice">
-                    <strong>project.transfer.description3</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.transfer.description3")}
+                    </strong>
                   </li>
                   <li className="notice">
-                    <strong>project.transfer.description4</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.transfer.description4")}
+                    </strong>
                   </li>
                   <li className="notice">
-                    <strong>project.transfer.description5</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.transfer.description5")}
+                    </strong>
                   </li>
                 </ul>
                 <p>
@@ -2442,7 +2474,7 @@ export function ProjectTransferPage(props: {
                     type="checkbox"
                   />
                   <label className="bg-checkbox label-agreement" htmlFor="accept">
-                    project.transfer.accept
+                    {legacyMessage(props.messages, "project.transfer.accept")}
                   </label>
                 </p>
               </div>
@@ -2450,7 +2482,7 @@ export function ProjectTransferPage(props: {
           </div>
           {validationMessage ? (
             <div className="alert alert-error" role="alert">
-              {validationMessage}
+              {legacyMessage(props.messages, validationMessage)}
             </div>
           ) : null}
           <div className="box-wrap bottom">
@@ -2469,14 +2501,15 @@ export function ProjectTransferPage(props: {
                 }
               }}
             >
-              <i className="yobicon-database" /> project.transfer.this
+              <i className="yobicon-database" />{" "}
+              {legacyMessage(props.messages, "project.transfer.this")}
             </a>
           </div>
 
           <div className={modalOpen ? "modal" : "modal hide"} id="alertTransfer">
             <div className="modal-header">
               <button
-                aria-label="button.close"
+                aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
@@ -2484,11 +2517,11 @@ export function ProjectTransferPage(props: {
               >
                 ×
               </button>
-              <h3>project.transfer.requestion</h3>
+              <h3>{legacyMessage(props.messages, "project.transfer.requestion")}</h3>
             </div>
             <div className="modal-body">
-              <p>project.transfer.description</p>
-              <p>project.transfer.reaccept</p>
+              <p>{legacyMessage(props.messages, "project.transfer.description")}</p>
+              <p>{legacyMessage(props.messages, "project.transfer.reaccept")}</p>
               {props.transfer?.acceptPath ? <p>{props.transfer.acceptPath}</p> : null}
             </div>
             <div className="modal-footer">
@@ -2501,7 +2534,7 @@ export function ProjectTransferPage(props: {
                 }}
                 type="button"
               >
-                button.yes
+                {legacyMessage(props.messages, "button.yes")}
               </button>
               <button
                 className="ybtn"
@@ -2509,7 +2542,7 @@ export function ProjectTransferPage(props: {
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                button.no
+                {legacyMessage(props.messages, "button.no")}
               </button>
             </div>
           </div>
@@ -2775,6 +2808,7 @@ export function ProjectForkPage(props: {
 export function ProjectChangeVcsPage(props: {
   changeVcs: ProjectChangeVcsResponse | null | undefined;
   detail: ProjectDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   onChangeVcs?: () => Promise<void>;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
@@ -2812,6 +2846,7 @@ export function ProjectChangeVcsPage(props: {
           <ProjectSettingsSubMenu
             active="vcs"
             detail={detail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
           <div className="bubble-wrap gray wp">
@@ -2822,10 +2857,17 @@ export function ProjectChangeVcsPage(props: {
               <div className="cu-desc">
                 <ul>
                   <li className="notice">
-                    <strong>{`project.changeVCS.description1 ${changeVcs.nextVcs}`}</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.changeVCS.description1", {
+                        args: [changeVcs.nextVcs],
+                        fallback: `project.changeVCS.description1 ${changeVcs.nextVcs}`,
+                      })}
+                    </strong>
                   </li>
                   <li className="notice">
-                    <strong>project.changeVCS.description2</strong>
+                    <strong>
+                      {legacyMessage(props.messages, "project.changeVCS.description2")}
+                    </strong>
                   </li>
                 </ul>
                 <p>
@@ -2841,7 +2883,7 @@ export function ProjectChangeVcsPage(props: {
                     type="checkbox"
                   />
                   <label className="bg-checkbox label-agreement" htmlFor="acceptChangeVCS">
-                    project.changeVCS.accept
+                    {legacyMessage(props.messages, "project.changeVCS.accept")}
                   </label>
                 </p>
               </div>
@@ -2849,7 +2891,7 @@ export function ProjectChangeVcsPage(props: {
           </div>
           {validationMessage ? (
             <div className="alert alert-error" role="alert">
-              {validationMessage}
+              {legacyMessage(props.messages, validationMessage)}
             </div>
           ) : null}
           <div className="box-wrap bottom">
@@ -2868,13 +2910,14 @@ export function ProjectChangeVcsPage(props: {
                 }
               }}
             >
-              <i className="yobicon-database" /> project.changeVCS.this
+              <i className="yobicon-database" />{" "}
+              {legacyMessage(props.messages, "project.changeVCS.this")}
             </a>
           </div>
           <div className={modalOpen ? "modal" : "modal hide"} id="alertChangeVCS">
             <div className="modal-header">
               <button
-                aria-label="button.close"
+                aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
@@ -2882,11 +2925,16 @@ export function ProjectChangeVcsPage(props: {
               >
                 ×
               </button>
-              <h3>{`project.changeVCS.requestion ${changeVcs.nextVcs}`}</h3>
+              <h3>
+                {legacyMessage(props.messages, "project.changeVCS.requestion", {
+                  args: [changeVcs.nextVcs],
+                  fallback: `project.changeVCS.requestion ${changeVcs.nextVcs}`,
+                })}
+              </h3>
             </div>
             <div className="modal-body">
-              <p>project.changeVCS.description2</p>
-              <p>project.changeVCS.reaccept</p>
+              <p>{legacyMessage(props.messages, "project.changeVCS.description2")}</p>
+              <p>{legacyMessage(props.messages, "project.changeVCS.reaccept")}</p>
             </div>
             <div className="modal-footer">
               <button
@@ -2898,7 +2946,7 @@ export function ProjectChangeVcsPage(props: {
                 }}
                 type="button"
               >
-                button.yes
+                {legacyMessage(props.messages, "button.yes")}
               </button>
               <button
                 className="ybtn"
@@ -2906,7 +2954,7 @@ export function ProjectChangeVcsPage(props: {
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                button.no
+                {legacyMessage(props.messages, "button.no")}
               </button>
             </div>
           </div>
@@ -2948,6 +2996,7 @@ export function ProjectStatisticsPage(props: {
 export function ProjectSettingsSubMenu(props: {
   active: "delete" | "labels" | "members" | "setting" | "transfer" | "vcs" | "webhooks";
   detail: Pick<ProjectDetailViewModel, "ownerName" | "projectName" | "showCode">;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
@@ -2964,12 +3013,12 @@ export function ProjectSettingsSubMenu(props: {
             "settingform",
           )}
         >
-          project.setting
+          {legacyMessage(props.messages, "project.setting")}
         </a>
       </li>
       <li className={itemClass("members")} id="subMenuProjectMember">
         <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "members")}>
-          project.member
+          {legacyMessage(props.messages, "project.member")}
         </a>
       </li>
       <li className={itemClass("labels")} id="subMenuIssueLabel">
@@ -2981,24 +3030,24 @@ export function ProjectSettingsSubMenu(props: {
             "issue/labelsform",
           )}
         >
-          issue.label
+          {legacyMessage(props.messages, "issue.label")}
         </a>
       </li>
       <li className={itemClass("webhooks")} id="subMenuWebhook">
         <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "webhooks")}>
-          project.webhook
+          {legacyMessage(props.messages, "project.webhook")}
         </a>
       </li>
       <li className={itemClass("transfer")} id="subMenuProjectTransfer">
         <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "transfer")}>
-          project.transfer
+          {legacyMessage(props.messages, "project.transfer")}
         </a>
       </li>
       <li className={itemClass("delete")} id="subMenuProjectDelete">
         <a
           href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "deleteform")}
         >
-          project.delete
+          {legacyMessage(props.messages, "project.delete")}
         </a>
       </li>
       <li
@@ -3009,7 +3058,7 @@ export function ProjectSettingsSubMenu(props: {
         <a
           href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "changeVCS")}
         >
-          project.changeVCS
+          {legacyMessage(props.messages, "project.changeVCS")}
         </a>
       </li>
     </ul>
@@ -3018,6 +3067,7 @@ export function ProjectSettingsSubMenu(props: {
 
 export function ProjectDeletePage(props: {
   detail: ProjectDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onDeleteProject?: (ownerName: string, projectName: string) => void;
@@ -3047,14 +3097,17 @@ export function ProjectDeletePage(props: {
           <ProjectSettingsSubMenu
             active="delete"
             detail={detail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
 
           <div className="bubble-wrap gray wp">
-            <div className="cu-label">project.delete</div>
+            <div className="cu-label">{legacyMessage(props.messages, "project.delete")}</div>
             <div className="cu-desc">
               <p>
-                <strong className="notice">project.delete.description</strong>
+                <strong className="notice">
+                  {legacyMessage(props.messages, "project.delete.description")}
+                </strong>
               </p>
               <p>
                 <input
@@ -3069,14 +3122,14 @@ export function ProjectDeletePage(props: {
                   type="checkbox"
                 />
                 <label className="bg-checkbox label-agreement" htmlFor="accept">
-                  project.delete.accept
+                  {legacyMessage(props.messages, "project.delete.accept")}
                 </label>
               </p>
             </div>
           </div>
           {validationMessage ? (
             <div className="alert alert-error" role="alert">
-              {validationMessage}
+              {legacyMessage(props.messages, validationMessage)}
             </div>
           ) : null}
           <div className="box-wrap bottom">
@@ -3095,14 +3148,15 @@ export function ProjectDeletePage(props: {
                 }
               }}
             >
-              <i className="yobicon-database-remove" /> project.delete.this
+              <i className="yobicon-database-remove" />{" "}
+              {legacyMessage(props.messages, "project.delete.this")}
             </a>
           </div>
 
           <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
             <div className="modal-header">
               <button
-                aria-label="button.close"
+                aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
@@ -3110,11 +3164,11 @@ export function ProjectDeletePage(props: {
               >
                 ×
               </button>
-              <h3>project.delete.requestion</h3>
+              <h3>{legacyMessage(props.messages, "project.delete.requestion")}</h3>
             </div>
             <div className="modal-body">
-              <p>project.delete.description</p>
-              <p>project.delete.reaccept</p>
+              <p>{legacyMessage(props.messages, "project.delete.description")}</p>
+              <p>{legacyMessage(props.messages, "project.delete.reaccept")}</p>
             </div>
             <div className="modal-footer">
               <button
@@ -3124,7 +3178,7 @@ export function ProjectDeletePage(props: {
                 onClick={() => props.onDeleteProject?.(detail.ownerName, detail.projectName)}
                 type="button"
               >
-                button.yes
+                {legacyMessage(props.messages, "button.yes")}
               </button>
               <button
                 className="ybtn"
@@ -3132,7 +3186,7 @@ export function ProjectDeletePage(props: {
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                button.no
+                {legacyMessage(props.messages, "button.no")}
               </button>
             </div>
           </div>
@@ -3144,6 +3198,7 @@ export function ProjectDeletePage(props: {
 
 export function ProjectSettingsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onUpdateProjectSettings?: (input: {
@@ -3216,6 +3271,7 @@ export function ProjectSettingsPage(props: {
           <ProjectSettingsSubMenu
             active="setting"
             detail={detail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
           <form
@@ -3257,18 +3313,21 @@ export function ProjectSettingsPage(props: {
                   <div className="logo-desc">
                     <ul className="unstyled descs">
                       <li>
-                        <strong>project.logo</strong>
+                        <strong>{legacyMessage(props.messages, "project.logo")}</strong>
                       </li>
                       <li>
-                        project.logo.type <span className="point">bmp, jpg, gif, png</span>
+                        {legacyMessage(props.messages, "project.logo.type")}{" "}
+                        <span className="point">bmp, jpg, gif, png</span>
                       </li>
                       <li>
-                        project.logo.maxFileSize <span className="point">5MB</span>
+                        {legacyMessage(props.messages, "project.logo.maxFileSize")}{" "}
+                        <span className="point">5MB</span>
                       </li>
                       <li>
                         <div className="btn-wrap">
                           <div className="nbtn medium white fake-file-wrap">
-                            <i className="yobicon-upload" /> button.upload
+                            <i className="yobicon-upload" />{" "}
+                            {legacyMessage(props.messages, "button.upload")}
                             <input
                               accept="image/*"
                               className="file"
@@ -3293,11 +3352,13 @@ export function ProjectSettingsPage(props: {
                 </div>
                 <dl className="setting-box right">
                   <dt>
-                    <label htmlFor="project-name">project.name.placeholder</label>
+                    <label htmlFor="project-name">
+                      {legacyMessage(props.messages, "project.name.placeholder")}
+                    </label>
                   </dt>
                   <dd>
                     <input
-                      data-content="project.transfer.description6"
+                      data-content={legacyMessage(props.messages, "project.transfer.description6")}
                       data-placement="left"
                       data-trigger="focus"
                       id="project-name"
@@ -3315,7 +3376,9 @@ export function ProjectSettingsPage(props: {
                     <br />
                   </dd>
                   <dt>
-                    <label htmlFor="project-desc">project.description.placeholder</label>
+                    <label htmlFor="project-desc">
+                      {legacyMessage(props.messages, "project.description.placeholder")}
+                    </label>
                   </dt>
                   <dd>
                     <textarea
@@ -3336,12 +3399,14 @@ export function ProjectSettingsPage(props: {
               </div>
               {validationMessage ? (
                 <div className="alert alert-error" role="alert">
-                  {validationMessage}
+                  {legacyMessage(props.messages, validationMessage)}
                 </div>
               ) : null}
 
               <div className="box-wrap middle">
-                <div className="cu-label">project.shareOption</div>
+                <div className="cu-label">
+                  {legacyMessage(props.messages, "project.shareOption")}
+                </div>
                 <div className="cu-desc">
                   {projectScopes.map((scope) => (
                     <React.Fragment key={scope.id}>
@@ -3360,16 +3425,20 @@ export function ProjectSettingsPage(props: {
                         }
                       />
                       <label className={`bg-radiobtn label-${scope.id}`} htmlFor={scope.id}>
-                        {scope.label}
+                        {legacyMessage(props.messages, scope.label)}
                       </label>
                     </React.Fragment>
                   ))}
-                  <span className="note">project.private.notice</span>
+                  <span className="note">
+                    {legacyMessage(props.messages, "project.private.notice")}
+                  </span>
                 </div>
               </div>
 
               <div className="box-wrap middle">
-                <div className="cu-label">project.codeAccessible</div>
+                <div className="cu-label">
+                  {legacyMessage(props.messages, "project.codeAccessible")}
+                </div>
                 <div className="cu-desc">
                   <input
                     checked={detail.codeMemberOnly === true}
@@ -3381,7 +3450,7 @@ export function ProjectSettingsPage(props: {
                     value="true"
                   />
                   <label className="bg-radiobtn label-public" htmlFor="codeAccessibleMemberOnly">
-                    button.yes
+                    {legacyMessage(props.messages, "button.yes")}
                   </label>
                   <input
                     checked={detail.codeMemberOnly !== true}
@@ -3393,14 +3462,16 @@ export function ProjectSettingsPage(props: {
                     value="false"
                   />
                   <label className="bg-radiobtn label-private" htmlFor="codeAccessibleAnyone">
-                    button.no
+                    {legacyMessage(props.messages, "button.no")}
                   </label>
                   <span className="note" />
                 </div>
               </div>
 
               <div className="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel">
-                <div className="cu-label vmiddle">project.reviewer.count</div>
+                <div className="cu-label vmiddle">
+                  {legacyMessage(props.messages, "project.reviewer.count")}
+                </div>
                 <div className="cu-desc">
                   <input
                     checked={formState.isUsingReviewerCount}
@@ -3419,7 +3490,7 @@ export function ProjectSettingsPage(props: {
                     }
                   />
                   <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
-                    project.reviewer.count.enable
+                    {legacyMessage(props.messages, "project.reviewer.count.enable")}
                   </label>
                   <input
                     checked={!formState.isUsingReviewerCount}
@@ -3438,7 +3509,7 @@ export function ProjectSettingsPage(props: {
                     }
                   />
                   <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
-                    project.reviewer.count.disable
+                    {legacyMessage(props.messages, "project.reviewer.count.disable")}
                   </label>
                   <div
                     className={formState.isUsingReviewerCount ? undefined : "hide"}
@@ -3469,13 +3540,17 @@ export function ProjectSettingsPage(props: {
                         ))}
                       </select>
                     </div>
-                    <span className="note ml10">project.reviewer.count.description</span>
+                    <span className="note ml10">
+                      {legacyMessage(props.messages, "project.reviewer.count.description")}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="box-wrap middle">
-                <div className="cu-label vmiddle">project.menu.setting</div>
+                <div className="cu-label vmiddle">
+                  {legacyMessage(props.messages, "project.menu.setting")}
+                </div>
                 <div className="cu-desc">
                   {PROJECT_MENU_SETTINGS.map((item) => (
                     <label
@@ -3497,7 +3572,7 @@ export function ProjectSettingsPage(props: {
                           }))
                         }
                       />
-                      {item.label}
+                      {legacyMessage(props.messages, item.label)}
                     </label>
                   ))}
                 </div>
@@ -3510,7 +3585,7 @@ export function ProjectSettingsPage(props: {
                 id="save"
                 type="submit"
               >
-                button.save
+                {legacyMessage(props.messages, "button.save")}
               </button>
             </div>
           </form>

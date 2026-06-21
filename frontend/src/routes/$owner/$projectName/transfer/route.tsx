@@ -24,7 +24,7 @@ export const Route = createFileRoute("/$owner/$projectName/transfer")({
 
 function ProjectTransferRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/transfer`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -67,7 +67,7 @@ function ProjectTransferRouteComponent() {
         destination,
         ownerName: owner,
         projectName,
-    }),
+      }),
     onError: (error) => {
       setErrorMessage(error instanceof Error ? error.message : "project.transfer.error");
     },
@@ -103,6 +103,7 @@ function ProjectTransferRouteComponent() {
   return (
     <ProjectTransferPage
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       onRequestTransfer={async (destination) => {
         await transferMutation.mutateAsync(destination);
       }}

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/$owner/$projectName/deleteform")({
 
 function ProjectDeleteFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/deleteform`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -54,7 +54,7 @@ function ProjectDeleteFormRouteComponent() {
       deleteProjectRest(runtimeConfig, csrfToken, {
         ownerName: owner,
         projectName,
-    }),
+      }),
     onError: (error) => {
       setErrorMessage(error instanceof Error ? error.message : "project.delete.error");
     },
@@ -87,6 +87,7 @@ function ProjectDeleteFormRouteComponent() {
   return (
     <ProjectDeletePage
       detail={projectQuery.data ? toProjectContainerView(projectQuery.data) : null}
+      messages={messages}
       onDeleteProject={() => deleteMutation.mutate()}
       pending={deleteMutation.isPending}
       runtimeConfig={runtimeConfig}

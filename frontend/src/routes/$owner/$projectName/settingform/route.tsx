@@ -19,7 +19,7 @@ export const Route = createFileRoute("/$owner/$projectName/settingform")({
 
 function ProjectSettingsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/${owner}/${projectName}/settingform`);
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -78,6 +78,7 @@ function ProjectSettingsRouteComponent() {
   return (
     <ProjectSettingsPage
       detail={detail}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onUpdateProjectSettings={async (input) => {
         try {

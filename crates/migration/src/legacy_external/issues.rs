@@ -218,6 +218,28 @@ pub struct IssueCommentUpdateRequest {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueCommentNotificationRequest {
+    pub path: IssueHelperPath,
+    pub comment: String,
+    pub parent_comment_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LegacyIssueHelperUser {
+    pub login_id: Option<String>,
+    pub name: Option<String>,
+    pub pure_name_only: Option<String>,
+    pub avatar_url: Option<String>,
+    pub user_type: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueCommentNotificationResponse {
+    pub path: IssueHelperPath,
+    pub receivers: Vec<LegacyIssueHelperUser>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IssueLabelReplaceRequest {
     pub path: IssueHelperPath,
     pub label_ids: Vec<i64>,
@@ -227,6 +249,41 @@ pub struct IssueLabelReplaceRequest {
 pub struct IssueAssigneeReplaceRequest {
     pub path: IssueHelperPath,
     pub login_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueAssigneeReplaceResponse {
+    pub path: IssueHelperPath,
+    pub assignee: Option<LegacyIssueHelperUser>,
+    pub issue_url: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueHelperSearchPath {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub number: Option<i64>,
+    pub query: Option<String>,
+    pub search_type: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LegacyIssueSharableEntry {
+    pub login_id: Option<String>,
+    pub name: Option<String>,
+    pub pure_name_only: Option<String>,
+    pub avatar_url: Option<String>,
+    pub entry_type: Option<String>,
+    pub project_name: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueHelperSearchResponse {
+    pub path: IssueHelperSearchPath,
+    pub content_range: Option<String>,
+    pub entries: Vec<LegacyIssueSharableEntry>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -241,6 +298,13 @@ pub struct IssueShareUpdateRequest {
     pub path: IssueHelperPath,
     pub action: String,
     pub sharer: IssueSharerRef,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueShareUpdateResponse {
+    pub path: IssueHelperPath,
+    pub action: Option<String>,
+    pub sharer: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -265,6 +329,24 @@ pub struct IssueDetectChangeResponse {
     pub num_of_comments: i64,
     pub issue_body_checksum: String,
     pub issue_update_date: i64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueTranslationRequest {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub source_type: String,
+    pub number: i64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueTranslationResponse {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub translated: Option<String>,
+    pub precondition_failed: bool,
 }
 
 impl IssueImportBatch {
@@ -294,6 +376,7 @@ pub enum IssueAdapterError {
     InvalidIssueItem { index: usize },
     MissingField { index: usize, field: &'static str },
     MissingCommentBody,
+    MissingNotificationReceivers,
     MissingContent,
     MissingOriginal,
     MissingLabelArray,
@@ -309,6 +392,8 @@ pub enum IssueAdapterError {
     MissingIssueBodyChanged,
     MissingIssueUpdateDate,
     InvalidIssueUpdateDate(String),
+    MissingTranslationField(&'static str),
+    InvalidTranslationNumber(String),
 }
 
 impl std::fmt::Display for IssueAdapterError {
@@ -347,6 +432,9 @@ impl std::fmt::Display for IssueAdapterError {
             Self::MissingCommentBody => {
                 write!(formatter, "missing issue comment `comment` or `body` field")
             }
+            Self::MissingNotificationReceivers => {
+                write!(formatter, "missing comment notification `receivers` array")
+            }
             Self::MissingContent => write!(formatter, "missing issue helper `content` field"),
             Self::MissingOriginal => write!(formatter, "missing issue helper `original` field"),
             Self::MissingLabelArray => write!(formatter, "issue label replacement body must be a JSON array"),
@@ -375,6 +463,12 @@ impl std::fmt::Display for IssueAdapterError {
             }
             Self::InvalidIssueUpdateDate(value) => {
                 write!(formatter, "invalid detectChange issueUpdateDate `{value}`")
+            }
+            Self::MissingTranslationField(field) => {
+                write!(formatter, "missing translation `{field}` field")
+            }
+            Self::InvalidTranslationNumber(value) => {
+                write!(formatter, "invalid translation number `{value}`")
             }
         }
     }
@@ -597,6 +691,49 @@ pub fn parse_issue_comment_update_request(
     })
 }
 
+pub fn parse_issue_comment_notification_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueCommentNotificationRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
+        &["issues", ":number", "commentNotiReceivers"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let comment = text_field(&payload, "comment").ok_or(IssueAdapterError::MissingCommentBody)?;
+    let parent_comment_id =
+        text_field(&payload, "parentCommentId").filter(|value| !value.is_empty());
+
+    Ok(IssueCommentNotificationRequest {
+        path,
+        comment,
+        parent_comment_id,
+    })
+}
+
+pub fn parse_issue_comment_notification_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssueCommentNotificationResponse, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
+        &["issues", ":number", "commentNotiReceivers"],
+    )?;
+    let payload = parse_json(response_json)?;
+    let receivers = find_value(&payload, "receivers")
+        .and_then(Value::as_array)
+        .ok_or(IssueAdapterError::MissingNotificationReceivers)?
+        .iter()
+        .map(issue_helper_user)
+        .collect();
+
+    Ok(IssueCommentNotificationResponse { path, receivers })
+}
+
 pub fn parse_issue_label_replace_request(
     sample_path: &str,
     request_json: &str,
@@ -646,6 +783,72 @@ pub fn parse_issue_assignee_replace_request(
     Ok(IssueAssigneeReplaceRequest { path, login_ids })
 }
 
+pub fn parse_issue_assignee_replace_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssueAssigneeReplaceResponse, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
+        &["issues", ":number", "assignees"],
+    )?;
+    let payload = parse_json(response_json)?;
+    let assignee = find_value(&payload, "assignee").map(issue_helper_user);
+    let issue_url = text_field(&payload, "issue");
+
+    Ok(IssueAssigneeReplaceResponse {
+        path,
+        assignee,
+        issue_url,
+    })
+}
+
+pub fn parse_issue_helper_search_response(
+    sample_path: &str,
+    response_json: &str,
+    content_range: Option<&str>,
+) -> Result<IssueHelperSearchResponse, IssueAdapterError> {
+    let path = if sample_path.contains("/issues/") && sample_path.contains("/assignableUsers") {
+        parse_issue_search_path(
+            sample_path,
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
+            &["issues", ":number", "assignableUsers"],
+        )?
+    } else if sample_path.contains("/issues/") && sample_path.contains("/findSharer") {
+        parse_issue_search_path(
+            sample_path,
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
+            &["issues", ":number", "findSharer"],
+        )?
+    } else if sample_path.contains("/issues/") && sample_path.contains("/sharableUsers") {
+        parse_issue_search_path(
+            sample_path,
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
+            &["issues", ":number", "sharableUsers"],
+        )?
+    } else {
+        parse_issue_search_path(
+            sample_path,
+            "/-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
+            &["assignableUsers"],
+        )?
+    };
+    let payload = parse_json(response_json)?;
+    let entries = payload
+        .as_array()
+        .ok_or(IssueAdapterError::MissingIssuesArray)?
+        .iter()
+        .map(issue_sharable_entry)
+        .collect();
+
+    Ok(IssueHelperSearchResponse {
+        path,
+        content_range: content_range.map(str::to_string),
+        entries,
+    })
+}
+
 pub fn parse_issue_share_update_request(
     sample_path: &str,
     request_json: &str,
@@ -674,6 +877,25 @@ pub fn parse_issue_share_update_request(
             login_id,
             project_id,
         },
+    })
+}
+
+pub fn parse_issue_share_update_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssueShareUpdateResponse, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
+        &["issues", ":number", "share"],
+    )?;
+    let payload = parse_json(response_json)?;
+
+    Ok(IssueShareUpdateResponse {
+        path,
+        action: text_field(&payload, "action"),
+        sharer: text_field(&payload, "sharer"),
     })
 }
 
@@ -762,6 +984,52 @@ pub fn parse_issue_detect_change_response(
         num_of_comments,
         issue_body_checksum: checksum,
         issue_update_date,
+    })
+}
+
+pub fn parse_issue_translation_request(
+    request_json: &str,
+) -> Result<IssueTranslationRequest, IssueAdapterError> {
+    let payload = parse_json(request_json)?;
+    let owner =
+        text_field(&payload, "owner").ok_or(IssueAdapterError::MissingTranslationField("owner"))?;
+    let project_name = text_field(&payload, "projectName")
+        .ok_or(IssueAdapterError::MissingTranslationField("projectName"))?;
+    let source_type =
+        text_field(&payload, "type").ok_or(IssueAdapterError::MissingTranslationField("type"))?;
+    let number_value = find_value(&payload, "number")
+        .ok_or(IssueAdapterError::MissingTranslationField("number"))?;
+    let number = integer_field(number_value)
+        .ok_or_else(|| IssueAdapterError::InvalidTranslationNumber(scalar_text(number_value)))?;
+
+    Ok(IssueTranslationRequest {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/translation",
+        owner,
+        project_name,
+        source_type,
+        number,
+    })
+}
+
+pub fn parse_issue_translation_response(
+    response_json: &str,
+) -> Result<IssueTranslationResponse, IssueAdapterError> {
+    if response_json == "Precondition Failed" {
+        return Ok(IssueTranslationResponse {
+            endpoint_method: "POST",
+            endpoint_path: "/-_-api/v1/translation",
+            translated: None,
+            precondition_failed: true,
+        });
+    }
+
+    let payload = parse_json(response_json)?;
+    Ok(IssueTranslationResponse {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/translation",
+        translated: text_field(&payload, "translated"),
+        precondition_failed: false,
     })
 }
 
@@ -857,6 +1125,45 @@ fn parse_issue_helper_path(
     })
 }
 
+fn parse_issue_search_path(
+    path: &str,
+    endpoint_path: &'static str,
+    tail: &[&str],
+) -> Result<IssueHelperSearchPath, IssueAdapterError> {
+    let (path_part, query_part) = path.split_once('?').unwrap_or((path, ""));
+    let parts: Vec<&str> = path_part
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect();
+    let Some(tail_start) = parts.len().checked_sub(tail.len()) else {
+        return Err(IssueAdapterError::InvalidPath(path.to_string()));
+    };
+    let ["-_-api", "v1", "owners", owner, "projects", project_name] = parts[..tail_start] else {
+        return Err(IssueAdapterError::InvalidPath(path.to_string()));
+    };
+
+    let mut number = None;
+    for (actual, expected) in parts[tail_start..].iter().zip(tail.iter()) {
+        match *expected {
+            ":number" => {
+                number = Some(parse_positive_path_number(path, actual)?);
+            }
+            literal if literal == *actual => {}
+            _ => return Err(IssueAdapterError::InvalidPath(path.to_string())),
+        }
+    }
+
+    Ok(IssueHelperSearchPath {
+        endpoint_method: "GET",
+        endpoint_path,
+        owner: owner.to_string(),
+        project_name: project_name.to_string(),
+        number,
+        query: query_field(query_part, "query"),
+        search_type: query_field(query_part, "type"),
+    })
+}
+
 fn parse_positive_path_number(path: &str, value: &str) -> Result<i64, IssueAdapterError> {
     value
         .parse::<i64>()
@@ -865,11 +1172,39 @@ fn parse_positive_path_number(path: &str, value: &str) -> Result<i64, IssueAdapt
         .ok_or_else(|| IssueAdapterError::InvalidPath(path.to_string()))
 }
 
+fn query_field(query: &str, field: &str) -> Option<String> {
+    query.split('&').find_map(|pair| {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        (key == field).then(|| value.to_string())
+    })
+}
+
 fn author_ref(value: &Value) -> LegacyAuthorRef {
     LegacyAuthorRef {
         login_id: text_field(value, "loginId"),
         name: text_field(value, "name"),
         email: text_field(value, "email"),
+    }
+}
+
+fn issue_helper_user(value: &Value) -> LegacyIssueHelperUser {
+    LegacyIssueHelperUser {
+        login_id: text_field(value, "loginId"),
+        name: text_field(value, "name"),
+        pure_name_only: text_field(value, "pureNameOnly"),
+        avatar_url: text_field(value, "avatarUrl"),
+        user_type: text_field(value, "type"),
+    }
+}
+
+fn issue_sharable_entry(value: &Value) -> LegacyIssueSharableEntry {
+    LegacyIssueSharableEntry {
+        login_id: text_field(value, "loginId"),
+        name: text_field(value, "name"),
+        pure_name_only: text_field(value, "pureNameOnly"),
+        avatar_url: text_field(value, "avatarUrl"),
+        entry_type: text_field(value, "type"),
+        project_name: text_field(value, "projectName"),
     }
 }
 

@@ -24,7 +24,7 @@ export const Route = createFileRoute("/$owner/$projectName/members")({
 
 function ProjectMembersRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/members`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -134,6 +134,7 @@ function ProjectMembersRouteComponent() {
   return (
     <ProjectMembersPage
       detail={membersQuery.data ?? null}
+      messages={messages}
       onAddMember={(loginId) => addMutation.mutate(loginId)}
       onDeleteMember={(userId) => deleteMutation.mutate(userId)}
       onUpdateMemberRole={(userId, role) => updateRoleMutation.mutate({ role, userId })}

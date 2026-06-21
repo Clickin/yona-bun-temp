@@ -2027,6 +2027,94 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
 }
 
 #[tokio::test]
+async fn site_admin_import_cleans_leftover_staging_before_live_import() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable-cleanup",
+    )
+    .await;
+
+    let staging_dir = imported_upload_staging_dir(&data_dir);
+    let leftover_dir = staging_dir.join("previous-import");
+    std::fs::create_dir_all(&leftover_dir).expect("leftover staging dir");
+    std::fs::write(leftover_dir.join("leftover-hash"), b"orphaned staged bytes")
+        .expect("leftover staged bytes");
+    let final_upload_sentinel = data_dir.path().join("uploads").join("existing-final-hash");
+    std::fs::write(&final_upload_sentinel, b"existing final upload")
+        .expect("existing final upload");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "contentBase64": "Y2xlYW51cC1wb3J0YWJsZS1maWxl",
+                "id": 9902,
+                "mimeType": "text/plain",
+                "name": "cleanup-portable.txt",
+                "size": 21
+            }],
+            "bodyMarkdown": "post with portable attachment /files/9902",
+            "comments": [],
+            "ownerName": "member",
+            "projectName": "portable-cleanup",
+            "title": "Portable cleanup post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedPosts"], 1);
+
+    assert!(
+        !staging_dir.exists(),
+        "successful live import must remove prior import-local staging leftovers"
+    );
+    assert!(
+        final_upload_sentinel.exists(),
+        "staging cleanup must not remove normal upload files"
+    );
+    let post_detail = repo
+        .read_posting_detail_for_viewer("member", "portable-cleanup", 1, None)
+        .await
+        .expect("read imported post")
+        .expect("imported post exists");
+    let attachment = repo
+        .read_attachment_by_id(post_detail.attachments[0].id)
+        .await
+        .expect("read imported attachment")
+        .expect("imported attachment exists");
+    assert_eq!(
+        std::fs::read(data_dir.path().join("uploads").join(&attachment.hash))
+            .expect("promoted portable bytes"),
+        b"cleanup-portable-file"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, _repo, db) = build_app_with_app_config(AppRuntimeConfig {

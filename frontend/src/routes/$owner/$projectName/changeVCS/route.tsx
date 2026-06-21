@@ -25,7 +25,7 @@ export const Route = createFileRoute("/$owner/$projectName/changeVCS")({
 
 function ProjectChangeVcsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/changeVCS`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -67,7 +67,7 @@ function ProjectChangeVcsRouteComponent() {
       changeProjectVcsRest(runtimeConfig, csrfToken, {
         ownerName: owner,
         projectName,
-    }),
+      }),
     onError: (error) => {
       setErrorMessage(error instanceof Error ? error.message : "project.changeVCS.error");
     },
@@ -108,6 +108,7 @@ function ProjectChangeVcsRouteComponent() {
     <ProjectChangeVcsPage
       changeVcs={changeMutation.data ?? changeVcsQuery.data ?? null}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       onChangeVcs={async () => {
         await changeMutation.mutateAsync();
       }}

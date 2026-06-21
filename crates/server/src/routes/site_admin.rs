@@ -29,8 +29,8 @@ use crate::{
     parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
     random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
     require_session, require_valid_csrf, rest_board_label_from_record, rest_repository,
-    site_export_filename_stamp, workspace_avatar_url, ConnectError, PilotServiceImpl,
-    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
+    site_export_filename_stamp, site_import_staging_lock, workspace_avatar_url, ConnectError,
+    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
     SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
@@ -2259,6 +2259,8 @@ async fn rest_import_site_data(
     if let Some(error) = preflight.validation_errors.first() {
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
+    let _site_import_guard = site_import_staging_lock().lock().await;
+    cleanup_site_import_staging_uploads(&service)?;
     let mut checkpoint = RestSiteImportCheckpoint::from_payload(&payload);
     checkpoint.mark_all_validated();
 
@@ -4305,12 +4307,25 @@ async fn rest_site_import_attachments(
 }
 
 fn site_import_staging_upload_path(service: &PilotServiceImpl, hash: &str) -> PathBuf {
+    site_import_staging_upload_root(service)
+        .join(random_storage_token())
+        .join(hash)
+}
+
+fn site_import_staging_upload_root(service: &PilotServiceImpl) -> PathBuf {
     service
         .data_root
         .join("uploads")
         .join(".site-import-staging")
-        .join(random_storage_token())
-        .join(hash)
+}
+
+fn cleanup_site_import_staging_uploads(service: &PilotServiceImpl) -> Result<(), RestRouteError> {
+    let staging_root = site_import_staging_upload_root(service);
+    match std::fs::remove_dir_all(&staging_root) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(RestRouteError::internal(error.to_string())),
+    }
 }
 
 fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> String {

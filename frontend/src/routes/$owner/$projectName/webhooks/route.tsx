@@ -26,7 +26,7 @@ export const Route = createFileRoute("/$owner/$projectName/webhooks")({
 
 function ProjectWebhooksRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/webhooks`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -123,6 +123,7 @@ function ProjectWebhooksRouteComponent() {
   return (
     <ProjectWebhooksPage
       detail={webhooksQuery.data ?? null}
+      messages={messages}
       onCreateWebhook={(input) => createMutation.mutate(input)}
       onDeleteWebhook={(webhookId) => deleteMutation.mutate(webhookId)}
       pending={createMutation.isPending || deleteMutation.isPending}

@@ -112,6 +112,11 @@ pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+pub(crate) fn site_import_staging_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
+
 #[derive(Clone)]
 pub(crate) struct RuntimeRegistry {
     pub(crate) auth_ui: AuthUiConfig,

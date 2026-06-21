@@ -208,7 +208,12 @@ are now milestone created/updated timestamps and other source fields that
 current legacy evidence/persistence inputs do not expose, non-portable
 attachment timestamp mutation beyond preserving existing rows, and the narrower
 crash/process-kill window around filesystem side effects outside the DB
-transaction. Repository content transfer is explicitly retired from the
+transaction. The live `/sites/import` mutation/promotion section is now
+process-local serialized after preflight, and the route removes prior
+import-local `uploads/.site-import-staging` leftovers before mutation starts
+while preserving normal upload files; this narrows pre-commit process-kill
+leftovers to cleanup-on-next-valid-live-import rather than committed final
+upload state. Repository content transfer is explicitly retired from the
 site-admin `yobi-data` import/export hardening list: legacy `SiteApp.exportData`
 / `SiteApp.importData` delegate to `DataService`, whose fixed exchanger list
 serializes database tables and sequences only; `ProjectDataExchanger` carries
@@ -329,7 +334,12 @@ list response shapes, the legacy favorite-issue `projectIds`/`projects` naming,
 and favorite toggle `{id,favored,message?}` fields. These parsers preserve
 recursive wrapped payload consumption and scalar fallback normalization for
 tool-side legacy payload handling while keeping the rows app-owned and avoiding
-broad `/-_-api/v1/**` runtime route expansion.
+broad `/-_-api/v1/**` runtime route expansion. Issue helper adapter depth now
+also covers comment notification receiver request/response inventory,
+assignable/find-sharer/sharable search responses with path/query/content-range
+metadata, assignee/share mutation responses, and translation request/response
+normalization including legacy unconfigured `Precondition Failed`, again as
+tool-side parsing only without broad runtime route expansion.
 Remaining P1-B work is executable adapter depth for other descriptor-only
 groups only where a migration tool needs it.
 
@@ -496,10 +506,18 @@ and `partial_edit_tabmenu.scala.html`: the known `userinfo.*`, `user.*`,
 `emails.*`, `site.resetPasswordEmail.*`, and shared `button.*` labels now flow
 from `AppRuntimeContext`/legacy message lookup while preserving literal key
 fallback without a provider. Focused coverage is
-`frontend/src/workspace-settings-i18n.spec.tsx`. Remaining app-wide opt-in scope
+`frontend/src/workspace-settings-i18n.spec.tsx`. P4-A-ProjectSettingsI18n
+continuation covers the existing project settings/member/webhook/transfer/delete/change-VCS
+controls from `project/setting.scala.html`, `members.scala.html`,
+`webhooks.scala.html`, `partial_webhooks_list.scala.html`, `transfer.scala.html`,
+`delete.scala.html`, `change_vcs.scala.html`, and `partial_settingmenu.scala.html`:
+the known `project.*`, `issue.label`, `button.*`, and related labels/placeholders
+now flow from `AppRuntimeContext`/legacy message lookup while preserving literal
+key fallback without a provider. Focused coverage is
+`frontend/src/project-settings-parity.spec.tsx`. Remaining app-wide opt-in scope
 is other existing controls that still render known legacy keys/copy as literal
-fallback text, including project settings/member/webhook/transfer/delete/change-VCS
-and code/review controls not already covered by prior slices. No language
+fallback text, including code/review controls not already covered by prior
+slices. No language
 selector or settings screen was added because the re-audit found no corresponding
 legacy UI surface.
 
