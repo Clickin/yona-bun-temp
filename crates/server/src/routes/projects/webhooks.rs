@@ -167,6 +167,14 @@ fn legacy_hangout_thread_json(thread_name: Option<&str>) -> serde_json::Value {
     }
 }
 
+fn slack_webhook_color<'a>(service: &'a PilotServiceImpl, event_type: &str) -> &'a str {
+    service
+        .slack_webhook_colors
+        .get(event_type)
+        .map(String::as_str)
+        .unwrap_or("")
+}
+
 fn webhook_response_thread_name(response_body: &str) -> Option<String> {
     let value: serde_json::Value = serde_json::from_str(response_body).ok()?;
     match value.get("thread")?.get("name")? {
@@ -256,6 +264,7 @@ fn issue_webhook_payload(
     issue: &persistence::IssueRecord,
     request_message: &str,
     detail_markdown: &str,
+    color: &str,
     thread_name: Option<&str>,
 ) -> String {
     match webhook.webhook_type {
@@ -283,7 +292,7 @@ fn issue_webhook_payload(
                 "attachments": [{
                     "text": detail_markdown,
                     "fields": fields,
-                    "color": "",
+                    "color": color,
                 }],
             })
             .to_string()
@@ -323,6 +332,7 @@ fn posting_comment_webhook_payload(
     webhook: &persistence::ProjectWebhookRecord,
     request_message: &str,
     detail_markdown: &str,
+    color: &str,
     thread_name: Option<&str>,
 ) -> String {
     match webhook.webhook_type {
@@ -331,7 +341,7 @@ fn posting_comment_webhook_payload(
             "attachments": [{
                 "text": detail_markdown,
                 "fields": null,
-                "color": "",
+                "color": color,
             }],
         })
         .to_string(),
@@ -487,6 +497,7 @@ pub(crate) async fn dispatch_posting_comment_webhooks(
             &webhook,
             &request_message,
             &comment.contents_markdown,
+            slack_webhook_color(service, event_type),
             thread_name.as_deref(),
         );
         let request_body = body.clone();
@@ -581,6 +592,7 @@ pub(crate) async fn dispatch_issue_webhooks(
             issue,
             &request_message,
             detail_markdown,
+            slack_webhook_color(service, event_type),
             thread_name.as_deref(),
         );
         let request_body = body.clone();
@@ -622,6 +634,7 @@ fn pull_request_webhook_payload(
     pull_request: &persistence::PullRequestDetailRecord,
     request_message: &str,
     detail_markdown: &str,
+    color: &str,
     thread_name: Option<&str>,
 ) -> String {
     match webhook.webhook_type {
@@ -646,7 +659,7 @@ fn pull_request_webhook_payload(
                         "short": true,
                     },
                 ],
-                "color": "",
+                "color": color,
             }],
         })
         .to_string(),
@@ -735,6 +748,7 @@ pub(crate) async fn dispatch_pull_request_webhooks(
             pull_request,
             &request_message,
             detail_markdown,
+            slack_webhook_color(service, event_type),
             thread_name.as_deref(),
         );
         let request_body = body.clone();

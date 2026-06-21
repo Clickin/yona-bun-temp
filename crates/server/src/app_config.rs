@@ -6,6 +6,7 @@ use crate::{
     project_default_scope_from_option, site_name_from_option, supported_languages_from_option,
     trimmed_option, LEGACY_DEFAULT_MAX_FILE_SIZE,
 };
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use yona_rust_integrations::IntegrationConfig;
 
@@ -38,6 +39,7 @@ pub struct AppRuntimeConfig {
     pub show_user_email: bool,
     pub site_name: String,
     pub site_update: SiteUpdateConfig,
+    pub slack_webhook_colors: BTreeMap<String, String>,
     pub smtp: SmtpRuntimeConfig,
     pub supported_languages: Vec<String>,
     pub translation_proxy: TranslationProxyConfig,
@@ -127,6 +129,7 @@ impl Default for AppRuntimeConfig {
             show_user_email: true,
             site_name: "Yona".to_string(),
             site_update: SiteUpdateConfig::default(),
+            slack_webhook_colors: BTreeMap::new(),
             smtp: SmtpRuntimeConfig::default(),
             supported_languages: default_supported_languages(),
             translation_proxy: TranslationProxyConfig::default(),
@@ -155,6 +158,7 @@ impl AppRuntimeConfig {
             show_user_email: config.show_user_email.unwrap_or(true),
             site_name: site_name_from_option(config.site_name.as_deref()),
             site_update: SiteUpdateConfig::from_startup(config),
+            slack_webhook_colors: config.slack_webhook_colors.clone(),
             smtp: SmtpRuntimeConfig::from_startup(config),
             supported_languages: supported_languages_from_option(
                 config.supported_languages.as_deref(),

@@ -73,7 +73,7 @@ fn loads_sectioned_legacy_migration_toml_keys() {
     let config_path = dir.path().join("yona.toml");
     fs::write(
         &config_path,
-        r#"
+        r##"
 [site]
 name = "Legacy Yona"
 hostname = "yona.example.com"
@@ -126,6 +126,10 @@ from = "override@example.com"
 delivery_retries = 2
 allow_private_networks = true
 
+[slack]
+NEW_COMMENT = "#36a64f"
+ISSUE_STATE_CHANGED = "danger"
+
 [update]
 current_version = "1.0.0"
 latest_version = "1.1.0"
@@ -143,7 +147,7 @@ mail_delay = "0"
 recipient_limit = 50
 hide_address = false
 draft_time = "1s"
-"#,
+"##,
     )
     .expect("write config");
 
@@ -239,6 +243,20 @@ draft_time = "1s"
     );
     assert_eq!(config.webhook_delivery_retries, Some(2));
     assert_eq!(config.webhook_allow_private_networks, Some(true));
+    assert_eq!(
+        config
+            .slack_webhook_colors
+            .get("NEW_COMMENT")
+            .map(String::as_str),
+        Some("#36a64f")
+    );
+    assert_eq!(
+        config
+            .slack_webhook_colors
+            .get("ISSUE_STATE_CHANGED")
+            .map(String::as_str),
+        Some("danger")
+    );
     assert_eq!(config.notification_mail_enabled, Some(false));
     assert_eq!(
         config.notification_mail_initial_delay.as_deref(),
@@ -439,6 +457,8 @@ draft_time = "30s"
                 "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS".to_string(),
                 "true".to_string(),
             ),
+            ("slack.NEW_ISSUE".to_string(), "good".to_string()),
+            ("slack.NEW_COMMENT".to_string(), "#439fe0".to_string()),
             (
                 "YONA_CURRENT_VERSION".to_string(),
                 "env-current".to_string(),
@@ -589,6 +609,20 @@ draft_time = "30s"
     );
     assert_eq!(config.webhook_delivery_retries, Some(4));
     assert_eq!(config.webhook_allow_private_networks, Some(true));
+    assert_eq!(
+        config
+            .slack_webhook_colors
+            .get("NEW_ISSUE")
+            .map(String::as_str),
+        Some("good")
+    );
+    assert_eq!(
+        config
+            .slack_webhook_colors
+            .get("NEW_COMMENT")
+            .map(String::as_str),
+        Some("#439fe0")
+    );
     assert_eq!(config.notification_mail_enabled, Some(false));
     assert_eq!(
         config.notification_mail_initial_delay.as_deref(),

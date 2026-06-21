@@ -163,6 +163,7 @@ fn build_router_with_app_config(
         project_default_scope: runtime.project_default_scope.clone(),
         site_name: runtime.site_name.clone(),
         site_update: runtime.site_update.clone(),
+        slack_webhook_colors: runtime.slack_webhook_colors.clone(),
         smtp: runtime.smtp.clone(),
         translation_proxy: runtime.translation_proxy.clone(),
     };

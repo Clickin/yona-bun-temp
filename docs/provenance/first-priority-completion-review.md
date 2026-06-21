@@ -3,7 +3,7 @@
 > Status: closed for the current first-priority app-runtime conversion scope.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and `docs/provenance/core-parity-audit.md`.
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 ## Scope
 
@@ -101,6 +101,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 - 2026-06-20: runtime config DI cleanup continued for Smart HTTP and SVN. Shared Basic-auth principal resolution now receives the router's app-scoped `AuthUiConfig` through asset fallback registration instead of reading auth env vars during the request.
 - 2026-06-20: runtime config DI cleanup continued for notification mail delivery. Due-mail drain and scheduler tick execution now require an explicit `NotificationMailDeliveryConfig`, so sender/domain/BCC/reply-to behavior is test-scoped instead of being read from process env during delivery.
 - 2026-06-20: runtime config DI cleanup continued for mailbox polling. Runtime mailbox scheduler config now flows through the startup snapshot helper only, and the env-mutating mailbox polling config contract was replaced by the startup snapshot contract.
+- 2026-06-21: P4-D/P4-E stale deferred re-audit closed the mailbox and update-notification status question without code changes. Legacy `Global.java` starts `MailboxService.start()` and `YobiUpdate.onStart()`; current Rust starts `spawn_mailbox_polling_scheduler` from `crates/server/src/main.rs`, feeds `YONA_MAILBOX_FETCH_COMMAND` NUL-separated raw RFC822 output through `crates/server/src/mailbox.rs`, and covers the bridge with `crates/server/tests/mailbox_contract.rs::mailbox_polling_tick_fetches_raw_messages_and_threads_replies` plus startup snapshot coverage. Legacy `YobiUpdate.java`, `partial_update_notification.scala.html`, and `site/update.scala.html` map to `crates/server/src/routes/site_admin/update.rs`, `crates/server/tests/site_admin_contract.rs` update metadata/download tests, and `frontend/tests/site-admin-update-parity.e2e.ts`; no active app-runtime gap was found. `SPEC.md` Section 3.3 now marks IMAP mailbox service and update notification closed for app-runtime scope.
 
 ## Compile-Time Note
 

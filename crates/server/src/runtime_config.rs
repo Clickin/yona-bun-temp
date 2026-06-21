@@ -38,6 +38,7 @@ pub struct StartupConfig {
     pub site_allow_anonymous_access: Option<bool>,
     pub site_hostname: Option<String>,
     pub site_name: Option<String>,
+    pub slack_webhook_colors: BTreeMap<String, String>,
     pub smtp_domain: Option<String>,
     pub smtp_from: Option<String>,
     pub smtp_host: Option<String>,
@@ -88,6 +89,7 @@ struct StartupConfigFile {
     session: Option<SessionConfigFile>,
     show_user_email: Option<bool>,
     site: Option<SiteConfigFile>,
+    slack: Option<BTreeMap<String, String>>,
     smtp: Option<SmtpConfigFile>,
     update: Option<UpdateConfigFile>,
     use_embedded_assets: Option<bool>,
@@ -200,6 +202,7 @@ pub fn load_startup_config(
     let notification = file.notification.unwrap_or_default();
     let project = file.project.unwrap_or_default();
     let session = file.session.unwrap_or_default();
+    let slack = file.slack.unwrap_or_default();
     let smtp = file.smtp.unwrap_or_default();
     let update = file.update.unwrap_or_default();
     let webhook = file.webhook.unwrap_or_default();
@@ -324,6 +327,7 @@ pub fn load_startup_config(
     let smtp_from = env_string(&env, "YONA_SMTP_FROM")
         .or_else(|| env_string(&env, "SMTP_FROM"))
         .or_else(|| non_empty_string(smtp.from));
+    let slack_webhook_colors = slack_webhook_colors_from_config_and_env(slack, &env);
     let update_current_version = env_string(&env, "YONA_CURRENT_VERSION")
         .or_else(|| non_empty_string(update.current_version));
     let update_error =
@@ -401,6 +405,7 @@ pub fn load_startup_config(
         site_allow_anonymous_access,
         site_hostname,
         site_name,
+        slack_webhook_colors,
         smtp_domain,
         smtp_from,
         smtp_host,
@@ -497,6 +502,29 @@ fn split_csv(value: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(ToString::to_string)
         .collect()
+}
+
+fn slack_webhook_colors_from_config_and_env(
+    mut colors: BTreeMap<String, String>,
+    env: &BTreeMap<String, String>,
+) -> BTreeMap<String, String> {
+    colors.retain(|key, value| !key.trim().is_empty() && !value.trim().is_empty());
+    colors = colors
+        .into_iter()
+        .map(|(key, value)| (key.trim().to_string(), value.trim().to_string()))
+        .collect();
+
+    for (key, value) in env {
+        let Some(event_type) = key.strip_prefix("slack.") else {
+            continue;
+        };
+        if event_type.trim().is_empty() || value.trim().is_empty() {
+            continue;
+        }
+        colors.insert(event_type.trim().to_string(), value.trim().to_string());
+    }
+
+    colors
 }
 
 fn read_startup_config_file(

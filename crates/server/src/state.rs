@@ -2,6 +2,7 @@ use axum::http::HeaderMap;
 use http::StatusCode;
 use serde::Serialize;
 use std::{
+    collections::BTreeMap,
     path::PathBuf,
     sync::{atomic::AtomicBool, Mutex, OnceLock},
 };
@@ -120,6 +121,7 @@ pub(crate) struct RuntimeRegistry {
     pub(crate) project_default_scope: String,
     pub(crate) site_name: String,
     pub(crate) site_update: SiteUpdateConfig,
+    pub(crate) slack_webhook_colors: BTreeMap<String, String>,
     pub(crate) smtp: SmtpRuntimeConfig,
     pub(crate) translation_proxy: TranslationProxyConfig,
 }
@@ -134,6 +136,7 @@ impl RuntimeRegistry {
             project_default_scope: config.project_default_scope.clone(),
             site_name: config.site_name.clone(),
             site_update: config.site_update.clone(),
+            slack_webhook_colors: config.slack_webhook_colors.clone(),
             smtp: config.smtp.clone(),
             translation_proxy: config.translation_proxy.clone(),
         }
@@ -153,6 +156,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) project_default_scope: String,
     pub(crate) site_name: String,
     pub(crate) site_update: SiteUpdateConfig,
+    pub(crate) slack_webhook_colors: BTreeMap<String, String>,
     pub(crate) smtp: SmtpRuntimeConfig,
     pub(crate) translation_proxy: TranslationProxyConfig,
 }

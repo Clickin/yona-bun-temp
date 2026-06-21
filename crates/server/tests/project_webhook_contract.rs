@@ -3,7 +3,10 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection, EntityTrait, PaginatorTrait};
 use serde_json::{json, Value};
-use std::sync::{Mutex, OnceLock};
+use std::{
+    collections::BTreeMap,
+    sync::{Mutex, OnceLock},
+};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_integrations::{
@@ -302,7 +305,14 @@ async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hoo
     // for board posting comments through the project-owned webhook dispatch module.
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
-    let (app, _db) = build_app_with_repository().await;
+    let (app, _db) = build_app_with_app_config(AppRuntimeConfig {
+        slack_webhook_colors: BTreeMap::from([
+            ("NEW_COMMENT".to_string(), "#36a64f".to_string()),
+            ("COMMENT_UPDATED".to_string(), "warning".to_string()),
+        ]),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
@@ -426,6 +436,7 @@ async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hoo
         "First board comment body"
     );
     assert_eq!(slack_payload["attachments"][0]["fields"], Value::Null);
+    assert_eq!(slack_payload["attachments"][0]["color"], "#36a64f");
     clear_test_webhook_outbox();
 
     ok_json(
@@ -459,6 +470,13 @@ async fn project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hoo
     assert!(updated_text.contains(&format!(
         "/yona/owner/projectYobi/post/1#comment-{comment_id}|#1: Board comment webhook parity"
     )));
+    let updated_slack = updated_deliveries
+        .iter()
+        .find(|delivery| delivery.webhook_type == "DETAIL_SLACK")
+        .expect("updated slack comment webhook");
+    let updated_slack_payload: Value =
+        serde_json::from_str(&updated_slack.body).expect("updated slack comment webhook payload");
+    assert_eq!(updated_slack_payload["attachments"][0]["color"], "warning");
 
     clear_test_webhook_outbox();
 }
