@@ -39,6 +39,7 @@ import {
   type SiteUserState,
 } from "../../../api/site-admin";
 import { useAppRuntime } from "../../../app-runtime-context";
+import { type LegacyI18nContextValue, useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   BadRequestPage,
@@ -77,6 +78,22 @@ const SITE_ADMIN_NAV = [
   { href: "/sites/update", label: "site.sidebar.update", pageName: "update" },
   { href: "/sites/diagnostic", label: "site.sidebar.diagnostics", pageName: "diagnostic" },
 ];
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  args?: Array<number | string>,
+  fallback = key,
+): string {
+  return messages ? messages(key, { args, fallback }) : fallback;
+}
+
+function useSiteAdminMessages(messages: LegacyMessageLookup | undefined): LegacyMessageLookup {
+  const legacyMessages = useLegacyMessages();
+  return messages ?? legacyMessages.t;
+}
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
@@ -211,7 +228,7 @@ function apiSiteMailListUri(runtimeConfig: RuntimeConfig): string {
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const href = useCurrentHref();
-  const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
 
   useDocumentTitle("title.siteSetting");
@@ -230,6 +247,7 @@ function SiteAdminRouteComponent() {
         csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -244,6 +262,7 @@ function SiteAdminRouteComponent() {
         csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -257,6 +276,7 @@ function SiteAdminRouteComponent() {
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         updateAvailable={updateAvailable}
       />
@@ -269,6 +289,7 @@ function SiteAdminRouteComponent() {
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         updateAvailable={updateAvailable}
       />
@@ -282,6 +303,7 @@ function SiteAdminRouteComponent() {
         csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -296,6 +318,7 @@ function SiteAdminRouteComponent() {
         csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -310,6 +333,7 @@ function SiteAdminRouteComponent() {
         csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         updateAvailable={updateAvailable}
       />
@@ -322,6 +346,7 @@ function SiteAdminRouteComponent() {
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         updateAvailable={updateAvailable}
       />
@@ -334,6 +359,7 @@ function SiteAdminRouteComponent() {
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
+        messages={messages}
         runtimeConfig={runtimeConfig}
         updateAvailable={updateAvailable}
       />
@@ -348,6 +374,7 @@ function SiteDataRoute({
   csrfToken,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
@@ -355,6 +382,7 @@ function SiteDataRoute({
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
@@ -374,6 +402,7 @@ function SiteDataRoute({
   return (
     <SiteAdminDataPage
       csrfToken={csrfToken}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
     />
@@ -384,12 +413,14 @@ function SiteUpdateRoute({
   bootstrapping,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
@@ -413,6 +444,7 @@ function SiteUpdateRoute({
   return (
     <SiteAdminUpdatePage
       error={query.error instanceof Error ? query.error.message : null}
+      messages={messages}
       response={query.data}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
@@ -425,6 +457,7 @@ function SiteUserListRoute({
   csrfToken,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -433,6 +466,7 @@ function SiteUserListRoute({
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -516,6 +550,7 @@ function SiteUserListRoute({
     <SiteAdminUserListPage
       deleteTarget={deleteTarget}
       input={input}
+      messages={messages}
       pendingAccountLockLoginId={lockMutation.isPending ? lockMutation.variables : ""}
       pendingDeleteLoginId={deleteMutation.isPending ? deleteMutation.variables : ""}
       pendingGuestLoginId={guestMutation.isPending ? guestMutation.variables : ""}
@@ -543,6 +578,7 @@ function SiteProjectListRoute({
   csrfToken,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -551,6 +587,7 @@ function SiteProjectListRoute({
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -596,6 +633,7 @@ function SiteProjectListRoute({
     <SiteAdminProjectListPage
       deleteTarget={deleteTarget}
       input={input}
+      messages={messages}
       pendingDeleteProjectId={deleteMutation.isPending ? deleteMutation.variables : undefined}
       response={query.data}
       runtimeConfig={runtimeConfig}
@@ -611,12 +649,14 @@ function SitePostListRoute({
   bootstrapping,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
@@ -648,6 +688,7 @@ function SitePostListRoute({
   return (
     <SiteAdminPostListPage
       input={input}
+      messages={messages}
       response={query.data}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
@@ -659,12 +700,14 @@ function SiteIssueListRoute({
   bootstrapping,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
@@ -696,6 +739,7 @@ function SiteIssueListRoute({
   return (
     <SiteAdminIssueListPage
       input={input}
+      messages={messages}
       response={query.data}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
@@ -708,6 +752,7 @@ function SiteMailRoute({
   csrfToken,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -716,6 +761,7 @@ function SiteMailRoute({
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -758,6 +804,7 @@ function SiteMailRoute({
 
   return (
     <SiteAdminMailPage
+      messages={messages}
       pending={sendMutation.isPending}
       response={query.data}
       runtimeConfig={runtimeConfig}
@@ -773,6 +820,7 @@ function SiteMassMailRoute({
   csrfToken,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -781,6 +829,7 @@ function SiteMassMailRoute({
   csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -813,6 +862,7 @@ function SiteMassMailRoute({
   return (
     <SiteAdminMassMailPage
       mailtoHref={mailtoHref}
+      messages={messages}
       pending={mailListMutation.isPending}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
@@ -825,12 +875,14 @@ function SiteDiagnosticRoute({
   bootstrapping,
   currentIsSiteAdmin,
   href,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
   currentIsSiteAdmin: boolean;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
@@ -860,6 +912,7 @@ function SiteDiagnosticRoute({
 
   return (
     <SiteAdminDiagnosticPage
+      messages={messages}
       response={query.data}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
@@ -869,19 +922,22 @@ function SiteDiagnosticRoute({
 
 function SiteAdminSidebar({
   activePageName,
+  messages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   activePageName: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const msg = useSiteAdminMessages(messages);
   return (
     <ul className="site-setting-nav">
       {SITE_ADMIN_NAV.map((item) => (
         <li className={item.pageName === activePageName ? "active" : ""} key={item.pageName}>
           <a href={appHref(runtimeConfig, item.href)}>
-            {item.label}
+            {msg(item.label, { fallback: item.label })}
             {item.pageName === "update" && updateAvailable ? (
               <span className="notification-badge">1</span>
             ) : null}
@@ -895,6 +951,7 @@ function SiteAdminSidebar({
 export function SiteAdminUserListPage({
   deleteTarget,
   input,
+  messages: i18nMessages,
   pendingAccountLockLoginId,
   pendingDeleteLoginId,
   pendingGuestLoginId,
@@ -914,6 +971,7 @@ export function SiteAdminUserListPage({
 }: {
   deleteTarget: SiteUser | null;
   input: SiteUserListInput;
+  messages?: LegacyMessageLookup;
   pendingAccountLockLoginId: string | undefined;
   pendingDeleteLoginId: string | undefined;
   pendingGuestLoginId: string | undefined;
@@ -931,6 +989,7 @@ export function SiteAdminUserListPage({
   onToggleGuest: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const users = response?.users ?? [];
   const page = response?.page ?? input.page;
   const totalPages = response?.totalPages ?? 0;
@@ -939,7 +998,7 @@ export function SiteAdminUserListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -948,13 +1007,14 @@ export function SiteAdminUserListPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="userList"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.userList</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.userList")}</h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/userList")}
                   className="form-search pull-right"
@@ -966,7 +1026,7 @@ export function SiteAdminUserListPage({
                       className="textbox"
                       defaultValue={input.query}
                       name="query"
-                      placeholder="site.userList.search"
+                      placeholder={legacyMessage(messages, "site.userList.search")}
                       type="text"
                     />
                     <button className="search-btn" type="submit">
@@ -978,9 +1038,10 @@ export function SiteAdminUserListPage({
               <SiteUserTabs
                 input={input}
                 runtimeConfig={runtimeConfig}
+                messages={messages}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
-              <SiteUserListHeader state={input.state} />
+              <SiteUserListHeader messages={messages} state={input.state} />
               <ul className="user-list-wrap">
                 {users.map((user) => (
                   <SiteUserRow
@@ -992,6 +1053,7 @@ export function SiteAdminUserListPage({
                     pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
                     resetPassword={resetPasswords[user.loginId] ?? ""}
                     runtimeConfig={runtimeConfig}
+                    messages={messages}
                     selectedState={input.state}
                     user={user}
                     onRequestDelete={onRequestDelete}
@@ -1006,6 +1068,7 @@ export function SiteAdminUserListPage({
                 input={input}
                 page={page}
                 runtimeConfig={runtimeConfig}
+                messages={messages}
                 totalPages={totalPages}
               />
             </div>
@@ -1015,6 +1078,7 @@ export function SiteAdminUserListPage({
       <SiteDeleteUserModal
         pending={deleteTarget !== null && pendingDeleteLoginId === deleteTarget.loginId}
         runtimeConfig={runtimeConfig}
+        messages={messages}
         user={deleteTarget}
         onCancel={onCancelDelete}
         onConfirm={onConfirmDelete}
@@ -1026,6 +1090,7 @@ export function SiteAdminUserListPage({
 export function SiteAdminProjectListPage({
   deleteTarget,
   input,
+  messages: i18nMessages,
   pendingDeleteProjectId,
   response,
   runtimeConfig,
@@ -1036,6 +1101,7 @@ export function SiteAdminProjectListPage({
 }: {
   deleteTarget: SiteProject | null;
   input: SiteProjectListInput;
+  messages?: LegacyMessageLookup;
   pendingDeleteProjectId: number | undefined;
   response: SiteProjectListResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -1044,6 +1110,7 @@ export function SiteAdminProjectListPage({
   onConfirmDelete: (projectId: number) => void;
   onRequestDelete: (project: SiteProject) => void;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const projects = response?.projects ?? [];
   const page = response?.page ?? input.page;
   const totalPages = response?.totalPages ?? 0;
@@ -1052,7 +1119,7 @@ export function SiteAdminProjectListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1061,13 +1128,14 @@ export function SiteAdminProjectListPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="projectList"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.projectList</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.projectList")}</h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/projectList")}
                   className="form-search pull-right"
@@ -1078,7 +1146,7 @@ export function SiteAdminProjectListPage({
                       className="textbox"
                       defaultValue={input.filter}
                       name="filter"
-                      placeholder="site.project.filter"
+                      placeholder={legacyMessage(messages, "site.project.filter")}
                       type="text"
                     />
                     <button className="search-btn" type="submit">
@@ -1087,7 +1155,7 @@ export function SiteAdminProjectListPage({
                   </div>
                 </form>
               </div>
-              <SiteProjectListHeader />
+              <SiteProjectListHeader messages={messages} />
               <ul className="project-list-wrap">
                 {projects.map((project) => (
                   <SiteProjectRow
@@ -1095,6 +1163,7 @@ export function SiteAdminProjectListPage({
                     pendingDelete={pendingDeleteProjectId === project.id}
                     project={project}
                     runtimeConfig={runtimeConfig}
+                    messages={messages}
                     onRequestDelete={onRequestDelete}
                   />
                 ))}
@@ -1103,6 +1172,7 @@ export function SiteAdminProjectListPage({
                 input={input}
                 page={page}
                 runtimeConfig={runtimeConfig}
+                messages={messages}
                 totalPages={totalPages}
               />
             </div>
@@ -1113,6 +1183,7 @@ export function SiteAdminProjectListPage({
         pending={deleteTarget !== null && pendingDeleteProjectId === deleteTarget.id}
         project={deleteTarget}
         runtimeConfig={runtimeConfig}
+        messages={messages}
         onCancel={onCancelDelete}
         onConfirm={onConfirmDelete}
       />
@@ -1122,15 +1193,18 @@ export function SiteAdminProjectListPage({
 
 export function SiteAdminPostListPage({
   input,
+  messages: i18nMessages,
   response,
   runtimeConfig,
   updateAvailable = false,
 }: {
   input: SitePostListInput;
+  messages?: LegacyMessageLookup;
   response: SitePostListResponse | undefined;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const posts = response?.posts ?? [];
   const page = response?.page ?? input.page;
   const totalPages = response?.totalPages ?? 0;
@@ -1139,7 +1213,7 @@ export function SiteAdminPostListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1148,13 +1222,14 @@ export function SiteAdminPostListPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="postList"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.postList</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.postList")}</h2>
               </div>
               <ul className="post-list-wrap">
                 {posts.map((post) => (
@@ -1169,6 +1244,7 @@ export function SiteAdminPostListPage({
                 input={input}
                 page={page}
                 runtimeConfig={runtimeConfig}
+                messages={messages}
                 totalPages={totalPages}
               />
             </div>
@@ -1181,15 +1257,18 @@ export function SiteAdminPostListPage({
 
 export function SiteAdminIssueListPage({
   input,
+  messages: i18nMessages,
   response,
   runtimeConfig,
   updateAvailable = false,
 }: {
   input: SiteIssueListInput;
+  messages?: LegacyMessageLookup;
   response: SiteIssueListResponse | undefined;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const issues = response?.issues ?? [];
   const page = response?.page ?? input.page;
   const totalPages = response?.totalPages ?? 0;
@@ -1198,7 +1277,7 @@ export function SiteAdminIssueListPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1207,15 +1286,16 @@ export function SiteAdminIssueListPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="issueList"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.issueList</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.issueList")}</h2>
               </div>
-              <SiteIssueTabs input={input} runtimeConfig={runtimeConfig} />
+              <SiteIssueTabs input={input} messages={messages} runtimeConfig={runtimeConfig} />
               <ul className="post-list-wrap">
                 {issues.map((issue) => (
                   <SiteIssueRow
@@ -1229,6 +1309,7 @@ export function SiteAdminIssueListPage({
                 input={input}
                 page={page}
                 runtimeConfig={runtimeConfig}
+                messages={messages}
                 totalPages={totalPages}
               />
             </div>
@@ -1240,6 +1321,7 @@ export function SiteAdminIssueListPage({
 }
 
 export function SiteAdminMailPage({
+  messages: i18nMessages,
   pending,
   response,
   runtimeConfig,
@@ -1247,6 +1329,7 @@ export function SiteAdminMailPage({
   updateAvailable = false,
   onSend,
 }: {
+  messages?: LegacyMessageLookup;
   pending: boolean;
   response: SiteMailOptionsResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -1254,6 +1337,7 @@ export function SiteAdminMailPage({
   updateAvailable?: boolean;
   onSend: (input: SiteMailSendInput) => void;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const notConfiguredItems = response?.notConfiguredItems ?? [];
   const sender = response?.sender ?? "";
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -1271,7 +1355,7 @@ export function SiteAdminMailPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1280,17 +1364,18 @@ export function SiteAdminMailPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="mail"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">title.sendMail</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "title.sendMail")}</h2>
               </div>
               {notConfiguredItems.length === 0 ? null : (
                 <div className="alert alert-error">
-                  <p>site.mail.notConfigured /admin/mailconf</p>
+                  <p>{`${legacyMessage(messages, "site.mail.notConfigured")} /admin/mailconf`}</p>
                   <ul>
                     {notConfiguredItems.map((item) => (
                       <li key={item}>{item}</li>
@@ -1298,7 +1383,11 @@ export function SiteAdminMailPage({
                   </ul>
                 </div>
               )}
-              {sent ? <div className="alert alert-success">site.mail.sended</div> : null}
+              {sent ? (
+                <div className="alert alert-success">
+                  {legacyMessage(messages, "site.mail.sended")}
+                </div>
+              ) : null}
               <form
                 action={appHref(runtimeConfig, "/sites/mail")}
                 className="form-horizontal"
@@ -1312,7 +1401,7 @@ export function SiteAdminMailPage({
                     htmlFor="mail-from"
                     {...legacyLabelName("from")}
                   >
-                    site.mail.from
+                    {legacyMessage(messages, "site.mail.from")}
                   </label>
                   <div className="controls">
                     <input
@@ -1320,7 +1409,7 @@ export function SiteAdminMailPage({
                       defaultValue={sender}
                       id="mail-from"
                       name="from"
-                      placeholder="site.mail.fromPlaceholder"
+                      placeholder={legacyMessage(messages, "site.mail.fromPlaceholder")}
                       required
                       type="text"
                     />
@@ -1328,14 +1417,14 @@ export function SiteAdminMailPage({
                 </div>
                 <div className="control-group">
                   <label className="control-label" htmlFor="mail-to" {...legacyLabelName("to")}>
-                    site.mail.to
+                    {legacyMessage(messages, "site.mail.to")}
                   </label>
                   <div className="controls">
                     <input
                       className="span4"
                       id="mail-to"
                       name="to"
-                      placeholder="site.mail.toPlaceholder"
+                      placeholder={legacyMessage(messages, "site.mail.toPlaceholder")}
                       required
                       type="text"
                     />
@@ -1347,7 +1436,7 @@ export function SiteAdminMailPage({
                     htmlFor="mail-subject"
                     {...legacyLabelName("subject")}
                   >
-                    site.mail.subject
+                    {legacyMessage(messages, "site.mail.subject")}
                   </label>
                   <div className="controls">
                     <input className="span12" id="mail-subject" name="subject" type="text" />
@@ -1355,7 +1444,7 @@ export function SiteAdminMailPage({
                 </div>
                 <div className="control-group mr10">
                   <label className="control-label" htmlFor="body" {...legacyLabelName("body")}>
-                    site.mail.body
+                    {legacyMessage(messages, "site.mail.body")}
                   </label>
                   <div className="controls">
                     <textarea
@@ -1368,7 +1457,7 @@ export function SiteAdminMailPage({
                 </div>
                 <div className="span12 mail-btn-wrap">
                   <button className="ybtn ybtn-primary" disabled={pending} type="submit">
-                    <strong>site.mail.send</strong>
+                    <strong>{legacyMessage(messages, "site.mail.send")}</strong>
                   </button>
                 </div>
               </form>
@@ -1382,17 +1471,20 @@ export function SiteAdminMailPage({
 
 export function SiteAdminMassMailPage({
   mailtoHref,
+  messages: i18nMessages,
   pending,
   runtimeConfig,
   updateAvailable = false,
   onResolveRecipients,
 }: {
   mailtoHref: string;
+  messages?: LegacyMessageLookup;
   pending: boolean;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
   onResolveRecipients: (input: SiteMailListInput) => void;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const [mode, setMode] = React.useState<"all" | "projects">("all");
   const [projectInput, setProjectInput] = React.useState("");
   const [selectedProjects, setSelectedProjects] = React.useState<string[]>([]);
@@ -1415,7 +1507,7 @@ export function SiteAdminMassMailPage({
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1424,13 +1516,14 @@ export function SiteAdminMassMailPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="massmail"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">title.massMail</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "title.massMail")}</h2>
               </div>
               <div className="mess-mail-wrap">
                 <label className="radio" htmlFor="mailtoAll">
@@ -1444,7 +1537,7 @@ export function SiteAdminMassMailPage({
                     value="all"
                     onChange={() => setMode("all")}
                   />
-                  site.massMail.toAll
+                  {legacyMessage(messages, "site.massMail.toAll")}
                 </label>
                 <label className="radio" htmlFor="mailtoPrj">
                   <input
@@ -1457,7 +1550,7 @@ export function SiteAdminMassMailPage({
                     value="projects"
                     onChange={() => setMode("projects")}
                   />
-                  site.massMail.toProjects
+                  {legacyMessage(messages, "site.massMail.toProjects")}
                 </label>
                 <div
                   className={mode === "projects" ? "control-group" : "control-group hide"}
@@ -1469,19 +1562,19 @@ export function SiteAdminMassMailPage({
                       className="span3"
                       data-provider="typeahead"
                       id="input-project"
-                      placeholder="project.name"
+                      placeholder={legacyMessage(messages, "project.name")}
                       type="text"
                       value={projectInput}
                       onChange={(event) => setProjectInput(event.target.value)}
                     />
                     <button
                       className="ybtn"
-                      data-loading-text="site.massMail.loading"
+                      data-loading-text={legacyMessage(messages, "site.massMail.loading")}
                       id="select-project"
                       type="submit"
                       onClick={addProject}
                     >
-                      <strong>button.add</strong>
+                      <strong>{legacyMessage(messages, "button.add")}</strong>
                     </button>
                   </div>
                   <div id="selected-projects">
@@ -1502,7 +1595,7 @@ export function SiteAdminMassMailPage({
                     type="submit"
                     onClick={resolveRecipients}
                   >
-                    <strong>site.mail.write</strong>
+                    <strong>{legacyMessage(messages, "site.mail.write")}</strong>
                   </button>
                   {mailtoHref === "" ? null : (
                     <a href={mailtoHref} id="mailto-link">
@@ -1521,18 +1614,21 @@ export function SiteAdminMassMailPage({
 
 export function SiteAdminDataPage({
   csrfToken,
+  messages: i18nMessages,
   runtimeConfig,
   updateAvailable = false,
 }: {
   csrfToken: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1541,36 +1637,37 @@ export function SiteAdminDataPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="data"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.data</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.data")}</h2>
               </div>
               <div className="cu-desc">
                 <ul>
                   <li className="notice">
-                    <strong>site.data.warning1</strong>
+                    <strong>{legacyMessage(messages, "site.data.warning1")}</strong>
                   </li>
                   <li className="notice">
-                    <strong>site.data.warning2</strong>
+                    <strong>{legacyMessage(messages, "site.data.warning2")}</strong>
                   </li>
                   <li className="notice">
-                    <strong>site.data.warning3</strong>
+                    <strong>{legacyMessage(messages, "site.data.warning3")}</strong>
                   </li>
                 </ul>
               </div>
 
-              <h3>site.data.export</h3>
-              <p>site.data.export.info</p>
+              <h3>{legacyMessage(messages, "site.data.export")}</h3>
+              <p>{legacyMessage(messages, "site.data.export.info")}</p>
               <a className="ybtn ybtn-primary" href={appHref(runtimeConfig, "/sites/export")}>
-                <strong>site.data.export</strong>
+                <strong>{legacyMessage(messages, "site.data.export")}</strong>
               </a>
 
-              <h3>site.data.import</h3>
-              <p>site.data.import.info</p>
+              <h3>{legacyMessage(messages, "site.data.import")}</h3>
+              <p>{legacyMessage(messages, "site.data.import.info")}</p>
               <form
                 action={appHref(runtimeConfig, "/sites/import")}
                 encType="multipart/form-data"
@@ -1592,26 +1689,43 @@ export function SiteAdminDataPage({
 
 export function SiteAdminUpdatePage({
   error,
+  messages: i18nMessages,
   response,
   runtimeConfig,
   updateAvailable = false,
 }: {
   error: string | null;
+  messages?: LegacyMessageLookup;
   response: SiteUpdateResponse | undefined;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const branchError = response?.error ?? error;
   const versionToUpdate = response?.versionToUpdate ?? null;
   const currentVersion = response?.currentVersion ?? "";
   const showUpdateBadge = updateAvailable || versionToUpdate !== null;
-  const updateAvailableMessage = versionToUpdate ? `Yona ${versionToUpdate} is available` : "";
-  const currentVersionMessage = currentVersion ? `Current version is Yona ${currentVersion}` : "";
+  const updateAvailableMessage = versionToUpdate
+    ? legacyMessage(
+        messages,
+        "site.update.isAvailable",
+        [versionToUpdate],
+        `Yona ${versionToUpdate} is available`,
+      )
+    : "";
+  const currentVersionMessage = currentVersion
+    ? legacyMessage(
+        messages,
+        "site.update.currentVersion",
+        [currentVersion],
+        `Current version is Yona ${currentVersion}`,
+      )
+    : "";
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1620,13 +1734,14 @@ export function SiteAdminUpdatePage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="update"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={showUpdateBadge}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.update</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.update")}</h2>
               </div>
               {versionToUpdate ? (
                 <p>
@@ -1635,15 +1750,24 @@ export function SiteAdminUpdatePage({
                     className="ybtn ybtn-success"
                     href={appHref(runtimeConfig, "/sites/update/download")}
                   >
-                    site.update.download
+                    {legacyMessage(messages, "site.update.download")}
                   </a>
                 </p>
               ) : null}
               {currentVersion ? <p>{currentVersionMessage}</p> : null}
-              {!versionToUpdate && !branchError ? <p>You are using the latest version</p> : null}
+              {!versionToUpdate && !branchError ? (
+                <p>
+                  {legacyMessage(
+                    messages,
+                    "site.update.isNotNecessary",
+                    [currentVersion],
+                    "You are using the latest version",
+                  )}
+                </p>
+              ) : null}
               {branchError ? (
                 <>
-                  <p>site.update.error</p>
+                  <p>{legacyMessage(messages, "site.update.error")}</p>
                   <pre>{branchError}</pre>
                 </>
               ) : null}
@@ -1656,20 +1780,23 @@ export function SiteAdminUpdatePage({
 }
 
 export function SiteAdminDiagnosticPage({
+  messages: i18nMessages,
   response,
   runtimeConfig,
   updateAvailable = false,
 }: {
+  messages?: LegacyMessageLookup;
   response: SiteDiagnosticsResponse | undefined;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
+  const messages = useSiteAdminMessages(i18nMessages);
   const errors = response?.errors ?? [];
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>site.sidebar</h3>
+          <h3>{legacyMessage(messages, "site.sidebar")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -1678,19 +1805,27 @@ export function SiteAdminDiagnosticPage({
             <div className="span2">
               <SiteAdminSidebar
                 activePageName="diagnostic"
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 updateAvailable={updateAvailable}
               />
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">site.sidebar.diagnostics</h2>
+                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.diagnostics")}</h2>
               </div>
               {errors.length === 0 ? (
-                <p>site.diagnostic.errorNotFound</p>
+                <p>{legacyMessage(messages, "site.diagnostic.errorNotFound")}</p>
               ) : (
                 <>
-                  <p>{`site.diagnostic.errorFound ${response?.errorCount ?? errors.length}`}</p>
+                  <p>
+                    {legacyMessage(
+                      messages,
+                      "site.diagnostic.errorFound",
+                      [response?.errorCount ?? errors.length],
+                      `site.diagnostic.errorFound ${response?.errorCount ?? errors.length}`,
+                    )}
+                  </p>
                   <ul>
                     {errors.map((error) => (
                       <li key={error}>
@@ -1710,9 +1845,11 @@ export function SiteAdminDiagnosticPage({
 
 function SiteIssueTabs({
   input,
+  messages,
   runtimeConfig,
 }: {
   input: SiteIssueListInput;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   return (
@@ -1720,7 +1857,7 @@ function SiteIssueTabs({
       {SITE_ISSUE_STATES.map((item) => (
         <li className={item.state === input.state ? "active" : ""} key={item.state}>
           <a href={appHref(runtimeConfig, siteIssueListHref({ page: 1, state: item.state }, 1))}>
-            {item.label}
+            {legacyMessage(messages, item.label)}
           </a>
         </li>
       ))}
@@ -1836,17 +1973,17 @@ function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: R
   );
 }
 
-function SiteProjectListHeader() {
+function SiteProjectListHeader({ messages }: { messages?: LegacyMessageLookup }) {
   return (
     <div className="row-fluid listhead">
       <div className="span5 listhead-title">
-        <strong>project.name</strong>
+        <strong>{legacyMessage(messages, "project.name")}</strong>
       </div>
       <div className="span4 listhead-title">
-        <strong>project.description</strong>
+        <strong>{legacyMessage(messages, "project.description")}</strong>
       </div>
       <div className="span2 listhead-title">
-        <strong>project.created</strong>
+        <strong>{legacyMessage(messages, "project.created")}</strong>
       </div>
       <div className="span1 listhead-title">
         <strong>{"\u00a0"}</strong>
@@ -1878,11 +2015,13 @@ function siteUserSocialDateLabel(createdAt: string) {
 }
 
 function SiteProjectRow({
+  messages,
   pendingDelete,
   project,
   runtimeConfig,
   onRequestDelete,
 }: {
+  messages?: LegacyMessageLookup;
   pendingDelete: boolean;
   project: SiteProject;
   runtimeConfig: RuntimeConfig;
@@ -1924,7 +2063,7 @@ function SiteProjectRow({
             onRequestDelete(project);
           }}
         >
-          button.delete
+          {legacyMessage(messages, "button.delete")}
         </button>
       </div>
     </li>
@@ -1932,12 +2071,14 @@ function SiteProjectRow({
 }
 
 function SiteDeleteProjectModal({
+  messages,
   pending,
   project,
   runtimeConfig,
   onCancel,
   onConfirm,
 }: {
+  messages?: LegacyMessageLookup;
   pending: boolean;
   project: SiteProject | null;
   runtimeConfig: RuntimeConfig;
@@ -1955,7 +2096,7 @@ function SiteDeleteProjectModal({
     >
       <div className="modal-header">
         <button
-          aria-label="button.close"
+          aria-label={legacyMessage(messages, "button.close")}
           className="close"
           data-dismiss="modal"
           type="button"
@@ -1966,10 +2107,10 @@ function SiteDeleteProjectModal({
         <span id="project-name">
           {project === null ? "" : `${project.ownerName}/${project.projectName}`}
         </span>
-        site.project.delete
+        {legacyMessage(messages, "site.project.delete")}
       </div>
       <div className="modal-body">
-        <p>site.project.deleteConfirm</p>
+        <p>{legacyMessage(messages, "site.project.deleteConfirm")}</p>
       </div>
       <div className="modal-footer">
         <button
@@ -1988,7 +2129,7 @@ function SiteDeleteProjectModal({
             }
           }}
         >
-          button.yes
+          {legacyMessage(messages, "button.yes")}
         </button>
         <button
           className="ybtn"
@@ -1997,7 +2138,7 @@ function SiteDeleteProjectModal({
           type="button"
           onClick={onCancel}
         >
-          button.no
+          {legacyMessage(messages, "button.no")}
         </button>
       </div>
     </div>
@@ -2006,10 +2147,12 @@ function SiteDeleteProjectModal({
 
 function SiteUserTabs({
   input,
+  messages,
   runtimeConfig,
   siteAdminCount,
 }: {
   input: SiteUserListInput;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   siteAdminCount: number;
 }) {
@@ -2023,7 +2166,7 @@ function SiteUserTabs({
               siteUserListHref({ page: 1, query: input.query, state: item.state }, 1),
             )}
           >
-            {item.label}
+            {legacyMessage(messages, item.label)}
             {item.state === "SITE_ADMIN" ? (
               <span className="num-badge">{siteAdminCount}</span>
             ) : null}
@@ -2034,26 +2177,35 @@ function SiteUserTabs({
   );
 }
 
-function SiteUserListHeader({ state }: { state: SiteUserState }) {
+function SiteUserListHeader({
+  messages,
+  state,
+}: {
+  messages?: LegacyMessageLookup;
+  state: SiteUserState;
+}) {
   return (
     <div className="row-fluid listhead">
       <div className="span3 listhead-title">
-        <strong>user.name</strong>
+        <strong>{legacyMessage(messages, "user.name")}</strong>
       </div>
       <div className="span3 listhead-title">
-        <strong>user.email</strong>
+        <strong>{legacyMessage(messages, "user.email")}</strong>
       </div>
       <div className="span2 listhead-title">
-        <strong>userinfo.since</strong>
+        <strong>{legacyMessage(messages, "userinfo.since")}</strong>
       </div>
       <div className="span4 listhead-title">
-        <strong>{state === "DELETED" ? "userinfo.leave" : "\u00a0"}</strong>
+        <strong>
+          {state === "DELETED" ? legacyMessage(messages, "userinfo.leave") : "\u00a0"}
+        </strong>
       </div>
     </div>
   );
 }
 
 function SiteUserRow({
+  messages,
   pendingAccountLock: _pendingAccountLock,
   pendingDelete,
   pendingGuest: _pendingGuest,
@@ -2069,6 +2221,7 @@ function SiteUserRow({
   onResetPassword,
   onToggleSiteAdmin,
 }: {
+  messages?: LegacyMessageLookup;
   pendingAccountLock: boolean;
   pendingDelete: boolean;
   pendingGuest: boolean;
@@ -2121,7 +2274,10 @@ function SiteUserRow({
               onToggleGuest(user.loginId);
             }}
           >
-            {user.isGuest ? "button.user.make.normal.mode" : "button.user.make.guest.mode"}
+            {legacyMessage(
+              messages,
+              user.isGuest ? "button.user.make.normal.mode" : "button.user.make.guest.mode",
+            )}
           </button>
           <button
             className="ybtn ybtn-small"
@@ -2133,7 +2289,7 @@ function SiteUserRow({
               onToggleAccountLock(user.loginId);
             }}
           >
-            {`button.user.makeAccountUnlock.${user.state === "LOCKED"}`}
+            {legacyMessage(messages, `button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
           </button>
           <button
             className="ybtn ybtn-small"
@@ -2148,11 +2304,11 @@ function SiteUserRow({
               onResetPassword(user.loginId);
             }}
           >
-            title.resetPassword
+            {legacyMessage(messages, "title.resetPassword")}
           </button>
           {resetPassword === "" ? null : (
             <div className="alert alert-success">
-              <h4>{`user.newPassword: ${resetPassword}`}</h4>
+              <h4>{`${legacyMessage(messages, "user.newPassword")}: ${resetPassword}`}</h4>
             </div>
           )}
           <button
@@ -2166,8 +2322,8 @@ function SiteUserRow({
             }}
           >
             {user.isSiteAdmin
-              ? "button.user.revoke.site.admin.role"
-              : "button.user.upgrade.to.site.admin"}
+              ? legacyMessage(messages, "button.user.revoke.site.admin.role")
+              : legacyMessage(messages, "button.user.upgrade.to.site.admin")}
           </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
@@ -2184,7 +2340,7 @@ function SiteUserRow({
               onRequestDelete(user);
             }}
           >
-            button.delete
+            {legacyMessage(messages, "button.delete")}
           </button>
         </div>
       )}
@@ -2193,12 +2349,14 @@ function SiteUserRow({
 }
 
 function SiteDeleteUserModal({
+  messages,
   pending,
   runtimeConfig,
   user,
   onCancel,
   onConfirm,
 }: {
+  messages?: LegacyMessageLookup;
   pending: boolean;
   runtimeConfig: RuntimeConfig;
   user: SiteUser | null;
@@ -2216,7 +2374,7 @@ function SiteDeleteUserModal({
     >
       <div className="modal-header">
         <button
-          aria-label="button.close"
+          aria-label={legacyMessage(messages, "button.close")}
           className="close"
           data-dismiss="modal"
           type="button"
@@ -2225,10 +2383,10 @@ function SiteDeleteUserModal({
           ×
         </button>
         <span id="userInfo">{user === null ? "" : `${user.displayName}(${user.loginId})`}</span>
-        <span>site.user.delete</span>
+        <span>{legacyMessage(messages, "site.user.delete")}</span>
       </div>
       <div className="modal-body">
-        <p>site.user.deleteConfirm</p>
+        <p>{legacyMessage(messages, "site.user.deleteConfirm")}</p>
       </div>
       <div className="modal-footer">
         <button
@@ -2245,7 +2403,7 @@ function SiteDeleteUserModal({
             }
           }}
         >
-          button.yes
+          {legacyMessage(messages, "button.yes")}
         </button>
         <button
           className="ybtn"
@@ -2254,7 +2412,7 @@ function SiteDeleteUserModal({
           type="button"
           onClick={onCancel}
         >
-          button.no
+          {legacyMessage(messages, "button.no")}
         </button>
       </div>
     </div>
@@ -2263,11 +2421,13 @@ function SiteDeleteUserModal({
 
 function SiteUserPagination({
   input,
+  messages,
   page,
   runtimeConfig,
   totalPages,
 }: {
   input: SiteUserListInput;
+  messages?: LegacyMessageLookup;
   page: number;
   runtimeConfig: RuntimeConfig;
   totalPages: number;
@@ -2276,6 +2436,7 @@ function SiteUserPagination({
     <SiteAdminPagination
       currentPage={page}
       hrefForPage={(pageNumber) => appHref(runtimeConfig, siteUserListHref(input, pageNumber))}
+      messages={messages}
       totalPages={totalPages}
     />
   );
@@ -2283,11 +2444,13 @@ function SiteUserPagination({
 
 function SiteProjectPagination({
   input,
+  messages,
   page,
   runtimeConfig,
   totalPages,
 }: {
   input: SiteProjectListInput;
+  messages?: LegacyMessageLookup;
   page: number;
   runtimeConfig: RuntimeConfig;
   totalPages: number;
@@ -2296,6 +2459,7 @@ function SiteProjectPagination({
     <SiteAdminPagination
       currentPage={page}
       hrefForPage={(pageNumber) => appHref(runtimeConfig, siteProjectListHref(input, pageNumber))}
+      messages={messages}
       totalPages={totalPages}
     />
   );
@@ -2303,11 +2467,13 @@ function SiteProjectPagination({
 
 function SitePostPagination({
   input,
+  messages,
   page,
   runtimeConfig,
   totalPages,
 }: {
   input: SitePostListInput;
+  messages?: LegacyMessageLookup;
   page: number;
   runtimeConfig: RuntimeConfig;
   totalPages: number;
@@ -2316,6 +2482,7 @@ function SitePostPagination({
     <SiteAdminPagination
       currentPage={page}
       hrefForPage={(pageNumber) => appHref(runtimeConfig, sitePostListHref(input, pageNumber))}
+      messages={messages}
       totalPages={totalPages}
     />
   );
@@ -2323,11 +2490,13 @@ function SitePostPagination({
 
 function SiteIssuePagination({
   input,
+  messages,
   page,
   runtimeConfig,
   totalPages,
 }: {
   input: SiteIssueListInput;
+  messages?: LegacyMessageLookup;
   page: number;
   runtimeConfig: RuntimeConfig;
   totalPages: number;
@@ -2336,6 +2505,7 @@ function SiteIssuePagination({
     <SiteAdminPagination
       currentPage={page}
       hrefForPage={(pageNumber) => appHref(runtimeConfig, siteIssueListHref(input, pageNumber))}
+      messages={messages}
       totalPages={totalPages}
     />
   );
@@ -2344,10 +2514,12 @@ function SiteIssuePagination({
 function SiteAdminPagination({
   currentPage,
   hrefForPage,
+  messages,
   totalPages,
 }: {
   currentPage: number;
   hrefForPage: (page: number) => string;
+  messages?: LegacyMessageLookup;
   totalPages: number;
 }) {
   if (totalPages <= 0) {
@@ -2365,12 +2537,12 @@ function SiteAdminPagination({
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>button.prevPage</span>
+              <span>{legacyMessage(messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">button.prevPage</span>
+              <span className="off">{legacyMessage(messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -2394,12 +2566,12 @@ function SiteAdminPagination({
               href={hrefForPage(currentPage + 1)}
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
-              <span>button.nextPage</span>
+              <span>{legacyMessage(messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </a>
           ) : (
             <>
-              <span className="off">button.nextPage</span>
+              <span className="off">{legacyMessage(messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}

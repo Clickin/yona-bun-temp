@@ -1,5 +1,6 @@
 #![recursion_limit = "256"]
 
+mod import_checkpoint;
 mod legacy_external_boards;
 mod legacy_external_issues;
 mod legacy_external_milestones;

@@ -190,6 +190,83 @@ pub struct IssuePostConversionResponse {
     pub issue_number: i64,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueHelperPath {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub number: i64,
+    pub comment_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueCommentCreateRequest {
+    pub path: IssueHelperPath,
+    pub token_comment: Option<String>,
+    pub author: Option<LegacyAuthorRef>,
+    pub body: Option<String>,
+    pub created_at: Option<String>,
+    pub temporary_upload_files: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueCommentUpdateRequest {
+    pub path: IssueHelperPath,
+    pub content: String,
+    pub original: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueLabelReplaceRequest {
+    pub path: IssueHelperPath,
+    pub label_ids: Vec<i64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueAssigneeReplaceRequest {
+    pub path: IssueHelperPath,
+    pub login_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueSharerRef {
+    pub sharer_type: Option<String>,
+    pub login_id: Option<String>,
+    pub project_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueShareUpdateRequest {
+    pub path: IssueHelperPath,
+    pub action: String,
+    pub sharer: IssueSharerRef,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueWeightResponse {
+    pub path: IssueHelperPath,
+    pub weight: i64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueDetectChangeRequest {
+    pub path: IssueHelperPath,
+    pub issue_body_checksum: String,
+    pub num_of_comments: i64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueDetectChangeResponse {
+    pub path: IssueHelperPath,
+    pub result: Option<String>,
+    pub comment_author_name: Option<String>,
+    pub issue_body_changed: bool,
+    pub num_of_comments: i64,
+    pub issue_body_checksum: String,
+    pub issue_update_date: i64,
+}
+
 impl IssueImportBatch {
     pub fn creatable_entries(&self) -> impl Iterator<Item = &NormalizedIssueImport> {
         self.entries
@@ -216,6 +293,22 @@ pub enum IssueAdapterError {
     MissingIssuesArray,
     InvalidIssueItem { index: usize },
     MissingField { index: usize, field: &'static str },
+    MissingCommentBody,
+    MissingContent,
+    MissingOriginal,
+    MissingLabelArray,
+    InvalidLabelId { index: usize, value: String },
+    MissingAssignees,
+    MissingSharer,
+    MissingAction,
+    MissingWeight,
+    InvalidWeight(String),
+    MissingChecksum,
+    MissingCommentCount,
+    InvalidCommentCount(String),
+    MissingIssueBodyChanged,
+    MissingIssueUpdateDate,
+    InvalidIssueUpdateDate(String),
 }
 
 impl std::fmt::Display for IssueAdapterError {
@@ -250,6 +343,38 @@ impl std::fmt::Display for IssueAdapterError {
             }
             Self::MissingField { index, field } => {
                 write!(formatter, "missing required issue field `{field}` at index {index}")
+            }
+            Self::MissingCommentBody => {
+                write!(formatter, "missing issue comment `comment` or `body` field")
+            }
+            Self::MissingContent => write!(formatter, "missing issue helper `content` field"),
+            Self::MissingOriginal => write!(formatter, "missing issue helper `original` field"),
+            Self::MissingLabelArray => write!(formatter, "issue label replacement body must be a JSON array"),
+            Self::InvalidLabelId { index, value } => {
+                write!(formatter, "invalid issue label id `{value}` at index {index}")
+            }
+            Self::MissingAssignees => write!(formatter, "No assignee"),
+            Self::MissingSharer => write!(formatter, "No sharer"),
+            Self::MissingAction => write!(formatter, "missing issue share `action` field"),
+            Self::MissingWeight => write!(formatter, "missing issue weight response `weight` field"),
+            Self::InvalidWeight(value) => write!(formatter, "invalid issue weight `{value}`"),
+            Self::MissingChecksum => {
+                write!(formatter, "missing detectChange `issueBodyChecksum` field")
+            }
+            Self::MissingCommentCount => {
+                write!(formatter, "missing detectChange `numOfComments` field")
+            }
+            Self::InvalidCommentCount(value) => {
+                write!(formatter, "invalid detectChange numOfComments `{value}`")
+            }
+            Self::MissingIssueBodyChanged => {
+                write!(formatter, "missing detectChange response `issueBodyChanged` field")
+            }
+            Self::MissingIssueUpdateDate => {
+                write!(formatter, "missing detectChange response `issueUpdateDate` field")
+            }
+            Self::InvalidIssueUpdateDate(value) => {
+                write!(formatter, "invalid detectChange issueUpdateDate `{value}`")
             }
         }
     }
@@ -424,6 +549,226 @@ pub fn parse_issue_post_conversion_response(
     })
 }
 
+pub fn parse_issue_comment_create_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueCommentCreateRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
+        &["issues", ":number", "comments"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let token_comment = text_field(&payload, "comment");
+    let body = text_field(&payload, "body");
+    if token_comment.is_none() && body.is_none() {
+        return Err(IssueAdapterError::MissingCommentBody);
+    }
+
+    Ok(IssueCommentCreateRequest {
+        path,
+        token_comment,
+        author: find_value(&payload, "author").map(author_ref),
+        body,
+        created_at: text_field(&payload, "createdAt"),
+        temporary_upload_files: upload_files(&payload),
+    })
+}
+
+pub fn parse_issue_comment_update_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueCommentUpdateRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "PUT",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
+        &["issues", ":number", "comments", ":commentId"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let content = text_field(&payload, "content").ok_or(IssueAdapterError::MissingContent)?;
+    let original = text_field(&payload, "original").ok_or(IssueAdapterError::MissingOriginal)?;
+
+    Ok(IssueCommentUpdateRequest {
+        path,
+        content,
+        original,
+    })
+}
+
+pub fn parse_issue_label_replace_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueLabelReplaceRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
+        &["issuelabel", ":number"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let labels = payload
+        .as_array()
+        .ok_or(IssueAdapterError::MissingLabelArray)?;
+    let mut label_ids = Vec::with_capacity(labels.len());
+    for (index, label) in labels.iter().enumerate() {
+        let value = json_node_as_text(label);
+        let label_id = value
+            .parse::<i64>()
+            .map_err(|_| IssueAdapterError::InvalidLabelId {
+                index,
+                value: value.clone(),
+            })?;
+        label_ids.push(label_id);
+    }
+
+    Ok(IssueLabelReplaceRequest { path, label_ids })
+}
+
+pub fn parse_issue_assignee_replace_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueAssigneeReplaceRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
+        &["issues", ":number", "assignees"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let assignees = find_value(&payload, "assignees")
+        .and_then(Value::as_array)
+        .filter(|assignees| !assignees.is_empty())
+        .ok_or(IssueAdapterError::MissingAssignees)?;
+    let login_ids = assignees.iter().map(json_node_as_text).collect();
+
+    Ok(IssueAssigneeReplaceRequest { path, login_ids })
+}
+
+pub fn parse_issue_share_update_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueShareUpdateRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
+        &["issues", ":number", "share"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let sharer = find_value(&payload, "sharer").ok_or(IssueAdapterError::MissingSharer)?;
+    if sharer.as_array().is_some_and(Vec::is_empty) {
+        return Err(IssueAdapterError::MissingSharer);
+    }
+    let action = text_field(&payload, "action").ok_or(IssueAdapterError::MissingAction)?;
+    let sharer_type = text_field(sharer, "type");
+    let login_id = text_field(sharer, "loginId");
+    let project_id = find_value(sharer, "loginId").and_then(integer_field);
+
+    Ok(IssueShareUpdateRequest {
+        path,
+        action,
+        sharer: IssueSharerRef {
+            sharer_type,
+            login_id,
+            project_id,
+        },
+    })
+}
+
+pub fn parse_issue_weight_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssueWeightResponse, IssueAdapterError> {
+    let path = if sample_path.ends_with("/upvoteWeight") {
+        parse_issue_helper_path(
+            sample_path,
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
+            &["issues", ":number", "upvoteWeight"],
+        )?
+    } else {
+        parse_issue_helper_path(
+            sample_path,
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
+            &["issues", ":number", "downvoteWeight"],
+        )?
+    };
+    let payload = parse_json(response_json)?;
+    let weight = find_value(&payload, "weight").ok_or(IssueAdapterError::MissingWeight)?;
+    let weight = integer_field(weight)
+        .ok_or_else(|| IssueAdapterError::InvalidWeight(scalar_text(weight)))?;
+
+    Ok(IssueWeightResponse { path, weight })
+}
+
+pub fn parse_issue_detect_change_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<IssueDetectChangeRequest, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
+        &["issues", ":number", "detectChange"],
+    )?;
+    let payload = parse_json(request_json)?;
+    let issue_body_checksum =
+        text_field(&payload, "issueBodyChecksum").ok_or(IssueAdapterError::MissingChecksum)?;
+    let count =
+        find_value(&payload, "numOfComments").ok_or(IssueAdapterError::MissingCommentCount)?;
+    let num_of_comments = integer_field(count)
+        .ok_or_else(|| IssueAdapterError::InvalidCommentCount(scalar_text(count)))?;
+
+    Ok(IssueDetectChangeRequest {
+        path,
+        issue_body_checksum,
+        num_of_comments,
+    })
+}
+
+pub fn parse_issue_detect_change_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssueDetectChangeResponse, IssueAdapterError> {
+    let path = parse_issue_helper_path(
+        sample_path,
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
+        &["issues", ":number", "detectChange"],
+    )?;
+    let payload = parse_json(response_json)?;
+    let issue_body_changed = find_value(&payload, "issueBodyChanged")
+        .and_then(Value::as_bool)
+        .ok_or(IssueAdapterError::MissingIssueBodyChanged)?;
+    let count =
+        find_value(&payload, "numOfComments").ok_or(IssueAdapterError::MissingCommentCount)?;
+    let num_of_comments = integer_field(count)
+        .ok_or_else(|| IssueAdapterError::InvalidCommentCount(scalar_text(count)))?;
+    let checksum =
+        text_field(&payload, "issueBodyChecksum").ok_or(IssueAdapterError::MissingChecksum)?;
+    let update_date =
+        find_value(&payload, "issueUpdateDate").ok_or(IssueAdapterError::MissingIssueUpdateDate)?;
+    let issue_update_date = integer_field(update_date)
+        .ok_or_else(|| IssueAdapterError::InvalidIssueUpdateDate(scalar_text(update_date)))?;
+
+    Ok(IssueDetectChangeResponse {
+        path,
+        result: text_field(&payload, "result"),
+        comment_author_name: text_field(&payload, "commentAuthorName"),
+        issue_body_changed,
+        num_of_comments,
+        issue_body_checksum: checksum,
+        issue_update_date,
+    })
+}
+
+fn parse_json(json: &str) -> Result<Value, IssueAdapterError> {
+    serde_json::from_str(json).map_err(|error| IssueAdapterError::InvalidJson(error.to_string()))
+}
+
 fn parse_issue_import_path(path: &str) -> Result<(String, String), IssueAdapterError> {
     let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
     match parts.as_slice() {
@@ -465,6 +810,59 @@ fn parse_issue_imports_path(path: &str) -> Result<(String, String, i64), IssueAd
         .ok_or_else(|| IssueAdapterError::InvalidPostNumber(post_number.to_string()))?;
 
     Ok((owner, project_name, number))
+}
+
+fn parse_issue_helper_path(
+    path: &str,
+    method: &'static str,
+    endpoint_path: &'static str,
+    tail: &[&str],
+) -> Result<IssueHelperPath, IssueAdapterError> {
+    let path_part = path
+        .split_once('?')
+        .map_or(path, |(path_part, _)| path_part);
+    let parts: Vec<&str> = path_part
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect();
+    let Some(tail_start) = parts.len().checked_sub(tail.len()) else {
+        return Err(IssueAdapterError::InvalidPath(path.to_string()));
+    };
+    let ["-_-api", "v1", "owners", owner, "projects", project_name] = parts[..tail_start] else {
+        return Err(IssueAdapterError::InvalidPath(path.to_string()));
+    };
+
+    let mut number = None;
+    let mut comment_id = None;
+    for (actual, expected) in parts[tail_start..].iter().zip(tail.iter()) {
+        match *expected {
+            ":number" => {
+                number = Some(parse_positive_path_number(path, actual)?);
+            }
+            ":commentId" => {
+                comment_id = Some(parse_positive_path_number(path, actual)?);
+            }
+            literal if literal == *actual => {}
+            _ => return Err(IssueAdapterError::InvalidPath(path.to_string())),
+        }
+    }
+
+    Ok(IssueHelperPath {
+        endpoint_method: method,
+        endpoint_path,
+        owner: owner.to_string(),
+        project_name: project_name.to_string(),
+        number: number.ok_or_else(|| IssueAdapterError::InvalidPath(path.to_string()))?,
+        comment_id,
+    })
+}
+
+fn parse_positive_path_number(path: &str, value: &str) -> Result<i64, IssueAdapterError> {
+    value
+        .parse::<i64>()
+        .ok()
+        .filter(|number| *number > 0)
+        .ok_or_else(|| IssueAdapterError::InvalidPath(path.to_string()))
 }
 
 fn author_ref(value: &Value) -> LegacyAuthorRef {
@@ -605,6 +1003,16 @@ fn scalar_text(value: &Value) -> String {
         Value::Bool(flag) => flag.to_string(),
         Value::Number(number) => number.to_string(),
         other => other.to_string(),
+    }
+}
+
+fn json_node_as_text(value: &Value) -> String {
+    match value {
+        Value::Null => String::new(),
+        Value::String(text) => text.clone(),
+        Value::Bool(flag) => flag.to_string(),
+        Value::Number(number) => number.to_string(),
+        Value::Array(_) | Value::Object(_) => String::new(),
     }
 }
 

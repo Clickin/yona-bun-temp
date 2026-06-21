@@ -3,6 +3,7 @@ import path from "node:path";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { createLegacyI18nRuntime } from "./i18n";
 import {
   SiteAdminDataPage,
   SiteAdminDiagnosticPage,
@@ -15,8 +16,86 @@ import {
   SiteAdminUserListPage,
 } from "./routes/sites/$pageName/route";
 
+type LegacyMessageLookup = ReturnType<typeof createLegacyI18nRuntime>["t"];
+
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
 const noop = () => {};
+
+function renderSiteAdminI18nShell(messages?: LegacyMessageLookup) {
+  return renderToStaticMarkup(
+    <>
+      <SiteAdminUserListPage
+        deleteTarget={{
+          avatarUrl: "/yona/files/202",
+          createdAt: "2026-01-01 10:20:30",
+          displayName: "Door User",
+          emailAddress: "door@yona.test",
+          id: 7,
+          isGuest: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          state: "ACTIVE",
+        }}
+        input={{ page: 1, query: "", state: "ACTIVE" }}
+        messages={messages}
+        pendingAccountLockLoginId={undefined}
+        pendingDeleteLoginId={undefined}
+        pendingGuestLoginId={undefined}
+        pendingResetPasswordLoginId={undefined}
+        pendingSiteAdminLoginId={undefined}
+        response={{
+          page: 1,
+          pageSize: 30,
+          query: "",
+          siteAdminCount: 1,
+          state: "ACTIVE",
+          total: 1,
+          totalPages: 2,
+          users: [
+            {
+              avatarUrl: "/yona/files/202",
+              createdAt: "2026-01-01 10:20:30",
+              displayName: "Door User",
+              emailAddress: "door@yona.test",
+              id: 7,
+              isGuest: false,
+              isSiteAdmin: false,
+              loginId: "door",
+              state: "ACTIVE",
+            },
+          ],
+        }}
+        resetPasswords={{ door: "new-secret" }}
+        runtimeConfig={runtimeConfig}
+        updateAvailable={true}
+        onCancelDelete={noop}
+        onConfirmDelete={noop}
+        onRequestDelete={noop}
+        onResetPassword={noop}
+        onToggleAccountLock={noop}
+        onToggleGuest={noop}
+        onToggleSiteAdmin={noop}
+      />
+      <SiteAdminDiagnosticPage
+        messages={messages}
+        response={{ errorCount: 2, errors: ["storage missing"] }}
+        runtimeConfig={runtimeConfig}
+      />
+      <SiteAdminUpdatePage
+        error={null}
+        messages={messages}
+        response={{
+          currentVersion: "1.0.0",
+          error: null,
+          message: "",
+          releaseUrl: "/release",
+          versionToUpdate: "1.1.0",
+        }}
+        runtimeConfig={runtimeConfig}
+      />
+    </>,
+  );
+}
 
 describe("site-admin route parity harness", () => {
   it("closes the legacy site-admin wildcard route without porting placeholders", () => {
@@ -46,6 +125,83 @@ describe("site-admin route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("NotFoundPage");
     expect(routeSource).toContain("return <NotFoundPage href={`/sites/${pageName}`} />;");
+  });
+
+  it("keeps site-admin shell fallback keys without a runtime provider", () => {
+    const html = renderSiteAdminI18nShell();
+
+    expect(html).toContain(">site.sidebar<");
+    expect(html).toContain(">site.sidebar.userList<");
+    expect(html).toContain(">site.sidebar.postList<");
+    expect(html).toContain(">site.sidebar.issueList<");
+    expect(html).toContain(">site.sidebar.projectList<");
+    expect(html).toContain(">site.sidebar.mailSend<");
+    expect(html).toContain(">site.sidebar.massMail<");
+    expect(html).toContain(">site.sidebar.update<span");
+    expect(html).toContain(">site.sidebar.diagnostics<");
+    expect(html).toContain('placeholder="site.userList.search"');
+    expect(html).toContain(">site.userList.unlocked<");
+    expect(html).toContain(">user.name<");
+    expect(html).toContain(">button.user.make.guest.mode<");
+    expect(html).toContain(">title.resetPassword<");
+    expect(html).toContain("user.newPassword: new-secret");
+    expect(html).toContain(">button.delete<");
+    expect(html).toContain('aria-label="button.close"');
+    expect(html).toContain(">site.diagnostic.errorFound 2<");
+    expect(html).toContain("Yona 1.1.0 is available");
+  });
+
+  it("uses default English legacy messages for site-admin shell labels", () => {
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    const html = renderSiteAdminI18nShell(runtime.t);
+
+    expect(html).toContain(">Site management<");
+    expect(html).toContain(">Users<");
+    expect(html).toContain(">Posts<");
+    expect(html).toContain(">Issues<");
+    expect(html).toContain(">Projects<");
+    expect(html).toContain(">Send email<");
+    expect(html).toContain(">Send mass emails<");
+    expect(html).toContain(">Software Update<span");
+    expect(html).toContain(">Diagnostics<");
+    expect(html).toContain('placeholder="Find user by login ID, user name or email"');
+    expect(html).toContain(">Unlocked user<");
+    expect(html).toContain(">Name<");
+    expect(html).toContain(">Make Guest<");
+    expect(html).toContain(">Reset password<");
+    expect(html).toContain("New password: new-secret");
+    expect(html).toContain(">Delete<");
+    expect(html).toContain('aria-label="Close"');
+    expect(html).toContain(">2 errors were found<");
+    expect(html).toContain("Yona 1.1.0 is available");
+    expect(html).not.toContain(">site.sidebar.userList<");
+  });
+
+  it("switches site-admin shell labels to Korean legacy messages", () => {
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+    const html = renderSiteAdminI18nShell(runtime.t);
+
+    expect(html).toContain(">사이트 관리<");
+    expect(html).toContain(">사용자<");
+    expect(html).toContain(">게시물<");
+    expect(html).toContain(">이슈<");
+    expect(html).toContain(">프로젝트<");
+    expect(html).toContain(">메일 발송<");
+    expect(html).toContain(">대량 메일 발송<");
+    expect(html).toContain(">업데이트<span");
+    expect(html).toContain(">시스템 진단<");
+    expect(html).toContain('placeholder="찾으려는 사용자의 ID, 이름 또는 이메일을 입력하세요"');
+    expect(html).toContain(">활성화된 사용자<");
+    expect(html).toContain(">이름<");
+    expect(html).toContain(">게스트로 전환<");
+    expect(html).toContain(">비밀번호 재설정<");
+    expect(html).toContain("신규 비밀번호: new-secret");
+    expect(html).toContain(">삭제<");
+    expect(html).toContain('aria-label="닫기"');
+    expect(html).toContain(">2개의 문제점이 발견되었습니다.<");
+    expect(html).toContain("Yona 1.1.0 버전으로 업데이트 할 수 있습니다");
+    expect(html).not.toContain(">Site management<");
   });
 
   it("renders legacy user and project search forms without temporary English placeholders", () => {

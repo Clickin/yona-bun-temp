@@ -2,8 +2,12 @@ use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
     issues::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
     issues::{
-        parse_issue_import_request, parse_issue_post_conversion_request,
-        parse_issue_post_conversion_response, IssueAdapterError, IssueImportAction,
+        parse_issue_assignee_replace_request, parse_issue_comment_create_request,
+        parse_issue_comment_update_request, parse_issue_detect_change_request,
+        parse_issue_detect_change_response, parse_issue_import_request,
+        parse_issue_label_replace_request, parse_issue_post_conversion_request,
+        parse_issue_post_conversion_response, parse_issue_share_update_request,
+        parse_issue_weight_response, IssueAdapterError, IssueImportAction,
         IssuePostConversionAction, IssueState,
     },
     EndpointStatus,
@@ -838,6 +842,226 @@ fn issue_adapter_rejects_legacy_bad_request_boundaries_before_tool_consumption()
         IssueAdapterError::InvalidPath(
             "/-_-api/v1/owners/alice/projects/demo/issues/3".to_string()
         )
+    );
+}
+
+#[test]
+fn issue_helper_adapter_normalizes_comment_create_update_and_labels() {
+    let create = parse_issue_comment_create_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments",
+        r#"{
+          "wrapper": {
+            "author": { "loginId": 1001, "name": false, "email": "a@example.com" },
+            "body": 77,
+            "createdAt": "2026-06-03 AM 10:00:00 +0900",
+            "temporaryUploadFiles": 951
+          }
+        }"#,
+    )
+    .unwrap();
+
+    assert_eq!(create.path.endpoint_method, "POST");
+    assert_eq!(
+        create.path.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments"
+    );
+    assert_eq!(create.path.owner, "alice");
+    assert_eq!(create.path.project_name, "demo");
+    assert_eq!(create.path.number, 7);
+    assert_eq!(
+        create.author.as_ref().unwrap().login_id.as_deref(),
+        Some("1001")
+    );
+    assert_eq!(
+        create.author.as_ref().unwrap().name.as_deref(),
+        Some("false")
+    );
+    assert_eq!(create.body.as_deref(), Some("77"));
+    assert_eq!(create.token_comment, None);
+    assert_eq!(
+        create.created_at.as_deref(),
+        Some("2026-06-03 AM 10:00:00 +0900")
+    );
+    assert_eq!(create.temporary_upload_files, vec!["951"]);
+
+    let token_create = parse_issue_comment_create_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments",
+        r#"{"nest":{"comment":true}}"#,
+    )
+    .unwrap();
+    assert_eq!(token_create.token_comment.as_deref(), Some("true"));
+
+    let update = parse_issue_comment_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments/51",
+        r#"{"outer":{"content":123,"original":false}}"#,
+    )
+    .unwrap();
+    assert_eq!(update.path.comment_id, Some(51));
+    assert_eq!(update.content, "123");
+    assert_eq!(update.original, "false");
+
+    let labels = parse_issue_label_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/issuelabel/7",
+        r#"["1", 2, "3"]"#,
+    )
+    .unwrap();
+    assert_eq!(labels.label_ids, vec![1, 2, 3]);
+}
+
+#[test]
+fn issue_helper_adapter_normalizes_assignee_share_weight_and_detect_change() {
+    let assignees = parse_issue_assignee_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/assignees",
+        r#"{"outer":{"assignees":["bob", 1001, false]}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        assignees.path.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees"
+    );
+    assert_eq!(assignees.login_ids, vec!["bob", "1001", "false"]);
+
+    let share_user = parse_issue_share_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/share",
+        r#"{"outer":{"sharer":{"type":"user","loginId":1001},"action":"add"}}"#,
+    )
+    .unwrap();
+    assert_eq!(share_user.action, "add");
+    assert_eq!(share_user.sharer.sharer_type.as_deref(), Some("user"));
+    assert_eq!(share_user.sharer.login_id.as_deref(), Some("1001"));
+    assert_eq!(share_user.sharer.project_id, Some(1001));
+
+    let share_project = parse_issue_share_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/share",
+        r#"{"sharer":{"type":"project","loginId":"42"},"action":"delete"}"#,
+    )
+    .unwrap();
+    assert_eq!(share_project.sharer.sharer_type.as_deref(), Some("project"));
+    assert_eq!(share_project.sharer.project_id, Some(42));
+
+    let weight = parse_issue_weight_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/upvoteWeight",
+        r#"{"outer":{"weight":"9"}}"#,
+    )
+    .unwrap();
+    assert_eq!(weight.path.number, 7);
+    assert_eq!(weight.weight, 9);
+
+    let detect_request = parse_issue_detect_change_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/detectChange",
+        r#"{"wrapper":{"issueBodyChecksum":123,"numOfComments":"2"}}"#,
+    )
+    .unwrap();
+    assert_eq!(detect_request.issue_body_checksum, "123");
+    assert_eq!(detect_request.num_of_comments, 2);
+
+    let detect_response = parse_issue_detect_change_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/detectChange",
+        r#"{
+          "result": "ok",
+          "commentAuthorName": false,
+          "issueBodyChanged": true,
+          "numOfComments": 3,
+          "issueBodyChecksum": "abc",
+          "issueUpdateDate": "1781970000000"
+        }"#,
+    )
+    .unwrap();
+    assert_eq!(detect_response.result.as_deref(), Some("ok"));
+    assert_eq!(
+        detect_response.comment_author_name.as_deref(),
+        Some("false")
+    );
+    assert!(detect_response.issue_body_changed);
+    assert_eq!(detect_response.num_of_comments, 3);
+    assert_eq!(detect_response.issue_body_checksum, "abc");
+    assert_eq!(detect_response.issue_update_date, 1_781_970_000_000);
+}
+
+#[test]
+fn issue_helper_adapter_rejects_bad_json_path_and_payload_boundaries() {
+    let invalid_json = parse_issue_comment_create_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments",
+        "{",
+    )
+    .unwrap_err();
+    assert!(matches!(invalid_json, IssueAdapterError::InvalidJson(_)));
+
+    let invalid_path = parse_issue_comment_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/0/comments/51",
+        r#"{"content":"new","original":"old"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_path,
+        IssueAdapterError::InvalidPath(
+            "/-_-api/v1/owners/alice/projects/demo/issues/0/comments/51".to_string()
+        )
+    );
+
+    let missing_comment = parse_issue_comment_create_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments",
+        r#"{"author":{"loginId":"alice"}}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_comment, IssueAdapterError::MissingCommentBody);
+
+    let missing_original = parse_issue_comment_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/comments/51",
+        r#"{"content":"new"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_original, IssueAdapterError::MissingOriginal);
+
+    let missing_label_array = parse_issue_label_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/issuelabel/7",
+        r#"{"labels":[1]}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_label_array, IssueAdapterError::MissingLabelArray);
+
+    let invalid_label = parse_issue_label_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/issuelabel/7",
+        r#"[{}]"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_label,
+        IssueAdapterError::InvalidLabelId {
+            index: 0,
+            value: String::new()
+        }
+    );
+
+    let missing_assignees = parse_issue_assignee_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/assignees",
+        r#"{"assignees":[]}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_assignees, IssueAdapterError::MissingAssignees);
+
+    let missing_sharer = parse_issue_share_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/share",
+        r#"{"action":"add"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_sharer, IssueAdapterError::MissingSharer);
+
+    let missing_weight = parse_issue_weight_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/downvoteWeight",
+        r#"{"ok":true}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_weight, IssueAdapterError::MissingWeight);
+
+    let invalid_detect_count = parse_issue_detect_change_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/7/detectChange",
+        r#"{"issueBodyChecksum":"abc","numOfComments":"many"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_detect_count,
+        IssueAdapterError::InvalidCommentCount("many".to_string())
     );
 }
 
