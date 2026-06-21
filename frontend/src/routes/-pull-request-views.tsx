@@ -31,6 +31,10 @@ import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-vie
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -453,6 +457,7 @@ function PullRequestTabs(props: {
   active: PullRequestListCategory | string;
   detail: ProjectDetailViewModel;
   list: PullRequestListResponse | undefined;
+  messages?: LegacyMessageLookup;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -494,7 +499,7 @@ function PullRequestTabs(props: {
               .filter(Boolean)
               .join("?")}
           >
-            {tab.label}
+            {legacyMessage(props.messages, tab.label)}
             <span className="num-badge">{tab.badge}</span>
           </a>
         </li>
@@ -512,6 +517,7 @@ function ProjectPullRequestSearchForm(props: {
   category: PullRequestListCategory | string;
   detail: ProjectDetailViewModel;
   list: PullRequestListResponse | undefined;
+  messages?: LegacyMessageLookup;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -538,7 +544,7 @@ function ProjectPullRequestSearchForm(props: {
       {props.category !== "sent" ? (
         <div className="srch-advanced" id="advanced-search-form">
           <dl className="issue-option">
-            <dt>pullRequest.sender</dt>
+            <dt>{legacyMessage(props.messages, "pullRequest.sender")}</dt>
             <dd>
               <select
                 data-format="user"
@@ -546,7 +552,7 @@ function ProjectPullRequestSearchForm(props: {
                 id="contributors"
                 name="contributorId"
               >
-                <option value="">common.order.all</option>
+                <option value="">{legacyMessage(props.messages, "common.order.all")}</option>
                 {props.list?.contributors.map((contributor) => (
                   <option
                     data-login-id={contributor.loginId}
@@ -568,6 +574,7 @@ function ProjectPullRequestSearchForm(props: {
 function OrganizationPullRequestSearchForm(props: {
   category: "closed" | "open";
   detail: OrganizationDetailViewModel;
+  messages?: LegacyMessageLookup;
   query: OrganizationPullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -601,6 +608,7 @@ function OrganizationPullRequestSearchForm(props: {
 
 function PullRequestListRows(props: {
   items: PullRequestListResponse["items"];
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   showProjectName?: boolean;
 }) {
@@ -609,7 +617,7 @@ function PullRequestListRows(props: {
       <ul className="post-list-wrap">
         <div className="error-wrap">
           <i className="ico ico-err1"></i>
-          <p>pullRequest.is.empty</p>
+          <p>{legacyMessage(props.messages, "pullRequest.is.empty")}</p>
         </div>
       </ul>
     );
@@ -676,7 +684,9 @@ function PullRequestListRows(props: {
                     {item.contributorLabel}
                   </a>
                 ) : (
-                  <span className="infos-item">issue.noAuthor</span>
+                  <span className="infos-item">
+                    {legacyMessage(props.messages, "issue.noAuthor")}
+                  </span>
                 )}
                 <span className="infos-item" title={item.createdLabel}>
                   {item.createdLabel}
@@ -749,7 +759,9 @@ function PullRequestListRows(props: {
                   <div className="empty-avatar-wrap">&nbsp;</div>
                 )}
               </div>
-              <div className={`state ${stateClass} pull-right`}>{stateLabel}</div>
+              <div className={`state ${stateClass} pull-right`}>
+                {legacyMessage(props.messages, stateLabel)}
+              </div>
             </div>
           </li>
         );
@@ -761,6 +773,7 @@ function PullRequestListRows(props: {
 function PullRequestListPagination(props: {
   hrefForPage: (pageNum: number) => string;
   list: PullRequestListResponse | undefined;
+  messages?: LegacyMessageLookup;
 }) {
   const pageSize = Math.max(1, props.list?.pageSize || 15);
   const pageCount = Math.max(1, Math.ceil(Math.max(0, props.list?.totalCount ?? 0) / pageSize));
@@ -769,6 +782,7 @@ function PullRequestListPagination(props: {
     <LegacyPageNavigation
       currentPage={currentPage}
       hrefForPage={props.hrefForPage}
+      messages={props.messages}
       pageCount={pageCount}
     />
   );
@@ -777,6 +791,7 @@ function PullRequestListPagination(props: {
 function LegacyPageNavigation(props: {
   currentPage: number;
   hrefForPage: (pageNum: number) => string;
+  messages?: LegacyMessageLookup;
   pageCount: number;
 }) {
   if (props.pageCount <= 1) {
@@ -811,12 +826,12 @@ function LegacyPageNavigation(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>button.prevPage</span>
+              <span>{legacyMessage(props.messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">button.prevPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -840,12 +855,12 @@ function LegacyPageNavigation(props: {
               href={props.hrefForPage(currentPage + 1)}
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
-              <span>button.nextPage</span>
+              <span>{legacyMessage(props.messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </a>
           ) : (
             <>
-              <span className="off">button.nextPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
@@ -919,6 +934,7 @@ export function ProjectPullRequestListPage(props: {
   category: PullRequestListCategory;
   detail: ProjectDetailViewModel | null;
   list: PullRequestListResponse | undefined;
+  messages?: LegacyMessageLookup;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -940,6 +956,7 @@ export function ProjectPullRequestListPage(props: {
                 category={props.category}
                 detail={detail}
                 list={list}
+                messages={props.messages}
                 query={props.query}
                 runtimeConfig={props.runtimeConfig}
               />
@@ -959,13 +976,14 @@ export function ProjectPullRequestListPage(props: {
                     "newPullRequestForm",
                   )}
                 >
-                  pullRequest.new
+                  {legacyMessage(props.messages, "pullRequest.new")}
                 </a>
               </div>
               <PullRequestTabs
                 active={props.category}
                 detail={detail}
                 list={list}
+                messages={props.messages}
                 query={props.query}
                 runtimeConfig={props.runtimeConfig}
               />
@@ -973,6 +991,7 @@ export function ProjectPullRequestListPage(props: {
                 <div className="row-fluid tab-pane active" id="list">
                   <PullRequestListRows
                     items={list?.items ?? []}
+                    messages={props.messages}
                     runtimeConfig={props.runtimeConfig}
                   />
                   <PullRequestListPagination
@@ -985,6 +1004,7 @@ export function ProjectPullRequestListPage(props: {
                         .join("?")
                     }
                     list={list}
+                    messages={props.messages}
                   />
                 </div>
               </div>
@@ -1091,6 +1111,7 @@ export function OrganizationPullRequestListPage(props: {
               <OrganizationPullRequestSearchForm
                 category={props.category}
                 detail={detail}
+                messages={props.messages}
                 query={props.query}
                 runtimeConfig={props.runtimeConfig}
               />
@@ -1125,7 +1146,7 @@ export function OrganizationPullRequestListPage(props: {
                         .filter(Boolean)
                         .join("?")}
                     >
-                      {tab.label}
+                      {legacyMessage(props.messages, tab.label)}
                       <span className="num-badge">
                         {tab.category === "closed"
                           ? (props.list?.closedCount ?? 0)
@@ -1139,6 +1160,7 @@ export function OrganizationPullRequestListPage(props: {
                 <div className="row-fluid tab-pane active" id="list">
                   <PullRequestListRows
                     items={props.list?.items ?? []}
+                    messages={props.messages}
                     runtimeConfig={props.runtimeConfig}
                     showProjectName={true}
                   />
@@ -1156,6 +1178,7 @@ export function OrganizationPullRequestListPage(props: {
                         .join("?")
                     }
                     list={props.list}
+                    messages={props.messages}
                   />
                 </div>
               </div>

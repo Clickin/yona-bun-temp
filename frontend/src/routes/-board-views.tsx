@@ -17,6 +17,10 @@ import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-vie
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
 function boardProjectShellDetail(input: {
   ownerName: string;
   projectName: string;
@@ -156,6 +160,7 @@ function BoardSortLinks(props: {
   basePathname: string;
   filter: string;
   labelIds?: string[];
+  messages?: LegacyMessageLookup;
   orderBy: string;
   orderDir: string;
   projectNames?: string[];
@@ -182,7 +187,7 @@ function BoardSortLinks(props: {
             })}
             key={fieldName}
           >
-            {label}
+            {legacyMessage(props.messages, label)}
           </a>
         ))}
       </div>
@@ -194,6 +199,7 @@ function BoardPagination(props: {
   basePathname: string;
   filter: string;
   labelIds?: string[];
+  messages?: LegacyMessageLookup;
   orderBy: string;
   orderDir: string;
   pageNum: number;
@@ -230,12 +236,12 @@ function BoardPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>button.prevPage</span>
+              <span>{legacyMessage(props.messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">button.prevPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -259,12 +265,12 @@ function BoardPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-next"></i>
-              <span>button.nextPage</span>
+              <span>{legacyMessage(props.messages, "button.nextPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-next off"></i>
-              <span className="off">button.nextPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.nextPage")}</span>
             </>
           )}
         </li>
@@ -585,6 +591,7 @@ export function ProjectBoardListPage(props: {
   filter: string;
   labelIds: string[];
   labels: BoardLabel[];
+  messages?: LegacyMessageLookup;
   orderBy: string;
   orderDir: string;
   posts: ProjectPostsResponse | null | undefined;
@@ -633,7 +640,7 @@ export function ProjectBoardListPage(props: {
                   className="textbox"
                   defaultValue={props.filter}
                   name="filter"
-                  placeholder="project.searchPlaceholder"
+                  placeholder={legacyMessage(props.messages, "project.searchPlaceholder")}
                   type="text"
                 />
                 <button className="search-btn" type="submit">
@@ -668,7 +675,7 @@ export function ProjectBoardListPage(props: {
                     `/${ownerName}/${projectName}/postform`,
                   )}
                 >
-                  post.write
+                  {legacyMessage(props.messages, "post.write")}
                 </a>
               ) : null}
             </div>
@@ -676,7 +683,7 @@ export function ProjectBoardListPage(props: {
           {totalRows === 0 ? (
             <div className="error-wrap">
               <i className="ico ico-err1" />
-              <p>post.is.empty</p>
+              <p>{legacyMessage(props.messages, "post.is.empty")}</p>
             </div>
           ) : (
             <>
@@ -685,6 +692,7 @@ export function ProjectBoardListPage(props: {
                   basePathname={`/${ownerName}/${projectName}/posts`}
                   filter={props.filter}
                   labelIds={props.labelIds}
+                  messages={props.messages}
                   orderBy={props.orderBy}
                   orderDir={props.orderDir}
                   runtimeConfig={props.runtimeConfig}
@@ -706,6 +714,7 @@ export function ProjectBoardListPage(props: {
               basePathname={`/${ownerName}/${projectName}/posts`}
               filter={props.filter}
               labelIds={props.labelIds}
+              messages={props.messages}
               orderBy={props.orderBy}
               orderDir={props.orderDir}
               pageNum={props.posts.pageNum}
@@ -1896,7 +1905,7 @@ export function OrganizationBoardListPage(props: {
           {totalRows === 0 ? (
             <div className="error-wrap">
               <i className="ico ico-err1" />
-              <p>post.is.empty</p>
+              <p>{legacyMessage(props.messages, "post.is.empty")}</p>
             </div>
           ) : (
             <>
@@ -1904,6 +1913,7 @@ export function OrganizationBoardListPage(props: {
                 <BoardSortLinks
                   basePathname={`/organizations/${props.organizationName}/boards`}
                   filter={props.filter}
+                  messages={props.messages}
                   orderBy={props.orderBy}
                   orderDir={props.orderDir}
                   projectNames={props.projectNames}
@@ -1922,6 +1932,7 @@ export function OrganizationBoardListPage(props: {
             <BoardPagination
               basePathname={`/organizations/${props.organizationName}/boards`}
               filter={props.filter}
+              messages={props.messages}
               orderBy={props.orderBy}
               orderDir={props.orderDir}
               pageNum={props.boards.pageNum}

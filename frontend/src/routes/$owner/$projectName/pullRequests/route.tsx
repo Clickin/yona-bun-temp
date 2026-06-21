@@ -20,7 +20,7 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequests")({
 
 function ProjectPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -66,6 +66,7 @@ function ProjectPullRequestsRouteComponent() {
       category="open"
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       list={listQuery.data}
+      messages={messages}
       query={{ category: "open", contributorId, filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />

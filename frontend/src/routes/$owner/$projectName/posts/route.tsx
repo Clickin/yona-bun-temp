@@ -30,7 +30,7 @@ function readSearchParams() {
 
 function ProjectBoardsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
@@ -119,6 +119,7 @@ function ProjectBoardsRouteComponent() {
       filter={filter}
       labelIds={labelIds}
       labels={formOptionsQuery.data?.labels ?? []}
+      messages={messages}
       orderBy={orderBy}
       orderDir={orderDir}
       posts={postsQuery.data}

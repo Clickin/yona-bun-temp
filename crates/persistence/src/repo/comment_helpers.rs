@@ -232,6 +232,7 @@ impl AppRepositoryImpl<'_> {
             .await?
             .into_iter()
             .map(|row| IssueAttachmentRecord {
+                created_at: row.created_date,
                 hash: row.hash.unwrap_or_default(),
                 id: row.id,
                 mime_type: row.mime_type.unwrap_or_default(),

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/$owner/$projectName/sentPullRequests")({
 
 function SentPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -64,6 +64,7 @@ function SentPullRequestsRouteComponent() {
       category="sent"
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       list={listQuery.data}
+      messages={messages}
       query={{ category: "sent", filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />

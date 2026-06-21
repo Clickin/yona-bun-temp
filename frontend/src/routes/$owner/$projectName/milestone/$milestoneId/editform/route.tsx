@@ -26,7 +26,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 
 function ProjectMilestoneEditFormRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}/editform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -91,6 +91,7 @@ function ProjectMilestoneEditFormRouteComponent() {
       csrfToken={csrfToken}
       detail={detail}
       initialMilestone={milestone}
+      messages={messages}
       mode="edit"
       onSubmit={async (input) => {
         const response = await updateProjectMilestone(runtimeConfig, csrfToken, {

@@ -32,7 +32,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
 | Production migration/import/export hardening | Site-admin `yobi-data` import/export and adopt/validate exist, but production migration hardening remains follow-up. | Harden validators, dry-run reports, rollback/no-partial-write behavior, and fixture coverage. |
 | Full-text/index-backed search | P3-B DB-native FTS slice implemented. Current app search now has DB-native candidate retrieval while preserving legacy tabs, scope/type behavior, ACL filtering, snippets, and fallback ordering. SQLite uses persistent FTS5 external-content tables with query-time rebuild, PostgreSQL assures built-in GIN text-search indexes, and MySQL assures FULLTEXT indexes before native candidate queries. | Keep DB-native FTS only. Do not add Elastic/OpenSearch or change response shape/UX/ranking semantics; unsupported DB-native paths fall back to the existing literal scan. |
-| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload, auth/session requests persist legacy preferred-language context into `User.lang`, and the project navigation/keymap, workspace/public profile stream-tab, organization menu/header/settings-tab, search tab/shell labels, and site-admin shell/sidebar/top-level asserted labels now opt known legacy message-key labels into the same lookup boundary. | Remaining follow-up is app-wide message-key opt-in for other existing screens/components where legacy keys/copy are known; no new visible selector/settings UX was added because no legacy surface was found. |
+| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload, auth/session requests persist legacy preferred-language context into `User.lang`, and the project navigation/keymap, workspace/public profile stream-tab, organization menu/header/settings-tab, search tab/shell labels, site-admin shell/sidebar/top-level asserted labels, and issue/board/PR/milestone list/detail/form controls now opt known legacy message-key labels into the same lookup boundary. | Remaining follow-up is app-wide message-key opt-in for other existing screens/components where legacy keys/copy are known; no new visible selector/settings UX was added because no legacy surface was found. |
 | Slack webhook detail compatibility | Closed by P4-B re-audit. `DETAIL_SLACK` is the legacy project webhook type, not a separate Slack integration surface; Rust now preserves Slack attachment `text`, nullable/array `fields`, and `slack.<EventType>` color config via `[slack]` TOML or legacy-style env keys. | Retire stale deferred wording. Signature compatibility was separately retired by P4-C as not applicable. Evidence: `Webhook.java` `buildAttachmentJSON`, `project/webhooks.scala.html`, `crates/server/src/routes/projects/webhooks.rs`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | Optional webhook signature compatibility | P4-C re-audit complete: not applicable for legacy parity. Legacy `Webhook.java` only sets `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and optional `Authorization: token <secret> `; `project.webhook.help` documents only that token header; targeted legacy/current searches found no `X-Hub-Signature`, `X-Yona-*`, SHA/HMAC signing, or equivalent behavior. | Retire deferred wording; preserve the implemented token secret header and do not add a new signature surface. |
 | IMAP mailbox service | P4-D re-audit complete: the old deferred wording is stale for the current app-runtime mailbox surface. Legacy `Global.onStart()` starts `MailboxService.start()`, which opens configured IMAP and feeds messages into `EmailHandler`; Rust starts `spawn_mailbox_polling_scheduler` from `crates/server/src/main.rs`, runs the configured `YONA_MAILBOX_FETCH_COMMAND`, appends the configured mailbox address, and feeds NUL-separated raw RFC822 stdout through `process_mailbox_raw_message` into the same DB-backed parsed/raw mailbox bridge. | No new runtime work assigned. The live IMAP socket/client implementation remains intentionally replaced by an executable-backed fetch boundary; current parity evidence is `crates/server/src/mailbox.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and `docs/provenance/core-parity-audit.md`. |
@@ -163,15 +163,17 @@ asserts reusable dry-run keys, and
 `site_admin_contract::site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails`
 asserts downstream rollback failure checkpoint detail without partial writes.
 `/sites/export` now
-emits legacy-style project `createdAt`, post `createdAt`/`updatedAt`,
-post-comment `createdAt`, issue `createdAt`/`updatedAt`, and issue-comment
+emits legacy-style project `createdAt`, user `createdAt`/
+`lastStateModifiedAt`, post `createdAt`/`updatedAt`, post-comment `createdAt`,
+issue `createdAt`/`updatedAt`, issue-comment `createdAt`, and attachment
 `createdAt`; `/sites/import` restores those fields through timestamp-capable
-project/posting/issue/comment persistence paths. Issue-comment `updatedAt`
-remains unsupported because legacy export evidence and the current
-`issue_comment` schema expose no updated-date field. User, milestone, and
-attachment timestamp restoration remains a P1-A follow-up where current
-yobi-data payload or legacy-supported persistence inputs do not expose original
-values. Existing-project
+project/user/posting/issue/comment/portable-attachment persistence paths.
+Issue-comment `updatedAt` remains unsupported because legacy export evidence
+and the current `issue_comment` schema expose no updated-date field. Milestone
+created/updated timestamp restoration remains unsupported because legacy
+`MilestoneDataExchanger` and the current `milestone` schema expose due date but
+no created/updated timestamp columns. Non-portable preexisting attachment rows
+are snapshotted/restored rather than timestamp-mutated. Existing-project
 issue/post sequence counters are now snapshotted before the first imported
 issue/post and restored during in-process rollback when the current counter has
 not advanced beyond the import-created numbers. Preexisting attachment rows
@@ -202,9 +204,11 @@ state, failure location, aggregate total/validated/completed/skipped/remaining
 counters, per-section resumable state, and next resource-key anchors. It is a
 tool-side summary/retry boundary only; it does not replay HTTP imports or mutate
 the target app/DB/filesystem by itself. Residual P1-A production hardening gaps
-are now repository content transfer, source fields that current legacy evidence/
-persistence inputs do not expose, and the narrower crash/process-kill window
-around filesystem side effects outside the DB transaction. A process kill before
+are now repository content transfer, milestone created/updated timestamps and
+other source fields that current legacy evidence/persistence inputs do not
+expose, non-portable attachment timestamp mutation beyond preserving existing
+rows, and the narrower crash/process-kill window around filesystem side effects
+outside the DB transaction. A process kill before
 DB commit can now leave only import-local staging files, not committed final
 upload files; a process kill after DB commit but before or during staged file
 promotion can still leave committed attachment rows whose final upload file
@@ -295,6 +299,19 @@ payloads into deterministic migration-tool structs, preserving recursive
 open/closed state normalization, end-of-day due date normalization, bad
 milestone-array and bad due-date boundaries, and duplicate classification for
 existing or earlier-in-batch titles without mounting broad app-runtime routes.
+Watcher/favorite boundary adapter depth now goes beyond descriptors for the
+deterministic app-owned helper payloads migration/operator tooling can consume:
+`parse_watcher_request`, `parse_watcher_response`,
+`parse_favorite_projects_response`, `parse_favorite_organizations_response`,
+`parse_favorite_issues_response`, and `parse_favorite_toggle_response`
+normalize legacy watcher path/query behavior, `type=issues|posts` JSON
+projection, empty-OK invalid/missing watcher type behavior, watcher
+`totalWatchers`/`watchersInList`/`watchers[{name,url}]` responses, favorite
+list response shapes, the legacy favorite-issue `projectIds`/`projects` naming,
+and favorite toggle `{id,favored,message?}` fields. These parsers preserve
+recursive wrapped payload consumption and scalar fallback normalization for
+tool-side legacy payload handling while keeping the rows app-owned and avoiding
+broad `/-_-api/v1/**` runtime route expansion.
 Remaining P1-B work is executable adapter depth for other descriptor-only
 groups only where a migration tool needs it.
 
@@ -368,7 +385,7 @@ each remaining item is either implemented or explicitly deferred with reason.
 
 | Worker | Parallel? | Write scope | Responsibility |
 | --- | --- | --- | --- |
-| P4-A dynamic i18n switching | Closed | frontend runtime i18n, message loading tests | Bounded runtime switch implemented from legacy message keys/copy for auth/runtime shell, auth/session preferred-language persistence, project navigation/keymap shell labels, workspace/public profile stream-tab labels, organization menu/header/settings-tab labels, search tab/shell labels, and site-admin shell/sidebar/top-level asserted labels. Remaining broader app-wide opt-in for other existing screens stays follow-up where legacy keys/copy are known. |
+| P4-A dynamic i18n switching | Closed | frontend runtime i18n, message loading tests | Bounded runtime switch implemented from legacy message keys/copy for auth/runtime shell, auth/session preferred-language persistence, project navigation/keymap shell labels, workspace/public profile stream-tab labels, organization menu/header/settings-tab labels, search tab/shell labels, site-admin shell/sidebar/top-level asserted labels, and issue/board/PR/milestone controls. Remaining broader app-wide opt-in for other existing screens stays follow-up where legacy keys/copy are known. |
 | P4-B Slack webhook detail re-audit | Closed | webhook provenance, `crates/server` webhook tests | Confirmed `DETAIL_SLACK` is already the legacy project webhook UI type. Implemented the missing legacy-backed `slack.<EventType>` attachment color config while preserving existing text/fields payloads and avoiding any new Slack integration surface. Evidence lives in `SPEC.md`, `docs/provenance/phase-0b/project.md`, `docs/provenance/core-parity-audit.md`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | P4-C webhook signature decision | Closed | webhook provenance/docs | Re-audit found no legacy HMAC/signature behavior beyond the documented `Authorization: token <secret> ` header, so the optional signature item is retired as `not applicable` rather than implemented. Evidence lives in `SPEC.md`, `docs/provenance/phase-0b/project.md`, `docs/provenance/core-parity-audit.md`, `yona-original/app/models/Webhook.java`, `yona-original/conf/messages`, and current webhook delivery/header tests. |
 | P4-D mailbox re-audit | Yes | docs/tests only unless real gap found | Complete: no real gap found. The stale deferred label is retired in plan/provenance status based on `crates/server/src/mailbox.rs`, `crates/server/src/main.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and legacy `Global.java` / `mailbox/MailboxService.java` / `EmailHandler` evidence. |
@@ -442,11 +459,21 @@ labels, update status labels, diagnostics status labels, modal close/yes/no
 labels, and pagination labels now flow from the legacy message lookup while
 preserving literal key fallback or the prior dynamic scalar fallback when
 rendered without a provider. Focused coverage is
-`frontend/src/site-admin-route-parity.spec.tsx`. Remaining app-wide opt-in scope
-includes other workspace/profile,
-issue/board/PR/milestone controls that still render known legacy keys as literal
-fallback text. No language selector or settings screen was added because the
-re-audit found no corresponding legacy UI surface.
+`frontend/src/site-admin-route-parity.spec.tsx`. P4-A-IssueBoardPrMilestoneI18n
+continuation covers the existing project issue list controls from
+`issue/partial_list_wrap.scala.html`, `partial_list_quicksearch.scala.html`,
+and `partial_searchform.scala.html`; project board list controls from
+`board/list.scala.html`; project PR list controls from `git/partial_search.scala.html`
+and `git/partial_list.scala.html`; and milestone list/detail/form controls from
+`milestone/list.scala.html`, `milestone/view.scala.html`, `milestone/create.scala.html`,
+and `milestone/edit.scala.html`. The touched `issue.*`, `post.*`,
+`pullRequest.*`, `milestone.*`, `common.order.*`, `label.*`, and `button.*`
+labels/placeholders now flow from `AppRuntimeContext`/legacy message lookup
+while preserving literal key fallback without a provider. Focused coverage is
+`frontend/src/issue-board-pr-milestone-i18n.spec.tsx`. Remaining app-wide opt-in
+scope is other existing controls that still render known legacy keys/copy as
+literal fallback text. No language selector or settings screen was added because
+the re-audit found no corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

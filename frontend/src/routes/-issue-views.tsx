@@ -10,6 +10,7 @@ import type {
 } from "../api/issue-meta";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
+import type { LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import {
   addLegacyTasklistTemplateFromButton,
@@ -31,6 +32,12 @@ import { prefixBasePath } from "../runtime-config";
 type IssueTimelineCommentViewModel = NonNullable<
   ProjectIssueDetailViewModel["timeline"][number]["comment"]
 >;
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
 
 type IssueChildViewModel = ProjectIssueDetailViewModel["childIssues"][number];
 type IssueListItemViewModel = ProjectIssueListViewModel["items"][number];
@@ -543,6 +550,7 @@ export function ProjectIssueListPage(props: {
   detail: ProjectDetailViewModel | null;
   labels?: IssueListFilterLabel[];
   issueList: ProjectIssueListViewModel | null;
+  messages?: LegacyMessageLookup;
   milestones?: IssueListFilterMilestone[];
   query?: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
@@ -646,7 +654,10 @@ export function ProjectIssueListPage(props: {
                     href={allIssuesHref}
                     {...pjaxFilterAttr}
                   >
-                    {query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open"}
+                    {legacyMessage(
+                      props.messages,
+                      query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open",
+                    )}
                     <span className="num-badge pull-right">{issueList?.totalCount ?? 0}</span>
                   </a>
                 </li>
@@ -659,7 +670,7 @@ export function ProjectIssueListPage(props: {
                     href={assignedIssuesHref}
                     {...pjaxFilterAttr}
                   >
-                    issue.list.assignedToMe
+                    {legacyMessage(props.messages, "issue.list.assignedToMe")}
                     <span className="num-badge pull-right">
                       {query.assigneeLoginId ? (issueList?.totalCount ?? 0) : 0}
                     </span>
@@ -674,7 +685,7 @@ export function ProjectIssueListPage(props: {
                     href={authoredIssuesHref}
                     {...pjaxFilterAttr}
                   >
-                    issue.list.authoredByMe
+                    {legacyMessage(props.messages, "issue.list.authoredByMe")}
                     <span className="num-badge pull-right">
                       {query.authorLoginId ? (issueList?.totalCount ?? 0) : 0}
                     </span>
@@ -689,7 +700,7 @@ export function ProjectIssueListPage(props: {
                     href={commentedIssuesHref}
                     {...pjaxFilterAttr}
                   >
-                    issue.list.commentedByMe
+                    {legacyMessage(props.messages, "issue.list.commentedByMe")}
                     <span className="num-badge pull-right">0</span>
                   </a>
                 </li>
@@ -752,7 +763,7 @@ export function ProjectIssueListPage(props: {
                 </div>
                 <div className="srch-advanced hide-in-mobile" id="advanced-search-form">
                   <dl className="issue-option">
-                    <dt>issue.author</dt>
+                    <dt>{legacyMessage(props.messages, "issue.author")}</dt>
                     <dd>
                       <select
                         data-container-css-class="fullsize"
@@ -763,7 +774,9 @@ export function ProjectIssueListPage(props: {
                         name="authorLoginId"
                         defaultValue={query.authorLoginId}
                       >
-                        <option value="">common.order.all</option>
+                        <option value="">
+                          {legacyMessage(props.messages, "common.order.all")}
+                        </option>
                         {query.authorLoginId ? (
                           <option value={query.authorLoginId}>{query.authorLoginId}</option>
                         ) : null}
@@ -771,7 +784,7 @@ export function ProjectIssueListPage(props: {
                     </dd>
                   </dl>
                   <dl className="issue-option">
-                    <dt>issue.assignee</dt>
+                    <dt>{legacyMessage(props.messages, "issue.assignee")}</dt>
                     <dd>
                       <select
                         data-container-css-class="fullsize"
@@ -782,8 +795,12 @@ export function ProjectIssueListPage(props: {
                         name="assigneeLoginId"
                         defaultValue={query.assigneeLoginId}
                       >
-                        <option value="">common.order.all</option>
-                        <option value="anonymous">issue.noAssignee</option>
+                        <option value="">
+                          {legacyMessage(props.messages, "common.order.all")}
+                        </option>
+                        <option value="anonymous">
+                          {legacyMessage(props.messages, "issue.noAssignee")}
+                        </option>
                         {query.assigneeLoginId ? (
                           <option value={query.assigneeLoginId}>{query.assigneeLoginId}</option>
                         ) : null}
@@ -791,7 +808,7 @@ export function ProjectIssueListPage(props: {
                     </dd>
                   </dl>
                   <dl className="issue-option">
-                    <dt>milestone</dt>
+                    <dt>{legacyMessage(props.messages, "milestone")}</dt>
                     <dd>
                       <select
                         data-container-css-class="fullsize"
@@ -802,8 +819,12 @@ export function ProjectIssueListPage(props: {
                         name="milestoneId"
                         defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
                       >
-                        <option value="">milestone.state.all</option>
-                        <option value="0">issue.noMilestone</option>
+                        <option value="">
+                          {legacyMessage(props.messages, "milestone.state.all")}
+                        </option>
+                        <option value="0">
+                          {legacyMessage(props.messages, "issue.noMilestone")}
+                        </option>
                         {(props.milestones ?? []).map((milestone) => (
                           <option
                             data-state={milestone.state}
@@ -817,7 +838,7 @@ export function ProjectIssueListPage(props: {
                     </dd>
                   </dl>
                   <dl className="issue-option">
-                    <dt>issue.dueDate</dt>
+                    <dt>{legacyMessage(props.messages, "issue.dueDate")}</dt>
                     <dd className="search search-bar">
                       <input
                         className="textbox full"
@@ -853,11 +874,13 @@ export function ProjectIssueListPage(props: {
                     >
                       <i className="yobicon-cog vmiddle"></i>
                       {(props.labels ?? []).length === 0 ? (
-                        <span className="vmiddle">label.manage</span>
+                        <span className="vmiddle">
+                          {legacyMessage(props.messages, "label.manage")}
+                        </span>
                       ) : null}
                     </a>
                     <dl className="issue-option">
-                      <dt>label</dt>
+                      <dt>{legacyMessage(props.messages, "label")}</dt>
                       <dd>
                         <select
                           aria-label="label.select"
@@ -893,13 +916,13 @@ export function ProjectIssueListPage(props: {
                     "issueform",
                   )}
                 >
-                  issue.menu.new
+                  {legacyMessage(props.messages, "issue.menu.new")}
                 </a>
               </div>
               <ul className="nav nav-tabs nm">
                 <li className={query.state !== "closed" ? "active" : undefined} data-pjax="">
                   <a href={openHref} {...openStateAttr}>
-                    issue.state.open
+                    {legacyMessage(props.messages, "issue.state.open")}
                     <span className="num-badge">
                       {query.state !== "closed" ? (issueList?.totalCount ?? 0) : 0}
                     </span>
@@ -907,7 +930,7 @@ export function ProjectIssueListPage(props: {
                 </li>
                 <li className={query.state === "closed" ? "active" : undefined} data-pjax="">
                   <a href={closedHref} {...closedStateAttr}>
-                    issue.state.closed
+                    {legacyMessage(props.messages, "issue.state.closed")}
                     <span className="num-badge">
                       {query.state === "closed" ? (issueList?.totalCount ?? 0) : 0}
                     </span>
@@ -923,7 +946,7 @@ export function ProjectIssueListPage(props: {
               {issueRows.length === 0 ? (
                 <div className="error-wrap">
                   <i className="ico ico-err1"></i>
-                  <p>issue.is.empty</p>
+                  <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
                 </div>
               ) : (
                 <>
@@ -953,7 +976,7 @@ export function ProjectIssueListPage(props: {
                           })}
                         >
                           <i className="ico btn-gray-arrow down"></i>
-                          {label}
+                          {legacyMessage(props.messages, label)}
                         </a>
                       ))}
                     </div>
@@ -982,7 +1005,8 @@ export function ProjectIssueListPage(props: {
                         query,
                       )}
                     >
-                      <i className="yobicon-file-excel"></i> issue.downloadAsExcel
+                      <i className="yobicon-file-excel"></i>{" "}
+                      {legacyMessage(props.messages, "issue.downloadAsExcel")}
                     </a>
                   </div>
                   <IssueListPagination

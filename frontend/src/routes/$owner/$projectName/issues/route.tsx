@@ -28,7 +28,7 @@ export const Route = createFileRoute("/$owner/$projectName/issues")({
 
 function ProjectIssuesRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -125,6 +125,7 @@ function ProjectIssuesRouteComponent() {
       detail={detail}
       issueList={issueList}
       labels={labels}
+      messages={messages}
       milestones={milestones}
       query={query}
       runtimeConfig={runtimeConfig}

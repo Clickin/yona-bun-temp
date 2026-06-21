@@ -20,7 +20,7 @@ export const Route = createFileRoute("/$owner/$projectName/closedPullRequests")(
 
 function ClosedPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -66,6 +66,7 @@ function ClosedPullRequestsRouteComponent() {
       category="closed"
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       list={listQuery.data}
+      messages={messages}
       query={{ category: "closed", contributorId, filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />

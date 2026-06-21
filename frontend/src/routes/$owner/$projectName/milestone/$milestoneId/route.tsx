@@ -28,7 +28,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 
 function ProjectMilestoneDetailRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -99,6 +99,7 @@ function ProjectMilestoneDetailRouteComponent() {
     <ProjectMilestoneDetailPage
       detail={detail}
       issueState={issueState}
+      messages={messages}
       milestone={milestone}
       onClose={async () => {
         const response = await closeProjectMilestone(runtimeConfig, csrfToken, {

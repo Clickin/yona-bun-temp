@@ -639,6 +639,7 @@ pub struct UpdateMilestoneInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueAttachmentRecord {
+    pub created_at: Option<DateTime>,
     pub hash: String,
     pub id: i64,
     pub mime_type: String,
@@ -1399,6 +1400,7 @@ pub struct WorkspaceProfileRecord {
 pub struct AttachmentRecord {
     pub container_id: i64,
     pub container_type: String,
+    pub created_at: Option<DateTime>,
     pub hash: String,
     pub id: i64,
     pub mime_type: String,

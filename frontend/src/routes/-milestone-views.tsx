@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
@@ -9,6 +10,12 @@ import type {
   ProjectMilestoneListViewModel,
   ProjectMilestoneViewModel,
 } from "./-view-models";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
 
 function fallbackProjectDetail(ownerName: string, projectName: string): ProjectDetailViewModel {
   return {
@@ -150,6 +157,7 @@ function MilestoneSearchBox(props: { placeholder: string }) {
 export function ProjectMilestoneListPage(props: {
   detail: ProjectDetailViewModel | null;
   list: ProjectMilestoneListViewModel | null;
+  messages?: LegacyMessageLookup;
   owner: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -190,7 +198,7 @@ export function ProjectMilestoneListPage(props: {
                     "newMilestoneForm",
                   )}
                 >
-                  milestone.menu.new
+                  {legacyMessage(props.messages, "milestone.menu.new")}
                 </a>
               </div>
             ) : null}
@@ -198,7 +206,7 @@ export function ProjectMilestoneListPage(props: {
               {["open", "closed", "all"].map((state) => (
                 <li className={list.state === state ? "active" : ""} key={state}>
                   <a href={tabHref(props.runtimeConfig, detail, "milestones", state)}>
-                    {stateLabel(state)}
+                    {legacyMessage(props.messages, stateLabel(state))}
                   </a>
                 </li>
               ))}
@@ -207,7 +215,7 @@ export function ProjectMilestoneListPage(props: {
           {list.milestones.length === 0 ? (
             <div className="error-wrap">
               <i className="ico ico-err1" />
-              <p>milestone.is.empty</p>
+              <p>{legacyMessage(props.messages, "milestone.is.empty")}</p>
             </div>
           ) : (
             <>
@@ -224,7 +232,7 @@ export function ProjectMilestoneListPage(props: {
                             list.orderBy === "dueDate" && list.orderDir === "desc" ? " down" : ""
                           }`}
                         />
-                        common.order.dueDate
+                        {legacyMessage(props.messages, "common.order.dueDate")}
                       </a>
                       <a
                         className={list.orderBy === "completionRate" ? "filter active" : "filter"}
@@ -237,10 +245,12 @@ export function ProjectMilestoneListPage(props: {
                               : ""
                           }`}
                         />
-                        common.order.completionRate
+                        {legacyMessage(props.messages, "common.order.completionRate")}
                       </a>
                     </div>
-                    <MilestoneSearchBox placeholder="search.title" />
+                    <MilestoneSearchBox
+                      placeholder={legacyMessage(props.messages, "search.title")}
+                    />
                   </>
                 ) : null}
               </div>
@@ -271,7 +281,7 @@ export function ProjectMilestoneListPage(props: {
                               <>
                                 <span className="sp">|</span>
                                 <span className={`state nm ${milestone.state}`}>
-                                  {stateLabel(milestone.state)}
+                                  {legacyMessage(props.messages, stateLabel(milestone.state))}
                                 </span>
                               </>
                             ) : null}
@@ -283,7 +293,8 @@ export function ProjectMilestoneListPage(props: {
                                     milestone.state === "closed" ? " ml5" : ""
                                   }`}
                                 >
-                                  label.dueDate <strong>{milestone.dueDateLabel}</strong>
+                                  {legacyMessage(props.messages, "label.dueDate")}{" "}
+                                  <strong>{milestone.dueDateLabel}</strong>
                                 </span>
                               </>
                             ) : null}
@@ -339,6 +350,7 @@ export function ProjectMilestoneListPage(props: {
 export function ProjectMilestoneDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   issueState: string;
+  messages?: LegacyMessageLookup;
   milestone: ProjectMilestoneViewModel | null;
   onClose?: () => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -393,11 +405,12 @@ export function ProjectMilestoneDetailPage(props: {
                   <small className="ml10">
                     {milestone.dueDateLabel ? (
                       <span className="due-date">
-                        label.dueDate <strong>{milestone.dueDateLabel}</strong>
+                        {legacyMessage(props.messages, "label.dueDate")}{" "}
+                        <strong>{milestone.dueDateLabel}</strong>
                       </span>
                     ) : null}
                     <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
-                      {stateLabel(milestone.state)}
+                      {legacyMessage(props.messages, stateLabel(milestone.state))}
                     </span>
                   </small>
                 </h4>
@@ -437,11 +450,11 @@ export function ProjectMilestoneDetailPage(props: {
                       "milestones",
                     )}
                   >
-                    button.list
+                    {legacyMessage(props.messages, "button.list")}
                   </a>
                   {milestone.viewerCanDelete && props.onDelete ? (
                     <a className="ybtn ybtn-danger" data-toggle="modal" href="#deleteConfirm">
-                      button.delete
+                      {legacyMessage(props.messages, "button.delete")}
                     </a>
                   ) : null}
                   {milestone.viewerCanUpdate ? (
@@ -455,7 +468,7 @@ export function ProjectMilestoneDetailPage(props: {
                           `milestone/${milestone.id}/editform`,
                         )}
                       >
-                        button.edit
+                        {legacyMessage(props.messages, "button.edit")}
                       </a>
                       {milestone.state === "open" && props.onClose ? (
                         <button
@@ -470,7 +483,7 @@ export function ProjectMilestoneDetailPage(props: {
                           onClick={() => void props.onClose?.()}
                           type="button"
                         >
-                          milestone.close
+                          {legacyMessage(props.messages, "milestone.close")}
                         </button>
                       ) : null}
                       {milestone.state === "closed" && props.onOpen ? (
@@ -486,7 +499,7 @@ export function ProjectMilestoneDetailPage(props: {
                           onClick={() => void props.onOpen?.()}
                           type="button"
                         >
-                          milestone.open
+                          {legacyMessage(props.messages, "milestone.open")}
                         </button>
                       ) : null}
                     </>
@@ -504,11 +517,14 @@ export function ProjectMilestoneDetailPage(props: {
                             state,
                           )}#issues`}
                         >
-                          {state === "open"
-                            ? "issue.state.open"
-                            : state === "closed"
-                              ? "issue.state.closed"
-                              : "issue.state.all"}
+                          {legacyMessage(
+                            props.messages,
+                            state === "open"
+                              ? "issue.state.open"
+                              : state === "closed"
+                                ? "issue.state.closed"
+                                : "issue.state.all",
+                          )}
                           <span className="num-badge">
                             {state === "open"
                               ? milestone.openIssueCount
@@ -529,7 +545,7 @@ export function ProjectMilestoneDetailPage(props: {
                           data-toggle="item-search"
                           defaultValue=""
                           name="filter"
-                          placeholder="milestone.searchPlaceholder"
+                          placeholder={legacyMessage(props.messages, "milestone.searchPlaceholder")}
                           type="text"
                         />
                         <button className="search-btn" type="submit">
@@ -561,7 +577,7 @@ export function ProjectMilestoneDetailPage(props: {
                 >
                   ×
                 </button>
-                <h3>milestone.delete</h3>
+                <h3>{legacyMessage(props.messages, "milestone.delete")}</h3>
               </div>
               <div className="modal-body">
                 <p>post.delete.confirm</p>
@@ -579,10 +595,10 @@ export function ProjectMilestoneDetailPage(props: {
                   onClick={() => void props.onDelete?.()}
                   type="button"
                 >
-                  button.yes
+                  {legacyMessage(props.messages, "button.yes")}
                 </button>
                 <button className="ybtn" data-dismiss="modal" type="button">
-                  button.no
+                  {legacyMessage(props.messages, "button.no")}
                 </button>
               </div>
             </div>
@@ -597,6 +613,7 @@ export function ProjectMilestoneFormPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   initialMilestone?: ProjectMilestoneViewModel | null;
+  messages?: LegacyMessageLookup;
   mode: "create" | "edit";
   onSubmit?: (input: {
     attachmentIds: number[];
@@ -732,7 +749,7 @@ export function ProjectMilestoneFormPage(props: {
                     </dl>
                     <div className="actrow right-txt">
                       <button className="ybtn ybtn-info" disabled={pending} type="submit">
-                        button.save
+                        {legacyMessage(props.messages, "button.save")}
                       </button>
                       <a
                         className="ybtn"
@@ -743,13 +760,13 @@ export function ProjectMilestoneFormPage(props: {
                           "milestones",
                         )}
                       >
-                        button.cancel
+                        {legacyMessage(props.messages, "button.cancel")}
                       </a>
                     </div>
                   </div>
                   <div className="span3 span-hard-wrap">
                     <dl className="issue-option">
-                      <dt>milestone.form.state</dt>
+                      <dt>{legacyMessage(props.messages, "milestone.form.state")}</dt>
                       <dd>
                         <div>
                           <input
@@ -762,7 +779,7 @@ export function ProjectMilestoneFormPage(props: {
                             value="open"
                           />
                           <label className="bold" htmlFor="milestone-open">
-                            milestone.state.open
+                            {legacyMessage(props.messages, "milestone.state.open")}
                           </label>{" "}
                           <input
                             checked={state === "closed"}
@@ -774,13 +791,13 @@ export function ProjectMilestoneFormPage(props: {
                             value="closed"
                           />
                           <label className="bold" htmlFor="milestone-close">
-                            milestone.state.closed
+                            {legacyMessage(props.messages, "milestone.state.closed")}
                           </label>
                         </div>
                       </dd>
                     </dl>
                     <dl className="issue-option">
-                      <dt>milestone.form.dueDate</dt>
+                      <dt>{legacyMessage(props.messages, "milestone.form.dueDate")}</dt>
                       <dd>
                         <div>
                           <label aria-label="milestone.dueDate" htmlFor="dueDate">

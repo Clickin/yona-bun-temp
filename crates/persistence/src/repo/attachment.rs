@@ -26,6 +26,7 @@ impl AppRepositoryImpl<'_> {
         Ok(AttachmentRecord {
             container_id: created.container_id,
             container_type: created.container_type.unwrap_or_default(),
+            created_at: created.created_date,
             hash: created.hash.unwrap_or_default(),
             id: created.id,
             mime_type: created.mime_type.unwrap_or_default(),
@@ -48,6 +49,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.unwrap_or_default(),
@@ -78,6 +80,7 @@ impl AppRepositoryImpl<'_> {
             .map(|model| AttachmentRecord {
                 container_id: model.container_id,
                 container_type: model.container_type.unwrap_or_default(),
+                created_at: model.created_date,
                 hash: model.hash.unwrap_or_default(),
                 id: model.id,
                 mime_type: model.mime_type.unwrap_or_default(),
@@ -262,6 +265,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.unwrap_or_default(),
@@ -290,6 +294,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.unwrap_or_default(),
@@ -354,6 +359,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.unwrap_or_default(),
@@ -416,6 +422,7 @@ impl AppRepositoryImpl<'_> {
         let record = AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.clone().unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.clone().unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.clone().unwrap_or_default(),
@@ -476,6 +483,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: updated.container_id,
             container_type: updated.container_type.unwrap_or_default(),
+            created_at: updated.created_date,
             hash: updated.hash.unwrap_or_default(),
             id: updated.id,
             mime_type: updated.mime_type.unwrap_or_default(),

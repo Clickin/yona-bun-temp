@@ -406,7 +406,11 @@ describe("file-route parity harness", () => {
 
       expect(source).not.toContain('aria-label="Close"');
       for (const closeButton of closeButtons) {
-        expect(closeButton).toContain('aria-label="button.close"');
+        expect(
+          closeButton.includes('aria-label="button.close"') ||
+            closeButton.includes('aria-label={legacyMessage(messages, "button.close")}') ||
+            closeButton.includes('aria-label={legacyMessage(props.messages, "button.close")}'),
+        ).toBe(true);
         expect(closeButton).not.toMatch(/>\s*x\s*<\/button>/);
       }
     }
@@ -1288,12 +1292,9 @@ describe("file-route parity harness", () => {
     expect(searchViewsSource).toContain("OrganizationMenu");
     expect(searchViewsSource).toContain("organizationSearchDetail");
     expect(searchViewsSource).toContain('scope.type !== "organization"');
-    expect(searchViewsSource).toContain(
-      "<OrganizationHeader detail={organizationDetail} runtimeConfig={runtimeConfig} />",
-    );
-    expect(searchViewsSource).toContain(
-      "<OrganizationMenu detail={organizationDetail} runtimeConfig={runtimeConfig} />",
-    );
+    expect(searchViewsSource).toContain("detail={organizationDetail}");
+    expect(searchViewsSource).toContain("messages={messages}");
+    expect(searchViewsSource).toContain("runtimeConfig={runtimeConfig}");
     expect(searchViewsSource).toContain("readOrganizationSearch");
     expect(searchViewsSource).toContain("apiQueryKeys.search.project");
     for (const key of [

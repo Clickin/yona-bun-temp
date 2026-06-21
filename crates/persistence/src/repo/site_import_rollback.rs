@@ -89,6 +89,64 @@ impl AppRepositoryImpl<'_> {
         Ok(true)
     }
 
+    pub async fn restore_site_import_user_timestamps(
+        &self,
+        login_id: &str,
+        created_at: Option<DateTime>,
+        last_state_modified_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let normalized_login_id = normalize_identity(login_id);
+        if normalized_login_id.is_empty()
+            || (created_at.is_none() && last_state_modified_at.is_none())
+        {
+            return Ok(false);
+        }
+        let Some(user) = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(Some(normalized_login_id)))
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let mut active = n4user::ActiveModel {
+            id: Set(user.id),
+            ..Default::default()
+        };
+        if let Some(created_at) = created_at {
+            active.created_date = Set(Some(created_at));
+        }
+        if let Some(last_state_modified_at) = last_state_modified_at {
+            active.last_state_modified_date = Set(Some(last_state_modified_at));
+        }
+        active.update(&self.db).await?;
+        Ok(true)
+    }
+
+    pub async fn restore_site_import_attachment_created_at(
+        &self,
+        attachment_id: i64,
+        created_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let Some(created_at) = created_at else {
+            return Ok(false);
+        };
+        if attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            return Ok(false);
+        }
+        attachment::ActiveModel {
+            id: Set(attachment_id),
+            created_date: Set(Some(created_at)),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await?;
+        Ok(true)
+    }
+
     pub async fn delete_site_import_attachment_row(
         &self,
         attachment_id: i64,
@@ -102,6 +160,7 @@ impl AppRepositoryImpl<'_> {
         let record = AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.clone().unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.clone().unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.clone().unwrap_or_default(),
@@ -128,6 +187,7 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(AttachmentRecord {
             container_id: model.container_id,
             container_type: model.container_type.unwrap_or_default(),
+            created_at: model.created_date,
             hash: model.hash.unwrap_or_default(),
             id: model.id,
             mime_type: model.mime_type.unwrap_or_default(),
@@ -152,6 +212,7 @@ impl AppRepositoryImpl<'_> {
             id: Set(snapshot.id),
             container_id: Set(snapshot.container_id),
             container_type: Set(Some(snapshot.container_type.clone())),
+            created_date: Set(snapshot.created_at),
             hash: Set(Some(snapshot.hash.clone())),
             mime_type: Set(Some(snapshot.mime_type.clone())),
             name: Set(Some(snapshot.name.clone())),

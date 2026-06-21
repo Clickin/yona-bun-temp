@@ -344,9 +344,13 @@ struct RestSiteImportPayload {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteImportUserItem {
+    #[serde(alias = "createdDate")]
+    created_at: String,
     display_name: String,
     email_address: String,
     is_site_admin: bool,
+    #[serde(alias = "lastStateModifiedDate")]
+    last_state_modified_at: String,
     login_id: String,
     state: String,
 }
@@ -459,6 +463,9 @@ struct RestSiteExportAttachmentItem {
     content_base64: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     content_sha256: Option<String>,
+    #[serde(alias = "createdDate")]
+    #[serde(skip_serializing_if = "String::is_empty")]
+    created_at: String,
     id: i64,
     mime_type: String,
     name: String,
@@ -2633,6 +2640,18 @@ async fn rest_import_site_data_live(
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        repository
+            .restore_site_import_user_timestamps(
+                login_id,
+                rest_site_import_parse_legacy_datetime(&user.created_at),
+                rest_site_import_parse_legacy_datetime(&user.last_state_modified_at),
+            )
+            .await
+            .map_err(|error| {
+                let message = error.to_string();
+                checkpoint.set_failure("users", index, format!("user:{login_id}"), message.clone());
+                RestRouteError::internal(message)
+            })?;
         rollback.record_user(&created_user);
         imported_users += 1;
         checkpoint.mark_completed("users", index);
@@ -4256,6 +4275,13 @@ async fn rest_site_import_attachments(
                     return Err(RestRouteError::internal(error.to_string()));
                 }
             };
+            repository
+                .restore_site_import_attachment_created_at(
+                    created.id,
+                    rest_site_import_parse_legacy_datetime(&attachment.created_at),
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
             attachment_ids.push(created.id);
             if attachment.id > 0 && attachment.id != created.id {
                 link_rewrites.push((attachment.id, created.id));
@@ -5127,6 +5153,7 @@ fn rest_site_export_attachment_from_record(
             .as_ref()
             .map(|bytes| general_purpose::STANDARD.encode(bytes)),
         content_sha256: content_bytes.as_deref().map(sha256_hex),
+        created_at: legacy_external_date_string(record.created_at),
         id: record.id,
         mime_type: record.mime_type.clone(),
         name: record.name.clone(),

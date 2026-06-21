@@ -19,7 +19,7 @@ export const Route = createFileRoute("/$owner/$projectName/newMilestoneForm")({
 
 function NewMilestoneFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/newMilestoneForm`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -77,6 +77,7 @@ function NewMilestoneFormRouteComponent() {
     <ProjectMilestoneFormPage
       csrfToken={csrfToken}
       detail={detail}
+      messages={messages}
       mode="create"
       onSubmit={async (input) => {
         const response = await createProjectMilestone(runtimeConfig, csrfToken, {

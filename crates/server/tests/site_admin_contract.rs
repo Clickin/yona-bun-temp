@@ -1,6 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+use sea_orm::entity::prelude::DateTime;
 
 // Guards site-admin update helper ownership while server config helpers are
 // imported from their owning module instead of the root.
@@ -371,7 +372,10 @@ async fn insert_attachment(
         mime_type: Set(Some(mime_type.to_string())),
         size: Set(Some(256)),
         container_id: Set(container_id),
-        created_date: Set(None),
+        created_date: Set(Some(
+            DateTime::parse_from_str("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+                .expect("attachment timestamp"),
+        )),
         owner_login_id: Set(Some(owner_login_id.to_string())),
     }
     .insert(db)
@@ -1078,7 +1082,10 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .as_array()
         .unwrap()
         .iter()
-        .any(|user| user["loginId"] == "member"));
+        .any(|user| user["loginId"] == "member"
+            && user["createdAt"]
+                .as_str()
+                .is_some_and(|value| !value.is_empty())));
     assert_eq!(payload["projects"][0]["ownerName"], "member");
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
     assert_eq!(payload["projects"][0]["projectScope"], "public");
@@ -1110,6 +1117,12 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert_eq!(
         payload["milestones"][0]["attachments"][0]["contentBase64"],
         "bWlsZXN0b25lLWV4cG9ydC1iaW5hcnk="
+    );
+    assert!(
+        payload["milestones"][0]["attachments"][0]["createdAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy attachment createdAt"
     );
     assert_eq!(payload["posts"][0]["title"], "Data export post");
     assert!(
@@ -1240,7 +1253,9 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "loginId": "imported",
             "displayName": "Imported User",
             "emailAddress": "imported@example.com",
+            "createdAt": "2020-01-01T00:00:01+0000",
             "isSiteAdmin": false,
+            "lastStateModifiedAt": "2020-01-01T00:00:02+0000",
             "state": "ACTIVE"
         }, {
             "loginId": "imported-member",
@@ -1425,6 +1440,26 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         .unwrap()
         .iter()
         .any(|user| { user["loginId"] == "imported" && user["displayName"] == "Imported User" }));
+    let imported_user = users["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|user| user["loginId"] == "imported")
+        .expect("imported user in site list");
+    assert_eq!(
+        imported_user["createdAt"]
+            .as_str()
+            .expect("imported user created date")
+            .replace(' ', "T"),
+        "2020-01-01T00:00:01"
+    );
+    assert_eq!(
+        imported_user["lastStateModifiedAt"]
+            .as_str()
+            .expect("imported user last state modified date")
+            .replace(' ', "T"),
+        "2020-01-01T00:00:02"
+    );
 
     let projects = response_json(
         rest_get(
@@ -1848,6 +1883,7 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
             "authorLoginId": "member",
             "attachments": [{
                 "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "createdAt": "2020-02-01T01:02:03+0000",
                 "id": 901,
                 "mimeType": "text/plain",
                 "name": "portable-post.txt",
@@ -1857,6 +1893,7 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
             "comments": [{
                 "attachments": [{
                     "contentBase64": "cG9ydGFibGUtY29tbWVudC1maWxl",
+                    "createdAt": "2020-02-02T02:03:04+0000",
                     "id": 902,
                     "mimeType": "text/plain",
                     "name": "portable-comment.txt",
@@ -1901,6 +1938,14 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         .expect("post attachment exists");
     let post_hash = post_attachment.hash.as_str();
     assert_eq!(
+        post_attachment
+            .created_at
+            .expect("portable post attachment created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-02-01T01:02:03+0000"
+    );
+    assert_eq!(
         std::fs::read(data_dir.path().join("uploads").join(post_hash)).expect("post bytes"),
         b"portable-post-file"
     );
@@ -1930,6 +1975,14 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         .expect("read comment attachment")
         .expect("comment attachment exists");
     let comment_hash = comment_attachment.hash.as_str();
+    assert_eq!(
+        comment_attachment
+            .created_at
+            .expect("portable comment attachment created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-02-02T02:03:04+0000"
+    );
     assert_eq!(
         std::fs::read(data_dir.path().join("uploads").join(comment_hash)).expect("comment bytes"),
         b"portable-comment-file"
