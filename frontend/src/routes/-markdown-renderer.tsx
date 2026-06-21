@@ -5,7 +5,14 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { highlightCodeBlock } from "./-syntax-highlighting";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
 
 type MarkdownInlinePart =
   | { kind: "code"; key: string; value: string }
@@ -6834,7 +6841,9 @@ export function MarkdownRenderer(props: {
   );
 }
 
-export function LegacyMarkdownHelp() {
+export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {}) {
+  const { t: runtimeMessages } = useLegacyMessages();
+  const messages = props.messages ?? runtimeMessages;
   const sections = [
     {
       input: "# This is an H1\n## This is an H2\n### This is an H3",
@@ -6889,7 +6898,7 @@ export function LegacyMarkdownHelp() {
     <div className="markdown-help">
       <ul className="markdown-help-nav">
         <li>
-          <span className="label">title.markdown.help</span>
+          <span className="label">{legacyMessage(messages, "title.markdown.help")}</span>
         </li>
         {[...sections, { label: "Short Link", target: "markdownShortLinks" }].map((section) => (
           <li
@@ -6963,9 +6972,12 @@ export function LegacyMarkdownEditorShell(props: {
   children: React.ReactNode;
   editorMode?: string;
   editId: string;
+  messages?: LegacyMessageLookup;
   previewId: string;
   viaEmail?: boolean;
 }) {
+  const { t: runtimeMessages } = useLegacyMessages();
+  const messages = props.messages ?? runtimeMessages;
   const editorMode = props.editorMode ?? "content-body";
   return (
     <div data-toggle="markdown-editor" className="mt10">
@@ -7009,7 +7021,7 @@ export function LegacyMarkdownEditorShell(props: {
         </li>
       </ul>
       <div className="tab-content" style={{ overflow: "visible", position: "relative" }}>
-        <LegacyMarkdownHelp />
+        <LegacyMarkdownHelp messages={messages} />
         <div className="tab-pane active" id={props.editId}>
           <div className="textarea-box">{props.children}</div>
         </div>
@@ -7020,7 +7032,9 @@ export function LegacyMarkdownEditorShell(props: {
           ></div>
         </div>
         <div className="notification-receiver">
-          <span className="notification-receiver-title">notification.receiver.list.title</span>
+          <span className="notification-receiver-title">
+            {legacyMessage(messages, "notification.receiver.list.title")}
+          </span>
           <span className="notification-receiver-list"></span>
         </div>
       </div>

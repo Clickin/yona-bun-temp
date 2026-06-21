@@ -66,18 +66,31 @@ function buildOrganizationIssueHref(
   return buildOrganizationHref(runtimeConfig, organizationName, suffix);
 }
 
-function LegacyTwoColumnModeCheckboxArea() {
+function legacyMessageWithKeyFallback(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  args?: string[],
+) {
+  return messages ? messages(key, args ? { args } : undefined) : key;
+}
+
+function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup }) {
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
-      data-content="common.two.column.mode.desc"
+      data-content={legacyMessage(props.messages, "common.two.column.mode.desc")}
       id="two-column-mode-checkbox"
-      title="common.two.column.mode"
+      title={legacyMessage(props.messages, "common.two.column.mode")}
     >
-      <label className="checkbox" aria-label="common.two.column.view">
+      <label
+        className="checkbox"
+        aria-label={legacyMessage(props.messages, "common.two.column.view")}
+      >
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
-          <span className="two-column-mode-text">common.two.column.view</span>
+          <span className="two-column-mode-text">
+            {legacyMessage(props.messages, "common.two.column.view")}
+          </span>
         </div>
       </label>
     </div>
@@ -300,6 +313,7 @@ function OrganizationSettingsSubMenu(props: {
 
 function OrganizationMemberBubble(props: {
   members: NonNullable<OrganizationDetailViewModel["adminMembers"]>;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   title: string;
 }) {
@@ -308,7 +322,7 @@ function OrganizationMemberBubble(props: {
       <div className="bubble-wrap gray organization-home">
         <div className="inner member-info">
           <header>
-            <h3>{props.title}</h3>
+            <h3>{legacyMessage(props.messages, props.title)}</h3>
           </header>
           <div className="organization-member-wrap">
             <div className="member-wrap">
@@ -351,6 +365,7 @@ function OrganizationMemberBubble(props: {
 
 function OrganizationMembershipActions(props: {
   detail: OrganizationDetailViewModel;
+  messages?: LegacyMessageLookup;
   onLeaveOrganization?: (organizationName: string) => void;
 }) {
   const { detail } = props;
@@ -358,9 +373,9 @@ function OrganizationMembershipActions(props: {
   if (detail.viewerCanLeave) {
     return (
       <section>
-        <h2>organization.member.leave</h2>
+        <h2>{legacyMessage(props.messages, "organization.member.leave")}</h2>
         <button type="button" onClick={() => props.onLeaveOrganization?.(detail.organizationName)}>
-          organization.member.leave
+          {legacyMessage(props.messages, "organization.member.leave")}
         </button>
       </section>
     );
@@ -531,7 +546,7 @@ export function OrganizationDetailPage(props: {
                       data-toggle="item-search"
                       id="mylist-filter"
                       name="mylist-filter"
-                      placeholder="title.type.name"
+                      placeholder={legacyMessage(props.messages, "title.type.name")}
                       type="text"
                       defaultValue=""
                     />
@@ -549,7 +564,7 @@ export function OrganizationDetailPage(props: {
                         `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
                       )}
                     >
-                      button.newProject
+                      {legacyMessage(props.messages, "button.newProject")}
                     </a>
                   </div>
                 ) : null}
@@ -620,7 +635,7 @@ export function OrganizationDetailPage(props: {
                                 <strong title={project.createdLabel}>{project.createdLabel}</strong>
                                 {project.lastPushedLabel ? (
                                   <span className="small-font">
-                                    , project.codeUpdate{" "}
+                                    , {legacyMessage(props.messages, "project.codeUpdate")}{" "}
                                     <strong title={project.lastPushedLabel}>
                                       {project.lastPushedLabel}
                                     </strong>
@@ -640,13 +655,20 @@ export function OrganizationDetailPage(props: {
                                   <i
                                     className="yobicon-lightbulb ramp-on"
                                     data-toggle="tooltip"
-                                    title="project.default.group.watching"
+                                    title={legacyMessage(
+                                      props.messages,
+                                      "project.default.group.watching",
+                                    )}
                                   />
                                 ) : (
                                   <i
                                     className="yobicon-lightbulb ramp-off"
                                     data-toggle="tooltip"
-                                    title="project.you.are.not.watching"
+                                    title={legacyMessageWithKeyFallback(
+                                      props.messages,
+                                      "project.you.are.not.watching",
+                                      [""],
+                                    )}
                                   />
                                 )}
                               </p>
@@ -662,11 +684,13 @@ export function OrganizationDetailPage(props: {
             <aside className="span3 span-right-pane">
               <OrganizationMembershipActions
                 detail={detail}
+                messages={props.messages}
                 onLeaveOrganization={props.onLeaveOrganization}
               />
               {detail.adminMembers?.length ? (
                 <OrganizationMemberBubble
                   members={detail.adminMembers}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   title="user.role.org_admin"
                 />
@@ -674,6 +698,7 @@ export function OrganizationDetailPage(props: {
               {detail.memberMembers?.length ? (
                 <OrganizationMemberBubble
                   members={detail.memberMembers}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   title="user.role.org_member"
                 />
@@ -781,7 +806,7 @@ export function OrganizationIssueListPage(props: {
                       data-project-names={query.projectNames.join(",")}
                       href={allHref}
                     >
-                      issue.list.all
+                      {legacyMessage(props.messages, "issue.list.all")}
                     </a>
                   </li>
                   {props.currentUserId > 0 ? (
@@ -798,7 +823,7 @@ export function OrganizationIssueListPage(props: {
                           data-project-names={query.projectNames.join(",")}
                           href={assignedHref}
                         >
-                          issue.list.assignedToMe
+                          {legacyMessage(props.messages, "issue.list.assignedToMe")}
                         </a>
                       </li>
                       <li className={query.authorId === props.currentUserId ? "active" : undefined}>
@@ -811,7 +836,7 @@ export function OrganizationIssueListPage(props: {
                           data-project-names={query.projectNames.join(",")}
                           href={authoredHref}
                         >
-                          issue.list.authoredByMe
+                          {legacyMessage(props.messages, "issue.list.authoredByMe")}
                         </a>
                       </li>
                       <li
@@ -826,7 +851,7 @@ export function OrganizationIssueListPage(props: {
                           data-project-names={query.projectNames.join(",")}
                           href={mentionedHref}
                         >
-                          issue.list.mentionedOfMe
+                          {legacyMessage(props.messages, "issue.list.mentionedOfMe")}
                         </a>
                       </li>
                     </>
@@ -899,18 +924,18 @@ export function OrganizationIssueListPage(props: {
               <ul className="nav nav-tabs nm">
                 <li className={state === "open" ? "active" : undefined}>
                   <a data-state="open" href={openHref}>
-                    issue.state.open{" "}
+                    {legacyMessage(props.messages, "issue.state.open")}{" "}
                     <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li className={state === "closed" ? "active" : undefined}>
                   <a data-state="closed" href={closedHref}>
-                    issue.state.closed{" "}
+                    {legacyMessage(props.messages, "issue.state.closed")}{" "}
                     <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li>
-                  <LegacyTwoColumnModeCheckboxArea />
+                  <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
                 </li>
               </ul>
               {issueItems.length > 0 ? (
@@ -936,7 +961,7 @@ export function OrganizationIssueListPage(props: {
                                 query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
                               }`}
                             />
-                            {label}
+                            {legacyMessage(props.messages, label)}
                           </a>
                         ))}
                       </div>
@@ -980,7 +1005,11 @@ export function OrganizationIssueListPage(props: {
                               data-placement="top"
                               data-toggle="tooltip"
                               href={authorHref}
-                              title={issue.authorLoginId || issue.authorLabel || "issue.noAuthor"}
+                              title={
+                                issue.authorLoginId ||
+                                issue.authorLabel ||
+                                legacyMessage(props.messages, "issue.noAuthor")
+                              }
                             >
                               {issue.authorAvatarUrl ? (
                                 <img
@@ -1010,7 +1039,9 @@ export function OrganizationIssueListPage(props: {
                                   {issue.authorLabel}
                                 </a>
                               ) : (
-                                <span className="infos-item">issue.noAuthor</span>
+                                <span className="infos-item">
+                                  {legacyMessage(props.messages, "issue.noAuthor")}
+                                </span>
                               )}
                               <span className="infos-item">{issue.updatedLabel}</span>
                               {issue.milestoneTitle ? (
@@ -1059,7 +1090,9 @@ export function OrganizationIssueListPage(props: {
                                   data-placement="top"
                                   data-toggle="tooltip"
                                   href={assigneeHref}
-                                  title={`issue.assignee: ${issue.assigneeLabel}`}
+                                  title={`${legacyMessage(props.messages, "issue.assignee")}: ${
+                                    issue.assigneeLabel
+                                  }`}
                                 >
                                   {issue.assigneeAvatarUrl ? (
                                     <img
@@ -1113,7 +1146,7 @@ export function OrganizationIssueListPage(props: {
               ) : (
                 <div className="error-wrap">
                   <i className="ico ico-err1" />
-                  <p>issue.is.empty</p>
+                  <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
                 </div>
               )}
             </section>
@@ -1392,7 +1425,7 @@ export function OrganizationMembersPage(props: {
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 placeholder={legacyMessage(props.messages, "project.members.addMember")}
                 required
-                title="user.wrongloginId.alert"
+                title={legacyMessage(props.messages, "user.wrongloginId.alert")}
                 type="text"
                 value={loginId}
               />
@@ -1427,7 +1460,9 @@ export function OrganizationMembersPage(props: {
                       data-toggle="dropdown"
                       type="button"
                     >
-                      <span className="d-label">{`user.role.${member.role}`}</span>
+                      <span className="d-label">
+                        {legacyMessage(props.messages, `user.role.${member.role}`)}
+                      </span>
                       <span className="d-caret">
                         <span className="caret" />
                       </span>
@@ -1462,7 +1497,7 @@ export function OrganizationMembersPage(props: {
                             }}
                             data-loginid={member.loginId}
                           >
-                            {`user.role.${roleOption.label}`}
+                            {legacyMessage(props.messages, `user.role.${roleOption.role}`)}
                           </a>
                         </li>
                       ))}

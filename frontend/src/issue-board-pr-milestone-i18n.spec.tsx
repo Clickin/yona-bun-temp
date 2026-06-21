@@ -297,4 +297,63 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(koreanHtml).not.toContain(">change.history</span>");
     expect(koreanHtml).not.toContain("<strong>common.comment</strong>");
   });
+
+  it("opts the bounded P4-A issue/board shared controls into legacy message lookups", () => {
+    const issueViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-issue-views.tsx"),
+      "utf8",
+    );
+    const boardViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-board-views.tsx"),
+      "utf8",
+    );
+
+    for (const key of [
+      "common.two.column.mode",
+      "common.two.column.mode.desc",
+      "common.two.column.view",
+      "common.show.subtasks",
+      "common.show.subtasks.desc",
+      "label.select",
+      "issue.noAuthor",
+      "button.prevPage",
+      "button.nextPage",
+      "title.favorite",
+      "issue.draft.description",
+      "common.comment",
+      "issue.menu.new.by",
+      "issue.milestone",
+      "issue.search",
+      "issue.myIssue",
+      "user.files",
+      "issue.sharer.select",
+      "issue.noAssignee",
+      "common.attach.dropFilesHere",
+      "issue.state.draft",
+      "issue.option",
+      "issue.subtask.select",
+      "notification.send.mail",
+      "issue.state",
+      "issue.assignee",
+      "issue.noMilestone",
+      "issue.dueDate",
+    ]) {
+      expect(issueViewsSource).toContain(`legacyMessage(`);
+      expect(issueViewsSource).toContain(`"${key}"`);
+    }
+
+    for (const key of [
+      "common.two.column.mode",
+      "common.two.column.mode.desc",
+      "common.two.column.view",
+      "post.is.empty",
+      "post.notice",
+      "issue.noAuthor",
+      "label.select",
+      "common.attach.dropFilesHere",
+    ]) {
+      expect(boardViewsSource).toContain(`legacyMessage(`);
+      expect(boardViewsSource).toContain(`"${key}"`);
+    }
+  });
 });

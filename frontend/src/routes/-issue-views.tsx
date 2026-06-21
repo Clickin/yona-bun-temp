@@ -57,39 +57,49 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
   };
 }
 
-function LegacyTwoColumnModeCheckboxArea() {
+function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup } = {}) {
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
-      data-content="common.two.column.mode.desc"
+      data-content={legacyMessage(props.messages, "common.two.column.mode.desc")}
       id="two-column-mode-checkbox"
-      title="common.two.column.mode"
+      title={legacyMessage(props.messages, "common.two.column.mode")}
     >
-      <label className="checkbox" aria-label="common.two.column.view">
+      <label
+        className="checkbox"
+        aria-label={legacyMessage(props.messages, "common.two.column.view")}
+      >
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
-          <span className="two-column-mode-text">common.two.column.view</span>
+          <span className="two-column-mode-text">
+            {legacyMessage(props.messages, "common.two.column.view")}
+          </span>
         </div>
       </label>
     </div>
   );
 }
 
-function LegacyShowSubtasksCheckbox() {
+function LegacyShowSubtasksCheckbox(props: { messages?: LegacyMessageLookup } = {}) {
   return (
     <div
       className="show-subtasks mr10"
-      data-content="common.show.subtasks.desc"
+      data-content={legacyMessage(props.messages, "common.show.subtasks.desc")}
       data-placement="top"
       data-toggle="popover"
       data-trigger="hover"
       id="two-column-mode-checkbox"
-      title="common.show.subtasks"
+      title={legacyMessage(props.messages, "common.show.subtasks")}
     >
-      <label className="checkbox" aria-label="common.show.subtasks">
+      <label
+        className="checkbox"
+        aria-label={legacyMessage(props.messages, "common.show.subtasks")}
+      >
         <div className="show-subtasks-button-border">
           <input id="toggle-show-subtasks" type="checkbox" />
-          <span className="show-subtasks-text">common.show.subtasks</span>
+          <span className="show-subtasks-text">
+            {legacyMessage(props.messages, "common.show.subtasks")}
+          </span>
         </div>
       </label>
     </div>
@@ -98,6 +108,7 @@ function LegacyShowSubtasksCheckbox() {
 
 function IssueSubtaskList(props: {
   issue: ProjectIssueDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const { issue, runtimeConfig } = props;
@@ -145,6 +156,7 @@ function IssueSubtaskList(props: {
             <IssueSubtaskItem
               child={child}
               key={`${child.state}-${child.issueNumber}`}
+              messages={props.messages}
               ownerName={issue.ownerName}
               projectName={issue.projectName}
               runtimeConfig={runtimeConfig}
@@ -159,6 +171,7 @@ function IssueSubtaskList(props: {
 
 function IssueSubtaskItem(props: {
   child: IssueChildViewModel;
+  messages?: LegacyMessageLookup;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -182,7 +195,9 @@ function IssueSubtaskItem(props: {
         <span className="item-name">
           <span className="subtask-number">
             {child.isDraft ? (
-              <span className="draft-number">#issue.state.draft</span>
+              <span className="draft-number">
+                #{legacyMessage(props.messages, "issue.state.draft")}
+              </span>
             ) : (
               `#${child.issueNumber}`
             )}
@@ -448,7 +463,11 @@ function IssueListSubtaskSummary(props: {
   );
 }
 
-function IssueListChildRows(props: { item: IssueListItemViewModel; runtimeConfig: RuntimeConfig }) {
+function IssueListChildRows(props: {
+  item: IssueListItemViewModel;
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
   const childIssues = props.item.childIssues ?? [];
   return (
     <div className="child-issue-list hide">
@@ -468,6 +487,7 @@ function IssueListChildRows(props: { item: IssueListItemViewModel; runtimeConfig
                 voterCount: child.voterCount,
               }}
               key={`${child.state}-${child.issueNumber}`}
+              messages={props.messages}
               ownerName={props.item.ownerName}
               projectName={props.item.projectName}
               runtimeConfig={props.runtimeConfig}
@@ -895,10 +915,10 @@ export function ProjectIssueListPage(props: {
                       <dt>{legacyMessage(props.messages, "label")}</dt>
                       <dd>
                         <select
-                          aria-label="label.select"
+                          aria-label={legacyMessage(props.messages, "label.select")}
                           className="issue-label-filter"
                           data-search="labelIds"
-                          data-placeholder="label.select"
+                          data-placeholder={legacyMessage(props.messages, "label.select")}
                           defaultValue={selectedLabelIds}
                           multiple
                           name="labelIds"
@@ -949,10 +969,10 @@ export function ProjectIssueListPage(props: {
                   </a>
                 </li>
                 <li>
-                  <LegacyTwoColumnModeCheckboxArea />
+                  <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
                 </li>
                 <li className="show-subtasks-li">
-                  <LegacyShowSubtasksCheckbox />
+                  <LegacyShowSubtasksCheckbox messages={props.messages} />
                 </li>
               </ul>
               {issueRows.length === 0 ? (
@@ -997,6 +1017,7 @@ export function ProjectIssueListPage(props: {
                     <ProjectIssueRows
                       items={issueList.draftItems}
                       listKind="draft"
+                      messages={props.messages}
                       query={query}
                       runtimeConfig={props.runtimeConfig}
                     />
@@ -1004,6 +1025,7 @@ export function ProjectIssueListPage(props: {
                   <ProjectIssueRows
                     items={issueRows}
                     listKind="normal"
+                    messages={props.messages}
                     query={query}
                     runtimeConfig={props.runtimeConfig}
                   />
@@ -1032,6 +1054,7 @@ export function ProjectIssueListPage(props: {
                         pageNum,
                       )
                     }
+                    messages={props.messages}
                     pageCount={totalPageCount}
                   />
                 </>
@@ -1071,6 +1094,7 @@ export interface IssueListFilterMilestone {
 function ProjectIssueRows(props: {
   items: ProjectIssueListViewModel["items"];
   listKind: "draft" | "normal";
+  messages?: LegacyMessageLookup;
   query: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1123,7 +1147,9 @@ function ProjectIssueRows(props: {
                   <a className="title" href={issueHref}>
                     <span className="post-id">
                       {item.state === "draft" ? (
-                        <span className="draft-number">#issue.state.draft</span>
+                        <span className="draft-number">
+                          #{legacyMessage(props.messages, "issue.state.draft")}
+                        </span>
                       ) : (
                         `#${item.issueNumber}`
                       )}
@@ -1169,7 +1195,9 @@ function ProjectIssueRows(props: {
                       {item.authorLabel}
                     </a>
                   ) : (
-                    <span className="infos-item">issue.noAuthor</span>
+                    <span className="infos-item">
+                      {legacyMessage(props.messages, "issue.noAuthor")}
+                    </span>
                   )}
                   <span
                     className="infos-item"
@@ -1232,7 +1260,11 @@ function ProjectIssueRows(props: {
                       {label.name}
                     </a>
                   ))}
-                  <IssueListChildRows item={item} runtimeConfig={props.runtimeConfig} />
+                  <IssueListChildRows
+                    item={item}
+                    messages={props.messages}
+                    runtimeConfig={props.runtimeConfig}
+                  />
                 </div>
               </div>
             </div>
@@ -1273,7 +1305,7 @@ function ProjectIssueRows(props: {
                   <i className="yobicon-clock2 mr3 vmiddle" />
                   <span className="vmiddle">
                     {item.state === "open" && (item.dueDateOverdue ?? false)
-                      ? "issue.dueDate.overdue"
+                      ? legacyMessage(props.messages, "issue.dueDate.overdue")
                       : item.dueDateLabel}
                   </span>
                 </div>
@@ -1289,6 +1321,7 @@ function ProjectIssueRows(props: {
 function IssueListPagination(props: {
   currentPage: number;
   hrefForPage: (pageNum: number) => string;
+  messages?: LegacyMessageLookup;
   pageCount: number;
 }) {
   if (props.pageCount <= 1) {
@@ -1307,12 +1340,12 @@ function IssueListPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>button.prevPage</span>
+              <span>{legacyMessage(props.messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">button.prevPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -1335,12 +1368,12 @@ function IssueListPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-next"></i>
-              <span>button.nextPage</span>
+              <span>{legacyMessage(props.messages, "button.nextPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-next off"></i>
-              <span className="off">button.nextPage</span>
+              <span className="off">{legacyMessage(props.messages, "button.nextPage")}</span>
             </>
           )}
         </li>
@@ -1476,12 +1509,14 @@ export function ProjectIssueDetailPage(props: {
     return commentsByParent;
   }, [issue?.comments]);
   const issueAuthorLoginId = issue?.authorLoginId ?? "";
-  const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "issue.noAuthor";
+  const issueAuthorLabel =
+    issue?.authorLabel || issueAuthorLoginId || legacyMessage(messages, "issue.noAuthor");
   const issueAuthorHref = issueAuthorLoginId
     ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAuthorLoginId}`)
     : "#";
   const issueAssigneeLoginId = issue?.assigneeLoginId ?? "";
-  const issueAssigneeLabel = issue?.assigneeLabel || issueAssigneeLoginId || "issue.noAssignee";
+  const issueAssigneeLabel =
+    issue?.assigneeLabel || issueAssigneeLoginId || legacyMessage(messages, "issue.noAssignee");
   const issueAssigneeHref = issueAssigneeLoginId
     ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAssigneeLoginId}`)
     : "#";
@@ -1580,7 +1615,9 @@ export function ProjectIssueDetailPage(props: {
               {issueNumberLabel ? (
                 <strong className="board-id">
                   {issue?.isDraft ? (
-                    <span className="draft-number">#issue.state.draft</span>
+                    <span className="draft-number">
+                      #{legacyMessage(messages, "issue.state.draft")}
+                    </span>
                   ) : (
                     issueNumberLabel
                   )}
@@ -1590,7 +1627,7 @@ export function ProjectIssueDetailPage(props: {
                 {issueTitle}
                 {issue && props.onFavoriteToggle ? (
                   <button
-                    aria-label="title.favorite"
+                    aria-label={legacyMessage(messages, "title.favorite")}
                     className="favorite-issue"
                     onClick={() => void props.onFavoriteToggle?.()}
                     type="button"
@@ -1617,7 +1654,9 @@ export function ProjectIssueDetailPage(props: {
                   </span>
                 </div>
               ) : null}
-              {issue?.isDraft ? <div className="draft">issue.draft.description</div> : null}
+              {issue?.isDraft ? (
+                <div className="draft">{legacyMessage(messages, "issue.draft.description")}</div>
+              ) : null}
             </div>
             {issue ? (
               <PostingHistoryModal
@@ -1796,7 +1835,7 @@ export function ProjectIssueDetailPage(props: {
                       disabled={translatingIssue || translatedIssueMarkdown !== null}
                       id="translate"
                       onClick={() => void translateIssue()}
-                      title="button.translation"
+                      title={legacyMessage(messages, "button.translation")}
                       type="button"
                     >
                       <i className="yobicon-lang"></i>
@@ -1811,7 +1850,7 @@ export function ProjectIssueDetailPage(props: {
                         detail.projectName,
                         `issue/${issue.issueNumber}/editform`,
                       )}
-                      title="button.edit"
+                      title={legacyMessage(messages, "button.edit")}
                     >
                       <i className="yobicon-edit-2"></i>
                     </a>
@@ -1822,7 +1861,12 @@ export function ProjectIssueDetailPage(props: {
                       onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
                       type="button"
                     >
-                      {issue.state === "open" ? "button.nextState.closed" : "button.nextState.open"}
+                      {legacyMessage(
+                        messages,
+                        issue.state === "open"
+                          ? "button.nextState.closed"
+                          : "button.nextState.open",
+                      )}
                     </button>
                   ) : null}
                   {issue?.viewerCanDelete && onDeleteIssue ? (
@@ -1836,7 +1880,7 @@ export function ProjectIssueDetailPage(props: {
                     >
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml6"
-                        title="button.delete"
+                        title={legacyMessage(messages, "button.delete")}
                         type="button"
                       >
                         <i className="yobicon-trash"></i>
@@ -1850,7 +1894,7 @@ export function ProjectIssueDetailPage(props: {
                   <div className="timeline-list">
                     <div className="comment-header">
                       <i></i>
-                      <strong>common.comment</strong>{" "}
+                      <strong>{legacyMessage(messages, "common.comment")}</strong>{" "}
                       <strong className="num">{issue?.commentCount ?? 0}</strong>
                     </div>
                     <hr className="nm" />
@@ -1952,7 +1996,9 @@ export function ProjectIssueDetailPage(props: {
                                 </span>
                                 <span className="act-row pull-right">
                                   <span className="new-issue-by">
-                                    <a href={newIssueByCommentHref}>issue.menu.new.by</a>
+                                    <a href={newIssueByCommentHref}>
+                                      {legacyMessage(messages, "issue.menu.new.by")}
+                                    </a>
                                   </span>
                                   <span className="comment-vote-row">
                                     {comment.voterCount > 0 ? (
@@ -1979,8 +2025,8 @@ export function ProjectIssueDetailPage(props: {
                                       <button
                                         aria-label={
                                           comment.viewerHasVoted
-                                            ? "common.comment.unvote"
-                                            : "common.comment.vote"
+                                            ? legacyMessage(messages, "common.comment.unvote")
+                                            : legacyMessage(messages, "common.comment.vote")
                                         }
                                         className="comment-vote btn-transparent-with-fontsize-lineheight"
                                         data-request-type="comment-vote"
@@ -1993,8 +2039,8 @@ export function ProjectIssueDetailPage(props: {
                                         }
                                         title={
                                           comment.viewerHasVoted
-                                            ? "common.comment.unvote"
-                                            : "common.comment.vote"
+                                            ? legacyMessage(messages, "common.comment.unvote")
+                                            : legacyMessage(messages, "common.comment.vote")
                                         }
                                         type="button"
                                       >
@@ -2017,7 +2063,7 @@ export function ProjectIssueDetailPage(props: {
                                       Boolean(translatedCommentMarkdownById[comment.id])
                                     }
                                     onClick={() => void translateIssueComment(comment)}
-                                    title="button.translation"
+                                    title={legacyMessage(messages, "button.translation")}
                                     type="button"
                                   >
                                     <i className="yobicon-lang"></i>
@@ -2034,7 +2080,7 @@ export function ProjectIssueDetailPage(props: {
                                           return next;
                                         })
                                       }
-                                      title="common.comment.edit"
+                                      title={legacyMessage(messages, "common.comment.edit")}
                                       type="button"
                                     >
                                       <i className="yobicon-edit-2"></i>
@@ -2046,7 +2092,7 @@ export function ProjectIssueDetailPage(props: {
                                       data-request-uri={commentDeleteUri}
                                       data-toggle="comment-delete"
                                       onClick={() => setCommentDeleteTargetId(comment.id)}
-                                      title="common.comment.delete"
+                                      title={legacyMessage(messages, "common.comment.delete")}
                                       type="button"
                                     >
                                       <i className="yobicon-trash"></i>
@@ -2064,6 +2110,7 @@ export function ProjectIssueDetailPage(props: {
                                       props.getIssueReferencesQueryOptions
                                     }
                                     initialContents={comment.contentsMarkdown}
+                                    messages={messages}
                                     onCancel={() =>
                                       setEditingCommentIds((current) => {
                                         const next = new Set(current);
@@ -2161,7 +2208,10 @@ export function ProjectIssueDetailPage(props: {
                                                 onClick={() =>
                                                   setCommentDeleteTargetId(childComment.id)
                                                 }
-                                                title="common.comment.delete"
+                                                title={legacyMessage(
+                                                  messages,
+                                                  "common.comment.delete",
+                                                )}
                                                 type="button"
                                               >
                                                 x
@@ -2302,17 +2352,22 @@ export function ProjectIssueDetailPage(props: {
                 )}
               </div>
               <dl className="issue-info">
-                <dt>issue.milestone</dt>
-                <dd>{issue?.milestoneTitle || "issue.noMilestone"}</dd>
+                <dt>{legacyMessage(messages, "issue.milestone")}</dt>
+                <dd>{issue?.milestoneTitle || legacyMessage(messages, "issue.noMilestone")}</dd>
               </dl>
               <div className="watcher-list"></div>
               {issue ? (
-                <IssueSubtaskList issue={issue} runtimeConfig={props.runtimeConfig} />
+                <IssueSubtaskList
+                  issue={issue}
+                  messages={messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
               ) : null}
               <IssueDetailSelectedLabels issue={issue} runtimeConfig={props.runtimeConfig} />
               {issue?.viewerCanUpdate && props.onAssign ? (
                 <IssueAssignForm
                   initialAssignee={issue.assigneeLoginId}
+                  messages={messages}
                   onSearchAssignableUsers={props.onSearchAssignableUsers}
                   onSubmit={props.onAssign}
                 />
@@ -2320,6 +2375,7 @@ export function ProjectIssueDetailPage(props: {
               {issue ? (
                 <IssueSharerPanel
                   issue={issue}
+                  messages={messages}
                   onSearchSharableUsers={props.onSearchSharableUsers}
                   onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
                   onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
@@ -2337,14 +2393,14 @@ export function ProjectIssueDetailPage(props: {
             >
               <div className="modal-header">
                 <button
-                  aria-label="button.close"
+                  aria-label={legacyMessage(messages, "button.close")}
                   className="close"
                   onClick={() => setDeleteConfirmOpen(false)}
                   type="button"
                 >
                   ×
                 </button>
-                <h3>issue.delete</h3>
+                <h3>{legacyMessage(messages, "issue.delete")}</h3>
               </div>
               <div className="modal-body">
                 <p>{legacyMessage(messages, "post.delete.confirm")}</p>
@@ -2356,10 +2412,10 @@ export function ProjectIssueDetailPage(props: {
                   onClick={() => void onDeleteIssue()}
                   type="button"
                 >
-                  button.yes
+                  {legacyMessage(messages, "button.yes")}
                 </button>
                 <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
-                  button.no
+                  {legacyMessage(messages, "button.no")}
                 </button>
               </div>
             </div>
@@ -2373,7 +2429,7 @@ export function ProjectIssueDetailPage(props: {
             >
               <div className="modal-header">
                 <button
-                  aria-label="button.close"
+                  aria-label={legacyMessage(messages, "button.close")}
                   className="close"
                   data-dismiss="modal"
                   onClick={() => setCommentDeleteTargetId(null)}
@@ -2381,10 +2437,10 @@ export function ProjectIssueDetailPage(props: {
                 >
                   ×
                 </button>
-                <h3>common.comment.delete</h3>
+                <h3>{legacyMessage(messages, "common.comment.delete")}</h3>
               </div>
               <div className="modal-body">
-                <p>common.comment.delete.confirm</p>
+                <p>{legacyMessage(messages, "common.comment.delete.confirm")}</p>
               </div>
               <div className="modal-footer">
                 <button
@@ -2402,7 +2458,7 @@ export function ProjectIssueDetailPage(props: {
                   }}
                   type="button"
                 >
-                  button.yes
+                  {legacyMessage(messages, "button.yes")}
                 </button>
                 <button
                   className="ybtn"
@@ -2410,7 +2466,7 @@ export function ProjectIssueDetailPage(props: {
                   onClick={() => setCommentDeleteTargetId(null)}
                   type="button"
                 >
-                  button.no
+                  {legacyMessage(messages, "button.no")}
                 </button>
               </div>
             </div>
@@ -2548,6 +2604,7 @@ export function UserIssueListPage(props: {
   query: UserIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t: messages } = useLegacyMessages();
   const issueList = props.issueList;
   const query = props.query;
   const action = prefixBasePath(props.runtimeConfig.basePath, "/user/issues");
@@ -2626,6 +2683,7 @@ export function UserIssueListPage(props: {
           <UserIssueMySeriesMenuTabs
             basePath={props.runtimeConfig.basePath}
             canSetDefaultLoginPage={props.canSetDefaultLoginPage ?? false}
+            messages={messages}
             onSetDefaultLoginPage={props.onSetDefaultLoginPage}
           />
           <div className="row-fluid issue-list-wrap" data-pjax-container="">
@@ -2705,7 +2763,7 @@ export function UserIssueListPage(props: {
                         className="textbox full"
                         defaultValue={query.query}
                         name="query"
-                        placeholder="issue.search"
+                        placeholder={legacyMessage(messages, "issue.search")}
                         type="text"
                       />
                       <button className="search-btn" type="submit">
@@ -2720,21 +2778,21 @@ export function UserIssueListPage(props: {
               <ul className="nav nav-tabs nm">
                 <li className={state === "open" ? "active" : undefined} data-pjax="">
                   <a data-state="open" href={stateHref("open")}>
-                    issue.state.open{" "}
+                    {legacyMessage(messages, "issue.state.open")}{" "}
                     <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li className={state === "closed" ? "active" : undefined} data-pjax="">
                   <a data-state="closed" href={stateHref("closed")}>
-                    issue.state.closed{" "}
+                    {legacyMessage(messages, "issue.state.closed")}{" "}
                     <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li>
-                  <LegacyTwoColumnModeCheckboxArea />
+                  <LegacyTwoColumnModeCheckboxArea messages={messages} />
                 </li>
                 <li className="show-subtasks-li">
-                  <LegacyShowSubtasksCheckbox />
+                  <LegacyShowSubtasksCheckbox messages={messages} />
                 </li>
               </ul>
               {issueItems.length > 0 ? (
@@ -2760,7 +2818,7 @@ export function UserIssueListPage(props: {
                                 query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
                               }`}
                             />
-                            {label}
+                            {legacyMessage(messages, label)}
                           </a>
                         ))}
                       </div>
@@ -2866,6 +2924,7 @@ export function UserIssueListPage(props: {
                                 ))}
                                 <IssueListChildRows
                                   item={item}
+                                  messages={messages}
                                   runtimeConfig={props.runtimeConfig}
                                 />
                               </span>
@@ -2875,6 +2934,7 @@ export function UserIssueListPage(props: {
                                 <UserIssueAuthorCell
                                   authorLabel={item.authorLabel}
                                   authorLoginId={item.authorLoginId}
+                                  messages={messages}
                                   runtimeConfig={props.runtimeConfig}
                                 />
                               )}
@@ -2892,6 +2952,7 @@ export function UserIssueListPage(props: {
                                     <UserIssueAuthorCell
                                       authorLabel={item.authorLabel}
                                       authorLoginId={item.authorLoginId}
+                                      messages={messages}
                                       runtimeConfig={props.runtimeConfig}
                                     />
                                   )}
@@ -2911,7 +2972,7 @@ export function UserIssueListPage(props: {
                                   >
                                     <i className="yobicon-clock2" />
                                     {item.state === "open" && (item.dueDateOverdue ?? false)
-                                      ? "issue.dueDate.overdue"
+                                      ? legacyMessage(messages, "issue.dueDate.overdue")
                                       : item.dueDateLabel}
                                   </span>
                                 ) : null}
@@ -2958,7 +3019,7 @@ export function UserIssueListPage(props: {
               ) : (
                 <div className="error-wrap">
                   <i className="ico ico-err1" />
-                  <p>issue.is.empty</p>
+                  <p>{legacyMessage(messages, "issue.is.empty")}</p>
                 </div>
               )}
             </section>
@@ -2972,14 +3033,16 @@ export function UserIssueListPage(props: {
 function UserIssueAuthorCell({
   authorLabel,
   authorLoginId,
+  messages,
   runtimeConfig,
 }: {
   authorLabel: string;
   authorLoginId?: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   if (!authorLabel) {
-    return <span className="infos-item">issue.noAuthor</span>;
+    return <span className="infos-item">{legacyMessage(messages, "issue.noAuthor")}</span>;
   }
   if (!authorLoginId) {
     return (
@@ -3009,6 +3072,7 @@ function UserIssueAuthorCell({
 function UserIssueMySeriesMenuTabs(props: {
   basePath: string;
   canSetDefaultLoginPage: boolean;
+  messages?: LegacyMessageLookup;
   onSetDefaultLoginPage?: () => void;
 }) {
   return (
@@ -3017,10 +3081,14 @@ function UserIssueMySeriesMenuTabs(props: {
         <a href={prefixBasePath(props.basePath, "/notifications")}>notification</a>
       </li>
       <li className="active">
-        <a href={prefixBasePath(props.basePath, "/user/issues")}>issue.myIssue</a>
+        <a href={prefixBasePath(props.basePath, "/user/issues")}>
+          {legacyMessage(props.messages, "issue.myIssue")}
+        </a>
       </li>
       <li>
-        <a href={prefixBasePath(props.basePath, "/user/files")}>user.files</a>
+        <a href={prefixBasePath(props.basePath, "/user/files")}>
+          {legacyMessage(props.messages, "user.files")}
+        </a>
       </li>
       <li>
         {props.canSetDefaultLoginPage ? (
@@ -3046,6 +3114,7 @@ function UserIssueMySeriesMenuTabs(props: {
 
 function IssueSharerPanel(props: {
   issue: ProjectIssueDetailViewModel;
+  messages?: LegacyMessageLookup;
   onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
@@ -3086,7 +3155,7 @@ function IssueSharerPanel(props: {
   return (
     <dl className={hasSharers ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
       <dt className="issue-share-title mb10">
-        issue.sharer{" "}
+        {legacyMessage(props.messages, "issue.sharer")}{" "}
         <span className="num issue-sharer-count">
           {hasSharers ? props.issue.sharers.length : ""}
         </span>
@@ -3122,7 +3191,7 @@ function IssueSharerPanel(props: {
             className="bigdrop width100p"
             id="issueSharer"
             name="issueSharer"
-            placeholder="issue.sharer.select"
+            placeholder={legacyMessage(props.messages, "issue.sharer.select")}
             readOnly
             title=""
             type="hidden"
@@ -3136,13 +3205,13 @@ function IssueSharerPanel(props: {
           >
             <IssueAssigneeAutocompleteField
               className="bigdrop width100p"
-              emptyMessage="issue.sharer.select"
-              errorMessage="issue.sharer.select"
+              emptyMessage={legacyMessage(props.messages, "issue.sharer.select")}
+              errorMessage={legacyMessage(props.messages, "issue.sharer.select")}
               name="issueSharer"
               onChange={setLoginId}
               onSearchAssignableUsers={props.onSearchSharableUsers}
               onSelect={selectSharerSuggestion}
-              placeholder="issue.sharer.select"
+              placeholder={legacyMessage(props.messages, "issue.sharer.select")}
               title=""
               value={loginId}
             />
@@ -3307,6 +3376,7 @@ function IssueAssigneeAutocompleteField(props: {
 
 function IssueAssignForm(props: {
   initialAssignee: string;
+  messages?: LegacyMessageLookup;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onSubmit: (assigneeLoginId: string) => Promise<void>;
 }) {
@@ -3335,7 +3405,7 @@ function IssueAssignForm(props: {
         onChange={setAssigneeLoginId}
         onSearchAssignableUsers={props.onSearchAssignableUsers}
         onSelect={selectSuggestion}
-        placeholder="issue.noAssignee"
+        placeholder={legacyMessage(props.messages, "issue.noAssignee")}
         style={{ width: "100%" }}
         title=""
         value={assigneeLoginId}
@@ -3865,7 +3935,7 @@ function IssueCommentForm(props: {
             </li>
           </ul>
           <div className="tab-content" style={{ overflow: "visible", position: "relative" }}>
-            <LegacyMarkdownHelp />
+            <LegacyMarkdownHelp messages={props.messages} />
             <div className="tab-pane active" id="edit-comment-body">
               <div className="textarea-box">
                 <IssueMentionTextarea
@@ -3947,6 +4017,7 @@ function IssueCommentEditForm(props: {
   csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialContents: string;
+  messages?: LegacyMessageLookup;
   onCancel: () => void;
   onSearchMentionUsers?: (
     query: string,
@@ -3985,6 +4056,7 @@ function IssueCommentEditForm(props: {
             <LegacyMarkdownEditorShell
               editId={`edit-${props.commentId}`}
               editorMode="update-comment-body"
+              messages={props.messages}
               previewId={`preview-${props.commentId}`}
             >
               <IssueMentionTextarea
@@ -4007,7 +4079,9 @@ function IssueCommentEditForm(props: {
             </LegacyMarkdownEditorShell>
             <div className="upload-drop-here">
               <div className="msg-wrap">
-                <div className="msg">common.attach.dropFilesHere</div>
+                <div className="msg">
+                  {legacyMessage(props.messages, "common.attach.dropFilesHere")}
+                </div>
               </div>
             </div>
             <div className="right-txt comment-update-button upload-button-line">
@@ -4017,10 +4091,10 @@ function IssueCommentEditForm(props: {
                 onClick={props.onCancel}
                 type="button"
               >
-                button.cancel
+                {legacyMessage(props.messages, "button.cancel")}
               </button>
               <button className="ybtn ybtn-info" type="submit">
-                button.save
+                {legacyMessage(props.messages, "button.save")}
               </button>
             </div>
           </div>
@@ -4228,7 +4302,9 @@ export function ProjectIssueFormPage(props: {
                     {props.mode === "edit" && props.initialIssue ? (
                       <dt>
                         {props.initialIssue.isDraft ? (
-                          <span className="draft">issue.state.draft</span>
+                          <span className="draft">
+                            {legacyMessage(messages, "issue.state.draft")}
+                          </span>
                         ) : (
                           <label htmlFor="title">
                             <strong className="secondary-txt">
@@ -4258,7 +4334,9 @@ export function ProjectIssueFormPage(props: {
                             value={title}
                           />
                         </div>
-                        <div className="span1 subtask-message">issue.option</div>
+                        <div className="span1 subtask-message">
+                          {legacyMessage(messages, "issue.option")}
+                        </div>
                       </div>
                       <div
                         className={`subtask-wrap${parentIssueOptions.length > 0 || parentIssueId > 0 ? " show" : ""}`}
@@ -4295,7 +4373,9 @@ export function ProjectIssueFormPage(props: {
                             }
                             value={parentIssueId}
                           >
-                            <option value="">issue.subtask.select</option>
+                            <option value="">
+                              {legacyMessage(messages, "issue.subtask.select")}
+                            </option>
                             {parentIssueOptions.map((option) => (
                               <option key={option.id} value={option.id}>
                                 #{option.issueNumber}. {option.title}
@@ -4314,6 +4394,7 @@ export function ProjectIssueFormPage(props: {
                         <LegacyMarkdownEditorShell
                           editId="edit-content-body"
                           editorMode="content-body"
+                          messages={messages}
                           previewId="preview-content-body"
                         >
                           <IssueMentionTextarea
@@ -4358,7 +4439,7 @@ export function ProjectIssueFormPage(props: {
                               type="checkbox"
                               value="yes"
                             />
-                            <strong>notification.send.mail</strong>
+                            <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
                           </label>
                         </span>
                       ) : null}
@@ -4371,7 +4452,7 @@ export function ProjectIssueFormPage(props: {
                           id="button-save"
                           type="submit"
                         >
-                          button.save
+                          {legacyMessage(messages, "button.save")}
                         </button>
                       ) : null}
                       {props.mode === "edit" && props.initialIssue?.isDraft ? (
@@ -4384,7 +4465,7 @@ export function ProjectIssueFormPage(props: {
                             title="button.draft.publish.description"
                             type="button"
                           >
-                            button.draft.publish
+                            {legacyMessage(messages, "button.draft.publish")}
                           </button>
                           <button
                             className="ybtn ybtn-watching draft-save-btn"
@@ -4394,7 +4475,7 @@ export function ProjectIssueFormPage(props: {
                             title="button.draft.save.description"
                             type="button"
                           >
-                            button.draft.save
+                            {legacyMessage(messages, "button.draft.save")}
                           </button>
                         </>
                       ) : props.mode === "create" ? (
@@ -4406,7 +4487,7 @@ export function ProjectIssueFormPage(props: {
                           title="button.draft.save.description"
                           type="button"
                         >
-                          button.draft.save
+                          {legacyMessage(messages, "button.draft.save")}
                         </button>
                       ) : null}
                       <a
@@ -4419,14 +4500,14 @@ export function ProjectIssueFormPage(props: {
                           "issues",
                         )}
                       >
-                        button.cancel
+                        {legacyMessage(messages, "button.cancel")}
                       </a>
                     </div>
                   </div>
                   <div className="span3 span-hard-wrap right-menu">
                     {props.mode === "edit" && props.initialIssue ? (
                       <dl className="issue-option">
-                        <dt>issue.state</dt>
+                        <dt>{legacyMessage(messages, "issue.state")}</dt>
                         <dd>
                           <div className="btn-group auto" data-name="state" id="state">
                             <button
@@ -4434,7 +4515,9 @@ export function ProjectIssueFormPage(props: {
                               data-toggle="dropdown"
                               type="button"
                             >
-                              <span className="d-label">issue.state</span>
+                              <span className="d-label">
+                                {legacyMessage(messages, "issue.state")}
+                              </span>
                               <span className="d-caret">
                                 <span className="caret"></span>
                               </span>
@@ -4457,7 +4540,7 @@ export function ProjectIssueFormPage(props: {
                                     "issues?state=open",
                                   )}
                                 >
-                                  issue.state.open
+                                  {legacyMessage(messages, "issue.state.open")}
                                 </a>
                               </li>
                               <li
@@ -4477,7 +4560,7 @@ export function ProjectIssueFormPage(props: {
                                     "issues?state=closed",
                                   )}
                                 >
-                                  issue.state.closed
+                                  {legacyMessage(messages, "issue.state.closed")}
                                 </a>
                               </li>
                             </ul>
@@ -4486,7 +4569,7 @@ export function ProjectIssueFormPage(props: {
                       </dl>
                     ) : null}
                     <dl className="issue-option">
-                      <dt>issue.assignee</dt>
+                      <dt>{legacyMessage(messages, "issue.assignee")}</dt>
                       <dd>
                         <IssueAssigneeAutocompleteField
                           className="bigdrop"
@@ -4495,7 +4578,7 @@ export function ProjectIssueFormPage(props: {
                           onChange={setAssigneeLoginId}
                           onSearchAssignableUsers={props.onSearchAssignableUsers}
                           onSelect={selectAssigneeSuggestion}
-                          placeholder="issue.noAssignee"
+                          placeholder={legacyMessage(messages, "issue.noAssignee")}
                           style={{ width: "100%" }}
                           title=""
                           value={assigneeLoginId}
@@ -4528,7 +4611,9 @@ export function ProjectIssueFormPage(props: {
                             onChange={(event) => setMilestoneId(Number(event.currentTarget.value))}
                             value={milestoneId}
                           >
-                            <option value={0}>issue.noMilestone</option>
+                            <option value={0}>
+                              {legacyMessage(messages, "issue.noMilestone")}
+                            </option>
                             {milestoneOptions.map((milestone) => (
                               <option
                                 data-state={milestone.state}
@@ -4543,7 +4628,7 @@ export function ProjectIssueFormPage(props: {
                       </dd>
                     </dl>
                     <dl className="issue-option">
-                      <dt>issue.dueDate</dt>
+                      <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
                       <dd>
                         <div className="search search-bar">
                           <input
@@ -4583,13 +4668,13 @@ export function ProjectIssueFormPage(props: {
                         </dt>
                         <dd>
                           <select
-                            aria-label="label.select"
+                            aria-label={legacyMessage(messages, "label.select")}
                             className="hide"
                             data-allow-clear="true"
                             data-container-css-class="issue-labels bordered fullsize"
                             data-dropdown-css-class="issue-labels"
                             data-format="issuelabel"
-                            data-placeholder="label.select"
+                            data-placeholder={legacyMessage(messages, "label.select")}
                             data-search="labelIds"
                             data-toggle="select2"
                             id="labelIds"

@@ -40,18 +40,23 @@ function boardProjectShellDetail(input: {
   };
 }
 
-function LegacyTwoColumnModeCheckboxArea() {
+function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup } = {}) {
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
-      data-content="common.two.column.mode.desc"
+      data-content={legacyMessage(props.messages, "common.two.column.mode.desc")}
       id="two-column-mode-checkbox"
-      title="common.two.column.mode"
+      title={legacyMessage(props.messages, "common.two.column.mode")}
     >
-      <label className="checkbox" aria-label="common.two.column.view">
+      <label
+        className="checkbox"
+        aria-label={legacyMessage(props.messages, "common.two.column.view")}
+      >
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
-          <span className="two-column-mode-text">common.two.column.view</span>
+          <span className="two-column-mode-text">
+            {legacyMessage(props.messages, "common.two.column.view")}
+          </span>
         </div>
       </label>
     </div>
@@ -437,6 +442,7 @@ function BoardMarkdownTextarea(props: {
 function PostRows(props: {
   className?: string;
   items: BoardPostListItem[];
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   showProject?: boolean;
 }) {
@@ -444,7 +450,7 @@ function PostRows(props: {
     return (
       <div className="error-wrap">
         <i className="ico ico-err1" />
-        <p>post.is.empty</p>
+        <p>{legacyMessage(props.messages, "post.is.empty")}</p>
       </div>
     );
   }
@@ -476,7 +482,9 @@ function PostRows(props: {
             <div className="title-wrap post-row-main">
               {post.notice ? (
                 <>
-                  <span className="label label-notice">post.notice</span>{" "}
+                  <span className="label label-notice">
+                    {legacyMessage(props.messages, "post.notice")}
+                  </span>{" "}
                 </>
               ) : null}
               {post.readme ? (
@@ -538,7 +546,9 @@ function PostRows(props: {
                   {post.authorLabel}
                 </a>
               ) : (
-                <span className="infos-item">issue.noAuthor</span>
+                <span className="infos-item">
+                  {legacyMessage(props.messages, "issue.noAuthor")}
+                </span>
               )}
               <span
                 className="infos-item"
@@ -656,8 +666,8 @@ export function ProjectBoardListPage(props: {
               {props.labels.length ? (
                 <div className="board-labels">
                   <select
-                    aria-label="label.select"
-                    data-placeholder="label.select"
+                    aria-label={legacyMessage(props.messages, "label.select")}
+                    data-placeholder={legacyMessage(props.messages, "label.select")}
                     defaultValue={props.labelIds}
                     multiple
                     name="labelIds[]"
@@ -670,7 +680,7 @@ export function ProjectBoardListPage(props: {
                   </select>
                 </div>
               ) : null}
-              <LegacyTwoColumnModeCheckboxArea />
+              <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
             </form>
             <div className="pull-right">
               {props.canCreate ? (
@@ -708,10 +718,15 @@ export function ProjectBoardListPage(props: {
                 <PostRows
                   className="post-list-wrap notice-wrap"
                   items={props.posts.notices}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                 />
               ) : null}
-              <PostRows items={props.posts?.items ?? []} runtimeConfig={props.runtimeConfig} />
+              <PostRows
+                items={props.posts?.items ?? []}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
             </>
           )}
           <div className="write-btn-wrap" />
@@ -1204,6 +1219,7 @@ export function ProjectBoardDetailPage(props: {
                                       <LegacyMarkdownEditorShell
                                         editId={`edit-${comment.id}`}
                                         editorMode="update-comment-body"
+                                        messages={props.messages}
                                         previewId={`preview-${comment.id}`}
                                       >
                                         <BoardMarkdownTextarea
@@ -1226,7 +1242,12 @@ export function ProjectBoardDetailPage(props: {
                                       </LegacyMarkdownEditorShell>
                                       <div className="upload-drop-here">
                                         <div className="msg-wrap">
-                                          <div className="msg">common.attach.dropFilesHere</div>
+                                          <div className="msg">
+                                            {legacyMessage(
+                                              props.messages,
+                                              "common.attach.dropFilesHere",
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                       <div className="right-txt comment-update-button upload-button-line">
@@ -1736,6 +1757,7 @@ export function ProjectPostFormPage(props: {
                   <LegacyMarkdownEditorShell
                     editId="edit-content-body"
                     editorMode="content-body"
+                    messages={messages}
                     previewId="preview-content-body"
                   >
                     <BoardMarkdownTextarea
@@ -1952,7 +1974,7 @@ export function OrganizationBoardListPage(props: {
                   <i className="yobicon-search" />
                 </button>
               </div>
-              <LegacyTwoColumnModeCheckboxArea />
+              <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
             </form>
           </div>
           {totalRows === 0 ? (
@@ -1975,6 +1997,7 @@ export function OrganizationBoardListPage(props: {
               ) : null}
               <PostRows
                 items={props.boards?.items ?? []}
+                messages={props.messages}
                 runtimeConfig={props.runtimeConfig}
                 showProject
               />

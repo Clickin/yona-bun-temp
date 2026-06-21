@@ -7,10 +7,13 @@ import { createLegacyI18nRuntime } from "./i18n";
 import {
   ProjectChangeVcsPage,
   ProjectDeletePage,
+  ProjectForkPage,
+  ProjectHeader,
   ProjectMembersPage,
   ProjectSettingsPage,
   ProjectTransferPage,
   ProjectWebhooksPage,
+  ProjectWatchersPage,
 } from "./routes/-project-views";
 
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
@@ -106,10 +109,30 @@ describe("project settings parity", () => {
       <ProjectMembersPage
         detail={{
           enrollmentRequests: [],
-          members: [],
+          members: [
+            {
+              avatarUrl: "",
+              isOwner: true,
+              loginId: "admin",
+              role: "manager",
+              userId: 1,
+              userLabel: "Admin",
+            },
+            {
+              avatarUrl: "",
+              isOwner: false,
+              loginId: "member",
+              role: "member",
+              userId: 2,
+              userLabel: "Member",
+            },
+          ],
           ownerName: "admin",
           projectName: "projectYobi",
-          roleOptions: [],
+          roleOptions: [
+            { label: "manager", role: "manager" },
+            { label: "member", role: "member" },
+          ],
           viewerCanUpdate: true,
         }}
         runtimeConfig={runtimeConfig}
@@ -161,7 +184,13 @@ describe("project settings parity", () => {
     expect(settingsHtml).toContain(">project.setting</a>");
     expect(settingsHtml).toContain(">button.save</button>");
     expect(membersHtml).toContain('placeholder="project.members.addMember"');
+    expect(membersHtml).toContain('title="user.wrongloginId.alert"');
+    expect(membersHtml).toContain('class="label owner">user.role.owner</span>');
+    expect(membersHtml).toContain('class="d-label">user.role.member</span>');
+    expect(membersHtml).toContain(">user.role.manager</button>");
     expect(webhooksHtml).toContain(">project.webhook.new</strong>");
+    expect(webhooksHtml).toContain(">project.webhook.delivery.history</h4>");
+    expect(webhooksHtml).toContain(">project.webhook.delivery.empty</p>");
     expect(transferHtml).toContain(">project.transfer.new.owner</div>");
     expect(deleteHtml).toContain(">project.delete.description</strong>");
     expect(changeVcsHtml).toContain(">project.changeVCS.description1 Subversion</strong>");
@@ -256,5 +285,196 @@ describe("project settings parity", () => {
     );
     expect(changeVcsHtml).toContain(">코드 저장소 타입을 Subversion으로 변경합니다.</strong>");
     expect(changeVcsHtml).not.toContain(">project.changeVCS.description1 Subversion</strong>");
+  });
+
+  it("opts the bounded P4-A project literals into provided legacy message lookups", () => {
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/-project-views.tsx"), "utf8");
+    const messages = (
+      key: string,
+      options?: { args?: Array<number | string>; fallback?: string },
+    ) =>
+      (
+        ({
+          "button.edit": "EDIT_LOOKUP",
+          "code.copyUrl": "COPY_LOOKUP",
+          "fork.already.exist": "FORK_EXISTS_LOOKUP",
+          "fork.help.message.1": "FORK_HELP_1_LOOKUP",
+          "fork.help.message.2": "FORK_HELP_2_LOOKUP",
+          "fork.help.title": "FORK_HELP_TITLE_LOOKUP",
+          "fork.original": "ORIGIN_LOOKUP",
+          "project.name.alert": "PROJECT_NAME_ALERT_LOOKUP",
+          "project.watcher.description": "WATCHER_DESCRIPTION_LOOKUP",
+          "project.watcher.title": "WATCHER_TITLE_LOOKUP",
+          "project.webhook.delivery.created": "DELIVERY_CREATED_LOOKUP",
+          "project.webhook.delivery.empty": "DELIVERY_EMPTY_LOOKUP",
+          "project.webhook.delivery.event": "DELIVERY_EVENT_LOOKUP",
+          "project.webhook.delivery.history": "DELIVERY_HISTORY_LOOKUP",
+          "project.webhook.delivery.response": "DELIVERY_RESPONSE_LOOKUP",
+          "project.webhook.delivery.response.empty": "DELIVERY_RESPONSE_EMPTY_LOOKUP",
+          "project.webhook.delivery.status": "DELIVERY_STATUS_LOOKUP",
+          "user.role.manager": "ROLE_MANAGER_LOOKUP",
+          "user.role.member": "ROLE_MEMBER_LOOKUP",
+          "user.role.owner": "ROLE_OWNER_LOOKUP",
+          "user.wrongloginId.alert": "WRONG_LOGIN_LOOKUP",
+        }) as Record<string, string>
+      )[key] ??
+      options?.fallback ??
+      key;
+
+    const headerHtml = renderToStaticMarkup(
+      <ProjectHeader
+        detail={{
+          ...projectDetail,
+          originOwnerName: "origin",
+          originProjectName: "source",
+        }}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const watchersHtml = renderToStaticMarkup(
+      <ProjectWatchersPage
+        detail={{
+          ownerName: "admin",
+          projectName: "projectYobi",
+          totalCount: 0,
+          watchers: [],
+        }}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const membersHtml = renderToStaticMarkup(
+      <ProjectMembersPage
+        detail={{
+          enrollmentRequests: [],
+          members: [
+            {
+              avatarUrl: "",
+              isOwner: true,
+              loginId: "admin",
+              role: "manager",
+              userId: 1,
+              userLabel: "Admin",
+            },
+            {
+              avatarUrl: "",
+              isOwner: false,
+              loginId: "member",
+              role: "member",
+              userId: 2,
+              userLabel: "Member",
+            },
+          ],
+          ownerName: "admin",
+          projectName: "projectYobi",
+          roleOptions: [{ label: "manager", role: "manager" }],
+          viewerCanUpdate: true,
+        }}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const webhooksHtml = renderToStaticMarkup(
+      <ProjectWebhooksPage
+        detail={{
+          deliveries: [
+            {
+              createdLabel: "2026-06-21 12:00",
+              errorMessage: "",
+              eventType: "issue",
+              id: 1,
+              payloadUrl: "https://example.test/hook",
+              requestBody: "{}",
+              responseBody: "",
+              status: "SUCCESS",
+              webhookId: 1,
+              webhookType: "SIMPLE",
+            },
+          ],
+          ownerName: "admin",
+          projectName: "projectYobi",
+          viewerCanUpdate: true,
+          webhookTypes: ["SIMPLE"],
+          webhooks: [],
+        }}
+        messages={messages}
+        projectDetail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const forkHelpHtml = renderToStaticMarkup(
+      <ProjectForkPage
+        detail={projectDetail}
+        forkOptions={{
+          canFork: true,
+          existingForks: [],
+          ownerOptions: [{ organization: false, ownerName: "admin", selected: true }],
+          selected: {
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+          },
+          source: {
+            isForked: false,
+            overview: "Overview",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+            vcs: "GIT",
+          },
+        }}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const forkExistsHtml = renderToStaticMarkup(
+      <ProjectForkPage
+        detail={projectDetail}
+        forkOptions={{
+          canFork: true,
+          existingForks: [{ ownerName: "admin", projectName: "forked" }],
+          ownerOptions: [{ organization: false, ownerName: "admin", selected: true }],
+          selected: {
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+          },
+          source: {
+            isForked: false,
+            overview: "Overview",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+            vcs: "GIT",
+          },
+        }}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(headerHtml).toContain(">ORIGIN_LOOKUP</span>");
+    expect(watchersHtml).toContain(">WATCHER_TITLE_LOOKUP</strong>");
+    expect(watchersHtml).toContain(">WATCHER_DESCRIPTION_LOOKUP</p>");
+    expect(membersHtml).toContain('title="WRONG_LOGIN_LOOKUP"');
+    expect(membersHtml).toContain(">ROLE_OWNER_LOOKUP</span>");
+    expect(membersHtml).toContain(">ROLE_MEMBER_LOOKUP</span>");
+    expect(membersHtml).toContain(">ROLE_MANAGER_LOOKUP</button>");
+    expect(webhooksHtml).toContain(">DELIVERY_HISTORY_LOOKUP</h4>");
+    expect(webhooksHtml).toContain(">DELIVERY_CREATED_LOOKUP</div>");
+    expect(webhooksHtml).toContain(">DELIVERY_EVENT_LOOKUP</div>");
+    expect(webhooksHtml).toContain(">DELIVERY_STATUS_LOOKUP</div>");
+    expect(webhooksHtml).toContain(">DELIVERY_RESPONSE_LOOKUP</div>");
+    expect(webhooksHtml).toContain(">DELIVERY_RESPONSE_EMPTY_LOOKUP</div>");
+    expect(forkHelpHtml).toContain(">FORK_HELP_TITLE_LOOKUP</p>");
+    expect(forkHelpHtml).toContain(">FORK_HELP_1_LOOKUP</p>");
+    expect(forkHelpHtml).toContain(">FORK_HELP_2_LOOKUP</p>");
+    expect(forkHelpHtml).toContain(">PROJECT_NAME_ALERT_LOOKUP</span>");
+    expect(forkExistsHtml).toContain(">FORK_EXISTS_LOOKUP</p>");
+    expect(source).toContain('legacyMessage(messages, "user.loginId")');
+    expect(source).toContain('legacyMessage(messages, "user.password")');
+    expect(source).toContain('legacyMessage(messages, "button.edit")');
+    expect(source).toContain('legacyMessage(messages, "code.copyUrl")');
   });
 });

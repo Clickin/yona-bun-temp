@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   insertLegacyTasklistTemplate,
+  LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
 } from "./routes/-markdown-renderer";
@@ -23,6 +24,38 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("Markdown Output");
     expect(html).toContain("Issue no: #2");
     expect(html).toContain("commit: @763575");
+  });
+
+  it("opts shared markdown labels into legacy messages while preserving key fallbacks", () => {
+    const html = renderToStaticMarkup(
+      <LegacyMarkdownEditorShell
+        editId="edit-body"
+        messages={(key, options) =>
+          key === "title.markdown.help" ? "Translated Markdown Help" : (options?.fallback ?? key)
+        }
+        previewId="preview-body"
+      >
+        <textarea />
+      </LegacyMarkdownEditorShell>,
+    );
+    const receiverHtml = renderToStaticMarkup(
+      <LegacyMarkdownEditorShell
+        editId="edit-receiver"
+        messages={(key, options) =>
+          key === "notification.receiver.list.title"
+            ? "Translated receivers"
+            : (options?.fallback ?? key)
+        }
+        previewId="preview-receiver"
+      >
+        <textarea />
+      </LegacyMarkdownEditorShell>,
+    );
+
+    expect(html).toContain("Translated Markdown Help");
+    expect(html).not.toContain("title.markdown.help");
+    expect(receiverHtml).toContain("Translated receivers");
+    expect(receiverHtml).not.toContain("notification.receiver.list.title");
   });
 
   it("inserts the legacy checklist template like common/scripts.scala.html", () => {

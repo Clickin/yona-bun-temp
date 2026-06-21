@@ -154,6 +154,7 @@ function ProjectDashboardAssigneeMetric(props: {
 function ProjectDashboardUnassignedMetric(props: {
   count: number;
   href: string;
+  messages?: LegacyMessageLookup;
   totalCount: number;
 }) {
   const percent = dashboardPercent(props.count, props.totalCount);
@@ -165,7 +166,7 @@ function ProjectDashboardUnassignedMetric(props: {
           <span className="avatar-wrap smaller">
             <i className="yobicon-blankstare" />
           </span>
-          <span className="name">issue.noAssignee</span>
+          <span className="name">{legacyMessage(props.messages, "issue.noAssignee")}</span>
         </a>
       </div>
       <div className="span3 num">
@@ -293,6 +294,7 @@ function ProjectHomeDashboardPane(props: {
                     <ProjectDashboardUnassignedMetric
                       count={detail.dashboard?.unassignedOpenIssueCount ?? 0}
                       href={projectHref("issues?state=open&assigneeId=0")}
+                      messages={props.messages}
                       totalCount={openIssueCount}
                     />
                   </>
@@ -795,9 +797,12 @@ function projectKeymapSectionTitle(section: ProjectMenuActive, mode?: "detail" |
 
 export function ProjectHeader(props: {
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
+  const { t: contextMessages } = useLegacyMessages();
+  const messages = props.messages ?? contextMessages;
   const projectHref = buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName);
   const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${detail.ownerName}`);
   const favoriteClass = `${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`;
@@ -841,7 +846,9 @@ export function ProjectHeader(props: {
             </div>
             {detail.originOwnerName && detail.originProjectName ? (
               <div className="project-origin">
-                <span className="project-origin-title">fork.original</span>
+                <span className="project-origin-title">
+                  {legacyMessage(messages, "fork.original")}
+                </span>
                 <a
                   className="project-origin-name"
                   href={buildProjectHref(
@@ -1272,7 +1279,7 @@ export function ProjectImportPage(props: {
                   <input
                     className="text"
                     name="authId"
-                    placeholder="user.loginId"
+                    placeholder={legacyMessage(messages, "user.loginId")}
                     type="text"
                     value={formState.authId}
                     onChange={(event) =>
@@ -1285,7 +1292,7 @@ export function ProjectImportPage(props: {
                   <input
                     className="text"
                     name="authPw"
-                    placeholder="user.password"
+                    placeholder={legacyMessage(messages, "user.password")}
                     type="password"
                     value={formState.authPw}
                     onChange={(event) =>
@@ -1538,7 +1545,7 @@ export function ProjectDetailPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="home" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -1577,10 +1584,10 @@ export function ProjectDetailPage(props: {
                   )}
                   {detail.overviewEditable || detail.viewerCanUpdate ? (
                     <button
-                      aria-label="button.edit"
+                      aria-label={legacyMessage(messages, "button.edit")}
                       className="ybtn ybtn-minimum"
                       data-toggle="description-edit"
-                      title="button.edit"
+                      title={legacyMessage(messages, "button.edit")}
                       type="button"
                       onClick={() => setEditingOverview(true)}
                     >
@@ -1630,11 +1637,11 @@ export function ProjectDetailPage(props: {
             {detail.showCode ? (
               <div className="project-clone-wrap span3 hide-in-mobile">
                 <input
-                  aria-label="code.copyUrl"
+                  aria-label={legacyMessage(messages, "code.copyUrl")}
                   className="project-clone-url"
                   id="cloneURL"
                   readOnly
-                  title="code.copyUrl"
+                  title={legacyMessage(messages, "code.copyUrl")}
                   type="text"
                   value={detail.cloneUrl ?? ""}
                 />
@@ -1644,7 +1651,7 @@ export function ProjectDetailPage(props: {
                   id="cloneURLBtn"
                   type="button"
                 >
-                  code.copyUrl
+                  {legacyMessage(messages, "code.copyUrl")}
                 </button>
               </div>
             ) : null}
@@ -1877,8 +1884,11 @@ export function ProjectDetailPage(props: {
 
 export function ProjectWatchersPage(props: {
   detail: ProjectWatchersResponse | null | undefined;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t: contextMessages } = useLegacyMessages();
+  const messages = props.messages ?? contextMessages;
   const detail = props.detail ?? {
     ownerName: "",
     projectName: "",
@@ -1892,14 +1902,14 @@ export function ProjectWatchersPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader detail={shellDetail} messages={messages} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h4>
-            <strong>project.watcher.title</strong>
+            <strong>{legacyMessage(messages, "project.watcher.title")}</strong>
           </h4>
-          <p>project.watcher.description</p>
+          <p>{legacyMessage(messages, "project.watcher.description")}</p>
           <ul className="members project row-fluid">
             {detail.watchers.map((watcher) => (
               <li className="member span6 span-hard-wrap" key={watcher.loginId}>
@@ -1954,7 +1964,11 @@ export function ProjectMembersPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader
+        detail={shellDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -1979,7 +1993,7 @@ export function ProjectMembersPage(props: {
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 placeholder={legacyMessage(props.messages, "project.members.addMember")}
                 required
-                title="user.wrongloginId.alert"
+                title={legacyMessage(props.messages, "user.wrongloginId.alert")}
                 type="text"
                 value={loginId}
               />
@@ -2009,7 +2023,9 @@ export function ProjectMembersPage(props: {
                 <div className="member-id">{`@${member.loginId}`}</div>
                 <div className="member-setting">
                   {member.isOwner ? (
-                    <span className="label owner">user.role.owner</span>
+                    <span className="label owner">
+                      {legacyMessage(props.messages, "user.role.owner")}
+                    </span>
                   ) : (
                     <>
                       <div className="btn-group" data-name={`roleof-${member.loginId}`}>
@@ -2018,7 +2034,9 @@ export function ProjectMembersPage(props: {
                           data-toggle="dropdown"
                           type="button"
                         >
-                          <span className="d-label">{`user.role.${member.role}`}</span>
+                          <span className="d-label">
+                            {legacyMessage(props.messages, `user.role.${member.role}`)}
+                          </span>
                           <span className="d-caret">
                             <span className="caret" />
                           </span>
@@ -2041,7 +2059,7 @@ export function ProjectMembersPage(props: {
                                 }}
                                 type="button"
                               >
-                                {`user.role.${roleOption.label}`}
+                                {legacyMessage(props.messages, `user.role.${roleOption.label}`)}
                               </button>
                             </li>
                           ))}
@@ -2181,7 +2199,11 @@ export function ProjectWebhooksPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={menuDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader
+        detail={menuDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <ProjectMenu activeMenu="settings" detail={menuDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap webhook-editor-wrap">
@@ -2367,20 +2389,32 @@ export function ProjectWebhooksPage(props: {
             </div>
 
             <div className="webhook-history-wrap" id="webhookDeliveryHistory">
-              <h4 className="form-legend">project.webhook.delivery.history</h4>
+              <h4 className="form-legend">
+                {legacyMessage(props.messages, "project.webhook.delivery.history")}
+              </h4>
               {detail.deliveries.length === 0 ? (
                 <div className="error-wrap">
                   <i className="ico ico-err1" />
-                  <p>project.webhook.delivery.empty</p>
+                  <p>{legacyMessage(props.messages, "project.webhook.delivery.empty")}</p>
                 </div>
               ) : (
                 <>
                   <div className="row-fluid list-head">
-                    <div className="span2 text-center">project.webhook.delivery.created</div>
-                    <div className="span2 text-center">project.webhook.delivery.event</div>
-                    <div className="span2 text-center">project.webhook.delivery.status</div>
-                    <div className="span3 payload-url">project.webhook.payloadUrl</div>
-                    <div className="span3">project.webhook.delivery.response</div>
+                    <div className="span2 text-center">
+                      {legacyMessage(props.messages, "project.webhook.delivery.created")}
+                    </div>
+                    <div className="span2 text-center">
+                      {legacyMessage(props.messages, "project.webhook.delivery.event")}
+                    </div>
+                    <div className="span2 text-center">
+                      {legacyMessage(props.messages, "project.webhook.delivery.status")}
+                    </div>
+                    <div className="span3 payload-url">
+                      {legacyMessage(props.messages, "project.webhook.payloadUrl")}
+                    </div>
+                    <div className="span3">
+                      {legacyMessage(props.messages, "project.webhook.delivery.response")}
+                    </div>
                   </div>
                   {detail.deliveries.map((delivery) => (
                     <div
@@ -2395,7 +2429,7 @@ export function ProjectWebhooksPage(props: {
                       <div className="span3 webhook-delivery-response">
                         {delivery.errorMessage ||
                           delivery.responseBody ||
-                          "project.webhook.delivery.response.empty"}
+                          legacyMessage(props.messages, "project.webhook.delivery.response.empty")}
                       </div>
                     </div>
                   ))}
@@ -2593,10 +2627,13 @@ export function ProjectTransferPage(props: {
 export function ProjectForkPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   forkOptions: ProjectForkOptionsResponse | null | undefined;
+  messages?: LegacyMessageLookup;
   onFork?: (input: { name: string; owner: string; projectScope: string }) => Promise<void>;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t: contextMessages } = useLegacyMessages();
+  const messages = props.messages ?? contextMessages;
   const detail = props.detail ?? {
     enrollmentRequested: false,
     isFavorited: false,
@@ -2650,7 +2687,7 @@ export function ProjectForkPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2694,15 +2731,15 @@ export function ProjectForkPage(props: {
                           <br />
                         </div>
                         <div className="pull-left help-messages">
-                          <p className="lead">fork.help.title</p>
-                          <p>fork.help.message.1</p>
-                          <p>fork.help.message.2</p>
+                          <p className="lead">{legacyMessage(messages, "fork.help.title")}</p>
+                          <p>{legacyMessage(messages, "fork.help.message.1")}</p>
+                          <p>{legacyMessage(messages, "fork.help.message.2")}</p>
                         </div>
                       </>
                     ) : (
                       <div className="help-messages center-txt">
                         <i className="ico ico-err2" />
-                        <p>fork.already.exist</p>
+                        <p>{legacyMessage(messages, "fork.already.exist")}</p>
                         {existingForks.map((fork) => (
                           <p key={`${fork.ownerName}/${fork.projectName}`}>
                             <strong className="vmiddle">
@@ -2769,7 +2806,9 @@ export function ProjectForkPage(props: {
                       type="text"
                       value={name}
                     />
-                    <span className="help-inline">project.name.alert</span>
+                    <span className="help-inline">
+                      {legacyMessage(messages, "project.name.alert")}
+                    </span>
                   </div>
                 </div>
 
