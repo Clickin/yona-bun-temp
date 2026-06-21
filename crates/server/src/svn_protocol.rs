@@ -73,6 +73,7 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
         &service.session_manager,
         repository,
         &service.auth_ui,
+        &service.ldap,
     )
     .await
     {

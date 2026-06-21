@@ -5443,7 +5443,14 @@ describe("file-route parity harness", () => {
           existingForks: [],
           ownerOptions: [{ organization: false, ownerName: "yona", selected: true }],
           selected: { ownerName: "yona", projectName: "projectYobi", projectScope: "public" },
-          source: { isForked: false },
+          source: {
+            isForked: false,
+            overview: "",
+            ownerName: "yona",
+            projectName: "projectYobi",
+            projectScope: "public",
+            vcs: "GIT",
+          },
         }}
         runtimeConfig={runtimeConfig}
       />,

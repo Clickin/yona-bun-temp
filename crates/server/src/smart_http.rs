@@ -13,7 +13,8 @@ use crate::{
     absolute_app_url, base_path_href, confirmation_session_required_from_config,
     dispatch_pull_request_webhooks, internal_error, map_project_scope, persistence,
     project_webhook_type_label, record_project_webhook_delivery, AuthUiConfig, ConnectError,
-    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_REQUIRED_MESSAGE,
+    ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
+    LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver_webhook_with_config, IntegrationConfig, OutboundWebhook};
@@ -135,6 +136,7 @@ pub(crate) async fn direct_smart_http_request(
         &service.session_manager,
         repository,
         &service.auth_ui,
+        &service.ldap,
     )
     .await
     {
@@ -378,29 +380,34 @@ pub(crate) async fn smart_http_principal_from_headers(
     session_manager: &SessionManager,
     repository: &PilotRepository,
     auth_ui: &AuthUiConfig,
+    ldap: &crate::LdapRuntimeConfig,
 ) -> Result<Option<persistence::AppUserRecord>, Response> {
     match parse_basic_authorization(headers) {
         Ok(Some((identifier, secret))) => {
-            let Some(user) = repository
-                .find_user_by_identifier(&identifier)
-                .await
-                .map_err(|error| {
-                    RestRouteError::from_connect_error(internal_error(error)).into_response()
-                })?
-            else {
-                return Err(smart_http_basic_challenge_response());
+            let user = if ldap.enabled {
+                match basic_auth_api_token_user(repository, &identifier, &secret).await? {
+                    Some(user) => user,
+                    None => match crate::routes::authenticate_with_ldap_or_legacy_fallback(
+                        auth_ui,
+                        ldap,
+                        repository,
+                        &identifier,
+                        &secret,
+                    )
+                    .await
+                    {
+                        Ok(user) => user,
+                        Err(error) if error.code == ErrorCode::Unauthenticated => {
+                            return Err(smart_http_basic_challenge_response());
+                        }
+                        Err(error) => {
+                            return Err(RestRouteError::from_connect_error(error).into_response());
+                        }
+                    },
+                }
+            } else {
+                authenticate_basic_local_user(repository, &identifier, &secret).await?
             };
-            let password_matches = verify(&secret, &user.password_hash).unwrap_or(false);
-            let token_matches = repository
-                .read_api_token_for_user(user.id)
-                .await
-                .map_err(|error| {
-                    RestRouteError::from_connect_error(internal_error(error)).into_response()
-                })?
-                .is_some_and(|token| !token.is_empty() && token == secret);
-            if !(password_matches || token_matches) {
-                return Err(smart_http_basic_challenge_response());
-            }
             if confirmation_session_required_from_config(auth_ui) && !user.is_confirmed {
                 return Err(smart_http_basic_challenge_response());
             }
@@ -419,6 +426,62 @@ pub(crate) async fn smart_http_principal_from_headers(
         }
         Err(()) => Err(smart_http_basic_challenge_response()),
     }
+}
+
+async fn authenticate_basic_local_user(
+    repository: &PilotRepository,
+    identifier: &str,
+    secret: &str,
+) -> Result<persistence::AppUserRecord, Response> {
+    let Some(user) = repository
+        .find_user_by_identifier(identifier)
+        .await
+        .map_err(|error| {
+            RestRouteError::from_connect_error(internal_error(error)).into_response()
+        })?
+    else {
+        return Err(smart_http_basic_challenge_response());
+    };
+    let password_matches = verify(secret, &user.password_hash).unwrap_or(false);
+    let token_matches = basic_auth_token_matches(repository, user.id, secret).await?;
+    if password_matches || token_matches {
+        Ok(user)
+    } else {
+        Err(smart_http_basic_challenge_response())
+    }
+}
+
+async fn basic_auth_api_token_user(
+    repository: &PilotRepository,
+    identifier: &str,
+    secret: &str,
+) -> Result<Option<persistence::AppUserRecord>, Response> {
+    let Some(user) = repository
+        .find_user_by_identifier(identifier)
+        .await
+        .map_err(|error| {
+            RestRouteError::from_connect_error(internal_error(error)).into_response()
+        })?
+    else {
+        return Ok(None);
+    };
+    if basic_auth_token_matches(repository, user.id, secret).await? {
+        Ok(Some(user))
+    } else {
+        Ok(None)
+    }
+}
+
+async fn basic_auth_token_matches(
+    repository: &PilotRepository,
+    user_id: i64,
+    secret: &str,
+) -> Result<bool, Response> {
+    repository
+        .read_api_token_for_user(user_id)
+        .await
+        .map_err(|error| RestRouteError::from_connect_error(internal_error(error)).into_response())
+        .map(|token| token.is_some_and(|token| !token.is_empty() && token == secret))
 }
 
 fn parse_basic_authorization(headers: &HeaderMap) -> Result<Option<(String, String)>, ()> {

@@ -19,7 +19,8 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, LdapFixtureUser,
+    LdapRuntimeConfig, RuntimeConfig,
 };
 use yona_rust_vcs::MAX_SMART_HTTP_RPC_BYTES;
 
@@ -465,6 +466,100 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
         String::from_utf8_lossy(&body).contains("# service=git-receive-pack"),
         "{}",
         String::from_utf8_lossy(&body)
+    );
+}
+
+#[tokio::test]
+async fn smart_http_basic_auth_routes_ldap_and_preserves_local_fallback_and_tokens() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, _) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ldap: LdapRuntimeConfig {
+            enabled: true,
+            fallback_to_local_login: true,
+            use_email_base_login: true,
+            fixture_users: vec![LdapFixtureUser {
+                department: "Dev".to_string(),
+                display_name: "Directory Member".to_string(),
+                email: "member@example.com".to_string(),
+                english_name: String::new(),
+                login_id: "ldap-member".to_string(),
+                password: "ldap-pass".to_string(),
+            }],
+            ..LdapRuntimeConfig::default()
+        },
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    let api_token = repo
+        .reset_api_token_for_user(member_id)
+        .await
+        .expect("member api token");
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (status, _, body) = response_bytes(
+        direct_request(
+            app.clone(),
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic("member", "doorpass1")),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{}", String::from_utf8_lossy(&body));
+
+    let (status, _, body) = response_bytes(
+        direct_request(
+            app.clone(),
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic("member", "ldap-pass")),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{}", String::from_utf8_lossy(&body));
+
+    let (status, _, body) = response_bytes(
+        direct_request(
+            app.clone(),
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic("member", &api_token)),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{}", String::from_utf8_lossy(&body));
+
+    let (status, headers, _) = response_bytes(
+        direct_request(
+            app,
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic("member", "wrong-pass")),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        headers
+            .get(http::header::WWW_AUTHENTICATE)
+            .and_then(|value| value.to_str().ok()),
+        Some("Basic realm=\"Yona\"")
     );
 }
 

@@ -26,7 +26,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Scope | Current status | Treatment |
 | --- | --- | --- |
 | OAuth provider login/linking | Deferred second-priority. Unsupported/denied route state and UI gating already exist. | Implement only legacy provider behavior with evidence, or keep explicitly deferred if provider fixtures cannot be made deterministic. |
-| LDAP login and BasicAuth LDAP | Deferred second-priority. No runtime LDAP flow exists. | Implement with isolated LDAP fixtures/mocks and legacy config compatibility. |
+| LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures. Real LDAP bind/search connector remains deferred. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; implement real connector only in a later LDAP connector slice. |
 | Broader SVN/WebDAV PROPFIND edge completeness | Closed by P3-A re-audit. Current `svn_protocol_contract` evidence covers the former VCC/baseline PROPFIND edge list. | Retire ambiguous deferred wording; keep `svn_protocol_contract` as the guard for root/default VCC, baseline resource, and baseline collection metadata/property behavior. |
 | Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
@@ -92,14 +92,19 @@ import preflight validates that checksum before writing. Live import now also ke
 rollback ledger for route-created portable attachments and import-created DB
 rows covering users, project shells, project memberships, standalone/embedded
 labels, standalone/on-demand milestones, posts/comments, and issues/comments
-for the supported portable-attachment import pipeline. Focused coverage:
+for the supported portable-attachment import pipeline. Existing-project
+issue/post sequence counters are now snapshotted before the first imported
+issue/post and restored during in-process rollback when the current counter has
+not advanced beyond the import-created numbers. Focused coverage:
 `site_admin_contract::site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails`
 and
-`site_admin_contract::site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails`.
+`site_admin_contract::site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails`;
+`site_admin_contract::site_admin_import_restores_existing_project_sequence_counters_after_downstream_failure`
+guards the project counter restoration path.
 True all-DB transaction protection for downstream non-validation failures during
 non-dry-run `/sites/import` remains a P1-A follow-up, especially for crash
-boundaries, preexisting attachment-id rebinding state, and preexisting project
-sequence counters advanced before a failure, and is recorded in
+boundaries, preexisting attachment-id rebinding state, and concurrent project
+counter advances beyond import-created numbers, and is recorded in
 `docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
@@ -155,9 +160,13 @@ boundary. The slice covers enabled LDAP login, `useEmailBaseLogin`,
 `fallbackToLocalLogin`, local user provisioning/update by LDAP email, password
 refresh, and guest-prefix propagation for newly provisioned LDAP users. Focused
 coverage lives in `runtime_config_contract` and `auth_workspace_contract`.
-Remaining P2-C/P2-D work is real LDAP bind/search connector support, existing
-LDAP user's English-name/guest refresh if the persistence boundary is expanded,
-and BasicAuth LDAP coverage.
+P2-D sub-slice status: Smart HTTP and SVN BasicAuth now share that fixture-backed
+LDAP boundary when LDAP is enabled. Coverage preserves existing local
+password/token/session behavior, configured local fallback, legacy email-base
+login semantics, LDAP fixture credentials, and wrong-credential Basic
+challenges in `smart_http_contract` and `svn_protocol_contract`.
+Remaining P2-C/P2-D work is real LDAP bind/search connector support and existing
+LDAP user's English-name/guest refresh if the persistence boundary is expanded.
 
 Exit criteria: password, OAuth, LDAP, and BasicAuth LDAP paths have isolated
 contract coverage and share the same legacy login UX.

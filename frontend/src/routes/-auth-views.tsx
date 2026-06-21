@@ -670,7 +670,7 @@ export function LostPasswordPage({
           {feedback ? (
             <div className={`alert alert-${feedback.kind === "success" ? "success" : "error"}`}>
               <button
-                aria-label={messages.t("button.close", { fallback: "button.close" })}
+                aria-label="button.close"
                 className="close"
                 data-dismiss="alert"
                 type="button"

@@ -137,7 +137,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.use.email.verification`       | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED`              |                              |
 | `signup.require.admin.confirm`             | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`                  |                              |
 | `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |
-| `application.use.ldap.login.supoort` / `ldap.*` | `YONA_LDAP_ENABLED`, `YONA_LDAP_*` / `yona.toml` `[ldap]` | legacy typo spelling preserved; fixture-backed form-login slice implemented, real bind/search and BasicAuth LDAP remain follow-up |
+| `application.use.ldap.login.supoort` / `ldap.*` | `YONA_LDAP_ENABLED`, `YONA_LDAP_*` / `yona.toml` `[ldap]` | legacy typo spelling preserved; fixture-backed form-login and BasicAuth LDAP slices implemented, real bind/search remains follow-up |
 | `application.login.page.loginId.placeholder` | `YONA_AUTH_LOGIN_ID_PLACEHOLDER`                   | 로그인 ID 입력 placeholder   |
 | `application.login.page.password.placeholder` | `YONA_AUTH_PASSWORD_PLACEHOLDER`                   | 비밀번호 입력 placeholder    |
 | `session.maxAge`                          | `YONA_SESSION_TIMEOUT_SECONDS`                     | non-remember session timeout seconds |
@@ -168,7 +168,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능 동작**을 분리한다.
 
 - `YONA_AUTH_SOCIAL_LOGIN_ONLY` / `YONA_AUTH_SOCIAL_LOGIN_SUPPORT`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating과 configured provider button rendering은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 message-key copy로 노출한다. `/authenticate/:provider`는 unsupported provider를 `/users/loginform?error=unsupported&provider=...`로 되돌려 로그인 화면에 명시 상태를 표시한다.
-- `YONA_LDAP_ENABLED` / `YONA_LDAP_*`: legacy `application.use.ldap.login.supoort`, `ldap.*`, and `ldap.options.*` 호환 설정을 파싱한다. P2-C는 deterministic fixture-backed LDAP boundary로 form-login, email-base login, fallback-to-local, user provisioning/update, password refresh, and new-user guest-prefix propagation을 구현한다. 실제 LDAP network bind/search connector와 BasicAuth LDAP는 남은 deferred/gap으로 기록한다.
+- `YONA_LDAP_ENABLED` / `YONA_LDAP_*`: legacy `application.use.ldap.login.supoort`, `ldap.*`, and `ldap.options.*` 호환 설정을 파싱한다. P2-C는 deterministic fixture-backed LDAP boundary로 form-login, email-base login, fallback-to-local, user provisioning/update, password refresh, and new-user guest-prefix propagation을 구현한다. P2-D는 같은 fixture-backed LDAP boundary를 Smart HTTP/SVN BasicAuth에 연결하고 기존 local password fallback, API token, and session auth behavior를 보존한다. 실제 LDAP network bind/search connector는 남은 deferred/gap으로 기록한다.
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. Frontend runtime은 legacy message files의 지원 언어(`en-US`, `ko-KR`, `ja-JP`, `ru-RU`, `uz-UZ`)로 값을 정규화하고, React `AppRuntimeContext`에서 bounded language state와 legacy message lookup을 제공한다. 2026-06-21 P4-A slice는 auth/runtime shell keys에만 lookup을 연결해 route reload 없이 copy가 전환됨을 검증했다. 전체 화면의 message-key opt-in과 서버 preferred-language/session persistence parity는 follow-up이다.
 - `YONA_SHOW_USER_EMAIL`: legacy `application.show.user.email`처럼 기본값은 `true`이며, `false`일 때 공개 사용자 프로필과 `/me` user card의 email 표시를 숨긴다. 프로필/메일 설정 폼의 email 관리 기능은 이 표시 설정의 대상이 아니다.
 - `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row와 create-form checkbox 기본값에 반영한다. settings 화면은 legacy menu checkbox mutation으로 `project_menu_setting`을 갱신한다.
@@ -240,7 +240,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | 항목                                     | 사유                                                   |
 | ---------------------------------------- | ------------------------------------------------------ |
 | SVN 프로토콜 / WebDAV 지원               | ✅ app-runtime SVN/WebDAV bridge implemented; P3-A broader VCC/baseline PROPFIND edge list closed by `svn_protocol_contract` evidence |
-| LDAP 연동                                | P2-C fixture-backed form-login slice implemented; real LDAP bind/search and BasicAuth LDAP remain deferred due to infrastructure/auth-boundary complexity |
+| LDAP 연동                                | P2-C/P2-D fixture-backed form-login and BasicAuth slices implemented; real LDAP bind/search remains deferred due to infrastructure complexity |
 | GitHub outbound migration (`/migration`, Yona -> GitHub) | 외부 GitHub API 의존; `/_import` Git URL clone과 별개이며 app-runtime scope가 아니라 migration-tool destination adapter 후보 |
 | Migration 도구 (Export CSV/Excel)        | 부가 기능; `/migration` legacy shell은 비활성 호환 상태만 제공 |
 | Social Login (OAuth)                     | 외부 provider 연동 복잡                                |
@@ -307,7 +307,7 @@ GET   /messages.js              → legacy JavaScript message lookup
 | 이메일 인증                  | verification code 확인 → 사용자 활성화                              | ✅ 구현   | 1     |
 | 관리자 가입 승인             | `signup.require.admin.confirm=true` 시 LOCKED 생성 후 site admin이 활성화 | ✅ 구현   | 6     |
 | Social Login (OAuth)         | GitHub, Google 등                                                   | deferred  | 2차   |
-| LDAP 연동                    | LDAP 서버 인증                                                      | partial: fixture-backed form-login runtime, real bind/search + BasicAuth LDAP deferred | 2차   |
+| LDAP 연동                    | LDAP 서버 인증                                                      | partial: fixture-backed form-login and Smart HTTP/SVN BasicAuth runtime, real bind/search deferred | 2차   |
 | "Remember Me"                | 체크 시 30일 persistent session cookie, 미체크 시 browser-scoped session | ✅ 구현   | 1     |
 | 세션 만료                    | 설정 가능한 세션 타임아웃                                           | ✅ 구현   | 6     |
 | 게스트 사용자                | `application.guest.user.login.id.prefix`로 guest 계정 분류, 제한 권한 | ✅ 구현: public project nonmember READ denial, issue/board post/comment/fork/commit/review-comment create gates, and project/organization enrollment guest-only gates | 2     |

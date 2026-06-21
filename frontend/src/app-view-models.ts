@@ -48,6 +48,36 @@ type ProjectDirectoryRestItem = Awaited<ReturnType<typeof listProjects>>["items"
   watchCount?: number;
 };
 
+type IssueChildRestItem = {
+  assigneeLabel: string;
+  commentCount?: number;
+  createdLabel: string;
+  isDraft?: boolean;
+  issueNumber: bigint | number;
+  labels: Array<{ color: string; id: bigint | number; name: string }>;
+  state: string;
+  title: string;
+  voterCount?: number;
+};
+
+function toIssueChildView(child: IssueChildRestItem) {
+  return {
+    assigneeLabel: child.assigneeLabel,
+    commentCount: child.commentCount ?? 0,
+    createdLabel: child.createdLabel,
+    isDraft: child.isDraft ?? false,
+    issueNumber: Number(child.issueNumber),
+    labels: child.labels.map((label) => ({
+      color: label.color,
+      id: Number(label.id),
+      name: label.name,
+    })),
+    state: child.state,
+    title: child.title,
+    voterCount: child.voterCount ?? 0,
+  };
+}
+
 function issueReferencesFrom(value: unknown): IssueReferenceMetadata[] {
   return normalizeIssueReferences(
     (value as { issueReferences?: Partial<IssueReferenceMetadata>[] } | null | undefined)
@@ -528,21 +558,7 @@ export function toProjectIssueListView(
     authorLabel: item.authorLabel,
     authorLoginId: item.authorLoginId ?? "",
     childClosedCount: item.childClosedCount ?? 0,
-    childIssues: (item.childIssues ?? []).map((child) => ({
-      assigneeLabel: child.assigneeLabel,
-      commentCount: child.commentCount ?? 0,
-      createdLabel: child.createdLabel,
-      isDraft: child.isDraft ?? false,
-      issueNumber: Number(child.issueNumber),
-      labels: child.labels.map((label) => ({
-        color: label.color,
-        id: Number(label.id),
-        name: label.name,
-      })),
-      state: child.state,
-      title: child.title,
-      voterCount: child.voterCount ?? 0,
-    })),
+    childIssues: (item.childIssues ?? []).map(toIssueChildView),
     childOpenCount: item.childOpenCount ?? 0,
     commentCount: Number(item.commentCount),
     dueDateLabel: item.dueDateLabel ?? "",
@@ -591,21 +607,7 @@ export function toUserIssueListView(
       authorLabel: item.authorLabel,
       authorLoginId: item.authorLoginId ?? "",
       childClosedCount: item.childClosedCount ?? 0,
-      childIssues: (item.childIssues ?? []).map((child) => ({
-        assigneeLabel: child.assigneeLabel,
-        commentCount: child.commentCount ?? 0,
-        createdLabel: child.createdLabel,
-        isDraft: child.isDraft ?? false,
-        issueNumber: Number(child.issueNumber),
-        labels: child.labels.map((label) => ({
-          color: label.color,
-          id: Number(label.id),
-          name: label.name,
-        })),
-        state: child.state,
-        title: child.title,
-        voterCount: child.voterCount ?? 0,
-      })),
+      childIssues: (item.childIssues ?? []).map(toIssueChildView),
       childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
       dueDateLabel: item.dueDateLabel ?? "",
@@ -656,21 +658,7 @@ export function toOrganizationIssueListView(
       authorLabel: item.authorLabel,
       authorLoginId: item.authorLoginId ?? "",
       childClosedCount: item.childClosedCount ?? 0,
-      childIssues: (item.childIssues ?? []).map((child) => ({
-        assigneeLabel: child.assigneeLabel,
-        commentCount: child.commentCount ?? 0,
-        createdLabel: child.createdLabel,
-        isDraft: child.isDraft ?? false,
-        issueNumber: Number(child.issueNumber),
-        labels: child.labels.map((label) => ({
-          color: label.color,
-          id: Number(label.id),
-          name: label.name,
-        })),
-        state: child.state,
-        title: child.title,
-        voterCount: child.voterCount ?? 0,
-      })),
+      childIssues: (item.childIssues ?? []).map(toIssueChildView),
       childOpenCount: item.childOpenCount ?? 0,
       commentCount: Number(item.commentCount),
       dueDateLabel: item.dueDateLabel ?? "",
@@ -795,21 +783,7 @@ export function toProjectIssueDetailView(
       })),
     })),
     childClosedCount: response.childClosedCount ?? 0,
-    childIssues: (response.childIssues ?? []).map((child) => ({
-      assigneeLabel: child.assigneeLabel,
-      commentCount: child.commentCount ?? 0,
-      createdLabel: child.createdLabel,
-      isDraft: child.isDraft ?? false,
-      issueNumber: Number(child.issueNumber),
-      labels: child.labels.map((label) => ({
-        color: label.color,
-        id: Number(label.id),
-        name: label.name,
-      })),
-      state: child.state,
-      title: child.title,
-      voterCount: child.voterCount ?? 0,
-    })),
+    childIssues: (response.childIssues ?? []).map(toIssueChildView),
     childOpenCount: response.childOpenCount ?? 0,
     hasVoted: response.hasVoted,
     historyHtml: response.historyHtml ?? "",

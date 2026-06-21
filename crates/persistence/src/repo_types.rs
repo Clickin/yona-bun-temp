@@ -1059,6 +1059,15 @@ pub struct ProjectRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteImportProjectCounterSnapshot {
+    pub id: i64,
+    pub last_issue_number: i64,
+    pub last_posting_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LegacyResourceTargetRecord {
     pub owner_name: String,
     pub project_id: i64,

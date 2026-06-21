@@ -1,6 +1,69 @@
 use super::*;
 
 impl AppRepository {
+    pub async fn read_site_import_project_counter_snapshot(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<Option<SiteImportProjectCounterSnapshot>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(row) = project::Entity::find_by_id(project_record.id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(SiteImportProjectCounterSnapshot {
+            id: row.id,
+            last_issue_number: row.last_issue_number.unwrap_or_default(),
+            last_posting_number: row.last_posting_number.unwrap_or_default(),
+            owner_name: project_record.owner_name,
+            project_name: project_record.project_name,
+        }))
+    }
+
+    pub async fn restore_site_import_project_counter_snapshot(
+        &self,
+        snapshot: &SiteImportProjectCounterSnapshot,
+        max_import_issue_number: i64,
+        max_import_posting_number: i64,
+    ) -> Result<bool, DbErr> {
+        let Some(current) = project::Entity::find_by_id(snapshot.id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let mut active = project::ActiveModel {
+            id: Set(snapshot.id),
+            ..Default::default()
+        };
+        let mut changed = false;
+        let current_issue_number = current.last_issue_number.unwrap_or_default();
+        if max_import_issue_number > snapshot.last_issue_number
+            && current_issue_number <= max_import_issue_number
+        {
+            active.last_issue_number = Set(Some(snapshot.last_issue_number));
+            changed = true;
+        }
+        let current_posting_number = current.last_posting_number.unwrap_or_default();
+        if max_import_posting_number > snapshot.last_posting_number
+            && current_posting_number <= max_import_posting_number
+        {
+            active.last_posting_number = Set(Some(snapshot.last_posting_number));
+            changed = true;
+        }
+        if changed {
+            active.update(&self.db).await?;
+        }
+        Ok(changed)
+    }
+
     pub async fn delete_site_import_attachment_row(
         &self,
         attachment_id: i64,

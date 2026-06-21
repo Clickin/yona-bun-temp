@@ -2397,6 +2397,180 @@ async fn site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comm
 }
 
 #[tokio::test]
+async fn site_admin_import_restores_existing_project_sequence_counters_after_downstream_failure() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "counter-safe",
+    )
+    .await;
+    let existing_post = repo
+        .create_posting(CreatePostingInput {
+            actor_display_name: "member".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "counter-safe".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![],
+                body_markdown: "existing post".to_string(),
+                label_ids: vec![],
+                notice: false,
+                readme: false,
+                title: "Existing post".to_string(),
+            },
+        })
+        .await
+        .expect("create existing post")
+        .expect("existing post created");
+    let existing_issue = repo
+        .create_issue(CreateIssueInput {
+            actor_display_name: "member".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "counter-safe".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![],
+                body_markdown: "existing issue".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: vec![],
+                milestone_id: None,
+                parent_issue_id: None,
+                title: "Existing issue".to_string(),
+            },
+        })
+        .await
+        .expect("create existing issue")
+        .expect("existing issue created");
+    assert_eq!(existing_post.post_number, 1);
+    assert_eq!(existing_issue.issue_number, 1);
+
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_counter_issue_comment_insert BEFORE INSERT ON issue_comment \
+         BEGIN SELECT RAISE(FAIL, 'forced counter issue comment import failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install issue comment failure trigger");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "bodyMarkdown": "imported post should roll back",
+            "comments": [],
+            "ownerName": "member",
+            "projectName": "counter-safe",
+            "title": "Rollback post"
+        }],
+        "issues": [{
+            "authorLoginId": "member",
+            "bodyMarkdown": "imported issue should roll back",
+            "comments": [{
+                "authorLoginId": "member",
+                "contentsMarkdown": "comment triggers rollback"
+            }],
+            "ownerName": "member",
+            "projectName": "counter-safe",
+            "state": "open",
+            "title": "Rollback issue"
+        }]
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(response_text(response)
+        .await
+        .contains("forced counter issue comment import failure"));
+
+    let project_row = project::Entity::find()
+        .filter(project::Column::Owner.eq(Some("member".to_string())))
+        .filter(project::Column::Name.eq(Some("counter-safe".to_string())))
+        .one(&db)
+        .await
+        .expect("read project counters")
+        .expect("project remains");
+    assert_eq!(project_row.last_posting_number, Some(1));
+    assert_eq!(project_row.last_issue_number, Some(1));
+    assert!(repo
+        .read_posting_detail_for_viewer("member", "counter-safe", 2, None)
+        .await
+        .expect("read rolled-back imported post")
+        .is_none());
+    assert!(repo
+        .read_issue_detail("member", "counter-safe", 2)
+        .await
+        .expect("read rolled-back imported issue")
+        .is_none());
+
+    let next_post = repo
+        .create_posting(CreatePostingInput {
+            actor_display_name: "member".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "counter-safe".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![],
+                body_markdown: "next post".to_string(),
+                label_ids: vec![],
+                notice: false,
+                readme: false,
+                title: "Next post".to_string(),
+            },
+        })
+        .await
+        .expect("create next post")
+        .expect("next post created");
+    let next_issue = repo
+        .create_issue(CreateIssueInput {
+            actor_display_name: "member".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "counter-safe".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![],
+                body_markdown: "next issue".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: vec![],
+                milestone_id: None,
+                parent_issue_id: None,
+                title: "Next issue".to_string(),
+            },
+        })
+        .await
+        .expect("create next issue")
+        .expect("next issue created");
+    assert_eq!(next_post.post_number, 2);
+    assert_eq!(next_issue.issue_number, 2);
+}
+
+#[tokio::test]
 async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {

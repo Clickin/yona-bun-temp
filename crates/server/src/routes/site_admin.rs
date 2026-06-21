@@ -1852,9 +1852,16 @@ struct RestSiteImportRollbackLedger {
     labels: Vec<(String, String, i64)>,
     milestones: Vec<(String, String, i64)>,
     posts: Vec<(String, String, i64)>,
+    project_counters: Vec<RestSiteImportRollbackProjectCounters>,
     project_members: Vec<RestSiteImportRollbackProjectMember>,
     projects: Vec<RestSiteImportRollbackProject>,
     users: Vec<i64>,
+}
+
+struct RestSiteImportRollbackProjectCounters {
+    max_import_issue_number: i64,
+    max_import_posting_number: i64,
+    snapshot: persistence::SiteImportProjectCounterSnapshot,
 }
 
 struct RestSiteImportRollbackProject {
@@ -1873,6 +1880,7 @@ impl RestSiteImportRollbackLedger {
     }
 
     fn record_issue(&mut self, owner_name: &str, project_name: &str, issue_number: i64) {
+        self.record_project_counter_issue(owner_name, project_name, issue_number);
         self.issues.push((
             owner_name.trim().to_string(),
             project_name.trim().to_string(),
@@ -1897,6 +1905,7 @@ impl RestSiteImportRollbackLedger {
     }
 
     fn record_post(&mut self, owner_name: &str, project_name: &str, post_number: i64) {
+        self.record_project_counter_post(owner_name, project_name, post_number);
         self.posts.push((
             owner_name.trim().to_string(),
             project_name.trim().to_string(),
@@ -1927,6 +1936,64 @@ impl RestSiteImportRollbackLedger {
         self.users.push(user.id);
     }
 
+    async fn record_project_counter_snapshot(
+        &mut self,
+        repository: &PilotRepository,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<(), RestRouteError> {
+        let owner_name = owner_name.trim();
+        let project_name = project_name.trim();
+        if self.project_counters.iter().any(|entry| {
+            entry.snapshot.owner_name == owner_name && entry.snapshot.project_name == project_name
+        }) {
+            return Ok(());
+        }
+        if let Some(snapshot) = repository
+            .read_site_import_project_counter_snapshot(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            self.project_counters
+                .push(RestSiteImportRollbackProjectCounters {
+                    max_import_issue_number: snapshot.last_issue_number,
+                    max_import_posting_number: snapshot.last_posting_number,
+                    snapshot,
+                });
+        }
+        Ok(())
+    }
+
+    fn record_project_counter_issue(
+        &mut self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+    ) {
+        let owner_name = owner_name.trim();
+        let project_name = project_name.trim();
+        if let Some(entry) = self.project_counters.iter_mut().find(|entry| {
+            entry.snapshot.owner_name == owner_name && entry.snapshot.project_name == project_name
+        }) {
+            entry.max_import_issue_number = entry.max_import_issue_number.max(issue_number);
+        }
+    }
+
+    fn record_project_counter_post(
+        &mut self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+    ) {
+        let owner_name = owner_name.trim();
+        let project_name = project_name.trim();
+        if let Some(entry) = self.project_counters.iter_mut().find(|entry| {
+            entry.snapshot.owner_name == owner_name && entry.snapshot.project_name == project_name
+        }) {
+            entry.max_import_posting_number = entry.max_import_posting_number.max(post_number);
+        }
+    }
+
     async fn rollback(&self, service: &PilotServiceImpl, repository: &PilotRepository) {
         for attachment in self.attachments.iter().rev() {
             let deleted = repository
@@ -1952,6 +2019,15 @@ impl RestSiteImportRollbackLedger {
         for (owner_name, project_name, post_number) in self.posts.iter().rev() {
             let _ = repository
                 .delete_site_import_posting_by_number(owner_name, project_name, *post_number)
+                .await;
+        }
+        for entry in self.project_counters.iter().rev() {
+            let _ = repository
+                .restore_site_import_project_counter_snapshot(
+                    &entry.snapshot,
+                    entry.max_import_issue_number,
+                    entry.max_import_posting_number,
+                )
                 .await;
         }
         for (owner_name, project_name, milestone_id) in self.milestones.iter().rev() {
@@ -2272,6 +2348,9 @@ async fn rest_import_site_data_live(
             skipped_posts += 1;
             continue;
         }
+        rollback
+            .record_project_counter_snapshot(repository, &post.owner_name, &post.project_name)
+            .await?;
         let label_ids = rest_site_import_label_ids(
             repository,
             &post.owner_name,
@@ -2374,6 +2453,9 @@ async fn rest_import_site_data_live(
             skipped_issues += 1;
             continue;
         }
+        rollback
+            .record_project_counter_snapshot(repository, &issue.owner_name, &issue.project_name)
+            .await?;
         let label_ids = rest_site_import_label_ids(
             repository,
             &issue.owner_name,

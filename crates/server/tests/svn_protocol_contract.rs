@@ -20,7 +20,8 @@ use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, LdapFixtureUser,
+    LdapRuntimeConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -5843,4 +5844,55 @@ async fn svn_protocol_private_project_uses_basic_auth_challenge() {
     )
     .await;
     assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+}
+
+#[tokio::test]
+async fn svn_protocol_private_project_accepts_ldap_basic_auth_and_challenges_wrong_credentials() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repository, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ldap: LdapRuntimeConfig {
+            enabled: true,
+            use_email_base_login: true,
+            fixture_users: vec![LdapFixtureUser {
+                department: "Ops".to_string(),
+                display_name: "Directory Owner".to_string(),
+                email: "owner@example.com".to_string(),
+                english_name: String::new(),
+                login_id: "ldap-owner".to_string(),
+                password: "ldap-pass".to_string(),
+            }],
+            ..LdapRuntimeConfig::default()
+        },
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    mark_project_as_svn(&repository, &db, data_dir.path()).await;
+
+    let response = direct_request(
+        app.clone(),
+        Method::GET,
+        "/svn/owner/projectYobi",
+        Some(&basic("owner", "ldap-pass")),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+
+    let response = direct_request(
+        app,
+        Method::GET,
+        "/svn/owner/projectYobi",
+        Some(&basic("owner", "wrong-pass")),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::WWW_AUTHENTICATE)
+            .and_then(|value| value.to_str().ok()),
+        Some("Basic realm=\"Yona\"")
+    );
 }

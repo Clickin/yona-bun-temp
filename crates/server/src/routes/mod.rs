@@ -24,6 +24,7 @@ mod workspace;
 #[cfg(debug_assertions)]
 pub(crate) use auth::auth_session_read;
 pub(crate) use auth::auth_sign_in_with_password;
+pub(crate) use auth::authenticate_with_ldap_or_legacy_fallback;
 pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
 #[cfg(debug_assertions)]

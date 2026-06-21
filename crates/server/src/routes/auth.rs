@@ -19,7 +19,7 @@ use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode,
+    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
     BrowserRuntimeConfig, ConnectError, Context, LdapFixtureUser, LdapRuntimeConfig, PilotBackend,
     PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
     LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
@@ -225,7 +225,8 @@ pub(crate) async fn auth_sign_in_with_password(
 
     let user = if service.ldap.enabled {
         authenticate_with_ldap_or_legacy_fallback(
-            service,
+            &service.auth_ui,
+            &service.ldap,
             repository,
             &identifier,
             &request.password,
@@ -284,16 +285,17 @@ enum LdapAuthFailure {
     Internal(ConnectError),
 }
 
-async fn authenticate_with_ldap_or_legacy_fallback(
-    service: &PilotServiceImpl,
+pub(crate) async fn authenticate_with_ldap_or_legacy_fallback(
+    auth_ui: &AuthUiConfig,
+    ldap: &LdapRuntimeConfig,
     repository: &PilotRepository,
     identifier: &str,
     password: &str,
 ) -> Result<AppUserRecord, ConnectError> {
-    match authenticate_with_configured_ldap(service, repository, identifier, password).await {
+    match authenticate_with_configured_ldap(auth_ui, ldap, repository, identifier, password).await {
         Ok(user) => Ok(user),
         Err(LdapAuthFailure::Authentication | LdapAuthFailure::ConnectionUnavailable)
-            if service.ldap.fallback_to_local_login =>
+            if ldap.fallback_to_local_login =>
         {
             authenticate_local_user(repository, identifier, password).await
         }
@@ -305,19 +307,20 @@ async fn authenticate_with_ldap_or_legacy_fallback(
 }
 
 async fn authenticate_with_configured_ldap(
-    service: &PilotServiceImpl,
+    auth_ui: &AuthUiConfig,
+    ldap: &LdapRuntimeConfig,
     repository: &PilotRepository,
     identifier: &str,
     password: &str,
 ) -> Result<AppUserRecord, LdapAuthFailure> {
-    let ldap_identity = ldap_login_identity(&service.ldap, repository, identifier).await?;
-    if service.ldap.fixture_users.is_empty() {
+    let ldap_identity = ldap_login_identity(ldap, repository, identifier).await?;
+    if ldap.fixture_users.is_empty() {
         return Err(LdapAuthFailure::ConnectionUnavailable);
     }
-    let Some(ldap_user) = fixture_ldap_authenticate(&service.ldap, &ldap_identity, password) else {
+    let Some(ldap_user) = fixture_ldap_authenticate(ldap, &ldap_identity, password) else {
         return Err(LdapAuthFailure::Authentication);
     };
-    provision_or_update_ldap_user(service, repository, &ldap_user, password)
+    provision_or_update_ldap_user(auth_ui, ldap, repository, &ldap_user, password)
         .await
         .map_err(LdapAuthFailure::Internal)
 }
@@ -357,7 +360,8 @@ fn fixture_ldap_authenticate<'a>(
 }
 
 async fn provision_or_update_ldap_user(
-    service: &PilotServiceImpl,
+    auth_ui: &AuthUiConfig,
+    ldap: &LdapRuntimeConfig,
     repository: &PilotRepository,
     ldap_user: &LdapFixtureUser,
     password: &str,
@@ -385,12 +389,12 @@ async fn provision_or_update_ldap_user(
             .map_err(crate::internal_error);
     }
 
-    let login_id = ldap_local_login_id(service, repository, ldap_user).await?;
+    let login_id = ldap_local_login_id(ldap, repository, ldap_user).await?;
     repository
         .create_user(CreateUserInput {
             display_name,
             email_address: email,
-            is_confirmed: !crate::confirmation_session_required_from_config(&service.auth_ui),
+            is_confirmed: !crate::confirmation_session_required_from_config(auth_ui),
             is_site_admin: false,
             login_id,
             password_hash,
@@ -410,12 +414,12 @@ fn legacy_ldap_display_name(ldap_user: &LdapFixtureUser) -> String {
 }
 
 async fn ldap_local_login_id(
-    service: &PilotServiceImpl,
+    ldap: &LdapRuntimeConfig,
     repository: &PilotRepository,
     ldap_user: &LdapFixtureUser,
 ) -> Result<String, ConnectError> {
     let configured_login_id = normalize_identifier(&ldap_user.login_id);
-    if !service.ldap.use_email_base_login {
+    if !ldap.use_email_base_login {
         return Ok(configured_login_id);
     }
     let email = normalize_identifier(&ldap_user.email);
