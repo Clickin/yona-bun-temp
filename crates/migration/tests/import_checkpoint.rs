@@ -74,6 +74,14 @@ fn dry_run_report_summarizes_validated_resume_keys() {
             .map(String::as_str),
         Some("projects:dry-imported/dry-restored")
     );
+    assert_eq!(
+        summary.next_retry.as_ref().map(|retry| (
+            retry.section.as_str(),
+            retry.index,
+            retry.resource_key.as_deref()
+        )),
+        Some(("users", 0, Some("users:admin")))
+    );
     assert!(summary
         .resumable_sections
         .iter()
@@ -140,6 +148,18 @@ fn failed_live_report_summarizes_failure_and_retry_anchor() {
         Some("issues.comments")
     );
     assert_eq!(
+        summary.next_retry.as_ref().map(|retry| (
+            retry.section.as_str(),
+            retry.index,
+            retry.resource_key.as_deref()
+        )),
+        Some((
+            "issues.comments",
+            0,
+            Some("issues.comments:rollback-owner/rollback-project#1:forced")
+        ))
+    );
+    assert_eq!(
         summary.next_resource_keys.get("issues").map(String::as_str),
         Some("issues:rollback-owner/rollback-project#1")
     );
@@ -153,4 +173,134 @@ fn failed_live_report_summarizes_failure_and_retry_anchor() {
     assert_eq!(summary.counters.total, 302);
     assert_eq!(summary.counters.completed, 257);
     assert_eq!(summary.counters.remaining, 45);
+}
+
+#[test]
+fn unsupported_checkpoint_version_fails_cleanly() {
+    let report = json!({
+        "dryRun": true,
+        "validationErrors": [],
+        "unsupportedSections": [],
+        "checkpoint": {
+            "version": 2,
+            "failure": null,
+            "sections": []
+        }
+    });
+
+    let error = summarize_site_import_report_json(&report.to_string()).expect_err("error");
+
+    assert_eq!(
+        error.to_string(),
+        "unsupported import checkpoint version: 2"
+    );
+}
+
+#[test]
+fn malformed_checkpoint_counts_fail_cleanly() {
+    let report = json!({
+        "dryRun": false,
+        "validationErrors": [],
+        "unsupportedSections": [],
+        "checkpoint": {
+            "version": 1,
+            "failure": null,
+            "sections": [{
+                "section": "users",
+                "total": 1,
+                "validated": 2,
+                "completed": 0,
+                "skipped": 0,
+                "nextIndex": 0,
+                "resourceKeys": ["users:admin"],
+                "resourceKeysTruncated": false
+            }]
+        }
+    });
+
+    let error = summarize_site_import_report_json(&report.to_string()).expect_err("error");
+
+    assert_eq!(
+        error.to_string(),
+        "malformed import checkpoint: section `users` validated count 2 exceeds total 1"
+    );
+}
+
+#[test]
+fn malformed_checkpoint_duplicate_sections_fail_cleanly() {
+    let report = json!({
+        "dryRun": false,
+        "validationErrors": [],
+        "unsupportedSections": [],
+        "checkpoint": {
+            "version": 1,
+            "failure": null,
+            "sections": [{
+                "section": "users",
+                "total": 1,
+                "validated": 1,
+                "completed": 1,
+                "skipped": 0,
+                "nextIndex": 1,
+                "resourceKeys": ["users:admin"],
+                "resourceKeysTruncated": false
+            }, {
+                "section": "users",
+                "total": 1,
+                "validated": 1,
+                "completed": 0,
+                "skipped": 0,
+                "nextIndex": 0,
+                "resourceKeys": ["users:other"],
+                "resourceKeysTruncated": false
+            }]
+        }
+    });
+
+    let error = summarize_site_import_report_json(&report.to_string()).expect_err("error");
+
+    assert_eq!(
+        error.to_string(),
+        "malformed import checkpoint: duplicate section `users`"
+    );
+}
+
+#[test]
+fn generic_import_failure_sentinel_is_supported() {
+    let report = json!({
+        "dryRun": false,
+        "validationErrors": [],
+        "unsupportedSections": [],
+        "checkpoint": {
+            "version": 1,
+            "failure": {
+                "section": "import",
+                "index": 0,
+                "resourceKey": "import:<unknown>",
+                "message": "site.import.failed"
+            },
+            "sections": [{
+                "section": "users",
+                "total": 0,
+                "validated": 0,
+                "completed": 0,
+                "skipped": 0,
+                "nextIndex": 0,
+                "resourceKeys": [],
+                "resourceKeysTruncated": false
+            }]
+        }
+    });
+
+    let summary = summarize_site_import_report_json(&report.to_string()).expect("summary");
+
+    assert_eq!(summary.status, ImportCheckpointSummaryStatus::Failed);
+    assert_eq!(
+        summary.next_retry.as_ref().map(|retry| (
+            retry.section.as_str(),
+            retry.index,
+            retry.resource_key.as_deref()
+        )),
+        Some(("import", 0, Some("import:<unknown>")))
+    );
 }

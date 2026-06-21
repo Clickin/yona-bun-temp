@@ -1,6 +1,18 @@
 import * as React from "react";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 
-export function HelpTocPage({ siteName = "Yona" }: { siteName?: string } = {}) {
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
+export function HelpTocPage({
+  messages,
+  siteName = "Yona",
+}: { messages?: LegacyMessageLookup; siteName?: string } = {}) {
+  const runtimeMessages = useLegacyMessages().t;
+  const messageLookup = messages ?? runtimeMessages;
   const listRef = React.useRef<HTMLUListElement | null>(null);
   const [openItems, setOpenItems] = React.useState<Set<number>>(() => new Set());
 
@@ -36,7 +48,7 @@ export function HelpTocPage({ siteName = "Yona" }: { siteName?: string } = {}) {
     <>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>title.help</h3>
+          <h3>{legacyMessage(messageLookup, "title.help")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">

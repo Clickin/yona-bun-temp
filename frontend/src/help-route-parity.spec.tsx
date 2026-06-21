@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { createLegacyI18nRuntime } from "./i18n";
 import { HelpTocPage } from "./routes/-help-views";
 
 describe("legacy help route parity", () => {
@@ -78,5 +79,13 @@ describe("legacy help route parity", () => {
     expect(html).toContain("Legacy Yona의 버그를 발견했어요.");
     expect(html).toContain("Legacy Yona 이슈트래커에 등록");
     expect(html).not.toContain("app.name");
+  });
+
+  it("opts the legacy help title into runtime message lookup", () => {
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"], ["ko-KR"]);
+    const html = renderToStaticMarkup(<HelpTocPage messages={runtime.t} />);
+
+    expect(html).toContain("<h3>도움말</h3>");
+    expect(html).not.toContain("<h3>title.help</h3>");
   });
 });

@@ -137,6 +137,24 @@ protects users moving real legacy installations.
 | P1-C GitHub import evidence decision | Yes, after P1-A interfaces are clear | provenance complete; adapter/tool code only if outbound GitHub migration is explicitly revived | Decision: `SPEC.md`'s old GitHub Import row maps to legacy outbound `/migration` Yona-to-GitHub behavior, not `/_import` and not GitHub-to-Rust import. Preserve implemented `/_import`; keep GitHub-to-Rust import not-applicable; implement only future migration-tool destination-adapter fixtures for the proven outbound GitHub API semantics if product scope asks for that feature. |
 | P1-D H2 bridge release check | Yes | `tools/h2-to-sqlite`, docs | Verify the existing H2-to-SQLite bridge against current SQLite adopt expectations and document limits. |
 
+P1-D H2 bridge release-check status, 2026-06-21: closed as a bounded tool/docs
+slice. Evidence read: legacy H2 configuration examples in
+`yona-original/conf/application.conf.default`, lower-case legacy evolution table
+names under `yona-original/conf/evolutions/default/*.sql`, the bridge
+implementation/tests/docs in `tools/h2-to-sqlite/**`, and the current SQLite
+adopt contract in `crates/migration/tests/runtime_schema_contract.rs` plus
+`crates/migration/tests/fixtures/p0b_legacy_like_sqlite_adopt.sql`. The bridge
+now lower-cases emitted SQLite identifiers so H2 metadata upper-case output does
+not fail the Rust manifest's table/column-name comparison. The deterministic
+tool-local release check covers representative legacy rows, `NOT NULL`, primary
+keys, boolean/default normalization, absence of a prewritten
+`seaql_migrations` marker, and preservation of optional `play_evolutions`
+history before the runtime `validate_only` then `adopt` handoff. Remaining
+limit: converted production H2 files still require the Rust SQLite
+`validate_only` gate before `adopt`; the bridge does not repair schema drift or
+preserve indexes, foreign keys, unique/check constraints, sequences, views,
+triggers, stored procedures, or H2-specific computed/generated columns.
+
 P1-A sub-slice status: `/sites/import?dryRun=true` now covers a no-write
 validate-only report for the existing `yobi-data` import shape. Non-dry-run
 `/sites/import` reuses that report as a preflight before mutation, so invalid
@@ -224,7 +242,10 @@ the `import_checkpoint` library module and `yobi-import-checkpoint` CLI read a
 saved dry-run or live `/sites/import` JSON report from stdin or a file and emit a
 deterministic JSON operator summary with version, failed/complete/truncated
 state, failure location, aggregate total/validated/completed/skipped/remaining
-counters, per-section resumable state, and next resource-key anchors. It is a
+counters, per-section resumable state, next resource-key anchors, and an
+explicit next retry/resume point. Malformed checkpoint counters, duplicate
+sections, impossible failure indexes, missing checkpoints, and unsupported
+checkpoint versions fail before emitting an operator summary. It is a
 tool-side summary/retry boundary only; it does not replay HTTP imports or mutate
 the target app/DB/filesystem by itself. Residual P1-A production hardening gaps
 are now milestone created/updated timestamps and other source fields that
@@ -583,7 +604,18 @@ without a provider or new selector UI. Focused coverage is
 `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, with the
 full `pnpm --dir frontend test` suite green after the continuation. Remaining
 app-wide opt-in scope is other existing controls that still render known legacy
-keys/copy as literal fallback text. P4-A-RemainingRouteLoadingShellI18n continuation
+keys/copy as literal fallback text. P4-A-WorkspaceHelpI18n continuation covers
+remaining known-key workspace/public-profile auxiliary controls from
+`user/view.scala.html`, `user/partial_issues.scala.html`,
+`user/partial_pullRequests.scala.html`, `common/twoColumnModeCheckboxArea.scala.html`,
+`common/showSubtasksCheckbox.scala.html`, and `common/mySeriesMenuTab.scala.html`,
+plus the anonymous `/_help` `help/toc.scala.html` title. The existing
+workspace/profile stream labels, empty states, no-author fallbacks,
+default-login-page/favorite/recent/logout controls, and help breadcrumb title
+now flow through legacy message lookup while preserving exact key fallback
+without a provider and without adding selector/settings UI. Focused coverage is
+`frontend/src/workspace-profile-i18n.spec.tsx` and
+`frontend/src/help-route-parity.spec.tsx`. P4-A-RemainingRouteLoadingShellI18n continuation
 covers the next bounded app-wide loading-shell pass for shared redirect, public
 profile, `/me`, auth/restricted, import, notification, project create,
 organization create, user issue/file/settings, and project fork route shells:

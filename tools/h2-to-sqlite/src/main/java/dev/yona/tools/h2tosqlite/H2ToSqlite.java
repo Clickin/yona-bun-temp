@@ -102,7 +102,7 @@ public final class H2ToSqlite {
         StringJoiner joiner = new StringJoiner(", ");
         for (Column column : columns) {
             StringBuilder definition = new StringBuilder();
-            definition.append(quoteIdentifier(column.name)).append(' ').append(sqliteType(column));
+            definition.append(quoteIdentifier(sqliteIdentifier(column.name))).append(' ').append(sqliteType(column));
             if (!column.nullable) {
                 definition.append(" NOT NULL");
             }
@@ -117,12 +117,12 @@ public final class H2ToSqlite {
         if (!primaryKeys.isEmpty()) {
             StringJoiner pkJoiner = new StringJoiner(", ");
             for (String primaryKey : primaryKeys) {
-                pkJoiner.add(quoteIdentifier(primaryKey));
+                pkJoiner.add(quoteIdentifier(sqliteIdentifier(primaryKey)));
             }
             joiner.add("PRIMARY KEY (" + pkJoiner + ")");
         }
 
-        String sql = "CREATE TABLE " + quoteIdentifier(table.name) + " (" + joiner + ")";
+        String sql = "CREATE TABLE " + quoteIdentifier(sqliteIdentifier(table.name)) + " (" + joiner + ")";
         try (Statement statement = sqlite.createStatement()) {
             statement.execute(sql);
         }
@@ -190,10 +190,10 @@ public final class H2ToSqlite {
         StringJoiner columns = new StringJoiner(", ");
         StringJoiner placeholders = new StringJoiner(", ");
         for (int index = 1; index <= columnCount; index++) {
-            columns.add(quoteIdentifier(meta.getColumnName(index)));
+            columns.add(quoteIdentifier(sqliteIdentifier(meta.getColumnName(index))));
             placeholders.add("?");
         }
-        return "INSERT INTO " + quoteIdentifier(tableName) + " (" + columns + ") VALUES (" + placeholders + ")";
+        return "INSERT INTO " + quoteIdentifier(sqliteIdentifier(tableName)) + " (" + columns + ") VALUES (" + placeholders + ")";
     }
 
     private static void bindValue(PreparedStatement statement, int index, Object value, int jdbcType) throws SQLException {
@@ -249,6 +249,10 @@ public final class H2ToSqlite {
 
     private static String h2QualifiedName(Table table) {
         return quoteIdentifier(table.schema) + "." + quoteIdentifier(table.name);
+    }
+
+    private static String sqliteIdentifier(String identifier) {
+        return identifier.toLowerCase(Locale.ROOT);
     }
 
     private static String quoteIdentifier(String identifier) {

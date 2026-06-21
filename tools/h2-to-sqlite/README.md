@@ -45,7 +45,10 @@ java -jar tools/h2-to-sqlite/target/h2-to-sqlite-0.1.0.jar \
 ## SQLite Adopt Handoff
 
 The generated SQLite file is not considered imported until the Rust runtime
-schema validator accepts it. Run validation first, then start with adopt mode:
+schema validator accepts it. The bridge emits lower-case SQLite table and
+column identifiers because the Rust adopt validator compares SQLite metadata
+against the current lower-case legacy schema manifest. Run validation first,
+then start with adopt mode:
 
 ```sh
 YONA_DATABASE_URL='sqlite:/path/to/yona.sqlite' \
@@ -64,9 +67,17 @@ offline artifact to inspect or repair. The converter is a JDBC table-copy bridge
 only, so the same SQLite schema compatibility rules in `SPEC.md` Section 5.1
 remain authoritative.
 
+The bridge does not write `seaql_migrations`. A successful `validate_only` run
+must leave that table absent, and the first successful `adopt` run is what marks
+the current Rust baseline as applied. Legacy Play evolution history, when
+present, is copied as the optional `play_evolutions` table and is not a
+substitute for the Rust migration marker.
+
 ## Smoke Test
 
-The test creates a tiny H2 database, runs the converter, and verifies copied rows in SQLite:
+The test creates deterministic H2 databases, runs the converter, and verifies
+copied rows plus the SQLite identifier/default/primary-key shape required by
+the current adopt handoff:
 
 ```sh
 mvn -f tools/h2-to-sqlite/pom.xml test
@@ -77,7 +88,8 @@ If the local environment has no cached `org.xerial:sqlite-jdbc` dependency and n
 ## What It Converts
 
 - H2 user tables from one schema, `PUBLIC` by default
-- Column names, common JDBC column types, `NOT NULL`, simple defaults, and primary keys
+- Lower-case SQLite table and column identifiers, common JDBC column types,
+  `NOT NULL`, simple defaults, and primary keys
 - Table data via batched JDBC reads and inserts
 - Boolean values as SQLite `INTEGER` values `0` or `1`
 - Date/time/timestamp values as text using the JDBC driver's string representation
@@ -88,6 +100,9 @@ If the local environment has no cached `org.xerial:sqlite-jdbc` dependency and n
 - This is not a broad migration framework.
 - It does not preserve foreign keys, indexes, unique constraints, check constraints, sequences, views, triggers, stored procedures, or H2-specific computed/generated columns.
 - It does not transform legacy Yona data semantics or reconcile schema drift.
+- It does not prove a converted production database is adoptable by itself. The
+  converted database must still have the full table/column/nullability/primary
+  key shape expected by the current Rust schema manifest.
 - It disables SQLite foreign key enforcement while loading data.
 - It uses SQLite affinity types, so exact H2 numeric/date type fidelity is not guaranteed.
 - It expects the source H2 database to be readable by the configured H2 JDBC driver.
@@ -96,7 +111,8 @@ For production migration, run this on a copy of the H2 database and inspect the 
 
 ## Current Release Check
 
-- 2026-06-21: `mvn -f tools/h2-to-sqlite/pom.xml test` passed with 2 smoke tests,
-  covering row copy, boolean normalization, primary keys, `NOT NULL`, and simple
-  defaults. The Java 25 run emitted only JVM/native-access deprecation warnings
-  from Maven/SQLite dependencies.
+- 2026-06-21: the release-check test covers row copy, boolean normalization,
+  primary keys, `NOT NULL`, simple defaults, lower-case SQLite identifiers,
+  absence of a prewritten `seaql_migrations` marker, and preservation of the
+  optional legacy `play_evolutions` table used by the current SQLite
+  `validate_only` then `adopt` handoff.

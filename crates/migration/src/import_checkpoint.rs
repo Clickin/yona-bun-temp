@@ -6,6 +6,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum ImportCheckpointSummaryError {
     Json(serde_json::Error),
+    MalformedCheckpoint(String),
     MissingCheckpoint,
     UnsupportedCheckpointVersion(u32),
 }
@@ -14,6 +15,9 @@ impl fmt::Display for ImportCheckpointSummaryError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Json(error) => write!(formatter, "failed to parse import report JSON: {error}"),
+            Self::MalformedCheckpoint(message) => {
+                write!(formatter, "malformed import checkpoint: {message}")
+            }
             Self::MissingCheckpoint => write!(formatter, "import report is missing checkpoint"),
             Self::UnsupportedCheckpointVersion(version) => {
                 write!(
@@ -101,6 +105,7 @@ pub struct ImportCheckpointSummary {
     pub counters: ImportCheckpointCounters,
     pub validation_error_count: u32,
     pub unsupported_sections: Vec<String>,
+    pub next_retry: Option<ImportCheckpointRetryPoint>,
     pub next_resource_keys: BTreeMap<String, String>,
     pub resumable_sections: Vec<ImportCheckpointSectionSummary>,
 }
@@ -140,6 +145,22 @@ pub struct ImportCheckpointSectionSummary {
     pub resumable: bool,
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportCheckpointRetryPoint {
+    pub section: String,
+    pub index: u32,
+    pub resource_key: Option<String>,
+    pub reason: ImportCheckpointRetryReason,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ImportCheckpointRetryReason {
+    Failure,
+    Resume,
+}
+
 pub fn summarize_site_import_report_json(
     input: &str,
 ) -> Result<ImportCheckpointSummary, ImportCheckpointSummaryError> {
@@ -167,10 +188,25 @@ pub fn summarize_site_import_checkpoint(
         ));
     }
 
+    validate_checkpoint(&checkpoint)?;
+
     let mut counters = ImportCheckpointCounters::default();
     let mut truncated = false;
     let mut next_resource_keys = BTreeMap::new();
     let mut resumable_sections = Vec::new();
+    let mut next_retry = checkpoint
+        .failure
+        .as_ref()
+        .map(|failure| ImportCheckpointRetryPoint {
+            section: failure.section.clone(),
+            index: failure.index,
+            resource_key: if failure.resource_key.is_empty() {
+                None
+            } else {
+                Some(failure.resource_key.clone())
+            },
+            reason: ImportCheckpointRetryReason::Failure,
+        });
 
     for section in checkpoint.sections {
         counters.total = counters.total.saturating_add(section.total);
@@ -186,6 +222,14 @@ pub fn summarize_site_import_checkpoint(
         let next_resource_key = next_key(&section);
         if let Some(next_resource_key) = &next_resource_key {
             next_resource_keys.insert(section.section.clone(), next_resource_key.clone());
+        }
+        if next_retry.is_none() && remaining > 0 {
+            next_retry = Some(ImportCheckpointRetryPoint {
+                section: section.section.clone(),
+                index: section.next_index,
+                resource_key: next_resource_key.clone(),
+                reason: ImportCheckpointRetryReason::Resume,
+            });
         }
 
         resumable_sections.push(ImportCheckpointSectionSummary {
@@ -232,9 +276,101 @@ pub fn summarize_site_import_checkpoint(
         counters,
         validation_error_count,
         unsupported_sections,
+        next_retry,
         next_resource_keys,
         resumable_sections,
     })
+}
+
+fn validate_checkpoint(checkpoint: &ImportCheckpoint) -> Result<(), ImportCheckpointSummaryError> {
+    let mut seen_sections = BTreeMap::new();
+    for section in &checkpoint.sections {
+        if section.section.trim().is_empty() {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(
+                "section name must not be empty".to_string(),
+            ));
+        }
+        if seen_sections.insert(section.section.as_str(), ()).is_some() {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "duplicate section `{}`",
+                section.section
+            )));
+        }
+        if section.validated > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` validated count {} exceeds total {}",
+                section.section, section.validated, section.total
+            )));
+        }
+        if section.completed > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` completed count {} exceeds total {}",
+                section.section, section.completed, section.total
+            )));
+        }
+        if section.skipped > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` skipped count {} exceeds total {}",
+                section.section, section.skipped, section.total
+            )));
+        }
+        if section.completed.saturating_add(section.skipped) > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` completed+skipped exceeds total {}",
+                section.section, section.total
+            )));
+        }
+        if section.next_index > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` nextIndex {} exceeds total {}",
+                section.section, section.next_index, section.total
+            )));
+        }
+        if section.resource_keys.len() as u32 > section.total {
+            return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                "section `{}` resourceKeys count {} exceeds total {}",
+                section.section,
+                section.resource_keys.len(),
+                section.total
+            )));
+        }
+    }
+
+    if let Some(failure) = &checkpoint.failure {
+        if failure.section != "import" {
+            let exact_section = checkpoint
+                .sections
+                .iter()
+                .find(|section| section.section == failure.section);
+            if let Some(section) = exact_section {
+                if failure.index >= section.total {
+                    return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                        "failure index {} exceeds section `{}` total {}",
+                        failure.index, failure.section, section.total
+                    )));
+                }
+            } else {
+                let base_section = failure
+                    .section
+                    .split_once('.')
+                    .map(|(base_section, _)| base_section);
+                let has_base_section = base_section.is_some_and(|base_section| {
+                    checkpoint
+                        .sections
+                        .iter()
+                        .any(|section| section.section == base_section)
+                });
+                if !has_base_section {
+                    return Err(ImportCheckpointSummaryError::MalformedCheckpoint(format!(
+                        "failure references unknown section `{}`",
+                        failure.section
+                    )));
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn next_key(section: &ImportCheckpointSection) -> Option<String> {

@@ -42,10 +42,18 @@ function legacyMessage(
   return messages ? messages(key, { fallback }) : fallback;
 }
 
-function UserProjectListEmpty({ active, id }: { active?: boolean; id: string }) {
+function UserProjectListEmpty({
+  active,
+  id,
+  messages,
+}: {
+  active?: boolean;
+  id: string;
+  messages?: LegacyMessageLookup;
+}) {
   return (
     <div className={`no-result tab-pane user-ul ${active ? "active" : ""}`.trim()} id={id}>
-      title.no.results
+      {legacyMessage(messages, "title.no.results")}
     </div>
   );
 }
@@ -159,6 +167,22 @@ export function PublicUserProfilePage(props: {
   const issueTabLabel = legacyMessage(props.messages, "menu.issue");
   const pullRequestTabLabel = legacyMessage(props.messages, "menu.pullRequest");
   const projectsTabLabel = legacyMessage(props.messages, "project.projects");
+  const daysAgoPrefixLabel = legacyMessage(props.messages, "userinfo.daysAgo.prefix");
+  const daysAgoSuffixLabel = legacyMessage(props.messages, "userinfo.daysAgo.suffix");
+  const noIssueLabel = `${daysAgoPrefixLabel} ${legacyMessage(props.messages, "issue.is.empty")}`;
+  const noPullRequestLabel = `${daysAgoPrefixLabel} ${legacyMessage(
+    props.messages,
+    "pullRequest.is.empty",
+  )}`;
+  const noAuthorLabel = legacyMessage(props.messages, "issue.noAuthor");
+  const projectCodeUpdateLabel = legacyMessage(props.messages, "project.codeUpdate");
+  const openIssueStateLabel = legacyMessage(props.messages, "issue.state.open");
+  const closedIssueStateLabel = legacyMessage(props.messages, "issue.state.closed");
+  const twoColumnModeLabel = legacyMessage(props.messages, "common.two.column.mode");
+  const twoColumnModeDescription = legacyMessage(props.messages, "common.two.column.mode.desc");
+  const twoColumnViewLabel = legacyMessage(props.messages, "common.two.column.view");
+  const showSubtasksLabel = legacyMessage(props.messages, "common.show.subtasks");
+  const showSubtasksDescription = legacyMessage(props.messages, "common.show.subtasks.desc");
   const openIssues = issueItems.filter((item) => item.state === "open");
   const closedIssues = issueItems.filter((item) => item.state !== "open");
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
@@ -197,7 +221,8 @@ export function PublicUserProfilePage(props: {
                       className="ybtn ybtn-default ybtn-mini"
                       href={appHref(props.runtimeConfig, "/user/editform")}
                     >
-                      <i className="yobicon-edit"></i> userinfo.editProfile
+                      <i className="yobicon-edit"></i>{" "}
+                      {legacyMessage(props.messages, "userinfo.editProfile")}
                     </a>
                   </div>
                 ) : null}
@@ -210,13 +235,13 @@ export function PublicUserProfilePage(props: {
               </div>
               {profile.sinceLabel ? (
                 <div className="user-since">
-                  <strong>userinfo.since</strong>
+                  <strong>{legacyMessage(props.messages, "userinfo.since")}</strong>
                   <span className="since">{profile.sinceLabel}</span>
                 </div>
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>user.connected.social.login</strong>
+                  <strong>{legacyMessage(props.messages, "user.connected.social.login")}</strong>
                 </div>
                 <div className="auth-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
@@ -232,7 +257,7 @@ export function PublicUserProfilePage(props: {
 
             <div className="user-stream-box">
               <div className="pull-right">
-                <span>userinfo.daysAgo.prefix</span>
+                <span>{daysAgoPrefixLabel}</span>
                 <input
                   className="input-mini-min"
                   id="daysAgoBtn"
@@ -243,7 +268,7 @@ export function PublicUserProfilePage(props: {
                   type="number"
                   value={daysAgo}
                 />
-                <span>userinfo.daysAgo.suffix</span>
+                <span>{daysAgoSuffixLabel}</span>
               </div>
               <ul className="nav nav-tabs">
                 <li className={activeTab === "issues" ? "active" : undefined}>
@@ -288,14 +313,14 @@ export function PublicUserProfilePage(props: {
                 <li>
                   <div
                     className="two-column-icon mr10 hide-in-mobile"
-                    data-content="common.two.column.mode.desc"
+                    data-content={twoColumnModeDescription}
                     id="two-column-mode-checkbox"
-                    title="common.two.column.mode"
+                    title={twoColumnModeLabel}
                   >
-                    <label className="checkbox" aria-label="common.two.column.view">
+                    <label className="checkbox" aria-label={twoColumnViewLabel}>
                       <div className="two-column-icon-border">
                         <input id="two-column-mode" type="checkbox" />
-                        <span className="two-column-mode-text">common.two.column.view</span>
+                        <span className="two-column-mode-text">{twoColumnViewLabel}</span>
                       </div>
                     </label>
                   </div>
@@ -318,7 +343,8 @@ export function PublicUserProfilePage(props: {
                           setActiveIssueTab("open");
                         }}
                       >
-                        issue.state.open <span className="num-badge">{openIssues.length}</span>
+                        {`${openIssueStateLabel} `}
+                        <span className="num-badge">{openIssues.length}</span>
                       </a>
                     </li>
                     <li className={activeIssueTab === "closed" ? "active" : undefined}>
@@ -330,23 +356,24 @@ export function PublicUserProfilePage(props: {
                           setActiveIssueTab("closed");
                         }}
                       >
-                        issue.state.closed <span className="num-badge">{closedIssues.length}</span>
+                        {`${closedIssueStateLabel} `}
+                        <span className="num-badge">{closedIssues.length}</span>
                       </a>
                     </li>
                     <li className="show-subtasks-li">
                       <div
                         className="show-subtasks mr10"
-                        data-content="common.show.subtasks.desc"
+                        data-content={showSubtasksDescription}
                         data-placement="top"
                         data-toggle="popover"
                         data-trigger="hover"
                         id="two-column-mode-checkbox"
-                        title="common.show.subtasks"
+                        title={showSubtasksLabel}
                       >
-                        <label className="checkbox" aria-label="common.show.subtasks">
+                        <label className="checkbox" aria-label={showSubtasksLabel}>
                           <div className="show-subtasks-button-border">
                             <input id="toggle-show-subtasks" type="checkbox" />
-                            <span className="show-subtasks-text">common.show.subtasks</span>
+                            <span className="show-subtasks-text">{showSubtasksLabel}</span>
                           </div>
                         </label>
                       </div>
@@ -360,11 +387,12 @@ export function PublicUserProfilePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
+                          <p>{noIssueLabel}</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
                           items={openIssues}
+                          messages={props.messages}
                           runtimeConfig={props.runtimeConfig}
                         />
                       )}
@@ -376,11 +404,12 @@ export function PublicUserProfilePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
+                          <p>{noIssueLabel}</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
                           items={closedIssues}
+                          messages={props.messages}
                           runtimeConfig={props.runtimeConfig}
                         />
                       )}
@@ -395,7 +424,7 @@ export function PublicUserProfilePage(props: {
                 >
                   {pullRequestItems.length === 0 ? (
                     <div className="error-wrap">
-                      <p>userinfo.daysAgo.prefix pullRequest.is.empty</p>
+                      <p>{noPullRequestLabel}</p>
                     </div>
                   ) : (
                     <ul className="post-list-wrap row-fluid">
@@ -453,7 +482,7 @@ export function PublicUserProfilePage(props: {
                                   {pullRequest.contributorLabel}
                                 </span>
                               ) : (
-                                <span className="infos-item">issue.noAuthor</span>
+                                <span className="infos-item">{noAuthorLabel}</span>
                               )}
                               <span className="infos-item" title={pullRequest.updatedLabel}>
                                 {pullRequest.updatedLabel}
@@ -499,7 +528,10 @@ export function PublicUserProfilePage(props: {
                               )}
                             </div>
                             <div className={`state ${pullRequest.state} pull-right`}>
-                              {`pullRequest.state.${pullRequest.state}`}
+                              {legacyMessage(
+                                props.messages,
+                                `pullRequest.state.${pullRequest.state}`,
+                              )}
                             </div>
                           </div>
                         </li>
@@ -515,7 +547,7 @@ export function PublicUserProfilePage(props: {
                 >
                   {memberProjects.length === 0 ? (
                     <div className="error-wrap">
-                      <p>project.is.empty</p>
+                      <p>{legacyMessage(props.messages, "project.is.empty")}</p>
                     </div>
                   ) : (
                     <ul className="user-streams all-projects">
@@ -561,7 +593,7 @@ export function PublicUserProfilePage(props: {
                                 <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
                                 {project.lastPushedLabel ? (
                                   <>
-                                    <span>, project.codeUpdate </span>
+                                    <span>, {projectCodeUpdateLabel} </span>
                                     <span title={project.lastPushedLabel}>
                                       {project.lastPushedLabel}
                                     </span>
@@ -591,6 +623,7 @@ export function PublicUserProfilePage(props: {
 
 function PublicProfileIssueItems(props: {
   items: NonNullable<WorkspaceOverviewViewModel["issueItems"]>;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   return (
@@ -645,6 +678,7 @@ function PublicProfileIssueItems(props: {
                 <PublicProfileIssuePersonCell
                   emptyLabel="issue.noAuthor"
                   label={issue.authorLabel}
+                  messages={props.messages}
                 />
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
@@ -676,12 +710,16 @@ function PublicProfileIssueItems(props: {
 function PublicProfileIssuePersonCell({
   emptyLabel = "",
   label,
+  messages,
 }: {
   emptyLabel?: string;
   label: string;
+  messages?: LegacyMessageLookup;
 }) {
   if (!label) {
-    return <span className="infos-item">{emptyLabel}</span>;
+    return (
+      <span className="infos-item">{emptyLabel ? legacyMessage(messages, emptyLabel) : ""}</span>
+    );
   }
   return (
     <span
@@ -747,6 +785,17 @@ export function WorkspacePage(props: {
   const issueTabLabel = legacyMessage(props.messages, "menu.issue");
   const pullRequestTabLabel = legacyMessage(props.messages, "menu.pullRequest");
   const projectsTabLabel = legacyMessage(props.messages, "project.projects");
+  const daysAgoPrefixLabel = legacyMessage(props.messages, "userinfo.daysAgo.prefix");
+  const daysAgoSuffixLabel = legacyMessage(props.messages, "userinfo.daysAgo.suffix");
+  const noIssueLabel = `${daysAgoPrefixLabel} ${legacyMessage(props.messages, "issue.is.empty")}`;
+  const noPullRequestLabel = `${daysAgoPrefixLabel} ${legacyMessage(
+    props.messages,
+    "pullRequest.is.empty",
+  )}`;
+  const noAuthorLabel = legacyMessage(props.messages, "issue.noAuthor");
+  const projectCodeUpdateLabel = legacyMessage(props.messages, "project.codeUpdate");
+  const openIssueStateLabel = legacyMessage(props.messages, "issue.state.open");
+  const closedIssueStateLabel = legacyMessage(props.messages, "issue.state.closed");
   const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
   const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
@@ -786,7 +835,8 @@ export function WorkspacePage(props: {
                   className="ybtn ybtn-default ybtn-mini"
                   href={appHref(props.runtimeConfig, "/user/editform")}
                 >
-                  <i className="yobicon-edit"></i> userinfo.editProfile
+                  <i className="yobicon-edit"></i>{" "}
+                  {legacyMessage(props.messages, "userinfo.editProfile")}
                 </a>
               </div>
               <div className="user-status">
@@ -797,13 +847,13 @@ export function WorkspacePage(props: {
               </div>
               {profile.sinceLabel ? (
                 <div className="user-since">
-                  <strong>userinfo.since</strong>
+                  <strong>{legacyMessage(props.messages, "userinfo.since")}</strong>
                   <span className="since">{profile.sinceLabel}</span>
                 </div>
               ) : null}
               <div className="user-since">
                 <div>
-                  <strong>user.connected.social.login</strong>
+                  <strong>{legacyMessage(props.messages, "user.connected.social.login")}</strong>
                 </div>
                 <div className="auth-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
@@ -819,7 +869,7 @@ export function WorkspacePage(props: {
 
             <div className="user-stream-box">
               <div className="pull-right">
-                <span>userinfo.daysAgo.prefix</span>
+                <span>{daysAgoPrefixLabel}</span>
                 <input
                   className="input-mini-min"
                   id="daysAgoBtn"
@@ -830,7 +880,7 @@ export function WorkspacePage(props: {
                   type="number"
                   value={daysAgo}
                 />
-                <span>userinfo.daysAgo.suffix</span>
+                <span>{daysAgoSuffixLabel}</span>
               </div>
               <ul className="nav nav-tabs">
                 <li className={activeTab === "issues" ? "active" : undefined}>
@@ -889,7 +939,8 @@ export function WorkspacePage(props: {
                           setActiveIssueTab("open");
                         }}
                       >
-                        issue.state.open <span className="num-badge">{openIssues.length}</span>
+                        {`${openIssueStateLabel} `}
+                        <span className="num-badge">{openIssues.length}</span>
                       </a>
                     </li>
                     <li className={activeIssueTab === "closed" ? "active" : undefined}>
@@ -901,7 +952,8 @@ export function WorkspacePage(props: {
                           setActiveIssueTab("closed");
                         }}
                       >
-                        issue.state.closed <span className="num-badge">{closedIssues.length}</span>
+                        {`${closedIssueStateLabel} `}
+                        <span className="num-badge">{closedIssues.length}</span>
                       </a>
                     </li>
                     <li>
@@ -918,11 +970,12 @@ export function WorkspacePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
+                          <p>{noIssueLabel}</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
                           items={openIssues}
+                          messages={props.messages}
                           runtimeConfig={props.runtimeConfig}
                         />
                       )}
@@ -934,11 +987,12 @@ export function WorkspacePage(props: {
                     >
                       {issueItems.length === 0 ? (
                         <div className="error-wrap">
-                          <p>userinfo.daysAgo.prefix issue.is.empty</p>
+                          <p>{noIssueLabel}</p>
                         </div>
                       ) : (
                         <PublicProfileIssueItems
                           items={closedIssues}
+                          messages={props.messages}
                           runtimeConfig={props.runtimeConfig}
                         />
                       )}
@@ -953,7 +1007,7 @@ export function WorkspacePage(props: {
                 >
                   {pullRequestItems.length === 0 ? (
                     <div className="error-wrap">
-                      <p>userinfo.daysAgo.prefix pullRequest.is.empty</p>
+                      <p>{noPullRequestLabel}</p>
                     </div>
                   ) : (
                     <ul className="post-list-wrap row-fluid">
@@ -1011,7 +1065,7 @@ export function WorkspacePage(props: {
                                   {pullRequest.contributorLabel}
                                 </span>
                               ) : (
-                                <span className="infos-item">issue.noAuthor</span>
+                                <span className="infos-item">{noAuthorLabel}</span>
                               )}
                               <span className="infos-item" title={pullRequest.updatedLabel}>
                                 {pullRequest.updatedLabel}
@@ -1057,7 +1111,10 @@ export function WorkspacePage(props: {
                               )}
                             </div>
                             <div className={`state ${pullRequest.state} pull-right`}>
-                              {`pullRequest.state.${pullRequest.state}`}
+                              {legacyMessage(
+                                props.messages,
+                                `pullRequest.state.${pullRequest.state}`,
+                              )}
                             </div>
                           </div>
                         </li>
@@ -1073,7 +1130,7 @@ export function WorkspacePage(props: {
                 >
                   {memberProjects.length === 0 ? (
                     <div className="error-wrap">
-                      <p>project.is.empty</p>
+                      <p>{legacyMessage(props.messages, "project.is.empty")}</p>
                     </div>
                   ) : (
                     <ul className="user-streams all-projects">
@@ -1104,7 +1161,7 @@ export function WorkspacePage(props: {
                               <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
                               {project.lastPushedLabel ? (
                                 <>
-                                  <span>, project.codeUpdate </span>
+                                  <span>, {projectCodeUpdateLabel} </span>
                                   <span title={project.lastPushedLabel}>
                                     {project.lastPushedLabel}
                                   </span>
@@ -1146,7 +1203,7 @@ export function WorkspacePage(props: {
           </dl>
         </div>
       </div>
-      <Section title="button.setDefaultLoginPage">
+      <Section title={legacyMessage(props.messages, "button.setDefaultLoginPage")}>
         <form
           className="runtime-grid"
           onSubmit={(event) => {
@@ -1155,7 +1212,7 @@ export function WorkspacePage(props: {
           }}
         >
           <label>
-            <span>button.setDefaultLoginPage.desc</span>
+            <span>{legacyMessage(props.messages, "button.setDefaultLoginPage.desc")}</span>
             <input
               name="defaultLandingPath"
               onChange={(event) => setNextDefaultLandingPath(event.target.value)}
@@ -1163,12 +1220,14 @@ export function WorkspacePage(props: {
               value={nextDefaultLandingPath}
             />
           </label>
-          <button type="submit">button.setDefaultLoginPage</button>
+          <button type="submit">
+            {legacyMessage(props.messages, "button.setDefaultLoginPage")}
+          </button>
         </form>
       </Section>
-      <Section title="title.favorite">
+      <Section title={legacyMessage(props.messages, "title.favorite")}>
         {favoriteProjects.length === 0 ? (
-          <UserProjectListEmpty id="watching" />
+          <UserProjectListEmpty id="watching" messages={props.messages} />
         ) : (
           <ul>
             {favoriteProjects.map((project) => (
@@ -1179,9 +1238,9 @@ export function WorkspacePage(props: {
           </ul>
         )}
       </Section>
-      <Section title="title.recently.visited">
+      <Section title={legacyMessage(props.messages, "title.recently.visited")}>
         {recentProjects.length === 0 ? (
-          <UserProjectListEmpty active id="recentlyVisited" />
+          <UserProjectListEmpty active id="recentlyVisited" messages={props.messages} />
         ) : (
           <ul>
             {recentProjects.map((project) => (
@@ -1193,7 +1252,7 @@ export function WorkspacePage(props: {
         )}
       </Section>
       <button onClick={() => props.onSignOut?.()} type="button">
-        title.logout
+        {legacyMessage(props.messages, "title.logout")}
       </button>
     </main>
   );
