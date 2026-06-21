@@ -11,7 +11,11 @@ use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, DEFAULT_COST};
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::Path as StdPath, sync::atomic::Ordering};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path as StdPath,
+    sync::atomic::Ordering,
+};
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver_with_config, OutboundMail};
 
@@ -206,6 +210,33 @@ struct RestSiteIssuesQuery {
     page: Option<u32>,
     page_num: Option<u32>,
     state: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportQuery {
+    #[serde(alias = "dry_run", alias = "dry-run")]
+    dry_run: Option<String>,
+    #[serde(
+        alias = "validate_only",
+        alias = "validate-only",
+        alias = "validateonly"
+    )]
+    validate_only: Option<String>,
+}
+
+impl RestSiteImportQuery {
+    fn is_dry_run(&self) -> bool {
+        site_import_query_flag(self.dry_run.as_deref())
+            || site_import_query_flag(self.validate_only.as_deref())
+    }
+}
+
+fn site_import_query_flag(value: Option<&str>) -> bool {
+    matches!(
+        value.map(str::trim).map(str::to_ascii_lowercase).as_deref(),
+        Some("true" | "1" | "yes" | "on")
+    )
 }
 
 #[derive(Serialize)]
@@ -429,6 +460,7 @@ struct RestSiteExportLabelItem {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteImportResponse {
+    dry_run: bool,
     imported_projects: u32,
     imported_project_members: u32,
     imported_issues: u32,
@@ -444,6 +476,131 @@ struct RestSiteImportResponse {
     skipped_project_members: u32,
     skipped_users: u32,
     unsupported_sections: Vec<String>,
+    validation_errors: Vec<RestSiteImportValidationError>,
+    would_import_attachments: u32,
+    would_import_projects: u32,
+    would_import_project_members: u32,
+    would_import_issues: u32,
+    would_import_labels: u32,
+    would_import_milestones: u32,
+    would_import_posts: u32,
+    would_import_users: u32,
+    would_skip_attachments: u32,
+    would_skip_projects: u32,
+    would_skip_project_members: u32,
+    would_skip_issues: u32,
+    would_skip_labels: u32,
+    would_skip_milestones: u32,
+    would_skip_posts: u32,
+    would_skip_users: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportValidationError {
+    field: String,
+    index: u32,
+    message: String,
+    section: String,
+}
+
+#[derive(Default)]
+struct RestSiteImportCountSet {
+    attachments: u32,
+    projects: u32,
+    project_members: u32,
+    issues: u32,
+    labels: u32,
+    milestones: u32,
+    posts: u32,
+    users: u32,
+}
+
+impl RestSiteImportResponse {
+    fn imported(
+        imported: RestSiteImportCountSet,
+        skipped: RestSiteImportCountSet,
+        unsupported_sections: Vec<String>,
+    ) -> Self {
+        Self {
+            dry_run: false,
+            imported_projects: imported.projects,
+            imported_project_members: imported.project_members,
+            imported_issues: imported.issues,
+            imported_labels: imported.labels,
+            imported_milestones: imported.milestones,
+            imported_posts: imported.posts,
+            imported_users: imported.users,
+            skipped_issues: skipped.issues,
+            skipped_labels: skipped.labels,
+            skipped_milestones: skipped.milestones,
+            skipped_posts: skipped.posts,
+            skipped_projects: skipped.projects,
+            skipped_project_members: skipped.project_members,
+            skipped_users: skipped.users,
+            unsupported_sections,
+            validation_errors: Vec::new(),
+            would_import_attachments: 0,
+            would_import_projects: 0,
+            would_import_project_members: 0,
+            would_import_issues: 0,
+            would_import_labels: 0,
+            would_import_milestones: 0,
+            would_import_posts: 0,
+            would_import_users: 0,
+            would_skip_attachments: 0,
+            would_skip_projects: 0,
+            would_skip_project_members: 0,
+            would_skip_issues: 0,
+            would_skip_labels: 0,
+            would_skip_milestones: 0,
+            would_skip_posts: 0,
+            would_skip_users: 0,
+        }
+    }
+
+    fn dry_run(
+        would_import: RestSiteImportCountSet,
+        would_skip: RestSiteImportCountSet,
+        validation_errors: Vec<RestSiteImportValidationError>,
+        unsupported_sections: Vec<String>,
+    ) -> Self {
+        Self {
+            dry_run: true,
+            imported_projects: 0,
+            imported_project_members: 0,
+            imported_issues: 0,
+            imported_labels: 0,
+            imported_milestones: 0,
+            imported_posts: 0,
+            imported_users: 0,
+            skipped_issues: 0,
+            skipped_labels: 0,
+            skipped_milestones: 0,
+            skipped_posts: 0,
+            skipped_projects: 0,
+            skipped_project_members: 0,
+            skipped_users: 0,
+            unsupported_sections,
+            validation_errors,
+            would_import_attachments: would_import.attachments,
+            would_import_projects: would_import.projects,
+            would_import_project_members: would_import.project_members,
+            would_import_issues: would_import.issues,
+            would_import_labels: would_import.labels,
+            would_import_milestones: would_import.milestones,
+            would_import_posts: would_import.posts,
+            would_import_users: would_import.users,
+            would_skip_attachments: would_skip.attachments,
+            would_skip_projects: would_skip.projects,
+            would_skip_project_members: would_skip.project_members,
+            would_skip_issues: would_skip.issues,
+            would_skip_labels: would_skip.labels,
+            would_skip_milestones: would_skip.milestones,
+            would_skip_posts: would_skip.posts,
+            would_skip_users: would_skip.users,
+        }
+    }
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
@@ -681,10 +838,11 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
         )
         .route(
             "/sites/import",
-            post(move |headers: HeaderMap, body: Bytes| {
+            post(move |headers: HeaderMap, Query(query): Query<RestSiteImportQuery>, body: Bytes| {
                 async move {
                     direct_import_site_data(
                         headers,
+                        query,
                         body,
                         site_import_service.clone(),
                     )
@@ -944,6 +1102,7 @@ async fn direct_export_site_data(headers: HeaderMap, service: PilotServiceImpl) 
 
 async fn direct_import_site_data(
     headers: HeaderMap,
+    query: RestSiteImportQuery,
     body: Bytes,
     service: PilotServiceImpl,
 ) -> Response {
@@ -953,10 +1112,10 @@ async fn direct_import_site_data(
         return Redirect::to(&base_path_href(&base_path, "/sites/data")).into_response();
     }
     let headers = headers_with_form_csrf(headers, &form);
-    match rest_import_site_data(headers, &payload, service).await {
+    match rest_import_site_data(headers, &payload, service, query.is_dry_run()).await {
         Ok(payload) => {
             let payload = payload.0;
-            if is_multipart {
+            if is_multipart && !payload.dry_run {
                 Redirect::to(&base_path_href(&base_path, "/")).into_response()
             } else {
                 Json(payload).into_response()
@@ -1652,6 +1811,7 @@ async fn rest_import_site_data(
     headers: HeaderMap,
     payload: &str,
     service: PilotServiceImpl,
+    dry_run: bool,
 ) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
     let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let payload: RestSiteImportPayload = serde_json::from_str(payload)
@@ -1659,6 +1819,11 @@ async fn rest_import_site_data(
     if payload.format.trim() != "yobi-data" {
         return Err(RestRouteError::bad_request(
             "unsupported site data import format",
+        ));
+    }
+    if dry_run {
+        return Ok(Json(
+            rest_site_import_dry_run_report(&service, repository, &payload).await?,
         ));
     }
 
@@ -2047,23 +2212,551 @@ async fn rest_import_site_data(
         imported_issues += 1;
     }
 
-    Ok(Json(RestSiteImportResponse {
-        imported_issues,
-        imported_labels,
-        imported_milestones,
-        imported_posts,
-        imported_projects,
-        imported_project_members,
-        imported_users,
-        skipped_issues,
-        skipped_labels,
-        skipped_milestones,
-        skipped_posts,
-        skipped_projects,
-        skipped_project_members,
-        skipped_users,
-        unsupported_sections: Vec::new(),
-    }))
+    Ok(Json(RestSiteImportResponse::imported(
+        RestSiteImportCountSet {
+            issues: imported_issues,
+            labels: imported_labels,
+            milestones: imported_milestones,
+            posts: imported_posts,
+            projects: imported_projects,
+            project_members: imported_project_members,
+            users: imported_users,
+            ..RestSiteImportCountSet::default()
+        },
+        RestSiteImportCountSet {
+            issues: skipped_issues,
+            labels: skipped_labels,
+            milestones: skipped_milestones,
+            posts: skipped_posts,
+            projects: skipped_projects,
+            project_members: skipped_project_members,
+            users: skipped_users,
+            ..RestSiteImportCountSet::default()
+        },
+        Vec::new(),
+    )))
+}
+
+#[derive(Default)]
+struct RestSiteImportDryRunState {
+    labels: HashSet<(String, String, String, String)>,
+    milestones: HashSet<(String, String, String)>,
+    projects: HashSet<(String, String)>,
+    users: HashSet<String>,
+}
+
+async fn rest_site_import_dry_run_report(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    payload: &RestSiteImportPayload,
+) -> Result<RestSiteImportResponse, RestRouteError> {
+    let mut state = RestSiteImportDryRunState::default();
+    let mut would_import = RestSiteImportCountSet::default();
+    let mut would_skip = RestSiteImportCountSet::default();
+    let mut validation_errors = Vec::new();
+
+    for user in &payload.users {
+        let login_id = user.login_id.trim();
+        if login_id.is_empty()
+            || rest_site_import_dry_run_user_available(repository, &mut state, login_id).await?
+        {
+            would_skip.users += 1;
+            continue;
+        }
+        would_import.users += 1;
+        state.users.insert(login_id.to_string());
+    }
+
+    for (index, project) in payload.projects.iter().enumerate() {
+        let owner_name = project.owner_name.trim();
+        let project_name = project.project_name.trim();
+        let mut invalid = false;
+        if let Err(error) = normalize_site_import_project_scope(&project.project_scope) {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "projects",
+                index,
+                "projectScope",
+                error.to_string(),
+            );
+            invalid = true;
+        }
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || invalid
+            || !rest_site_import_dry_run_user_available(repository, &mut state, owner_name).await?
+            || rest_site_import_dry_run_project_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+            )
+            .await?
+        {
+            would_skip.projects += 1;
+            continue;
+        }
+        would_import.projects += 1;
+        state
+            .projects
+            .insert((owner_name.to_string(), project_name.to_string()));
+    }
+
+    for member in &payload.project_members {
+        let owner_name = member.owner_name.trim();
+        let project_name = member.project_name.trim();
+        let login_id = member.login_id.trim();
+        if !rest_site_import_dry_run_project_available(
+            repository,
+            &mut state,
+            owner_name,
+            project_name,
+        )
+        .await?
+            || !rest_site_import_dry_run_user_available(repository, &mut state, login_id).await?
+        {
+            would_skip.project_members += 1;
+            continue;
+        }
+        would_import.project_members += 1;
+    }
+
+    for (index, label) in payload.labels.iter().enumerate() {
+        let owner_name = label.owner_name.trim();
+        let project_name = label.project_name.trim();
+        let label_name = label.name.trim();
+        let category_name = rest_site_import_label_category_name(label.category_name.trim());
+        if !label.color.trim().is_empty() {
+            if let Err(error) = normalize_issue_label_color(label.color.trim()) {
+                rest_site_import_push_validation_error(
+                    &mut validation_errors,
+                    "labels",
+                    index,
+                    "color",
+                    error.to_string(),
+                );
+                would_skip.labels += 1;
+                continue;
+            }
+        }
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || label_name.is_empty()
+            || !rest_site_import_dry_run_project_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+            )
+            .await?
+            || rest_site_import_dry_run_label_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+                category_name,
+                label_name,
+            )
+            .await?
+        {
+            would_skip.labels += 1;
+            continue;
+        }
+        would_import.labels += 1;
+        state.labels.insert((
+            owner_name.to_string(),
+            project_name.to_string(),
+            category_name.to_string(),
+            label_name.to_string(),
+        ));
+    }
+
+    for (index, milestone) in payload.milestones.iter().enumerate() {
+        let attachment_errors_before = validation_errors.len();
+        rest_site_import_dry_run_attachments(
+            service,
+            "milestones.attachments",
+            index,
+            &milestone.attachments,
+            &mut would_import,
+            &mut would_skip,
+            &mut validation_errors,
+        );
+        let attachment_invalid = validation_errors.len() != attachment_errors_before;
+        let owner_name = milestone.owner_name.trim();
+        let project_name = milestone.project_name.trim();
+        let title = milestone.title.trim();
+        let mut invalid = false;
+        if let Err(error) = parse_milestone_due_date(&milestone.due_date) {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "milestones",
+                index,
+                "dueDate",
+                error.to_string(),
+            );
+            invalid = true;
+        }
+        if let Err(error) = normalize_milestone_state(&milestone.state) {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "milestones",
+                index,
+                "state",
+                error.to_string(),
+            );
+            invalid = true;
+        }
+        if title.is_empty()
+            || invalid
+            || attachment_invalid
+            || !rest_site_import_dry_run_actor_available(repository, &mut state, "", owner_name)
+                .await?
+            || !rest_site_import_dry_run_project_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+            )
+            .await?
+            || rest_site_import_dry_run_milestone_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+                title,
+            )
+            .await?
+        {
+            would_skip.milestones += 1;
+            continue;
+        }
+        would_import.milestones += 1;
+        state.milestones.insert((
+            owner_name.to_string(),
+            project_name.to_string(),
+            title.to_string(),
+        ));
+    }
+
+    for (index, post) in payload.posts.iter().enumerate() {
+        let attachment_errors_before = validation_errors.len();
+        rest_site_import_dry_run_attachments(
+            service,
+            "posts.attachments",
+            index,
+            &post.attachments,
+            &mut would_import,
+            &mut would_skip,
+            &mut validation_errors,
+        );
+        rest_site_import_dry_run_comment_attachments(
+            service,
+            "posts.comments.attachments",
+            &post.comments,
+            &mut would_import,
+            &mut would_skip,
+            &mut validation_errors,
+        );
+        let attachment_invalid = validation_errors.len() != attachment_errors_before;
+        let owner_name = post.owner_name.trim();
+        let project_name = post.project_name.trim();
+        if rest_site_import_dry_run_validate_labels(
+            &post.labels,
+            "posts.labels",
+            index,
+            &mut validation_errors,
+        ) || !rest_site_import_dry_run_actor_available(
+            repository,
+            &mut state,
+            &post.author_login_id,
+            owner_name,
+        )
+        .await?
+            || attachment_invalid
+            || !rest_site_import_dry_run_project_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+            )
+            .await?
+        {
+            would_skip.posts += 1;
+            continue;
+        }
+        would_import.posts += 1;
+    }
+
+    for (index, issue) in payload.issues.iter().enumerate() {
+        let attachment_errors_before = validation_errors.len();
+        rest_site_import_dry_run_attachments(
+            service,
+            "issues.attachments",
+            index,
+            &issue.attachments,
+            &mut would_import,
+            &mut would_skip,
+            &mut validation_errors,
+        );
+        rest_site_import_dry_run_comment_attachments(
+            service,
+            "issues.comments.attachments",
+            &issue.comments,
+            &mut would_import,
+            &mut would_skip,
+            &mut validation_errors,
+        );
+        let attachment_invalid = validation_errors.len() != attachment_errors_before;
+        let owner_name = issue.owner_name.trim();
+        let project_name = issue.project_name.trim();
+        if rest_site_import_dry_run_validate_labels(
+            &issue.labels,
+            "issues.labels",
+            index,
+            &mut validation_errors,
+        ) || !rest_site_import_dry_run_actor_available(
+            repository,
+            &mut state,
+            &issue.author_login_id,
+            owner_name,
+        )
+        .await?
+            || attachment_invalid
+            || !rest_site_import_dry_run_project_available(
+                repository,
+                &mut state,
+                owner_name,
+                project_name,
+            )
+            .await?
+        {
+            would_skip.issues += 1;
+            continue;
+        }
+        would_import.issues += 1;
+    }
+
+    Ok(RestSiteImportResponse::dry_run(
+        would_import,
+        would_skip,
+        validation_errors,
+        Vec::new(),
+    ))
+}
+
+async fn rest_site_import_dry_run_user_available(
+    repository: &PilotRepository,
+    state: &mut RestSiteImportDryRunState,
+    login_id: &str,
+) -> Result<bool, RestRouteError> {
+    let login_id = login_id.trim();
+    if login_id.is_empty() {
+        return Ok(false);
+    }
+    if state.users.contains(login_id) {
+        return Ok(true);
+    }
+    let exists = repository
+        .find_user_by_login_id(login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .is_some();
+    if exists {
+        state.users.insert(login_id.to_string());
+    }
+    Ok(exists)
+}
+
+async fn rest_site_import_dry_run_project_available(
+    repository: &PilotRepository,
+    state: &mut RestSiteImportDryRunState,
+    owner_name: &str,
+    project_name: &str,
+) -> Result<bool, RestRouteError> {
+    let owner_name = owner_name.trim();
+    let project_name = project_name.trim();
+    if owner_name.is_empty() || project_name.is_empty() {
+        return Ok(false);
+    }
+    let key = (owner_name.to_string(), project_name.to_string());
+    if state.projects.contains(&key) {
+        return Ok(true);
+    }
+    let exists = repository
+        .read_project_by_owner_and_name(owner_name, project_name)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .is_some();
+    if exists {
+        state.projects.insert(key);
+    }
+    Ok(exists)
+}
+
+async fn rest_site_import_dry_run_actor_available(
+    repository: &PilotRepository,
+    state: &mut RestSiteImportDryRunState,
+    preferred_login_id: &str,
+    owner_name: &str,
+) -> Result<bool, RestRouteError> {
+    for candidate in [preferred_login_id.trim(), owner_name.trim()] {
+        if rest_site_import_dry_run_user_available(repository, state, candidate).await? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+async fn rest_site_import_dry_run_label_available(
+    repository: &PilotRepository,
+    state: &mut RestSiteImportDryRunState,
+    owner_name: &str,
+    project_name: &str,
+    category_name: &str,
+    label_name: &str,
+) -> Result<bool, RestRouteError> {
+    let key = (
+        owner_name.trim().to_string(),
+        project_name.trim().to_string(),
+        category_name.trim().to_string(),
+        label_name.trim().to_string(),
+    );
+    if state.labels.contains(&key) {
+        return Ok(true);
+    }
+    let labels = repository
+        .list_project_labels(owner_name.trim(), project_name.trim())
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let exists = labels
+        .iter()
+        .any(|label| label.category_name == category_name && label.name == label_name);
+    if exists {
+        state.labels.insert(key);
+    }
+    Ok(exists)
+}
+
+async fn rest_site_import_dry_run_milestone_available(
+    repository: &PilotRepository,
+    state: &mut RestSiteImportDryRunState,
+    owner_name: &str,
+    project_name: &str,
+    title: &str,
+) -> Result<bool, RestRouteError> {
+    let key = (
+        owner_name.trim().to_string(),
+        project_name.trim().to_string(),
+        title.trim().to_string(),
+    );
+    if state.milestones.contains(&key) {
+        return Ok(true);
+    }
+    let exists = repository
+        .project_milestone_title_exists(owner_name.trim(), project_name.trim(), title.trim(), None)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    if exists {
+        state.milestones.insert(key);
+    }
+    Ok(exists)
+}
+
+fn rest_site_import_dry_run_validate_labels(
+    labels: &[RestSiteExportLabelItem],
+    section: &str,
+    section_index: usize,
+    validation_errors: &mut Vec<RestSiteImportValidationError>,
+) -> bool {
+    let mut invalid = false;
+    for label in labels {
+        if label.color.trim().is_empty() {
+            continue;
+        }
+        if let Err(error) = normalize_issue_label_color(label.color.trim()) {
+            rest_site_import_push_validation_error(
+                validation_errors,
+                section,
+                section_index,
+                "color",
+                error.to_string(),
+            );
+            invalid = true;
+        }
+    }
+    invalid
+}
+
+fn rest_site_import_dry_run_comment_attachments(
+    service: &PilotServiceImpl,
+    section: &str,
+    comments: &[RestSiteExportCommentItem],
+    would_import: &mut RestSiteImportCountSet,
+    would_skip: &mut RestSiteImportCountSet,
+    validation_errors: &mut Vec<RestSiteImportValidationError>,
+) {
+    for (index, comment) in comments.iter().enumerate() {
+        rest_site_import_dry_run_attachments(
+            service,
+            section,
+            index,
+            &comment.attachments,
+            would_import,
+            would_skip,
+            validation_errors,
+        );
+        rest_site_import_dry_run_comment_attachments(
+            service,
+            section,
+            &comment.child_comments,
+            would_import,
+            would_skip,
+            validation_errors,
+        );
+    }
+}
+
+fn rest_site_import_dry_run_attachments(
+    service: &PilotServiceImpl,
+    section: &str,
+    section_index: usize,
+    attachments: &[RestSiteExportAttachmentItem],
+    would_import: &mut RestSiteImportCountSet,
+    would_skip: &mut RestSiteImportCountSet,
+    validation_errors: &mut Vec<RestSiteImportValidationError>,
+) {
+    for attachment in attachments {
+        match rest_site_import_portable_attachment_bytes(service, attachment) {
+            Ok(Some(_bytes)) => would_import.attachments += 1,
+            Ok(None) => {}
+            Err(message) => {
+                would_skip.attachments += 1;
+                rest_site_import_push_validation_error(
+                    validation_errors,
+                    section,
+                    section_index,
+                    "contentBase64",
+                    message,
+                );
+            }
+        }
+    }
+}
+
+fn rest_site_import_push_validation_error(
+    validation_errors: &mut Vec<RestSiteImportValidationError>,
+    section: &str,
+    index: usize,
+    field: &str,
+    message: impl Into<String>,
+) {
+    validation_errors.push(RestSiteImportValidationError {
+        field: field.to_string(),
+        index: index as u32,
+        message: message.into(),
+        section: section.to_string(),
+    });
 }
 
 async fn rest_site_import_post_comments(
@@ -2202,6 +2895,30 @@ struct RestSiteImportedAttachments {
     link_rewrites: Vec<(i64, i64)>,
 }
 
+fn rest_site_import_portable_attachment_bytes(
+    service: &PilotServiceImpl,
+    attachment: &RestSiteExportAttachmentItem,
+) -> Result<Option<Vec<u8>>, String> {
+    let Some(content_base64) = attachment
+        .content_base64
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(None);
+    };
+    let bytes = general_purpose::STANDARD
+        .decode(content_base64)
+        .map_err(|_| "site.import.attachment.invalidContent".to_string())?;
+    if attachment.size >= 0 && attachment.size != bytes.len() as i64 {
+        return Err("site.import.attachment.sizeMismatch".to_string());
+    }
+    if bytes.len() > service.max_uploaded_file_size {
+        return Err("site.import.attachment.tooLarge".to_string());
+    }
+    Ok(Some(bytes))
+}
+
 async fn rest_site_import_attachments(
     service: &PilotServiceImpl,
     repository: &PilotRepository,
@@ -2211,27 +2928,9 @@ async fn rest_site_import_attachments(
     let mut attachment_ids = Vec::new();
     let mut link_rewrites = Vec::new();
     for attachment in attachments {
-        if let Some(content_base64) = attachment
-            .content_base64
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
+        if let Some(bytes) = rest_site_import_portable_attachment_bytes(service, attachment)
+            .map_err(RestRouteError::bad_request)?
         {
-            let bytes = general_purpose::STANDARD
-                .decode(content_base64)
-                .map_err(|_| {
-                    RestRouteError::bad_request("site.import.attachment.invalidContent")
-                })?;
-            if attachment.size >= 0 && attachment.size != bytes.len() as i64 {
-                return Err(RestRouteError::bad_request(
-                    "site.import.attachment.sizeMismatch",
-                ));
-            }
-            if bytes.len() > service.max_uploaded_file_size {
-                return Err(RestRouteError::bad_request(
-                    "site.import.attachment.tooLarge",
-                ));
-            }
             let file_name = attachment
                 .name
                 .trim()
@@ -2443,6 +3142,15 @@ fn normalize_site_import_project_member_role(value: &str) -> String {
         "manager".to_string()
     } else {
         "member".to_string()
+    }
+}
+
+fn rest_site_import_label_category_name(value: &str) -> &str {
+    let value = value.trim();
+    if value.is_empty() {
+        "Imported"
+    } else {
+        value
     }
 }
 

@@ -237,7 +237,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | ---------------------------------------- | ------------------------------------------------------ |
 | SVN 프로토콜 지원                        | 공수 대비 사용률 낮음                                  |
 | LDAP 연동                                | 인프라 의존성 복잡                                     |
-| GitHub Import                            | 외부 API 의존                                          |
+| GitHub outbound migration (`/migration`, Yona -> GitHub) | 외부 GitHub API 의존; `/_import` Git URL clone과 별개이며 app-runtime scope가 아니라 migration-tool destination adapter 후보 |
 | Migration 도구 (Export CSV/Excel)        | 부가 기능; `/migration` legacy shell은 비활성 호환 상태만 제공 |
 | Social Login (OAuth)                     | 외부 provider 연동 복잡                                |
 | IMAP 메일박스 서비스                     | 부가 기능                                              |
@@ -245,6 +245,13 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | WebDAV 지원                              | SVN과 연관된 부가 기능                                 |
 | i18n (다국어)                            | 1차에서는 한국어/영어 hardcode 허용, 추후 i18next 도입 |
 | Update notification (버전 업데이트 알림) | 배포 체계 변경 후 재설계 필요                          |
+
+2026-06-21 evidence decision: legacy `/_import` is only the implemented Git URL
+clone project import form. Legacy GitHub migration evidence exists under
+`/migration` and browser-side `yona.Migration.js`, but the direction is outbound
+Yona-to-GitHub and disabled by `github.allow.migration = false`; no legacy
+GitHub-to-Yona import route/controller/test was found. See
+`docs/provenance/github-migration-decision.md`.
 
 ---
 
@@ -1564,7 +1571,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 세션/인증         | ✅ 구현           | bcrypt, CSRF, 세션 쿠키                                          |
 | DB 엔티티         | ✅ 구현           | 60+ SeaORM 모델, legacy 스키마 전체 매핑                         |
 | Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
-| Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB, legacy `/migration` 비활성 shell |
+| Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB, legacy `/migration` 비활성 shell; legacy outbound Yona-to-GitHub migration is evidence-backed external destination-adapter follow-up, not app-runtime import |
 | 인증 플로우       | ✅ 구현           | 로그인/가입/비밀번호 찾기/이메일 인증                            |
 | Workspace         | ✅ 구현           | 대시보드, 공개 프로필, 설정, 이메일, 토큰, 아바타                |
 | 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입, legacy settings/member/delete shell anchors |
@@ -1621,7 +1628,7 @@ historical 문서(`docs/plans/*`, `docs/workflow/*`)는 삭제하지 않는다. 
 
 Rust 런타임은 legacy `conf/application.conf` HOCON 파일을 직접 파싱하지 않는다. 운영자는 legacy 값을 `yona.toml`로 옮기거나 동일한 `YONA_*` 환경 변수로 주입한다. 우선순위는 `YONA_*` 환경 변수 > `YONA_CONFIG_TOML`로 지정한 파일 > 현재 작업 디렉터리의 `yona.toml` > 런타임 기본값이다.
 
-Legacy Play/JVM 전용 키(`application.secret`, `application.global`, `application.server`, Ebean/evolutions, Play/Akka thread-pool, JNDI, logger 설정)는 Rust 런타임 설정으로 옮기지 않는다. LDAP, full OAuth provider flow, GitHub migration, dynamic i18n switching, analytics/custom navbar, Slack color tuning, and broad external API/migrator behavior remain deferred/follow-up boundaries documented in the main SPEC and provenance.
+Legacy Play/JVM 전용 키(`application.secret`, `application.global`, `application.server`, Ebean/evolutions, Play/Akka thread-pool, JNDI, logger 설정)는 Rust 런타임 설정으로 옮기지 않는다. LDAP, full OAuth provider flow, legacy outbound GitHub migration (`/migration`, Yona-to-GitHub), dynamic i18n switching, analytics/custom navbar, Slack color tuning, and broad external API/migrator behavior remain deferred/follow-up boundaries documented in the main SPEC and provenance.
 
 ```toml
 # yona.toml — legacy application.conf에서 변환
@@ -1886,6 +1893,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search verification refresh: app search now has `SearchTests.findProjects`-borrowed project result visibility coverage proving anonymous global `searchType=project` returns matching public projects and excludes matching private projects.
 - Notification: mailbox executable polling now processes NUL-separated raw RFC822 messages from `YONA_MAILBOX_FETCH_COMMAND` through the existing raw mailbox bridge after issue/board/code/review comment `original_email` marker parity, mailbox plus-address/detail-routing parser parity, Message-ID left-part parser parity, header Message-ID token parser parity, sender lookup parity, raw RFC822/MIME mailbox ingestion, parsed mailbox-message normalization, app-level parsed/raw-message processing bridge, normalized mailbox-message orchestration, MIME content selection parity, exact `original_email` reply target lookup, Message-ID-left direct resource-path fallback, recipient detail resource lookup with legacy enum-style resource type canonicalization, mailbox action planning/execution, DB-backed `CreationViaEmailTest` resource creation parity including board comments, legacy `NotificationMail.handleLinks` external-link `noreferrer` parity, and the legacy notification mail HTML shell/view-link/resource-unwatch/settings-footer body
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the app-owned direct rows inventoried in `docs/provenance/legacy-external-api.md` is a separate migration-tool source-adapter deliverable rather than app server scope. Existing legacy Yona instances are read through their existing legacy endpoints; Rust Yona receives migration data through site-admin import or tool-local `yobi-data` formats, not by mounting the broad legacy API in the Rust runtime.
+- GitHub outbound migration: legacy `/migration` plus `yona.Migration.js` proves a disabled Yona-to-GitHub external API migration tool for labels, milestones, issues, posts, comments, and attachment-link payloads. It is not `/_import` and not GitHub-to-Rust import; any revival belongs in migration-tool destination-adapter fixtures, as documented in `docs/provenance/github-migration-decision.md`.
 - Webhook follow-up: optional signature compatibility if external evidence requires it
 - Admin follow-up: site-admin user/project/post/issue/mail/diagnostic/update/data surfaces are implemented; remaining admin work is production hardening outside the app-runtime parity slice
 - Markdown watchlist: add further legacy autolink, GFM extension, or Highlight.js-equivalent language edges only when new evidence requires them; no known app-runtime Markdown renderer blocker remains

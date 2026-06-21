@@ -46,6 +46,17 @@ pub struct ProjectEndpointFixture {
     pub auth: AuthRequirement,
     pub request: FixtureShape,
     pub response: FixtureShape,
+    pub migration_payload: Option<ProjectMigrationPayloadFixture>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ProjectMigrationPayloadFixture {
+    pub sample_path: &'static str,
+    pub request_json: Option<&'static str>,
+    pub success_status: u16,
+    pub success_json: &'static str,
+    pub alternate_status: Option<u16>,
+    pub alternate_json: Option<&'static str>,
 }
 
 pub fn fixtures() -> &'static [ProjectEndpointFixture] {
@@ -108,6 +119,7 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
                 "milestones",
             ],
         ),
+        migration_payload: Some(PROJECT_EXPORT_PAYLOAD),
     },
     ProjectEndpointFixture {
         method: "POST",
@@ -141,6 +153,7 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
                 "id", "owner", "name", "overview", "vcs", "status", "reason", "project",
             ],
         ),
+        migration_payload: Some(PROJECT_IMPORT_PAYLOAD),
     },
     ProjectEndpointFixture {
         method: "POST",
@@ -177,6 +190,7 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
                 "message",
             ],
         ),
+        migration_payload: None,
     },
     ProjectEndpointFixture {
         method: "GET",
@@ -203,5 +217,239 @@ const PROJECT_ENDPOINT_FIXTURES: &[ProjectEndpointFixture] = &[
                 "isExclusive",
             ],
         ),
+        migration_payload: None,
     },
 ];
+
+const PROJECT_EXPORT_PAYLOAD: ProjectMigrationPayloadFixture = ProjectMigrationPayloadFixture {
+    sample_path: "/-_-api/v1/owners/alice/projects/demo/exports",
+    request_json: None,
+    success_status: 200,
+    success_json: r##"{
+  "owner": "alice",
+  "projectName": "demo",
+  "projectDescription": "Legacy project",
+  "projectCreatedDate": "2026-06-01 AM 09:00:00 +0900",
+  "projectVcs": "GIT",
+  "projectScope": "PUBLIC",
+  "assignees": [
+    {
+      "loginId": "assignee",
+      "name": "Assignee User",
+      "email": "assignee@example.com"
+    }
+  ],
+  "authors": [
+    {
+      "loginId": "author",
+      "name": "Author User",
+      "email": "author@example.com"
+    }
+  ],
+  "memberCount": 1,
+  "members": [
+    {
+      "loginId": "alice",
+      "name": "Alice Owner",
+      "role": "manager",
+      "email": "alice@example.com"
+    }
+  ],
+  "issueCount": 1,
+  "postCount": 1,
+  "milestoneCount": 1,
+  "labels": [
+    {
+      "labelName": "Bug",
+      "labelColor": "#2196f3",
+      "category": "Type",
+      "isExclusive": false
+    }
+  ],
+  "issues": [
+    {
+      "number": 3,
+      "id": 30,
+      "title": "Legacy issue",
+      "type": "ISSUE_POST",
+      "author": {
+        "loginId": "author",
+        "name": "Author User",
+        "email": "author@example.com"
+      },
+      "createdAt": "2026-06-01T00:00:00Z",
+      "updatedAt": "2026-06-02T00:00:00Z",
+      "body": "legacy issue body",
+      "owner": "alice",
+      "projectName": "demo",
+      "assignees": [
+        {
+          "loginId": "assignee",
+          "name": "Assignee User",
+          "email": "assignee@example.com"
+        }
+      ],
+      "state": "CLOSED",
+      "labels": [
+        {
+          "labelName": "Bug",
+          "labelColor": "#2196f3",
+          "category": "Type"
+        }
+      ],
+      "milestoneId": 7,
+      "milestoneTitle": "M1",
+      "dueDate": "2026-06-30 PM 11:59:59 +0900",
+      "refUrl": "https://yona.example.com/alice/demo/issue/3",
+      "attachments": [
+        {
+          "id": 301,
+          "name": "issue.png",
+          "hash": "issue-hash",
+          "mimeType": "image/png",
+          "size": 123,
+          "containerType": "ISSUE_POST",
+          "containerId": "30",
+          "ownerLoginId": "author"
+        }
+      ],
+      "comments": [
+        {
+          "id": 40,
+          "type": "ISSUE_COMMENT",
+          "author": {
+            "loginId": "commenter",
+            "name": "Commenter User",
+            "email": "commenter@example.com"
+          },
+          "createdAt": "2026-06-03T00:00:00Z",
+          "body": "issue comment",
+          "attachments": [
+            {
+              "id": 401,
+              "name": "issue-comment.txt",
+              "hash": "issue-comment-hash",
+              "mimeType": "text/plain",
+              "size": 45,
+              "containerType": "ISSUE_COMMENT",
+              "containerId": "40",
+              "ownerLoginId": "commenter"
+            }
+          ],
+          "childComments": [
+            {
+              "id": 41,
+              "type": "ISSUE_COMMENT",
+              "author": {
+                "loginId": "commenter",
+                "name": "Commenter User",
+                "email": "commenter@example.com"
+              },
+              "createdAt": "2026-06-03T01:00:00Z",
+              "body": "child issue comment"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "number": 4,
+      "id": 50,
+      "title": "Legacy post",
+      "type": "BOARD_POST",
+      "author": {
+        "loginId": "author",
+        "name": "Author User",
+        "email": "author@example.com"
+      },
+      "createdAt": "2026-06-04T00:00:00Z",
+      "updatedAt": "2026-06-05T00:00:00Z",
+      "body": "legacy post body",
+      "owner": "alice",
+      "projectName": "demo",
+      "labels": [
+        {
+          "labelName": "Bug",
+          "labelColor": "#2196f3",
+          "category": "Type"
+        }
+      ],
+      "comments": [
+        {
+          "id": 51,
+          "type": "NONISSUE_COMMENT",
+          "author": {
+            "loginId": "commenter",
+            "name": "Commenter User",
+            "email": "commenter@example.com"
+          },
+          "createdAt": "2026-06-06T00:00:00Z",
+          "body": "post comment"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": 7,
+      "title": "M1",
+      "state": "open",
+      "description": "First milestone",
+      "dueDate": "2026-06-30 PM 11:59:59 +0900"
+    }
+  ]
+}"##,
+    alternate_status: None,
+    alternate_json: None,
+};
+
+const PROJECT_IMPORT_PAYLOAD: ProjectMigrationPayloadFixture = ProjectMigrationPayloadFixture {
+    sample_path: "/-_-api/v1/owners/alice/projects",
+    request_json: Some(
+        r##"{
+  "projectName": "demo",
+  "projectDescription": "Legacy project",
+  "projectCreatedDate": "2026-06-01 AM 09:00:00 +0900",
+  "projectVcs": "GIT",
+  "projectScope": "PUBLIC",
+  "members": [
+    {
+      "loginId": "alice",
+      "name": "Alice Owner",
+      "email": "alice@example.com",
+      "role": "manager"
+    },
+    {
+      "loginId": "member",
+      "name": "Member User",
+      "email": "member@example.com",
+      "role": "member"
+    }
+  ]
+}"##,
+    ),
+    success_status: 201,
+    success_json: r##"{
+  "id": 10,
+  "owner": "alice",
+  "name": "demo",
+  "overview": "Legacy project",
+  "vcs": "GIT"
+}"##,
+    alternate_status: Some(400),
+    alternate_json: Some(
+        r##"{
+  "status": 409,
+  "reason": "Conflict",
+  "project": {
+    "id": 10,
+    "owner": "alice",
+    "name": "demo",
+    "overview": "Legacy project",
+    "vcs": "GIT"
+  }
+}"##,
+    ),
+};

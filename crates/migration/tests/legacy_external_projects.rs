@@ -1,6 +1,7 @@
 use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
     projects::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
+    EndpointStatus,
 };
 
 #[test]
@@ -81,6 +82,69 @@ fn project_export_descriptor_preserves_export_shape() {
 }
 
 #[test]
+fn project_export_descriptor_includes_deterministic_migration_payload() {
+    let fixture = find_fixture(
+        "GET",
+        "/-_-api/v1/owners/:owner/projects/:projectName/exports",
+    )
+    .unwrap();
+    let payload = fixture
+        .migration_payload
+        .expect("project export should have a migrator payload fixture");
+
+    assert_eq!(
+        payload.sample_path,
+        "/-_-api/v1/owners/alice/projects/demo/exports"
+    );
+    assert_eq!(payload.request_json, None);
+    assert_eq!(payload.success_status, 200);
+    assert_eq!(payload.alternate_status, None);
+    assert_eq!(payload.alternate_json, None);
+
+    let success: serde_json::Value = serde_json::from_str(payload.success_json).unwrap();
+    assert_eq!(success["owner"], "alice");
+    assert_eq!(success["projectName"], "demo");
+    assert_eq!(success["projectDescription"], "Legacy project");
+    assert_eq!(
+        success["projectCreatedDate"],
+        "2026-06-01 AM 09:00:00 +0900"
+    );
+    assert_eq!(success["projectVcs"], "GIT");
+    assert_eq!(success["projectScope"], "PUBLIC");
+    assert_eq!(success["assignees"][0]["loginId"], "assignee");
+    assert_eq!(success["authors"][0]["email"], "author@example.com");
+    assert_eq!(success["memberCount"], 1);
+    assert_eq!(success["members"][0]["role"], "manager");
+    assert_eq!(success["issueCount"], 1);
+    assert_eq!(success["postCount"], 1);
+    assert_eq!(success["milestoneCount"], 1);
+    assert_eq!(success["labels"][0]["isExclusive"], false);
+
+    let issue = &success["issues"][0];
+    assert_eq!(issue["number"], 3);
+    assert_eq!(issue["type"], "ISSUE_POST");
+    assert_eq!(issue["author"]["loginId"], "author");
+    assert_eq!(issue["assignees"][0]["email"], "assignee@example.com");
+    assert_eq!(issue["state"], "CLOSED");
+    assert_eq!(issue["milestoneTitle"], "M1");
+    assert_eq!(issue["attachments"][0]["containerType"], "ISSUE_POST");
+    assert_eq!(issue["comments"][0]["type"], "ISSUE_COMMENT");
+    assert_eq!(
+        issue["comments"][0]["childComments"][0]["body"],
+        "child issue comment"
+    );
+
+    let post = &success["posts"][0];
+    assert_eq!(post["number"], 4);
+    assert_eq!(post["type"], "BOARD_POST");
+    assert_eq!(post["comments"][0]["type"], "NONISSUE_COMMENT");
+
+    let milestone = &success["milestones"][0];
+    assert_eq!(milestone["title"], "M1");
+    assert_eq!(milestone["dueDate"], "2026-06-30 PM 11:59:59 +0900");
+}
+
+#[test]
 fn project_import_descriptor_preserves_body_and_status_classification() {
     let project = find_fixture("POST", "/-_-api/v1/owners/:owner/projects").unwrap();
     assert_eq!(project.direction, MigrationDirection::Import);
@@ -99,6 +163,46 @@ fn project_import_descriptor_preserves_body_and_status_classification() {
             "role",
         ]
     );
+}
+
+#[test]
+fn project_import_descriptor_includes_site_manager_payload_and_conflict_shape() {
+    let fixture = find_fixture("POST", "/-_-api/v1/owners/:owner/projects").unwrap();
+    let payload = fixture
+        .migration_payload
+        .expect("project import should have a migrator payload fixture");
+
+    assert_eq!(payload.sample_path, "/-_-api/v1/owners/alice/projects");
+    assert_eq!(payload.success_status, 201);
+    assert_eq!(payload.alternate_status, Some(400));
+
+    let request: serde_json::Value =
+        serde_json::from_str(payload.request_json.expect("project import request JSON")).unwrap();
+    assert_eq!(request["projectName"], "demo");
+    assert_eq!(request["projectDescription"], "Legacy project");
+    assert_eq!(
+        request["projectCreatedDate"],
+        "2026-06-01 AM 09:00:00 +0900"
+    );
+    assert_eq!(request["projectVcs"], "GIT");
+    assert_eq!(request["projectScope"], "PUBLIC");
+    assert_eq!(request["members"][0]["email"], "alice@example.com");
+    assert_eq!(request["members"][0]["role"], "manager");
+    assert_eq!(request["members"][1]["role"], "member");
+
+    let created: serde_json::Value = serde_json::from_str(payload.success_json).unwrap();
+    assert_eq!(created["id"], 10);
+    assert_eq!(created["owner"], "alice");
+    assert_eq!(created["name"], "demo");
+    assert_eq!(created["overview"], "Legacy project");
+    assert_eq!(created["vcs"], "GIT");
+
+    let conflict: serde_json::Value =
+        serde_json::from_str(payload.alternate_json.expect("project conflict JSON")).unwrap();
+    assert_eq!(conflict["status"], 409);
+    assert_eq!(conflict["reason"], "Conflict");
+    assert_eq!(conflict["project"]["owner"], "alice");
+    assert_eq!(conflict["project"]["name"], "demo");
 }
 
 #[test]
@@ -132,6 +236,36 @@ fn project_app_owned_helpers_preserve_label_and_title_head_shapes() {
             "message",
         ]
     );
+}
+
+#[test]
+fn only_migrator_project_descriptors_carry_migration_payload_samples() {
+    for fixture in fixtures() {
+        let inventory = find_endpoint(fixture.method, fixture.path).unwrap_or_else(|| {
+            panic!(
+                "missing endpoint inventory entry: {} {}",
+                fixture.method, fixture.path
+            )
+        });
+
+        if fixture.direction.endpoint_status().is_migrator_scope() {
+            assert_ne!(inventory.status, EndpointStatus::AppOwned);
+            assert!(
+                fixture.migration_payload.is_some(),
+                "{} {} should carry a deterministic migration payload",
+                fixture.method,
+                fixture.path
+            );
+        } else {
+            assert_eq!(inventory.status, EndpointStatus::AppOwned);
+            assert!(
+                fixture.migration_payload.is_none(),
+                "{} {} is app-owned and must not be treated as a migration payload source",
+                fixture.method,
+                fixture.path
+            );
+        }
+    }
 }
 
 #[test]

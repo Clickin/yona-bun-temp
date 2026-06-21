@@ -42,6 +42,28 @@ java -jar tools/h2-to-sqlite/target/h2-to-sqlite-0.1.0.jar \
   --overwrite
 ```
 
+## SQLite Adopt Handoff
+
+The generated SQLite file is not considered imported until the Rust runtime
+schema validator accepts it. Run validation first, then start with adopt mode:
+
+```sh
+YONA_DATABASE_URL='sqlite:/path/to/yona.sqlite' \
+YONA_SCHEMA_POLICY=validate_only \
+target/release/yona-rust-pilot-server
+```
+
+```sh
+YONA_DATABASE_URL='sqlite:/path/to/yona.sqlite' \
+YONA_SCHEMA_POLICY=adopt \
+target/release/yona-rust-pilot-server
+```
+
+If validation fails, do not start with `adopt`; treat the converter output as an
+offline artifact to inspect or repair. The converter is a JDBC table-copy bridge
+only, so the same SQLite schema compatibility rules in `SPEC.md` Section 5.1
+remain authoritative.
+
 ## Smoke Test
 
 The test creates a tiny H2 database, runs the converter, and verifies copied rows in SQLite:
@@ -71,3 +93,10 @@ If the local environment has no cached `org.xerial:sqlite-jdbc` dependency and n
 - It expects the source H2 database to be readable by the configured H2 JDBC driver.
 
 For production migration, run this on a copy of the H2 database and inspect the generated SQLite file before using it with any runtime.
+
+## Current Release Check
+
+- 2026-06-21: `mvn -f tools/h2-to-sqlite/pom.xml test` passed with 2 smoke tests,
+  covering row copy, boolean normalization, primary keys, `NOT NULL`, and simple
+  defaults. The Java 25 run emitted only JVM/native-access deprecation warnings
+  from Maven/SQLite dependencies.

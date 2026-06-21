@@ -12,9 +12,10 @@ use serde_json::{json, Value};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    attachment, project_user, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, CreateProjectLabelInput, IssueMutationInput,
-    MilestoneListFilter, MilestoneMutationInput, PostingMutationInput,
+    attachment, issue, milestone, n4user, posting, project, project_user, site_admin,
+    AppRepository, CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput,
+    CreatePostingInput, CreateProjectLabelInput, IssueMutationInput, MilestoneListFilter,
+    MilestoneMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -1734,6 +1735,177 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         .find(|comment| comment.contents_markdown == "child comment with portable attachment")
         .expect("child comment");
     assert_eq!(child_comment.parent_comment_id, Some(parent_comment.id));
+}
+
+#[tokio::test]
+async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, _repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        max_uploaded_file_size: 8,
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_issues = issue::Entity::find().all(&db).await.unwrap().len();
+    let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "dry-imported",
+            "displayName": "Dry Imported User",
+            "emailAddress": "dry-imported@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }, {
+            "loginId": "siteboss",
+            "displayName": "Existing Site Boss",
+            "emailAddress": "siteboss@example.com",
+            "isSiteAdmin": true,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored",
+            "overview": "Dry-run restored project",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }, {
+            "ownerName": "missing-owner",
+            "projectName": "skipped-project",
+            "overview": "Skipped because owner is absent",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "projectMembers": [{
+            "loginId": "dry-imported",
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored",
+            "role": "manager"
+        }, {
+            "loginId": "missing-member",
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored",
+            "role": "member"
+        }],
+        "labels": [{
+            "categoryIsExclusive": false,
+            "categoryName": "Type",
+            "color": "#4caf50",
+            "name": "Dry label",
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored"
+        }],
+        "milestones": [{
+            "attachments": [{
+                "contentBase64": "ZHJ5",
+                "id": 701,
+                "mimeType": "text/plain",
+                "name": "dry.txt",
+                "size": 3
+            }],
+            "contentsMarkdown": "dry milestone body",
+            "dueDate": "",
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored",
+            "state": "open",
+            "title": "Dry milestone"
+        }],
+        "posts": [{
+            "authorLoginId": "dry-imported",
+            "attachments": [{
+                "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "id": 702,
+                "mimeType": "text/plain",
+                "name": "too-large.txt",
+                "size": 18
+            }],
+            "bodyMarkdown": "dry-run post with oversized portable attachment",
+            "comments": [],
+            "ownerName": "dry-imported",
+            "projectName": "dry-restored",
+            "title": "Dry-run post"
+        }],
+        "issues": [{
+            "authorLoginId": "dry-imported",
+            "bodyMarkdown": "skipped issue",
+            "comments": [],
+            "ownerName": "missing-owner",
+            "projectName": "skipped-project",
+            "state": "open",
+            "title": "Skipped issue"
+        }]
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import?dryRun=true",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let report = response_json(response).await;
+    assert_eq!(report["dryRun"], true);
+    assert_eq!(report["importedUsers"], 0);
+    assert_eq!(report["importedProjects"], 0);
+    assert_eq!(report["importedPosts"], 0);
+    assert_eq!(report["importedIssues"], 0);
+    assert_eq!(report["importedMilestones"], 0);
+    assert_eq!(report["wouldImportUsers"], 1);
+    assert_eq!(report["wouldSkipUsers"], 1);
+    assert_eq!(report["wouldImportProjects"], 1);
+    assert_eq!(report["wouldSkipProjects"], 1);
+    assert_eq!(report["wouldImportProjectMembers"], 1);
+    assert_eq!(report["wouldSkipProjectMembers"], 1);
+    assert_eq!(report["wouldImportLabels"], 1);
+    assert_eq!(report["wouldImportMilestones"], 1);
+    assert_eq!(report["wouldImportPosts"], 0);
+    assert_eq!(report["wouldSkipPosts"], 1);
+    assert_eq!(report["wouldSkipIssues"], 1);
+    assert_eq!(report["wouldImportAttachments"], 1);
+    assert_eq!(report["wouldSkipAttachments"], 1);
+    assert_eq!(
+        report["validationErrors"][0]["message"],
+        "site.import.attachment.tooLarge"
+    );
+
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        issue::Entity::find().all(&db).await.unwrap().len(),
+        before_issues
+    );
+    assert_eq!(
+        milestone::Entity::find().all(&db).await.unwrap().len(),
+        before_milestones
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "dry-run must not write portable attachment files"
+    );
 }
 
 #[tokio::test]

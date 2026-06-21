@@ -32,6 +32,11 @@ Rust through Rust-owned site-admin import or tool-local `yobi-data` formats.
 Direct DB extraction can be an optional expert adapter later, not the default
 contract.
 
+The legacy `/migration` GitHub feature is not part of this `/-_-api/v1/**`
+inventory. It is an outbound Yona-to-GitHub migration tool, documented in
+`docs/provenance/github-migration-decision.md`, and must remain separate from
+Rust app-runtime compatibility.
+
 ## Legacy Sources
 
 - Route table: `yona-original/conf/routes`, lines 40-90 for `/-_-api/v1/**`.
@@ -57,8 +62,8 @@ contract.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `GET /-_-api/v1/owners/:owner/projects/:projectName/exports` | `ProjectApi.exports()` | Project export JSON including metadata, members, labels, issues, posts, milestones. | Migrator/export scope. |
-| `POST /-_-api/v1/owners/:owner/projects` | `ProjectApi.newProject()` | Site/admin import-style project creation with members and repository creation. | Migrator/import scope. |
+| `GET /-_-api/v1/owners/:owner/projects/:projectName/exports` | `ProjectApi.exports()` | Project export JSON including metadata, members, labels, issues, posts, milestones. | Migrator/export scope; `crates/migration` has a deterministic descriptor payload fixture for migration-tool work. |
+| `POST /-_-api/v1/owners/:owner/projects` | `ProjectApi.newProject()` | Site/admin import-style project creation with members and repository creation. | Migrator/import scope; `crates/migration` has a deterministic descriptor payload and conflict fixture for migration-tool work. |
 | `POST /-_-api/v1/owners/:owner/projects/:projectName/labels` | `ProjectApi.newLabel()` | Bulk issue-label/category import. | Implemented in app server with legacy `JsonNode.findValue("labels")` recursive request parsing, per-label recursive scalar lookup, `201 Created` created-array response, and duplicate `409 Conflict` item payloads. |
 | `GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads?query=` | `ProjectApi.titleHeads()` | JSON title-head and label suggestion helper. | Implemented in app server with legacy JSON Accept gate and title-head/project-label result shape. |
 
@@ -143,3 +148,6 @@ tests.
 - `Foverite`, `Assginees`, `commentNotiRecivers`, and `defultLoginPage` are legacy spellings in source and route/action names; provenance preserves them only when naming legacy references.
 - Implemented app-server compatibility is limited to the rows marked implemented in this inventory. Any broader route listed above as migrator/deferred must remain outside the Rust app-facing `/api/v1` surface and outside broad Rust `/-_-api/v1/**` runtime compatibility.
 - Existing React/runtime behavior should continue using canonical `/api/v1/**` except for the direct legacy helper calls explicitly allowed by SPEC.
+- Do not use the ambiguous old `GitHub Import` label for `/_import` or for
+  `/-_-api/v1/**` migrator rows. Legacy evidence maps it to outbound
+  `/migration` Yona-to-GitHub behavior only.

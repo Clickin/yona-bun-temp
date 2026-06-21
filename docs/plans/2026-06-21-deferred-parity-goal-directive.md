@@ -28,7 +28,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | OAuth provider login/linking | Deferred second-priority. Unsupported/denied route state and UI gating already exist. | Implement only legacy provider behavior with evidence, or keep explicitly deferred if provider fixtures cannot be made deterministic. |
 | LDAP login and BasicAuth LDAP | Deferred second-priority. No runtime LDAP flow exists. | Implement with isolated LDAP fixtures/mocks and legacy config compatibility. |
 | Broader SVN/WebDAV PROPFIND edge completeness | App-runtime SVN bridge is broad but still documented as a VCS lifecycle follow-up. | Close the remaining edge list by evidence-backed contract tests and implementation. |
-| Git import / GitHub migration ambiguity | Legacy `/_import` Git URL clone behavior is already implemented. `SPEC.md` still lists GitHub Import as deferred, but the validation pass found no legacy GitHub API issue/label/milestone/comment import route in `yona-original`; only Git clone import and site/migrator import surfaces were observed. | Do not duplicate implemented `/_import`. First produce provenance that proves a legacy-backed GitHub API import surface exists; if none exists, reclassify the SPEC row as deferred/not-applicable for this goal. Only implement a migration-tool adapter when legacy evidence defines the source semantics. |
+| Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
 | Production migration/import/export hardening | Site-admin `yobi-data` import/export and adopt/validate exist, but production migration hardening remains follow-up. | Harden validators, dry-run reports, rollback/no-partial-write behavior, and fixture coverage. |
 | Full-text/index-backed search | App-runtime lightweight legacy search exists; index-backed search is deferred. | Implement only if it preserves legacy search UX and result ordering semantics. |
@@ -79,8 +79,25 @@ protects users moving real legacy installations.
 | --- | --- | --- | --- |
 | P1-A import/export hardening | Yes | `crates/migration`, site-admin import/export tests, provenance | Add dry-run/validate-only import reports, no-partial-write guards, attachment size/hash validation coverage, and legacy fixture snapshots. |
 | P1-B legacy external migration adapters | Yes | `crates/migration/src/legacy_external/**`, migration tests | Implement the worker split already documented in `legacy-external-api.md` for users, projects, issues, boards, milestones, watchers/favorites boundary, and shared wiring. Do not mount broad runtime routes. |
-| P1-C GitHub import evidence decision | Yes, after P1-A interfaces are clear | provenance first; import adapter/tool code only if evidence exists | Confirm whether `SPEC.md`'s GitHub Import row refers to a legacy-backed GitHub API migration surface beyond the implemented `/_import` Git clone form. If no legacy route/controller/test proves labels/milestones/issues/comments API import semantics, reclassify the row as deferred/not-applicable for this goal. If evidence exists, implement deterministic migration-tool fixtures/mocks for only the proven semantics. |
+| P1-C GitHub import evidence decision | Yes, after P1-A interfaces are clear | provenance complete; adapter/tool code only if outbound GitHub migration is explicitly revived | Decision: `SPEC.md`'s old GitHub Import row maps to legacy outbound `/migration` Yona-to-GitHub behavior, not `/_import` and not GitHub-to-Rust import. Preserve implemented `/_import`; keep GitHub-to-Rust import not-applicable; implement only future migration-tool destination-adapter fixtures for the proven outbound GitHub API semantics if product scope asks for that feature. |
 | P1-D H2 bridge release check | Yes | `tools/h2-to-sqlite`, docs | Verify the existing H2-to-SQLite bridge against current SQLite adopt expectations and document limits. |
+
+P1-A sub-slice status: `/sites/import?dryRun=true` now covers a no-write
+validate-only report for the existing `yobi-data` import shape. It does not
+close the live import no-partial-write requirement; true transaction/rollback
+protection for non-dry-run `/sites/import` remains a P1-A follow-up and is
+recorded in `docs/provenance/phase-0b/yona-export.md`.
+
+P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
+has deterministic migration payload fixtures for legacy `ProjectApi.exports`
+and `ProjectApi.newProject`, with tests proving those project export/create
+descriptors remain migrator-owned and do not become app-runtime routes. Issue,
+board, milestone, and remaining shared adapter depth still need follow-up
+slices.
+
+P1-D sub-slice status: `tools/h2-to-sqlite` release evidence was refreshed on
+2026-06-21 with `mvn -f tools/h2-to-sqlite/pom.xml test`; the README now
+documents the required SQLite `validate_only` handoff before `adopt`.
 
 Exit criteria: a legacy user can choose either existing DB adopt/validate or
 export/import migration with clear failure reports and no silent data loss.

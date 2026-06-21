@@ -18,6 +18,13 @@ Use a separate migration tool with adapters:
 
 This is not a new product API. It is a compatibility bridge for migration.
 
+Legacy outbound GitHub migration is a different direction. The legacy
+`/migration` UI reads Yona data and writes to GitHub API endpoints from the
+browser. It is evidence-backed by
+`docs/provenance/github-migration-decision.md`, but it is not the default
+legacy-Yona-to-Rust migration path and must not be mounted in the Rust app
+runtime.
+
 ## Rejected Options
 
 ### Direct DB-to-DB connection as the default
@@ -58,6 +65,7 @@ The migration tool should have explicit source/target modes:
 | `yobi-data -> rust-site-import` | Local `yobi-data` package | Rust `/sites/import` or equivalent site-admin import path | Default Rust import path; keeps app-server API small. |
 | `h2 -> sqlite` | Legacy H2 JDBC | SQLite file | Already handled by `tools/h2-to-sqlite`; this is a DB conversion bridge, not the main app migration API. |
 | `db -> yobi-data` | Legacy DB connection | Local `yobi-data` package | Optional future expert mode only if driver packaging and schema-version checks are explicit. |
+| `yobi-data/source-export -> github` | Legacy-style Yona export payloads | GitHub API with mocked fixtures in tests | Optional outbound destination adapter only if the legacy GitHub migration feature is revived; not required for Rust import. |
 
 ## Consequences
 
