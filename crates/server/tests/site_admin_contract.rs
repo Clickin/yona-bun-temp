@@ -5,8 +5,8 @@ use http_body_util::BodyExt;
 // Guards site-admin update helper ownership while server config helpers are
 // imported from their owning module instead of the root.
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
-    Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, EntityTrait,
+    NotSet, QueryFilter, Set, Statement,
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -2028,6 +2028,103 @@ async fn site_admin_import_live_preflight_rejects_invalid_portable_attachment_wi
         !data_dir.path().join("uploads").exists(),
         "live preflight must reject before portable attachment file writes"
     );
+}
+
+#[tokio::test]
+async fn site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable",
+    )
+    .await;
+
+    let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_import_milestone_insert BEFORE INSERT ON milestone \
+         BEGIN SELECT RAISE(FAIL, 'forced milestone import failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install milestone failure trigger");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "milestones": [{
+            "attachments": [{
+                "contentBase64": "cm9sbGJhY2stZmlsZQ==",
+                "id": 9901,
+                "mimeType": "text/plain",
+                "name": "rollback-file.txt",
+                "size": 13
+            }],
+            "contentsMarkdown": "milestone with portable attachment /files/9901",
+            "dueDate": "",
+            "ownerName": "member",
+            "projectName": "portable",
+            "state": "open",
+            "title": "Rollback milestone"
+        }],
+        "posts": [],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(response_text(response)
+        .await
+        .contains("forced milestone import failure"));
+
+    assert_eq!(
+        milestone::Entity::find().all(&db).await.unwrap().len(),
+        before_milestones
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(repo
+        .list_project_milestones(
+            "member",
+            "portable",
+            MilestoneListFilter {
+                order_by: String::new(),
+                order_dir: String::new(),
+                state: "all".to_string(),
+            },
+        )
+        .await
+        .expect("list milestones after failed import")
+        .into_iter()
+        .all(|milestone| milestone.title != "Rollback milestone"));
+    let upload_count = std::fs::read_dir(data_dir.path().join("uploads"))
+        .map(|entries| entries.count())
+        .unwrap_or_default();
+    assert_eq!(upload_count, 0, "failed import must remove portable files");
 }
 
 #[tokio::test]

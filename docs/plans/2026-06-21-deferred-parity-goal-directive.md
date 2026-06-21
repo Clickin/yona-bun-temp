@@ -86,9 +86,13 @@ P1-A sub-slice status: `/sites/import?dryRun=true` now covers a no-write
 validate-only report for the existing `yobi-data` import shape. Non-dry-run
 `/sites/import` reuses that report as a preflight before mutation, so invalid
 portable attachment content/size/max-upload payloads fail without creating
-earlier records or portable files. True transaction/rollback protection for
-downstream non-validation failures during non-dry-run `/sites/import` remains a
-P1-A follow-up and is recorded in `docs/provenance/phase-0b/yona-export.md`.
+earlier records or portable files. Live import now also cleans route-created
+portable attachment rows and `data_root/uploads` files when a downstream
+resource/comment operation fails. Focused coverage:
+`site_admin_contract::site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails`.
+True all-DB transaction/rollback protection for downstream non-validation
+failures during non-dry-run `/sites/import` remains a P1-A follow-up and is
+recorded in `docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
 has deterministic migration payload fixtures for legacy `ProjectApi.exports`
@@ -101,8 +105,14 @@ legacy external adapter payload fixtures for `BoardApi.newPostings`,
 `BoardApi.updatePostingContent`, `BoardApi.newPostingComment`,
 `BoardApi.updatePostLabel`, and `MilestoneApi.newMilestone`, with tests proving
 those rows remain app-owned direct compatibility metadata rather than broad
-migrator/server route expansion. Remaining shared adapter wiring and
-watcher/favorites boundary depth still need follow-up slices.
+migrator/server route expansion. Watcher descriptors now have deterministic
+app-owned `WatcherApi.getWatchers` response fixtures for `type=issues|posts`,
+the empty-OK invalid-type boundary, the 100-row list cap, and local UserApi
+favorite-helper boundary descriptors that do not leak into WatcherApi fixtures.
+Shared legacy-external module wiring now exposes stable endpoint group summaries,
+status counts, and duplicate method/path guards for migration-tool inventory
+checks. Remaining P1-B work is executable adapter depth beyond these descriptor
+fixtures, only where a migration tool needs it.
 
 P1-D sub-slice status: `tools/h2-to-sqlite` release evidence was refreshed on
 2026-06-21 with `mvn -f tools/h2-to-sqlite/pom.xml test`; the README now

@@ -1,5 +1,8 @@
+use std::collections::HashSet;
+
 use yona_rust_pilot_migration::legacy_external::{
-    endpoint_groups, endpoints, find_endpoint, EndpointStatus,
+    endpoint_group_summaries, endpoint_groups, endpoints, find_endpoint, EndpointDomain,
+    EndpointGroupSummary, EndpointStatus,
 };
 
 #[test]
@@ -139,21 +142,79 @@ fn broader_legacy_external_endpoints_remain_migrator_scope() {
         (
             "GET",
             "/-_-api/v1/owners/:owner/projects/:projectName/exports",
+            EndpointStatus::MigratorExport,
         ),
-        ("POST", "/-_-api/v1/owners/:owner/projects"),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects",
+            EndpointStatus::MigratorImport,
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+            EndpointStatus::MigratorImport,
+        ),
         (
             "POST",
             "/-_-api/v1/owners/:owner/projects/:projectName/issues",
+            EndpointStatus::MigratorImport,
         ),
     ];
 
-    for (method, path) in broader_endpoints {
+    for (method, path, status) in broader_endpoints {
         let endpoint = find_endpoint(method, path)
             .unwrap_or_else(|| panic!("missing migrator endpoint: {method} {path}"));
+        assert_eq!(endpoint.status, status);
         assert!(
             endpoint.status.is_migrator_scope(),
             "{method} {path} was {:?}",
             endpoint.status
+        );
+    }
+}
+
+#[test]
+fn app_owned_adapter_helpers_remain_outside_migrator_scope() {
+    let app_owned_adapter_helpers = [
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts",
+        ),
+        (
+            "PATCH",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+        ),
+        (
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
+        ),
+        (
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
+        ),
+        ("GET", "/-_-api/v1/favoriteProjects"),
+        ("POST", "/-_-api/v1/favoriteProjects/:projectId"),
+        ("GET", "/-_-api/v1/favoriteIssues"),
+        ("POST", "/-_-api/v1/favoriteIssues/:issueId"),
+        ("GET", "/-_-api/v1/favoriteOrganizations"),
+        ("POST", "/-_-api/v1/favoriteOrganizations/:organizationId"),
+    ];
+
+    for (method, path) in app_owned_adapter_helpers {
+        let endpoint = find_endpoint(method, path)
+            .unwrap_or_else(|| panic!("missing app-owned adapter helper: {method} {path}"));
+        assert_eq!(endpoint.status, EndpointStatus::AppOwned);
+        assert!(
+            !endpoint.status.is_migrator_scope(),
+            "{method} {path} must remain app-owned direct compatibility metadata"
         );
     }
 }
@@ -180,6 +241,112 @@ fn migration_tool_source_adapter_endpoints_do_not_become_app_owned_runtime_api()
             "{method} {path} must stay a migration-tool adapter descriptor, not Rust runtime API"
         );
     }
+}
+
+#[test]
+fn endpoint_group_summaries_pin_shared_registry_shape() {
+    let summaries: Vec<_> = endpoint_group_summaries().collect();
+
+    assert_eq!(
+        summaries.as_slice(),
+        &[
+            EndpointGroupSummary {
+                domain: EndpointDomain::Users,
+                name: "users",
+                endpoint_count: 8,
+                app_owned_count: 8,
+                migrator_export_count: 0,
+                migrator_import_count: 0,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Projects,
+                name: "projects",
+                endpoint_count: 4,
+                app_owned_count: 2,
+                migrator_export_count: 1,
+                migrator_import_count: 1,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Issues,
+                name: "issues",
+                endpoint_count: 20,
+                app_owned_count: 18,
+                migrator_export_count: 0,
+                migrator_import_count: 2,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Board,
+                name: "board",
+                endpoint_count: 4,
+                app_owned_count: 4,
+                migrator_export_count: 0,
+                migrator_import_count: 0,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Milestones,
+                name: "milestones",
+                endpoint_count: 1,
+                app_owned_count: 1,
+                migrator_export_count: 0,
+                migrator_import_count: 0,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Watchers,
+                name: "watchers",
+                endpoint_count: 1,
+                app_owned_count: 1,
+                migrator_export_count: 0,
+                migrator_import_count: 0,
+                migrator_deferred_count: 0,
+            },
+            EndpointGroupSummary {
+                domain: EndpointDomain::Other,
+                name: "other",
+                endpoint_count: 9,
+                app_owned_count: 9,
+                migrator_export_count: 0,
+                migrator_import_count: 0,
+                migrator_deferred_count: 0,
+            },
+        ]
+    );
+
+    let totals = summaries.iter().fold(
+        (0, 0, 0, 0, 0),
+        |(endpoints, app_owned, migrator_export, migrator_import, migrator_deferred), summary| {
+            (
+                endpoints + summary.endpoint_count,
+                app_owned + summary.app_owned_count,
+                migrator_export + summary.migrator_export_count,
+                migrator_import + summary.migrator_import_count,
+                migrator_deferred + summary.migrator_deferred_count,
+            )
+        },
+    );
+    assert_eq!(totals, (47, 43, 1, 3, 0));
+}
+
+#[test]
+fn endpoint_inventory_has_no_duplicate_method_path_entries() {
+    let mut seen = HashSet::new();
+    let mut total = 0;
+
+    for endpoint in endpoints() {
+        total += 1;
+        assert!(
+            seen.insert((endpoint.method, endpoint.path)),
+            "duplicate legacy external endpoint: {} {}",
+            endpoint.method,
+            endpoint.path
+        );
+    }
+
+    assert_eq!(seen.len(), total);
 }
 
 #[test]

@@ -111,7 +111,7 @@ Rust app-runtime compatibility.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `GET /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers?type=issues|posts` | `WatcherApi.getWatchers()` | Return up to 100 watcher names/URLs plus total count. | Implemented in app server for legacy issue/post watcher JSON shape. |
+| `GET /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers?type=issues|posts` | `WatcherApi.getWatchers()` | Return up to 100 watcher names/URLs plus total count. | Implemented in app server for legacy issue/post watcher JSON shape; `crates/migration` carries deterministic app-owned fixture depth for the `type=issues|posts` boundary, response keys, 100-row list cap, and sample watcher objects without adding server routes. |
 | `GET /-_-api/v1/favoriteProjects` | `UserApi.getFoveriteProjects()` | Legacy misspelled favorite project list JSON. | Implemented in app server as direct helper. |
 | `POST /-_-api/v1/favoriteProjects/:projectId` | `UserApi.toggleFoveriteProject()` | Toggle favorite project; return id and `favored`. | Implemented in app server as direct helper. |
 | `GET /-_-api/v1/favoriteOrganizations` | `UserApi.getFoveriteOrganizations()` | Legacy misspelled favorite organization list JSON. | Implemented in app server as direct helper. |
@@ -140,8 +140,8 @@ tests.
 | Issues/comments | `crates/migration/src/legacy_external/issues.rs` | `crates/migration/tests/legacy_external_issues.rs` | Issue bulk import/export, comments, labels, assignee/share/weight/change-detection compatibility needed by migration. |
 | Board/posts/comments | `crates/migration/src/legacy_external/boards.rs` | `crates/migration/tests/legacy_external_boards.rs` | Board post/comment import and post-label compatibility. |
 | Milestones | `crates/migration/src/legacy_external/milestones.rs` | `crates/migration/tests/legacy_external_milestones.rs` | Milestone import compatibility. |
-| Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Keep the watcher list helper classified as app-owned runtime compatibility while preventing favorite helpers from leaking into WatcherApi migration fixtures; broader watcher/favorite export snapshots remain future migrator scope only if a migration tool needs them. |
-| Module wiring | `crates/migration/src/legacy_external/mod.rs` | `crates/migration/tests/legacy_external_mod.rs` | Shared request/response fixtures and module registration for migration tooling, without app-server route mounting. |
+| Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Keep the watcher list helper classified as app-owned runtime compatibility with deterministic watcher response fixtures while preventing UserApi favorite helpers from leaking into WatcherApi migration fixtures; broader watcher/favorite export snapshots remain future migrator scope only if a migration tool needs them. |
+| Module wiring | `crates/migration/src/legacy_external/mod.rs` | `crates/migration/tests/legacy_external_mod.rs` | Shared endpoint group summaries, status counts, duplicate method/path guards, and module registration for migration tooling, without app-server route mounting. |
 
 ## Consistency Notes
 

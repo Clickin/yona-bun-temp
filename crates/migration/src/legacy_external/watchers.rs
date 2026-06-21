@@ -38,7 +38,46 @@ pub struct WatcherEndpointFixture {
     pub request: FixtureShape,
     pub response: FixtureShape,
     pub list_limit: usize,
+    pub accepted_type_values: &'static [&'static str],
+    pub empty_ok_type_values: &'static [&'static str],
+    pub empty_ok_status: u16,
+    pub empty_ok_body: Option<&'static str>,
+    pub payloads: &'static [WatcherPayloadFixture],
     pub app_server_owned: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WatcherResourceType {
+    Issues,
+    Posts,
+}
+
+impl WatcherResourceType {
+    pub const fn query_value(self) -> &'static str {
+        match self {
+            Self::Issues => "issues",
+            Self::Posts => "posts",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct WatcherPayloadFixture {
+    pub resource_type: WatcherResourceType,
+    pub sample_path: &'static str,
+    pub success_status: u16,
+    pub success_json: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FavoriteHelperBoundary {
+    pub method: &'static str,
+    pub path: &'static str,
+    pub legacy_controller: &'static str,
+    pub legacy_action: &'static str,
+    pub status: EndpointStatus,
+    pub app_server_owned: bool,
+    pub watcher_api_owned: bool,
 }
 
 pub fn fixtures() -> &'static [WatcherEndpointFixture] {
@@ -49,6 +88,10 @@ pub fn find_fixture(method: &str, path: &str) -> Option<&'static WatcherEndpoint
     WATCHER_ENDPOINT_FIXTURES
         .iter()
         .find(|fixture| fixture.method == method && fixture.path == path)
+}
+
+pub fn favorite_helper_boundaries() -> &'static [FavoriteHelperBoundary] {
+    FAVORITE_HELPER_BOUNDARIES
 }
 
 const fn source(controller: &'static str, action: &'static str) -> LegacySource {
@@ -78,6 +121,9 @@ pub const ENDPOINT_DESCRIPTORS: &[EndpointDescriptor] = &[EndpointDescriptor {
     status: EndpointStatus::AppOwned,
 }];
 
+const ACCEPTED_WATCHER_TYPES: &[&str] = &["issues", "posts"];
+const EMPTY_OK_WATCHER_TYPES: &[&str] = &["", "issue", "pullRequests", "ISSUES"];
+
 const WATCHER_ENDPOINT_FIXTURES: &[WatcherEndpointFixture] = &[WatcherEndpointFixture {
     method: "GET",
     path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/watchers",
@@ -100,5 +146,104 @@ const WATCHER_ENDPOINT_FIXTURES: &[WatcherEndpointFixture] = &[WatcherEndpointFi
         &["totalWatchers", "watchersInList", "watchers", "name", "url"],
     ),
     list_limit: 100,
+    accepted_type_values: ACCEPTED_WATCHER_TYPES,
+    empty_ok_type_values: EMPTY_OK_WATCHER_TYPES,
+    empty_ok_status: 200,
+    empty_ok_body: None,
+    payloads: WATCHER_PAYLOAD_FIXTURES,
     app_server_owned: true,
 }];
+
+const WATCHER_PAYLOAD_FIXTURES: &[WatcherPayloadFixture] = &[
+    WatcherPayloadFixture {
+        resource_type: WatcherResourceType::Issues,
+        sample_path: "/-_-api/v1/owners/alice/projects/demo/posts/3/watchers?type=issues",
+        success_status: 200,
+        success_json: r##"{
+  "totalWatchers": 2,
+  "watchersInList": 2,
+  "watchers": [
+    {
+      "name": "Alice Owner",
+      "url": "/alice"
+    },
+    {
+      "name": "Issue Watcher",
+      "url": "/issue-watcher"
+    }
+  ]
+}"##,
+    },
+    WatcherPayloadFixture {
+        resource_type: WatcherResourceType::Posts,
+        sample_path: "/-_-api/v1/owners/alice/projects/demo/posts/4/watchers?type=posts",
+        success_status: 200,
+        success_json: r##"{
+  "totalWatchers": 1,
+  "watchersInList": 1,
+  "watchers": [
+    {
+      "name": "Board Watcher",
+      "url": "/board-watcher"
+    }
+  ]
+}"##,
+    },
+];
+
+const FAVORITE_HELPER_BOUNDARIES: &[FavoriteHelperBoundary] = &[
+    FavoriteHelperBoundary {
+        method: "GET",
+        path: "/-_-api/v1/favoriteProjects",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "getFoveriteProjects",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+    FavoriteHelperBoundary {
+        method: "POST",
+        path: "/-_-api/v1/favoriteProjects/:projectId",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "toggleFoveriteProject",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+    FavoriteHelperBoundary {
+        method: "GET",
+        path: "/-_-api/v1/favoriteOrganizations",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "getFoveriteOrganizations",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+    FavoriteHelperBoundary {
+        method: "POST",
+        path: "/-_-api/v1/favoriteOrganizations/:organizationId",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "toggleFoveriteOrganization",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+    FavoriteHelperBoundary {
+        method: "GET",
+        path: "/-_-api/v1/favoriteIssues",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "getFoveriteIssues",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+    FavoriteHelperBoundary {
+        method: "POST",
+        path: "/-_-api/v1/favoriteIssues/:issueId",
+        legacy_controller: "controllers.api.UserApi",
+        legacy_action: "toggleFoveriteIssue",
+        status: EndpointStatus::AppOwned,
+        app_server_owned: true,
+        watcher_api_owned: false,
+    },
+];

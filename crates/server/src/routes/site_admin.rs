@@ -2012,25 +2012,67 @@ async fn rest_import_site_data(
             &milestone.contents_markdown,
             &imported_attachments.link_rewrites,
         );
-        if repository
+        let due_date = match parse_milestone_due_date(&milestone.due_date) {
+            Ok(due_date) => due_date,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::from_connect_error(error));
+            }
+        };
+        let state = match normalize_milestone_state(&milestone.state) {
+            Ok(state) => state,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::from_connect_error(error));
+            }
+        };
+        let created_milestone = match repository
             .create_project_milestone(persistence::MilestoneMutationInput {
                 actor_id: Some(actor.id),
-                attachment_ids: imported_attachments.ids,
+                attachment_ids: imported_attachments.ids.clone(),
                 contents_markdown,
-                due_date: parse_milestone_due_date(&milestone.due_date)
-                    .map_err(RestRouteError::from_connect_error)?,
+                due_date,
                 owner_name: owner_name.to_string(),
                 project_name: project_name.to_string(),
-                state: normalize_milestone_state(&milestone.state)
-                    .map_err(RestRouteError::from_connect_error)?,
+                state,
                 title: title.to_string(),
             })
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?
-            .is_some()
         {
+            Ok(created) => created,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::internal(error.to_string()));
+            }
+        };
+        if created_milestone.is_some() {
             imported_milestones += 1;
         } else {
+            rest_site_import_cleanup_attachments(
+                &service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
             skipped_milestones += 1;
         }
     }
@@ -2074,7 +2116,7 @@ async fn rest_import_site_data(
                 owner_name: post.owner_name.trim().to_string(),
                 project_name: post.project_name.trim().to_string(),
                 values: persistence::PostingMutationInput {
-                    attachment_ids: imported_attachments.ids,
+                    attachment_ids: imported_attachments.ids.clone(),
                     body_markdown,
                     label_ids,
                     notice: post.notice,
@@ -2083,8 +2125,28 @@ async fn rest_import_site_data(
                 },
             })
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+        let created = match created {
+            Ok(created) => created,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(error);
+            }
+        };
         let Some(created) = created else {
+            rest_site_import_cleanup_attachments(
+                &service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
             skipped_posts += 1;
             continue;
         };
@@ -2161,7 +2223,7 @@ async fn rest_import_site_data(
                 project_name: issue.project_name.trim().to_string(),
                 values: persistence::IssueMutationInput {
                     assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
-                    attachment_ids: imported_attachments.ids,
+                    attachment_ids: imported_attachments.ids.clone(),
                     body_markdown,
                     due_date: None,
                     is_draft: false,
@@ -2173,8 +2235,28 @@ async fn rest_import_site_data(
                 },
             })
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+        let created = match created {
+            Ok(created) => created,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(error);
+            }
+        };
         let Some(created) = created else {
+            rest_site_import_cleanup_attachments(
+                &service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
             skipped_issues += 1;
             continue;
         };
@@ -2800,7 +2882,30 @@ async fn rest_site_import_post_comments(
                 project_name: project_name.trim().to_string(),
             })
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+        let detail = match detail {
+            Ok(detail) => detail,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(error);
+            }
+        };
+        if detail.is_none() {
+            rest_site_import_cleanup_attachments(
+                service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
+            continue;
+        }
         if let Some(created_comment_id) = detail
             .as_ref()
             .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
@@ -2856,7 +2961,30 @@ async fn rest_site_import_issue_comments(
                 project_name: project_name.trim().to_string(),
             })
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+        let detail = match detail {
+            Ok(detail) => detail,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(error);
+            }
+        };
+        if detail.is_none() {
+            rest_site_import_cleanup_attachments(
+                service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
+            continue;
+        }
         if let Some(created_comment_id) = detail
             .as_ref()
             .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
@@ -2897,6 +3025,28 @@ async fn rest_site_import_comment_actor(
 struct RestSiteImportedAttachments {
     ids: Vec<i64>,
     link_rewrites: Vec<(i64, i64)>,
+    created_attachments: Vec<persistence::AttachmentRecord>,
+}
+
+async fn rest_site_import_cleanup_attachments(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    attachments: &[persistence::AttachmentRecord],
+) {
+    for attachment in attachments.iter().rev() {
+        if let Ok(persistence::DeleteAttachmentResult::Deleted(deleted)) = repository
+            .delete_attachment_for_actor(attachment.id, actor.id, &actor.login_id, true)
+            .await
+        {
+            if !deleted.hash.is_empty() {
+                let _ = std::fs::remove_file(uploaded_file_path_with_root(
+                    &service.data_root,
+                    &deleted.hash,
+                ));
+            }
+        }
+    }
 }
 
 fn rest_site_import_portable_attachment_bytes(
@@ -2931,10 +3081,21 @@ async fn rest_site_import_attachments(
 ) -> Result<RestSiteImportedAttachments, RestRouteError> {
     let mut attachment_ids = Vec::new();
     let mut link_rewrites = Vec::new();
+    let mut created_attachments = Vec::new();
     for attachment in attachments {
-        if let Some(bytes) = rest_site_import_portable_attachment_bytes(service, attachment)
-            .map_err(RestRouteError::bad_request)?
-        {
+        if let Some(bytes) = match rest_site_import_portable_attachment_bytes(service, attachment) {
+            Ok(bytes) => bytes,
+            Err(message) => {
+                rest_site_import_cleanup_attachments(
+                    service,
+                    repository,
+                    actor,
+                    &created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::bad_request(message));
+            }
+        } {
             let file_name = attachment
                 .name
                 .trim()
@@ -2950,11 +3111,28 @@ async fn rest_site_import_attachments(
             let hash = random_storage_token();
             let path = uploaded_file_path_with_root(&service.data_root, &hash);
             if let Some(parent) = path.parent() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|error| RestRouteError::internal(error.to_string()))?;
+                if let Err(error) = std::fs::create_dir_all(parent) {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        actor,
+                        &created_attachments,
+                    )
+                    .await;
+                    return Err(RestRouteError::internal(error.to_string()));
+                }
             }
-            std::fs::write(&path, &bytes)
-                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            if let Err(error) = std::fs::write(&path, &bytes) {
+                let _ = std::fs::remove_file(&path);
+                rest_site_import_cleanup_attachments(
+                    service,
+                    repository,
+                    actor,
+                    &created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::internal(error.to_string()));
+            }
             let created = match repository
                 .create_user_attachment_upload(
                     actor.id,
@@ -2969,6 +3147,13 @@ async fn rest_site_import_attachments(
                 Ok(created) => created,
                 Err(error) => {
                     let _ = std::fs::remove_file(&path);
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        actor,
+                        &created_attachments,
+                    )
+                    .await;
                     return Err(RestRouteError::internal(error.to_string()));
                 }
             };
@@ -2976,6 +3161,7 @@ async fn rest_site_import_attachments(
             if attachment.id > 0 && attachment.id != created.id {
                 link_rewrites.push((attachment.id, created.id));
             }
+            created_attachments.push(created);
             continue;
         }
 
@@ -2986,6 +3172,7 @@ async fn rest_site_import_attachments(
     Ok(RestSiteImportedAttachments {
         ids: attachment_ids,
         link_rewrites,
+        created_attachments,
     })
 }
 

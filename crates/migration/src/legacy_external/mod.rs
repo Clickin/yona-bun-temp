@@ -18,6 +18,20 @@ pub enum EndpointDomain {
     Other,
 }
 
+impl EndpointDomain {
+    pub const fn stable_name(self) -> &'static str {
+        match self {
+            Self::Users => "users",
+            Self::Projects => "projects",
+            Self::Issues => "issues",
+            Self::Board => "board",
+            Self::Milestones => "milestones",
+            Self::Watchers => "watchers",
+            Self::Other => "other",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EndpointStatus {
     AppOwned,
@@ -55,8 +69,48 @@ pub struct EndpointGroup {
     pub endpoints: &'static [EndpointDescriptor],
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct EndpointGroupSummary {
+    pub domain: EndpointDomain,
+    pub name: &'static str,
+    pub endpoint_count: usize,
+    pub app_owned_count: usize,
+    pub migrator_export_count: usize,
+    pub migrator_import_count: usize,
+    pub migrator_deferred_count: usize,
+}
+
+impl EndpointGroup {
+    pub fn summary(&self) -> EndpointGroupSummary {
+        let mut summary = EndpointGroupSummary {
+            domain: self.domain,
+            name: self.domain.stable_name(),
+            endpoint_count: self.endpoints.len(),
+            app_owned_count: 0,
+            migrator_export_count: 0,
+            migrator_import_count: 0,
+            migrator_deferred_count: 0,
+        };
+
+        for endpoint in self.endpoints {
+            match endpoint.status {
+                EndpointStatus::AppOwned => summary.app_owned_count += 1,
+                EndpointStatus::MigratorExport => summary.migrator_export_count += 1,
+                EndpointStatus::MigratorImport => summary.migrator_import_count += 1,
+                EndpointStatus::MigratorDeferred => summary.migrator_deferred_count += 1,
+            }
+        }
+
+        summary
+    }
+}
+
 pub fn endpoint_groups() -> &'static [EndpointGroup] {
     ENDPOINT_GROUPS
+}
+
+pub fn endpoint_group_summaries() -> impl Iterator<Item = EndpointGroupSummary> {
+    ENDPOINT_GROUPS.iter().map(EndpointGroup::summary)
 }
 
 pub fn endpoints() -> impl Iterator<Item = &'static EndpointDescriptor> {
