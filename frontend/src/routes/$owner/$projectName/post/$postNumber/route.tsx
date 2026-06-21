@@ -28,7 +28,7 @@ export const Route = createFileRoute("/$owner/$projectName/post/$postNumber")({
 
 function BoardDetailRouteComponent() {
   const { owner, projectName, postNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/post/${postNumber}`;
@@ -63,7 +63,7 @@ function BoardDetailRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -87,6 +87,7 @@ function BoardDetailRouteComponent() {
   return (
     <ProjectBoardDetailPage
       csrfToken={csrfToken}
+      messages={messages}
       post={postQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession?.actorId.toString()}

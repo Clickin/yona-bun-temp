@@ -61,7 +61,7 @@ function OrganizationSettingsRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

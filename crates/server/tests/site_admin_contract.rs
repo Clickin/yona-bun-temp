@@ -2115,6 +2115,91 @@ async fn site_admin_import_cleans_leftover_staging_before_live_import() {
 }
 
 #[tokio::test]
+async fn site_admin_import_repairs_committed_staged_attachment_before_live_import_cleanup() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, _repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, _member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let committed_attachment = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("crash-window.txt".to_string())),
+        hash: Set(Some("site-import-crash-window-hash".to_string())),
+        container_type: Set(Some("USER".to_string())),
+        mime_type: Set(Some("text/plain".to_string())),
+        size: Set(Some(27)),
+        container_id: Set(member_id),
+        created_date: Set(Some(
+            DateTime::parse_from_str("2020-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+                .expect("attachment timestamp"),
+        )),
+        owner_login_id: Set(Some("member".to_string())),
+    }
+    .insert(&db)
+    .await
+    .expect("committed attachment row");
+    let hash = committed_attachment
+        .hash
+        .as_deref()
+        .expect("attachment hash");
+    let staging_dir = imported_upload_staging_dir(&data_dir);
+    let staged_import_dir = staging_dir.join("committed-import");
+    std::fs::create_dir_all(&staged_import_dir).expect("staged import dir");
+    std::fs::write(
+        staged_import_dir.join(hash),
+        b"committed staged crash bytes",
+    )
+    .expect("staged bytes");
+    std::fs::write(
+        staged_import_dir.join(format!("{hash}.json")),
+        json!({
+            "attachmentId": committed_attachment.id,
+            "hash": hash,
+            "version": 1
+        })
+        .to_string(),
+    )
+    .expect("staged journal");
+    let final_path = data_dir.path().join("uploads").join(hash);
+    assert!(
+        !final_path.exists(),
+        "fixture should model the post-commit/pre-promotion crash window"
+    );
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [],
+        "issues": []
+    });
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedPosts"], 0);
+    assert_eq!(
+        std::fs::read(&final_path).expect("repaired final upload"),
+        b"committed staged crash bytes"
+    );
+    assert!(
+        !staging_dir.exists(),
+        "repair should promote committed staged bytes before cleanup removes stale staging"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, _repo, db) = build_app_with_app_config(AppRuntimeConfig {

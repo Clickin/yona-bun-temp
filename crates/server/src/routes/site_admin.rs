@@ -2260,6 +2260,7 @@ async fn rest_import_site_data(
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
     let _site_import_guard = site_import_staging_lock().lock().await;
+    reconcile_site_import_staging_uploads(&service, repository).await?;
     cleanup_site_import_staging_uploads(&service)?;
     let mut checkpoint = RestSiteImportCheckpoint::from_payload(&payload);
     checkpoint.mark_all_validated();
@@ -2320,8 +2321,19 @@ struct RestSiteImportRollbackLedger {
 }
 
 struct RestSiteImportStagedUpload {
+    attachment_id: i64,
     final_path: PathBuf,
+    hash: String,
+    journal_path: PathBuf,
     staging_path: PathBuf,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportStagedUploadJournal {
+    attachment_id: i64,
+    hash: String,
+    version: u32,
 }
 
 struct RestSiteImportRollbackProjectCounters {
@@ -2345,9 +2357,19 @@ impl RestSiteImportRollbackLedger {
         self.attachments.extend(attachments.iter().cloned());
     }
 
-    fn record_staged_upload(&mut self, staging_path: PathBuf, final_path: PathBuf) {
+    fn record_staged_upload(
+        &mut self,
+        attachment_id: i64,
+        hash: String,
+        staging_path: PathBuf,
+        final_path: PathBuf,
+        journal_path: PathBuf,
+    ) {
         self.staged_uploads.push(RestSiteImportStagedUpload {
+            attachment_id,
             final_path,
+            hash,
+            journal_path,
             staging_path,
         });
     }
@@ -2568,14 +2590,7 @@ impl RestSiteImportRollbackLedger {
 
     fn promote_staged_uploads(&self) -> std::io::Result<()> {
         for upload in &self.staged_uploads {
-            if let Some(parent) = upload.final_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            if upload.final_path.exists() {
-                std::fs::remove_file(&upload.final_path)?;
-            }
-            std::fs::rename(&upload.staging_path, &upload.final_path)?;
-            cleanup_empty_parent_dirs(upload.staging_path.parent(), upload.final_path.parent());
+            promote_site_import_staged_upload_file(upload)?;
         }
         Ok(())
     }
@@ -2583,6 +2598,7 @@ impl RestSiteImportRollbackLedger {
     fn cleanup_staged_uploads(&self) {
         for upload in self.staged_uploads.iter().rev() {
             let _ = std::fs::remove_file(&upload.staging_path);
+            let _ = std::fs::remove_file(&upload.journal_path);
             cleanup_empty_parent_dirs(upload.staging_path.parent(), upload.final_path.parent());
         }
     }
@@ -4240,6 +4256,7 @@ async fn rest_site_import_attachments(
             let hash = random_storage_token();
             let final_path = uploaded_file_path_with_root(&service.data_root, &hash);
             let staging_path = site_import_staging_upload_path(service, &hash);
+            let journal_path = site_import_staging_upload_journal_path(&staging_path);
             if let Some(parent) = staging_path.parent() {
                 if let Err(error) = std::fs::create_dir_all(parent) {
                     rest_site_import_cleanup_attachments(
@@ -4263,7 +4280,6 @@ async fn rest_site_import_attachments(
                 .await;
                 return Err(RestRouteError::internal(error.to_string()));
             }
-            rollback.record_staged_upload(staging_path.clone(), final_path.clone());
             let created = match repository
                 .create_user_attachment_upload(
                     actor.id,
@@ -4288,6 +4304,27 @@ async fn rest_site_import_attachments(
                     return Err(RestRouteError::internal(error.to_string()));
                 }
             };
+            if let Err(error) =
+                write_site_import_staged_upload_journal(&journal_path, created.id, &hash)
+            {
+                let _ = std::fs::remove_file(&staging_path);
+                let _ = std::fs::remove_file(&journal_path);
+                rest_site_import_cleanup_attachments(
+                    service,
+                    repository,
+                    actor,
+                    &created_attachments,
+                )
+                .await;
+                return Err(RestRouteError::internal(error.to_string()));
+            }
+            rollback.record_staged_upload(
+                created.id,
+                hash.clone(),
+                staging_path.clone(),
+                final_path.clone(),
+                journal_path,
+            );
             repository
                 .restore_site_import_attachment_created_at(
                     created.id,
@@ -4323,6 +4360,10 @@ fn site_import_staging_upload_path(service: &PilotServiceImpl, hash: &str) -> Pa
         .join(hash)
 }
 
+fn site_import_staging_upload_journal_path(staging_path: &StdPath) -> PathBuf {
+    staging_path.with_extension("json")
+}
+
 fn site_import_staging_upload_root(service: &PilotServiceImpl) -> PathBuf {
     service
         .data_root
@@ -4337,6 +4378,127 @@ fn cleanup_site_import_staging_uploads(service: &PilotServiceImpl) -> Result<(),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(RestRouteError::internal(error.to_string())),
     }
+}
+
+fn write_site_import_staged_upload_journal(
+    journal_path: &StdPath,
+    attachment_id: i64,
+    hash: &str,
+) -> std::io::Result<()> {
+    let journal = RestSiteImportStagedUploadJournal {
+        attachment_id,
+        hash: hash.to_string(),
+        version: 1,
+    };
+    if let Some(parent) = journal_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let bytes = serde_json::to_vec(&journal)
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+    let mut file = std::fs::File::create(journal_path)?;
+    use std::io::Write as _;
+    file.write_all(&bytes)?;
+    file.sync_all()?;
+    Ok(())
+}
+
+fn promote_site_import_staged_upload_file(
+    upload: &RestSiteImportStagedUpload,
+) -> std::io::Result<()> {
+    if upload.attachment_id <= 0 || upload.hash.trim().is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "invalid site import staged upload journal",
+        ));
+    }
+    if upload
+        .staging_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        != Some(upload.hash.as_str())
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "site import staged upload hash mismatch",
+        ));
+    }
+    if let Some(parent) = upload.final_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    if upload.final_path.exists() {
+        std::fs::remove_file(&upload.staging_path)?;
+    } else {
+        std::fs::rename(&upload.staging_path, &upload.final_path)?;
+    }
+    let _ = std::fs::remove_file(&upload.journal_path);
+    cleanup_empty_parent_dirs(upload.staging_path.parent(), upload.final_path.parent());
+    Ok(())
+}
+
+async fn reconcile_site_import_staging_uploads(
+    service: &PilotServiceImpl,
+    repository: &persistence::AppRepositoryImpl<'_>,
+) -> Result<(), RestRouteError> {
+    let staging_root = site_import_staging_upload_root(service);
+    let entries = match std::fs::read_dir(&staging_root) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(RestRouteError::internal(error.to_string())),
+    };
+    for entry in entries.filter_map(Result::ok) {
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_dir() {
+            continue;
+        }
+        let child_entries = match std::fs::read_dir(entry.path()) {
+            Ok(entries) => entries,
+            Err(_) => continue,
+        };
+        for child in child_entries.filter_map(Result::ok) {
+            let journal_path = child.path();
+            if journal_path.extension().and_then(|value| value.to_str()) != Some("json") {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(&journal_path) else {
+                continue;
+            };
+            let Ok(journal) = serde_json::from_slice::<RestSiteImportStagedUploadJournal>(&bytes)
+            else {
+                continue;
+            };
+            if journal.version != 1 || journal.attachment_id <= 0 || journal.hash.trim().is_empty()
+            {
+                continue;
+            }
+            let Some(attachment) = repository
+                .read_attachment_by_id(journal.attachment_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+            else {
+                continue;
+            };
+            if attachment.hash != journal.hash {
+                continue;
+            }
+            let staging_path = journal_path.with_extension("");
+            if !staging_path.exists() {
+                let _ = std::fs::remove_file(&journal_path);
+                continue;
+            }
+            let upload = RestSiteImportStagedUpload {
+                attachment_id: journal.attachment_id,
+                final_path: uploaded_file_path_with_root(&service.data_root, &journal.hash),
+                hash: journal.hash,
+                journal_path,
+                staging_path,
+            };
+            promote_site_import_staged_upload_file(&upload)
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+    }
+    Ok(())
 }
 
 fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> String {

@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -37,6 +39,29 @@ const projectDetail = {
 };
 
 describe("project settings parity", () => {
+  it("opts project and organization settings loading shells into legacy messages", () => {
+    const routePaths = [
+      "routes/$owner/$projectName/settingform/route.tsx",
+      "routes/$owner/$projectName/members/route.tsx",
+      "routes/$owner/$projectName/webhooks/route.tsx",
+      "routes/$owner/$projectName/transfer/route.tsx",
+      "routes/$owner/$projectName/changeVCS/route.tsx",
+      "routes/$owner/$projectName/statistics/route.tsx",
+      "routes/$owner/$projectName/deleteform/route.tsx",
+      "routes/organizations/$organizationName/settingform/route.tsx",
+      "routes/organizations/$organizationName/members/route.tsx",
+      "routes/organizations/$organizationName/deleteForm/route.tsx",
+      "routes/organizations/$organizationName/issues/route.tsx",
+    ];
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+
+      expect(source).toContain('messages("common.loading", { fallback: "common.loading" })');
+      expect(source).not.toContain("<h1>common.loading</h1>");
+    }
+  });
+
   it("renders the legacy project setting form shell and controls", () => {
     const html = renderToStaticMarkup(
       <ProjectSettingsPage detail={projectDetail} runtimeConfig={runtimeConfig} />,

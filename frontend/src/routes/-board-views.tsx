@@ -733,6 +733,7 @@ export function ProjectBoardListPage(props: {
 
 export function ProjectBoardDetailPage(props: {
   csrfToken?: string;
+  messages?: LegacyMessageLookup;
   post: BoardPostDetail | null | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: string;
@@ -771,7 +772,7 @@ export function ProjectBoardDetailPage(props: {
   if (!post) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{legacyMessage(props.messages, "common.loading")}</h1>
       </main>
     );
   }

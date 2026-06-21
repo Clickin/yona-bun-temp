@@ -106,6 +106,23 @@ function renderBranches(branchList: CodeBranchListViewModel, messages?: LegacyMe
 }
 
 describe("project code browser routing", () => {
+  it("opts code loading shells into legacy messages with literal fallback", () => {
+    const routePaths = [
+      "routes/$owner/$projectName/code/-code-route.tsx",
+      "routes/$owner/$projectName/branches/route.tsx",
+      "routes/$owner/$projectName/compare/$revisionRange/route.tsx",
+      "routes/$owner/$projectName/commit/$commitId/route.tsx",
+      "routes/$owner/$projectName/commits/-code-history-route.tsx",
+    ];
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+
+      expect(source).toContain('messages("common.loading", { fallback: "common.loading" })');
+      expect(source).not.toContain("<h1>common.loading</h1>");
+    }
+  });
+
   it("keeps the project code route inside the project route tree", () => {
     const codeRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/code/route.tsx"),

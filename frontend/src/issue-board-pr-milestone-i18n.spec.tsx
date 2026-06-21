@@ -1,9 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
 import { testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
-import { ProjectBoardListPage } from "./routes/-board-views";
+import { ProjectBoardDetailPage, ProjectBoardListPage } from "./routes/-board-views";
 import { ProjectIssueListPage } from "./routes/-issue-views";
 import { ProjectMilestoneFormPage, ProjectMilestoneListPage } from "./routes/-milestone-views";
 import { ProjectPullRequestListPage } from "./routes/-pull-request-views";
@@ -113,6 +115,32 @@ function renderIssueBoardPrMilestoneControls(messages?: LegacyMessageLookup) {
 }
 
 describe("issue/board/PR/milestone legacy i18n opt-in", () => {
+  it("opts project issue, board/post, and milestone loading shells into legacy messages", () => {
+    const routePaths = [
+      "routes/$owner/$projectName/issueform/route.tsx",
+      "routes/$owner/$projectName/issues/route.tsx",
+      "routes/$owner/$projectName/issue/$issueNumber/route.tsx",
+      "routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx",
+      "routes/$owner/$projectName/issue/labelsform/route.tsx",
+      "routes/$owner/$projectName/posts/route.tsx",
+      "routes/$owner/$projectName/postform/route.tsx",
+      "routes/$owner/$projectName/post/$postNumber/route.tsx",
+      "routes/$owner/$projectName/post/$postNumber/editform/route.tsx",
+      "routes/$owner/$projectName/milestones/route.tsx",
+      "routes/$owner/$projectName/newMilestoneForm/route.tsx",
+      "routes/$owner/$projectName/milestone/$milestoneId/route.tsx",
+      "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
+      "routes/organizations/$organizationName/boards/route.tsx",
+    ];
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+
+      expect(source).toContain('messages("common.loading", { fallback: "common.loading" })');
+      expect(source).not.toContain("<h1>common.loading</h1>");
+    }
+  });
+
   it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
     const html = renderIssueBoardPrMilestoneControls();
 
@@ -129,6 +157,21 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(html).toContain(">milestone.is.empty</p>");
     expect(html).toContain(">milestone.form.state</dt>");
     expect(html).toContain(">button.save</button>");
+  });
+
+  it("uses the legacy loading fallback and Korean runtime for the board detail loading shell", () => {
+    const fallbackHtml = renderToStaticMarkup(
+      <ProjectBoardDetailPage post={null} runtimeConfig={testRuntimeConfig} />,
+    );
+    expect(fallbackHtml).toContain("<h1>common.loading</h1>");
+
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+    const koreanHtml = renderToStaticMarkup(
+      <ProjectBoardDetailPage messages={runtime.t} post={null} runtimeConfig={testRuntimeConfig} />,
+    );
+    expect(koreanHtml).toContain("<h1>불러오는 중</h1>");
+    expect(koreanHtml).not.toContain("<h1>common.loading</h1>");
   });
 
   it("uses Korean legacy messages for the touched controls when a runtime lookup is provided", () => {

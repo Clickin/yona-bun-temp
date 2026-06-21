@@ -23,7 +23,7 @@ export const Route = createFileRoute("/$owner/$projectName/postform")({
 
 function PostCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/postform`;
   const queryClient = useQueryClient();
   const [failureKind, setFailureKind] = React.useState<
@@ -61,7 +61,7 @@ function PostCreateRouteComponent() {
   if (bootstrapping || formOptionsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

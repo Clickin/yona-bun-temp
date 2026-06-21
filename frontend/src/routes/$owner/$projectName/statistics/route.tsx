@@ -5,7 +5,12 @@ import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectStatisticsPage } from "../../../-project-views";
-import { BadRequestPage, classifyConnectFailure, ForbiddenPage, NotFoundPage } from "../../../-shared";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/statistics")({
   component: ProjectStatisticsRouteComponent,
@@ -13,9 +18,11 @@ export const Route = createFileRoute("/$owner/$projectName/statistics")({
 
 function ProjectStatisticsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/statistics`;
-  const [failureKind, setFailureKind] = React.useState<null | "bad-request" | "forbidden" | "not-found">(null);
+  const [failureKind, setFailureKind] = React.useState<
+    null | "bad-request" | "forbidden" | "not-found"
+  >(null);
   const containerQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,
@@ -39,7 +46,7 @@ function ProjectStatisticsRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

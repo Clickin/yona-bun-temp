@@ -157,6 +157,13 @@ succeeds. Live import still keeps a compensating rollback ledger for staged
 portable upload files and preexisting attachment rows rebound by imported
 resources, so normal error returns remove staging files after transaction
 rollback and preexisting attachment row state remains guarded.
+Each route-created portable staged file now also has an import-local journal
+written beside it after the attachment row is created inside the transaction.
+Before a later live import removes stale staging leftovers, `/sites/import`
+reconciles journaled staged files against committed attachment rows and promotes
+matching hashes to `uploads/<hash>`, reducing the documented post-commit
+process-kill window without adding a new legacy-visible UI. Remaining limit:
+repair runs on the next live import rather than as a background startup service.
 The dry-run/live import report now also carries a bounded `checkpoint` artifact
 for migration/operator tooling: versioned section entries, stable resource keys
 capped at 256 per section with truncation flags, total/validated/completed/

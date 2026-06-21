@@ -188,6 +188,25 @@ describe("auth and workspace views", () => {
     expect(html).toContain('name="password"');
   });
 
+  it("does not render non-legacy OAuth providers from stale capability state", () => {
+    const html = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        enabledSocialProviders: ["gitlab", " github ", "Google"],
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      },
+      routeHref: "/users/loginform",
+    });
+
+    expect(html).toContain('href="/yona/authenticate/github"');
+    expect(html).toContain('href="/yona/authenticate/google"');
+    expect(html).not.toContain('href="/yona/authenticate/gitlab"');
+    expect(html).not.toContain(">gitlab<");
+    expect(html).toContain('name="loginIdOrEmail"');
+    expect(html).toContain('name="password"');
+  });
+
   it("renders configured OAuth provider buttons on the legacy login dialog", () => {
     const html = renderToStaticMarkup(
       <LegacyLoginDialog

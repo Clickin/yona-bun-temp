@@ -3,6 +3,8 @@ import { renderLegacyHighlightedMessage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { AuthUiCapabilitiesViewModel } from "./-view-models";
 
+const LEGACY_SOCIAL_LOGIN_PROVIDERS = new Set(["github", "google"]);
+
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
@@ -19,8 +21,8 @@ function readEnabledSocialProviders(
     authUiCapabilities?.enabled_social_providers ??
     [];
   return providers.flatMap((provider) => {
-    const trimmed = provider.trim();
-    return trimmed ? [trimmed] : [];
+    const trimmed = provider.trim().toLowerCase();
+    return trimmed && LEGACY_SOCIAL_LOGIN_PROVIDERS.has(trimmed) ? [trimmed] : [];
   });
 }
 

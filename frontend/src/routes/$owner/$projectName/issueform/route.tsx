@@ -11,7 +11,10 @@ import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../-issue-views";
-import type { ProjectIssueParentOptionViewModel, ProjectMilestoneViewModel } from "../../../-view-models";
+import type {
+  ProjectIssueParentOptionViewModel,
+  ProjectMilestoneViewModel,
+} from "../../../-view-models";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -26,7 +29,7 @@ export const Route = createFileRoute("/$owner/$projectName/issueform")({
 
 function IssueCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issueform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -87,7 +90,7 @@ function IssueCreateRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -149,7 +152,9 @@ function IssueCreateRouteComponent() {
         });
         window.location.assign(`/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`);
       }}
-      initialParentIssueId={Number(new URLSearchParams(window.location.search).get("parentIssueId") ?? 0)}
+      initialParentIssueId={Number(
+        new URLSearchParams(window.location.search).get("parentIssueId") ?? 0,
+      )}
       parentIssueOptions={parentIssueOptions}
       runtimeConfig={runtimeConfig}
     />

@@ -35,7 +35,7 @@ export const Route = createFileRoute("/$owner/$projectName/issue/$issueNumber/ed
 
 function IssueEditRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}/editform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -101,7 +101,7 @@ function IssueEditRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

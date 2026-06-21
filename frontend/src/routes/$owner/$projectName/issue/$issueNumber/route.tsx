@@ -41,7 +41,7 @@ export const Route = createFileRoute("/$owner/$projectName/issue/$issueNumber")(
 
 function IssueDetailRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -90,7 +90,7 @@ function IssueDetailRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
