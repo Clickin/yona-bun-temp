@@ -494,7 +494,7 @@ Interpretation:
 - [x] Non-forbidden/non-not-found REST search query failures render the common legacy `error.badrequest` shell instead of the temporary `Search failed.` runtime banner.
 - [x] Search snippets expose truncated-window metadata and React result bodies append the legacy `.....` suffix when `SearchResult.makeSnippets` returned text shorter than the original source.
 - [x] Search result author meta preserves legacy `search/partial_*.scala.html` scalar output: `/:loginId` tooltip links when a display name exists, `issue.noAuthor` span fallback otherwise, and created-date title attributes.
-- Follow-up: async indexing and index-backed ranking beyond the lightweight scorer; external search engine integration remains out of scope because DB-native FTS is the canonical backend.
+- Follow-up: future search tuning must stay inside the selected database's built-in query/FTS facilities and preserve the lightweight scorer fallback; external search engine integration remains out of scope because DB-native FTS is the canonical backend.
 - Retired: legacy external search API compatibility is not applicable because
   legacy exposes no `/-_-api/v1/**` search route or `controllers.api.SearchApi`;
   app search remains `/api/v1/**` only.
