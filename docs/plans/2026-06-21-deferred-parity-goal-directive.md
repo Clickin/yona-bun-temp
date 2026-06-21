@@ -26,7 +26,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Scope | Current status | Treatment |
 | --- | --- | --- |
 | OAuth provider login/linking | Deferred second-priority. Unsupported/denied route state and UI gating already exist. | Implement only legacy provider behavior with evidence, or keep explicitly deferred if provider fixtures cannot be made deterministic. |
-| LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures; real LDAP bind/search connector implemented for non-fixture runtime LDAP. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; remaining follow-up is existing LDAP user's English-name/guest refresh if the persistence boundary is expanded. |
+| LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures; real LDAP bind/search connector implemented for non-fixture runtime LDAP; existing-user display-name/nonblank-English-name/password/guest refresh implemented. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; broader external-directory/runtime edge behavior remains bounded by existing connector evidence. |
 | Broader SVN/WebDAV PROPFIND edge completeness | Closed by P3-A re-audit. Current `svn_protocol_contract` evidence covers the former VCC/baseline PROPFIND edge list. | Retire ambiguous deferred wording; keep `svn_protocol_contract` as the guard for root/default VCC, baseline resource, and baseline collection metadata/property behavior. |
 | Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
@@ -69,6 +69,36 @@ Exit criteria: current first-priority gates are green, existing DB adoption is
 not merely theoretical, Docker/SFX deployment evidence is current, and k8s
 guidance is either validated or explicitly recorded as non-blocking deployment
 follow-up.
+
+P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
+
+- P0-B existing DB adopt: no checked-in unmodified legacy-like MariaDB/MySQL dump
+  or fixture was found. The current repo evidence remains schema-level:
+  `crates/migration/tests/runtime_schema_contract.rs` covers `validate_only`
+  accepting a precreated schema without writing migration history and `adopt`
+  accepting a precreated runtime schema, while `db_matrix_testcontainers` covers
+  live MariaDB runtime schema validation after managed schema creation. The
+  refreshed focused command
+  `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration runtime_schema_contract -- --nocapture`
+  passed on 2026-06-21. Do not claim P0-B fully closed until a deterministic
+  legacy-like MariaDB/MySQL fixture is added and validated first with
+  `YONA_SCHEMA_POLICY=validate_only`, then with `YONA_SCHEMA_POLICY=adopt`.
+- P0-C packaging smoke: `pnpm smoke:embedded-assets` passed on 2026-06-21,
+  rebuilding `frontend/dist`, compiling the debug server with
+  `YONA_EMBED_ASSET_ROOT=frontend/dist`, starting it at `/yona`, and verifying
+  the SPA index, `/projects`, emitted JS asset, `/api/auth/session` CSRF header,
+  and `/api/v1/projects` seeded `projectName:"yona"` response. The compile
+  emitted two existing server warnings in `boards.rs` and `routes/utils.rs`.
+  `pnpm smoke:docker` also passed on 2026-06-21: Docker Buildx built
+  `yona-rust-pilot:smoke`, the release compile completed in 1m22s with the same
+  two warnings, the runtime image retained `ca-certificates`, `curl`, `git`, and
+  `subversion`, and container `473ecf69c428` returned 200 responses for the same
+  base-path, asset, session, and REST project smoke endpoints.
+- P0-D Kubernetes viability: no canonical k8s, Kubernetes, Helm, or manifest
+  files were found in the repo. No local manifest smoke was run. Kubernetes
+  remains a non-blocking deployment guidance follow-up; `SPEC.md` Section 1.4
+  release baseline is still SFX plus Docker/base-path, not maintained k8s
+  manifests.
 
 ## Phase 1: Migration And Data Safety
 
@@ -162,12 +192,13 @@ P2-A/P2-B sub-slice status: OAuth runtime now preserves the legacy
 GitHub/Google. Unconfigured providers keep the existing unsupported login state,
 configured providers redirect to the configured authorization URL, deterministic
 callback identity links or creates the local user through legacy
-`user_credential` / `linked_account` tables, creates a session, and redirects to
-the default landing path. Connected-provider profile output is covered through
-the existing workspace profile projection. Focused coverage lives in
-`auth_workspace_contract` and `runtime_config_contract`. Remaining OAuth work is
-real provider token/userinfo HTTP exchange and any provider-specific logout
-interaction that requires external provider behavior.
+`user_credential` / `linked_account` tables, real `code` callbacks exchange
+provider token/userinfo/profile/email payloads for GitHub/Google, create a
+session, and redirect to the default landing path. Connected-provider profile
+output is covered through the existing workspace profile projection. Focused
+coverage lives in `auth_workspace_contract` and `runtime_config_contract`.
+Remaining OAuth work is any provider-specific logout interaction that requires
+external provider behavior.
 
 P2-C sub-slice status: form-login LDAP runtime now parses the legacy typo
 `application.use.ldap.login.supoort`, legacy `ldap.*`, and `YONA_LDAP_*`
@@ -183,8 +214,9 @@ login semantics, LDAP fixture credentials, and wrong-credential Basic
 challenges in `smart_http_contract` and `svn_protocol_contract`.
 The P2-C/P2-D connector follow-up adds real simple bind/search support when
 fixture users are absent, preserving deterministic fixture-backed tests and
-BasicAuth behavior. Remaining P2-C/P2-D work is existing LDAP user's
-English-name/guest refresh if the persistence boundary is expanded.
+BasicAuth behavior. Existing LDAP users matched by email now refresh display
+name, password hash, nonblank English name, and guest flag from the LDAP login
+ID and configured legacy guest prefixes.
 
 Exit criteria: password, OAuth, LDAP, and BasicAuth LDAP paths have isolated
 contract coverage and share the same legacy login UX.

@@ -160,10 +160,13 @@ struct AuthConfigFile {
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
 pub struct OAuthProviderConfigFile {
+    pub access_token_url: Option<String>,
     pub authorization_url: Option<String>,
     pub client_id: Option<String>,
     pub client_secret: Option<String>,
+    pub email_url: Option<String>,
     pub scope: Option<String>,
+    pub user_info_url: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -682,12 +685,20 @@ fn oauth_providers_from_env_and_file(
         config.client_id = env_string(env, &format!("{prefix}_CLIENT_ID")).or(config.client_id);
         config.client_secret =
             env_string(env, &format!("{prefix}_CLIENT_SECRET")).or(config.client_secret);
+        config.access_token_url =
+            env_string(env, &format!("{prefix}_ACCESS_TOKEN_URL")).or(config.access_token_url);
         config.authorization_url =
             env_string(env, &format!("{prefix}_AUTHORIZATION_URL")).or(config.authorization_url);
+        config.user_info_url =
+            env_string(env, &format!("{prefix}_USER_INFO_URL")).or(config.user_info_url);
+        config.email_url = env_string(env, &format!("{prefix}_EMAIL_URL")).or(config.email_url);
         config.scope = env_string(env, &format!("{prefix}_SCOPE")).or(config.scope);
         if config.client_id.is_some()
             || config.client_secret.is_some()
+            || config.access_token_url.is_some()
             || config.authorization_url.is_some()
+            || config.user_info_url.is_some()
+            || config.email_url.is_some()
             || config.scope.is_some()
         {
             providers.insert(provider.to_string(), config);

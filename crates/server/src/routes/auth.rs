@@ -8,6 +8,7 @@ use axum::{
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::assets::serve_frontend_page;
@@ -381,7 +382,13 @@ async fn provision_or_update_ldap_user(
                 .map_err(crate::internal_error)?;
         }
         return repository
-            .update_profile_for_user(existing.id, &display_name, &email)
+            .update_ldap_user_profile(
+                existing.id,
+                &display_name,
+                &email,
+                Some(&ldap_user.english_name),
+                &ldap_user.login_id,
+            )
             .await
             .map_err(crate::internal_error);
     }
@@ -910,6 +917,164 @@ fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, S
     Some((provider_user_id, email, name))
 }
 
+#[derive(Debug)]
+struct OAuthProviderIdentity {
+    provider_user_id: String,
+    email: String,
+    name: String,
+}
+
+fn json_string_field(value: &Value, key: &str) -> Option<String> {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+}
+
+fn json_id_field(value: &Value, key: &str) -> Option<String> {
+    value.get(key).and_then(|field| match field {
+        Value::String(value) => {
+            let value = value.trim();
+            (!value.is_empty()).then(|| value.to_string())
+        }
+        Value::Number(value) => Some(value.to_string()),
+        _ => None,
+    })
+}
+
+fn github_primary_email(value: &Value) -> Option<String> {
+    let emails = value.as_array()?;
+    emails
+        .iter()
+        .find(|entry| {
+            entry
+                .get("primary")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+                && entry
+                    .get("verified")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(true)
+        })
+        .or_else(|| emails.first())
+        .and_then(|entry| json_string_field(entry, "email"))
+        .map(|email| normalize_identifier(&email))
+        .filter(|email| !email.is_empty())
+}
+
+fn oauth_provider_identity_from_userinfo(
+    provider: &str,
+    userinfo: &Value,
+    email_response: Option<&Value>,
+) -> Option<OAuthProviderIdentity> {
+    match provider {
+        "github" => {
+            let provider_user_id = json_id_field(userinfo, "id")?;
+            let email = json_string_field(userinfo, "email")
+                .map(|email| normalize_identifier(&email))
+                .filter(|email| !email.is_empty())
+                .or_else(|| github_primary_email(email_response?))?;
+            let name = json_string_field(userinfo, "name")
+                .or_else(|| json_string_field(userinfo, "login"))
+                .unwrap_or_else(|| email.clone());
+            Some(OAuthProviderIdentity {
+                provider_user_id,
+                email,
+                name,
+            })
+        }
+        "google" => {
+            let provider_user_id =
+                json_id_field(userinfo, "sub").or_else(|| json_id_field(userinfo, "id"))?;
+            let email = json_string_field(userinfo, "email")
+                .map(|email| normalize_identifier(&email))
+                .filter(|email| !email.is_empty())?;
+            let name = json_string_field(userinfo, "name")
+                .or_else(|| json_string_field(userinfo, "displayName"))
+                .unwrap_or_else(|| email.clone());
+            Some(OAuthProviderIdentity {
+                provider_user_id,
+                email,
+                name,
+            })
+        }
+        _ => None,
+    }
+}
+
+async fn fetch_oauth_provider_identity(
+    provider: &str,
+    config: &crate::OAuthProviderRuntimeConfig,
+    code: &str,
+    redirect_uri: &str,
+) -> Result<OAuthProviderIdentity, String> {
+    if config.client_secret.trim().is_empty()
+        || config.access_token_url.trim().is_empty()
+        || config.user_info_url.trim().is_empty()
+    {
+        return Err("oauth provider exchange is not fully configured".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .user_agent("Yona OAuth")
+        .build()
+        .map_err(|error| error.to_string())?;
+    let token_response: Value = client
+        .post(config.access_token_url.trim())
+        .header(reqwest::header::ACCEPT, "application/json")
+        .form(&[
+            ("client_id", config.client_id.trim()),
+            ("client_secret", config.client_secret.trim()),
+            ("code", code.trim()),
+            ("grant_type", "authorization_code"),
+            ("redirect_uri", redirect_uri),
+        ])
+        .send()
+        .await
+        .map_err(|error| error.to_string())?
+        .error_for_status()
+        .map_err(|error| error.to_string())?
+        .json()
+        .await
+        .map_err(|error| error.to_string())?;
+    let access_token = json_string_field(&token_response, "access_token")
+        .ok_or_else(|| "oauth token response did not include access_token".to_string())?;
+    let userinfo: Value = client
+        .get(config.user_info_url.trim())
+        .bearer_auth(&access_token)
+        .header(reqwest::header::ACCEPT, "application/json")
+        .send()
+        .await
+        .map_err(|error| error.to_string())?
+        .error_for_status()
+        .map_err(|error| error.to_string())?
+        .json()
+        .await
+        .map_err(|error| error.to_string())?;
+    let email_response = if provider == "github" && !config.email_url.trim().is_empty() {
+        Some(
+            client
+                .get(config.email_url.trim())
+                .bearer_auth(&access_token)
+                .header(reqwest::header::ACCEPT, "application/json")
+                .send()
+                .await
+                .map_err(|error| error.to_string())?
+                .error_for_status()
+                .map_err(|error| error.to_string())?
+                .json()
+                .await
+                .map_err(|error| error.to_string())?,
+        )
+    } else {
+        None
+    };
+    oauth_provider_identity_from_userinfo(provider, &userinfo, email_response.as_ref())
+        .ok_or_else(|| "oauth provider identity response was incomplete".to_string())
+}
+
 fn oauth_login_id_hint(query: &HashMap<String, String>, email: &str) -> String {
     query
         .get("loginId")
@@ -967,15 +1132,28 @@ pub(crate) async fn direct_authenticate_provider(
         return direct_authenticate_provider_denied(provider, service).await;
     }
 
-    let Some((provider_user_id, email, name)) = oauth_callback_identity(&query) else {
-        if query
+    let (provider_user_id, email, name) = if let Some(identity) = oauth_callback_identity(&query) {
+        identity
+    } else {
+        let Some(code) = query
             .get("code")
-            .map(|value| !value.trim().is_empty())
-            .unwrap_or(false)
-        {
-            return direct_authenticate_provider_denied(provider, service).await;
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+        else {
+            return configured_oauth_start_redirect(&provider, &config, &service);
+        };
+        let redirect_uri = format!(
+            "{}{}",
+            service.public_origin,
+            base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
+        );
+        match fetch_oauth_provider_identity(&provider, &config, code, &redirect_uri).await {
+            Ok(identity) => (identity.provider_user_id, identity.email, identity.name),
+            Err(error) => {
+                tracing::warn!(provider = %provider, error = %error, "OAuth provider callback exchange failed");
+                return direct_authenticate_provider_denied(provider, service).await;
+            }
         }
-        return configured_oauth_start_redirect(&provider, &config, &service);
     };
 
     let PilotBackend::Repository(repository) = &service.backend else {

@@ -97,6 +97,70 @@ impl AppRepository {
         self.app_user_record_from_model(user).await.map(Some)
     }
 
+    pub async fn update_ldap_user_profile(
+        &self,
+        user_id: i64,
+        name: &str,
+        email_address: &str,
+        english_name: Option<&str>,
+        ldap_login_id: &str,
+    ) -> Result<AppUserRecord, DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        let normalized_email = normalize_identity(email_address);
+        if normalized_email.is_empty() {
+            return Err(DbErr::Custom("Email address is required.".to_string()));
+        }
+        if !looks_like_email_address(&normalized_email) {
+            return Err(DbErr::Custom("Email address is invalid.".to_string()));
+        }
+
+        let duplicate_email = n4user::Entity::find()
+            .filter(n4user::Column::Id.ne(user_id))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .any(|row| {
+                normalize_optional(row.email.as_deref()).as_deref()
+                    == Some(normalized_email.as_str())
+            });
+        if duplicate_email {
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
+        }
+        let duplicate_valid_secondary = email::Entity::find()
+            .filter(email::Column::Email.eq(Some(normalized_email.clone())))
+            .filter(email::Column::Valid.eq(Some(1)))
+            .one(&self.db)
+            .await?;
+        if duplicate_valid_secondary.is_some() {
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
+        }
+
+        let mut active = n4user::ActiveModel::from(model);
+        active.name = Set(Some(name.trim().to_string()));
+        active.email = Set(Some(normalized_email));
+        if let Some(english_name) = english_name
+            .map(str::trim)
+            .filter(|english_name| !english_name.is_empty())
+        {
+            active.english_name = Set(Some(english_name.to_string()));
+        }
+        active.is_guest = Set(Some(
+            if self.config.login_id_matches_guest_prefix(ldap_login_id) {
+                1
+            } else {
+                0
+            },
+        ));
+        let updated = active.update(&self.db).await?;
+        self.app_user_record_from_model(updated).await
+    }
+
     pub async fn link_or_create_oauth_user(
         &self,
         input: OAuthUserInput,

@@ -64,10 +64,13 @@ pub struct OAuthRuntimeConfig {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct OAuthProviderRuntimeConfig {
+    pub access_token_url: String,
     pub authorization_url: String,
     pub client_id: String,
     pub client_secret: String,
+    pub email_url: String,
     pub scope: String,
+    pub user_info_url: String,
 }
 
 impl OAuthRuntimeConfig {
@@ -105,19 +108,34 @@ impl OAuthRuntimeConfig {
                 Some((
                     provider.clone(),
                     OAuthProviderRuntimeConfig {
+                        access_token_url: trimmed_option(config.access_token_url.as_deref())
+                            .unwrap_or_else(|| default_oauth_access_token_url(&provider)),
                         authorization_url: trimmed_option(config.authorization_url.as_deref())
                             .unwrap_or_else(|| default_oauth_authorization_url(&provider)),
                         client_id: trimmed_option(config.client_id.as_deref()).unwrap_or_default(),
                         client_secret: trimmed_option(config.client_secret.as_deref())
                             .unwrap_or_default(),
+                        email_url: trimmed_option(config.email_url.as_deref())
+                            .unwrap_or_else(|| default_oauth_email_url(&provider)),
                         scope: trimmed_option(config.scope.as_deref())
                             .unwrap_or_else(|| default_oauth_scope(&provider)),
+                        user_info_url: trimmed_option(config.user_info_url.as_deref())
+                            .unwrap_or_else(|| default_oauth_user_info_url(&provider)),
                     },
                 ))
             })
             .collect();
         Self { providers }
     }
+}
+
+fn default_oauth_access_token_url(provider: &str) -> String {
+    match provider {
+        "google" => "https://oauth2.googleapis.com/token",
+        "github" => "https://github.com/login/oauth/access_token",
+        _ => "",
+    }
+    .to_string()
 }
 
 fn default_oauth_authorization_url(provider: &str) -> String {
@@ -129,10 +147,27 @@ fn default_oauth_authorization_url(provider: &str) -> String {
     .to_string()
 }
 
+fn default_oauth_email_url(provider: &str) -> String {
+    match provider {
+        "github" => "https://api.github.com/user/emails",
+        _ => "",
+    }
+    .to_string()
+}
+
 fn default_oauth_scope(provider: &str) -> String {
     match provider {
         "google" => "profile email",
         "github" => "user:email",
+        _ => "",
+    }
+    .to_string()
+}
+
+fn default_oauth_user_info_url(provider: &str) -> String {
+    match provider {
+        "google" => "https://www.googleapis.com/oauth2/v3/userinfo",
+        "github" => "https://api.github.com/user",
         _ => "",
     }
     .to_string()

@@ -155,6 +155,78 @@ fn cookie_header_from_set_cookie_response(response: &axum::response::Response) -
         .join("; ")
 }
 
+async fn spawn_oauth_provider_stub(provider: &str) -> String {
+    let app = match provider {
+        "github" => axum::Router::new()
+            .route(
+                "/token",
+                axum::routing::post(|| async {
+                    axum::Json(serde_json::json!({
+                        "access_token": "github-access-token",
+                        "token_type": "bearer"
+                    }))
+                }),
+            )
+            .route(
+                "/user",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!({
+                        "id": 42,
+                        "login": "octo-provider",
+                        "name": "GitHub Provider",
+                        "email": null
+                    }))
+                }),
+            )
+            .route(
+                "/emails",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!([
+                        {
+                            "email": "secondary@example.com",
+                            "primary": false,
+                            "verified": true
+                        },
+                        {
+                            "email": "provider-octo@example.com",
+                            "primary": true,
+                            "verified": true
+                        }
+                    ]))
+                }),
+            ),
+        "google" => axum::Router::new()
+            .route(
+                "/token",
+                axum::routing::post(|| async {
+                    axum::Json(serde_json::json!({
+                        "access_token": "google-access-token",
+                        "token_type": "Bearer"
+                    }))
+                }),
+            )
+            .route(
+                "/userinfo",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!({
+                        "sub": "google-provider-7",
+                        "email": "provider-door@example.com",
+                        "name": "Google Provider"
+                    }))
+                }),
+            ),
+        _ => panic!("unsupported oauth stub provider: {provider}"),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("oauth stub listener");
+    let address = listener.local_addr().expect("oauth stub address");
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.expect("oauth stub server");
+    });
+    format!("http://{address}")
+}
+
 fn days_ago_datetime(days: u64) -> DateTime {
     DateTimeUtc::from(SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60)).naive_utc()
 }
@@ -491,6 +563,7 @@ async fn legacy_oauth_start_redirects_to_configured_github_authorization_endpoin
                     client_id: "github-client".to_string(),
                     client_secret: "github-secret".to_string(),
                     scope: "user:email".to_string(),
+                    ..Default::default()
                 },
             )]),
             ..AppRuntimeConfig::default()
@@ -540,6 +613,7 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
                     client_id: "github-client".to_string(),
                     client_secret: "github-secret".to_string(),
                     scope: "user:email".to_string(),
+                    ..Default::default()
                 },
             )]),
             ..AppRuntimeConfig::default()
@@ -607,6 +681,134 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
 }
 
 #[tokio::test]
+// Guards configured GitHub OAuth callback token exchange plus user/email profile mapping without external network.
+async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
+    let provider_base = spawn_oauth_provider_stub("github").await;
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    access_token_url: format!("{provider_base}/token"),
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    email_url: format!("{provider_base}/emails"),
+                    scope: "user:email".to_string(),
+                    user_info_url: format!("{provider_base}/user"),
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (_, cookie_header) = bootstrap(app.clone()).await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github?code=real-provider-code")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
+    let user = repository
+        .find_user_by_identifier("provider-octo@example.com")
+        .await
+        .unwrap()
+        .expect("oauth-created GitHub user");
+    assert_eq!(user.login_id, "provider-octo");
+    assert_eq!(user.display_name, "GitHub Provider");
+    let provider_rows = linked_account::Entity::find()
+        .filter(linked_account::Column::ProviderKey.eq("github"))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(provider_rows.len(), 1);
+    assert_eq!(provider_rows[0].provider_user_id.as_deref(), Some("42"));
+}
+
+#[tokio::test]
+// Guards configured Google OAuth callback token exchange plus userinfo profile mapping without external network.
+async fn legacy_oauth_callback_exchanges_google_code_for_provider_identity() {
+    let provider_base = spawn_oauth_provider_stub("google").await;
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["google".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "google",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    access_token_url: format!("{provider_base}/token"),
+                    authorization_url: "https://accounts.example/o/oauth2/auth".to_string(),
+                    client_id: "google-client".to_string(),
+                    client_secret: "google-secret".to_string(),
+                    scope: "profile email".to_string(),
+                    user_info_url: format!("{provider_base}/userinfo"),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (_, cookie_header) = bootstrap(app.clone()).await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/google?code=real-provider-code")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    let user = repository
+        .find_user_by_identifier("provider-door@example.com")
+        .await
+        .unwrap()
+        .expect("oauth-created Google user");
+    assert_eq!(user.login_id, "provider-door");
+    assert_eq!(user.display_name, "Google Provider");
+    let provider_rows = linked_account::Entity::find()
+        .filter(linked_account::Column::ProviderKey.eq("google"))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(provider_rows.len(), 1);
+    assert_eq!(
+        provider_rows[0].provider_user_id.as_deref(),
+        Some("google-provider-7")
+    );
+}
+
+#[tokio::test]
 // Guards legacy OAuth callback linking by email instead of creating a duplicate local user.
 async fn legacy_oauth_callback_links_existing_local_user_by_email() {
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
@@ -623,6 +825,7 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
                     client_id: "google-client".to_string(),
                     client_secret: "google-secret".to_string(),
                     scope: "profile email".to_string(),
+                    ..Default::default()
                 },
             )]),
             ..AppRuntimeConfig::default()
@@ -1914,18 +2117,19 @@ async fn ldap_sign_in_uses_email_base_login_and_updates_existing_local_user() {
             department: "Ops".to_string(),
             display_name: "Directory Door".to_string(),
             email: "door@example.com".to_string(),
-            english_name: String::new(),
-            login_id: "ldap-door".to_string(),
+            english_name: "Directory English".to_string(),
+            login_id: "pt-door".to_string(),
             password: "new-ldap-pass".to_string(),
         }],
         ..LdapRuntimeConfig::default()
     };
-    let (app, _repo, db) = build_auth_router_with_anonymous_access_and_app_config(
+    let (app, _repo, db) = build_auth_router_with_configs(
         true,
         AppRuntimeConfig {
             ldap,
             ..AppRuntimeConfig::default()
         },
+        RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "pt-")]),
     )
     .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -1944,6 +2148,16 @@ async fn ldap_sign_in_uses_email_base_login_and_updates_existing_local_user() {
         .await
         .unwrap();
     assert_eq!(register.status(), StatusCode::OK);
+    let registered = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("door".to_string())))
+        .one(&db)
+        .await
+        .expect("query registered user")
+        .expect("registered local user");
+    let mut registered_active = n4user::ActiveModel::from(registered);
+    registered_active.english_name = Set(Some("Old English".to_string()));
+    registered_active.is_guest = Set(Some(0));
+    registered_active.update(&db).await.unwrap();
     let (login_csrf, login_cookie_header) = bootstrap(app.clone()).await;
 
     let response = app
@@ -1971,6 +2185,8 @@ async fn ldap_sign_in_uses_email_base_login_and_updates_existing_local_user() {
         .expect("updated local user");
     assert_eq!(updated.name.as_deref(), Some("Directory Door [Ops]"));
     assert_eq!(updated.email.as_deref(), Some("door@example.com"));
+    assert_eq!(updated.english_name.as_deref(), Some("Directory English"));
+    assert_eq!(updated.is_guest, Some(1));
     assert!(bcrypt::verify("new-ldap-pass", updated.password.as_deref().unwrap()).unwrap());
 }
 

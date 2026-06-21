@@ -95,7 +95,10 @@ social_login_only = true
 [oauth.github]
 client_id = "github-file-client"
 client_secret = "github-file-secret"
+access_token_url = "https://github.file/login/oauth/access_token"
 authorization_url = "https://github.file/login/oauth/authorize"
+user_info_url = "https://github.file/api/v3/user"
+email_url = "https://github.file/api/v3/user/emails"
 scope = "user:email"
 
 [oauth.google]
@@ -213,8 +216,26 @@ draft_time = "1s"
     assert_eq!(
         oauth
             .get("github")
+            .and_then(|provider| provider.access_token_url.as_deref()),
+        Some("https://github.file/login/oauth/access_token")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
             .and_then(|provider| provider.authorization_url.as_deref()),
         Some("https://github.file/login/oauth/authorize")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.user_info_url.as_deref()),
+        Some("https://github.file/api/v3/user")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.email_url.as_deref()),
+        Some("https://github.file/api/v3/user/emails")
     );
     assert_eq!(
         oauth
@@ -510,8 +531,20 @@ draft_time = "30s"
                 "github-env-secret".to_string(),
             ),
             (
+                "YONA_OAUTH_GITHUB_ACCESS_TOKEN_URL".to_string(),
+                "https://github.env/login/oauth/access_token".to_string(),
+            ),
+            (
                 "YONA_OAUTH_GITHUB_AUTHORIZATION_URL".to_string(),
                 "https://github.env/login/oauth/authorize".to_string(),
+            ),
+            (
+                "YONA_OAUTH_GITHUB_USER_INFO_URL".to_string(),
+                "https://github.env/api/v3/user".to_string(),
+            ),
+            (
+                "YONA_OAUTH_GITHUB_EMAIL_URL".to_string(),
+                "https://github.env/api/v3/user/emails".to_string(),
             ),
             (
                 "YONA_OAUTH_GITHUB_SCOPE".to_string(),
@@ -687,8 +720,26 @@ draft_time = "30s"
     assert_eq!(
         oauth
             .get("github")
+            .and_then(|provider| provider.access_token_url.as_deref()),
+        Some("https://github.env/login/oauth/access_token")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
             .and_then(|provider| provider.authorization_url.as_deref()),
         Some("https://github.env/login/oauth/authorize")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.user_info_url.as_deref()),
+        Some("https://github.env/api/v3/user")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.email_url.as_deref()),
+        Some("https://github.env/api/v3/user/emails")
     );
     assert_eq!(
         oauth

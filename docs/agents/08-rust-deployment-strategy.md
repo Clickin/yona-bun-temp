@@ -17,3 +17,9 @@
 - `reference/mixed-code/**`는 deployment baseline이 아니다.
 - user-uploaded asset은 image layer나 embedded static asset과 분리한다.
 
+## Kubernetes 상태
+
+- `SPEC.md` Section 1.4의 release baseline은 SFX와 Docker/base-path다.
+- 현재 repo에는 canonical Kubernetes, k8s, Helm, Deployment, Service manifest가 없다.
+- Kubernetes 배포는 Docker image, 외부 `yona.toml`/환경변수, secret, DB, 그리고 user-uploaded asset volume을 조합하는 운영 가이드 follow-up으로 다룬다.
+- manifest가 추가되기 전에는 local k8s smoke를 release blocker로 보지 않는다.
