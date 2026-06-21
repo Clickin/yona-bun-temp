@@ -174,8 +174,14 @@ fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {
     assert_eq!(issue.attachments[0].mime_type, "image/png");
     assert_eq!(issue.attachments[0].size, 123);
     assert_eq!(issue.attachments[0].content_base64, None);
+    assert_eq!(issue.attachments[0].content_sha256, None);
     assert_eq!(issue.attachments[0].legacy_hash, "issue-hash");
     assert_eq!(issue.comments[0].attachments[0].name, "issue-comment.txt");
+    let json = serde_json::to_value(&snapshot).unwrap();
+    let attachment_json = json["issues"][0]["attachments"][0].as_object().unwrap();
+    assert!(!attachment_json.contains_key("contentBase64"));
+    assert!(!attachment_json.contains_key("contentSha256"));
+    assert_eq!(attachment_json["legacyHash"], "issue-hash");
 
     let post = &snapshot.posts[0];
     assert_eq!(post.post_number, "4");
@@ -280,10 +286,21 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
         Some("aXNzdWUtZmlsZQ==")
     );
     assert_eq!(
+        snapshot.issues[0].attachments[0].content_sha256.as_deref(),
+        Some("64ca2bc5b73628aa6c89e890d2df9a1f55a47fdee5a6360b9a2467df121f8f6d")
+    );
+    assert_eq!(snapshot.issues[0].attachments[0].legacy_hash, "issue-hash");
+    assert_eq!(
         snapshot.issues[0].comments[0].attachments[0]
             .content_base64
             .as_deref(),
         Some("Y29tbWVudC1maWxl")
+    );
+    assert_eq!(
+        snapshot.issues[0].comments[0].attachments[0]
+            .content_sha256
+            .as_deref(),
+        Some("d83631a7218cab3fc1ca2729c5c6a20eb29674f679a2b85383d37491b0c0684a")
     );
     assert_eq!(
         snapshot.issues[0].comments[0].child_comments[0].contents_markdown,
@@ -292,6 +309,10 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
     assert_eq!(
         snapshot.posts[0].attachments[0].content_base64.as_deref(),
         Some("cG9zdC1maWxl")
+    );
+    assert_eq!(
+        snapshot.posts[0].attachments[0].content_sha256.as_deref(),
+        Some("94c5a5e6f71abc3a4661eadd2482e577e1c754762477657307a41e5c385b854e")
     );
     assert!(!snapshot
         .unsupported_sections
@@ -302,6 +323,17 @@ fn mapper_embeds_supplied_attachment_content_base64_for_portable_site_import() {
         json["issues"][0]["attachments"][0]["contentBase64"],
         "aXNzdWUtZmlsZQ=="
     );
+    assert_eq!(
+        json["issues"][0]["attachments"][0]["contentSha256"],
+        "64ca2bc5b73628aa6c89e890d2df9a1f55a47fdee5a6360b9a2467df121f8f6d"
+    );
+    assert_eq!(
+        json["issues"][0]["attachments"][0]["legacyHash"],
+        "issue-hash"
+    );
+    let attachment_json = json["issues"][0]["attachments"][0].as_object().unwrap();
+    assert!(!attachment_json.contains_key("content_sha256"));
+    assert!(!attachment_json.contains_key("legacy_hash"));
 }
 
 #[test]
@@ -387,49 +419,60 @@ fn yona_export_adapter_embeds_downloaded_attachment_tree_content() {
     )
     .unwrap();
     let json_path = temp.path().join("exported").join("alice").join("demo.json");
-    std::fs::write(
-        &json_path,
-        json!({
-            "owner": "alice",
-            "projectName": "demo",
-            "members": [{
+    let payload = json!({
+        "owner": "alice",
+        "projectName": "demo",
+        "members": [{
+            "loginId": "alice",
+            "name": "Alice Owner",
+            "role": "manager",
+            "email": "alice@example.com"
+        }],
+        "issues": [{
+            "number": 1,
+            "title": "Attached issue",
+            "author": {
                 "loginId": "alice",
                 "name": "Alice Owner",
-                "role": "manager",
                 "email": "alice@example.com"
-            }],
-            "issues": [{
-                "number": 1,
-                "title": "Attached issue",
-                "author": {
-                    "loginId": "alice",
-                    "name": "Alice Owner",
-                    "email": "alice@example.com"
-                },
-                "body": "see /files/123",
-                "attachments": [{
-                    "id": 123,
-                    "name": "linked.txt",
-                    "hash": "linked-hash",
-                    "mimeType": "text/plain",
-                    "size": 11,
-                    "containerType": "ISSUE_POST",
-                    "containerId": "1",
-                    "ownerLoginId": "alice"
-                }]
+            },
+            "body": "see /files/123",
+            "attachments": [{
+                "id": 123,
+                "name": "linked.txt",
+                "hash": "linked-hash",
+                "mimeType": "text/plain",
+                "size": 11,
+                "containerType": "ISSUE_POST",
+                "containerId": "1",
+                "ownerLoginId": "alice"
             }]
-        })
-        .to_string(),
-    )
-    .unwrap();
+        }]
+    })
+    .to_string();
+    std::fs::write(&json_path, &payload).unwrap();
 
     let snapshot =
         map_yona_export_project_directory_to_yobi_data(&json_path, &project_dir).unwrap();
+    let mapper_snapshot = map_project_export_json_to_yobi_data_with_attachment_content_base64(
+        &payload,
+        &BTreeMap::from([(123, "bGlua2VkLWZpbGU=".to_string())]),
+    )
+    .unwrap();
 
     assert_eq!(
         snapshot.issues[0].attachments[0].content_base64.as_deref(),
         Some("bGlua2VkLWZpbGU=")
     );
+    assert_eq!(
+        snapshot.issues[0].attachments[0].content_sha256.as_deref(),
+        Some("5568e3038c927fb3b1db37bdb98a3eba0851eb0340204599cb38200da96d4f74")
+    );
+    assert_eq!(
+        snapshot.issues[0].attachments[0].content_sha256,
+        mapper_snapshot.issues[0].attachments[0].content_sha256
+    );
+    assert_eq!(snapshot, mapper_snapshot);
     assert!(!snapshot
         .unsupported_sections
         .contains(&"attachmentContentFiles".to_string()));

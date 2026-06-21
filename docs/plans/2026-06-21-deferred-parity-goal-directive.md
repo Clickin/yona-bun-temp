@@ -85,19 +85,33 @@ protects users moving real legacy installations.
 P1-A sub-slice status: `/sites/import?dryRun=true` now covers a no-write
 validate-only report for the existing `yobi-data` import shape. Non-dry-run
 `/sites/import` reuses that report as a preflight before mutation, so invalid
-portable attachment content/size/max-upload payloads fail without creating
-earlier records or portable files. Live import now also cleans route-created
-portable attachment rows and `data_root/uploads` files when a downstream
-resource/comment operation fails. Focused coverage:
-`site_admin_contract::site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails`.
-True all-DB transaction/rollback protection for downstream non-validation
-failures during non-dry-run `/sites/import` remains a P1-A follow-up and is
-recorded in `docs/provenance/phase-0b/yona-export.md`.
+portable attachment content/size/SHA-256/max-upload payloads fail without
+creating earlier records or portable files. `/sites/export` and the migration
+`yona-export` mapper emit `contentSha256` beside embedded `contentBase64`, and
+import preflight validates that checksum before writing. Live import now also keeps a compensating
+rollback ledger for route-created portable attachments and import-created DB
+rows covering users, project shells, project memberships, standalone/embedded
+labels, standalone/on-demand milestones, posts/comments, and issues/comments
+for the supported portable-attachment import pipeline. Focused coverage:
+`site_admin_contract::site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails`
+and
+`site_admin_contract::site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails`.
+True all-DB transaction protection for downstream non-validation failures during
+non-dry-run `/sites/import` remains a P1-A follow-up, especially for crash
+boundaries, preexisting attachment-id rebinding state, and preexisting project
+sequence counters advanced before a failure, and is recorded in
+`docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
 has deterministic migration payload fixtures for legacy `ProjectApi.exports`
 and `ProjectApi.newProject`, with tests proving those project export/create
-descriptors remain migrator-owned and do not become app-runtime routes. Issue
+descriptors remain migrator-owned and do not become app-runtime routes. User
+and auth-token descriptors now have deterministic app-owned payload fixtures
+for mention lookup, site-admin user creation, token creation, user issue export,
+statistics, typo-preserving `defultLoginPage`, admin user listing, and admin
+state mutation, with tests proving recursive legacy request shapes and response
+keys while keeping those rows classified as direct app-owned compatibility.
+Issue
 descriptors now have deterministic migrator payload fixtures for
 `IssueApi.imports` and `IssueApi.newIssues`, while app-owned issue helper rows
 remain payload-free. Board and milestone descriptors now have deterministic

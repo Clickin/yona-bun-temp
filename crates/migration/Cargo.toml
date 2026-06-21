@@ -27,6 +27,7 @@ sea-orm.workspace = true
 sea-orm-migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 yona-rust-persistence-entities = { path = "../persistence-entities" }
 
 [dev-dependencies]

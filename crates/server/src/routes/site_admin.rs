@@ -11,6 +11,7 @@ use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, DEFAULT_COST};
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
     collections::{HashMap, HashSet},
     path::Path as StdPath,
@@ -441,6 +442,8 @@ struct RestSiteExportCommentItem {
 struct RestSiteExportAttachmentItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     content_base64: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content_sha256: Option<String>,
     id: i64,
     mime_type: String,
     name: String,
@@ -1831,6 +1834,164 @@ async fn rest_import_site_data(
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
 
+    let mut rollback = RestSiteImportRollbackLedger::default();
+    let result = rest_import_site_data_live(&service, repository, payload, &mut rollback).await;
+    match result {
+        Ok(response) => Ok(Json(response)),
+        Err(error) => {
+            rollback.rollback(&service, repository).await;
+            Err(error)
+        }
+    }
+}
+
+#[derive(Default)]
+struct RestSiteImportRollbackLedger {
+    attachments: Vec<persistence::AttachmentRecord>,
+    issues: Vec<(String, String, i64)>,
+    labels: Vec<(String, String, i64)>,
+    milestones: Vec<(String, String, i64)>,
+    posts: Vec<(String, String, i64)>,
+    project_members: Vec<RestSiteImportRollbackProjectMember>,
+    projects: Vec<RestSiteImportRollbackProject>,
+    users: Vec<i64>,
+}
+
+struct RestSiteImportRollbackProject {
+    id: i64,
+}
+
+struct RestSiteImportRollbackProjectMember {
+    previous_role: Option<String>,
+    project_id: i64,
+    user_id: i64,
+}
+
+impl RestSiteImportRollbackLedger {
+    fn record_attachments(&mut self, attachments: &[persistence::AttachmentRecord]) {
+        self.attachments.extend(attachments.iter().cloned());
+    }
+
+    fn record_issue(&mut self, owner_name: &str, project_name: &str, issue_number: i64) {
+        self.issues.push((
+            owner_name.trim().to_string(),
+            project_name.trim().to_string(),
+            issue_number,
+        ));
+    }
+
+    fn record_label(&mut self, owner_name: &str, project_name: &str, label_id: i64) {
+        self.labels.push((
+            owner_name.trim().to_string(),
+            project_name.trim().to_string(),
+            label_id,
+        ));
+    }
+
+    fn record_milestone(&mut self, owner_name: &str, project_name: &str, milestone_id: i64) {
+        self.milestones.push((
+            owner_name.trim().to_string(),
+            project_name.trim().to_string(),
+            milestone_id,
+        ));
+    }
+
+    fn record_post(&mut self, owner_name: &str, project_name: &str, post_number: i64) {
+        self.posts.push((
+            owner_name.trim().to_string(),
+            project_name.trim().to_string(),
+            post_number,
+        ));
+    }
+
+    fn record_project(&mut self, project: &persistence::ProjectRecord) {
+        self.projects
+            .push(RestSiteImportRollbackProject { id: project.id });
+    }
+
+    fn record_project_member(
+        &mut self,
+        project_id: i64,
+        user_id: i64,
+        previous_role: Option<String>,
+    ) {
+        self.project_members
+            .push(RestSiteImportRollbackProjectMember {
+                previous_role,
+                project_id,
+                user_id,
+            });
+    }
+
+    fn record_user(&mut self, user: &persistence::AppUserRecord) {
+        self.users.push(user.id);
+    }
+
+    async fn rollback(&self, service: &PilotServiceImpl, repository: &PilotRepository) {
+        for attachment in self.attachments.iter().rev() {
+            let deleted = repository
+                .delete_site_import_attachment_row(attachment.id)
+                .await
+                .ok()
+                .flatten();
+            let hash = deleted
+                .as_ref()
+                .map(|record| record.hash.as_str())
+                .filter(|hash| !hash.is_empty())
+                .unwrap_or(attachment.hash.as_str());
+            if !hash.is_empty() {
+                let _ =
+                    std::fs::remove_file(uploaded_file_path_with_root(&service.data_root, hash));
+            }
+        }
+        for (owner_name, project_name, issue_number) in self.issues.iter().rev() {
+            let _ = repository
+                .delete_site_import_issue_by_number(owner_name, project_name, *issue_number)
+                .await;
+        }
+        for (owner_name, project_name, post_number) in self.posts.iter().rev() {
+            let _ = repository
+                .delete_site_import_posting_by_number(owner_name, project_name, *post_number)
+                .await;
+        }
+        for (owner_name, project_name, milestone_id) in self.milestones.iter().rev() {
+            let _ = repository
+                .delete_site_import_milestone_by_id(owner_name, project_name, *milestone_id)
+                .await;
+        }
+        for (owner_name, project_name, label_id) in self.labels.iter().rev() {
+            let _ = repository
+                .delete_project_label(owner_name, project_name, *label_id)
+                .await;
+        }
+        for member in self.project_members.iter().rev() {
+            if let Some(previous_role) = &member.previous_role {
+                let _ = repository
+                    .add_project_membership(member.project_id, member.user_id, previous_role)
+                    .await;
+            } else {
+                let _ = repository
+                    .delete_project_membership(member.project_id, member.user_id)
+                    .await;
+            }
+        }
+        for project in self.projects.iter().rev() {
+            let _ = repository
+                .delete_site_import_project_shell_by_id(project.id)
+                .await;
+        }
+        for user_id in self.users.iter().rev() {
+            let _ = repository.delete_site_import_user_by_id(*user_id).await;
+        }
+    }
+}
+
+async fn rest_import_site_data_live(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    payload: RestSiteImportPayload,
+    rollback: &mut RestSiteImportRollbackLedger,
+) -> Result<RestSiteImportResponse, RestRouteError> {
     let mut imported_users = 0;
     let mut skipped_users = 0;
     for user in payload.users {
@@ -1854,7 +2015,7 @@ async fn rest_import_site_data(
             DEFAULT_COST,
         )
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        repository
+        let created_user = repository
             .create_user(persistence::CreateUserInput {
                 display_name: user.display_name.trim().to_string(),
                 email_address: email_address.to_string(),
@@ -1865,6 +2026,7 @@ async fn rest_import_site_data(
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        rollback.record_user(&created_user);
         imported_users += 1;
     }
 
@@ -1889,7 +2051,7 @@ async fn rest_import_site_data(
             skipped_projects += 1;
             continue;
         }
-        repository
+        let created_project = repository
             .create_project(persistence::CreateProjectInput {
                 organization_id: None,
                 owner_name: owner_name.to_string(),
@@ -1901,6 +2063,7 @@ async fn rest_import_site_data(
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        rollback.record_project(&created_project);
         imported_projects += 1;
     }
 
@@ -1927,10 +2090,19 @@ async fn rest_import_site_data(
             skipped_project_members += 1;
             continue;
         };
+        let previous_role = repository
+            .read_project_members(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .members
+            .into_iter()
+            .find(|member| member.user_id == user.id)
+            .map(|member| member.role);
         repository
             .add_project_membership(project.id, user.id, &role)
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        rollback.record_project_member(project.id, user.id, previous_role);
         imported_project_members += 1;
     }
 
@@ -1975,7 +2147,10 @@ async fn rest_import_site_data(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?
         {
-            Some((_record, true)) => imported_labels += 1,
+            Some((record, true)) => {
+                rollback.record_label(owner_name, project_name, record.id);
+                imported_labels += 1;
+            }
             Some((_record, false)) => skipped_labels += 1,
             None => skipped_labels += 1,
         }
@@ -2008,6 +2183,7 @@ async fn rest_import_site_data(
         let imported_attachments =
             rest_site_import_attachments(&service, repository, &actor, &milestone.attachments)
                 .await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown = rewrite_site_import_file_links(
             &milestone.contents_markdown,
             &imported_attachments.link_rewrites,
@@ -2063,7 +2239,8 @@ async fn rest_import_site_data(
                 return Err(RestRouteError::internal(error.to_string()));
             }
         };
-        if created_milestone.is_some() {
+        if let Some(created_milestone) = created_milestone {
+            rollback.record_milestone(owner_name, project_name, created_milestone.id);
             imported_milestones += 1;
         } else {
             rest_site_import_cleanup_attachments(
@@ -2100,10 +2277,12 @@ async fn rest_import_site_data(
             &post.owner_name,
             &post.project_name,
             &post.labels,
+            rollback,
         )
         .await?;
         let imported_attachments =
             rest_site_import_attachments(&service, repository, &actor, &post.attachments).await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
         let body_markdown = rewrite_site_import_file_links(
             &post.body_markdown,
             &imported_attachments.link_rewrites,
@@ -2150,6 +2329,7 @@ async fn rest_import_site_data(
             skipped_posts += 1;
             continue;
         };
+        rollback.record_post(&post.owner_name, &post.project_name, created.post_number);
         if !post.history_markdown.trim().is_empty() {
             repository
                 .restore_posting_history(
@@ -2170,6 +2350,7 @@ async fn rest_import_site_data(
             &post.comments,
             &actor,
             None,
+            rollback,
         )
         .await?;
         imported_posts += 1;
@@ -2198,6 +2379,7 @@ async fn rest_import_site_data(
             &issue.owner_name,
             &issue.project_name,
             &issue.labels,
+            rollback,
         )
         .await?;
         let milestone_id = rest_site_import_milestone_id(
@@ -2206,10 +2388,12 @@ async fn rest_import_site_data(
             &issue.project_name,
             &issue.milestone_title,
             &actor,
+            rollback,
         )
         .await?;
         let imported_attachments =
             rest_site_import_attachments(&service, repository, &actor, &issue.attachments).await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
         let body_markdown = rewrite_site_import_file_links(
             &issue.body_markdown,
             &imported_attachments.link_rewrites,
@@ -2260,6 +2444,7 @@ async fn rest_import_site_data(
             skipped_issues += 1;
             continue;
         };
+        rollback.record_issue(&issue.owner_name, &issue.project_name, created.issue_number);
         if !issue.history_markdown.trim().is_empty() {
             repository
                 .restore_issue_history(
@@ -2293,12 +2478,13 @@ async fn rest_import_site_data(
             &issue.comments,
             &actor,
             None,
+            rollback,
         )
         .await?;
         imported_issues += 1;
     }
 
-    Ok(Json(RestSiteImportResponse::imported(
+    Ok(RestSiteImportResponse::imported(
         RestSiteImportCountSet {
             issues: imported_issues,
             labels: imported_labels,
@@ -2320,7 +2506,7 @@ async fn rest_import_site_data(
             ..RestSiteImportCountSet::default()
         },
         Vec::new(),
-    )))
+    ))
 }
 
 #[derive(Default)]
@@ -2822,11 +3008,18 @@ fn rest_site_import_dry_run_attachments(
                     validation_errors,
                     section,
                     section_index,
-                    "contentBase64",
+                    rest_site_import_attachment_validation_field(&message),
                     message,
                 );
             }
         }
+    }
+}
+
+fn rest_site_import_attachment_validation_field(message: &str) -> &'static str {
+    match message {
+        "site.import.attachment.sha256Mismatch" => "contentSha256",
+        _ => "contentBase64",
     }
 }
 
@@ -2854,6 +3047,7 @@ async fn rest_site_import_post_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
+    rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -2865,6 +3059,7 @@ async fn rest_site_import_post_comments(
                 .await?;
         let imported_attachments =
             rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -2919,6 +3114,7 @@ async fn rest_site_import_post_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
+                rollback,
             ))
             .await?;
         }
@@ -2935,6 +3131,7 @@ async fn rest_site_import_issue_comments(
     comments: &[RestSiteExportCommentItem],
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
+    rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<(), RestRouteError> {
     for comment in comments {
         let contents_markdown = comment.contents_markdown.trim();
@@ -2946,6 +3143,7 @@ async fn rest_site_import_issue_comments(
                 .await?;
         let imported_attachments =
             rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
         let detail = repository
@@ -2998,6 +3196,7 @@ async fn rest_site_import_issue_comments(
                 &comment.child_comments,
                 &actor,
                 Some(created_comment_id),
+                rollback,
             ))
             .await?;
         }
@@ -3069,6 +3268,17 @@ fn rest_site_import_portable_attachment_bytes(
     }
     if bytes.len() > service.max_uploaded_file_size {
         return Err("site.import.attachment.tooLarge".to_string());
+    }
+    if let Some(expected_sha256) = attachment
+        .content_sha256
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        let actual_sha256 = sha256_hex(&bytes);
+        if !actual_sha256.eq_ignore_ascii_case(expected_sha256) {
+            return Err("site.import.attachment.sha256Mismatch".to_string());
+        }
     }
     Ok(Some(bytes))
 }
@@ -3218,6 +3428,7 @@ async fn rest_site_import_label_ids(
     owner_name: &str,
     project_name: &str,
     labels: &[RestSiteExportLabelItem],
+    rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<Vec<i64>, RestRouteError> {
     let mut label_ids = Vec::new();
     for label in labels {
@@ -3236,7 +3447,7 @@ async fn rest_site_import_label_ids(
             normalize_issue_label_color(label.color.trim())
                 .map_err(RestRouteError::from_connect_error)?
         };
-        let Some((record, _created)) = repository
+        let Some((record, created)) = repository
             .create_project_label(persistence::CreateProjectLabelInput {
                 category_is_exclusive: label.category_is_exclusive,
                 category_name: category_name.to_string(),
@@ -3250,6 +3461,9 @@ async fn rest_site_import_label_ids(
         else {
             continue;
         };
+        if created {
+            rollback.record_label(owner_name, project_name, record.id);
+        }
         label_ids.push(record.id);
     }
     Ok(label_ids)
@@ -3261,6 +3475,7 @@ async fn rest_site_import_milestone_id(
     project_name: &str,
     milestone_title: &str,
     actor: &persistence::AppUserRecord,
+    rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<Option<i64>, RestRouteError> {
     let title = milestone_title.trim();
     if title.is_empty() {
@@ -3294,7 +3509,12 @@ async fn rest_site_import_milestone_id(
         })
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
-    Ok(created.map(|milestone| milestone.id))
+    if let Some(milestone) = created {
+        rollback.record_milestone(owner_name, project_name, milestone.id);
+        Ok(Some(milestone.id))
+    } else {
+        Ok(None)
+    }
 }
 
 async fn rest_site_import_actor(
@@ -3994,8 +4214,12 @@ fn rest_site_export_attachment_from_record(
     data_root: &StdPath,
     record: &persistence::IssueAttachmentRecord,
 ) -> RestSiteExportAttachmentItem {
+    let content_bytes = rest_site_export_attachment_content_bytes(data_root, record);
     RestSiteExportAttachmentItem {
-        content_base64: rest_site_export_attachment_content_base64(data_root, record),
+        content_base64: content_bytes
+            .as_ref()
+            .map(|bytes| general_purpose::STANDARD.encode(bytes)),
+        content_sha256: content_bytes.as_deref().map(sha256_hex),
         id: record.id,
         mime_type: record.mime_type.clone(),
         name: record.name.clone(),
@@ -4003,17 +4227,25 @@ fn rest_site_export_attachment_from_record(
     }
 }
 
-fn rest_site_export_attachment_content_base64(
+fn rest_site_export_attachment_content_bytes(
     data_root: &StdPath,
     record: &persistence::IssueAttachmentRecord,
-) -> Option<String> {
+) -> Option<Vec<u8>> {
     let hash = record.hash.trim();
     if hash.is_empty() {
         return None;
     }
-    std::fs::read(uploaded_file_path_with_root(data_root, hash))
-        .ok()
-        .map(|bytes| general_purpose::STANDARD.encode(bytes))
+    std::fs::read(uploaded_file_path_with_root(data_root, hash)).ok()
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        use std::fmt::Write as _;
+        let _ = write!(&mut hex, "{byte:02x}");
+    }
+    hex
 }
 
 fn rest_site_export_label_from_record(

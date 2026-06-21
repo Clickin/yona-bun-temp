@@ -265,6 +265,8 @@ mod repo_role_project_helpers;
 mod repo_search;
 #[path = "site_admin.rs"]
 mod repo_site_admin;
+#[path = "site_import_rollback.rs"]
+mod repo_site_import_rollback;
 #[path = "user.rs"]
 mod repo_user;
 #[path = "user_helpers.rs"]

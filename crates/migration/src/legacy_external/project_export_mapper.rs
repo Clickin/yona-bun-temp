@@ -1,4 +1,7 @@
+use base64::engine::general_purpose;
+use base64::Engine;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 #[derive(Debug)]
@@ -226,6 +229,8 @@ pub struct YobiDataCommentItem {
 pub struct YobiDataAttachmentItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content_base64: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content_sha256: Option<String>,
     pub id: i64,
     pub mime_type: String,
     pub name: String,
@@ -479,11 +484,17 @@ fn map_attachment(
     attachment: &LegacyAttachment,
     attachment_content_base64: &BTreeMap<i64, String>,
 ) -> YobiDataAttachmentItem {
+    let content_base64 = attachment_content_base64
+        .get(&attachment.id)
+        .map(|content| content.trim().to_string())
+        .filter(|content| !content.is_empty());
+    let content_sha256 = content_base64
+        .as_deref()
+        .and_then(content_sha256_from_base64);
+
     YobiDataAttachmentItem {
-        content_base64: attachment_content_base64
-            .get(&attachment.id)
-            .map(|content| content.trim().to_string())
-            .filter(|content| !content.is_empty()),
+        content_base64,
+        content_sha256,
         id: attachment.id,
         mime_type: attachment.mime_type.clone(),
         name: attachment.name.clone(),
@@ -493,6 +504,23 @@ fn map_attachment(
         legacy_container_id: attachment.container_id.clone(),
         legacy_owner_login_id: attachment.owner_login_id.clone(),
     }
+}
+
+fn content_sha256_from_base64(content_base64: &str) -> Option<String> {
+    general_purpose::STANDARD
+        .decode(content_base64)
+        .ok()
+        .map(|bytes| sha256_hex(&bytes))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        use std::fmt::Write as _;
+        let _ = write!(&mut hex, "{byte:02x}");
+    }
+    hex
 }
 
 fn posting_number(value: &serde_json::Value) -> String {

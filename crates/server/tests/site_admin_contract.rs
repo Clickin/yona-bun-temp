@@ -12,10 +12,11 @@ use serde_json::{json, Value};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    attachment, issue, milestone, n4user, posting, project, project_user, site_admin,
-    AppRepository, CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput,
-    CreatePostingInput, CreateProjectLabelInput, IssueMutationInput, MilestoneListFilter,
-    MilestoneMutationInput, PostingMutationInput,
+    attachment, issue, issue_comment, issue_label, issue_label_category, milestone, n4user,
+    posting, posting_comment, project, project_user, role, site_admin, AppRepository,
+    CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
+    CreateProjectLabelInput, IssueMutationInput, MilestoneListFilter, MilestoneMutationInput,
+    PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -1150,6 +1151,10 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "aXNzdWUtZXhwb3J0LWJpbmFyeQ=="
     );
     assert_eq!(
+        payload["issues"][0]["attachments"][0]["contentSha256"],
+        "0629ce10856feac7bb39198f2fe1122dc1aea05ddd4eb3aad2ec9d5270f79fc6"
+    );
+    assert_eq!(
         payload["issues"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export issue comment"
     );
@@ -2128,6 +2133,270 @@ async fn site_admin_import_cleans_portable_attachment_when_downstream_milestone_
 }
 
 #[tokio::test]
+async fn site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+    if role::Entity::find()
+        .filter(role::Column::Name.eq(Some("manager".to_string())))
+        .one(&db)
+        .await
+        .expect("read manager role")
+        .is_none()
+    {
+        role::ActiveModel {
+            id: NotSet,
+            name: Set(Some("manager".to_string())),
+            active: Set(Some(1)),
+        }
+        .insert(&db)
+        .await
+        .expect("seed manager role");
+    }
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_site_admins = site_admin::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_project_users = project_user::Entity::find().all(&db).await.unwrap().len();
+    let before_labels = issue_label::Entity::find().all(&db).await.unwrap().len();
+    let before_label_categories = issue_label_category::Entity::find()
+        .all(&db)
+        .await
+        .unwrap()
+        .len();
+    let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_post_comments = posting_comment::Entity::find()
+        .all(&db)
+        .await
+        .unwrap()
+        .len();
+    let before_issues = issue::Entity::find().all(&db).await.unwrap().len();
+    let before_issue_comments = issue_comment::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+    let before_roles = role::Entity::find().all(&db).await.unwrap().len();
+
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_import_issue_comment_insert BEFORE INSERT ON issue_comment \
+         BEGIN SELECT RAISE(FAIL, 'forced issue comment import failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install issue comment failure trigger");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "rollback-owner",
+            "displayName": "Rollback Owner",
+            "emailAddress": "rollback-owner@example.com",
+            "isSiteAdmin": true,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project",
+            "overview": "Should disappear after failed import",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "projectMembers": [{
+            "loginId": "rollback-owner",
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project",
+            "role": "manager"
+        }],
+        "labels": [{
+            "categoryIsExclusive": false,
+            "categoryName": "Kind",
+            "color": "#4caf50",
+            "name": "Standalone rollback label",
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project"
+        }],
+        "milestones": [{
+            "attachments": [{
+                "contentBase64": "bWlsZXN0b25lLWZpbGU=",
+                "id": 9911,
+                "mimeType": "text/plain",
+                "name": "rollback-milestone.txt",
+                "size": 14
+            }],
+            "contentsMarkdown": "milestone with portable attachment /files/9911",
+            "dueDate": "",
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project",
+            "state": "open",
+            "title": "Standalone rollback milestone"
+        }],
+        "posts": [{
+            "authorLoginId": "rollback-owner",
+            "attachments": [{
+                "contentBase64": "cG9zdC1maWxl",
+                "id": 9912,
+                "mimeType": "text/plain",
+                "name": "rollback-post.txt",
+                "size": 9
+            }],
+            "bodyMarkdown": "post with portable attachment /files/9912",
+            "comments": [{
+                "authorLoginId": "rollback-owner",
+                "attachments": [{
+                    "contentBase64": "cG9zdC1jb21tZW50LWZpbGU=",
+                    "id": 9913,
+                    "mimeType": "text/plain",
+                    "name": "rollback-post-comment.txt",
+                    "size": 17
+                }],
+                "childComments": [],
+                "contentsMarkdown": "post comment with portable attachment /files/9913"
+            }],
+            "labels": [{
+                "categoryIsExclusive": false,
+                "categoryName": "Embedded",
+                "color": "#2196f3",
+                "name": "Embedded post label"
+            }],
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project",
+            "title": "Rollback post"
+        }],
+        "issues": [{
+            "authorLoginId": "rollback-owner",
+            "attachments": [{
+                "contentBase64": "aXNzdWUtZmlsZQ==",
+                "id": 9914,
+                "mimeType": "text/plain",
+                "name": "rollback-issue.txt",
+                "size": 10
+            }],
+            "bodyMarkdown": "issue with portable attachment /files/9914",
+            "comments": [{
+                "authorLoginId": "rollback-owner",
+                "attachments": [{
+                    "contentBase64": "aXNzdWUtY29tbWVudC1maWxl",
+                    "id": 9915,
+                    "mimeType": "text/plain",
+                    "name": "rollback-issue-comment.txt",
+                    "size": 18
+                }],
+                "childComments": [],
+                "contentsMarkdown": "issue comment should trigger rollback /files/9915"
+            }],
+            "labels": [{
+                "categoryIsExclusive": false,
+                "categoryName": "Embedded",
+                "color": "#ff9800",
+                "name": "Embedded issue label"
+            }],
+            "milestoneTitle": "On-demand issue milestone",
+            "ownerName": "rollback-owner",
+            "projectName": "rollback-project",
+            "state": "open",
+            "title": "Rollback issue"
+        }]
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(response_text(response)
+        .await
+        .contains("forced issue comment import failure"));
+
+    assert!(repo
+        .find_user_by_login_id("rollback-owner")
+        .await
+        .expect("read rolled-back user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name("rollback-owner", "rollback-project")
+        .await
+        .expect("read rolled-back project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        site_admin::Entity::find().all(&db).await.unwrap().len(),
+        before_site_admins
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        project_user::Entity::find().all(&db).await.unwrap().len(),
+        before_project_users
+    );
+    assert_eq!(
+        issue_label::Entity::find().all(&db).await.unwrap().len(),
+        before_labels
+    );
+    assert_eq!(
+        issue_label_category::Entity::find()
+            .all(&db)
+            .await
+            .unwrap()
+            .len(),
+        before_label_categories
+    );
+    assert_eq!(
+        milestone::Entity::find().all(&db).await.unwrap().len(),
+        before_milestones
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        posting_comment::Entity::find()
+            .all(&db)
+            .await
+            .unwrap()
+            .len(),
+        before_post_comments
+    );
+    assert_eq!(
+        issue::Entity::find().all(&db).await.unwrap().len(),
+        before_issues
+    );
+    assert_eq!(
+        issue_comment::Entity::find().all(&db).await.unwrap().len(),
+        before_issue_comments
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert_eq!(
+        role::Entity::find().all(&db).await.unwrap().len(),
+        before_roles
+    );
+    let upload_count = std::fs::read_dir(data_dir.path().join("uploads"))
+        .map(|entries| entries.count())
+        .unwrap_or_default();
+    assert_eq!(
+        upload_count, 0,
+        "failed import must remove every route-created portable file"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
@@ -2187,6 +2456,84 @@ async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
         .await
         .expect("read rejected post")
         .is_none());
+}
+
+#[tokio::test]
+async fn site_admin_import_preflight_rejects_portable_attachment_sha256_mismatch() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable",
+    )
+    .await;
+
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "id": 901,
+                "mimeType": "text/plain",
+                "name": "portable-post.txt",
+                "size": 18
+            }],
+            "bodyMarkdown": "post with checksum-mismatched portable attachment",
+            "ownerName": "member",
+            "projectName": "portable",
+            "title": "Rejected checksum portable attached post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.sha256Mismatch"));
+
+    assert!(repo
+        .read_posting_detail_for_viewer("member", "portable", 1, None)
+        .await
+        .expect("read rejected post")
+        .is_none());
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "checksum preflight must not write portable attachment files"
+    );
 }
 
 #[tokio::test]

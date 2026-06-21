@@ -450,7 +450,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "site-admin-core",
     label: "Site admin core surface",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/site-admin\.ts$/i,
       /^frontend\/src\/routes\/sites\/\$pageName\/route\.tsx$/i,

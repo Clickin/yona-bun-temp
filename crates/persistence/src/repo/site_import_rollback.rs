@@ -1,0 +1,459 @@
+use super::*;
+
+impl AppRepository {
+    pub async fn delete_site_import_attachment_row(
+        &self,
+        attachment_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let record = AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.clone().unwrap_or_default(),
+            hash: model.hash.clone().unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.clone().unwrap_or_default(),
+            name: model.name.clone().unwrap_or_default(),
+            owner_login_id: model.owner_login_id.clone().unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        };
+        attachment::Entity::delete_by_id(model.id)
+            .exec(&self.db)
+            .await?;
+        Ok(Some(record))
+    }
+
+    pub async fn delete_site_import_posting_by_number(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+    ) -> Result<bool, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let comment_ids = posting_comment::Entity::find()
+            .filter(posting_comment::Column::PostingId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|comment| comment.id)
+            .collect::<Vec<_>>();
+        recent_issue::Entity::delete_many()
+            .filter(recent_issue::Column::PostingId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        posting_issue_label::Entity::delete_many()
+            .filter(posting_issue_label::Column::PostingId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        if !comment_ids.is_empty() {
+            mention::Entity::delete_many()
+                .filter(mention::Column::ResourceType.eq(Some("posting_comment".to_string())))
+                .filter(
+                    mention::Column::ResourceId
+                        .is_in(comment_ids.iter().map(|id| Some(id.to_string()))),
+                )
+                .exec(&self.db)
+                .await?;
+        }
+        posting_comment::Entity::delete_many()
+            .filter(posting_comment::Column::PostingId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        mention::Entity::delete_many()
+            .filter(mention::Column::ResourceType.eq(Some("posting".to_string())))
+            .filter(mention::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        posting::Entity::delete_by_id(model.id)
+            .exec(&self.db)
+            .await?;
+        Ok(true)
+    }
+
+    pub async fn delete_site_import_issue_by_number(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+    ) -> Result<bool, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let comment_ids = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|comment| comment.id)
+            .collect::<Vec<_>>();
+        favorite_issue::Entity::delete_many()
+            .filter(favorite_issue::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        recent_issue::Entity::delete_many()
+            .filter(recent_issue::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        issue_issue_label::Entity::delete_many()
+            .filter(issue_issue_label::Column::IssueId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        issue_event::Entity::delete_many()
+            .filter(issue_event::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        issue_voter::Entity::delete_many()
+            .filter(issue_voter::Column::IssueId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        issue_sharer::Entity::delete_many()
+            .filter(issue_sharer::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        if !comment_ids.is_empty() {
+            issue_comment_voter::Entity::delete_many()
+                .filter(issue_comment_voter::Column::IssueCommentId.is_in(comment_ids.clone()))
+                .exec(&self.db)
+                .await?;
+            mention::Entity::delete_many()
+                .filter(mention::Column::ResourceType.eq(Some("issue_comment".to_string())))
+                .filter(
+                    mention::Column::ResourceId
+                        .is_in(comment_ids.iter().map(|id| Some(id.to_string()))),
+                )
+                .exec(&self.db)
+                .await?;
+        }
+        issue_comment::Entity::delete_many()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        mention::Entity::delete_many()
+            .filter(mention::Column::ResourceType.eq(Some("issue_post".to_string())))
+            .filter(mention::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        issue::Entity::delete_by_id(model.id).exec(&self.db).await?;
+        Ok(true)
+    }
+
+    pub async fn delete_site_import_milestone_by_id(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        milestone_id: i64,
+    ) -> Result<bool, DbErr> {
+        let Some((project, row)) = self
+            .read_project_milestone_model(owner_name, project_name, milestone_id)
+            .await?
+        else {
+            return Ok(false);
+        };
+        issue::Entity::update_many()
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+            .col_expr(issue::Column::MilestoneId, Expr::value(Option::<i64>::None))
+            .exec(&self.db)
+            .await?;
+        milestone::Entity::delete_by_id(row.id)
+            .exec(&self.db)
+            .await?;
+        Ok(true)
+    }
+
+    pub async fn delete_site_import_project_shell_by_id(
+        &self,
+        project_id: i64,
+    ) -> Result<bool, DbErr> {
+        let Some(project) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let issue_ids = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let issue_comment_ids = if issue_ids.is_empty() {
+            Vec::new()
+        } else {
+            issue_comment::Entity::find()
+                .filter(issue_comment::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
+        let posting_ids = posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let project_resource_id = project_id.to_string();
+        let issue_label_ids = issue_label::Entity::find()
+            .filter(issue_label::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        if !issue_comment_ids.is_empty() {
+            issue_comment_voter::Entity::delete_many()
+                .filter(
+                    issue_comment_voter::Column::IssueCommentId
+                        .is_in(issue_comment_ids.iter().copied()),
+                )
+                .exec(&self.db)
+                .await?;
+        }
+        if !issue_ids.is_empty() {
+            favorite_issue::Entity::delete_many()
+                .filter(favorite_issue::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .exec(&self.db)
+                .await?;
+            recent_issue::Entity::delete_many()
+                .filter(recent_issue::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .exec(&self.db)
+                .await?;
+            issue_event::Entity::delete_many()
+                .filter(issue_event::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .exec(&self.db)
+                .await?;
+            issue_issue_label::Entity::delete_many()
+                .filter(issue_issue_label::Column::IssueId.is_in(issue_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+            issue_sharer::Entity::delete_many()
+                .filter(issue_sharer::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .exec(&self.db)
+                .await?;
+            issue_voter::Entity::delete_many()
+                .filter(issue_voter::Column::IssueId.is_in(issue_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+            issue_comment::Entity::delete_many()
+                .filter(issue_comment::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .exec(&self.db)
+                .await?;
+            issue::Entity::delete_many()
+                .filter(issue::Column::Id.is_in(issue_ids))
+                .exec(&self.db)
+                .await?;
+        }
+        if !posting_ids.is_empty() {
+            recent_issue::Entity::delete_many()
+                .filter(
+                    recent_issue::Column::PostingId.is_in(posting_ids.iter().copied().map(Some)),
+                )
+                .exec(&self.db)
+                .await?;
+            posting_issue_label::Entity::delete_many()
+                .filter(posting_issue_label::Column::PostingId.is_in(posting_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+            posting_comment::Entity::delete_many()
+                .filter(
+                    posting_comment::Column::PostingId.is_in(posting_ids.iter().copied().map(Some)),
+                )
+                .exec(&self.db)
+                .await?;
+            posting::Entity::delete_many()
+                .filter(posting::Column::Id.is_in(posting_ids))
+                .exec(&self.db)
+                .await?;
+        }
+        if !issue_label_ids.is_empty() {
+            issue_issue_label::Entity::delete_many()
+                .filter(
+                    issue_issue_label::Column::IssueLabelId.is_in(issue_label_ids.iter().copied()),
+                )
+                .exec(&self.db)
+                .await?;
+            posting_issue_label::Entity::delete_many()
+                .filter(
+                    posting_issue_label::Column::IssueLabelId
+                        .is_in(issue_label_ids.iter().copied()),
+                )
+                .exec(&self.db)
+                .await?;
+            issue_label::Entity::delete_many()
+                .filter(issue_label::Column::Id.is_in(issue_label_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+        }
+        issue_label_category::Entity::delete_many()
+            .filter(issue_label_category::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        milestone::Entity::delete_many()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        assignee::Entity::delete_many()
+            .filter(assignee::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        commit_comment::Entity::delete_many()
+            .filter(commit_comment::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        project_transfer::Entity::delete_many()
+            .filter(project_transfer::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        project_pushed_branch::Entity::delete_many()
+            .filter(project_pushed_branch::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        project_label::Entity::delete_many()
+            .filter(project_label::Column::ProjectId.eq(project_id))
+            .exec(&self.db)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_resource_id.clone())))
+            .exec(&self.db)
+            .await?;
+        unwatch::Entity::delete_many()
+            .filter(unwatch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(project_resource_id)))
+            .exec(&self.db)
+            .await?;
+        project_user::Entity::delete_many()
+            .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        project_menu_setting::Entity::delete_many()
+            .filter(project_menu_setting::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        user_project_notification::Entity::delete_many()
+            .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        project_visitation::Entity::delete_many()
+            .filter(project_visitation::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        recent_project::Entity::delete_many()
+            .filter(recent_project::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        favorite_project::Entity::delete_many()
+            .filter(favorite_project::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        user_enrolled_project::Entity::delete_many()
+            .filter(user_enrolled_project::Column::ProjectId.eq(project_id))
+            .exec(&self.db)
+            .await?;
+        project::Entity::delete_by_id(project.id)
+            .exec(&self.db)
+            .await?;
+        Ok(true)
+    }
+
+    pub async fn delete_site_import_user_by_id(&self, user_id: i64) -> Result<bool, DbErr> {
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(false);
+        };
+        let credential_ids = user_credential::Entity::find()
+            .filter(user_credential::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        if !credential_ids.is_empty() {
+            linked_account::Entity::delete_many()
+                .filter(linked_account::Column::UserCredentialId.is_in(credential_ids.clone()))
+                .exec(&self.db)
+                .await?;
+            user_credential::Entity::delete_many()
+                .filter(user_credential::Column::Id.is_in(credential_ids))
+                .exec(&self.db)
+                .await?;
+        }
+        site_admin::Entity::delete_many()
+            .filter(site_admin::Column::AdminId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        project_user::Entity::delete_many()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        user_enrolled_project::Entity::delete_many()
+            .filter(user_enrolled_project::Column::UserId.eq(user_id))
+            .exec(&self.db)
+            .await?;
+        user_enrolled_organization::Entity::delete_many()
+            .filter(user_enrolled_organization::Column::UserId.eq(user_id))
+            .exec(&self.db)
+            .await?;
+        user_project_notification::Entity::delete_many()
+            .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        user_setting::Entity::delete_many()
+            .filter(user_setting::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        user_verification::Entity::delete_many()
+            .filter(user_verification::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        recent_issue::Entity::delete_many()
+            .filter(recent_issue::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        notification_event_n4user::Entity::delete_many()
+            .filter(notification_event_n4user::Column::N4userId.eq(user_id))
+            .exec(&self.db)
+            .await?;
+        mention::Entity::delete_many()
+            .filter(mention::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+        let sent_notification_ids = notification_event::Entity::find()
+            .filter(notification_event::Column::SenderId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        for notification_id in sent_notification_ids {
+            self.delete_notification_event_rows(notification_id).await?;
+        }
+        n4user::Entity::delete_by_id(user.id).exec(&self.db).await?;
+        Ok(true)
+    }
+}
