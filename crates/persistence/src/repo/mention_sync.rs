@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn sync_posting_mentions_and_notify(
         &self,
         sender_id: i64,

@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn list_issue_comments(
         &self,
         issue_id: i64,

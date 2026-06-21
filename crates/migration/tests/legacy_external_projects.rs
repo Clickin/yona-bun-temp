@@ -1,6 +1,10 @@
 use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
-    projects::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
+    projects::{
+        find_fixture, fixtures, parse_project_export_response, parse_project_import_request,
+        AuthRequirement, MigrationDirection, ProjectAdapterError, ProjectImportAction,
+        ProjectScope,
+    },
     EndpointStatus,
 };
 
@@ -300,4 +304,208 @@ fn title_heads_action_and_path_are_stable() {
             "isExclusive",
         ]
     );
+}
+
+#[test]
+fn project_export_parser_normalizes_fixture_payload_depth() {
+    let fixture = find_fixture(
+        "GET",
+        "/-_-api/v1/owners/:owner/projects/:projectName/exports",
+    )
+    .unwrap();
+    let payload = fixture.migration_payload.unwrap();
+    let export = parse_project_export_response(payload.sample_path, payload.success_json).unwrap();
+
+    assert_eq!(export.endpoint_method, "GET");
+    assert_eq!(
+        export.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/exports"
+    );
+    assert_eq!(export.owner, "alice");
+    assert_eq!(export.project_name, "demo");
+    assert_eq!(export.project_description, "Legacy project");
+    assert_eq!(
+        export.project_created_date.as_deref(),
+        Some("2026-06-01 AM 09:00:00 +0900")
+    );
+    assert_eq!(export.project_vcs, "GIT");
+    assert_eq!(export.project_scope, ProjectScope::Public);
+    assert_eq!(export.project_scope.as_legacy_str(), "PUBLIC");
+    assert_eq!(export.member_count, 1);
+    assert_eq!(export.members[0].role.as_deref(), Some("manager"));
+    assert_eq!(export.assignees[0].login_id.as_deref(), Some("assignee"));
+    assert_eq!(
+        export.authors[0].email.as_deref(),
+        Some("author@example.com")
+    );
+    assert_eq!(export.issue_count, 1);
+    assert_eq!(export.post_count, 1);
+    assert_eq!(export.milestone_count, 1);
+    assert_eq!(export.labels[0].label_name.as_deref(), Some("Bug"));
+    assert_eq!(export.labels[0].is_exclusive, Some(false));
+    assert_eq!(export.issues[0].number, Some(3));
+    assert_eq!(
+        export.issues[0].resource_type.as_deref(),
+        Some("ISSUE_POST")
+    );
+    assert_eq!(export.issues[0].milestone_title.as_deref(), Some("M1"));
+    assert_eq!(export.issues[0].attachment_count, 1);
+    assert_eq!(export.issues[0].comment_count, 1);
+    assert_eq!(export.posts[0].resource_type.as_deref(), Some("BOARD_POST"));
+    assert_eq!(export.milestones[0].title.as_deref(), Some("M1"));
+    assert_eq!(export.menu_settings, None);
+}
+
+#[test]
+fn project_export_parser_preserves_recursive_wrappers_and_defaults() {
+    let wrapped = r#"{
+      "envelope": {
+        "project": {
+          "owner": "bob",
+          "projectName": "wrapped",
+          "members": [{"email": "bob@example.com", "role": "manager"}],
+          "labels": [{"labelName": "Docs", "isExclusive": "true"}],
+          "issues": [{"number": "8", "title": "Nested issue", "attachments": [{}]}],
+          "posts": [{"number": true, "type": "BOARD_POST", "comments": [{}]}],
+          "milestones": [{"id": "5", "title": "Later"}],
+          "menuSettings": {"code": true, "issue": false, "pullRequest": 1}
+        }
+      }
+    }"#;
+
+    let export = parse_project_export_response(
+        "/-_-api/v1/owners/path/projects/path-project/exports",
+        wrapped,
+    )
+    .unwrap();
+
+    assert_eq!(export.owner, "bob");
+    assert_eq!(export.project_name, "wrapped");
+    assert_eq!(export.project_description, "");
+    assert_eq!(export.project_vcs, "GIT");
+    assert_eq!(export.project_scope, ProjectScope::Private);
+    assert_eq!(export.member_count, 1);
+    assert_eq!(export.issue_count, 1);
+    assert_eq!(export.post_count, 1);
+    assert_eq!(export.milestone_count, 1);
+    assert_eq!(export.labels[0].is_exclusive, Some(true));
+    assert_eq!(export.issues[0].number, Some(8));
+    assert_eq!(export.posts[0].number, Some(1));
+    let menu = export.menu_settings.unwrap();
+    assert_eq!(menu.code, Some(true));
+    assert_eq!(menu.issue, Some(false));
+    assert_eq!(menu.pull_request, Some(true));
+    assert_eq!(menu.review, None);
+}
+
+#[test]
+fn project_import_parser_normalizes_fixture_payload_and_defaults() {
+    let fixture = find_fixture("POST", "/-_-api/v1/owners/:owner/projects").unwrap();
+    let payload = fixture.migration_payload.unwrap();
+    let import = parse_project_import_request(
+        payload.sample_path,
+        payload.request_json.unwrap(),
+        &[("other", "demo")],
+    )
+    .unwrap();
+
+    assert_eq!(import.endpoint_method, "POST");
+    assert_eq!(import.endpoint_path, "/-_-api/v1/owners/:owner/projects");
+    assert_eq!(import.owner, "alice");
+    assert_eq!(import.project_name, "demo");
+    assert_eq!(import.project_description, "Legacy project");
+    assert_eq!(
+        import.project_created_date.as_deref(),
+        Some("2026-06-01 AM 09:00:00 +0900")
+    );
+    assert_eq!(import.project_vcs, "GIT");
+    assert_eq!(import.project_scope, ProjectScope::Public);
+    assert_eq!(import.members.len(), 2);
+    assert_eq!(
+        import.members[0].email.as_deref(),
+        Some("alice@example.com")
+    );
+    assert_eq!(import.members[1].role.as_deref(), Some("member"));
+    assert_eq!(import.menu_settings.code, Some(true));
+    assert_eq!(import.menu_settings.issue, Some(true));
+    assert_eq!(import.menu_settings.pull_request, Some(true));
+    assert_eq!(import.menu_settings.review, Some(true));
+    assert_eq!(import.menu_settings.milestone, Some(true));
+    assert_eq!(import.menu_settings.board, Some(true));
+    assert_eq!(import.action, ProjectImportAction::Create);
+}
+
+#[test]
+fn project_import_parser_preserves_recursive_shape_scalar_fallbacks_and_conflict() {
+    let wrapped = r#"{
+      "outer": {
+        "projectName": 77,
+        "projectDescription": false,
+        "projectVcs": "SVN",
+        "projectScope": "BOGUS",
+        "members": [{"email": "member@example.com", "role": "manager"}],
+        "projectMenuSetting": {"code": false, "board": "true"}
+      }
+    }"#;
+
+    let import = parse_project_import_request(
+        "/-_-api/v1/owners/alice/projects",
+        wrapped,
+        &[("ALICE", "77")],
+    )
+    .unwrap();
+
+    assert_eq!(import.project_name, "77");
+    assert_eq!(import.project_description, "false");
+    assert_eq!(import.project_vcs, "SVN");
+    assert_eq!(import.project_scope, ProjectScope::Private);
+    assert_eq!(import.members[0].role.as_deref(), Some("manager"));
+    assert_eq!(import.menu_settings.code, Some(false));
+    assert_eq!(import.menu_settings.board, Some(true));
+    assert_eq!(import.action, ProjectImportAction::ConflictExistingProject);
+}
+
+#[test]
+fn project_parsers_reject_invalid_path_and_payload_boundaries() {
+    assert!(matches!(
+        parse_project_export_response("/-_-api/v1/owners/alice/projects/demo", "{}"),
+        Err(ProjectAdapterError::InvalidPath { .. })
+    ));
+    assert!(matches!(
+        parse_project_export_response("/-_-api/v1/owners/alice/projects/demo/exports", "[]"),
+        Err(ProjectAdapterError::InvalidExportPayload)
+    ));
+    assert!(matches!(
+        parse_project_import_request("/-_-api/v1/owners/alice/projects/demo", "{}", &[]),
+        Err(ProjectAdapterError::InvalidPath { .. })
+    ));
+    assert!(matches!(
+        parse_project_import_request("/-_-api/v1/owners/alice/projects", "{}", &[]),
+        Err(ProjectAdapterError::MissingProjectName)
+    ));
+    assert!(matches!(
+        parse_project_import_request("/-_-api/v1/owners/alice/projects", "{", &[]),
+        Err(ProjectAdapterError::InvalidJson(_))
+    ));
+}
+
+#[test]
+fn project_migrator_adapters_do_not_promote_broad_runtime_routes() {
+    let export = find_endpoint(
+        "GET",
+        "/-_-api/v1/owners/:owner/projects/:projectName/exports",
+    )
+    .unwrap();
+    let import = find_endpoint("POST", "/-_-api/v1/owners/:owner/projects").unwrap();
+
+    assert_eq!(export.status, EndpointStatus::MigratorExport);
+    assert_eq!(import.status, EndpointStatus::MigratorImport);
+    assert_ne!(export.status, EndpointStatus::AppOwned);
+    assert_ne!(import.status, EndpointStatus::AppOwned);
+    assert!(find_endpoint("GET", "/-_-api/v1/owners/:owner/projects").is_none());
+    assert!(find_endpoint(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/exports"
+    )
+    .is_none());
 }

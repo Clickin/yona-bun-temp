@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn set_pull_request_review(
         &self,
         input: PullRequestReviewInput,

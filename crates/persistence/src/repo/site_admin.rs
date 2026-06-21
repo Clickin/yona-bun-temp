@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     /// Lists users for the legacy site-admin user-management surface.
     ///
     /// # Errors

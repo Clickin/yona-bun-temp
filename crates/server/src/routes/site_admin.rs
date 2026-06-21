@@ -1847,11 +1847,24 @@ async fn rest_import_site_data(
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
 
+    let transaction = repository
+        .begin_transaction()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let transaction_repository = repository.with_transaction(&transaction);
     let mut rollback = RestSiteImportRollbackLedger::default();
-    let result = rest_import_site_data_live(&service, repository, payload, &mut rollback).await;
+    let result =
+        rest_import_site_data_live(&service, &transaction_repository, payload, &mut rollback).await;
     match result {
-        Ok(response) => Ok(Json(response)),
+        Ok(response) => {
+            transaction
+                .commit()
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            Ok(Json(response))
+        }
         Err(error) => {
+            let _ = transaction.rollback().await;
             rollback.rollback(&service, repository).await;
             Err(error)
         }
@@ -1895,7 +1908,7 @@ impl RestSiteImportRollbackLedger {
 
     async fn record_existing_attachment(
         &mut self,
-        repository: &PilotRepository,
+        repository: &persistence::AppRepositoryImpl<'_>,
         attachment_id: i64,
     ) -> Result<(), RestRouteError> {
         if self
@@ -1974,7 +1987,7 @@ impl RestSiteImportRollbackLedger {
 
     async fn record_project_counter_snapshot(
         &mut self,
-        repository: &PilotRepository,
+        repository: &persistence::AppRepositoryImpl<'_>,
         owner_name: &str,
         project_name: &str,
     ) -> Result<(), RestRouteError> {
@@ -2030,7 +2043,11 @@ impl RestSiteImportRollbackLedger {
         }
     }
 
-    async fn rollback(&self, service: &PilotServiceImpl, repository: &PilotRepository) {
+    async fn rollback(
+        &self,
+        service: &PilotServiceImpl,
+        repository: &persistence::AppRepositoryImpl<'_>,
+    ) {
         for attachment in self.attachments.iter().rev() {
             let deleted = repository
                 .delete_site_import_attachment_row(attachment.id)
@@ -2105,7 +2122,7 @@ impl RestSiteImportRollbackLedger {
 
 async fn rest_import_site_data_live(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     payload: RestSiteImportPayload,
     rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<RestSiteImportResponse, RestRouteError> {
@@ -2696,7 +2713,7 @@ struct RestSiteImportDryRunState {
 
 async fn rest_site_import_dry_run_report(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     payload: &RestSiteImportPayload,
 ) -> Result<RestSiteImportResponse, RestRouteError> {
     let mut state = RestSiteImportDryRunState::default();
@@ -3086,7 +3103,7 @@ async fn rest_site_import_dry_run_report(
 }
 
 async fn rest_site_import_dry_run_user_available(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     state: &mut RestSiteImportDryRunState,
     login_id: &str,
 ) -> Result<bool, RestRouteError> {
@@ -3109,7 +3126,7 @@ async fn rest_site_import_dry_run_user_available(
 }
 
 async fn rest_site_import_dry_run_project_available(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     state: &mut RestSiteImportDryRunState,
     owner_name: &str,
     project_name: &str,
@@ -3135,7 +3152,7 @@ async fn rest_site_import_dry_run_project_available(
 }
 
 async fn rest_site_import_dry_run_actor_available(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     state: &mut RestSiteImportDryRunState,
     preferred_login_id: &str,
     owner_name: &str,
@@ -3149,7 +3166,7 @@ async fn rest_site_import_dry_run_actor_available(
 }
 
 async fn rest_site_import_dry_run_label_available(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     state: &mut RestSiteImportDryRunState,
     owner_name: &str,
     project_name: &str,
@@ -3179,7 +3196,7 @@ async fn rest_site_import_dry_run_label_available(
 }
 
 async fn rest_site_import_dry_run_milestone_available(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     state: &mut RestSiteImportDryRunState,
     owner_name: &str,
     project_name: &str,
@@ -3326,7 +3343,7 @@ fn rest_site_import_push_validation_error(
 
 async fn rest_site_import_post_comments(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     owner_name: &str,
     project_name: &str,
     post_number: i64,
@@ -3416,7 +3433,7 @@ async fn rest_site_import_post_comments(
 
 async fn rest_site_import_issue_comments(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     owner_name: &str,
     project_name: &str,
     issue_number: i64,
@@ -3510,7 +3527,7 @@ async fn rest_site_import_issue_comments(
 }
 
 async fn rest_site_import_comment_actor(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     preferred_login_id: &str,
     fallback_actor: &persistence::AppUserRecord,
 ) -> Result<persistence::AppUserRecord, RestRouteError> {
@@ -3545,7 +3562,7 @@ struct RestSiteImportedAttachments {
 
 async fn rest_site_import_cleanup_attachments(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     actor: &persistence::AppUserRecord,
     attachments: &[persistence::AttachmentRecord],
 ) {
@@ -3601,7 +3618,7 @@ fn rest_site_import_portable_attachment_bytes(
 
 async fn rest_site_import_attachments(
     service: &PilotServiceImpl,
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
     rollback: &mut RestSiteImportRollbackLedger,
@@ -3744,7 +3761,7 @@ fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> St
 }
 
 async fn rest_site_import_label_ids(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     owner_name: &str,
     project_name: &str,
     labels: &[RestSiteExportLabelItem],
@@ -3790,7 +3807,7 @@ async fn rest_site_import_label_ids(
 }
 
 async fn rest_site_import_milestone_id(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     owner_name: &str,
     project_name: &str,
     milestone_title: &str,
@@ -3838,7 +3855,7 @@ async fn rest_site_import_milestone_id(
 }
 
 async fn rest_site_import_actor(
-    repository: &PilotRepository,
+    repository: &persistence::AppRepositoryImpl<'_>,
     preferred_login_id: &str,
     owner_name: &str,
 ) -> Result<Option<persistence::AppUserRecord>, RestRouteError> {

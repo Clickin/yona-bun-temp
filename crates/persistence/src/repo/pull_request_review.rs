@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn read_legacy_review_comment_delete_target(
         &self,
         comment_id: i64,

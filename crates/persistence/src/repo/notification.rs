@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn list_watched_project_notifications_for_user(
         &self,
         user_id: i64,

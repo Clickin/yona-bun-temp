@@ -2652,6 +2652,88 @@ async fn site_admin_import_cleans_portable_attachment_when_downstream_milestone_
 }
 
 #[tokio::test]
+async fn site_admin_import_transaction_rolls_back_project_created_before_timestamp_restore_fails() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_site_admins = site_admin::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_import_project_timestamp_restore BEFORE UPDATE ON project \
+         WHEN NEW.name = 'tx-project' \
+         BEGIN SELECT RAISE(FAIL, 'forced project timestamp restore failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install project timestamp restore failure trigger");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "tx-owner",
+            "displayName": "Transaction Owner",
+            "emailAddress": "tx-owner@example.com",
+            "isSiteAdmin": true,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "createdAt": "2024-01-02T03:04:05",
+            "ownerName": "tx-owner",
+            "projectName": "tx-project",
+            "overview": "Should disappear through DB transaction rollback",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "projectMembers": [],
+        "labels": [],
+        "milestones": [],
+        "posts": [],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(response_text(response)
+        .await
+        .contains("forced project timestamp restore failure"));
+
+    assert!(repo
+        .find_user_by_login_id("tx-owner")
+        .await
+        .expect("read transaction rolled-back user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name("tx-owner", "tx-project")
+        .await
+        .expect("read transaction rolled-back project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        site_admin::Entity::find().all(&db).await.unwrap().len(),
+        before_site_admins
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {

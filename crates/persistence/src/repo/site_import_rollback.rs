@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn read_site_import_project_counter_snapshot(
         &self,
         owner_name: &str,

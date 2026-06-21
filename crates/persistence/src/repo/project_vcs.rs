@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn read_project_by_id(
         &self,
         project_id: i64,

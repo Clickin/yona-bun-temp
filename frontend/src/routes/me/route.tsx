@@ -12,6 +12,7 @@ function MeRouteComponent() {
   const {
     bootstrapping,
     csrfToken,
+    messages,
     runtimeConfig,
     workspaceOverview,
     setCurrentSession,
@@ -29,6 +30,7 @@ function MeRouteComponent() {
 
   return (
     <WorkspacePage
+      messages={messages}
       runtimeConfig={runtimeConfig}
       workspaceOverview={workspaceOverview}
       onSignOut={async () => {

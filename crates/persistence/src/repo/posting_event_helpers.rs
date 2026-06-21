@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn clear_other_readme_postings(
         &self,
         project_id: i64,

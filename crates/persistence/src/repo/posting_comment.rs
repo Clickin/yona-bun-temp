@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn read_posting_comment_origin(
         &self,
         comment_id: i64,

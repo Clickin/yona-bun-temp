@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn list_commit_discussion_threads(
         &self,
         project_id: i64,

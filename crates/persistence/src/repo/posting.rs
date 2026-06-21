@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn list_project_postings_filtered(
         &self,
         owner_name: &str,

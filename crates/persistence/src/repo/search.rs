@@ -31,7 +31,7 @@ impl NativeSearchCandidates {
     }
 }
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn search_app(
         &self,
         input: SearchRepositoryInput,

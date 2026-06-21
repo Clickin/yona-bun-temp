@@ -102,7 +102,7 @@ function toPublicProfileOverview(
 
 function PublicUserProfileRouteComponent() {
   const { user } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<null | "bad-request" | "not-found">(null);
   const search = publicProfileSearch();
   const profileQuery = useQuery({
@@ -160,6 +160,7 @@ function PublicUserProfileRouteComponent() {
 
   return (
     <PublicUserProfilePage
+      messages={messages}
       profileOverview={
         profileQuery.data ? toPublicProfileOverview(profileQuery.data, session) : null
       }

@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn contextual_issue_mention_users(
         &self,
         project_record: &ProjectRecord,

@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn list_workspace_emails_for_user(
         &self,
         user_id: i64,

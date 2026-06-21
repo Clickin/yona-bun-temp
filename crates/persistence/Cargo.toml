@@ -13,6 +13,7 @@ mysql = ["sea-orm/sqlx-mysql"]
 db-matrix = ["sqlite", "postgres", "mysql"]
 
 [dependencies]
+async-trait.workspace = true
 rand.workspace = true
 sea-orm.workspace = true
 serde.workspace = true

@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn vote_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
         if issue_voter::Entity::find_by_id((issue_id, user_id))
             .one(&self.db)

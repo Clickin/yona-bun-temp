@@ -75,10 +75,13 @@ use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use sea_orm::{
     sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseBackend,
-    DatabaseConnection, DbErr, EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, Set, Statement, TransactionTrait,
+    DatabaseConnection, DatabaseTransaction, DbBackend, DbErr, EntityTrait, ExecResult,
+    FromQueryResult, NotSet, PaginatorTrait, QueryFilter, QueryOrder, QueryResult, QuerySelect,
+    Set, Statement, TransactionTrait,
 };
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::future::Future;
+use std::pin::Pin;
 use std::time::{Duration, SystemTime};
 use yona_rust_search::{
     keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
@@ -89,9 +92,131 @@ mod app_user;
 mod default_landing;
 
 #[derive(Clone)]
-pub struct AppRepository {
+pub struct AppRepositoryImpl<'db> {
     config: RepositoryConfig,
-    db: DatabaseConnection,
+    db: RepositoryDb<'db>,
+}
+
+pub type AppRepository = AppRepositoryImpl<'static>;
+
+#[derive(Clone)]
+enum RepositoryDb<'db> {
+    Connection(DatabaseConnection),
+    Transaction(&'db DatabaseTransaction),
+}
+
+#[async_trait::async_trait]
+impl ConnectionTrait for RepositoryDb<'_> {
+    fn get_database_backend(&self) -> DbBackend {
+        match self {
+            Self::Connection(db) => db.get_database_backend(),
+            Self::Transaction(txn) => txn.get_database_backend(),
+        }
+    }
+
+    async fn execute(&self, stmt: Statement) -> Result<ExecResult, DbErr> {
+        match self {
+            Self::Connection(db) => db.execute(stmt).await,
+            Self::Transaction(txn) => txn.execute(stmt).await,
+        }
+    }
+
+    async fn execute_unprepared(&self, sql: &str) -> Result<ExecResult, DbErr> {
+        match self {
+            Self::Connection(db) => db.execute_unprepared(sql).await,
+            Self::Transaction(txn) => txn.execute_unprepared(sql).await,
+        }
+    }
+
+    async fn query_one(&self, stmt: Statement) -> Result<Option<QueryResult>, DbErr> {
+        match self {
+            Self::Connection(db) => db.query_one(stmt).await,
+            Self::Transaction(txn) => txn.query_one(stmt).await,
+        }
+    }
+
+    async fn query_all(&self, stmt: Statement) -> Result<Vec<QueryResult>, DbErr> {
+        match self {
+            Self::Connection(db) => db.query_all(stmt).await,
+            Self::Transaction(txn) => txn.query_all(stmt).await,
+        }
+    }
+
+    fn support_returning(&self) -> bool {
+        match self {
+            Self::Connection(db) => db.support_returning(),
+            Self::Transaction(txn) => txn.support_returning(),
+        }
+    }
+
+    fn is_mock_connection(&self) -> bool {
+        match self {
+            Self::Connection(db) => db.is_mock_connection(),
+            Self::Transaction(txn) => txn.is_mock_connection(),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl TransactionTrait for RepositoryDb<'_> {
+    async fn begin(&self) -> Result<DatabaseTransaction, DbErr> {
+        match self {
+            Self::Connection(db) => db.begin().await,
+            Self::Transaction(txn) => txn.begin().await,
+        }
+    }
+
+    async fn begin_with_config(
+        &self,
+        isolation_level: Option<sea_orm::IsolationLevel>,
+        access_mode: Option<sea_orm::AccessMode>,
+    ) -> Result<DatabaseTransaction, DbErr> {
+        match self {
+            Self::Connection(db) => db.begin_with_config(isolation_level, access_mode).await,
+            Self::Transaction(txn) => txn.begin_with_config(isolation_level, access_mode).await,
+        }
+    }
+
+    async fn transaction<F, T, E>(&self, callback: F) -> Result<T, sea_orm::TransactionError<E>>
+    where
+        F: for<'c> FnOnce(
+                &'c DatabaseTransaction,
+            ) -> Pin<Box<dyn Future<Output = Result<T, E>> + Send + 'c>>
+            + Send,
+        T: Send,
+        E: std::fmt::Display + std::fmt::Debug + Send,
+    {
+        match self {
+            Self::Connection(db) => db.transaction(callback).await,
+            Self::Transaction(txn) => txn.transaction(callback).await,
+        }
+    }
+
+    async fn transaction_with_config<F, T, E>(
+        &self,
+        callback: F,
+        isolation_level: Option<sea_orm::IsolationLevel>,
+        access_mode: Option<sea_orm::AccessMode>,
+    ) -> Result<T, sea_orm::TransactionError<E>>
+    where
+        F: for<'c> FnOnce(
+                &'c DatabaseTransaction,
+            ) -> Pin<Box<dyn Future<Output = Result<T, E>> + Send + 'c>>
+            + Send,
+        T: Send,
+        E: std::fmt::Display + std::fmt::Debug + Send,
+    {
+        match self {
+            Self::Connection(db) => {
+                db.transaction_with_config(callback, isolation_level, access_mode)
+                    .await
+            }
+            Self::Transaction(txn) => {
+                txn.transaction_with_config(callback, isolation_level, access_mode)
+                    .await
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

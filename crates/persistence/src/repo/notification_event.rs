@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn create_notification_event_for_receivers(
         &self,
         sender_id: i64,

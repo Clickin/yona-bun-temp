@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { TranslateOptions } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 
@@ -29,6 +30,16 @@ function Section({ title, children }: React.PropsWithChildren<{ title: string }>
       {children}
     </section>
   );
+}
+
+type LegacyMessageLookup = (key: string, options?: TranslateOptions) => string;
+
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  fallback = key,
+): string {
+  return messages ? messages(key, { fallback }) : fallback;
 }
 
 function UserProjectListEmpty({ active, id }: { active?: boolean; id: string }) {
@@ -113,6 +124,7 @@ function publicProfileSelectedTab(routeHref: string): "issues" | "projects" | "p
 }
 
 export function PublicUserProfilePage(props: {
+  messages?: LegacyMessageLookup;
   profileOverview: WorkspaceOverviewViewModel | null;
   routeHref: string;
   runtimeConfig: RuntimeConfig;
@@ -144,6 +156,9 @@ export function PublicUserProfilePage(props: {
   const [activeTab, setActiveTab] = React.useState<"issues" | "projects" | "pullRequests">(() =>
     publicProfileSelectedTab(props.routeHref),
   );
+  const issueTabLabel = legacyMessage(props.messages, "menu.issue");
+  const pullRequestTabLabel = legacyMessage(props.messages, "menu.pullRequest");
+  const projectsTabLabel = legacyMessage(props.messages, "project.projects");
   const openIssues = issueItems.filter((item) => item.state === "open");
   const closedIssues = issueItems.filter((item) => item.state !== "open");
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
@@ -240,7 +255,8 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("issues");
                     }}
                   >
-                    menu.issue <span className="num-badge">{issueItems.length}</span>
+                    {`${issueTabLabel} `}
+                    <span className="num-badge">{issueItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "pullRequests" ? "active" : undefined}>
@@ -252,7 +268,8 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("pullRequests");
                     }}
                   >
-                    menu.pullRequest <span className="num-badge">{pullRequestItems.length}</span>
+                    {`${pullRequestTabLabel} `}
+                    <span className="num-badge">{pullRequestItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "projects" ? "active" : undefined}>
@@ -264,7 +281,8 @@ export function PublicUserProfilePage(props: {
                       setActiveTab("projects");
                     }}
                   >
-                    project.projects <span className="num-badge">{memberProjects.length}</span>
+                    {`${projectsTabLabel} `}
+                    <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
                 <li>
@@ -678,6 +696,7 @@ function PublicProfileIssuePersonCell({
 }
 
 export function WorkspacePage(props: {
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   workspaceOverview: WorkspaceOverviewViewModel | null;
@@ -725,6 +744,9 @@ export function WorkspacePage(props: {
   const [activeTab, setActiveTab] = React.useState<"issues" | "projects" | "pullRequests">(
     "issues",
   );
+  const issueTabLabel = legacyMessage(props.messages, "menu.issue");
+  const pullRequestTabLabel = legacyMessage(props.messages, "menu.pullRequest");
+  const projectsTabLabel = legacyMessage(props.messages, "project.projects");
   const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
   const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
@@ -820,7 +842,8 @@ export function WorkspacePage(props: {
                       setActiveTab("issues");
                     }}
                   >
-                    menu.issue <span className="num-badge">{issueItems.length}</span>
+                    {`${issueTabLabel} `}
+                    <span className="num-badge">{issueItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "pullRequests" ? "active" : undefined}>
@@ -832,7 +855,8 @@ export function WorkspacePage(props: {
                       setActiveTab("pullRequests");
                     }}
                   >
-                    menu.pullRequest <span className="num-badge">{pullRequestItems.length}</span>
+                    {`${pullRequestTabLabel} `}
+                    <span className="num-badge">{pullRequestItems.length}</span>
                   </a>
                 </li>
                 <li className={activeTab === "projects" ? "active" : undefined}>
@@ -844,7 +868,8 @@ export function WorkspacePage(props: {
                       setActiveTab("projects");
                     }}
                   >
-                    project.projects <span className="num-badge">{memberProjects.length}</span>
+                    {`${projectsTabLabel} `}
+                    <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
               </ul>

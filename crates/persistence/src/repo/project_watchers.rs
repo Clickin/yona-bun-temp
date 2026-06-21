@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn count_project_members(&self, project_id: i64) -> Result<u32, DbErr> {
         Ok(project_user::Entity::find()
             .filter(project_user::Column::ProjectId.eq(Some(project_id)))

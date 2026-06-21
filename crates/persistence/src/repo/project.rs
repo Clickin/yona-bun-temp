@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub async fn create_project(&self, input: CreateProjectInput) -> Result<ProjectRecord, DbErr> {
         let created = project::ActiveModel {
             id: NotSet,

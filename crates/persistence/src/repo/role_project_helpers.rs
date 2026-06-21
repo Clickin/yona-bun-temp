@@ -1,6 +1,6 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub(super) async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {
         if site_admin::Entity::find()
             .filter(site_admin::Column::AdminId.eq(Some(user_id)))

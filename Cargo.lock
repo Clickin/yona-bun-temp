@@ -4838,6 +4838,7 @@ dependencies = [
 name = "yona-rust-persistence"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "rand 0.8.5",
  "sea-orm",
  "serde",

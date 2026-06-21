@@ -1,12 +1,29 @@
 use super::*;
 
-impl AppRepository {
+impl AppRepositoryImpl<'_> {
     pub fn new(db: DatabaseConnection) -> Self {
         Self::new_with_config(db, RepositoryConfig::default())
     }
 
     pub fn new_with_config(db: DatabaseConnection, config: RepositoryConfig) -> Self {
-        Self { config, db }
+        Self {
+            config,
+            db: RepositoryDb::Connection(db),
+        }
+    }
+
+    pub async fn begin_transaction(&self) -> Result<DatabaseTransaction, DbErr> {
+        self.db.begin().await
+    }
+
+    pub fn with_transaction<'tx>(
+        &self,
+        transaction: &'tx DatabaseTransaction,
+    ) -> AppRepositoryImpl<'tx> {
+        AppRepositoryImpl {
+            config: self.config.clone(),
+            db: RepositoryDb::Transaction(transaction),
+        }
     }
 
     pub async fn create_user(&self, input: CreateUserInput) -> Result<AppUserRecord, DbErr> {
