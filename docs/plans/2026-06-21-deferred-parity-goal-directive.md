@@ -204,11 +204,19 @@ state, failure location, aggregate total/validated/completed/skipped/remaining
 counters, per-section resumable state, and next resource-key anchors. It is a
 tool-side summary/retry boundary only; it does not replay HTTP imports or mutate
 the target app/DB/filesystem by itself. Residual P1-A production hardening gaps
-are now repository content transfer, milestone created/updated timestamps and
-other source fields that current legacy evidence/persistence inputs do not
-expose, non-portable attachment timestamp mutation beyond preserving existing
-rows, and the narrower crash/process-kill window around filesystem side effects
-outside the DB transaction. A process kill before
+are now milestone created/updated timestamps and other source fields that
+current legacy evidence/persistence inputs do not expose, non-portable
+attachment timestamp mutation beyond preserving existing rows, and the narrower
+crash/process-kill window around filesystem side effects outside the DB
+transaction. Repository content transfer is explicitly retired from the
+site-admin `yobi-data` import/export hardening list: legacy `SiteApp.exportData`
+/ `SiteApp.importData` delegate to `DataService`, whose fixed exchanger list
+serializes database tables and sequences only; `ProjectDataExchanger` carries
+project VCS metadata but no Git/SVN repository payload, and legacy `ImportApp`
+is the separate `/_import` Git URL clone flow. Repository storage movement
+therefore belongs to existing Git clone/import, Smart HTTP/SVN transport,
+change-VCS storage provisioning, or a future external migration-tool path with
+separate evidence, not to `/sites/export` or `/sites/import`. A process kill before
 DB commit can now leave only import-local staging files, not committed final
 upload files; a process kill after DB commit but before or during staged file
 promotion can still leave committed attachment rows whose final upload file
@@ -243,6 +251,16 @@ boundaries while keeping those rows classified as direct app-owned
 compatibility and avoiding broad app-runtime route expansion. Mention lookup
 remains descriptor/sample metadata only because migration tooling has no current
 need to parse its HTML `info` presentation string.
+Project helper adapter depth now also covers the bounded app-owned
+label/title-head payloads that migration/operator tooling can consume without
+mounting broad runtime routes: `parse_project_label_import_request`,
+`parse_project_label_response`, and `parse_project_title_heads_response`
+normalize legacy `ProjectApi.newLabel` recursive label batches, created/conflict
+label responses, and `ProjectApi.titleHeads` title-head/label suggestion
+responses. The parser preserves recursive `JsonNode.findValue` lookup, scalar
+fallbacks, the legacy `isExclusive.isBoolean()` token boundary, path/query
+capture, duplicate label/category preflight classification, invalid
+path/JSON/payload boundaries, and app-owned endpoint classification.
 Issue descriptors now have deterministic migrator payload fixtures for
 `IssueApi.imports` and `IssueApi.newIssues`, while app-owned issue helper rows
 remain payload-free. Issue import adapter depth now goes beyond descriptors:
@@ -470,10 +488,20 @@ and `milestone/edit.scala.html`. The touched `issue.*`, `post.*`,
 `pullRequest.*`, `milestone.*`, `common.order.*`, `label.*`, and `button.*`
 labels/placeholders now flow from `AppRuntimeContext`/legacy message lookup
 while preserving literal key fallback without a provider. Focused coverage is
-`frontend/src/issue-board-pr-milestone-i18n.spec.tsx`. Remaining app-wide opt-in
-scope is other existing controls that still render known legacy keys/copy as
-literal fallback text. No language selector or settings screen was added because
-the re-audit found no corresponding legacy UI surface.
+`frontend/src/issue-board-pr-milestone-i18n.spec.tsx`. P4-A-WorkspaceSettingsI18n
+continuation covers the existing `/user/editform/**` profile/password/email/token
+settings controls from `user/edit.scala.html`, `edit_password.scala.html`,
+`edit_emails.scala.html`, `edit_notifications.scala.html`, `edit_token.scala.html`,
+and `partial_edit_tabmenu.scala.html`: the known `userinfo.*`, `user.*`,
+`emails.*`, `site.resetPasswordEmail.*`, and shared `button.*` labels now flow
+from `AppRuntimeContext`/legacy message lookup while preserving literal key
+fallback without a provider. Focused coverage is
+`frontend/src/workspace-settings-i18n.spec.tsx`. Remaining app-wide opt-in scope
+is other existing controls that still render known legacy keys/copy as literal
+fallback text, including project settings/member/webhook/transfer/delete/change-VCS
+and code/review controls not already covered by prior slices. No language
+selector or settings screen was added because the re-audit found no corresponding
+legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 import { resolveWorkspaceAvatarUrl } from "./-workspace-views";
@@ -24,6 +25,8 @@ export interface AvatarCropSelection {
 
 export const WORKSPACE_AVATAR_ONLY_IMAGE_MESSAGE = "user.avatar.onlyImage";
 export const WORKSPACE_AVATAR_UPLOAD_ERROR_MESSAGE = "user.avatar.uploadError";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 const WORKSPACE_SETTINGS_TABS: Array<{
   href: string;
@@ -143,6 +146,10 @@ function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
 
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
 export function WorkspaceSettingsPage(props: {
   onAddWorkspaceEmail?: (email: string) => void;
   onChangePassword?: (input: {
@@ -159,6 +166,7 @@ export function WorkspaceSettingsPage(props: {
   onUploadAvatar?: (blob: Blob, filename: string) => Promise<string>;
   onUpdateProfile?: (input: ProfileUpdateInput) => void;
   pending?: boolean;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   routeHref: string;
   csrfToken?: string;
@@ -293,7 +301,7 @@ export function WorkspaceSettingsPage(props: {
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <input name="avatarAttachmentId" type="hidden" value={avatarAttachmentId} />
             <dl>
-              <dt>user.loginId</dt>
+              <dt>{legacyMessage(props.messages, "user.loginId")}</dt>
               <dd className="mt10">
                 <input
                   className="text"
@@ -303,11 +311,11 @@ export function WorkspaceSettingsPage(props: {
                   type="text"
                 />
               </dd>
-              <dt>user.name</dt>
+              <dt>{legacyMessage(props.messages, "user.name")}</dt>
               <dd className="mt10">
                 <input className="text" defaultValue={session.userLabel} name="name" type="text" />
               </dd>
-              <dt>user.email</dt>
+              <dt>{legacyMessage(props.messages, "user.email")}</dt>
               <dd className="mt10">
                 <input
                   className="text"
@@ -318,7 +326,7 @@ export function WorkspaceSettingsPage(props: {
               </dd>
               <dd>
                 <button className="ybtn ybtn-success" type="submit">
-                  userinfo.editProfile
+                  {legacyMessage(props.messages, "userinfo.editProfile")}
                 </button>
               </dd>
             </dl>
@@ -341,7 +349,7 @@ export function WorkspaceSettingsPage(props: {
               </div>
               <div className="btn-wrap mt10 center-txt">
                 <label className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
-                  userinfo.changeAvatar
+                  {legacyMessage(props.messages, "userinfo.changeAvatar")}
                   <input
                     accept="image/*"
                     className="file"
@@ -366,7 +374,7 @@ export function WorkspaceSettingsPage(props: {
               }}
             >
               <button className="ybtn" type="submit">
-                userinfo.reset.visited.project.list
+                {legacyMessage(props.messages, "userinfo.reset.visited.project.list")}
               </button>
             </form>
           </div>
@@ -460,7 +468,7 @@ export function WorkspaceSettingsPage(props: {
             </div>
             <div className="modal-footer">
               <button className="ybtn ybtn-default" onClick={closeCropModal} type="button">
-                button.cancel
+                {legacyMessage(props.messages, "button.cancel")}
               </button>
               <button
                 className="ybtn ybtn-success btnSubmitCrop"
@@ -468,7 +476,7 @@ export function WorkspaceSettingsPage(props: {
                 onClick={() => void uploadCroppedAvatar()}
                 type="button"
               >
-                button.save
+                {legacyMessage(props.messages, "button.save")}
               </button>
             </div>
           </section>
@@ -495,15 +503,15 @@ export function WorkspaceSettingsPage(props: {
           >
             <input name="loginId" type="hidden" value={session.loginId} />
             <dl>
-              <dt>user.currentPassword</dt>
+              <dt>{legacyMessage(props.messages, "user.currentPassword")}</dt>
               <dd className="mt10">
                 <input autoComplete="off" id="oldPassword" name="oldPassword" type="password" />
               </dd>
-              <dt>user.newPassword</dt>
+              <dt>{legacyMessage(props.messages, "user.newPassword")}</dt>
               <dd className="mt10">
                 <input autoComplete="off" id="password" name="password" type="password" />
               </dd>
-              <dt>validation.retypePassword</dt>
+              <dt>{legacyMessage(props.messages, "validation.retypePassword")}</dt>
               <dd className="mt10">
                 <input
                   autoComplete="off"
@@ -514,7 +522,7 @@ export function WorkspaceSettingsPage(props: {
               </dd>
               <dd>
                 <button className="ybtn ybtn-success" type="submit">
-                  userinfo.changePassword
+                  {legacyMessage(props.messages, "userinfo.changePassword")}
                 </button>
               </dd>
             </dl>
@@ -522,10 +530,10 @@ export function WorkspaceSettingsPage(props: {
           <hr />
           <div className="mt10">
             <dl>
-              <dt>site.resetPasswordEmail.desc</dt>
+              <dt>{legacyMessage(props.messages, "site.resetPasswordEmail.desc")}</dt>
               <dd className="mt10">
                 <a className="ybtn ybtn-fail" href={appHref(props.runtimeConfig, "/lostPassword")}>
-                  site.resetPasswordEmail.title
+                  {legacyMessage(props.messages, "site.resetPasswordEmail.title")}
                 </a>
               </dd>
             </dl>
@@ -601,16 +609,21 @@ export function WorkspaceSettingsPage(props: {
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
-            <input className="text uname" name="email" placeholder="user.email.new" type="text" />
+            <input
+              className="text uname"
+              name="email"
+              placeholder={legacyMessage(props.messages, "user.email.new")}
+              type="text"
+            />
             <button className="ybtn ybtn-success" type="submit">
-              button.add
+              {legacyMessage(props.messages, "button.add")}
             </button>
           </form>
           <hr />
           <p>
-            emails.main.email.descr
+            {legacyMessage(props.messages, "emails.main.email.descr")}
             <br />
-            emails.sub.email.descr
+            {legacyMessage(props.messages, "emails.sub.email.descr")}
           </p>
           <table className="table mt20">
             <tbody>
@@ -618,7 +631,9 @@ export function WorkspaceSettingsPage(props: {
                 <td>
                   <img alt="" height={40} src={currentAvatarUrl} width={40} />
                   <strong className="ml10">{session.emailAddress}</strong>
-                  <span className="label-head vmiddle ml10">emails.main.email</span>
+                  <span className="label-head vmiddle ml10">
+                    {legacyMessage(props.messages, "emails.main.email")}
+                  </span>
                 </td>
                 <td style={{ textAlign: "right" }} />
               </tr>
@@ -644,7 +659,7 @@ export function WorkspaceSettingsPage(props: {
                       onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
                       type="button"
                     >
-                      button.delete
+                      {legacyMessage(props.messages, "button.delete")}
                     </button>
                     {email.valid ? (
                       <button
@@ -658,7 +673,7 @@ export function WorkspaceSettingsPage(props: {
                         style={{ width: "150px" }}
                         type="button"
                       >
-                        emails.set.as.main
+                        {legacyMessage(props.messages, "emails.set.as.main")}
                       </button>
                     ) : (
                       <button
@@ -676,7 +691,7 @@ export function WorkspaceSettingsPage(props: {
                           className="yobicon-error2 orange-txt mr5"
                           style={{ verticalAlign: "bottom" }}
                         />
-                        emails.send.validatino.mail
+                        {legacyMessage(props.messages, "emails.send.validatino.mail")}
                       </button>
                     )}
                   </td>
@@ -702,7 +717,7 @@ export function WorkspaceSettingsPage(props: {
             style={{ width: "100%" }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
-            <div>userinfo.token</div>
+            <div>{legacyMessage(props.messages, "userinfo.token")}</div>
             <div>
               <input
                 className="text"
@@ -719,7 +734,7 @@ export function WorkspaceSettingsPage(props: {
             </div>
             <div>
               <button className="ybtn ybtn-success" type="submit">
-                userinfo.recreateToken
+                {legacyMessage(props.messages, "userinfo.recreateToken")}
               </button>
             </div>
           </form>
@@ -732,7 +747,12 @@ export function WorkspaceSettingsPage(props: {
     <main className="app-shell">
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>{props.section === "token" ? "userinfo.token" : "userinfo.accountSetting"}</h3>
+          <h3>
+            {legacyMessage(
+              props.messages,
+              props.section === "token" ? "userinfo.token" : "userinfo.accountSetting",
+            )}
+          </h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -743,7 +763,9 @@ export function WorkspaceSettingsPage(props: {
                 className={props.section === tab.section ? "active" : undefined}
                 key={tab.section}
               >
-                <a href={appHref(props.runtimeConfig, tab.href)}>{tab.label}</a>
+                <a href={appHref(props.runtimeConfig, tab.href)}>
+                  {legacyMessage(props.messages, tab.label)}
+                </a>
               </li>
             ))}
           </ul>

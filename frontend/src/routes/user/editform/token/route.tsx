@@ -12,6 +12,7 @@ function EditTokenRouteComponent() {
   const {
     bootstrapping,
     csrfToken,
+    messages,
     runtimeConfig,
     workspaceOverview,
     setErrorMessage,
@@ -31,6 +32,7 @@ function EditTokenRouteComponent() {
   return (
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
+      messages={messages}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="token"

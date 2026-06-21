@@ -12,6 +12,7 @@ function EditNotificationsRouteComponent() {
   const {
     bootstrapping,
     csrfToken,
+    messages,
     runtimeConfig,
     workspaceOverview,
     setErrorMessage,
@@ -31,6 +32,7 @@ function EditNotificationsRouteComponent() {
   return (
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
+      messages={messages}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="notifications"

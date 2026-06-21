@@ -120,6 +120,70 @@ pub struct NormalizedProjectImport {
     pub action: ProjectImportAction,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProjectLabelAction {
+    Create,
+    ConflictExistingLabel,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectLabelImport {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub labels: Vec<NormalizedProjectLabelItem>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectLabelItem {
+    pub label_name: String,
+    pub label_color: String,
+    pub category: String,
+    pub is_exclusive_token_is_boolean: bool,
+    pub action: ProjectLabelAction,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectLabelResponse {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub labels: Vec<NormalizedProjectLabelResponseItem>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectLabelResponseItem {
+    pub status: Option<i64>,
+    pub label: Option<String>,
+    pub category: Option<String>,
+    pub label_color: Option<String>,
+    pub is_exclusive: Option<bool>,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectTitleHeads {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub query: String,
+    pub entries: Vec<NormalizedProjectTitleHeadEntry>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedProjectTitleHeadEntry {
+    pub name: Option<String>,
+    pub frequency: Option<i64>,
+    pub category: Option<String>,
+    pub search_text: Option<String>,
+    pub category_id: Option<i64>,
+    pub id: Option<i64>,
+    pub label_color: Option<String>,
+    pub is_exclusive: Option<bool>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ProjectAdapterError {
     InvalidJson(String),
@@ -129,6 +193,9 @@ pub enum ProjectAdapterError {
     },
     MissingProjectName,
     InvalidExportPayload,
+    InvalidLabelPayload,
+    InvalidLabelItem,
+    InvalidTitleHeadsPayload,
 }
 
 impl std::fmt::Display for ProjectAdapterError {
@@ -146,6 +213,24 @@ impl std::fmt::Display for ProjectAdapterError {
             }
             Self::InvalidExportPayload => {
                 write!(formatter, "project export payload must be a JSON object")
+            }
+            Self::InvalidLabelPayload => {
+                write!(
+                    formatter,
+                    "project label payload must include a JSON labels array"
+                )
+            }
+            Self::InvalidLabelItem => {
+                write!(
+                    formatter,
+                    "project label item is missing legacy scalar fields"
+                )
+            }
+            Self::InvalidTitleHeadsPayload => {
+                write!(
+                    formatter,
+                    "project titleHeads payload must include a JSON result array"
+                )
             }
         }
     }
@@ -311,6 +396,87 @@ pub fn parse_project_import_request(
     })
 }
 
+pub fn parse_project_label_import_request(
+    sample_path: &str,
+    request_json: &str,
+    existing_labels: &[(&str, &str)],
+) -> Result<NormalizedProjectLabelImport, ProjectAdapterError> {
+    let (owner, project_name) = parse_project_label_path(sample_path)?;
+    let payload = parse_json(request_json)?;
+    let labels = find_value(&payload, "labels")
+        .and_then(Value::as_array)
+        .ok_or(ProjectAdapterError::InvalidLabelPayload)?
+        .iter()
+        .map(|label| normalize_label_item(label, existing_labels))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(NormalizedProjectLabelImport {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/labels",
+        owner,
+        project_name,
+        labels,
+    })
+}
+
+pub fn parse_project_label_response(
+    response_json: &str,
+) -> Result<NormalizedProjectLabelResponse, ProjectAdapterError> {
+    let payload = parse_json(response_json)?;
+    let labels = payload
+        .as_array()
+        .ok_or(ProjectAdapterError::InvalidLabelPayload)?
+        .iter()
+        .map(|label| NormalizedProjectLabelResponseItem {
+            status: find_value(label, "status").and_then(integer_field),
+            label: text_field(label, "label"),
+            category: text_field(label, "category"),
+            label_color: text_field(label, "labelColor"),
+            is_exclusive: find_value(label, "isExclusive").and_then(bool_field),
+            reason: text_field(label, "reason"),
+            message: text_field(label, "message"),
+        })
+        .collect();
+
+    Ok(NormalizedProjectLabelResponse {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/labels",
+        labels,
+    })
+}
+
+pub fn parse_project_title_heads_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<NormalizedProjectTitleHeads, ProjectAdapterError> {
+    let (owner, project_name, query) = parse_project_title_heads_path(sample_path)?;
+    let payload = parse_json(response_json)?;
+    let entries = find_value(&payload, "result")
+        .and_then(Value::as_array)
+        .ok_or(ProjectAdapterError::InvalidTitleHeadsPayload)?
+        .iter()
+        .map(|entry| NormalizedProjectTitleHeadEntry {
+            name: text_field(entry, "name"),
+            frequency: find_value(entry, "frequency").and_then(integer_field),
+            category: text_field(entry, "category"),
+            search_text: text_field(entry, "searchText"),
+            category_id: find_value(entry, "categoryId").and_then(integer_field),
+            id: find_value(entry, "id").and_then(integer_field),
+            label_color: text_field(entry, "labelColor"),
+            is_exclusive: find_value(entry, "isExclusive").and_then(bool_field),
+        })
+        .collect();
+
+    Ok(NormalizedProjectTitleHeads {
+        endpoint_method: "GET",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
+        owner,
+        project_name,
+        query,
+        entries,
+    })
+}
+
 fn parse_json(payload: &str) -> Result<Value, ProjectAdapterError> {
     serde_json::from_str(payload)
         .map_err(|error| ProjectAdapterError::InvalidJson(error.to_string()))
@@ -338,6 +504,51 @@ fn parse_project_import_path(path: &str) -> Result<String, ProjectAdapterError> 
             expected: "/-_-api/v1/owners/:owner/projects",
         }),
     }
+}
+
+fn parse_project_label_path(path: &str) -> Result<(String, String), ProjectAdapterError> {
+    let path_without_query = path.split_once('?').map_or(path, |(path, _query)| path);
+    let parts: Vec<&str> = path_without_query
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect();
+    match parts.as_slice() {
+        ["-_-api", "v1", "owners", owner, "projects", project_name, "labels"] => {
+            Ok(((*owner).to_string(), (*project_name).to_string()))
+        }
+        _ => Err(ProjectAdapterError::InvalidPath {
+            path: path.to_string(),
+            expected: "/-_-api/v1/owners/:owner/projects/:projectName/labels",
+        }),
+    }
+}
+
+fn parse_project_title_heads_path(
+    path: &str,
+) -> Result<(String, String, String), ProjectAdapterError> {
+    let (path_without_query, query_string) = path.split_once('?').unwrap_or((path, ""));
+    let parts: Vec<&str> = path_without_query
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect();
+    match parts.as_slice() {
+        ["-_-api", "v1", "owners", owner, "projects", project_name, "titleHeads"] => Ok((
+            (*owner).to_string(),
+            (*project_name).to_string(),
+            query_param(query_string, "query").unwrap_or_default(),
+        )),
+        _ => Err(ProjectAdapterError::InvalidPath {
+            path: path.to_string(),
+            expected: "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
+        }),
+    }
+}
+
+fn query_param(query_string: &str, key: &str) -> Option<String> {
+    query_string.split('&').find_map(|pair| {
+        let (name, value) = pair.split_once('=').unwrap_or((pair, ""));
+        (name == key).then(|| value.to_string())
+    })
 }
 
 fn user_ref(value: &Value) -> LegacyProjectUserRef {
@@ -375,6 +586,34 @@ fn member_refs(value: &Value, key: &str) -> Vec<LegacyProjectMemberRef> {
         }],
         _ => Vec::new(),
     }
+}
+
+fn normalize_label_item(
+    label: &Value,
+    existing_labels: &[(&str, &str)],
+) -> Result<NormalizedProjectLabelItem, ProjectAdapterError> {
+    let label_name = text_field(label, "labelName").ok_or(ProjectAdapterError::InvalidLabelItem)?;
+    let label_color =
+        text_field(label, "labelColor").ok_or(ProjectAdapterError::InvalidLabelItem)?;
+    let category = text_field(label, "category").ok_or(ProjectAdapterError::InvalidLabelItem)?;
+    let is_exclusive_token_is_boolean =
+        find_value(label, "isExclusive").is_some_and(Value::is_boolean);
+    let action = if existing_labels
+        .iter()
+        .any(|(name, existing_category)| name == &label_name && existing_category == &category)
+    {
+        ProjectLabelAction::ConflictExistingLabel
+    } else {
+        ProjectLabelAction::Create
+    };
+
+    Ok(NormalizedProjectLabelItem {
+        label_name,
+        label_color,
+        category,
+        is_exclusive_token_is_boolean,
+        action,
+    })
 }
 
 fn label_refs(value: &Value, key: &str) -> Vec<LegacyProjectLabelRef> {

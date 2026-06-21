@@ -2,8 +2,9 @@ use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
     projects::{
         find_fixture, fixtures, parse_project_export_response, parse_project_import_request,
-        AuthRequirement, MigrationDirection, ProjectAdapterError, ProjectImportAction,
-        ProjectScope,
+        parse_project_label_import_request, parse_project_label_response,
+        parse_project_title_heads_response, AuthRequirement, MigrationDirection,
+        ProjectAdapterError, ProjectImportAction, ProjectLabelAction, ProjectScope,
     },
     EndpointStatus,
 };
@@ -487,6 +488,194 @@ fn project_parsers_reject_invalid_path_and_payload_boundaries() {
         parse_project_import_request("/-_-api/v1/owners/alice/projects", "{", &[]),
         Err(ProjectAdapterError::InvalidJson(_))
     ));
+}
+
+#[test]
+fn project_label_parser_normalizes_recursive_request_and_response_payloads() {
+    let request = r##"{
+      "payload": {
+        "labels": [
+          {
+            "wrapper": {
+              "labelName": "Bug",
+              "labelColor": "#ff0000",
+              "category": "Type",
+              "isExclusive": false
+            }
+          },
+          {
+            "labelName": 77,
+            "labelColor": true,
+            "category": "Type",
+            "isExclusive": "false"
+          }
+        ]
+      }
+    }"##;
+
+    let import = parse_project_label_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/labels",
+        request,
+        &[("Bug", "Type")],
+    )
+    .unwrap();
+
+    assert_eq!(import.endpoint_method, "POST");
+    assert_eq!(
+        import.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/labels"
+    );
+    assert_eq!(import.owner, "alice");
+    assert_eq!(import.project_name, "demo");
+    assert_eq!(import.labels.len(), 2);
+    assert_eq!(import.labels[0].label_name, "Bug");
+    assert_eq!(import.labels[0].label_color, "#ff0000");
+    assert_eq!(import.labels[0].category, "Type");
+    assert!(import.labels[0].is_exclusive_token_is_boolean);
+    assert_eq!(
+        import.labels[0].action,
+        ProjectLabelAction::ConflictExistingLabel
+    );
+    assert_eq!(import.labels[1].label_name, "77");
+    assert_eq!(import.labels[1].label_color, "true");
+    assert!(!import.labels[1].is_exclusive_token_is_boolean);
+    assert_eq!(import.labels[1].action, ProjectLabelAction::Create);
+
+    let response = parse_project_label_response(
+        r##"[
+          {
+            "status": "201",
+            "label": "Bug",
+            "category": "Type",
+            "labelColor": "#ff0000",
+            "isExclusive": true
+          },
+          {
+            "status": 409,
+            "reason": "Conflict",
+            "message": "label.error.duplicated"
+          }
+        ]"##,
+    )
+    .unwrap();
+
+    assert_eq!(response.endpoint_method, "POST");
+    assert_eq!(response.labels[0].status, Some(201));
+    assert_eq!(response.labels[0].label.as_deref(), Some("Bug"));
+    assert_eq!(response.labels[0].is_exclusive, Some(true));
+    assert_eq!(response.labels[1].status, Some(409));
+    assert_eq!(response.labels[1].reason.as_deref(), Some("Conflict"));
+}
+
+#[test]
+fn project_title_heads_parser_normalizes_wrapped_result_entries() {
+    let title_heads = parse_project_title_heads_response(
+        "/-_-api/v1/owners/alice/projects/demo/titleHeads?query=bug&type=ignored",
+        r##"{
+          "outer": {
+            "result": [
+              {
+                "name": "Crash",
+                "frequency": "3",
+                "category": "",
+                "searchText": "Crash"
+              },
+              {
+                "name": "Bug",
+                "frequency": 0,
+                "category": "Type",
+                "categoryId": "5",
+                "id": 7,
+                "labelColor": "#ff0000",
+                "isExclusive": "true",
+                "searchText": "Bug/Type"
+              }
+            ]
+          }
+        }"##,
+    )
+    .unwrap();
+
+    assert_eq!(title_heads.endpoint_method, "GET");
+    assert_eq!(
+        title_heads.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads"
+    );
+    assert_eq!(title_heads.owner, "alice");
+    assert_eq!(title_heads.project_name, "demo");
+    assert_eq!(title_heads.query, "bug");
+    assert_eq!(title_heads.entries.len(), 2);
+    assert_eq!(title_heads.entries[0].name.as_deref(), Some("Crash"));
+    assert_eq!(title_heads.entries[0].frequency, Some(3));
+    assert_eq!(title_heads.entries[0].search_text.as_deref(), Some("Crash"));
+    assert_eq!(title_heads.entries[1].category_id, Some(5));
+    assert_eq!(title_heads.entries[1].id, Some(7));
+    assert_eq!(title_heads.entries[1].is_exclusive, Some(true));
+}
+
+#[test]
+fn project_helper_parsers_reject_invalid_boundaries_and_stay_app_owned() {
+    assert!(matches!(
+        parse_project_label_import_request(
+            "/-_-api/v1/owners/alice/projects/demo",
+            r#"{"labels":[]}"#,
+            &[]
+        ),
+        Err(ProjectAdapterError::InvalidPath { .. })
+    ));
+    assert!(matches!(
+        parse_project_label_import_request(
+            "/-_-api/v1/owners/alice/projects/demo/labels",
+            r#"{"labels":{}}"#,
+            &[]
+        ),
+        Err(ProjectAdapterError::InvalidLabelPayload)
+    ));
+    assert!(matches!(
+        parse_project_label_import_request(
+            "/-_-api/v1/owners/alice/projects/demo/labels",
+            r#"{"labels":[{"labelName":"Bug"}]}"#,
+            &[]
+        ),
+        Err(ProjectAdapterError::InvalidLabelItem)
+    ));
+    assert!(matches!(
+        parse_project_label_response(r#"{"status":201}"#),
+        Err(ProjectAdapterError::InvalidLabelPayload)
+    ));
+    assert!(matches!(
+        parse_project_title_heads_response(
+            "/-_-api/v1/owners/alice/projects/demo/titleHeads",
+            r#"{"result":{}}"#
+        ),
+        Err(ProjectAdapterError::InvalidTitleHeadsPayload)
+    ));
+    assert!(matches!(
+        parse_project_title_heads_response(
+            "/-_-api/v1/owners/alice/projects/demo/labels",
+            r#"{"result":[]}"#
+        ),
+        Err(ProjectAdapterError::InvalidPath { .. })
+    ));
+
+    assert_eq!(
+        find_endpoint(
+            "POST",
+            "/-_-api/v1/owners/:owner/projects/:projectName/labels"
+        )
+        .unwrap()
+        .status,
+        EndpointStatus::AppOwned
+    );
+    assert_eq!(
+        find_endpoint(
+            "GET",
+            "/-_-api/v1/owners/:owner/projects/:projectName/titleHeads"
+        )
+        .unwrap()
+        .status,
+        EndpointStatus::AppOwned
+    );
 }
 
 #[test]

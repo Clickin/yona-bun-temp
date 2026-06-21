@@ -16,6 +16,7 @@ function EditEmailsRouteComponent() {
   const {
     bootstrapping,
     csrfToken,
+    messages,
     runtimeConfig,
     workspaceOverview,
     setErrorMessage,
@@ -35,6 +36,7 @@ function EditEmailsRouteComponent() {
   return (
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
+      messages={messages}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="emails"

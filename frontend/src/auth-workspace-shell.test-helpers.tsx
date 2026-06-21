@@ -1,4 +1,5 @@
 import { renderToString } from "react-dom/server";
+import type { LegacyI18nContextValue } from "./i18n";
 import type { RuntimeConfig } from "./runtime-config";
 import { HomePage } from "./routes/-home-view";
 import {
@@ -33,6 +34,8 @@ import type {
   ProjectMembersViewModel,
   WorkspaceOverviewViewModel,
 } from "./routes/-view-models";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 export const testRuntimeConfig: RuntimeConfig = {
   apiBaseUrl: "/yona/api",
@@ -116,9 +119,11 @@ export function renderWorkspaceSettings(
   routeHref: string,
   workspaceOverview: WorkspaceOverviewViewModel | null,
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
+  messages?: LegacyMessageLookup,
 ): string {
   return renderToString(
     <WorkspaceSettingsPage
+      messages={messages}
       routeHref={routeHref}
       runtimeConfig={runtimeConfig}
       section={section}

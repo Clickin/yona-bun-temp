@@ -17,6 +17,7 @@ function EditPasswordRouteComponent() {
   const {
     bootstrapping,
     csrfToken,
+    messages,
     runtimeConfig,
     workspaceOverview,
     setCurrentSession,
@@ -38,6 +39,7 @@ function EditPasswordRouteComponent() {
   return (
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
+      messages={messages}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="password"
