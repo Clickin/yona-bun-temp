@@ -64,6 +64,31 @@ impl AppRepository {
         Ok(changed)
     }
 
+    pub async fn restore_site_import_project_created_at(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        created_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let Some(created_at) = created_at else {
+            return Ok(false);
+        };
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(false);
+        };
+        project::ActiveModel {
+            id: Set(project_record.id),
+            created_date: Set(Some(created_at)),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await?;
+        Ok(true)
+    }
+
     pub async fn delete_site_import_attachment_row(
         &self,
         attachment_id: i64,
@@ -224,6 +249,62 @@ impl AppRepository {
             active.updated_date = Set(Some(updated_at));
         }
         active.update(&self.db).await?;
+        Ok(true)
+    }
+
+    pub async fn restore_site_import_issue_timestamps(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        created_at: Option<DateTime>,
+        updated_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        if created_at.is_none() && updated_at.is_none() {
+            return Ok(false);
+        }
+        let mut active = issue::ActiveModel {
+            id: Set(model.id),
+            ..Default::default()
+        };
+        if let Some(created_at) = created_at {
+            active.created_date = Set(Some(created_at));
+        }
+        if let Some(updated_at) = updated_at {
+            active.updated_date = Set(Some(updated_at));
+        }
+        active.update(&self.db).await?;
+        Ok(true)
+    }
+
+    pub async fn restore_site_import_issue_comment_created_at(
+        &self,
+        comment_id: i64,
+        created_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let Some(created_at) = created_at else {
+            return Ok(false);
+        };
+        if issue_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            return Ok(false);
+        }
+        issue_comment::ActiveModel {
+            id: Set(comment_id),
+            created_date: Set(Some(created_at)),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await?;
         Ok(true)
     }
 

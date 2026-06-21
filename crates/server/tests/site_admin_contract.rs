@@ -1150,6 +1150,18 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     );
     assert_eq!(payload["posts"][0]["comments"].as_array().unwrap().len(), 1);
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
+    assert!(
+        payload["issues"][0]["createdAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy issue createdAt"
+    );
+    assert!(
+        payload["issues"][0]["updatedAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy issue updatedAt"
+    );
     assert_eq!(payload["issues"][0]["milestoneTitle"], "Export milestone");
     assert_eq!(
         payload["issues"][0]["bodyMarkdown"],
@@ -1192,6 +1204,12 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         payload["issues"][0]["comments"].as_array().unwrap().len(),
         1
     );
+    assert!(
+        payload["issues"][0]["comments"][0]["createdAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy issue comment createdAt"
+    );
 }
 
 #[tokio::test]
@@ -1217,6 +1235,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "state": "ACTIVE"
         }],
         "projects": [{
+            "createdAt": "2020-01-01T02:03:04+0000",
             "ownerName": "imported",
             "projectName": "restored",
             "overview": "Restored from site import",
@@ -1280,8 +1299,10 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "bodyMarkdown": "restored issue body",
             "comments": [{
                 "authorLoginId": "imported",
-                "contentsMarkdown": "restored issue comment"
+                "contentsMarkdown": "restored issue comment",
+                "createdAt": "2020-01-04T05:06:07+0000"
             }],
+            "createdAt": "2020-01-04T05:00:00+0000",
             "historyMarkdown": "previous issue body",
             "milestoneTitle": "Imported milestone",
             "ownerName": "imported",
@@ -1293,7 +1314,8 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
                 "name": "Bug"
             }],
             "state": "closed",
-            "title": "Restored issue"
+            "title": "Restored issue",
+            "updatedAt": "2020-01-05T06:07:08+0000"
         }]
     });
 
@@ -1402,6 +1424,13 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(projects["projects"][0]["projectName"], "restored");
     assert_eq!(projects["projects"][0]["projectScope"], "protected");
     assert_eq!(projects["projects"][0]["vcs"], "Subversion");
+    assert_eq!(
+        projects["projects"][0]["createdAt"]
+            .as_str()
+            .expect("imported project created date")
+            .replace(' ', "T"),
+        "2020-01-01T02:03:04"
+    );
 
     let members = repo
         .read_project_members("imported", "restored")
@@ -1511,6 +1540,30 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     );
     assert_eq!(issue_detail.history_markdown, "previous issue body");
     assert_eq!(issue_detail.milestone_title, "Imported milestone");
+    assert_eq!(
+        issue_detail
+            .created_at
+            .expect("imported issue created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-04T05:00:00+0000"
+    );
+    assert_eq!(
+        issue_detail
+            .updated_at
+            .expect("imported issue updated date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-05T06:07:08+0000"
+    );
+    assert_eq!(
+        issue_detail.comments[0]
+            .created_at
+            .expect("imported issue comment created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-04T05:06:07+0000"
+    );
 }
 
 #[tokio::test]

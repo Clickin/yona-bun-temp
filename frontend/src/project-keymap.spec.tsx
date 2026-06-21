@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { LegacyI18nProvider } from "./i18n";
 import { ProjectMenu } from "./routes/-project-views";
 import type { ProjectDetailViewModel } from "./routes/-view-models";
 
@@ -67,6 +68,78 @@ describe("project keymap help parity", () => {
     expect(html).toContain('<span class="ybtn ybtn-small">CTRL</span> + <span');
     expect(html).toContain('<span class="ybtn ybtn-small">ALT</span> + <span');
     expect(html).toContain('<span class="help-inline">button.selectAll</span>');
+  });
+
+  it("keeps project menu and keymap labels on legacy key fallbacks without a runtime provider", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMenu
+        activeMenu="code"
+        detail={projectDetail}
+        keymapMode="detail"
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('<span class="menu-name">menu.code</span>');
+    expect(html).toContain(">title.keymap</a>");
+    expect(html).toContain("<h5>menu.code</h5>");
+    expect(html).toContain('<span class="help-inline">button.list</span>');
+  });
+
+  it("switches project menu and keymap labels through legacy message dictionaries", () => {
+    const englishHtml = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["en-US", "ko-KR"]}>
+        <ProjectMenu
+          activeMenu="issue"
+          detail={projectDetail}
+          keymapMode="list"
+          runtimeConfig={runtimeConfig}
+        />
+      </LegacyI18nProvider>,
+    );
+    const koreanHtml = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <ProjectMenu
+          activeMenu="issue"
+          detail={projectDetail}
+          keymapMode="list"
+          runtimeConfig={runtimeConfig}
+        />
+      </LegacyI18nProvider>,
+    );
+
+    expect(englishHtml).toContain('<span class="menu-name">Issue</span>');
+    expect(englishHtml).toContain(">Keyboard shortcuts</a>");
+    expect(englishHtml).toContain("<h5>Issue list</h5>");
+    expect(englishHtml).toContain('<span class="help-inline">New issue</span>');
+    expect(englishHtml).toContain('<span class="help-inline">Profile</span>');
+    expect(englishHtml).toContain('<span class="help-inline">User menu</span>');
+    expect(englishHtml).not.toContain('<span class="menu-name">menu.issue</span>');
+
+    expect(koreanHtml).toContain('<span class="menu-name">이슈</span>');
+    expect(koreanHtml).toContain(">단축키 안내</a>");
+    expect(koreanHtml).toContain("<h5>이슈 목록</h5>");
+    expect(koreanHtml).toContain('<span class="help-inline">새 이슈</span>');
+    expect(koreanHtml).toContain('<span class="help-inline">프로필 페이지</span>');
+    expect(koreanHtml).toContain('<span class="help-inline">사용자 메뉴</span>');
+    expect(koreanHtml).not.toContain('<span class="menu-name">menu.issue</span>');
+  });
+
+  it("preserves exact fallback copy for missing project keymap dictionary entries", () => {
+    const html = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <ProjectMenu
+          activeMenu="board"
+          detail={projectDetail}
+          keymapMode="detail"
+          runtimeConfig={runtimeConfig}
+        />
+      </LegacyI18nProvider>,
+    );
+
+    expect(html).toContain("<h5>title.boardDetail</h5>");
+    expect(html).toContain('<span class="help-inline">목록</span>');
+    expect(html).toContain('<span class="help-inline">수정</span>');
   });
 
   it("renders legacy issue detail shortcuts", () => {

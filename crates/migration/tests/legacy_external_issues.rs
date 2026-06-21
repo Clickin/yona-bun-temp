@@ -1,6 +1,7 @@
 use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
     issues::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
+    issues::{parse_issue_import_request, IssueAdapterError, IssueImportAction, IssueState},
     EndpointStatus,
 };
 
@@ -368,6 +369,209 @@ fn bulk_issue_import_descriptor_includes_deterministic_payload_and_error_shape()
 }
 
 #[test]
+fn issue_adapter_normalizes_recursive_legacy_bulk_import_payload() {
+    let fixture = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues",
+    )
+    .unwrap();
+    let payload = fixture
+        .migration_payload
+        .expect("IssueApi.newIssues should have a migrator payload fixture");
+
+    let batch = parse_issue_import_request(
+        payload.sample_path,
+        payload.request_json.expect("issue import request JSON"),
+        &[],
+    )
+    .unwrap();
+
+    assert_eq!(batch.endpoint_method, "POST");
+    assert_eq!(
+        batch.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues"
+    );
+    assert_eq!(batch.owner, "alice");
+    assert_eq!(batch.project_name, "demo");
+    assert_eq!(batch.send_notification, true);
+    assert_eq!(batch.entries.len(), 1);
+
+    let issue = &batch.entries[0];
+    assert_eq!(issue.source_index, 0);
+    assert_eq!(
+        issue.author.as_ref().unwrap().login_id.as_deref(),
+        Some("author")
+    );
+    assert_eq!(
+        issue.author.as_ref().unwrap().email.as_deref(),
+        Some("author@example.com")
+    );
+    assert_eq!(issue.title, "Legacy issue");
+    assert_eq!(issue.body, "legacy issue body");
+    assert_eq!(issue.state, IssueState::Closed);
+    assert_eq!(issue.state.as_legacy_str(), "CLOSED");
+    assert_eq!(issue.requested_number, Some(3));
+    assert_eq!(
+        issue.created_at.as_deref(),
+        Some("2026-06-01 AM 09:00:00 +0900")
+    );
+    assert_eq!(
+        issue.updated_at.as_deref(),
+        Some("2026-06-02 PM 03:30:00 +0900")
+    );
+    assert_eq!(issue.assignees.len(), 1);
+    assert_eq!(
+        issue.assignees[0].email.as_deref(),
+        Some("assignee@example.com")
+    );
+    assert_eq!(issue.milestone_title.as_deref(), Some("M1"));
+    assert_eq!(
+        issue.due_date.as_deref(),
+        Some("2026-06-30 PM 11:59:59 +0900")
+    );
+    assert_eq!(issue.labels.len(), 1);
+    assert_eq!(issue.labels[0].label_name.as_deref(), Some("Bug"));
+    assert_eq!(issue.labels[0].category.as_deref(), Some("Type"));
+    assert_eq!(issue.temporary_upload_files, vec!["tmp-issue-upload"]);
+    assert_eq!(issue.action, IssueImportAction::Create);
+    assert_eq!(batch.creatable_entries().count(), 1);
+    assert_eq!(batch.conflict_entries().count(), 0);
+}
+
+#[test]
+fn issue_adapter_preserves_find_value_defaults_and_scalar_fallbacks() {
+    let payload = r#"{
+      "wrapper": {
+        "issues": [
+          {
+            "outer": {
+              "author": { "loginId": 1001, "name": false, "email": "numeric@example.com" },
+              "content": { "title": 77, "body": true },
+              "number": "42",
+              "assignees": { "email": "solo@example.com", "loginId": "solo" },
+              "labels": [
+                { "labelName": 9, "labelColor": false, "category": "Type" }
+              ],
+              "temporaryUploadFiles": 951
+            }
+          }
+        ]
+      }
+    }"#;
+
+    let batch =
+        parse_issue_import_request("/-_-api/v1/owners/alice/projects/demo/issues", payload, &[])
+            .unwrap();
+
+    assert_eq!(batch.send_notification, false);
+    let issue = &batch.entries[0];
+    assert_eq!(
+        issue.author.as_ref().unwrap().login_id.as_deref(),
+        Some("1001")
+    );
+    assert_eq!(
+        issue.author.as_ref().unwrap().name.as_deref(),
+        Some("false")
+    );
+    assert_eq!(issue.title, "77");
+    assert_eq!(issue.body, "true");
+    assert_eq!(issue.state, IssueState::Open);
+    assert_eq!(issue.state.as_legacy_str(), "OPEN");
+    assert_eq!(issue.requested_number, Some(42));
+    assert_eq!(
+        issue.assignees[0].email.as_deref(),
+        Some("solo@example.com")
+    );
+    assert_eq!(issue.labels[0].label_name.as_deref(), Some("9"));
+    assert_eq!(issue.labels[0].label_color.as_deref(), Some("false"));
+    assert_eq!(issue.temporary_upload_files, vec!["951"]);
+}
+
+#[test]
+fn issue_adapter_classifies_requested_number_conflicts_for_migration_preflight() {
+    let payload = r#"{
+      "issues": [
+        { "number": 3, "title": "existing", "body": "body" },
+        { "number": 4, "title": "first", "body": "body" },
+        { "number": "4", "title": "duplicate in batch", "body": "body" },
+        { "title": "auto-number", "body": "body" }
+      ]
+    }"#;
+
+    let batch = parse_issue_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues",
+        payload,
+        &[3],
+    )
+    .unwrap();
+
+    assert_eq!(
+        batch
+            .entries
+            .iter()
+            .map(|entry| entry.action)
+            .collect::<Vec<_>>(),
+        vec![
+            IssueImportAction::ConflictExistingNumber,
+            IssueImportAction::Create,
+            IssueImportAction::ConflictEarlierInBatch,
+            IssueImportAction::Create,
+        ]
+    );
+    assert_eq!(batch.creatable_entries().count(), 2);
+    assert_eq!(batch.conflict_entries().count(), 2);
+}
+
+#[test]
+fn issue_adapter_rejects_legacy_bad_request_boundaries_before_tool_consumption() {
+    let missing_issues = parse_issue_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues",
+        r#"{"issues":{"title":"not an array"}}"#,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(missing_issues, IssueAdapterError::MissingIssuesArray);
+
+    let invalid_item = parse_issue_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues",
+        r#"{"issues":["not an object"]}"#,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_item,
+        IssueAdapterError::InvalidIssueItem { index: 0 }
+    );
+
+    let missing_title = parse_issue_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues",
+        r#"{"issues":[{"body":"body"}]}"#,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(
+        missing_title,
+        IssueAdapterError::MissingField {
+            index: 0,
+            field: "title"
+        }
+    );
+
+    let invalid_path = parse_issue_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/3",
+        r#"{"issues":[{"title":"title","body":"body"}]}"#,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_path,
+        IssueAdapterError::InvalidPath(
+            "/-_-api/v1/owners/alice/projects/demo/issues/3".to_string()
+        )
+    );
+}
+
+#[test]
 fn only_migrator_issue_descriptors_carry_payload_samples() {
     for fixture in fixtures() {
         let inventory = find_endpoint(fixture.method, fixture.path).unwrap_or_else(|| {
@@ -399,6 +603,25 @@ fn only_migrator_issue_descriptors_carry_payload_samples() {
             );
         }
     }
+}
+
+#[test]
+fn issue_migration_adapter_does_not_mount_broad_app_runtime_routes() {
+    let migrator = find_endpoint(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues",
+    )
+    .unwrap();
+    assert_eq!(migrator.status, EndpointStatus::MigratorImport);
+    assert!(migrator.status.is_migrator_scope());
+
+    assert!(find_endpoint(
+        "GET",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues"
+    )
+    .is_none());
+    assert!(find_endpoint("POST", "/-_-api/v1/**").is_none());
+    assert!(find_endpoint("GET", "/-_-api/v1/**").is_none());
 }
 
 #[test]

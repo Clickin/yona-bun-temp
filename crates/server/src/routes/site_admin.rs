@@ -352,6 +352,8 @@ struct RestSiteImportUserItem {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteImportProjectItem {
+    #[serde(alias = "projectCreatedDate")]
+    created_at: String,
     owner_name: String,
     overview: String,
     project_name: String,
@@ -422,6 +424,8 @@ struct RestSiteExportIssueItem {
     attachments: Vec<RestSiteExportAttachmentItem>,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    created_at: String,
     history_markdown: String,
     issue_number: String,
     labels: Vec<RestSiteExportLabelItem>,
@@ -430,6 +434,8 @@ struct RestSiteExportIssueItem {
     project_name: String,
     state: String,
     title: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    updated_at: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -2174,6 +2180,14 @@ async fn rest_import_site_data_live(
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        repository
+            .restore_site_import_project_created_at(
+                owner_name,
+                project_name,
+                rest_site_import_parse_legacy_datetime(&project.created_at),
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
         rollback.record_project(&created_project);
         imported_projects += 1;
     }
@@ -2543,6 +2557,8 @@ async fn rest_import_site_data_live(
             &issue.body_markdown,
             &imported_attachments.link_rewrites,
         );
+        let imported_created_at = rest_site_import_parse_legacy_datetime(&issue.created_at);
+        let imported_updated_at = rest_site_import_parse_legacy_datetime(&issue.updated_at);
         let created = repository
             .create_issue(persistence::CreateIssueInput {
                 actor_display_name: actor.display_name.clone(),
@@ -2626,6 +2642,16 @@ async fn rest_import_site_data_live(
             rollback,
         )
         .await?;
+        repository
+            .restore_site_import_issue_timestamps(
+                &issue.owner_name,
+                &issue.project_name,
+                created.issue_number,
+                imported_created_at,
+                imported_updated_at,
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_issues += 1;
     }
 
@@ -3459,6 +3485,13 @@ async fn rest_site_import_issue_comments(
             .as_ref()
             .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
         {
+            repository
+                .restore_site_import_issue_comment_created_at(
+                    created_comment_id,
+                    rest_site_import_parse_legacy_datetime(&comment.created_at),
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
             Box::pin(rest_site_import_issue_comments(
                 service,
                 repository,
@@ -4402,6 +4435,7 @@ fn rest_site_export_issue_from_record(
             .collect(),
         body_markdown: record.body_markdown.clone(),
         comments: rest_site_export_issue_comments_from_records(data_root, &record.comments),
+        created_at: legacy_external_date_string(record.created_at),
         history_markdown: record.history_markdown.clone(),
         issue_number: record.issue_number.to_string(),
         labels: record
@@ -4414,6 +4448,7 @@ fn rest_site_export_issue_from_record(
         project_name: record.project_name.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
+        updated_at: legacy_external_date_string(record.updated_at),
     }
 }
 
@@ -4449,7 +4484,7 @@ fn rest_site_export_issue_comment_from_record(
             .collect(),
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
-        created_at: String::new(),
+        created_at: legacy_external_date_string(record.created_at),
     }
 }
 

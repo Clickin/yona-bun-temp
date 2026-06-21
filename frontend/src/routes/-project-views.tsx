@@ -16,6 +16,7 @@ import type {
   ProjectWebhookType,
   ProjectWatchersResponse,
 } from "../api/org-project";
+import { useLegacyMessages } from "../i18n";
 import { MarkdownRenderer } from "./-markdown-renderer";
 import type { ProjectDetailViewModel } from "./-view-models";
 
@@ -486,6 +487,7 @@ export function ProjectMenu(props: {
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
+  const messages = useLegacyMessages();
   const menuItems = [
     {
       key: "home",
@@ -557,7 +559,9 @@ export function ProjectMenu(props: {
             return [
               <li className={classNames || undefined} key={item.key}>
                 <a href={item.href}>
-                  <span className="menu-name">{item.menuName}</span>
+                  <span className="menu-name">
+                    {messages.t(item.menuName, { fallback: item.menuName })}
+                  </span>
                   <span className="short-menu">{item.shortMenu}</span>{" "}
                   {(item.count ?? 0) > 0 ? (
                     <span className="project-menu-count">{item.count}</span>
@@ -581,7 +585,9 @@ export function ProjectMenu(props: {
                 >
                   <i className="yobicon-cog" />
                   <span className="blind">
-                    <span className="menu-name">menu.admin</span>
+                    <span className="menu-name">
+                      {messages.t("menu.admin", { fallback: "menu.admin" })}
+                    </span>
                   </span>
                 </a>
               </li>
@@ -604,6 +610,7 @@ function ProjectKeymapHelp(props: {
   section: ProjectMenuActive;
 }) {
   const { detail, mode, section } = props;
+  const messages = useLegacyMessages();
   const canUseAdmin = detail.showAdmin || detail.viewerCanUpdate;
   const isMac = projectKeymapIsMacintosh();
   const ctrlKey = isMac ? "\u2318" : "CTRL";
@@ -612,66 +619,103 @@ function ProjectKeymapHelp(props: {
   return (
     <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
       <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpKeys">
-        title.keymap
+        {messages.t("title.keymap", { fallback: "title.keymap" })}
       </a>
 
       <div className="modal hide fade keymap-help" id="helpKeys" role="dialog" tabIndex={-1}>
         <div className="row-fluid">
           <div className="span3">
-            <h5>project.projects</h5>
+            <h5>{messages.t("project.projects", { fallback: "project.projects" })}</h5>
 
-            <ProjectKeymapRow keys={["H"]} label="menu.home" />
-            {detail.showBoard ? <ProjectKeymapRow keys={["B"]} label="menu.board" /> : null}
-            {detail.showIssue ? <ProjectKeymapRow keys={["I"]} label="menu.issue" /> : null}
-            {detail.showCode ? <ProjectKeymapRow keys={["C"]} label="menu.code" /> : null}
-            {detail.showMilestone ? <ProjectKeymapRow keys={["M"]} label="milestone" /> : null}
-            {detail.showPullRequest ? (
-              <ProjectKeymapRow keys={["P"]} label="menu.pullRequest" />
+            <ProjectKeymapRow keys={["H"]} label="menu.home" messages={messages.t} />
+            {detail.showBoard ? (
+              <ProjectKeymapRow keys={["B"]} label="menu.board" messages={messages.t} />
             ) : null}
-            {canUseAdmin ? <ProjectKeymapRow keys={["Q"]} label="project.setting" /> : null}
+            {detail.showIssue ? (
+              <ProjectKeymapRow keys={["I"]} label="menu.issue" messages={messages.t} />
+            ) : null}
+            {detail.showCode ? (
+              <ProjectKeymapRow keys={["C"]} label="menu.code" messages={messages.t} />
+            ) : null}
+            {detail.showMilestone ? (
+              <ProjectKeymapRow keys={["M"]} label="milestone" messages={messages.t} />
+            ) : null}
+            {detail.showPullRequest ? (
+              <ProjectKeymapRow keys={["P"]} label="menu.pullRequest" messages={messages.t} />
+            ) : null}
+            {canUseAdmin ? (
+              <ProjectKeymapRow keys={["Q"]} label="project.setting" messages={messages.t} />
+            ) : null}
           </div>
 
           <div className="span9">
             <div className="row-fluid">
               <div className="span5">
-                <h5>{projectKeymapSectionTitle(section, mode)}</h5>
-                {section === "board" ? <ProjectKeymapRow keys={["N"]} label="post.write" /> : null}
+                <h5>
+                  {messages.t(projectKeymapSectionTitle(section, mode), {
+                    fallback: projectKeymapSectionTitle(section, mode),
+                  })}
+                </h5>
+                {section === "board" ? (
+                  <ProjectKeymapRow keys={["N"]} label="post.write" messages={messages.t} />
+                ) : null}
                 {section === "issue" ? (
-                  <ProjectKeymapRow keys={["N"]} label="issue.menu.new" />
+                  <ProjectKeymapRow keys={["N"]} label="issue.menu.new" messages={messages.t} />
                 ) : null}
                 {mode === "detail" ? (
                   <>
-                    <ProjectKeymapRow keys={["L"]} label="button.list" />
-                    <ProjectKeymapRow keys={["E"]} label="button.edit" />
+                    <ProjectKeymapRow keys={["L"]} label="button.list" messages={messages.t} />
+                    <ProjectKeymapRow keys={["E"]} label="button.edit" messages={messages.t} />
                   </>
                 ) : null}
                 {mode === "list" ? (
                   <>
-                    <ProjectKeymapRow keys={["\u2190"]} label="button.prevPage" />
-                    <ProjectKeymapRow keys={["\u2192"]} label="button.nextPage" />
+                    <ProjectKeymapRow
+                      keys={["\u2190"]}
+                      label="button.prevPage"
+                      messages={messages.t}
+                    />
+                    <ProjectKeymapRow
+                      keys={["\u2192"]}
+                      label="button.nextPage"
+                      messages={messages.t}
+                    />
                   </>
                 ) : null}
                 {section === "issue" && mode === "list" ? (
-                  <ProjectKeymapRow keys={[ctrlKey, "A"]} label="button.selectAll" />
+                  <ProjectKeymapRow
+                    keys={[ctrlKey, "A"]}
+                    label="button.selectAll"
+                    messages={messages.t}
+                  />
                 ) : null}
               </div>
 
               <div className="span7">
-                <h5>site</h5>
-                <ProjectKeymapRow keys={["A"]} label="issue.myIssue" />
-                <ProjectKeymapRow keys={["U"]} label="userinfo.profile" />
-                <ProjectKeymapRow keys={["F"]} label="user.menu" />
-                <ProjectKeymapRow keys={searchKeys} label="site.search" />
-                <ProjectKeymapRow keys={[ctrlKey, "ENTER"]} label="button.submitForm" />
+                <h5>{messages.t("site", { fallback: "site" })}</h5>
+                <ProjectKeymapRow keys={["A"]} label="issue.myIssue" messages={messages.t} />
+                <ProjectKeymapRow keys={["U"]} label="userinfo.profile" messages={messages.t} />
+                <ProjectKeymapRow keys={["F"]} label="user.menu" messages={messages.t} />
+                <ProjectKeymapRow keys={searchKeys} label="site.search" messages={messages.t} />
+                <ProjectKeymapRow
+                  keys={[ctrlKey, "ENTER"]}
+                  label="button.submitForm"
+                  messages={messages.t}
+                />
               </div>
             </div>
             {section === "issue" && mode === "detail" ? (
               <div className="row-fluid mt20">
                 <div className="span12">
-                  <h5>search.menu.issue.comments</h5>
+                  <h5>
+                    {messages.t("search.menu.issue.comments", {
+                      fallback: "search.menu.issue.comments",
+                    })}
+                  </h5>
                   <ProjectKeymapRow
                     keys={["SHIFT", ctrlKey, "ENTER"]}
                     label="button.commentAndNextState.closed"
+                    messages={messages.t}
                   />
                 </div>
               </div>
@@ -681,7 +725,7 @@ function ProjectKeymapHelp(props: {
 
         <p className="actrow">
           <button className="ybtn ybtn-info" data-dismiss="modal" type="button">
-            button.confirm
+            {messages.t("button.confirm", { fallback: "button.confirm" })}
           </button>
         </p>
       </div>
@@ -697,7 +741,11 @@ function projectKeymapIsMacintosh() {
   );
 }
 
-function ProjectKeymapRow(props: { keys: string[]; label: string }) {
+function ProjectKeymapRow(props: {
+  keys: string[];
+  label: string;
+  messages: (key: string, options?: { fallback?: string }) => string;
+}) {
   return (
     <>
       {props.keys.map((key, index) => (
@@ -706,7 +754,7 @@ function ProjectKeymapRow(props: { keys: string[]; label: string }) {
           <span className="ybtn ybtn-small">{key}</span>
         </React.Fragment>
       ))}
-      <span className="help-inline">{props.label}</span>
+      <span className="help-inline">{props.messages(props.label, { fallback: props.label })}</span>
       <br />
     </>
   );
