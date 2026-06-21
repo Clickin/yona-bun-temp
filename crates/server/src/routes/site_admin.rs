@@ -24,12 +24,13 @@ use crate::persistence::PilotRepository;
 use crate::{
     base_path_href, decode_query_component, delete_project_repository_storage,
     detect_upload_mime_type, escape_html_text, gravatar_url, headers_with_form_csrf,
-    internal_error, map_project_scope, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, parse_milestone_due_date, percent_encode_uri_component, persistence,
-    project_logo_url, random_site_admin_password, random_storage_token, redirect_to,
-    require_authenticated_user, require_session, require_valid_csrf, rest_board_label_from_record,
-    rest_repository, site_export_filename_stamp, workspace_avatar_url, ConnectError,
-    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
+    internal_error, legacy_external_date_string, legacy_external_parse_datetime, map_project_scope,
+    normalize_identifier, normalize_issue_label_color, normalize_milestone_state,
+    parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
+    random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
+    require_session, require_valid_csrf, rest_board_label_from_record, rest_repository,
+    site_export_filename_stamp, workspace_avatar_url, ConnectError, PilotServiceImpl,
+    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
     SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
@@ -399,6 +400,8 @@ struct RestSiteExportPostItem {
     attachments: Vec<RestSiteExportAttachmentItem>,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    created_at: String,
     history_markdown: String,
     labels: Vec<RestSiteExportLabelItem>,
     notice: bool,
@@ -407,6 +410,8 @@ struct RestSiteExportPostItem {
     project_name: String,
     readme: bool,
     title: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    updated_at: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -435,6 +440,8 @@ struct RestSiteExportCommentItem {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     child_comments: Vec<RestSiteExportCommentItem>,
     contents_markdown: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    created_at: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -2400,13 +2407,19 @@ async fn rest_import_site_data_live(
             &post.body_markdown,
             &imported_attachments.link_rewrites,
         );
+        let imported_created_at = rest_site_import_parse_legacy_datetime(&post.created_at);
+        let imported_updated_at = rest_site_import_parse_legacy_datetime(&post.updated_at);
         let created = repository
-            .create_posting(persistence::CreatePostingInput {
+            .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
                 actor_login_id: actor.login_id.clone(),
+                attachment_actor_id: Some(actor.id),
+                created_at: imported_created_at,
                 owner_name: post.owner_name.trim().to_string(),
+                post_number: None,
                 project_name: post.project_name.trim().to_string(),
+                updated_at: imported_updated_at,
                 values: persistence::PostingMutationInput {
                     attachment_ids: imported_attachments.ids.clone(),
                     body_markdown,
@@ -2466,6 +2479,16 @@ async fn rest_import_site_data_live(
             rollback,
         )
         .await?;
+        repository
+            .restore_site_import_posting_timestamps(
+                &post.owner_name,
+                &post.project_name,
+                created.post_number,
+                imported_created_at,
+                imported_updated_at,
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_posts += 1;
     }
 
@@ -3198,7 +3221,7 @@ async fn rest_site_import_post_comments(
                 attachment_actor_id: None,
                 attachment_ids: imported_attachments.ids,
                 contents_markdown,
-                created_at: None,
+                created_at: rest_site_import_parse_legacy_datetime(&comment.created_at),
                 owner_name: owner_name.trim().to_string(),
                 parent_comment_id,
                 post_number,
@@ -3353,6 +3376,17 @@ async fn rest_site_import_comment_actor(
         }
     }
     Ok(fallback_actor.clone())
+}
+
+fn rest_site_import_parse_legacy_datetime(
+    value: &str,
+) -> Option<sea_orm::entity::prelude::DateTime> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let json_value = serde_json::Value::String(trimmed.to_string());
+    legacy_external_parse_datetime(Some(&json_value))
 }
 
 struct RestSiteImportedAttachments {
@@ -4222,6 +4256,7 @@ fn rest_site_export_post_from_record(
             .collect(),
         body_markdown: record.body_markdown.clone(),
         comments: rest_site_export_post_comments_from_records(data_root, &record.comments),
+        created_at: legacy_external_date_string(record.created_at),
         history_markdown: record.history_markdown.clone(),
         labels: record
             .labels
@@ -4234,6 +4269,7 @@ fn rest_site_export_post_from_record(
         project_name: record.project_name.clone(),
         readme: record.readme,
         title: record.title.clone(),
+        updated_at: legacy_external_date_string(record.updated_at),
     }
 }
 
@@ -4280,6 +4316,7 @@ fn rest_site_export_post_comment_from_record(
             .collect(),
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
+        created_at: legacy_external_date_string(record.created_at),
     }
 }
 
@@ -4297,6 +4334,7 @@ fn rest_site_export_issue_comment_from_record(
             .collect(),
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
+        created_at: String::new(),
     }
 }
 

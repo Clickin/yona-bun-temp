@@ -73,16 +73,20 @@ follow-up.
 P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
 
 - P0-B existing DB adopt: no checked-in unmodified legacy-like MariaDB/MySQL dump
-  or fixture was found. The current repo evidence remains schema-level:
-  `crates/migration/tests/runtime_schema_contract.rs` covers `validate_only`
-  accepting a precreated schema without writing migration history and `adopt`
-  accepting a precreated runtime schema, while `db_matrix_testcontainers` covers
-  live MariaDB runtime schema validation after managed schema creation. The
+  or external-service-free MySQL fixture was found. The evidence now goes beyond
+  schema-only validation with a deterministic populated SQLite surrogate fixture:
+  `crates/migration/tests/fixtures/p0b_legacy_like_sqlite_adopt.sql` loads
+  representative legacy-like users, project membership, issue/comment, posting,
+  and `play_evolutions` rows on top of the current manifest-backed runtime
+  schema. `runtime_schema_contract::p0b_legacy_like_sqlite_fixture_validates_without_write_then_adopts_preserving_rows`
+  first runs `validate_only` and asserts no `seaql_migrations` table is written,
+  then runs `adopt` and asserts the baseline marker is written while fixture data
+  remains. Live MariaDB evidence is still limited to managed-schema validation in
+  `db_matrix_testcontainers`; do not claim full unmodified legacy MariaDB/MySQL
+  dump adoption until such a dump/fixture is checked in or provided. The
   refreshed focused command
   `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration runtime_schema_contract -- --nocapture`
-  passed on 2026-06-21. Do not claim P0-B fully closed until a deterministic
-  legacy-like MariaDB/MySQL fixture is added and validated first with
-  `YONA_SCHEMA_POLICY=validate_only`, then with `YONA_SCHEMA_POLICY=adopt`.
+  passed on 2026-06-21.
 - P0-C packaging smoke: `pnpm smoke:embedded-assets` passed on 2026-06-21,
   rebuilding `frontend/dist`, compiling the debug server with
   `YONA_EMBED_ASSET_ROOT=frontend/dist`, starting it at `/yona`, and verifying
@@ -122,7 +126,12 @@ import preflight validates that checksum before writing. Live import now also ke
 rollback ledger for route-created portable attachments and import-created DB
 rows covering users, project shells, project memberships, standalone/embedded
 labels, standalone/on-demand milestones, posts/comments, and issues/comments
-for the supported portable-attachment import pipeline. Existing-project
+for the supported portable-attachment import pipeline. `/sites/export` now
+emits legacy-style post `createdAt`/`updatedAt` and post-comment `createdAt`,
+and `/sites/import` restores those fields through the timestamp-capable posting
+persistence paths; issue, issue-comment, project, user, milestone, and
+attachment timestamp restoration remains a P1-A follow-up where current
+persistence inputs do not expose original values. Existing-project
 issue/post sequence counters are now snapshotted before the first imported
 issue/post and restored during in-process rollback when the current counter has
 not advanced beyond the import-created numbers. Preexisting attachment rows
@@ -182,7 +191,7 @@ then frontend shell updates.
 
 | Worker | Parallel? | Write scope | Responsibility |
 | --- | --- | --- | --- |
-| P2-A OAuth runtime | Yes | auth runtime/routes/config, provider credential persistence, focused tests | Implement legacy GitHub/Google start/callback/denied flow, local-user linking or creation, session creation, provider logout interaction, and message-key error states. |
+| P2-A OAuth runtime | Yes | auth runtime/routes/config, provider credential persistence, focused tests | Implement legacy GitHub/Google start/callback/denied flow, local-user linking or creation, session creation, local logout parity, and message-key error states. |
 | P2-B OAuth UI/evidence | Limited | frontend login/dialog/profile provider shells, route tests | Preserve legacy social-login button/copy/provider image behavior and connected-provider profile output. |
 | P2-C LDAP runtime | Yes | auth runtime, integrations/domain as needed, tests | Implement legacy `application.use.ldap.login.supoort` spelling, `ldap.*` config, bind/search, email login option, fallback-to-local option, user provisioning/update, and guest flag propagation. |
 | P2-D BasicAuth LDAP | Yes after P2-C core | Smart HTTP/SVN auth boundary tests | Route legacy BasicAuth through LDAP when enabled without breaking local-token/session auth. |
@@ -197,8 +206,9 @@ provider token/userinfo/profile/email payloads for GitHub/Google, create a
 session, and redirect to the default landing path. Connected-provider profile
 output is covered through the existing workspace profile projection. Focused
 coverage lives in `auth_workspace_contract` and `runtime_config_contract`.
-Remaining OAuth work is any provider-specific logout interaction that requires
-external provider behavior.
+The earlier provider-specific external logout follow-up is retired as not
+applicable: legacy `/logout` calls local `UserApp.logout()` and
+PlayAuthenticate `logout()` without provider input, then redirects to Referer.
 
 P2-C sub-slice status: form-login LDAP runtime now parses the legacy typo
 `application.use.ldap.login.supoort`, legacy `ldap.*`, and `YONA_LDAP_*`

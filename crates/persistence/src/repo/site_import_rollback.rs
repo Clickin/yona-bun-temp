@@ -196,6 +196,37 @@ impl AppRepository {
         Ok(true)
     }
 
+    pub async fn restore_site_import_posting_timestamps(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        created_at: Option<DateTime>,
+        updated_at: Option<DateTime>,
+    ) -> Result<bool, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        if created_at.is_none() && updated_at.is_none() {
+            return Ok(false);
+        }
+        let mut active = posting::ActiveModel {
+            id: Set(model.id),
+            ..Default::default()
+        };
+        if let Some(created_at) = created_at {
+            active.created_date = Set(Some(created_at));
+        }
+        if let Some(updated_at) = updated_at {
+            active.updated_date = Set(Some(updated_at));
+        }
+        active.update(&self.db).await?;
+        Ok(true)
+    }
+
     pub async fn delete_site_import_issue_by_number(
         &self,
         owner_name: &str,

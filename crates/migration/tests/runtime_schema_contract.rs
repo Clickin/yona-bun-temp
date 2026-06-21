@@ -8,6 +8,8 @@ use yona_rust_pilot_migration::{
 };
 
 const MANIFEST_JSON: &str = include_str!("../legacy-final-schema-manifest.json");
+const P0B_LEGACY_LIKE_SQLITE_ADOPT_SQL: &str =
+    include_str!("fixtures/p0b_legacy_like_sqlite_adopt.sql");
 
 #[derive(Deserialize)]
 struct SchemaManifest {
@@ -166,6 +168,65 @@ async fn validate_only_policy_accepts_precreated_schema_without_writing_migratio
         .has_table("seaql_migrations")
         .await
         .expect("migration table check"));
+}
+
+#[tokio::test]
+async fn p0b_legacy_like_sqlite_fixture_validates_without_write_then_adopts_preserving_rows() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    entity_schema::create_schema(&SchemaManager::new(&db))
+        .await
+        .expect("precreate current manifest-backed sqlite schema");
+    create_optional_play_evolutions_table(&db).await;
+    apply_sqlite_statements(&db, P0B_LEGACY_LIKE_SQLITE_ADOPT_SQL)
+        .await
+        .expect("load legacy-like sqlite data fixture");
+
+    let manager = SchemaManager::new(&db);
+    assert!(!manager
+        .has_table("seaql_migrations")
+        .await
+        .expect("migration table before validation"));
+
+    Migrator::ensure_runtime_schema_with_policy(&db, RuntimeSchemaPolicy::ValidateOnly)
+        .await
+        .expect("validate-only existing populated fixture");
+
+    assert!(!manager
+        .has_table("seaql_migrations")
+        .await
+        .expect("migration table after validate-only"));
+    assert_eq!(scalar_count(&db, "project").await, 1);
+    assert_eq!(scalar_count(&db, "issue").await, 1);
+    assert_eq!(
+        scalar_string(&db, "SELECT `title` AS value FROM `issue` WHERE `id` = 1").await,
+        "Existing DB adopt issue"
+    );
+
+    Migrator::ensure_runtime_schema_with_policy(&db, RuntimeSchemaPolicy::Adopt)
+        .await
+        .expect("adopt populated legacy-like sqlite fixture");
+
+    let applied = seaql_migrations::Entity::find()
+        .all(&db)
+        .await
+        .expect("applied migrations after adopt");
+    assert_eq!(applied.len(), 1);
+    assert_eq!(
+        applied[0].version,
+        "m20260409_000001_create_legacy_start_schema"
+    );
+    assert_eq!(scalar_count(&db, "project").await, 1);
+    assert_eq!(scalar_count(&db, "issue").await, 1);
+    assert_eq!(scalar_count(&db, "issue_comment").await, 1);
+    assert_eq!(scalar_count(&db, "posting").await, 1);
+    assert_eq!(scalar_count(&db, "play_evolutions").await, 1);
+    assert_eq!(
+        scalar_string(&db, "SELECT `owner` AS value FROM `project` WHERE `id` = 1").await,
+        "admin"
+    );
+    validate_manifest_schema(&db).await;
 }
 
 #[tokio::test]
@@ -401,4 +462,47 @@ async fn create_optional_play_evolutions_table(db: &sea_orm::DatabaseConnection)
     db.execute(DbBackend::Sqlite.build(&stmt))
         .await
         .expect("create optional play_evolutions");
+}
+
+async fn apply_sqlite_statements(
+    db: &sea_orm::DatabaseConnection,
+    sql: &str,
+) -> Result<(), sea_orm::DbErr> {
+    let uncommented = sql
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("--"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    for statement in uncommented
+        .split("--> statement-breakpoint")
+        .flat_map(|chunk| chunk.split(';'))
+        .map(str::trim)
+        .filter(|statement| !statement.is_empty())
+    {
+        db.execute_unprepared(statement).await?;
+    }
+    Ok(())
+}
+
+async fn scalar_count(db: &sea_orm::DatabaseConnection, table_name: &str) -> i64 {
+    let statement = Statement::from_string(
+        DbBackend::Sqlite,
+        format!("SELECT COUNT(*) AS count FROM `{table_name}`"),
+    );
+    db.query_one(statement)
+        .await
+        .expect("count query")
+        .expect("count row")
+        .try_get("", "count")
+        .expect("count value")
+}
+
+async fn scalar_string(db: &sea_orm::DatabaseConnection, sql: &str) -> String {
+    let statement = Statement::from_string(DbBackend::Sqlite, sql.to_string());
+    db.query_one(statement)
+        .await
+        .expect("scalar query")
+        .expect("scalar row")
+        .try_get("", "value")
+        .expect("scalar value")
 }

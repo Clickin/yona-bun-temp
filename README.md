@@ -36,7 +36,7 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 - `Phase -1 refactor temp development`는 기존 임시 구현을 `/api/v1` REST JSON + TanStack Query + typed frontend API client 기준으로 재기준화했다.
 - runtime ConnectRPC registration과 frontend ConnectRPC client/dependency는 제거되었다. `proto/`는 historical schema snapshot으로만 남는다.
 - Current first-priority app-runtime parity is tracked by [`docs/provenance/first-priority-completion-review.md`](/G:/programming/yona/docs/provenance/first-priority-completion-review.md) and [`docs/provenance/core-parity-audit.md`](/G:/programming/yona/docs/provenance/core-parity-audit.md). The old Phase -1 active-gap list has been closed or reclassified into narrower provenance files.
-- Remaining non-first-priority or hardening boundaries are explicit deferred/follow-up scope: LDAP and full OAuth provider login/linking, broader SVN VCC/baseline PROPFIND edge completeness, full-text/index-backed search, dynamic i18n switching, optional webhook signature compatibility if external evidence requires it, and production migration/import hardening.
+- Remaining non-first-priority or hardening boundaries are explicit deferred/follow-up scope: broader external-directory/OAuth edge behavior beyond the bounded LDAP and configured GitHub/Google OAuth runtime slices, dynamic i18n switching, optional webhook signature compatibility if external evidence requires it, and production migration/import hardening.
 
 ## Live-reload Dev Startup
 
@@ -53,4 +53,3 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
   - entrypoints: `http://127.0.0.1:3101/yona/`, `http://127.0.0.1:8089/yona/api/auth/session`
 - legacy Yona supported configurable context roots via `application.context`; mounted mode stays available for parity smoke coverage, but root mount is the default local dev path.
 - dev startup persists data in `.yona-data/dev.db` and only seeds pilot data on the first boot.
-

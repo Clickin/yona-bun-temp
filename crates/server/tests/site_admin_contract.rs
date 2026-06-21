@@ -1097,6 +1097,18 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "bWlsZXN0b25lLWV4cG9ydC1iaW5hcnk="
     );
     assert_eq!(payload["posts"][0]["title"], "Data export post");
+    assert!(
+        payload["posts"][0]["createdAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy post createdAt"
+    );
+    assert!(
+        payload["posts"][0]["updatedAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy post updatedAt"
+    );
     assert_eq!(
         payload["posts"][0]["bodyMarkdown"],
         "legacy data export post"
@@ -1117,6 +1129,12 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert_eq!(
         payload["posts"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export post comment"
+    );
+    assert!(
+        payload["posts"][0]["comments"][0]["createdAt"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
+        "site export should carry legacy post comment createdAt"
     );
     assert_eq!(
         payload["posts"][0]["comments"][0]["attachments"][0]["name"],
@@ -1238,8 +1256,10 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "bodyMarkdown": "restored post body",
             "comments": [{
                 "authorLoginId": "imported",
-                "contentsMarkdown": "restored post comment"
+                "contentsMarkdown": "restored post comment",
+                "createdAt": "2020-01-02T03:04:05+0000"
             }],
+            "createdAt": "2020-01-02T03:00:00+0000",
             "historyMarkdown": "previous post body",
             "labels": [{
                 "categoryIsExclusive": false,
@@ -1251,7 +1271,8 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "ownerName": "imported",
             "projectName": "restored",
             "readme": false,
-            "title": "Restored post"
+            "title": "Restored post",
+            "updatedAt": "2020-01-03T04:05:06+0000"
         }],
         "issues": [{
             "assigneeLoginId": "",
@@ -1439,6 +1460,30 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(
         post_detail.comments[0].contents_markdown,
         "restored post comment"
+    );
+    assert_eq!(
+        post_detail
+            .created_at
+            .expect("imported post created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-02T03:00:00+0000"
+    );
+    assert_eq!(
+        post_detail
+            .updated_at
+            .expect("imported post updated date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-03T04:05:06+0000"
+    );
+    assert_eq!(
+        post_detail.comments[0]
+            .created_at
+            .expect("imported post comment created date")
+            .format("%Y-%m-%dT%H:%M:%S+0000")
+            .to_string(),
+        "2020-01-02T03:04:05+0000"
     );
     assert_eq!(post_detail.history_markdown, "previous post body");
 

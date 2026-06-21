@@ -681,6 +681,88 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
 }
 
 #[tokio::test]
+// Guards legacy Application.oAuthLogout parity: even for configured OAuth users,
+// logout is local PlayAuthenticate/session cleanup plus Referer redirect, not a
+// provider-specific external logout redirect or network interaction.
+async fn legacy_oauth_logout_clears_local_session_without_provider_logout_redirect() {
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (_, cookie_header) = bootstrap(app.clone()).await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github?code=fixture-code&providerUserId=octo-logout&email=octo-logout@example.com&name=Octo%20Logout")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    let authenticated_cookie_header = cookie_header_from_set_cookie_response(&callback);
+
+    let logout = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/logout")
+                .header(http::header::COOKIE, &authenticated_cookie_header)
+                .header(http::header::REFERER, "/yona/me")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(logout.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        logout
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
+
+    let logout_cookie_header = cookie_header_from_set_cookie_response(&logout);
+    let current = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, logout_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(current.status(), StatusCode::OK);
+    let current_json = response_text(current).await;
+    assert!(current_json.contains("\"isAnonymous\":true"));
+}
+
+#[tokio::test]
 // Guards configured GitHub OAuth callback token exchange plus user/email profile mapping without external network.
 async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
     let provider_base = spawn_oauth_provider_stub("github").await;
