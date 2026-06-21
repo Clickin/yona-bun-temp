@@ -69,9 +69,13 @@ function PullRequestDetailLeafRouteComponent() {
   const failureKind = classifyConnectFailure(error);
   const commonMutationError = React.useCallback(
     (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("error.badrequest", { fallback: "error.badrequest" }),
+      );
     },
-    [setErrorMessage],
+    [messages, setErrorMessage],
   );
   const closeMutation = useMutation({
     mutationFn: () => closePullRequestRest(runtimeConfig, csrfToken, scope),

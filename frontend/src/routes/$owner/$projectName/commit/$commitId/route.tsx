@@ -72,9 +72,13 @@ function CodeCommitDetailRouteComponent() {
   });
   const mutationError = React.useCallback(
     (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("error.badrequest", { fallback: "error.badrequest" }),
+      );
     },
-    [setErrorMessage],
+    [messages, setErrorMessage],
   );
   const createCommentMutation = useMutation({
     mutationFn: (input: {

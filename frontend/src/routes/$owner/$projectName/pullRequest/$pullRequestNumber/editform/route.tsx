@@ -73,7 +73,11 @@ function PullRequestEditFormRouteComponent() {
     },
     onError: (error) => {
       setErrorMessage(
-        error instanceof Error ? error.message : "pullRequest.error.newPullRequestForm",
+        error instanceof Error
+          ? error.message
+          : messages("pullRequest.error.newPullRequestForm", {
+              fallback: "pullRequest.error.newPullRequestForm",
+            }),
       );
     },
   });

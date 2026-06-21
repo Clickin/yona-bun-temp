@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -111,6 +113,50 @@ function renderRemainingPullRequestControls(messages?: LegacyMessageLookup) {
 }
 
 describe("PR list/form/review-list legacy i18n opt-in", () => {
+  it("opts PR route mutation error fallbacks into legacy messages", () => {
+    const routePaths = [
+      "routes/$owner/$projectName/newPullRequestForm/route.tsx",
+      "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
+    ];
+    const detailRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      ),
+      "utf8",
+    );
+    const changesRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      ),
+      "utf8",
+    );
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+
+      expect(source).toContain('messages("pullRequest.error.newPullRequestForm", {');
+      expect(source).toContain('fallback: "pullRequest.error.newPullRequestForm"');
+    }
+    expect(detailRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(changesRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(runtime.t("error.badrequest", { fallback: "error.badrequest" })).toBe(
+      "잘못된 요청입니다",
+    );
+    expect(
+      runtime.t("pullRequest.error.newPullRequestForm", {
+        fallback: "pullRequest.error.newPullRequestForm",
+      }),
+    ).toBe("pullRequest.error.newPullRequestForm");
+  });
+
   it("keeps literal key fallbacks without runtime messages", () => {
     const html = renderRemainingPullRequestControls();
 

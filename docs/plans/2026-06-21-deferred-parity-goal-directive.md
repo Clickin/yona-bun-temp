@@ -228,7 +228,7 @@ files and no staging directory survive normal downstream failures.
 `site_admin_contract::site_admin_import_preserves_committed_staging_when_final_upload_differs`
 proves a journal/final-file mismatch is not silently treated as repaired. The
 import dry-run/preflight report now also treats duplicate/conflicting payload keys for
-users, projects, project members, labels, and milestones as validation errors
+users, projects, project members, labels, milestones, posts, and issues as validation errors
 instead of silent skips; live import rejects those reports before any mutation.
 Focused coverage:
 `site_admin_contract::site_admin_import_live_preflight_rejects_duplicate_resource_keys_without_partial_writes`.

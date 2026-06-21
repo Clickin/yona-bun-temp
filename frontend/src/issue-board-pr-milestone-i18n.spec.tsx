@@ -213,6 +213,36 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     }
   });
 
+  it("keeps route error fallbacks as legacy keys for the root runtime message lookup", () => {
+    const rootSource = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+    const boardDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/post/$postNumber/route.tsx"),
+      "utf8",
+    );
+    const boardCreateRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/postform/route.tsx"),
+      "utf8",
+    );
+    const boardEditRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/post/$postNumber/editform/route.tsx"),
+      "utf8",
+    );
+
+    expect(rootSource).toContain("messages(errorMessage, { fallback: errorMessage })");
+    expect(boardDetailRouteSource).toContain('"error.badrequest"');
+    expect(boardCreateRouteSource).toContain('"error.badrequest"');
+    expect(boardEditRouteSource).toContain('"post.update.error"');
+
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+    expect(runtime.t("error.badrequest", { fallback: "error.badrequest" })).toBe(
+      "잘못된 요청입니다",
+    );
+    expect(runtime.t("post.update.error", { fallback: "post.update.error" })).toBe(
+      "post.update.error",
+    );
+  });
+
   it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
     const html = renderIssueBoardPrMilestoneControls();
 

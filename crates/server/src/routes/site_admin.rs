@@ -3255,9 +3255,11 @@ async fn rest_import_site_data_live(
 struct RestSiteImportDryRunState {
     labels: HashSet<(String, String, String, String)>,
     milestones: HashSet<(String, String, String)>,
+    payload_issues: HashSet<(String, String, String)>,
     payload_labels: HashSet<(String, String, String, String)>,
     payload_milestones: HashSet<(String, String, String)>,
     payload_portable_attachment_ids: HashSet<i64>,
+    payload_posts: HashSet<(String, String, String)>,
     payload_project_members: HashSet<(String, String, String)>,
     payload_projects: HashSet<(String, String)>,
     payload_users: HashSet<String>,
@@ -3570,18 +3572,49 @@ async fn rest_site_import_dry_run_report(
         let attachment_invalid = validation_errors.len() != attachment_errors_before;
         let owner_name = post.owner_name.trim();
         let project_name = post.project_name.trim();
+        let post_number = post.post_number.trim();
+        let title = post.title.trim();
+        let duplicate_key = if post_number.is_empty() {
+            title
+        } else {
+            post_number
+        };
+        let mut invalid = false;
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !duplicate_key.is_empty()
+            && !state.payload_posts.insert((
+                owner_name.to_string(),
+                project_name.to_string(),
+                duplicate_key.to_string(),
+            ))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "posts",
+                index,
+                if post_number.is_empty() {
+                    "title"
+                } else {
+                    "postNumber"
+                },
+                "site.import.duplicateResource",
+            );
+            invalid = true;
+        }
         if rest_site_import_dry_run_validate_labels(
             &post.labels,
             "posts.labels",
             index,
             &mut validation_errors,
-        ) || !rest_site_import_dry_run_actor_available(
-            repository,
-            &mut state,
-            &post.author_login_id,
-            owner_name,
-        )
-        .await?
+        ) || invalid
+            || !rest_site_import_dry_run_actor_available(
+                repository,
+                &mut state,
+                &post.author_login_id,
+                owner_name,
+            )
+            .await?
             || attachment_invalid
             || !rest_site_import_dry_run_project_available(
                 repository,
@@ -3621,18 +3654,49 @@ async fn rest_site_import_dry_run_report(
         let attachment_invalid = validation_errors.len() != attachment_errors_before;
         let owner_name = issue.owner_name.trim();
         let project_name = issue.project_name.trim();
+        let issue_number = issue.issue_number.trim();
+        let title = issue.title.trim();
+        let duplicate_key = if issue_number.is_empty() {
+            title
+        } else {
+            issue_number
+        };
+        let mut invalid = false;
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !duplicate_key.is_empty()
+            && !state.payload_issues.insert((
+                owner_name.to_string(),
+                project_name.to_string(),
+                duplicate_key.to_string(),
+            ))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "issues",
+                index,
+                if issue_number.is_empty() {
+                    "title"
+                } else {
+                    "issueNumber"
+                },
+                "site.import.duplicateResource",
+            );
+            invalid = true;
+        }
         if rest_site_import_dry_run_validate_labels(
             &issue.labels,
             "issues.labels",
             index,
             &mut validation_errors,
-        ) || !rest_site_import_dry_run_actor_available(
-            repository,
-            &mut state,
-            &issue.author_login_id,
-            owner_name,
-        )
-        .await?
+        ) || invalid
+            || !rest_site_import_dry_run_actor_available(
+                repository,
+                &mut state,
+                &issue.author_login_id,
+                owner_name,
+            )
+            .await?
             || attachment_invalid
             || !rest_site_import_dry_run_project_available(
                 repository,

@@ -123,6 +123,29 @@ describe("project code browser routing", () => {
     }
   });
 
+  it("opts code mutation error fallbacks into legacy messages", () => {
+    const branchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/branches/route.tsx"),
+      "utf8",
+    );
+    const commitRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commit/$commitId/route.tsx"),
+      "utf8",
+    );
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+
+    expect(branchRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(commitRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(runtime.t("error.badrequest", { fallback: "error.badrequest" })).toBe(
+      "잘못된 요청입니다",
+    );
+  });
+
   it("keeps the project code route inside the project route tree", () => {
     const codeRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/code/route.tsx"),

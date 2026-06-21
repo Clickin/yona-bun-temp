@@ -2506,6 +2506,8 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
     let before_members = project_user::Entity::find().all(&db).await.unwrap().len();
     let before_labels = issue_label::Entity::find().all(&db).await.unwrap().len();
     let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_issues = issue::Entity::find().all(&db).await.unwrap().len();
 
     let payload = json!({
         "format": "yobi-data",
@@ -2578,8 +2580,92 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
             "state": "closed",
             "title": "Duplicate milestone"
         }],
-        "posts": [],
-        "issues": []
+        "posts": [{
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "first duplicate post body",
+            "comments": [],
+            "ownerName": "duplicate-owner",
+            "postNumber": "17",
+            "projectName": "duplicate-project",
+            "title": "Duplicate post"
+        }, {
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "conflicting duplicate post body",
+            "comments": [],
+            "ownerName": "duplicate-owner",
+            "postNumber": "17",
+            "projectName": "duplicate-project",
+            "title": "Duplicate post with conflicting body"
+        }, {
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "first title-key duplicate post body",
+            "comments": [],
+            "ownerName": "duplicate-owner",
+            "postNumber": "",
+            "projectName": "duplicate-project",
+            "title": "Duplicate title-only post"
+        }, {
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "conflicting title-key duplicate post body",
+            "comments": [],
+            "ownerName": "duplicate-owner",
+            "postNumber": "",
+            "projectName": "duplicate-project",
+            "title": "Duplicate title-only post"
+        }],
+        "issues": [{
+            "assigneeLoginId": "",
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "first duplicate issue body",
+            "comments": [],
+            "issueNumber": "23",
+            "milestoneTitle": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "open",
+            "title": "Duplicate issue"
+        }, {
+            "assigneeLoginId": "",
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "conflicting duplicate issue body",
+            "comments": [],
+            "issueNumber": "23",
+            "milestoneTitle": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "closed",
+            "title": "Duplicate issue with conflicting body"
+        }, {
+            "assigneeLoginId": "",
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "first title-key duplicate issue body",
+            "comments": [],
+            "issueNumber": "",
+            "milestoneTitle": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "open",
+            "title": "Duplicate title-only issue"
+        }, {
+            "assigneeLoginId": "",
+            "authorLoginId": "duplicate-owner",
+            "attachments": [],
+            "bodyMarkdown": "conflicting title-key duplicate issue body",
+            "comments": [],
+            "issueNumber": "",
+            "milestoneTitle": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "closed",
+            "title": "Duplicate title-only issue"
+        }]
     });
 
     let dry_run_response = rest_raw_post(
@@ -2603,6 +2689,10 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
     assert_eq!(dry_run_report["wouldSkipLabels"], 1);
     assert_eq!(dry_run_report["wouldImportMilestones"], 1);
     assert_eq!(dry_run_report["wouldSkipMilestones"], 1);
+    assert_eq!(dry_run_report["wouldImportPosts"], 2);
+    assert_eq!(dry_run_report["wouldSkipPosts"], 2);
+    assert_eq!(dry_run_report["wouldImportIssues"], 2);
+    assert_eq!(dry_run_report["wouldSkipIssues"], 2);
     let validation_errors = dry_run_report["validationErrors"]
         .as_array()
         .expect("validation errors");
@@ -2628,6 +2718,26 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
     }));
     assert!(validation_errors.iter().any(|error| {
         error["section"] == "milestones"
+            && error["field"] == "title"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "posts"
+            && error["field"] == "postNumber"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "posts"
+            && error["field"] == "title"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "issues"
+            && error["field"] == "issueNumber"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "issues"
             && error["field"] == "title"
             && error["message"] == "site.import.duplicateResource"
     }));
@@ -2675,6 +2785,14 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
     assert_eq!(
         milestone::Entity::find().all(&db).await.unwrap().len(),
         before_milestones
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        issue::Entity::find().all(&db).await.unwrap().len(),
+        before_issues
     );
     assert!(
         !data_dir.path().join("uploads").exists(),
