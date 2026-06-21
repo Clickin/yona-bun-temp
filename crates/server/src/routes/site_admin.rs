@@ -43,6 +43,8 @@ use update::{
     rest_site_update_download_file_response, rest_site_update_download_redirect,
 };
 
+const SITE_IMPORT_CHECKPOINT_KEY_LIMIT: usize = 256;
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteUsersQuery {
@@ -476,6 +478,7 @@ struct RestSiteExportLabelItem {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteImportResponse {
+    checkpoint: RestSiteImportCheckpoint,
     dry_run: bool,
     imported_projects: u32,
     imported_project_members: u32,
@@ -520,6 +523,365 @@ struct RestSiteImportValidationError {
     section: String,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportCheckpoint {
+    failure: Option<RestSiteImportCheckpointFailure>,
+    sections: Vec<RestSiteImportCheckpointSection>,
+    version: u32,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportCheckpointSection {
+    completed: u32,
+    next_index: u32,
+    resource_keys: Vec<String>,
+    resource_keys_truncated: bool,
+    section: String,
+    skipped: u32,
+    total: u32,
+    validated: u32,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportCheckpointFailure {
+    index: u32,
+    message: String,
+    resource_key: String,
+    section: String,
+}
+
+impl RestSiteImportCheckpoint {
+    fn from_payload(payload: &RestSiteImportPayload) -> Self {
+        let mut checkpoint = Self {
+            failure: None,
+            sections: Vec::new(),
+            version: 1,
+        };
+        checkpoint.push_section(
+            "users",
+            payload
+                .users
+                .iter()
+                .map(|user| rest_site_import_user_key(user.login_id.trim())),
+        );
+        checkpoint.push_section(
+            "projects",
+            payload.projects.iter().map(|project| {
+                rest_site_import_project_key(project.owner_name.trim(), project.project_name.trim())
+            }),
+        );
+        checkpoint.push_section(
+            "projectMembers",
+            payload.project_members.iter().map(|member| {
+                rest_site_import_project_member_key(
+                    member.owner_name.trim(),
+                    member.project_name.trim(),
+                    member.login_id.trim(),
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "labels",
+            payload.labels.iter().map(|label| {
+                rest_site_import_label_key(
+                    label.owner_name.trim(),
+                    label.project_name.trim(),
+                    rest_site_import_label_category_name(label.category_name.trim()),
+                    label.name.trim(),
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "milestones",
+            payload.milestones.iter().map(|milestone| {
+                rest_site_import_milestone_key(
+                    milestone.owner_name.trim(),
+                    milestone.project_name.trim(),
+                    milestone.title.trim(),
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "posts",
+            payload.posts.iter().map(|post| {
+                rest_site_import_post_key(
+                    post.owner_name.trim(),
+                    post.project_name.trim(),
+                    post.post_number.trim(),
+                    post.title.trim(),
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "issues",
+            payload.issues.iter().map(|issue| {
+                rest_site_import_issue_key(
+                    issue.owner_name.trim(),
+                    issue.project_name.trim(),
+                    issue.issue_number.trim(),
+                    issue.title.trim(),
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "attachments",
+            rest_site_import_attachment_keys(payload).into_iter(),
+        );
+        checkpoint
+    }
+
+    fn mark_all_validated(&mut self) {
+        for section in &mut self.sections {
+            section.validated = section.total;
+        }
+    }
+
+    fn mark_completed(&mut self, section: &str, index: usize) {
+        if let Some(section) = self.section_mut(section) {
+            section.completed = section.completed.saturating_add(1);
+            section.next_index = (index as u32).saturating_add(1);
+        }
+    }
+
+    fn mark_counts(&mut self, would_skip: &RestSiteImportCountSet) {
+        for section in &mut self.sections {
+            section.skipped = match section.section.as_str() {
+                "attachments" => would_skip.attachments,
+                "issues" => would_skip.issues,
+                "labels" => would_skip.labels,
+                "milestones" => would_skip.milestones,
+                "posts" => would_skip.posts,
+                "projects" => would_skip.projects,
+                "projectMembers" => would_skip.project_members,
+                "users" => would_skip.users,
+                _ => 0,
+            };
+        }
+    }
+
+    fn mark_skipped(&mut self, section: &str, index: usize) {
+        if let Some(section) = self.section_mut(section) {
+            section.skipped = section.skipped.saturating_add(1);
+            section.next_index = (index as u32).saturating_add(1);
+        }
+    }
+
+    fn set_failure(
+        &mut self,
+        section: &str,
+        index: usize,
+        resource_key: impl Into<String>,
+        message: impl Into<String>,
+    ) {
+        if self.failure.is_some() {
+            return;
+        }
+        self.failure = Some(RestSiteImportCheckpointFailure {
+            index: index as u32,
+            message: message.into(),
+            resource_key: resource_key.into(),
+            section: section.to_string(),
+        });
+    }
+
+    fn push_section(&mut self, section: &str, keys: impl Iterator<Item = String>) {
+        let mut resource_keys = Vec::new();
+        let mut total = 0u32;
+        let mut truncated = false;
+        for key in keys {
+            total = total.saturating_add(1);
+            if resource_keys.len() < SITE_IMPORT_CHECKPOINT_KEY_LIMIT {
+                resource_keys.push(key);
+            } else {
+                truncated = true;
+            }
+        }
+        self.sections.push(RestSiteImportCheckpointSection {
+            completed: 0,
+            next_index: 0,
+            resource_keys,
+            resource_keys_truncated: truncated,
+            section: section.to_string(),
+            skipped: 0,
+            total,
+            validated: 0,
+        });
+    }
+
+    fn section_mut(&mut self, section: &str) -> Option<&mut RestSiteImportCheckpointSection> {
+        self.sections
+            .iter_mut()
+            .find(|candidate| candidate.section == section)
+    }
+}
+
+fn rest_site_import_user_key(login_id: &str) -> String {
+    format!("users:{}", rest_site_import_key_part(login_id))
+}
+
+fn rest_site_import_project_key(owner_name: &str, project_name: &str) -> String {
+    format!(
+        "projects:{}/{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name)
+    )
+}
+
+fn rest_site_import_project_member_key(
+    owner_name: &str,
+    project_name: &str,
+    login_id: &str,
+) -> String {
+    format!(
+        "projectMembers:{}/{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        rest_site_import_key_part(login_id)
+    )
+}
+
+fn rest_site_import_label_key(
+    owner_name: &str,
+    project_name: &str,
+    category_name: &str,
+    label_name: &str,
+) -> String {
+    format!(
+        "labels:{}/{}:{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        rest_site_import_key_part(category_name),
+        rest_site_import_key_part(label_name)
+    )
+}
+
+fn rest_site_import_milestone_key(owner_name: &str, project_name: &str, title: &str) -> String {
+    format!(
+        "milestones:{}/{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        rest_site_import_key_part(title)
+    )
+}
+
+fn rest_site_import_post_key(
+    owner_name: &str,
+    project_name: &str,
+    post_number: &str,
+    title: &str,
+) -> String {
+    let local_key = if post_number.is_empty() {
+        format!("title={}", rest_site_import_key_part(title))
+    } else {
+        format!("number={}", rest_site_import_key_part(post_number))
+    };
+    format!(
+        "posts:{}/{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        local_key
+    )
+}
+
+fn rest_site_import_issue_key(
+    owner_name: &str,
+    project_name: &str,
+    issue_number: &str,
+    title: &str,
+) -> String {
+    let local_key = if issue_number.is_empty() {
+        format!("title={}", rest_site_import_key_part(title))
+    } else {
+        format!("number={}", rest_site_import_key_part(issue_number))
+    };
+    format!(
+        "issues:{}/{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        local_key
+    )
+}
+
+fn rest_site_import_comment_key(
+    section: &str,
+    owner_name: &str,
+    project_name: &str,
+    parent_number: i64,
+    contents_markdown: &str,
+) -> String {
+    format!(
+        "{section}:{}/{}#{}:{}",
+        rest_site_import_key_part(owner_name),
+        rest_site_import_key_part(project_name),
+        parent_number,
+        rest_site_import_key_part(contents_markdown)
+    )
+}
+
+fn rest_site_import_attachment_keys(payload: &RestSiteImportPayload) -> Vec<String> {
+    let mut keys = Vec::new();
+    for attachment in payload
+        .milestones
+        .iter()
+        .flat_map(|milestone| milestone.attachments.iter())
+        .chain(
+            payload
+                .posts
+                .iter()
+                .flat_map(|post| post.attachments.iter()),
+        )
+        .chain(
+            payload
+                .issues
+                .iter()
+                .flat_map(|issue| issue.attachments.iter()),
+        )
+    {
+        keys.push(rest_site_import_attachment_key(attachment));
+    }
+    for post in &payload.posts {
+        rest_site_import_comment_attachment_keys(&post.comments, &mut keys);
+    }
+    for issue in &payload.issues {
+        rest_site_import_comment_attachment_keys(&issue.comments, &mut keys);
+    }
+    keys
+}
+
+fn rest_site_import_comment_attachment_keys(
+    comments: &[RestSiteExportCommentItem],
+    keys: &mut Vec<String>,
+) {
+    for comment in comments {
+        keys.extend(
+            comment
+                .attachments
+                .iter()
+                .map(rest_site_import_attachment_key),
+        );
+        rest_site_import_comment_attachment_keys(&comment.child_comments, keys);
+    }
+}
+
+fn rest_site_import_attachment_key(attachment: &RestSiteExportAttachmentItem) -> String {
+    format!(
+        "attachments:{}:{}",
+        attachment.id,
+        rest_site_import_key_part(attachment.name.trim())
+    )
+}
+
+fn rest_site_import_key_part(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return "<empty>".to_string();
+    }
+    trimmed.chars().take(120).collect()
+}
+
 #[derive(Default)]
 struct RestSiteImportCountSet {
     attachments: u32,
@@ -537,8 +899,10 @@ impl RestSiteImportResponse {
         imported: RestSiteImportCountSet,
         skipped: RestSiteImportCountSet,
         unsupported_sections: Vec<String>,
+        checkpoint: RestSiteImportCheckpoint,
     ) -> Self {
         Self {
+            checkpoint,
             dry_run: false,
             imported_projects: imported.projects,
             imported_project_members: imported.project_members,
@@ -580,8 +944,10 @@ impl RestSiteImportResponse {
         would_skip: RestSiteImportCountSet,
         validation_errors: Vec<RestSiteImportValidationError>,
         unsupported_sections: Vec<String>,
+        checkpoint: RestSiteImportCheckpoint,
     ) -> Self {
         Self {
+            checkpoint,
             dry_run: true,
             imported_projects: 0,
             imported_project_members: 0,
@@ -615,6 +981,45 @@ impl RestSiteImportResponse {
             would_skip_milestones: would_skip.milestones,
             would_skip_posts: would_skip.posts,
             would_skip_users: would_skip.users,
+        }
+    }
+
+    fn failed(checkpoint: RestSiteImportCheckpoint) -> Self {
+        Self {
+            checkpoint,
+            dry_run: false,
+            imported_projects: 0,
+            imported_project_members: 0,
+            imported_issues: 0,
+            imported_labels: 0,
+            imported_milestones: 0,
+            imported_posts: 0,
+            imported_users: 0,
+            skipped_issues: 0,
+            skipped_labels: 0,
+            skipped_milestones: 0,
+            skipped_posts: 0,
+            skipped_projects: 0,
+            skipped_project_members: 0,
+            skipped_users: 0,
+            unsupported_sections: Vec::new(),
+            validation_errors: Vec::new(),
+            would_import_attachments: 0,
+            would_import_projects: 0,
+            would_import_project_members: 0,
+            would_import_issues: 0,
+            would_import_labels: 0,
+            would_import_milestones: 0,
+            would_import_posts: 0,
+            would_import_users: 0,
+            would_skip_attachments: 0,
+            would_skip_projects: 0,
+            would_skip_project_members: 0,
+            would_skip_issues: 0,
+            would_skip_labels: 0,
+            would_skip_milestones: 0,
+            would_skip_posts: 0,
+            would_skip_users: 0,
         }
     }
 }
@@ -1129,12 +1534,12 @@ async fn direct_import_site_data(
     }
     let headers = headers_with_form_csrf(headers, &form);
     match rest_import_site_data(headers, &payload, service, query.is_dry_run()).await {
-        Ok(payload) => {
+        Ok((status, payload)) => {
             let payload = payload.0;
-            if is_multipart && !payload.dry_run {
+            if is_multipart && status == StatusCode::OK && !payload.dry_run {
                 Redirect::to(&base_path_href(&base_path, "/")).into_response()
             } else {
-                Json(payload).into_response()
+                (status, Json(payload)).into_response()
             }
         }
         Err(error) => error.into_response(),
@@ -1828,7 +2233,7 @@ async fn rest_import_site_data(
     payload: &str,
     service: PilotServiceImpl,
     dry_run: bool,
-) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
+) -> Result<(StatusCode, Json<RestSiteImportResponse>), RestRouteError> {
     let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let payload: RestSiteImportPayload = serde_json::from_str(payload)
         .map_err(|_| RestRouteError::bad_request("invalid site data import payload"))?;
@@ -1838,14 +2243,17 @@ async fn rest_import_site_data(
         ));
     }
     if dry_run {
-        return Ok(Json(
-            rest_site_import_dry_run_report(&service, repository, &payload).await?,
+        return Ok((
+            StatusCode::OK,
+            Json(rest_site_import_dry_run_report(&service, repository, &payload).await?),
         ));
     }
     let preflight = rest_site_import_dry_run_report(&service, repository, &payload).await?;
     if let Some(error) = preflight.validation_errors.first() {
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
+    let mut checkpoint = RestSiteImportCheckpoint::from_payload(&payload);
+    checkpoint.mark_all_validated();
 
     let transaction = repository
         .begin_transaction()
@@ -1853,8 +2261,14 @@ async fn rest_import_site_data(
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
     let transaction_repository = repository.with_transaction(&transaction);
     let mut rollback = RestSiteImportRollbackLedger::default();
-    let result =
-        rest_import_site_data_live(&service, &transaction_repository, payload, &mut rollback).await;
+    let result = rest_import_site_data_live(
+        &service,
+        &transaction_repository,
+        payload,
+        &mut rollback,
+        &mut checkpoint,
+    )
+    .await;
     match result {
         Ok(response) => {
             if let Err(error) = transaction.commit().await {
@@ -1865,12 +2279,18 @@ async fn rest_import_site_data(
                 rollback.cleanup_staged_uploads();
                 RestRouteError::internal(error.to_string())
             })?;
-            Ok(Json(response))
+            Ok((StatusCode::OK, Json(response)))
         }
-        Err(error) => {
+        Err(_error) => {
             let _ = transaction.rollback().await;
             rollback.rollback(&service, repository).await;
-            Err(error)
+            if checkpoint.failure.is_none() {
+                checkpoint.set_failure("import", 0, "import:<unknown>", "site.import.failed");
+            }
+            Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(RestSiteImportResponse::failed(checkpoint)),
+            ))
         }
     }
 }
@@ -2176,10 +2596,11 @@ async fn rest_import_site_data_live(
     repository: &persistence::AppRepositoryImpl<'_>,
     payload: RestSiteImportPayload,
     rollback: &mut RestSiteImportRollbackLedger,
+    checkpoint: &mut RestSiteImportCheckpoint,
 ) -> Result<RestSiteImportResponse, RestRouteError> {
     let mut imported_users = 0;
     let mut skipped_users = 0;
-    for user in payload.users {
+    for (index, user) in payload.users.into_iter().enumerate() {
         let login_id = user.login_id.trim();
         let email_address = user.email_address.trim();
         if login_id.is_empty()
@@ -2190,6 +2611,7 @@ async fn rest_import_site_data_live(
                 .is_some()
         {
             skipped_users += 1;
+            checkpoint.mark_skipped("users", index);
             continue;
         }
         let imported_password_hash = hash(
@@ -2213,11 +2635,12 @@ async fn rest_import_site_data_live(
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         rollback.record_user(&created_user);
         imported_users += 1;
+        checkpoint.mark_completed("users", index);
     }
 
     let mut imported_projects = 0;
     let mut skipped_projects = 0;
-    for project in payload.projects {
+    for (index, project) in payload.projects.into_iter().enumerate() {
         let owner_name = project.owner_name.trim();
         let project_name = project.project_name.trim();
         if owner_name.is_empty()
@@ -2234,6 +2657,7 @@ async fn rest_import_site_data_live(
                 .is_some()
         {
             skipped_projects += 1;
+            checkpoint.mark_skipped("projects", index);
             continue;
         }
         let created_project = repository
@@ -2255,14 +2679,24 @@ async fn rest_import_site_data_live(
                 rest_site_import_parse_legacy_datetime(&project.created_at),
             )
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            .map_err(|error| {
+                let message = error.to_string();
+                checkpoint.set_failure(
+                    "projects",
+                    index,
+                    rest_site_import_project_key(owner_name, project_name),
+                    message.clone(),
+                );
+                RestRouteError::internal(message)
+            })?;
         rollback.record_project(&created_project);
         imported_projects += 1;
+        checkpoint.mark_completed("projects", index);
     }
 
     let mut imported_project_members = 0;
     let mut skipped_project_members = 0;
-    for member in payload.project_members {
+    for (index, member) in payload.project_members.into_iter().enumerate() {
         let owner_name = member.owner_name.trim();
         let project_name = member.project_name.trim();
         let login_id = member.login_id.trim();
@@ -2273,6 +2707,7 @@ async fn rest_import_site_data_live(
             .map_err(|error| RestRouteError::internal(error.to_string()))?
         else {
             skipped_project_members += 1;
+            checkpoint.mark_skipped("projectMembers", index);
             continue;
         };
         let Some(user) = repository
@@ -2281,6 +2716,7 @@ async fn rest_import_site_data_live(
             .map_err(|error| RestRouteError::internal(error.to_string()))?
         else {
             skipped_project_members += 1;
+            checkpoint.mark_skipped("projectMembers", index);
             continue;
         };
         let previous_role = repository
@@ -2297,11 +2733,12 @@ async fn rest_import_site_data_live(
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         rollback.record_project_member(project.id, user.id, previous_role);
         imported_project_members += 1;
+        checkpoint.mark_completed("projectMembers", index);
     }
 
     let mut imported_labels = 0;
     let mut skipped_labels = 0;
-    for label in payload.labels {
+    for (index, label) in payload.labels.into_iter().enumerate() {
         let owner_name = label.owner_name.trim();
         let project_name = label.project_name.trim();
         let label_name = label.name.trim();
@@ -2315,6 +2752,7 @@ async fn rest_import_site_data_live(
                 .is_none()
         {
             skipped_labels += 1;
+            checkpoint.mark_skipped("labels", index);
             continue;
         }
         let label_color = if label.color.trim().is_empty() {
@@ -2343,20 +2781,28 @@ async fn rest_import_site_data_live(
             Some((record, true)) => {
                 rollback.record_label(owner_name, project_name, record.id);
                 imported_labels += 1;
+                checkpoint.mark_completed("labels", index);
             }
-            Some((_record, false)) => skipped_labels += 1,
-            None => skipped_labels += 1,
+            Some((_record, false)) => {
+                skipped_labels += 1;
+                checkpoint.mark_skipped("labels", index);
+            }
+            None => {
+                skipped_labels += 1;
+                checkpoint.mark_skipped("labels", index);
+            }
         }
     }
 
     let mut imported_milestones = 0;
     let mut skipped_milestones = 0;
-    for milestone in payload.milestones {
+    for (index, milestone) in payload.milestones.into_iter().enumerate() {
         let owner_name = milestone.owner_name.trim();
         let project_name = milestone.project_name.trim();
         let title = milestone.title.trim();
         let Some(actor) = rest_site_import_actor(repository, "", owner_name).await? else {
             skipped_milestones += 1;
+            checkpoint.mark_skipped("milestones", index);
             continue;
         };
         if title.is_empty()
@@ -2371,6 +2817,7 @@ async fn rest_import_site_data_live(
                 .map_err(|error| RestRouteError::internal(error.to_string()))?
         {
             skipped_milestones += 1;
+            checkpoint.mark_skipped("milestones", index);
             continue;
         }
         let imported_attachments = rest_site_import_attachments(
@@ -2427,6 +2874,7 @@ async fn rest_import_site_data_live(
         {
             Ok(created) => created,
             Err(error) => {
+                let message = error.to_string();
                 rest_site_import_cleanup_attachments(
                     &service,
                     repository,
@@ -2434,12 +2882,19 @@ async fn rest_import_site_data_live(
                     &imported_attachments.created_attachments,
                 )
                 .await;
-                return Err(RestRouteError::internal(error.to_string()));
+                checkpoint.set_failure(
+                    "milestones",
+                    index,
+                    rest_site_import_milestone_key(owner_name, project_name, title),
+                    message.clone(),
+                );
+                return Err(RestRouteError::internal(message));
             }
         };
         if let Some(created_milestone) = created_milestone {
             rollback.record_milestone(owner_name, project_name, created_milestone.id);
             imported_milestones += 1;
+            checkpoint.mark_completed("milestones", index);
         } else {
             rest_site_import_cleanup_attachments(
                 &service,
@@ -2449,16 +2904,18 @@ async fn rest_import_site_data_live(
             )
             .await;
             skipped_milestones += 1;
+            checkpoint.mark_skipped("milestones", index);
         }
     }
 
     let mut imported_posts = 0;
     let mut skipped_posts = 0;
-    for post in payload.posts {
+    for (index, post) in payload.posts.into_iter().enumerate() {
         let Some(actor) =
             rest_site_import_actor(repository, &post.author_login_id, &post.owner_name).await?
         else {
             skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
             continue;
         };
         if repository
@@ -2468,6 +2925,7 @@ async fn rest_import_site_data_live(
             .is_none()
         {
             skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
             continue;
         }
         rollback
@@ -2535,6 +2993,7 @@ async fn rest_import_site_data_live(
             )
             .await;
             skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
             continue;
         };
         rollback.record_post(&post.owner_name, &post.project_name, created.post_number);
@@ -2559,6 +3018,7 @@ async fn rest_import_site_data_live(
             &actor,
             None,
             rollback,
+            checkpoint,
         )
         .await?;
         repository
@@ -2572,15 +3032,17 @@ async fn rest_import_site_data_live(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_posts += 1;
+        checkpoint.mark_completed("posts", index);
     }
 
     let mut imported_issues = 0;
     let mut skipped_issues = 0;
-    for issue in payload.issues {
+    for (index, issue) in payload.issues.into_iter().enumerate() {
         let Some(actor) =
             rest_site_import_actor(repository, &issue.author_login_id, &issue.owner_name).await?
         else {
             skipped_issues += 1;
+            checkpoint.mark_skipped("issues", index);
             continue;
         };
         if repository
@@ -2590,6 +3052,7 @@ async fn rest_import_site_data_live(
             .is_none()
         {
             skipped_issues += 1;
+            checkpoint.mark_skipped("issues", index);
             continue;
         }
         rollback
@@ -2671,6 +3134,7 @@ async fn rest_import_site_data_live(
             )
             .await;
             skipped_issues += 1;
+            checkpoint.mark_skipped("issues", index);
             continue;
         };
         rollback.record_issue(&issue.owner_name, &issue.project_name, created.issue_number);
@@ -2708,6 +3172,7 @@ async fn rest_import_site_data_live(
             &actor,
             None,
             rollback,
+            checkpoint,
         )
         .await?;
         repository
@@ -2721,6 +3186,7 @@ async fn rest_import_site_data_live(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_issues += 1;
+        checkpoint.mark_completed("issues", index);
     }
 
     Ok(RestSiteImportResponse::imported(
@@ -2745,6 +3211,7 @@ async fn rest_import_site_data_live(
             ..RestSiteImportCountSet::default()
         },
         Vec::new(),
+        checkpoint.clone(),
     ))
 }
 
@@ -3145,11 +3612,16 @@ async fn rest_site_import_dry_run_report(
         would_import.issues += 1;
     }
 
+    let mut checkpoint = RestSiteImportCheckpoint::from_payload(payload);
+    checkpoint.mark_all_validated();
+    checkpoint.mark_counts(&would_skip);
+
     Ok(RestSiteImportResponse::dry_run(
         would_import,
         would_skip,
         validation_errors,
         Vec::new(),
+        checkpoint,
     ))
 }
 
@@ -3402,8 +3874,9 @@ async fn rest_site_import_post_comments(
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
     rollback: &mut RestSiteImportRollbackLedger,
+    checkpoint: &mut RestSiteImportCheckpoint,
 ) -> Result<(), RestRouteError> {
-    for comment in comments {
+    for (index, comment) in comments.iter().enumerate() {
         let contents_markdown = comment.contents_markdown.trim();
         if contents_markdown.is_empty() {
             continue;
@@ -3422,6 +3895,13 @@ async fn rest_site_import_post_comments(
         rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
+        let failure_resource_key = rest_site_import_comment_key(
+            "posts.comments",
+            owner_name,
+            project_name,
+            post_number,
+            contents_markdown.as_str(),
+        );
         let detail = repository
             .create_posting_comment(persistence::CreatePostingCommentInput {
                 actor_display_name: actor.display_name.clone(),
@@ -3448,6 +3928,12 @@ async fn rest_site_import_post_comments(
                     &imported_attachments.created_attachments,
                 )
                 .await;
+                checkpoint.set_failure(
+                    "posts.comments",
+                    index,
+                    failure_resource_key,
+                    "site.import.failed",
+                );
                 return Err(error);
             }
         };
@@ -3475,6 +3961,7 @@ async fn rest_site_import_post_comments(
                 &actor,
                 Some(created_comment_id),
                 rollback,
+                checkpoint,
             ))
             .await?;
         }
@@ -3492,8 +3979,9 @@ async fn rest_site_import_issue_comments(
     fallback_actor: &persistence::AppUserRecord,
     parent_comment_id: Option<i64>,
     rollback: &mut RestSiteImportRollbackLedger,
+    checkpoint: &mut RestSiteImportCheckpoint,
 ) -> Result<(), RestRouteError> {
-    for comment in comments {
+    for (index, comment) in comments.iter().enumerate() {
         let contents_markdown = comment.contents_markdown.trim();
         if contents_markdown.is_empty() {
             continue;
@@ -3512,6 +4000,13 @@ async fn rest_site_import_issue_comments(
         rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
+        let failure_resource_key = rest_site_import_comment_key(
+            "issues.comments",
+            owner_name,
+            project_name,
+            issue_number,
+            contents_markdown.as_str(),
+        );
         let detail = repository
             .create_issue_comment(persistence::CreateIssueCommentInput {
                 actor_display_name: actor.display_name.clone(),
@@ -3524,11 +4019,11 @@ async fn rest_site_import_issue_comments(
                 parent_comment_id,
                 project_name: project_name.trim().to_string(),
             })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()));
+            .await;
         let detail = match detail {
             Ok(detail) => detail,
             Err(error) => {
+                let message = error.to_string();
                 rest_site_import_cleanup_attachments(
                     service,
                     repository,
@@ -3536,7 +4031,13 @@ async fn rest_site_import_issue_comments(
                     &imported_attachments.created_attachments,
                 )
                 .await;
-                return Err(error);
+                checkpoint.set_failure(
+                    "issues.comments",
+                    index,
+                    failure_resource_key,
+                    message.clone(),
+                );
+                return Err(RestRouteError::internal(message));
             }
         };
         if detail.is_none() {
@@ -3570,6 +4071,7 @@ async fn rest_site_import_issue_comments(
                 &actor,
                 Some(created_comment_id),
                 rollback,
+                checkpoint,
             ))
             .await?;
         }

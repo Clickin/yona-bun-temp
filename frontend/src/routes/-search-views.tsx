@@ -15,6 +15,7 @@ import {
   readProjectSearch,
 } from "../api/search";
 import { apiQueryKeys } from "../api/query-keys";
+import type { LegacyI18nContextValue, TranslateOptions } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
 import {
@@ -37,6 +38,8 @@ type SearchRouteQuery =
   | { input: SearchInput; invalid: false }
   | { input: null; invalid: false }
   | { input: null; invalid: true };
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 const SEARCH_CATEGORIES: Array<{ countKey: keyof SearchCounts; label: string; type: SearchType }> =
   [
@@ -119,9 +122,44 @@ function emptyCounts(): SearchCounts {
   };
 }
 
-function categoryLabel(type: SearchType) {
+function legacySearchMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  options?: TranslateOptions,
+) {
+  return messages ? messages(key, options) : (options?.fallback ?? key);
+}
+
+function categoryLabel(type: SearchType, messages?: LegacyMessageLookup) {
+  const key =
+    SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "search.menu.issues";
+  return legacySearchMessage(messages, key);
+}
+
+function searchResultTitleNodes(
+  messages: LegacyMessageLookup | undefined,
+  count: number,
+  category: string,
+) {
+  if (!messages) {
+    return (
+      <>
+        search.result.title <strong>{count}</strong> {category}
+      </>
+    );
+  }
+
+  const message = messages("search.result.title", { args: [count, category] });
+  const match = /^(.*)<strong>([\s\S]*)<\/\s*strong>(.*)$/.exec(message);
+  if (!match) {
+    return message;
+  }
   return (
-    SEARCH_CATEGORIES.find((category) => category.type === type)?.label ?? "search.menu.issues"
+    <>
+      {match[1]}
+      <strong>{match[2]}</strong>
+      {match[3]}
+    </>
   );
 }
 
@@ -146,10 +184,11 @@ function HighlightedSnippet({ snippet }: { snippet: SearchSnippet }) {
   return <>{nodes}</>;
 }
 
-function SearchCategories(props: {
+export function SearchCategories(props: {
   activeType: SearchType;
   counts: SearchCounts;
   input: SearchInput | null;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
 }) {
@@ -176,7 +215,7 @@ function SearchCategories(props: {
             searchType: category.type,
           })}
         >
-          {category.label}
+          {legacySearchMessage(props.messages, category.label)}
           <span className="num-badge pull-right">{count}</span>
         </a>
       </li>,
@@ -185,20 +224,27 @@ function SearchCategories(props: {
   return <ul className="lst-stacked unstyled search-category-wrap">{categoryItems}</ul>;
 }
 
-function SearchResultTitle(props: { activeType: SearchType; count: number }) {
+export function SearchResultTitle(props: {
+  activeType: SearchType;
+  count: number;
+  messages?: LegacyMessageLookup;
+}) {
+  const category = categoryLabel(props.activeType, props.messages);
   return (
     <h3 className="search-result-title">
-      search.result.title <strong>{props.count}</strong> {categoryLabel(props.activeType)}
+      {searchResultTitleNodes(props.messages, props.count, category)}
     </h3>
   );
 }
 
 function SearchMeta({
   item,
+  messages,
   runtimeConfig,
   showProject,
 }: {
   item: SearchItem;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   showProject: boolean;
 }) {
@@ -215,7 +261,7 @@ function SearchMeta({
         ) : null}
         {item.updatedLabel ? (
           <span className="due-date meta-item">
-            label.dueDate <strong>{item.updatedLabel}</strong>
+            {legacySearchMessage(messages, "label.dueDate")} <strong>{item.updatedLabel}</strong>
           </span>
         ) : null}
       </div>
@@ -242,7 +288,7 @@ function SearchMeta({
           {item.authorLabel}
         </a>
       ) : (
-        <span className="meta-item">issue.noAuthor</span>
+        <span className="meta-item">{legacySearchMessage(messages, "issue.noAuthor")}</span>
       )}
       {item.createdLabel || item.updatedLabel ? (
         <span className="meta-item" title={item.createdLabel || item.updatedLabel}>
@@ -256,6 +302,7 @@ function SearchMeta({
 
 function SearchResultItem(props: {
   item: SearchItem;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   showProject: boolean;
 }) {
@@ -280,7 +327,12 @@ function SearchResultItem(props: {
           </p>
         ))}
       </div>
-      <SearchMeta item={item} runtimeConfig={props.runtimeConfig} showProject={props.showProject} />
+      <SearchMeta
+        item={item}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+        showProject={props.showProject}
+      />
     </li>
   );
 }
@@ -289,6 +341,7 @@ export function SearchResults(props: {
   activeType: SearchType;
   input: SearchInput | null;
   isLoading: boolean;
+  messages?: LegacyMessageLookup;
   response: SearchResponse | null | undefined;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
@@ -310,6 +363,7 @@ export function SearchResults(props: {
           <SearchResultItem
             item={item}
             key={`${item.type}-${item.id}`}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
             showProject={props.scope.type !== "project"}
           />
@@ -317,6 +371,7 @@ export function SearchResults(props: {
       </ul>
       <SearchPagination
         input={props.input}
+        messages={props.messages}
         response={props.response}
         runtimeConfig={props.runtimeConfig}
         scope={props.scope}
@@ -327,6 +382,7 @@ export function SearchResults(props: {
 
 export function SearchPagination(props: {
   input: SearchInput;
+  messages?: LegacyMessageLookup;
   response: SearchResponse;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
@@ -355,12 +411,12 @@ export function SearchPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>button.prevPage</span>
+              <span>{legacySearchMessage(props.messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">button.prevPage</span>
+              <span className="off">{legacySearchMessage(props.messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -384,12 +440,12 @@ export function SearchPagination(props: {
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-next"></i>
-              <span>button.nextPage</span>
+              <span>{legacySearchMessage(props.messages, "button.nextPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-next off"></i>
-              <span className="off">button.nextPage</span>
+              <span className="off">{legacySearchMessage(props.messages, "button.nextPage")}</span>
             </>
           )}
         </li>
@@ -482,7 +538,6 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   const activeCount = activeCategory ? counts[activeCategory.countKey] : 0;
   const projectDetail = projectSearchDetail(scope);
   const organizationDetail = organizationSearchDetail(scope);
-
   useDocumentTitle("title.search");
 
   React.useEffect(() => {
@@ -500,7 +555,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{legacySearchMessage(messages, "common.loading")}</h1>
       </main>
     );
   }
@@ -541,7 +596,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
       ) : null}
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>title.search</h3>
+          <h3>{legacySearchMessage(messages, "title.search")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">
@@ -552,6 +607,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
                 activeType={activeType}
                 counts={counts}
                 input={input}
+                messages={messages}
                 runtimeConfig={runtimeConfig}
                 scope={scope}
               />
@@ -573,16 +629,21 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
                   />
                   <input name="pageNum" type="hidden" value="1" />
                   <button className="ybtn" type="submit">
-                    title.search
+                    {legacySearchMessage(messages, "title.search")}
                   </button>
                 </form>
-                <SearchResultTitle activeType={activeType} count={activeCount} />
+                <SearchResultTitle
+                  activeType={activeType}
+                  count={activeCount}
+                  messages={messages}
+                />
               </div>
               <div className="search-result-wrap">
                 <SearchResults
                   activeType={activeType}
                   input={input}
                   isLoading={searchQuery.isLoading}
+                  messages={messages}
                   response={response}
                   runtimeConfig={runtimeConfig}
                   scope={scope}

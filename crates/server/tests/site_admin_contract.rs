@@ -2113,6 +2113,43 @@ async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
         report["validationErrors"][0]["message"],
         "site.import.attachment.tooLarge"
     );
+    assert_eq!(report["checkpoint"]["version"], 1);
+    assert!(report["checkpoint"]["failure"].is_null());
+    let checkpoint_sections = report["checkpoint"]["sections"]
+        .as_array()
+        .expect("checkpoint sections");
+    let users_checkpoint = checkpoint_sections
+        .iter()
+        .find(|section| section["section"] == "users")
+        .expect("users checkpoint");
+    assert_eq!(users_checkpoint["total"], 2);
+    assert_eq!(users_checkpoint["validated"], 2);
+    assert_eq!(users_checkpoint["skipped"], 1);
+    assert!(users_checkpoint["resourceKeys"]
+        .as_array()
+        .expect("user resource keys")
+        .iter()
+        .any(|key| key == "users:dry-imported"));
+    let projects_checkpoint = checkpoint_sections
+        .iter()
+        .find(|section| section["section"] == "projects")
+        .expect("projects checkpoint");
+    assert!(projects_checkpoint["resourceKeys"]
+        .as_array()
+        .expect("project resource keys")
+        .iter()
+        .any(|key| key == "projects:dry-imported/dry-restored"));
+    let attachments_checkpoint = checkpoint_sections
+        .iter()
+        .find(|section| section["section"] == "attachments")
+        .expect("attachments checkpoint");
+    assert_eq!(attachments_checkpoint["total"], 2);
+    assert_eq!(attachments_checkpoint["validated"], 2);
+    assert!(attachments_checkpoint["resourceKeys"]
+        .as_array()
+        .expect("attachment resource keys")
+        .iter()
+        .any(|key| key == "attachments:701:dry.txt"));
 
     assert_eq!(
         n4user::Entity::find().all(&db).await.unwrap().len(),
@@ -2957,9 +2994,36 @@ async fn site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comm
     )
     .await;
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
-    assert!(response_text(response)
-        .await
+    let failure_report: Value =
+        serde_json::from_str(&response_text(response).await).expect("failure report json");
+    assert_eq!(failure_report["dryRun"], false);
+    assert_eq!(
+        failure_report["checkpoint"]["failure"]["section"],
+        "issues.comments"
+    );
+    assert_eq!(failure_report["checkpoint"]["failure"]["index"], 0);
+    assert!(failure_report["checkpoint"]["failure"]["resourceKey"]
+        .as_str()
+        .expect("failure resource key")
+        .contains("issues.comments:rollback-owner/rollback-project#1"));
+    assert!(failure_report["checkpoint"]["failure"]["message"]
+        .as_str()
+        .expect("failure message")
         .contains("forced issue comment import failure"));
+    let failure_sections = failure_report["checkpoint"]["sections"]
+        .as_array()
+        .expect("failure checkpoint sections");
+    let users_checkpoint = failure_sections
+        .iter()
+        .find(|section| section["section"] == "users")
+        .expect("users failure checkpoint");
+    assert_eq!(users_checkpoint["completed"], 1);
+    let issues_checkpoint = failure_sections
+        .iter()
+        .find(|section| section["section"] == "issues")
+        .expect("issues failure checkpoint");
+    assert_eq!(issues_checkpoint["validated"], 1);
+    assert_eq!(issues_checkpoint["completed"], 0);
 
     assert!(repo
         .find_user_by_login_id("rollback-owner")
