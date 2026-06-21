@@ -970,6 +970,17 @@ impl AppRepository {
             .map(|column| format!("COALESCE({}, '')", quote_sql_identifier(backend, column)))
             .collect::<Vec<_>>()
             .join(" || ' ' || ");
+        if self
+            .db
+            .execute(Statement::from_string(
+                backend,
+                postgres_fts_index_sql(table, columns, &vector),
+            ))
+            .await
+            .is_err()
+        {
+            return Ok(NativeSearchCandidates::fallback_scan());
+        }
         let sql = format!(
             "SELECT id FROM {} WHERE to_tsvector('simple', {vector}) @@ plainto_tsquery('simple', $1)",
             quote_sql_identifier(backend, table)
@@ -985,6 +996,13 @@ impl AppRepository {
         keyword: &str,
     ) -> Result<NativeSearchCandidates, DbErr> {
         let backend = DatabaseBackend::MySql;
+        if self
+            .ensure_mysql_fulltext_index(table, columns)
+            .await
+            .is_err()
+        {
+            return Ok(NativeSearchCandidates::fallback_scan());
+        }
         let column_list = columns
             .iter()
             .map(|column| quote_sql_identifier(backend, column))
@@ -996,6 +1014,34 @@ impl AppRepository {
         );
         self.search_candidate_ids_from_statement(backend, sql, vec![keyword.to_string().into()])
             .await
+    }
+
+    async fn ensure_mysql_fulltext_index(
+        &self,
+        table: &str,
+        columns: &[&str],
+    ) -> Result<(), DbErr> {
+        let backend = DatabaseBackend::MySql;
+        let index_name = native_fts_index_name(table, columns);
+        let rows = self
+            .db
+            .query_all(Statement::from_sql_and_values(
+                backend,
+                "SELECT index_name AS name FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1".to_string(),
+                vec![table.to_string().into(), index_name.clone().into()],
+            ))
+            .await?;
+        if !rows.is_empty() {
+            return Ok(());
+        }
+
+        self.db
+            .execute(Statement::from_string(
+                backend,
+                mysql_fulltext_index_sql(table, columns),
+            ))
+            .await?;
+        Ok(())
     }
 
     async fn search_candidate_ids_from_statement(
@@ -1055,6 +1101,41 @@ fn quote_sql_string(value: &str) -> String {
 
 fn sqlite_fts_phrase(keyword: &str) -> String {
     format!("\"{}\"", keyword.replace('"', "\"\""))
+}
+
+fn native_fts_index_name(table: &str, columns: &[&str]) -> String {
+    let mut name = format!(
+        "yona_search_ft_{}_{}",
+        sanitize_sqlite_identifier_part(table),
+        sanitize_sqlite_identifier_part(&columns.join("_"))
+    );
+    if name.len() > 60 {
+        name.truncate(60);
+    }
+    name.trim_end_matches('_').to_string()
+}
+
+fn postgres_fts_index_sql(table: &str, columns: &[&str], vector: &str) -> String {
+    let backend = DatabaseBackend::Postgres;
+    format!(
+        "CREATE INDEX IF NOT EXISTS {} ON {} USING GIN (to_tsvector('simple', {vector}))",
+        quote_sql_identifier(backend, &native_fts_index_name(table, columns)),
+        quote_sql_identifier(backend, table)
+    )
+}
+
+fn mysql_fulltext_index_sql(table: &str, columns: &[&str]) -> String {
+    let backend = DatabaseBackend::MySql;
+    let column_list = columns
+        .iter()
+        .map(|column| quote_sql_identifier(backend, column))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(
+        "ALTER TABLE {} ADD FULLTEXT INDEX {} ({column_list})",
+        quote_sql_identifier(backend, table),
+        quote_sql_identifier(backend, &native_fts_index_name(table, columns))
+    )
 }
 
 #[cfg(test)]
@@ -1163,6 +1244,24 @@ mod tests {
         assert_eq!(
             persistent_sqlite_fts_table_name("issue-comment"),
             "yona_search_fts_issue_comment"
+        );
+    }
+
+    #[test]
+    fn postgres_fts_index_sql_uses_db_native_gin_index() {
+        let vector = "COALESCE(\"title\", '') || ' ' || COALESCE(\"body\", '')";
+
+        assert_eq!(
+            postgres_fts_index_sql("issue", &["title", "body"], vector),
+            "CREATE INDEX IF NOT EXISTS \"yona_search_ft_issue_title_body\" ON \"issue\" USING GIN (to_tsvector('simple', COALESCE(\"title\", '') || ' ' || COALESCE(\"body\", '')))"
+        );
+    }
+
+    #[test]
+    fn mysql_fulltext_index_sql_uses_db_native_fulltext_index() {
+        assert_eq!(
+            mysql_fulltext_index_sql("posting_comment", &["contents"]),
+            "ALTER TABLE `posting_comment` ADD FULLTEXT INDEX `yona_search_ft_posting_comment_contents` (`contents`)"
         );
     }
 

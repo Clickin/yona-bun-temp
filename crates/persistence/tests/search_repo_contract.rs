@@ -169,6 +169,9 @@ async fn search_repository_refreshes_sqlite_persistent_fts_index_for_update_and_
     let after_restore = search_issue_keyword(&repo, user.id, "PersistentToken").await;
     assert_eq!(after_restore.counts.issues, 1);
     assert_eq!(after_restore.items[0].id, issue.id.to_string());
+    let restored_body = search_issue_keyword(&repo, user.id, "restored body").await;
+    assert_eq!(restored_body.counts.issues, 1);
+    assert_eq!(restored_body.items[0].id, issue.id.to_string());
 
     db.execute(Statement::from_sql_and_values(
         DatabaseBackend::Sqlite,
