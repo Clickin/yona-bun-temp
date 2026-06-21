@@ -16,6 +16,7 @@ import type {
   ReviewThreadListQuery,
   ReviewThreadListResponse,
 } from "../api/pull-requests";
+import type { LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import {
@@ -27,6 +28,8 @@ import {
 import { buildOrganizationHref, OrganizationHeader, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
@@ -1054,6 +1057,7 @@ export function OrganizationPullRequestListPage(props: {
   category: "closed" | "open";
   detail: OrganizationDetailViewModel | null;
   list: PullRequestListResponse | undefined;
+  messages?: LegacyMessageLookup;
   organizationName: string;
   query: OrganizationPullRequestListQuery;
   runtimeConfig: RuntimeConfig;
@@ -1066,8 +1070,17 @@ export function OrganizationPullRequestListPage(props: {
 
   return (
     <main className="app-shell pull-request-page">
-      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu active="pullrequests" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        active="pullrequests"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div

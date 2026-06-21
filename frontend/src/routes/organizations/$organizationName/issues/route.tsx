@@ -27,7 +27,7 @@ export const Route = createFileRoute("/organizations/$organizationName/issues")(
 
 function OrganizationIssuesRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
@@ -121,6 +121,7 @@ function OrganizationIssuesRouteComponent() {
       currentUserId={currentSession?.isAnonymous ? 0 : Number(currentSession?.actorId ?? 0)}
       detail={detail}
       issueList={issueList}
+      messages={messages}
       query={query}
       runtimeConfig={runtimeConfig}
     />

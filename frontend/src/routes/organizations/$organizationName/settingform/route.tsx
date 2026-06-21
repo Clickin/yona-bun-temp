@@ -19,7 +19,7 @@ export const Route = createFileRoute("/organizations/$organizationName/settingfo
 
 function OrganizationSettingsRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/organizations/${organizationName}/settingform`);
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
@@ -79,6 +79,7 @@ function OrganizationSettingsRouteComponent() {
     <OrganizationSettingsPage
       csrfToken={csrfToken}
       detail={detail}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onUpdateOrganization={async (input) => {
         try {

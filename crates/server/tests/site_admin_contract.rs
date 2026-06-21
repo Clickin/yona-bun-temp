@@ -390,6 +390,21 @@ fn write_uploaded_test_file(
     std::fs::write(upload_dir.join(hash), bytes).expect("upload bytes");
 }
 
+fn imported_upload_staging_dir(data_dir: &tempfile::TempDir) -> std::path::PathBuf {
+    data_dir.path().join("uploads").join(".site-import-staging")
+}
+
+fn final_upload_file_count(data_dir: &tempfile::TempDir) -> usize {
+    std::fs::read_dir(data_dir.path().join("uploads"))
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter(|entry| entry.file_name() != ".site-import-staging")
+                .count()
+        })
+        .unwrap_or_default()
+}
+
 fn spawn_update_asset_server(path: &str, content_type: &str, body: &'static [u8]) -> String {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("update asset listener");
     let address = listener.local_addr().expect("update asset address");
@@ -1862,7 +1877,7 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
     });
 
     let response = rest_raw_post(
-        app,
+        app.clone(),
         "/yona/sites/import",
         Some(&admin_cookie),
         Some(&admin_csrf),
@@ -1889,6 +1904,14 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
         std::fs::read(data_dir.path().join("uploads").join(post_hash)).expect("post bytes"),
         b"portable-post-file"
     );
+    let post_download = rest_get(
+        app.clone(),
+        &format!("/yona/files/{}", post_attachment.id),
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(post_download.status(), StatusCode::OK);
+    assert_eq!(response_bytes(post_download).await, b"portable-post-file");
     assert_eq!(
         post_detail.body_markdown,
         format!(
@@ -1910,6 +1933,21 @@ async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_s
     assert_eq!(
         std::fs::read(data_dir.path().join("uploads").join(comment_hash)).expect("comment bytes"),
         b"portable-comment-file"
+    );
+    let comment_download = rest_get(
+        app,
+        &format!("/yona/files/{}", comment_attachment.id),
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(comment_download.status(), StatusCode::OK);
+    assert_eq!(
+        response_bytes(comment_download).await,
+        b"portable-comment-file"
+    );
+    assert!(
+        !imported_upload_staging_dir(&data_dir).exists(),
+        "successful import must promote and remove staged portable files"
     );
     assert_eq!(
         post_detail.comments[0].contents_markdown,
@@ -2645,10 +2683,15 @@ async fn site_admin_import_cleans_portable_attachment_when_downstream_milestone_
         .expect("list milestones after failed import")
         .into_iter()
         .all(|milestone| milestone.title != "Rollback milestone"));
-    let upload_count = std::fs::read_dir(data_dir.path().join("uploads"))
-        .map(|entries| entries.count())
-        .unwrap_or_default();
-    assert_eq!(upload_count, 0, "failed import must remove portable files");
+    assert_eq!(
+        final_upload_file_count(&data_dir),
+        0,
+        "failed import must leave no final portable upload files"
+    );
+    assert!(
+        !imported_upload_staging_dir(&data_dir).exists(),
+        "failed import must remove staged portable upload files"
+    );
 }
 
 #[tokio::test]
@@ -2988,12 +3031,14 @@ async fn site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comm
         role::Entity::find().all(&db).await.unwrap().len(),
         before_roles
     );
-    let upload_count = std::fs::read_dir(data_dir.path().join("uploads"))
-        .map(|entries| entries.count())
-        .unwrap_or_default();
     assert_eq!(
-        upload_count, 0,
-        "failed import must remove every route-created portable file"
+        final_upload_file_count(&data_dir),
+        0,
+        "failed import must leave no final route-created portable files"
+    );
+    assert!(
+        !imported_upload_staging_dir(&data_dir).exists(),
+        "failed import must remove every staged route-created portable file"
     );
 }
 

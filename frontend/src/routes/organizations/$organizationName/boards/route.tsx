@@ -25,7 +25,7 @@ function readSearchParams() {
 
 function OrganizationBoardsRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
@@ -85,6 +85,7 @@ function OrganizationBoardsRouteComponent() {
     <OrganizationBoardListPage
       boards={boardsQuery.data}
       filter={filter}
+      messages={messages}
       organizationName={organizationName}
       orderBy={orderBy}
       orderDir={orderDir}

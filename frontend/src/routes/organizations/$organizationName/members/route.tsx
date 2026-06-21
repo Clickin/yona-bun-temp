@@ -24,7 +24,7 @@ export const Route = createFileRoute("/organizations/$organizationName/members")
 
 function OrganizationMembersRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/members`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
@@ -83,6 +83,7 @@ function OrganizationMembersRouteComponent() {
   return (
     <OrganizationMembersPage
       detail={detail}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onAcceptEnrollment={async (nextOrganizationName, userId) => {
         try {

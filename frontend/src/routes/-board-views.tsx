@@ -8,11 +8,14 @@ import type {
 } from "../api/boards";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
+import type { LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 function boardProjectShellDetail(input: {
   ownerName: string;
@@ -1814,6 +1817,7 @@ export function OrganizationBoardListPage(props: {
   boards: OrganizationBoardsResponse | null | undefined;
   detail?: OrganizationDetailViewModel | null;
   filter: string;
+  messages?: LegacyMessageLookup;
   organizationName: string;
   orderBy: string;
   orderDir: string;
@@ -1833,8 +1837,17 @@ export function OrganizationBoardListPage(props: {
 
   return (
     <main className="app-shell board-page">
-      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu active="boards" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        active="boards"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="search-wrap underline board-toolbar">

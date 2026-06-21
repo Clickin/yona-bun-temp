@@ -432,7 +432,7 @@ function organizationSearchDetail(scope: SearchRouteScope): OrganizationDetailVi
 }
 
 export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
@@ -527,8 +527,16 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
       ) : null}
       {organizationDetail ? (
         <>
-          <OrganizationHeader detail={organizationDetail} runtimeConfig={runtimeConfig} />
-          <OrganizationMenu detail={organizationDetail} runtimeConfig={runtimeConfig} />
+          <OrganizationHeader
+            detail={organizationDetail}
+            messages={messages}
+            runtimeConfig={runtimeConfig}
+          />
+          <OrganizationMenu
+            detail={organizationDetail}
+            messages={messages}
+            runtimeConfig={runtimeConfig}
+          />
         </>
       ) : null}
       <div className="site-breadcrumb-outer">

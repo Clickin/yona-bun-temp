@@ -19,7 +19,7 @@ export const Route = createFileRoute("/organizations/$organizationName/deleteFor
 
 function OrganizationDeleteRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/deleteForm`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
@@ -78,6 +78,7 @@ function OrganizationDeleteRouteComponent() {
   return (
     <OrganizationDeletePage
       detail={detail}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onDeleteOrganization={async (nextOrganizationName) => {
         try {

@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     collections::{HashMap, HashSet},
-    path::Path as StdPath,
+    path::{Path as StdPath, PathBuf},
     sync::atomic::Ordering,
 };
 use yona_rust_domain::ProjectScope;
@@ -1857,10 +1857,14 @@ async fn rest_import_site_data(
         rest_import_site_data_live(&service, &transaction_repository, payload, &mut rollback).await;
     match result {
         Ok(response) => {
-            transaction
-                .commit()
-                .await
-                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            if let Err(error) = transaction.commit().await {
+                rollback.cleanup_staged_uploads();
+                return Err(RestRouteError::internal(error.to_string()));
+            }
+            rollback.promote_staged_uploads().map_err(|error| {
+                rollback.cleanup_staged_uploads();
+                RestRouteError::internal(error.to_string())
+            })?;
             Ok(Json(response))
         }
         Err(error) => {
@@ -1882,7 +1886,13 @@ struct RestSiteImportRollbackLedger {
     project_counters: Vec<RestSiteImportRollbackProjectCounters>,
     project_members: Vec<RestSiteImportRollbackProjectMember>,
     projects: Vec<RestSiteImportRollbackProject>,
+    staged_uploads: Vec<RestSiteImportStagedUpload>,
     users: Vec<i64>,
+}
+
+struct RestSiteImportStagedUpload {
+    final_path: PathBuf,
+    staging_path: PathBuf,
 }
 
 struct RestSiteImportRollbackProjectCounters {
@@ -1904,6 +1914,13 @@ struct RestSiteImportRollbackProjectMember {
 impl RestSiteImportRollbackLedger {
     fn record_attachments(&mut self, attachments: &[persistence::AttachmentRecord]) {
         self.attachments.extend(attachments.iter().cloned());
+    }
+
+    fn record_staged_upload(&mut self, staging_path: PathBuf, final_path: PathBuf) {
+        self.staged_uploads.push(RestSiteImportStagedUpload {
+            final_path,
+            staging_path,
+        });
     }
 
     async fn record_existing_attachment(
@@ -2116,6 +2133,40 @@ impl RestSiteImportRollbackLedger {
         }
         for user_id in self.users.iter().rev() {
             let _ = repository.delete_site_import_user_by_id(*user_id).await;
+        }
+        self.cleanup_staged_uploads();
+    }
+
+    fn promote_staged_uploads(&self) -> std::io::Result<()> {
+        for upload in &self.staged_uploads {
+            if let Some(parent) = upload.final_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            if upload.final_path.exists() {
+                std::fs::remove_file(&upload.final_path)?;
+            }
+            std::fs::rename(&upload.staging_path, &upload.final_path)?;
+            cleanup_empty_parent_dirs(upload.staging_path.parent(), upload.final_path.parent());
+        }
+        Ok(())
+    }
+
+    fn cleanup_staged_uploads(&self) {
+        for upload in self.staged_uploads.iter().rev() {
+            let _ = std::fs::remove_file(&upload.staging_path);
+            cleanup_empty_parent_dirs(upload.staging_path.parent(), upload.final_path.parent());
+        }
+    }
+}
+
+fn cleanup_empty_parent_dirs(mut current: Option<&StdPath>, stop_before: Option<&StdPath>) {
+    while let Some(directory) = current {
+        if Some(directory) == stop_before {
+            break;
+        }
+        match std::fs::remove_dir(directory) {
+            Ok(()) => current = directory.parent(),
+            Err(_) => break,
         }
     }
 }
@@ -3653,8 +3704,9 @@ async fn rest_site_import_attachments(
                 .then(|| detect_upload_mime_type(&file_name, None, &bytes))
                 .unwrap_or_else(|| attachment.mime_type.trim().to_string());
             let hash = random_storage_token();
-            let path = uploaded_file_path_with_root(&service.data_root, &hash);
-            if let Some(parent) = path.parent() {
+            let final_path = uploaded_file_path_with_root(&service.data_root, &hash);
+            let staging_path = site_import_staging_upload_path(service, &hash);
+            if let Some(parent) = staging_path.parent() {
                 if let Err(error) = std::fs::create_dir_all(parent) {
                     rest_site_import_cleanup_attachments(
                         service,
@@ -3666,8 +3718,8 @@ async fn rest_site_import_attachments(
                     return Err(RestRouteError::internal(error.to_string()));
                 }
             }
-            if let Err(error) = std::fs::write(&path, &bytes) {
-                let _ = std::fs::remove_file(&path);
+            if let Err(error) = std::fs::write(&staging_path, &bytes) {
+                let _ = std::fs::remove_file(&staging_path);
                 rest_site_import_cleanup_attachments(
                     service,
                     repository,
@@ -3677,6 +3729,7 @@ async fn rest_site_import_attachments(
                 .await;
                 return Err(RestRouteError::internal(error.to_string()));
             }
+            rollback.record_staged_upload(staging_path.clone(), final_path.clone());
             let created = match repository
                 .create_user_attachment_upload(
                     actor.id,
@@ -3690,7 +3743,7 @@ async fn rest_site_import_attachments(
             {
                 Ok(created) => created,
                 Err(error) => {
-                    let _ = std::fs::remove_file(&path);
+                    let _ = std::fs::remove_file(&staging_path);
                     rest_site_import_cleanup_attachments(
                         service,
                         repository,
@@ -3721,6 +3774,15 @@ async fn rest_site_import_attachments(
         link_rewrites,
         created_attachments,
     })
+}
+
+fn site_import_staging_upload_path(service: &PilotServiceImpl, hash: &str) -> PathBuf {
+    service
+        .data_root
+        .join("uploads")
+        .join(".site-import-staging")
+        .join(random_storage_token())
+        .join(hash)
 }
 
 fn rewrite_site_import_file_links(markdown: &str, rewrites: &[(i64, i64)]) -> String {

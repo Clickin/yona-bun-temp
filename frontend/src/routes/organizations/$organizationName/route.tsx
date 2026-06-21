@@ -41,7 +41,7 @@ function legacyOrganizationEnrollFallback(error: unknown): string {
 
 export function OrganizationDetailRouteComponent() {
   const { organizationName } = Route.useParams();
-  const { csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
   );
@@ -67,6 +67,7 @@ export function OrganizationDetailRouteComponent() {
   return (
     <OrganizationDetailPage
       detail={detail}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onCancelEnrollOrganization={async (nextOrganizationName) => {
         try {

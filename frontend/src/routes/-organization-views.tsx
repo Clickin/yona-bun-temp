@@ -1,11 +1,21 @@
 import * as React from "react";
 import { uploadTemporaryAttachment } from "../api/attachments";
+import type { LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type {
   OrganizationAdminViewModel,
   OrganizationDetailViewModel,
   OrganizationIssueListViewModel,
 } from "./-view-models";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string, args?: string[]) {
+  if (messages) {
+    return messages(key, args ? { args } : undefined);
+  }
+  return args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
+}
 
 export function buildOrganizationHref(
   runtimeConfig: RuntimeConfig,
@@ -104,9 +114,10 @@ export interface OrganizationIssueListQuery {
 export function OrganizationMenu(props: {
   active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   detail: OrganizationDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { detail, runtimeConfig } = props;
+  const { detail, messages, runtimeConfig } = props;
 
   return (
     <div className="project-menu-outer">
@@ -114,22 +125,22 @@ export function OrganizationMenu(props: {
         <ul className="project-menu-nav project-menu-gruop">
           <li className={props.active === "home" ? "active" : undefined}>
             <a href={buildOrganizationHref(runtimeConfig, detail.organizationName)}>
-              title.organizationHome
+              {legacyMessage(messages, "title.organizationHome")}
             </a>
           </li>
           <li className={props.active === "issues" ? "active" : undefined}>
             <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}>
-              menu.issue
+              {legacyMessage(messages, "menu.issue")}
             </a>
           </li>
           <li className={props.active === "boards" ? "active" : undefined}>
             <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}>
-              menu.board
+              {legacyMessage(messages, "menu.board")}
             </a>
           </li>
           <li className={props.active === "pullrequests" ? "active" : undefined}>
             <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}>
-              menu.pullRequest
+              {legacyMessage(messages, "menu.pullRequest")}
             </a>
           </li>
         </ul>
@@ -145,7 +156,7 @@ export function OrganizationMenu(props: {
                   )}
                 >
                   <i className="yobicon-cog" />
-                  <span className="blind">menu.admin</span>
+                  <span className="blind">{legacyMessage(messages, "menu.admin")}</span>
                 </a>
               </li>
             ) : null}
@@ -158,11 +169,12 @@ export function OrganizationMenu(props: {
 
 export function OrganizationHeader(props: {
   detail: OrganizationDetailViewModel;
+  messages?: LegacyMessageLookup;
   onCancelEnrollOrganization?: (organizationName: string) => void;
   onEnrollOrganization?: (organizationName: string) => void;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { detail, runtimeConfig } = props;
+  const { detail, messages, runtimeConfig } = props;
   const organizationHref = buildOrganizationHref(runtimeConfig, detail.organizationName);
   const logoUrl =
     detail.logoUrl ??
@@ -202,18 +214,23 @@ export function OrganizationHeader(props: {
                     data-toggle="dropdown"
                     type="button"
                   >
-                    <i className="yobicon-addfriend" /> organization.member.enrollment.title
+                    <i className="yobicon-addfriend" />{" "}
+                    {legacyMessage(messages, "organization.member.enrollment.title")}
                   </button>
                   <div className="dropdown-menu flat right title">
                     <div className="pop-title">
                       {detail.enrollmentRequested
-                        ? `organization.you.want.to.be.a.member ${detail.organizationName}`
-                        : `organization.you.may.want.to.be.a.member ${detail.organizationName}`}
+                        ? legacyMessage(messages, "organization.you.want.to.be.a.member", [
+                            detail.organizationName,
+                          ])
+                        : legacyMessage(messages, "organization.you.may.want.to.be.a.member", [
+                            detail.organizationName,
+                          ])}
                     </div>
                     <div className="pop-content">
                       {detail.enrollmentRequested
-                        ? "organization.member.enrollment.help.after"
-                        : "organization.member.enrollment.help.before"}
+                        ? legacyMessage(messages, "organization.member.enrollment.help.after")
+                        : legacyMessage(messages, "organization.member.enrollment.help.before")}
                     </div>
                     <div className="pop-content btn-wrap">
                       <a
@@ -239,8 +256,8 @@ export function OrganizationHeader(props: {
                           }
                         />{" "}
                         {detail.enrollmentRequested
-                          ? "button.cancel.enrollment"
-                          : "button.new.enrollment"}
+                          ? legacyMessage(messages, "button.cancel.enrollment")
+                          : legacyMessage(messages, "button.new.enrollment")}
                       </a>
                     </div>
                   </div>
@@ -256,6 +273,7 @@ export function OrganizationHeader(props: {
 
 function OrganizationSettingsSubMenu(props: {
   active?: "settings" | "members" | "delete";
+  messages?: LegacyMessageLookup;
   organizationName: string;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -263,17 +281,17 @@ function OrganizationSettingsSubMenu(props: {
     <ul className="nav nav-tabs">
       <li className={props.active === "settings" ? "active" : undefined}>
         <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "settingform")}>
-          organization.settingFrom
+          {legacyMessage(props.messages, "organization.settingFrom")}
         </a>
       </li>
       <li className={props.active === "members" ? "active" : undefined}>
         <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "members")}>
-          organization.member
+          {legacyMessage(props.messages, "organization.member")}
         </a>
       </li>
       <li className={props.active === "delete" ? "active" : undefined}>
         <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "deleteForm")}>
-          organization.delete
+          {legacyMessage(props.messages, "organization.delete")}
         </a>
       </li>
     </ul>
@@ -452,6 +470,7 @@ export function OrganizationNewPage(props: {
 
 export function OrganizationDetailPage(props: {
   detail: OrganizationDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   onCancelEnrollOrganization?: (organizationName: string) => void;
   onEnrollOrganization?: (organizationName: string) => void;
@@ -474,11 +493,17 @@ export function OrganizationDetailPage(props: {
     <main className="app-shell organization-page">
       <OrganizationHeader
         detail={detail}
+        messages={props.messages}
         onCancelEnrollOrganization={props.onCancelEnrollOrganization}
         onEnrollOrganization={props.onEnrollOrganization}
         runtimeConfig={props.runtimeConfig}
       />
-      <OrganizationMenu active="home" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMenu
+        active="home"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap organization-home-wrap">
           <div className="project-home-header row-fluid">
@@ -660,6 +685,7 @@ export function OrganizationIssueListPage(props: {
   currentUserId: number;
   detail: OrganizationDetailViewModel | null | undefined;
   issueList: OrganizationIssueListViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   query: OrganizationIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -717,8 +743,17 @@ export function OrganizationIssueListPage(props: {
 
   return (
     <main>
-      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu active="issues" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        active="issues"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <div className="row-fluid issue-list-wrap" data-pjax-container="">
@@ -1087,6 +1122,7 @@ export function OrganizationIssueListPage(props: {
 export function OrganizationSettingsPage(props: {
   csrfToken?: string;
   detail: OrganizationDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onUpdateOrganization?: (input: {
@@ -1123,12 +1159,22 @@ export function OrganizationSettingsPage(props: {
 
   return (
     <main className="app-shell organization-settings-shell">
-      <OrganizationHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu active="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        active="settings"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
             active="settings"
+            messages={props.messages}
             organizationName={detail.organizationName}
             runtimeConfig={props.runtimeConfig}
           />
@@ -1268,6 +1314,7 @@ export function OrganizationSettingsPage(props: {
 
 export function OrganizationMembersPage(props: {
   detail: OrganizationAdminViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onAcceptEnrollment?: (organizationName: string, userId: string) => void;
@@ -1294,12 +1341,21 @@ export function OrganizationMembersPage(props: {
 
   return (
     <main className="app-shell">
-      <OrganizationHeader detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={organizationDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        detail={organizationDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
             active="members"
+            messages={props.messages}
             organizationName={detail.organizationName}
             runtimeConfig={props.runtimeConfig}
           />
@@ -1515,6 +1571,7 @@ export function OrganizationMembersPage(props: {
 
 export function OrganizationDeletePage(props: {
   detail: OrganizationAdminViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onDeleteOrganization?: (organizationName: string) => void;
@@ -1536,12 +1593,21 @@ export function OrganizationDeletePage(props: {
 
   return (
     <main className="app-shell">
-      <OrganizationHeader detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMenu detail={organizationDetail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationHeader
+        detail={organizationDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        detail={organizationDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingsSubMenu
             active="delete"
+            messages={props.messages}
             organizationName={detail.organizationName}
             runtimeConfig={props.runtimeConfig}
           />

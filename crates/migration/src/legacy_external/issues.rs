@@ -102,6 +102,14 @@ pub enum IssueImportAction {
     ConflictEarlierInBatch,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IssuePostConversionAction {
+    Create,
+    MissingSourcePost,
+    SourcePostNumberMismatch,
+    ConflictNextIssueNumber,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NormalizedIssueImport {
     pub source_index: usize,
@@ -130,6 +138,58 @@ pub struct IssueImportBatch {
     pub entries: Vec<NormalizedIssueImport>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LegacyAttachmentRef {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub hash: Option<String>,
+    pub container_type: Option<String>,
+    pub container_id: Option<String>,
+    pub mime_type: Option<String>,
+    pub size: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedIssuePostConversionComment {
+    pub source_comment_id: Option<String>,
+    pub parent_source_comment_id: Option<String>,
+    pub author: Option<LegacyAuthorRef>,
+    pub body: String,
+    pub created_at: Option<String>,
+    pub attachments: Vec<LegacyAttachmentRef>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssuePostConversionRequest {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub post_number: i64,
+    pub source_post_number: Option<i64>,
+    pub author: Option<LegacyAuthorRef>,
+    pub title: Option<String>,
+    pub body: Option<String>,
+    pub state: IssueState,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub labels: Vec<LegacyIssueLabelRef>,
+    pub milestone_title: Option<String>,
+    pub comments: Vec<NormalizedIssuePostConversionComment>,
+    pub attachments: Vec<LegacyAttachmentRef>,
+    pub action: IssuePostConversionAction,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssuePostConversionResponse {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub post_number: i64,
+    pub issue_number: i64,
+}
+
 impl IssueImportBatch {
     pub fn creatable_entries(&self) -> impl Iterator<Item = &NormalizedIssueImport> {
         self.entries
@@ -148,6 +208,11 @@ impl IssueImportBatch {
 pub enum IssueAdapterError {
     InvalidJson(String),
     InvalidPath(String),
+    MissingPostNumber,
+    InvalidPostNumber(String),
+    InvalidPostSnapshot,
+    MissingResponseNumber,
+    InvalidResponseNumber(String),
     MissingIssuesArray,
     InvalidIssueItem { index: usize },
     MissingField { index: usize, field: &'static str },
@@ -161,6 +226,22 @@ impl std::fmt::Display for IssueAdapterError {
                 formatter,
                 "invalid issue import path `{path}`; expected /-_-api/v1/owners/:owner/projects/:projectName/issues"
             ),
+            Self::MissingPostNumber => write!(
+                formatter,
+                "missing postNumber query for /-_-api/v1/owners/:owner/projects/:projectName/issues/imports"
+            ),
+            Self::InvalidPostNumber(value) => {
+                write!(formatter, "invalid postNumber `{value}`; expected positive integer")
+            }
+            Self::InvalidPostSnapshot => {
+                write!(formatter, "legacy source post snapshot must be a JSON object")
+            }
+            Self::MissingResponseNumber => {
+                write!(formatter, "missing issue number in IssueApi.imports response")
+            }
+            Self::InvalidResponseNumber(value) => {
+                write!(formatter, "invalid IssueApi.imports response number `{value}`")
+            }
             Self::MissingIssuesArray => {
                 write!(formatter, "No issues key exists or value wasn't array!")
             }
@@ -257,6 +338,92 @@ pub fn parse_issue_import_request(
     })
 }
 
+pub fn parse_issue_post_conversion_request(
+    sample_path: &str,
+    source_post_json: Option<&str>,
+    next_issue_number: i64,
+    existing_issue_numbers: &[i64],
+) -> Result<IssuePostConversionRequest, IssueAdapterError> {
+    let (owner, project_name, post_number) = parse_issue_imports_path(sample_path)?;
+    let Some(source_post_json) = source_post_json else {
+        return Ok(IssuePostConversionRequest {
+            endpoint_method: "POST",
+            endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+            owner,
+            project_name,
+            post_number,
+            source_post_number: None,
+            author: None,
+            title: None,
+            body: None,
+            state: IssueState::Open,
+            created_at: None,
+            updated_at: None,
+            labels: Vec::new(),
+            milestone_title: None,
+            comments: Vec::new(),
+            attachments: Vec::new(),
+            action: IssuePostConversionAction::MissingSourcePost,
+        });
+    };
+    let payload: Value = serde_json::from_str(source_post_json)
+        .map_err(|error| IssueAdapterError::InvalidJson(error.to_string()))?;
+    if !payload.is_object() {
+        return Err(IssueAdapterError::InvalidPostSnapshot);
+    }
+
+    let source_post_number = find_value(&payload, "number").and_then(integer_field);
+    let action = if source_post_number != Some(post_number) {
+        IssuePostConversionAction::SourcePostNumberMismatch
+    } else if existing_issue_numbers.contains(&next_issue_number) {
+        IssuePostConversionAction::ConflictNextIssueNumber
+    } else {
+        IssuePostConversionAction::Create
+    };
+
+    Ok(IssuePostConversionRequest {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+        owner,
+        project_name,
+        post_number,
+        source_post_number,
+        author: find_value(&payload, "author").map(author_ref),
+        title: source_post_text_field(&payload, "title"),
+        body: source_post_text_field(&payload, "body"),
+        state: IssueState::Open,
+        created_at: text_field(&payload, "createdAt"),
+        updated_at: text_field(&payload, "updatedAt"),
+        labels: label_refs(&payload),
+        milestone_title: text_field(&payload, "milestoneTitle"),
+        comments: conversion_comments(&payload),
+        attachments: attachment_refs(find_value(&payload, "attachments")),
+        action,
+    })
+}
+
+pub fn parse_issue_post_conversion_response(
+    sample_path: &str,
+    response_json: &str,
+) -> Result<IssuePostConversionResponse, IssueAdapterError> {
+    let (owner, project_name, post_number) = parse_issue_imports_path(sample_path)?;
+    let payload: Value = serde_json::from_str(response_json)
+        .map_err(|error| IssueAdapterError::InvalidJson(error.to_string()))?;
+    let number = find_value(&payload, "number").ok_or(IssueAdapterError::MissingResponseNumber)?;
+    let issue_number = integer_field(number)
+        .filter(|number| *number > 0)
+        .ok_or_else(|| IssueAdapterError::InvalidResponseNumber(scalar_text(number)))?;
+
+    Ok(IssuePostConversionResponse {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+        owner,
+        project_name,
+        post_number,
+        issue_number,
+    })
+}
+
 fn parse_issue_import_path(path: &str) -> Result<(String, String), IssueAdapterError> {
     let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
     match parts.as_slice() {
@@ -265,6 +432,39 @@ fn parse_issue_import_path(path: &str) -> Result<(String, String), IssueAdapterE
         }
         _ => Err(IssueAdapterError::InvalidPath(path.to_string())),
     }
+}
+
+fn parse_issue_imports_path(path: &str) -> Result<(String, String, i64), IssueAdapterError> {
+    let (path_part, query_part) = path.split_once('?').unwrap_or((path, ""));
+    let parts: Vec<&str> = path_part
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect();
+    let (owner, project_name) = match parts.as_slice() {
+        ["-_-api", "v1", "owners", owner, "projects", project_name, "issues", "imports"] => {
+            ((*owner).to_string(), (*project_name).to_string())
+        }
+        _ => return Err(IssueAdapterError::InvalidPath(path.to_string())),
+    };
+    let post_number = query_part
+        .split('&')
+        .find_map(|pair| {
+            let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+            (key == "postNumber").then_some(value)
+        })
+        .ok_or(IssueAdapterError::MissingPostNumber)?;
+    if post_number.is_empty() {
+        return Err(IssueAdapterError::InvalidPostNumber(
+            post_number.to_string(),
+        ));
+    }
+    let number = post_number
+        .parse::<i64>()
+        .ok()
+        .filter(|number| *number > 0)
+        .ok_or_else(|| IssueAdapterError::InvalidPostNumber(post_number.to_string()))?;
+
+    Ok((owner, project_name, number))
 }
 
 fn author_ref(value: &Value) -> LegacyAuthorRef {
@@ -294,6 +494,61 @@ fn label_refs(value: &Value) -> Vec<LegacyIssueLabelRef> {
             })
             .collect(),
         _ => Vec::new(),
+    }
+}
+
+fn source_post_text_field(value: &Value, key: &str) -> Option<String> {
+    value
+        .as_object()
+        .and_then(|map| map.get(key))
+        .map(scalar_text)
+        .or_else(|| {
+            find_value(value, "content")
+                .and_then(Value::as_object)
+                .and_then(|map| map.get(key))
+                .map(scalar_text)
+        })
+        .or_else(|| text_field(value, key))
+}
+
+fn conversion_comments(value: &Value) -> Vec<NormalizedIssuePostConversionComment> {
+    match find_value(value, "comments") {
+        Some(Value::Array(comments)) => comments
+            .iter()
+            .filter(|comment| comment.is_object())
+            .map(|comment| NormalizedIssuePostConversionComment {
+                source_comment_id: text_field(comment, "id"),
+                parent_source_comment_id: text_field(comment, "parentCommentId")
+                    .or_else(|| text_field(comment, "parentId")),
+                author: find_value(comment, "author").map(author_ref),
+                body: text_field(comment, "body")
+                    .or_else(|| text_field(comment, "contents"))
+                    .unwrap_or_default(),
+                created_at: text_field(comment, "createdAt"),
+                attachments: attachment_refs(find_value(comment, "attachments")),
+            })
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn attachment_refs(value: Option<&Value>) -> Vec<LegacyAttachmentRef> {
+    match value {
+        Some(Value::Array(attachments)) => attachments.iter().map(attachment_ref).collect(),
+        Some(value) if value.is_object() => vec![attachment_ref(value)],
+        _ => Vec::new(),
+    }
+}
+
+fn attachment_ref(value: &Value) -> LegacyAttachmentRef {
+    LegacyAttachmentRef {
+        id: text_field(value, "id"),
+        name: text_field(value, "name"),
+        hash: text_field(value, "hash"),
+        container_type: text_field(value, "containerType"),
+        container_id: text_field(value, "containerId"),
+        mime_type: text_field(value, "mimeType"),
+        size: text_field(value, "size"),
     }
 }
 

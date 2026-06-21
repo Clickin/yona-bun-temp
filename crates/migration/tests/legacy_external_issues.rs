@@ -1,7 +1,11 @@
 use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
     issues::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
-    issues::{parse_issue_import_request, IssueAdapterError, IssueImportAction, IssueState},
+    issues::{
+        parse_issue_import_request, parse_issue_post_conversion_request,
+        parse_issue_post_conversion_response, IssueAdapterError, IssueImportAction,
+        IssuePostConversionAction, IssueState,
+    },
     EndpointStatus,
 };
 
@@ -436,6 +440,272 @@ fn issue_adapter_normalizes_recursive_legacy_bulk_import_payload() {
     assert_eq!(issue.action, IssueImportAction::Create);
     assert_eq!(batch.creatable_entries().count(), 1);
     assert_eq!(batch.conflict_entries().count(), 0);
+}
+
+#[test]
+fn issue_imports_adapter_normalizes_post_to_issue_conversion_fixture() {
+    let source_post = r##"{
+      "export": {
+        "number": 4,
+        "author": {
+          "loginId": "post-author",
+          "name": "Post Author",
+          "email": "post-author@example.com"
+        },
+        "content": {
+          "title": "Legacy post title",
+          "body": "legacy post body"
+        },
+        "createdAt": "2026-06-01 AM 09:00:00 +0900",
+        "updatedAt": "2026-06-02 PM 03:30:00 +0900",
+        "state": "CLOSED",
+        "labels": [
+          { "labelName": "Question", "labelColor": "#ff9800", "category": "Kind" }
+        ],
+        "milestoneTitle": "Imported milestone",
+        "attachments": [
+          {
+            "id": 901,
+            "name": "post.png",
+            "hash": "post-hash",
+            "containerType": "BOARD_POST",
+            "containerId": 11,
+            "mimeType": "image/png",
+            "size": 1024
+          }
+        ],
+        "comments": [
+          {
+            "id": 51,
+            "author": { "loginId": "commenter", "name": "Commenter", "email": "c@example.com" },
+            "contents": "top-level post comment",
+            "createdAt": "2026-06-03 AM 10:00:00 +0900",
+            "attachments": [
+              { "id": "951", "name": "comment.txt", "containerType": "NONISSUE_COMMENT", "containerId": "51" }
+            ]
+          },
+          {
+            "id": 52,
+            "parentCommentId": 51,
+            "author": { "loginId": "child", "name": "Child", "email": "child@example.com" },
+            "body": "child post comment"
+          }
+        ]
+      }
+    }"##;
+
+    let request = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        Some(source_post),
+        5,
+        &[],
+    )
+    .unwrap();
+
+    assert_eq!(request.endpoint_method, "POST");
+    assert_eq!(
+        request.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports"
+    );
+    assert_eq!(request.owner, "alice");
+    assert_eq!(request.project_name, "demo");
+    assert_eq!(request.post_number, 4);
+    assert_eq!(request.source_post_number, Some(4));
+    assert_eq!(
+        request.author.as_ref().unwrap().login_id.as_deref(),
+        Some("post-author")
+    );
+    assert_eq!(request.title.as_deref(), Some("Legacy post title"));
+    assert_eq!(request.body.as_deref(), Some("legacy post body"));
+    assert_eq!(request.state, IssueState::Open);
+    assert_eq!(request.state.as_legacy_str(), "OPEN");
+    assert_eq!(
+        request.created_at.as_deref(),
+        Some("2026-06-01 AM 09:00:00 +0900")
+    );
+    assert_eq!(request.labels.len(), 1);
+    assert_eq!(request.labels[0].label_name.as_deref(), Some("Question"));
+    assert_eq!(
+        request.milestone_title.as_deref(),
+        Some("Imported milestone")
+    );
+    assert_eq!(request.attachments.len(), 1);
+    assert_eq!(
+        request.attachments[0].container_type.as_deref(),
+        Some("BOARD_POST")
+    );
+    assert_eq!(request.comments.len(), 2);
+    assert_eq!(request.comments[0].source_comment_id.as_deref(), Some("51"));
+    assert_eq!(
+        request.comments[0].attachments[0].container_type.as_deref(),
+        Some("NONISSUE_COMMENT")
+    );
+    assert_eq!(
+        request.comments[1].parent_source_comment_id.as_deref(),
+        Some("51")
+    );
+    assert_eq!(request.action, IssuePostConversionAction::Create);
+
+    let response = parse_issue_post_conversion_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        r#"{"number":5}"#,
+    )
+    .unwrap();
+    assert_eq!(response.issue_number, 5);
+    assert_eq!(response.post_number, 4);
+}
+
+#[test]
+fn issue_imports_adapter_preserves_defaults_and_scalar_fallbacks() {
+    let source_post = r#"{
+      "number": "4",
+      "author": { "loginId": 1001, "name": false, "email": "scalar@example.com" },
+      "title": 77,
+      "body": true,
+      "labels": [
+        { "labelName": 9, "labelColor": false, "category": "Type" }
+      ],
+      "comments": [
+        {
+          "id": 51,
+          "parentId": 50,
+          "body": 123,
+          "attachments": { "id": 951, "size": 3, "containerType": "NONISSUE_COMMENT" }
+        }
+      ],
+      "attachments": { "id": 901, "size": 4, "containerType": "BOARD_POST" }
+    }"#;
+
+    let request = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        Some(source_post),
+        6,
+        &[],
+    )
+    .unwrap();
+
+    assert_eq!(
+        request.author.as_ref().unwrap().login_id.as_deref(),
+        Some("1001")
+    );
+    assert_eq!(
+        request.author.as_ref().unwrap().name.as_deref(),
+        Some("false")
+    );
+    assert_eq!(request.title.as_deref(), Some("77"));
+    assert_eq!(request.body.as_deref(), Some("true"));
+    assert_eq!(request.state, IssueState::Open);
+    assert_eq!(request.labels[0].label_name.as_deref(), Some("9"));
+    assert_eq!(request.labels[0].label_color.as_deref(), Some("false"));
+    assert_eq!(request.comments[0].body, "123");
+    assert_eq!(
+        request.comments[0].parent_source_comment_id.as_deref(),
+        Some("50")
+    );
+    assert_eq!(request.attachments[0].size.as_deref(), Some("4"));
+}
+
+#[test]
+fn issue_imports_adapter_rejects_bad_path_query_and_response_boundaries() {
+    let missing_post_number = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports",
+        None,
+        5,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(missing_post_number, IssueAdapterError::MissingPostNumber);
+
+    let invalid_post_number = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=0",
+        None,
+        5,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_post_number,
+        IssueAdapterError::InvalidPostNumber("0".to_string())
+    );
+
+    let invalid_path = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues?postNumber=4",
+        None,
+        5,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_path,
+        IssueAdapterError::InvalidPath(
+            "/-_-api/v1/owners/alice/projects/demo/issues?postNumber=4".to_string()
+        )
+    );
+
+    let invalid_snapshot = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        Some(r#"["not", "a", "post"]"#),
+        5,
+        &[],
+    )
+    .unwrap_err();
+    assert_eq!(invalid_snapshot, IssueAdapterError::InvalidPostSnapshot);
+
+    let missing_response_number = parse_issue_post_conversion_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        r#"{"ok":true}"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        missing_response_number,
+        IssueAdapterError::MissingResponseNumber
+    );
+
+    let invalid_response_number = parse_issue_post_conversion_response(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        r#"{"number":"nope"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        invalid_response_number,
+        IssueAdapterError::InvalidResponseNumber("nope".to_string())
+    );
+}
+
+#[test]
+fn issue_imports_adapter_classifies_missing_mismatch_and_next_number_conflict() {
+    let missing = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        None,
+        5,
+        &[],
+    )
+    .unwrap();
+    assert_eq!(missing.action, IssuePostConversionAction::MissingSourcePost);
+
+    let mismatch = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        Some(r#"{"number":5,"title":"other","body":"body"}"#),
+        6,
+        &[],
+    )
+    .unwrap();
+    assert_eq!(
+        mismatch.action,
+        IssuePostConversionAction::SourcePostNumberMismatch
+    );
+
+    let conflict = parse_issue_post_conversion_request(
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+        Some(r#"{"number":4,"title":"post","body":"body"}"#),
+        6,
+        &[6],
+    )
+    .unwrap();
+    assert_eq!(
+        conflict.action,
+        IssuePostConversionAction::ConflictNextIssueNumber
+    );
 }
 
 #[test]
