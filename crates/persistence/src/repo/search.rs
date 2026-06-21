@@ -1,5 +1,36 @@
 use super::*;
 
+struct NativeSearchCandidates {
+    ids: HashSet<i64>,
+    source: NativeSearchCandidateSource,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum NativeSearchCandidateSource {
+    DbNativeFts,
+    FallbackScan,
+}
+
+impl NativeSearchCandidates {
+    fn fallback_scan() -> Self {
+        Self {
+            ids: HashSet::new(),
+            source: NativeSearchCandidateSource::FallbackScan,
+        }
+    }
+
+    fn db_native(ids: HashSet<i64>) -> Self {
+        Self {
+            ids,
+            source: NativeSearchCandidateSource::DbNativeFts,
+        }
+    }
+
+    fn is_native_match(&self, id: i64) -> bool {
+        self.source == NativeSearchCandidateSource::DbNativeFts && self.ids.contains(&id)
+    }
+}
+
 impl AppRepository {
     pub async fn search_app(
         &self,
@@ -116,6 +147,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("issue", &["title", "body"], &input.keyword)
+            .await?;
         let rows = issue::Entity::find()
             .order_by_desc(issue::Column::CreatedDate)
             .order_by_desc(issue::Column::Id)
@@ -141,7 +175,11 @@ impl AppRepository {
 
             let title = row.title.clone().unwrap_or_default();
             let body = self.read_text_column("issue", "body", row.id).await?;
-            if !keyword_matches(&title, &input.keyword) && !keyword_matches(&body, &input.keyword) {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&title, &body],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&title, &body, &input.keyword);
@@ -181,6 +219,13 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates(
+                "n4user",
+                &["login_id", "name", "email", "english_name"],
+                &input.keyword,
+            )
+            .await?;
         let scoped_user_ids = self.search_scope_user_ids(input).await?;
         let rows = n4user::Entity::find()
             .order_by_asc(n4user::Column::Name)
@@ -201,15 +246,16 @@ impl AppRepository {
             let display_name = row.name.clone().unwrap_or_else(|| login_id.clone());
             let email = row.email.clone().unwrap_or_default();
             let english_name = row.english_name.clone().unwrap_or_default();
-            if ![
-                login_id.as_str(),
-                display_name.as_str(),
-                email.as_str(),
-                english_name.as_str(),
-            ]
-            .iter()
-            .any(|value| keyword_matches(value, &input.keyword))
-            {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[
+                    login_id.as_str(),
+                    display_name.as_str(),
+                    email.as_str(),
+                    english_name.as_str(),
+                ],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&display_name, &email, &input.keyword);
@@ -246,6 +292,13 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates(
+                "project",
+                &["owner", "name", "overview"],
+                &input.keyword,
+            )
+            .await?;
         let mut ranked_items = Vec::new();
         for project in self.list_projects().await? {
             if !self.search_project_matches_scope(&project, input)
@@ -257,9 +310,11 @@ impl AppRepository {
             }
             let title = format!("{}/{}", project.owner_name, project.project_name);
             let overview = project.overview.clone().unwrap_or_default();
-            if !keyword_matches(&title, &input.keyword)
-                && !keyword_matches(&overview, &input.keyword)
-            {
+            if !Self::search_text_matches(
+                candidates.is_native_match(project.id),
+                &[&title, &overview],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&title, &overview, &input.keyword);
@@ -292,6 +347,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("posting", &["title", "body"], &input.keyword)
+            .await?;
         let rows = posting::Entity::find()
             .order_by_desc(posting::Column::CreatedDate)
             .order_by_desc(posting::Column::Id)
@@ -311,7 +369,11 @@ impl AppRepository {
             }
             let title = row.title.clone().unwrap_or_default();
             let body = self.read_text_column("posting", "body", row.id).await?;
-            if !keyword_matches(&title, &input.keyword) && !keyword_matches(&body, &input.keyword) {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&title, &body],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&title, &body, &input.keyword);
@@ -351,6 +413,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("milestone", &["title", "contents"], &input.keyword)
+            .await?;
         let rows = milestone::Entity::find()
             .order_by_desc(milestone::Column::DueDate)
             .order_by_desc(milestone::Column::Id)
@@ -372,9 +437,11 @@ impl AppRepository {
             let contents = self
                 .read_text_column("milestone", "contents", row.id)
                 .await?;
-            if !keyword_matches(&title, &input.keyword)
-                && !keyword_matches(&contents, &input.keyword)
-            {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&title, &contents],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&title, &contents, &input.keyword);
@@ -410,6 +477,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("issue_comment", &["contents"], &input.keyword)
+            .await?;
         let rows = issue_comment::Entity::find()
             .order_by_desc(issue_comment::Column::CreatedDate)
             .order_by_desc(issue_comment::Column::Id)
@@ -436,7 +506,11 @@ impl AppRepository {
             let contents = self
                 .read_text_column("issue_comment", "contents", row.id)
                 .await?;
-            if !keyword_matches(&contents, &input.keyword) {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&contents],
+                &input.keyword,
+            ) {
                 continue;
             }
             let title = format!("Re) {}", issue.title.unwrap_or_default());
@@ -475,6 +549,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("posting_comment", &["contents"], &input.keyword)
+            .await?;
         let rows = posting_comment::Entity::find()
             .order_by_desc(posting_comment::Column::CreatedDate)
             .order_by_desc(posting_comment::Column::Id)
@@ -504,7 +581,11 @@ impl AppRepository {
             let contents = self
                 .read_text_column("posting_comment", "contents", row.id)
                 .await?;
-            if !keyword_matches(&contents, &input.keyword) {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&contents],
+                &input.keyword,
+            ) {
                 continue;
             }
             let title = format!("Re) {}", posting.title.unwrap_or_default());
@@ -543,6 +624,9 @@ impl AppRepository {
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
+        let candidates = self
+            .search_native_text_candidates("review_comment", &["contents"], &input.keyword)
+            .await?;
         let rows = review_comment::Entity::find()
             .order_by_desc(review_comment::Column::CreatedDate)
             .order_by_desc(review_comment::Column::Id)
@@ -583,9 +667,11 @@ impl AppRepository {
                 .read_text_column("review_comment", "contents", row.id)
                 .await?;
             let pull_title = pull_request.title.clone().unwrap_or_default();
-            if !keyword_matches(&contents, &input.keyword)
-                && !keyword_matches(&pull_title, &input.keyword)
-            {
+            if !Self::search_text_matches(
+                candidates.is_native_match(row.id),
+                &[&contents, &pull_title],
+                &input.keyword,
+            ) {
                 continue;
             }
             let snippets = self.search_snippets(&pull_title, &contents, &input.keyword);
@@ -789,5 +875,268 @@ impl AppRepository {
             return title_snippets;
         }
         make_snippets(body, keyword, 40)
+    }
+
+    fn search_text_matches(native_match: bool, values: &[&str], keyword: &str) -> bool {
+        // Native FTS broadens candidate retrieval while the literal path preserves legacy icontains matches.
+        let literal_match = values.iter().any(|value| keyword_matches(value, keyword));
+        native_match || literal_match
+    }
+
+    async fn search_native_text_candidates(
+        &self,
+        table: &str,
+        columns: &[&str],
+        keyword: &str,
+    ) -> Result<NativeSearchCandidates, DbErr> {
+        if columns.is_empty() || keyword.trim().is_empty() {
+            return Ok(NativeSearchCandidates::fallback_scan());
+        }
+
+        match self.db.get_database_backend() {
+            DatabaseBackend::Sqlite => {
+                self.search_sqlite_fts5_candidates(table, columns, keyword)
+                    .await
+            }
+            DatabaseBackend::Postgres => {
+                self.search_postgres_text_candidates(table, columns, keyword)
+                    .await
+            }
+            DatabaseBackend::MySql => {
+                self.search_mysql_fulltext_candidates(table, columns, keyword)
+                    .await
+            }
+        }
+    }
+
+    async fn search_sqlite_fts5_candidates(
+        &self,
+        table: &str,
+        columns: &[&str],
+        keyword: &str,
+    ) -> Result<NativeSearchCandidates, DbErr> {
+        let backend = DatabaseBackend::Sqlite;
+        let fts_table = format!("yona_search_fts_{}", sanitize_sqlite_temp_name(table));
+        let quoted_fts_table = quote_sql_identifier(backend, &fts_table);
+        let fts_columns = columns
+            .iter()
+            .map(|column| quote_sql_identifier(backend, column))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let create_sql = format!(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS temp.{quoted_fts_table} USING fts5(row_id UNINDEXED, {fts_columns})"
+        );
+        if self
+            .db
+            .execute(Statement::from_string(backend, create_sql))
+            .await
+            .is_err()
+        {
+            return Ok(NativeSearchCandidates::fallback_scan());
+        }
+
+        self.db
+            .execute(Statement::from_string(
+                backend,
+                format!("DELETE FROM temp.{quoted_fts_table}"),
+            ))
+            .await?;
+
+        let select_columns = columns
+            .iter()
+            .map(|column| format!("COALESCE({}, '')", quote_sql_identifier(backend, column)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let insert_sql = format!(
+            "INSERT INTO temp.{quoted_fts_table} (row_id, {fts_columns}) SELECT id, {select_columns} FROM {}",
+            quote_sql_identifier(backend, table)
+        );
+        if self
+            .db
+            .execute(Statement::from_string(backend, insert_sql))
+            .await
+            .is_err()
+        {
+            return Ok(NativeSearchCandidates::fallback_scan());
+        }
+
+        let query_sql = format!(
+            "SELECT row_id AS id FROM temp.{quoted_fts_table} WHERE {quoted_fts_table} MATCH ?"
+        );
+        self.search_candidate_ids_from_statement(
+            backend,
+            query_sql,
+            vec![sqlite_fts_phrase(keyword).into()],
+        )
+        .await
+    }
+
+    async fn search_postgres_text_candidates(
+        &self,
+        table: &str,
+        columns: &[&str],
+        keyword: &str,
+    ) -> Result<NativeSearchCandidates, DbErr> {
+        let backend = DatabaseBackend::Postgres;
+        let vector = columns
+            .iter()
+            .map(|column| format!("COALESCE({}, '')", quote_sql_identifier(backend, column)))
+            .collect::<Vec<_>>()
+            .join(" || ' ' || ");
+        let sql = format!(
+            "SELECT id FROM {} WHERE to_tsvector('simple', {vector}) @@ plainto_tsquery('simple', $1)",
+            quote_sql_identifier(backend, table)
+        );
+        self.search_candidate_ids_from_statement(backend, sql, vec![keyword.to_string().into()])
+            .await
+    }
+
+    async fn search_mysql_fulltext_candidates(
+        &self,
+        table: &str,
+        columns: &[&str],
+        keyword: &str,
+    ) -> Result<NativeSearchCandidates, DbErr> {
+        let backend = DatabaseBackend::MySql;
+        let column_list = columns
+            .iter()
+            .map(|column| quote_sql_identifier(backend, column))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT id FROM {} WHERE MATCH ({column_list}) AGAINST (? IN NATURAL LANGUAGE MODE)",
+            quote_sql_identifier(backend, table)
+        );
+        self.search_candidate_ids_from_statement(backend, sql, vec![keyword.to_string().into()])
+            .await
+    }
+
+    async fn search_candidate_ids_from_statement(
+        &self,
+        backend: DatabaseBackend,
+        sql: String,
+        values: Vec<sea_orm::Value>,
+    ) -> Result<NativeSearchCandidates, DbErr> {
+        let rows = match self
+            .db
+            .query_all(Statement::from_sql_and_values(backend, sql, values))
+            .await
+        {
+            Ok(rows) => rows,
+            Err(_) => return Ok(NativeSearchCandidates::fallback_scan()),
+        };
+
+        let mut ids = HashSet::new();
+        for row in rows {
+            if let Ok(id) = row.try_get::<i64>("", "id") {
+                ids.insert(id);
+            }
+        }
+        Ok(NativeSearchCandidates::db_native(ids))
+    }
+}
+
+fn quote_sql_identifier(backend: DatabaseBackend, value: &str) -> String {
+    let quote = match backend {
+        DatabaseBackend::MySql => '`',
+        DatabaseBackend::Postgres | DatabaseBackend::Sqlite => '"',
+    };
+    let escaped = value.replace(quote, &format!("{quote}{quote}"));
+    format!("{quote}{escaped}{quote}")
+}
+
+fn sanitize_sqlite_temp_name(value: &str) -> String {
+    value
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn sqlite_fts_phrase(keyword: &str) -> String {
+    format!("\"{}\"", keyword.replace('"', "\"\""))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sea_orm::{ConnectionTrait, Database, Statement};
+
+    async fn sqlite_probe_repo() -> AppRepository {
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("sqlite connection");
+        db.execute(Statement::from_string(
+            DatabaseBackend::Sqlite,
+            "CREATE TABLE search_probe (id INTEGER PRIMARY KEY, title TEXT, body TEXT)".to_string(),
+        ))
+        .await
+        .expect("create probe table");
+        db.execute(Statement::from_string(
+            DatabaseBackend::Sqlite,
+            "INSERT INTO search_probe (id, title, body) VALUES (1, 'Native FTS title', 'body token'), (2, 'Other title', 'fallback-only CamelNeedle')".to_string(),
+        ))
+        .await
+        .expect("insert probe rows");
+        AppRepository::new(db)
+    }
+
+    #[tokio::test]
+    async fn sqlite_fts5_candidate_lookup_uses_db_native_source_for_token_match() {
+        let repo = sqlite_probe_repo().await;
+
+        let candidates = repo
+            .search_native_text_candidates("search_probe", &["title", "body"], "Native")
+            .await
+            .expect("candidate lookup");
+
+        assert_eq!(candidates.source, NativeSearchCandidateSource::DbNativeFts);
+        assert!(candidates.is_native_match(1));
+        assert!(!candidates.is_native_match(2));
+    }
+
+    #[tokio::test]
+    async fn sqlite_fts5_candidate_lookup_falls_back_when_table_is_unavailable() {
+        let repo = sqlite_probe_repo().await;
+
+        let candidates = repo
+            .search_native_text_candidates("missing_probe", &["title", "body"], "Native")
+            .await
+            .expect("candidate lookup");
+
+        assert_eq!(candidates.source, NativeSearchCandidateSource::FallbackScan);
+        assert!(!candidates.is_native_match(1));
+    }
+
+    #[test]
+    fn sqlite_fts_phrase_escapes_user_quotes() {
+        assert_eq!(
+            sqlite_fts_phrase("a \"quoted\" value"),
+            "\"a \"\"quoted\"\" value\""
+        );
+    }
+
+    #[test]
+    fn search_text_matches_accepts_native_or_literal_candidates() {
+        assert!(AppRepository::search_text_matches(
+            true,
+            &["unrelated"],
+            "needle"
+        ));
+        assert!(AppRepository::search_text_matches(
+            false,
+            &["literal needle"],
+            "needle"
+        ));
+        assert!(!AppRepository::search_text_matches(
+            false,
+            &["unrelated"],
+            "needle"
+        ));
     }
 }

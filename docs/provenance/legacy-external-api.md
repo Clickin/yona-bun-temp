@@ -37,6 +37,24 @@ inventory. It is an outbound Yona-to-GitHub migration tool, documented in
 `docs/provenance/github-migration-decision.md`, and must remain separate from
 Rust app-runtime compatibility.
 
+## Search Boundary Decision
+
+P3-C external search API boundary was retired as not applicable on 2026-06-21.
+The legacy search controller routes are page/application routes, not external
+compatibility routes:
+
+- `GET /search` -> `controllers.SearchApp.searchInAll()`
+- `GET /organizations/:organizationName/search` -> `controllers.SearchApp.searchInAGroup(...)`
+- `GET /:user/:project/search` -> `controllers.SearchApp.searchInAProject(...)`
+
+The `/-_-api/v1/**` block in `yona-original/conf/routes` has no search route,
+and `yona-original/app/controllers/api/` has no `SearchApi` controller. The Rust
+app search boundary therefore remains the canonical `/api/v1` app surface only:
+`/api/v1/search`, `/api/v1/projects/:owner/:project/search`, and
+`/api/v1/organizations/:organization/search`. Do not add
+`crates/migration/src/legacy_external` descriptors or app-server routes for a
+non-existent legacy external search API.
+
 ## Legacy Sources
 
 - Route table: `yona-original/conf/routes`, lines 40-90 for `/-_-api/v1/**`.

@@ -495,7 +495,9 @@ Interpretation:
 - [x] Search snippets expose truncated-window metadata and React result bodies append the legacy `.....` suffix when `SearchResult.makeSnippets` returned text shorter than the original source.
 - [x] Search result author meta preserves legacy `search/partial_*.scala.html` scalar output: `/:loginId` tooltip links when a display name exists, `issue.noAuthor` span fallback otherwise, and created-date title attributes.
 - Follow-up: full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer.
-- Deferred: legacy external search API compatibility remains separate migrator scope.
+- Retired: legacy external search API compatibility is not applicable because
+  legacy exposes no `/-_-api/v1/**` search route or `controllers.api.SearchApi`;
+  app search remains `/api/v1/**` only.
 
 ## Notifications / Mail
 

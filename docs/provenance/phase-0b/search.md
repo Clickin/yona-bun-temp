@@ -26,8 +26,12 @@
 
 - `SPEC.md` FG-12 records global, project, and organization search as implemented for Phase 5C app runtime parity, with fixed `pageSize=20`, required `keyword`/`searchType`, legacy `auto` type order, legacy pagination shell, ACL-aware filtering, snippet behavior, and lightweight relevance ordering.
 - `docs/agents/06-phase-plan.md` Phase 5C records the same implemented surface and keeps full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer as remaining search follow-ups.
+- P3-C external search API boundary is not applicable: `yona-original/conf/routes` exposes search only through `GET /search`, `GET /organizations/:organizationName/search`, and `GET /:user/:project/search`, while the legacy `/-_-api/v1/**` route block contains no search endpoint and `yona-original/app/controllers/api/` contains no `SearchApi` controller.
 - Therefore the current app behavior is intentionally the REST query-backed app search surface listed in this document. This note does not change runtime behavior and does not replace the lightweight scorer with a new search architecture.
 - Legacy evidence currently listed for this boundary is `yona-original/app/controllers/SearchApp.java`, `yona-original/app/models/Search.java`, `yona-original/test/models/SearchTests.java`, `yona-original/test/models/SearchResultTests.java`, `yona-original/test/utils/AccessControlTest.java`, and the `yona-original/app/views/search/*.scala.html` partials referenced below.
+- P3-B DB-native FTS slice started on 2026-06-21. The legacy UX and app response shape remain unchanged: result tabs, scope/type resolution, ACL filtering, snippets, pagination, and the current lightweight relevance plus legacy-order fallback stay authoritative.
+- Runtime search now has a conservative native candidate abstraction in `crates/persistence/src/repo/search.rs`: SQLite uses temporary FTS5 candidate tables, PostgreSQL attempts built-in `to_tsvector`/`plainto_tsquery`, and MySQL attempts `MATCH ... AGAINST` where the schema supports FULLTEXT indexes. Any unsupported native path or database error falls back to the existing literal scan path.
+- Native FTS candidates participate in final inclusion together with the existing literal `keyword_matches` path. Literal matching remains in place so DB tokenization differences do not drop legacy `icontains`-style results, while DB-native matches can be returned when supported by the active dialect.
 
 ## Extracted Intent
 
@@ -48,16 +52,15 @@
 
 ## Explicit Deferrals
 
-- full-text index or external search engine
-- async indexing
+- persistent full-text index storage/backfill/update/delete orchestration beyond the current DB-native candidate slice
+- async indexing only with future legacy/external evidence for that separate scope
 - ranking beyond the current lightweight title/body hit-count scorer and legacy-order tie-breaker
 - broader AI-facing or machine-facing search surfaces
-- legacy external `/-_-api/v1/**` search compatibility unless the separate migrator/export scope requires it
 
 이 항목들은 Phase 5C app runtime parity 밖의 `deferred` scope다.
 
 ## Bounded Future Split
 
-- Search index design evidence: after current parity scope, identify whether legacy Yona used DB query matching, Lucene/Elasticsearch, or another index path for each result type, and record the source paths before any implementation.
-- Index-backed runtime slice: only after that evidence pass, add a bounded `crates/search` + `crates/persistence` implementation plan for index storage, update/delete indexing, backfill/rebuild, and ranking parity; keep `/api/v1` response shape, legacy result UI, scopes, ACL filtering, and the current lightweight scorer contract as the fallback baseline.
-- Legacy external compatibility: keep `/-_-api/v1/**` search work separate and only attach it to migrator/export/import scope if that scope requires it.
+- Search index design: partial DB-native candidate slice exists without external Elastic/OpenSearch dependency and without changing the legacy app search contract.
+- Remaining index-backed runtime work: persistent DB-native index schema/backfill/update/delete orchestration can be added later only if it keeps `/api/v1` response shape, legacy result UI, scopes, ACL filtering, and the current lightweight scorer contract as the fallback baseline.
+- Legacy external compatibility: retired as not applicable because no legacy `/-_-api/v1/**` search endpoint exists. Keep app search on `/api/v1/**` only unless new legacy evidence is found.
