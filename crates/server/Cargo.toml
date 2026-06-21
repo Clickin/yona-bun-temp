@@ -39,6 +39,7 @@ http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
 include_dir.workspace = true
+ldap3.workspace = true
 md-5.workspace = true
 mime_guess.workspace = true
 pulldown-cmark.workspace = true

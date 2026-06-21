@@ -12,7 +12,11 @@ use std::collections::HashMap;
 
 use crate::assets::serve_frontend_page;
 use crate::generated::yona::pilot::v1::*;
-use crate::persistence::{AppUserRecord, CreateUserInput};
+use crate::ldap::{
+    authenticate_with_real_ldap_connector, fixture_ldap_authenticate, LdapConnectorError,
+    RealLdapDirectoryConnector,
+};
+use crate::persistence::{AppUserRecord, CreateUserInput, OAuthUserInput};
 #[cfg(debug_assertions)]
 use crate::resolve_current_session_response;
 use crate::{
@@ -314,10 +318,22 @@ async fn authenticate_with_configured_ldap(
     password: &str,
 ) -> Result<AppUserRecord, LdapAuthFailure> {
     let ldap_identity = ldap_login_identity(ldap, repository, identifier).await?;
-    if ldap.fixture_users.is_empty() {
-        return Err(LdapAuthFailure::ConnectionUnavailable);
-    }
-    let Some(ldap_user) = fixture_ldap_authenticate(ldap, &ldap_identity, password) else {
+    let ldap_user = if ldap.fixture_users.is_empty() {
+        authenticate_with_real_ldap_connector(
+            ldap,
+            &ldap_identity,
+            password,
+            &RealLdapDirectoryConnector,
+        )
+        .await
+        .map_err(|error| match error {
+            LdapConnectorError::Authentication => LdapAuthFailure::Authentication,
+            LdapConnectorError::ConnectionUnavailable => LdapAuthFailure::ConnectionUnavailable,
+        })?
+    } else {
+        fixture_ldap_authenticate(ldap, &ldap_identity, password)
+    };
+    let Some(ldap_user) = ldap_user else {
         return Err(LdapAuthFailure::Authentication);
     };
     provision_or_update_ldap_user(auth_ui, ldap, repository, &ldap_user, password)
@@ -338,25 +354,6 @@ async fn ldap_login_identity(
         Ok(None) => Ok(identifier.to_string()),
         Err(_) => Err(LdapAuthFailure::ConnectionUnavailable),
     }
-}
-
-fn fixture_ldap_authenticate<'a>(
-    ldap: &'a LdapRuntimeConfig,
-    identity: &str,
-    password: &str,
-) -> Option<LdapFixtureUser> {
-    let normalized_identity = normalize_identifier(identity);
-    ldap.fixture_users
-        .iter()
-        .find(|user| {
-            let candidate = if normalized_identity.contains('@') {
-                &user.email
-            } else {
-                &user.login_id
-            };
-            normalize_identifier(candidate) == normalized_identity && user.password == password
-        })
-        .cloned()
 }
 
 async fn provision_or_update_ldap_user(
@@ -864,6 +861,173 @@ pub(crate) async fn direct_unsupported_authenticate_provider(
     Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
 }
 
+fn legacy_oauth_provider_display_name(provider: &str) -> String {
+    match provider {
+        "github" => "GitHub",
+        "google" => "Google",
+        _ => provider,
+    }
+    .to_string()
+}
+
+fn oauth_provider_configured<'a>(
+    service: &'a PilotServiceImpl,
+    provider: &str,
+) -> Option<&'a crate::OAuthProviderRuntimeConfig> {
+    let provider = provider.to_ascii_lowercase();
+    if !service
+        .auth_ui
+        .enabled_social_providers
+        .iter()
+        .any(|configured| configured.trim().eq_ignore_ascii_case(&provider))
+    {
+        return None;
+    }
+    let config = service.oauth.configured_provider(&provider)?;
+    if config.client_id.trim().is_empty() || config.authorization_url.trim().is_empty() {
+        return None;
+    }
+    Some(config)
+}
+
+fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, String, String)> {
+    let provider_user_id = query
+        .get("providerUserId")
+        .or_else(|| query.get("provider_user_id"))
+        .or_else(|| query.get("id"))
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())?;
+    let email = query
+        .get("email")
+        .map(|value| normalize_identifier(value))
+        .filter(|value| !value.is_empty())?;
+    let name = query
+        .get("name")
+        .or_else(|| query.get("displayName"))
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| email.clone());
+    Some((provider_user_id, email, name))
+}
+
+fn oauth_login_id_hint(query: &HashMap<String, String>, email: &str) -> String {
+    query
+        .get("loginId")
+        .or_else(|| query.get("login_id"))
+        .map(|value| normalize_identifier(value))
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| {
+            email
+                .split_once('@')
+                .map(|(local, _)| normalize_identifier(local))
+                .filter(|local| !local.is_empty())
+                .unwrap_or_else(|| "user".to_string())
+        })
+}
+
+fn configured_oauth_start_redirect(
+    provider: &str,
+    config: &crate::OAuthProviderRuntimeConfig,
+    service: &PilotServiceImpl,
+) -> Response {
+    let redirect_uri = format!(
+        "{}{}",
+        service.public_origin,
+        base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
+    );
+    let mut location = format!(
+        "{}?client_id={}&redirect_uri={}&response_type=code&state=yona-oauth",
+        config.authorization_url.trim(),
+        percent_encode_uri_component(config.client_id.trim()),
+        percent_encode_uri_component(&redirect_uri)
+    );
+    if !config.scope.trim().is_empty() {
+        location.push_str("&scope=");
+        location.push_str(&percent_encode_uri_component(config.scope.trim()));
+    }
+    Redirect::to(&location).into_response()
+}
+
+pub(crate) async fn direct_authenticate_provider(
+    headers: HeaderMap,
+    provider: String,
+    query: HashMap<String, String>,
+    service: PilotServiceImpl,
+) -> Response {
+    let provider = provider.trim().to_ascii_lowercase();
+    let Some(config) = oauth_provider_configured(&service, &provider).cloned() else {
+        return direct_unsupported_authenticate_provider(provider, service).await;
+    };
+
+    if query
+        .get("error")
+        .map(|value| value.eq_ignore_ascii_case("access_denied"))
+        .unwrap_or(false)
+    {
+        return direct_authenticate_provider_denied(provider, service).await;
+    }
+
+    let Some((provider_user_id, email, name)) = oauth_callback_identity(&query) else {
+        if query
+            .get("code")
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false)
+        {
+            return direct_authenticate_provider_denied(provider, service).await;
+        }
+        return configured_oauth_start_redirect(&provider, &config, &service);
+    };
+
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return direct_unsupported_authenticate_provider(provider, service).await;
+    };
+    let session = service.session_manager.ensure_anonymous_session(&headers);
+    let password_hash = match hash(format!("{provider}:{provider_user_id}:oauth"), DEFAULT_COST) {
+        Ok(password_hash) => password_hash,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let login_id_hint = oauth_login_id_hint(&query, &email);
+    let user = match repository
+        .link_or_create_oauth_user(OAuthUserInput {
+            email_address: email,
+            display_name: name,
+            login_id_hint,
+            password_hash,
+            provider: provider.clone(),
+            provider_display_name: legacy_oauth_provider_display_name(&provider),
+            provider_user_id,
+        })
+        .await
+    {
+        Ok(user) => user,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    let authenticated_session =
+        service
+            .session_manager
+            .create_authenticated_session(Some(&session.token), user.id, false);
+    let default_landing_path = repository
+        .read_default_landing_path(user.id)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| "/me".to_string());
+    let redirect_path = post_auth_landing_path(query.get("redirectUrl"), &default_landing_path);
+    let mut response =
+        Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response();
+    for cookie in service
+        .session_manager
+        .build_set_cookie_headers(&authenticated_session)
+    {
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            cookie.parse().expect("set-cookie header"),
+        );
+    }
+    response
+}
+
 pub(crate) async fn direct_authenticate_provider_denied(
     provider: String,
     service: PilotServiceImpl,
@@ -1063,10 +1227,19 @@ pub(crate) fn routes(
         )
         .route(
             "/authenticate/{provider}",
-            get(move |Path(provider): Path<String>| async move {
-                direct_unsupported_authenticate_provider(provider, authenticate_service.clone())
+            get(
+                move |headers: HeaderMap,
+                      Path(provider): Path<String>,
+                      Query(query): Query<HashMap<String, String>>| async move {
+                    direct_authenticate_provider(
+                        headers,
+                        provider,
+                        query,
+                        authenticate_service.clone(),
+                    )
                     .await
-            }),
+                },
+            ),
         )
         .route(
             "/logout",

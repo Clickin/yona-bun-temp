@@ -2,6 +2,7 @@ mod anonymous_access;
 mod app_config;
 mod assets;
 mod excel_export;
+mod ldap;
 mod mailbox;
 mod markdown;
 mod notification_mail;
@@ -13,7 +14,8 @@ mod state;
 
 pub use app_config::{
     repository_config_from_startup, AppRuntimeConfig, AuthUiConfig, LdapFixtureUser,
-    LdapRuntimeConfig, RuntimeConfig, SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
+    LdapRuntimeConfig, OAuthProviderRuntimeConfig, OAuthRuntimeConfig, RuntimeConfig,
+    SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
 };
 pub(crate) use markdown::{
     issue_reference_metadata_from_resolved, markdown_issue_references_for_project,

@@ -90,6 +90,55 @@ impl AppRepository {
         Ok(Some(record))
     }
 
+    pub async fn read_site_import_attachment_snapshot(
+        &self,
+        attachment_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.unwrap_or_default(),
+            hash: model.hash.unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.unwrap_or_default(),
+            name: model.name.unwrap_or_default(),
+            owner_login_id: model.owner_login_id.unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        }))
+    }
+
+    pub async fn restore_site_import_attachment_snapshot(
+        &self,
+        snapshot: &AttachmentRecord,
+    ) -> Result<bool, DbErr> {
+        if attachment::Entity::find_by_id(snapshot.id)
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            return Ok(false);
+        }
+        attachment::ActiveModel {
+            id: Set(snapshot.id),
+            container_id: Set(snapshot.container_id),
+            container_type: Set(Some(snapshot.container_type.clone())),
+            hash: Set(Some(snapshot.hash.clone())),
+            mime_type: Set(Some(snapshot.mime_type.clone())),
+            name: Set(Some(snapshot.name.clone())),
+            owner_login_id: Set(Some(snapshot.owner_login_id.clone())),
+            size: Set(Some(snapshot.size)),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await?;
+        Ok(true)
+    }
+
     pub async fn delete_site_import_posting_by_number(
         &self,
         owner_name: &str,

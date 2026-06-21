@@ -92,6 +92,16 @@ signup_require_confirm = true
 social_login_support = ["github", "google"]
 social_login_only = true
 
+[oauth.github]
+client_id = "github-file-client"
+client_secret = "github-file-secret"
+authorization_url = "https://github.file/login/oauth/authorize"
+scope = "user:email"
+
+[oauth.google]
+client_id = "google-file-client"
+client_secret = "google-file-secret"
+
 [session]
 max_age = 1800
 
@@ -193,6 +203,25 @@ draft_time = "1s"
         Some(vec!["github".to_string(), "google".to_string()])
     );
     assert_eq!(config.auth_social_login_only, Some(true));
+    let oauth = config.oauth_providers.as_ref().expect("oauth providers");
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.client_id.as_deref()),
+        Some("github-file-client")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.authorization_url.as_deref()),
+        Some("https://github.file/login/oauth/authorize")
+    );
+    assert_eq!(
+        oauth
+            .get("google")
+            .and_then(|provider| provider.client_secret.as_deref()),
+        Some("google-file-secret")
+    );
     assert_eq!(config.session_timeout_seconds, Some(1800));
     assert_eq!(config.issue_event_draft_time.as_deref(), Some("1s"));
     assert_eq!(
@@ -473,6 +502,22 @@ draft_time = "30s"
                 "github, google".to_string(),
             ),
             (
+                "YONA_OAUTH_GITHUB_CLIENT_ID".to_string(),
+                "github-env-client".to_string(),
+            ),
+            (
+                "YONA_OAUTH_GITHUB_CLIENT_SECRET".to_string(),
+                "github-env-secret".to_string(),
+            ),
+            (
+                "YONA_OAUTH_GITHUB_AUTHORIZATION_URL".to_string(),
+                "https://github.env/login/oauth/authorize".to_string(),
+            ),
+            (
+                "YONA_OAUTH_GITHUB_SCOPE".to_string(),
+                "read:user user:email".to_string(),
+            ),
+            (
                 "YONA_SESSION_TIMEOUT_SECONDS".to_string(),
                 "7200".to_string(),
             ),
@@ -625,6 +670,31 @@ draft_time = "30s"
     assert_eq!(
         config.auth_social_login_support,
         Some(vec!["github".to_string(), "google".to_string()])
+    );
+    let oauth = config.oauth_providers.as_ref().expect("oauth providers");
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.client_id.as_deref()),
+        Some("github-env-client")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.client_secret.as_deref()),
+        Some("github-env-secret")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.authorization_url.as_deref()),
+        Some("https://github.env/login/oauth/authorize")
+    );
+    assert_eq!(
+        oauth
+            .get("github")
+            .and_then(|provider| provider.scope.as_deref()),
+        Some("read:user user:email")
     );
     assert_eq!(config.session_timeout_seconds, Some(7200));
     assert_eq!(

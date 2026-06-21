@@ -475,6 +475,222 @@ async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
 }
 
 #[tokio::test]
+// Guards legacy PlayAuthenticate-style configured provider start without contacting GitHub.
+async fn legacy_oauth_start_redirects_to_configured_github_authorization_endpoint() {
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get(http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .expect("location");
+    assert!(location.starts_with("https://github.example/login/oauth/authorize?"));
+    assert!(location.contains("client_id=github-client"));
+    assert!(location
+        .contains("redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Fyona%2Fauthenticate%2Fgithub"));
+    assert!(location.contains("scope=user%3Aemail"));
+    assert!(location.contains("response_type=code"));
+}
+
+#[tokio::test]
+// Guards OAuth callback local-user creation, credential persistence, session creation, and profile provider projection.
+async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in() {
+    let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (_, cookie_header) = bootstrap(app.clone()).await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github?code=fixture-code&providerUserId=octo-1&email=octo@example.com&name=Octo%20Cat")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
+    let callback_cookie_header = cookie_header_from_set_cookie_response(&callback);
+    assert!(!callback_cookie_header.is_empty());
+
+    let user = repository
+        .find_user_by_identifier("octo@example.com")
+        .await
+        .unwrap()
+        .expect("oauth-created user");
+    assert_eq!(user.login_id, "octo");
+    assert_eq!(user.display_name, "Octo Cat");
+
+    let workspace = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, callback_cookie_header)
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(workspace.status(), StatusCode::OK);
+    let payload: serde_json::Value = serde_json::from_str(&response_text(workspace).await).unwrap();
+    assert_eq!(
+        payload
+            .pointer("/profile/connectedSocialProviders")
+            .and_then(|value| value.as_array())
+            .map(|providers| providers
+                .iter()
+                .filter_map(|provider| provider.as_str())
+                .collect::<Vec<_>>()),
+        Some(vec!["github"])
+    );
+}
+
+#[tokio::test]
+// Guards legacy OAuth callback linking by email instead of creating a duplicate local user.
+async fn legacy_oauth_callback_links_existing_local_user_by_email() {
+    let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["google".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+                "google",
+                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://accounts.example/o/oauth2/auth".to_string(),
+                    client_id: "google-client".to_string(),
+                    client_secret: "google-secret".to_string(),
+                    scope: "profile email".to_string(),
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let existing = repository
+        .create_user(yona_rust_persistence::CreateUserInput {
+            display_name: "Existing Door".to_string(),
+            email_address: "door@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "door".to_string(),
+            password_hash: bcrypt::hash("doorpass1", bcrypt::DEFAULT_COST).unwrap(),
+        })
+        .await
+        .unwrap();
+    let (_, cookie_header) = bootstrap(app.clone()).await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/google?providerUserId=google-door&email=door@example.com&name=Google%20Door")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+
+    let user = repository
+        .find_user_by_identifier("door@example.com")
+        .await
+        .unwrap()
+        .expect("existing user");
+    assert_eq!(user.id, existing.id);
+    assert_eq!(user.login_id, "door");
+
+    let callback_cookie_header = cookie_header_from_set_cookie_response(&callback);
+    let workspace = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, callback_cookie_header)
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_str(&response_text(workspace).await).unwrap();
+    assert_eq!(
+        payload
+            .pointer("/profile/connectedSocialProviders")
+            .and_then(|value| value.as_array())
+            .map(|providers| providers
+                .iter()
+                .filter_map(|provider| provider.as_str())
+                .collect::<Vec<_>>()),
+        Some(vec!["google"])
+    );
+}
+
+#[tokio::test]
 // Guards auth denied redirect reuse of the route-utils-owned URI component encoder.
 async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
     let (app, _, _) = build_auth_router_with_anonymous_access(false).await;

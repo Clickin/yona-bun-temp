@@ -294,6 +294,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/legacy-porting-progress.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",
+      "docs/provenance/auth-deferred-oauth-ldap.md",
+      "docs/plans/2026-06-21-deferred-parity-goal-directive.md",
     ],
   },
   {
@@ -499,11 +501,16 @@ const DOMAIN_BUCKETS = [
   },
   {
     id: "second-priority-deferred",
-    label: "SVN, LDAP, import/export deferred scope",
-    status: "deferred",
+    label: "SVN, LDAP, import/export follow-up scope",
+    status: "partial",
     implementationPatterns: [/(\/|^)(svn|ldap|import|export)(\/|\.|$)/i],
     testKeywords: ["svn", "ldap", "import", "export", "migration"],
-    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/auth-deferred-oauth-ldap.md",
+      "docs/provenance/phase-0b/yona-export.md",
+      "docs/plans/2026-06-21-deferred-parity-goal-directive.md",
+    ],
   },
   {
     id: "rust-foundation-and-runtime-bootstrap",

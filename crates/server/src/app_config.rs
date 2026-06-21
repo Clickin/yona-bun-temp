@@ -34,6 +34,7 @@ pub struct AppRuntimeConfig {
     pub integrations: IntegrationConfig,
     pub ldap: LdapRuntimeConfig,
     pub max_uploaded_file_size: usize,
+    pub oauth: OAuthRuntimeConfig,
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
     pub session_timeout_seconds: Option<u64>,
@@ -54,6 +55,87 @@ pub struct AuthUiConfig {
     pub password_placeholder: String,
     pub signup_require_confirm: bool,
     pub social_login_only: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct OAuthRuntimeConfig {
+    pub providers: BTreeMap<String, OAuthProviderRuntimeConfig>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct OAuthProviderRuntimeConfig {
+    pub authorization_url: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub scope: String,
+}
+
+impl OAuthRuntimeConfig {
+    pub fn from_providers<I, K>(providers: I) -> Self
+    where
+        I: IntoIterator<Item = (K, OAuthProviderRuntimeConfig)>,
+        K: Into<String>,
+    {
+        Self {
+            providers: providers
+                .into_iter()
+                .map(|(provider, config)| (provider.into(), config))
+                .collect(),
+        }
+    }
+
+    pub(crate) fn configured_provider(
+        &self,
+        provider: &str,
+    ) -> Option<&OAuthProviderRuntimeConfig> {
+        self.providers.get(&provider.to_ascii_lowercase())
+    }
+
+    pub(crate) fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        let providers = config
+            .oauth_providers
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|(provider, config)| {
+                let provider = provider.trim().to_ascii_lowercase();
+                if provider.is_empty() {
+                    return None;
+                }
+                Some((
+                    provider.clone(),
+                    OAuthProviderRuntimeConfig {
+                        authorization_url: trimmed_option(config.authorization_url.as_deref())
+                            .unwrap_or_else(|| default_oauth_authorization_url(&provider)),
+                        client_id: trimmed_option(config.client_id.as_deref()).unwrap_or_default(),
+                        client_secret: trimmed_option(config.client_secret.as_deref())
+                            .unwrap_or_default(),
+                        scope: trimmed_option(config.scope.as_deref())
+                            .unwrap_or_else(|| default_oauth_scope(&provider)),
+                    },
+                ))
+            })
+            .collect();
+        Self { providers }
+    }
+}
+
+fn default_oauth_authorization_url(provider: &str) -> String {
+    match provider {
+        "google" => "https://accounts.google.com/o/oauth2/auth",
+        "github" => "https://github.com/login/oauth/authorize",
+        _ => "",
+    }
+    .to_string()
+}
+
+fn default_oauth_scope(provider: &str) -> String {
+    match provider {
+        "google" => "profile email",
+        "github" => "user:email",
+        _ => "",
+    }
+    .to_string()
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -174,6 +256,7 @@ impl Default for AppRuntimeConfig {
             integrations: IntegrationConfig::default(),
             ldap: LdapRuntimeConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
+            oauth: OAuthRuntimeConfig::default(),
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             session_timeout_seconds: None,
@@ -200,6 +283,7 @@ impl AppRuntimeConfig {
             integrations: integration_config_from_startup(config),
             ldap: LdapRuntimeConfig::from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
+            oauth: OAuthRuntimeConfig::from_startup(config),
             project_default_menus: project_default_menus_from_option(
                 config.project_default_menus.as_deref(),
             ),

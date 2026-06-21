@@ -1613,6 +1613,101 @@ async fn site_admin_import_rebinds_existing_attachment_ids_from_yobi_data_snapsh
 }
 
 #[tokio::test]
+async fn site_admin_import_restores_preexisting_attachment_rebinding_after_downstream_failure() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "restore-attachment",
+    )
+    .await;
+    let preexisting_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "preexisting.txt",
+        "text/plain",
+    )
+    .await;
+
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_rebind_issue_comment_insert BEFORE INSERT ON issue_comment \
+         BEGIN SELECT RAISE(FAIL, 'forced rebinding issue comment import failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install issue comment failure trigger");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "id": preexisting_attachment.id,
+                "mimeType": "text/plain",
+                "name": "preexisting.txt",
+                "size": 256
+            }],
+            "bodyMarkdown": "post temporarily rebinds existing attachment",
+            "comments": [],
+            "ownerName": "member",
+            "projectName": "restore-attachment",
+            "title": "Temporary imported post"
+        }],
+        "issues": [{
+            "authorLoginId": "member",
+            "bodyMarkdown": "issue reaches failing comment insert",
+            "comments": [{
+                "authorLoginId": "member",
+                "contentsMarkdown": "comment triggers rebinding rollback"
+            }],
+            "ownerName": "member",
+            "projectName": "restore-attachment",
+            "state": "open",
+            "title": "Temporary imported issue"
+        }]
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(response_text(response)
+        .await
+        .contains("forced rebinding issue comment import failure"));
+
+    assert!(repo
+        .read_posting_detail_for_viewer("member", "restore-attachment", 1, None)
+        .await
+        .expect("read rolled-back post")
+        .is_none());
+    let restored_attachment = repo
+        .read_attachment_by_id(preexisting_attachment.id)
+        .await
+        .expect("read restored attachment")
+        .expect("restored attachment exists");
+    assert_eq!(restored_attachment.container_type, "USER");
+    assert_eq!(restored_attachment.container_id, member_id);
+    assert_eq!(restored_attachment.name, "preexisting.txt");
+    assert_eq!(restored_attachment.owner_login_id, "member");
+}
+
+#[tokio::test]
 async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_snapshot() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {

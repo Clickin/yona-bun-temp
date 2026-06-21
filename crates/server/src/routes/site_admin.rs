@@ -1848,6 +1848,7 @@ async fn rest_import_site_data(
 #[derive(Default)]
 struct RestSiteImportRollbackLedger {
     attachments: Vec<persistence::AttachmentRecord>,
+    existing_attachments: Vec<persistence::AttachmentRecord>,
     issues: Vec<(String, String, i64)>,
     labels: Vec<(String, String, i64)>,
     milestones: Vec<(String, String, i64)>,
@@ -1877,6 +1878,28 @@ struct RestSiteImportRollbackProjectMember {
 impl RestSiteImportRollbackLedger {
     fn record_attachments(&mut self, attachments: &[persistence::AttachmentRecord]) {
         self.attachments.extend(attachments.iter().cloned());
+    }
+
+    async fn record_existing_attachment(
+        &mut self,
+        repository: &PilotRepository,
+        attachment_id: i64,
+    ) -> Result<(), RestRouteError> {
+        if self
+            .existing_attachments
+            .iter()
+            .any(|attachment| attachment.id == attachment_id)
+        {
+            return Ok(());
+        }
+        if let Some(snapshot) = repository
+            .read_site_import_attachment_snapshot(attachment_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            self.existing_attachments.push(snapshot);
+        }
+        Ok(())
     }
 
     fn record_issue(&mut self, owner_name: &str, project_name: &str, issue_number: i64) {
@@ -2028,6 +2051,11 @@ impl RestSiteImportRollbackLedger {
                     entry.max_import_issue_number,
                     entry.max_import_posting_number,
                 )
+                .await;
+        }
+        for attachment in self.existing_attachments.iter().rev() {
+            let _ = repository
+                .restore_site_import_attachment_snapshot(attachment)
                 .await;
         }
         for (owner_name, project_name, milestone_id) in self.milestones.iter().rev() {
@@ -2256,9 +2284,14 @@ async fn rest_import_site_data_live(
             skipped_milestones += 1;
             continue;
         }
-        let imported_attachments =
-            rest_site_import_attachments(&service, repository, &actor, &milestone.attachments)
-                .await?;
+        let imported_attachments = rest_site_import_attachments(
+            &service,
+            repository,
+            &actor,
+            &milestone.attachments,
+            rollback,
+        )
+        .await?;
         rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown = rewrite_site_import_file_links(
             &milestone.contents_markdown,
@@ -2360,7 +2393,8 @@ async fn rest_import_site_data_live(
         )
         .await?;
         let imported_attachments =
-            rest_site_import_attachments(&service, repository, &actor, &post.attachments).await?;
+            rest_site_import_attachments(&service, repository, &actor, &post.attachments, rollback)
+                .await?;
         rollback.record_attachments(&imported_attachments.created_attachments);
         let body_markdown = rewrite_site_import_file_links(
             &post.body_markdown,
@@ -2473,8 +2507,14 @@ async fn rest_import_site_data_live(
             rollback,
         )
         .await?;
-        let imported_attachments =
-            rest_site_import_attachments(&service, repository, &actor, &issue.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            &service,
+            repository,
+            &actor,
+            &issue.attachments,
+            rollback,
+        )
+        .await?;
         rollback.record_attachments(&imported_attachments.created_attachments);
         let body_markdown = rewrite_site_import_file_links(
             &issue.body_markdown,
@@ -3139,8 +3179,14 @@ async fn rest_site_import_post_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments =
-            rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            service,
+            repository,
+            &actor,
+            &comment.attachments,
+            rollback,
+        )
+        .await?;
         rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
@@ -3223,8 +3269,14 @@ async fn rest_site_import_issue_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
-        let imported_attachments =
-            rest_site_import_attachments(service, repository, &actor, &comment.attachments).await?;
+        let imported_attachments = rest_site_import_attachments(
+            service,
+            repository,
+            &actor,
+            &comment.attachments,
+            rollback,
+        )
+        .await?;
         rollback.record_attachments(&imported_attachments.created_attachments);
         let contents_markdown =
             rewrite_site_import_file_links(contents_markdown, &imported_attachments.link_rewrites);
@@ -3370,6 +3422,7 @@ async fn rest_site_import_attachments(
     repository: &PilotRepository,
     actor: &persistence::AppUserRecord,
     attachments: &[RestSiteExportAttachmentItem],
+    rollback: &mut RestSiteImportRollbackLedger,
 ) -> Result<RestSiteImportedAttachments, RestRouteError> {
     let mut attachment_ids = Vec::new();
     let mut link_rewrites = Vec::new();
@@ -3458,6 +3511,9 @@ async fn rest_site_import_attachments(
         }
 
         if attachment.id > 0 {
+            rollback
+                .record_existing_attachment(repository, attachment.id)
+                .await?;
             attachment_ids.push(attachment.id);
         }
     }

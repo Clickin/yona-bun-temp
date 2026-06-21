@@ -16,6 +16,7 @@ pub struct StartupConfig {
     pub auth_signup_require_confirm: Option<bool>,
     pub auth_social_login_support: Option<Vec<String>>,
     pub auth_social_login_only: Option<bool>,
+    pub oauth_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
     pub allowed_sending_mail_domains: Option<Vec<String>>,
     pub bind_addr: String,
     pub data_root: Option<String>,
@@ -100,6 +101,7 @@ struct StartupConfigFile {
     project: Option<ProjectConfigFile>,
     public_origin: Option<String>,
     notification: Option<NotificationConfigFile>,
+    oauth: Option<BTreeMap<String, OAuthProviderConfigFile>>,
     schema_policy: Option<String>,
     seed_pilot: Option<bool>,
     session: Option<SessionConfigFile>,
@@ -154,6 +156,14 @@ struct AuthConfigFile {
     signup_require_confirm: Option<bool>,
     social_login_support: Option<Vec<String>>,
     social_login_only: Option<bool>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct OAuthProviderConfigFile {
+    pub authorization_url: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+    pub scope: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -361,6 +371,7 @@ pub fn load_startup_config(
         .or(auth.social_login_support);
     let auth_social_login_only =
         env_bool(&env, "YONA_AUTH_SOCIAL_LOGIN_ONLY").or(auth.social_login_only);
+    let oauth_providers = oauth_providers_from_env_and_file(&env, file.oauth);
     let session_timeout_seconds = env
         .get("YONA_SESSION_TIMEOUT_SECONDS")
         .and_then(|value| value.trim().parse::<u64>().ok())
@@ -517,6 +528,7 @@ pub fn load_startup_config(
         auth_signup_require_confirm,
         auth_social_login_support,
         auth_social_login_only,
+        oauth_providers,
         allowed_sending_mail_domains,
         bind_addr,
         data_root,
@@ -654,6 +666,39 @@ fn split_csv(value: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(ToString::to_string)
         .collect()
+}
+
+fn oauth_providers_from_env_and_file(
+    env: &BTreeMap<String, String>,
+    file_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
+) -> Option<BTreeMap<String, OAuthProviderConfigFile>> {
+    let mut providers = file_providers.unwrap_or_default();
+    for provider in ["github", "google"] {
+        let prefix = format!("YONA_OAUTH_{}", provider.to_ascii_uppercase());
+        let mut config = providers
+            .remove(provider)
+            .or_else(|| providers.remove(&provider.to_ascii_uppercase()))
+            .unwrap_or_default();
+        config.client_id = env_string(env, &format!("{prefix}_CLIENT_ID")).or(config.client_id);
+        config.client_secret =
+            env_string(env, &format!("{prefix}_CLIENT_SECRET")).or(config.client_secret);
+        config.authorization_url =
+            env_string(env, &format!("{prefix}_AUTHORIZATION_URL")).or(config.authorization_url);
+        config.scope = env_string(env, &format!("{prefix}_SCOPE")).or(config.scope);
+        if config.client_id.is_some()
+            || config.client_secret.is_some()
+            || config.authorization_url.is_some()
+            || config.scope.is_some()
+        {
+            providers.insert(provider.to_string(), config);
+        }
+    }
+
+    if providers.is_empty() {
+        None
+    } else {
+        Some(providers)
+    }
 }
 
 fn parse_ldap_fixture_users(value: &str) -> Vec<LdapFixtureUserConfig> {

@@ -26,7 +26,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Scope | Current status | Treatment |
 | --- | --- | --- |
 | OAuth provider login/linking | Deferred second-priority. Unsupported/denied route state and UI gating already exist. | Implement only legacy provider behavior with evidence, or keep explicitly deferred if provider fixtures cannot be made deterministic. |
-| LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures. Real LDAP bind/search connector remains deferred. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; implement real connector only in a later LDAP connector slice. |
+| LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures; real LDAP bind/search connector implemented for non-fixture runtime LDAP. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; remaining follow-up is existing LDAP user's English-name/guest refresh if the persistence boundary is expanded. |
 | Broader SVN/WebDAV PROPFIND edge completeness | Closed by P3-A re-audit. Current `svn_protocol_contract` evidence covers the former VCC/baseline PROPFIND edge list. | Retire ambiguous deferred wording; keep `svn_protocol_contract` as the guard for root/default VCC, baseline resource, and baseline collection metadata/property behavior. |
 | Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
@@ -95,16 +95,20 @@ labels, standalone/on-demand milestones, posts/comments, and issues/comments
 for the supported portable-attachment import pipeline. Existing-project
 issue/post sequence counters are now snapshotted before the first imported
 issue/post and restored during in-process rollback when the current counter has
-not advanced beyond the import-created numbers. Focused coverage:
+not advanced beyond the import-created numbers. Preexisting attachment rows
+referenced by imported resource `id` fields are now snapshotted before rebinding
+and restored during in-process rollback. Focused coverage:
 `site_admin_contract::site_admin_import_cleans_portable_attachment_when_downstream_milestone_insert_fails`
 and
 `site_admin_contract::site_admin_import_rolls_back_created_db_rows_when_downstream_issue_comment_insert_fails`;
 `site_admin_contract::site_admin_import_restores_existing_project_sequence_counters_after_downstream_failure`
-guards the project counter restoration path.
+guards the project counter restoration path, and
+`site_admin_contract::site_admin_import_restores_preexisting_attachment_rebinding_after_downstream_failure`
+guards the preexisting attachment-id rebinding restoration path.
 True all-DB transaction protection for downstream non-validation failures during
 non-dry-run `/sites/import` remains a P1-A follow-up, especially for crash
-boundaries, preexisting attachment-id rebinding state, and concurrent project
-counter advances beyond import-created numbers, and is recorded in
+boundaries and concurrent project counter advances beyond import-created
+numbers, and is recorded in
 `docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
@@ -153,6 +157,18 @@ then frontend shell updates.
 | P2-C LDAP runtime | Yes | auth runtime, integrations/domain as needed, tests | Implement legacy `application.use.ldap.login.supoort` spelling, `ldap.*` config, bind/search, email login option, fallback-to-local option, user provisioning/update, and guest flag propagation. |
 | P2-D BasicAuth LDAP | Yes after P2-C core | Smart HTTP/SVN auth boundary tests | Route legacy BasicAuth through LDAP when enabled without breaking local-token/session auth. |
 
+P2-A/P2-B sub-slice status: OAuth runtime now preserves the legacy
+`/authenticate/:provider` and `/authenticate/:provider/denied` route surface for
+GitHub/Google. Unconfigured providers keep the existing unsupported login state,
+configured providers redirect to the configured authorization URL, deterministic
+callback identity links or creates the local user through legacy
+`user_credential` / `linked_account` tables, creates a session, and redirects to
+the default landing path. Connected-provider profile output is covered through
+the existing workspace profile projection. Focused coverage lives in
+`auth_workspace_contract` and `runtime_config_contract`. Remaining OAuth work is
+real provider token/userinfo HTTP exchange and any provider-specific logout
+interaction that requires external provider behavior.
+
 P2-C sub-slice status: form-login LDAP runtime now parses the legacy typo
 `application.use.ldap.login.supoort`, legacy `ldap.*`, and `YONA_LDAP_*`
 equivalents, then authenticates through a deterministic fixture-backed LDAP
@@ -165,8 +181,10 @@ LDAP boundary when LDAP is enabled. Coverage preserves existing local
 password/token/session behavior, configured local fallback, legacy email-base
 login semantics, LDAP fixture credentials, and wrong-credential Basic
 challenges in `smart_http_contract` and `svn_protocol_contract`.
-Remaining P2-C/P2-D work is real LDAP bind/search connector support and existing
-LDAP user's English-name/guest refresh if the persistence boundary is expanded.
+The P2-C/P2-D connector follow-up adds real simple bind/search support when
+fixture users are absent, preserving deterministic fixture-backed tests and
+BasicAuth behavior. Remaining P2-C/P2-D work is existing LDAP user's
+English-name/guest refresh if the persistence boundary is expanded.
 
 Exit criteria: password, OAuth, LDAP, and BasicAuth LDAP paths have isolated
 contract coverage and share the same legacy login UX.

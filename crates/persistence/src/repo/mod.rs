@@ -22,7 +22,7 @@ use crate::repo_types::{
     MailboxNormalizedMessageResult, MailboxReplyTargetRecord, MailboxResourceActionRecord,
     MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
     NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    NotificationMailDeliveryRecord, OAuthUserInput, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,

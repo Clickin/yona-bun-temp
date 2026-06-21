@@ -10,8 +10,8 @@ use std::{
 use crate::runtime_config::normalize_base_path;
 use crate::session::SessionManager;
 use crate::{
-    AppRuntimeConfig, AuthUiConfig, LdapRuntimeConfig, PilotRepository, SiteUpdateConfig,
-    SmtpRuntimeConfig, TranslationProxyConfig,
+    AppRuntimeConfig, AuthUiConfig, LdapRuntimeConfig, OAuthRuntimeConfig, PilotRepository,
+    SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
 };
 use yona_rust_integrations::IntegrationConfig;
 
@@ -119,6 +119,7 @@ pub(crate) struct RuntimeRegistry {
     pub(crate) integrations: IntegrationConfig,
     pub(crate) ldap: LdapRuntimeConfig,
     pub(crate) max_uploaded_file_size: usize,
+    pub(crate) oauth: OAuthRuntimeConfig,
     pub(crate) project_default_scope: String,
     pub(crate) site_name: String,
     pub(crate) site_update: SiteUpdateConfig,
@@ -135,6 +136,7 @@ impl RuntimeRegistry {
             integrations: config.integrations.clone(),
             ldap: config.ldap.clone(),
             max_uploaded_file_size: config.max_uploaded_file_size,
+            oauth: config.oauth.clone(),
             project_default_scope: config.project_default_scope.clone(),
             site_name: config.site_name.clone(),
             site_update: config.site_update.clone(),
@@ -154,6 +156,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) integrations: IntegrationConfig,
     pub(crate) ldap: LdapRuntimeConfig,
     pub(crate) max_uploaded_file_size: usize,
+    pub(crate) oauth: OAuthRuntimeConfig,
     pub(crate) session_manager: SessionManager,
     pub(crate) backend: PilotBackend,
     pub(crate) project_default_scope: String,

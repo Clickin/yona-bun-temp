@@ -951,6 +951,17 @@ pub struct CreateUserInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OAuthUserInput {
+    pub email_address: String,
+    pub display_name: String,
+    pub login_id_hint: String,
+    pub password_hash: String,
+    pub provider: String,
+    pub provider_display_name: String,
+    pub provider_user_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateOrganizationInput {
     pub description: Option<String>,
     pub organization_name: String,
