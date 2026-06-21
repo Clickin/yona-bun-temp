@@ -30,7 +30,8 @@
 - Therefore the current app behavior is intentionally the REST query-backed app search surface listed in this document. This note does not change runtime behavior and does not replace the lightweight scorer with a new search architecture.
 - Legacy evidence currently listed for this boundary is `yona-original/app/controllers/SearchApp.java`, `yona-original/app/models/Search.java`, `yona-original/test/models/SearchTests.java`, `yona-original/test/models/SearchResultTests.java`, `yona-original/test/utils/AccessControlTest.java`, and the `yona-original/app/views/search/*.scala.html` partials referenced below.
 - P3-B DB-native FTS slice started on 2026-06-21. The legacy UX and app response shape remain unchanged: result tabs, scope/type resolution, ACL filtering, snippets, pagination, and the current lightweight relevance plus legacy-order fallback stay authoritative.
-- Runtime search now has a conservative native candidate abstraction in `crates/persistence/src/repo/search.rs`: SQLite uses temporary FTS5 candidate tables, PostgreSQL attempts built-in `to_tsvector`/`plainto_tsquery`, and MySQL attempts `MATCH ... AGAINST` where the schema supports FULLTEXT indexes. Any unsupported native path or database error falls back to the existing literal scan path.
+- Runtime search now has a conservative native candidate abstraction in `crates/persistence/src/repo/search.rs`: SQLite uses persistent DB-native FTS5 external-content tables named `yona_search_fts_*` and rebuilds the matching table before candidate lookup so backfill, source-row updates, and source-row deletes cannot return stale native candidates. PostgreSQL attempts built-in `to_tsvector`/`plainto_tsquery`, and MySQL attempts `MATCH ... AGAINST` where the schema supports FULLTEXT indexes. Any unsupported native path or database error falls back to the existing literal scan path.
+- `crates/migration/src/lib.rs` treats the `yona_search_fts_*` SQLite FTS table/shadow-table family as runtime-owned auxiliary storage during schema inspection so persistent DB-native indexes do not appear as legacy schema drift.
 - Native FTS candidates participate in final inclusion together with the existing literal `keyword_matches` path. Literal matching remains in place so DB tokenization differences do not drop legacy `icontains`-style results, while DB-native matches can be returned when supported by the active dialect.
 
 ## Extracted Intent
@@ -52,7 +53,7 @@
 
 ## Explicit Deferrals
 
-- persistent full-text index storage/backfill/update/delete orchestration beyond the current DB-native candidate slice
+- backend-specific maintained PostgreSQL/MySQL persistent full-text index DDL/update orchestration beyond the current best-effort built-in candidate queries
 - async indexing only with future legacy/external evidence for that separate scope
 - ranking beyond the current lightweight title/body hit-count scorer and legacy-order tie-breaker
 - broader AI-facing or machine-facing search surfaces
@@ -61,6 +62,6 @@
 
 ## Bounded Future Split
 
-- Search index design: partial DB-native candidate slice exists without external Elastic/OpenSearch dependency and without changing the legacy app search contract.
-- Remaining index-backed runtime work: persistent DB-native index schema/backfill/update/delete orchestration can be added later only if it keeps `/api/v1` response shape, legacy result UI, scopes, ACL filtering, and the current lightweight scorer contract as the fallback baseline.
+- Search index design: partial DB-native candidate slice exists without external Elastic/OpenSearch dependency and without changing the legacy app search contract. SQLite now has persistent FTS5 storage plus query-time rebuild orchestration; PostgreSQL/MySQL remain best-effort built-in candidate sources.
+- Remaining index-backed runtime work: backend-specific maintained PostgreSQL/MySQL index DDL/update orchestration can be added later only if it keeps `/api/v1` response shape, legacy result UI, scopes, ACL filtering, and the current lightweight scorer contract as the fallback baseline.
 - Legacy external compatibility: retired as not applicable because no legacy `/-_-api/v1/**` search endpoint exists. Keep app search on `/api/v1/**` only unless new legacy evidence is found.

@@ -5,6 +5,7 @@ import {
   readSessionBootstrap,
   readWorkspaceOverview,
 } from "./auth-workspace-client";
+import { LegacyI18nProvider, type LegacyI18nContextValue, useLegacyMessages } from "./i18n";
 import type { RuntimeConfig } from "./runtime-config";
 import type {
   AuthUiCapabilitiesViewModel,
@@ -15,9 +16,7 @@ function toWorkspaceOverview(
   session: Awaited<ReturnType<typeof readCurrentSession>>,
   overview: Awaited<ReturnType<typeof readWorkspaceOverview>>,
 ): WorkspaceOverviewViewModel {
-  const profile = overview.profile as
-    | (typeof overview.profile & { isGuest?: boolean })
-    | undefined;
+  const profile = overview.profile as (typeof overview.profile & { isGuest?: boolean }) | undefined;
   return {
     apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
@@ -122,11 +121,14 @@ interface AppRuntimeContextValue {
   csrfToken: string;
   currentSession: Awaited<ReturnType<typeof readCurrentSession>> | null;
   errorMessage: string | null;
+  language: LegacyI18nContextValue["language"];
+  messages: LegacyI18nContextValue["t"];
   refreshCurrentSession: () => Promise<Awaited<ReturnType<typeof readCurrentSession>>>;
   refreshWorkspace: (
     session?: Awaited<ReturnType<typeof readCurrentSession>> | null,
   ) => Promise<void>;
   runtimeConfig: RuntimeConfig;
+  setLanguage: LegacyI18nContextValue["setLanguage"];
   setCurrentSession: React.Dispatch<
     React.SetStateAction<Awaited<ReturnType<typeof readCurrentSession>> | null>
   >;
@@ -144,6 +146,17 @@ export function AppRuntimeProvider({
   children,
   runtimeConfig,
 }: React.PropsWithChildren<{ runtimeConfig: RuntimeConfig }>) {
+  return (
+    <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+      <AppRuntimeProviderInner runtimeConfig={runtimeConfig}>{children}</AppRuntimeProviderInner>
+    </LegacyI18nProvider>
+  );
+}
+
+function AppRuntimeProviderInner({
+  children,
+  runtimeConfig,
+}: React.PropsWithChildren<{ runtimeConfig: RuntimeConfig }>) {
   const [workspaceOverview, setWorkspaceOverview] =
     React.useState<WorkspaceOverviewViewModel | null>(null);
   const [authUiCapabilities, setAuthUiCapabilities] =
@@ -153,6 +166,7 @@ export function AppRuntimeProvider({
   > | null>(null);
   const [csrfToken, setCsrfToken] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const i18n = useLegacyMessages();
 
   const refreshWorkspace = React.useCallback(
     async (session?: Awaited<ReturnType<typeof readCurrentSession>> | null) => {
@@ -232,9 +246,12 @@ export function AppRuntimeProvider({
       csrfToken,
       currentSession,
       errorMessage,
+      language: i18n.language,
+      messages: i18n.t,
       refreshCurrentSession,
       refreshWorkspace,
       runtimeConfig,
+      setLanguage: i18n.setLanguage,
       setCurrentSession,
       setErrorMessage,
       setWorkspaceOverview,
@@ -246,6 +263,9 @@ export function AppRuntimeProvider({
       csrfToken,
       currentSession,
       errorMessage,
+      i18n.language,
+      i18n.setLanguage,
+      i18n.t,
       refreshCurrentSession,
       refreshWorkspace,
       runtimeConfig,

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { renderLegacyHighlightedMessage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { AuthUiCapabilitiesViewModel } from "./-view-models";
 
@@ -61,26 +62,32 @@ function siteNameForTitle(runtimeConfig: RuntimeConfig): string {
 }
 
 function LoginForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  return (
-    <>
-      Log in to <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
-    </>
+  const messages = useLegacyMessages();
+  return renderLegacyHighlightedMessage(
+    messages.t("title.loginFor", {
+      args: [siteNameForTitle(runtimeConfig)],
+      fallback: 'Log in to <span class="highlight">{0}</span>',
+    }),
   );
 }
 
 function SignupForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  return (
-    <>
-      Sign up for <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
-    </>
+  const messages = useLegacyMessages();
+  return renderLegacyHighlightedMessage(
+    messages.t("title.signupFor", {
+      args: [siteNameForTitle(runtimeConfig)],
+      fallback: 'Sign up for <span class="highlight">{0}</span>',
+    }),
   );
 }
 
 function ResetPasswordForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  return (
-    <>
-      Reset password for <span className="highlight">{siteNameForTitle(runtimeConfig)}</span>
-    </>
+  const messages = useLegacyMessages();
+  return renderLegacyHighlightedMessage(
+    messages.t("title.resetPasswordFor", {
+      args: [siteNameForTitle(runtimeConfig)],
+      fallback: 'Reset password for <span class="highlight">{0}</span>',
+    }),
   );
 }
 
@@ -91,6 +98,7 @@ function SocialProviderButtons({
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const providers = readEnabledSocialProviders(authUiCapabilities);
   if (providers.length === 0) {
     return null;
@@ -99,7 +107,9 @@ function SocialProviderButtons({
   return (
     <div className="btns-row nm">
       {!authUiCapabilities?.socialLoginOnly ? (
-        <div className="social-login-title-line">title.or</div>
+        <div className="social-login-title-line">
+          {messages.t("title.or", { fallback: "title.or" })}
+        </div>
       ) : null}
       {providers.map((provider) => (
         <a
@@ -154,6 +164,7 @@ export function LoginPage({
   routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const [formState, setFormState] = React.useState({
     identifier: "",
     password: "",
@@ -162,8 +173,12 @@ export function LoginPage({
   const searchParams = readSearchParams(routeHref);
   const redirectUrl = resolveAuthRedirectPath(searchParams);
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
-  const loginIdPlaceholder = authUiCapabilities?.loginIdPlaceholder?.trim() || "user.login.key";
-  const passwordPlaceholder = authUiCapabilities?.passwordPlaceholder?.trim() || "user.password";
+  const loginIdPlaceholder =
+    authUiCapabilities?.loginIdPlaceholder?.trim() ||
+    messages.t("user.login.key", { fallback: "user.login.key" });
+  const passwordPlaceholder =
+    authUiCapabilities?.passwordPlaceholder?.trim() ||
+    messages.t("user.password", { fallback: "user.password" });
   const authProvider = searchParams.get("provider")?.trim();
   const authError = searchParams.get("error");
   const authErrorMessage =
@@ -192,7 +207,9 @@ export function LoginPage({
           <h1 className="title">
             <LoginForTitle runtimeConfig={runtimeConfig} />
           </h1>
-          <p className="tag-line">app.description</p>
+          <p className="tag-line">
+            {messages.t("app.description", { fallback: "app.description" })}
+          </p>
         </div>
         <div className="login-form-wrap frm-wrap">
           {authErrorMessage ? <div className="alert alert-error">{authErrorMessage}</div> : null}
@@ -200,7 +217,11 @@ export function LoginPage({
             <div className="alert alert-success">{postSubmitMessage}</div>
           ) : null}
           {authUiCapabilities?.emailVerificationEnabled ? (
-            <div className="email-verification-help">notification.confirm.mail.will.be.sent</div>
+            <div className="email-verification-help">
+              {messages.t("notification.confirm.mail.will.be.sent", {
+                fallback: "notification.confirm.mail.will.be.sent",
+              })}
+            </div>
           ) : null}
           <form
             action={appHref(runtimeConfig, "/users/login")}
@@ -213,7 +234,11 @@ export function LoginPage({
             <input name="redirectUrl" type="hidden" value={redirectUrl ?? ""} />
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             {authUiCapabilities?.socialLoginOnly ? (
-              <div className="btns-row nm">app.warn.support.social.login.only</div>
+              <div className="btns-row nm">
+                {messages.t("app.warn.support.social.login.only", {
+                  fallback: "app.warn.support.social.login.only",
+                })}
+              </div>
             ) : null}
             {canRenderLocalForm ? (
               <>
@@ -255,7 +280,7 @@ export function LoginPage({
                 </dl>
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
-                    button.login
+                    {messages.t("button.login", { fallback: "button.login" })}
                   </button>
                 </div>
                 <SocialProviderButtons
@@ -278,11 +303,13 @@ export function LoginPage({
                       type="checkbox"
                     />
                     <label className="bg-checkbox" htmlFor="remember-me">
-                      title.rememberMe
+                      {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
                     </label>
                   </div>
                   <div className="links-wrap pull-right">
-                    <a href={appHref(runtimeConfig, "/lostPassword")}>title.forgotpassword</a>
+                    <a href={appHref(runtimeConfig, "/lostPassword")}>
+                      {messages.t("title.forgotpassword", { fallback: "title.forgotpassword" })}
+                    </a>
                   </div>
                 </div>
               </>
@@ -309,6 +336,7 @@ export function LegacyLoginDialog({
   csrfToken?: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
 
   return (
@@ -331,7 +359,11 @@ export function LegacyLoginDialog({
         >
           <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
           {authUiCapabilities?.socialLoginOnly ? (
-            <div className="btns-row nm">app.warn.support.social.login.only</div>
+            <div className="btns-row nm">
+              {messages.t("app.warn.support.social.login.only", {
+                fallback: "app.warn.support.social.login.only",
+              })}
+            </div>
           ) : null}
           {canRenderLocalForm ? (
             <>
@@ -342,7 +374,7 @@ export function LegacyLoginDialog({
                     className="text email"
                     id="loginIdOrEmailD"
                     name="loginIdOrEmail"
-                    placeholder="user.login.key"
+                    placeholder={messages.t("user.login.key", { fallback: "user.login.key" })}
                     type="text"
                   />
                 </dd>
@@ -352,7 +384,7 @@ export function LegacyLoginDialog({
                     className="text password"
                     id="passwordD"
                     name="password"
-                    placeholder="user.password"
+                    placeholder={messages.t("user.password", { fallback: "user.password" })}
                     type="password"
                   />
                 </dd>
@@ -363,7 +395,7 @@ export function LegacyLoginDialog({
               </div>
               <div className="btns-row nm">
                 <button className="ybtn ybtn-primary fullsize" type="submit">
-                  button.login
+                  {messages.t("button.login", { fallback: "button.login" })}
                 </button>
               </div>
             </>
@@ -385,12 +417,16 @@ export function LegacyLoginDialog({
                     type="checkbox"
                   />
                   <label className="bg-checkbox" htmlFor="remember-meD">
-                    title.rememberMe
+                    {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
                   </label>
                 </div>
-                <a href={appHref(runtimeConfig, "/lostPassword")}>title.resetPassword</a>
+                <a href={appHref(runtimeConfig, "/lostPassword")}>
+                  {messages.t("title.resetPassword", { fallback: "title.resetPassword" })}
+                </a>
                 <span className="gray-txt ml10 mr10">|</span>
-                <a href={appHref(runtimeConfig, "/users/signupform")}>title.signup</a>
+                <a href={appHref(runtimeConfig, "/users/signupform")}>
+                  {messages.t("title.signup", { fallback: "title.signup" })}
+                </a>
               </div>
             </>
           ) : null}
@@ -418,6 +454,7 @@ export function RegisterPage({
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const [formState, setFormState] = React.useState({
     emailAddress: "",
     loginId: "",
@@ -433,12 +470,16 @@ export function RegisterPage({
           <h1 className="title">
             <SignupForTitle runtimeConfig={runtimeConfig} />
           </h1>
-          <p className="tag-line">app.description</p>
+          <p className="tag-line">
+            {messages.t("app.description", { fallback: "app.description" })}
+          </p>
         </div>
         {authUiCapabilities?.signupRequireConfirm ? (
           <div className="center-txt">
-            <p>title.signupConfirmDesc</p>
-            <p>title.signupConfirmDesc2</p>
+            <p>{messages.t("title.signupConfirmDesc", { fallback: "title.signupConfirmDesc" })}</p>
+            <p>
+              {messages.t("title.signupConfirmDesc2", { fallback: "title.signupConfirmDesc2" })}
+            </p>
           </div>
         ) : null}
         <div className="signup-form-wrap frm-wrap">
@@ -453,13 +494,19 @@ export function RegisterPage({
           >
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             {authUiCapabilities?.socialLoginOnly ? (
-              <div className="btns-row nm">app.warn.support.social.login.only</div>
+              <div className="btns-row nm">
+                {messages.t("app.warn.support.social.login.only", {
+                  fallback: "app.warn.support.social.login.only",
+                })}
+              </div>
             ) : null}
             {authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly ? (
               <>
                 <dl>
                   <dt>
-                    <label htmlFor="loginId">user.signupId</label>
+                    <label htmlFor="loginId">
+                      {messages.t("user.signupId", { fallback: "user.signupId" })}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -479,7 +526,9 @@ export function RegisterPage({
                     />
                   </dd>
                   <dt>
-                    <label htmlFor="uname">user.name</label>
+                    <label htmlFor="uname">
+                      {messages.t("user.name", { fallback: "user.name" })}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -496,7 +545,9 @@ export function RegisterPage({
                     />
                   </dd>
                   <dt>
-                    <label htmlFor="email">user.email</label>
+                    <label htmlFor="email">
+                      {messages.t("user.email", { fallback: "user.email" })}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -516,7 +567,9 @@ export function RegisterPage({
                     />
                   </dd>
                   <dt>
-                    <label htmlFor="password">user.password</label>
+                    <label htmlFor="password">
+                      {messages.t("user.password", { fallback: "user.password" })}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -536,7 +589,11 @@ export function RegisterPage({
                     />
                   </dd>
                   <dt>
-                    <label htmlFor="retypedPassword">validation.retypePassword</label>
+                    <label htmlFor="retypedPassword">
+                      {messages.t("validation.retypePassword", {
+                        fallback: "validation.retypePassword",
+                      })}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -558,13 +615,15 @@ export function RegisterPage({
                 </dl>
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
-                    user.signupBtn
+                    {messages.t("user.signupBtn", { fallback: "user.signupBtn" })}
                   </button>
                 </div>
                 <div className="act-row">
-                  user.isAlreadySignupUser{" "}
+                  {messages.t("user.isAlreadySignupUser", {
+                    fallback: "user.isAlreadySignupUser",
+                  })}{" "}
                   <a className="go-login" href={appHref(runtimeConfig, "/users/loginform")}>
-                    title.login
+                    {messages.t("title.login", { fallback: "title.login" })}
                   </a>
                 </div>
               </>
@@ -583,6 +642,7 @@ export function LostPasswordPage({
   routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const searchParams = readSearchParams(routeHref);
   const feedback =
     searchParams.get("requested") === "1"
@@ -602,21 +662,23 @@ export function LostPasswordPage({
           <h1 className="title">
             <ResetPasswordForTitle runtimeConfig={runtimeConfig} />
           </h1>
-          <p className="tag-line">app.description</p>
+          <p className="tag-line">
+            {messages.t("app.description", { fallback: "app.description" })}
+          </p>
         </div>
         <div className="login-form-wrap frm-wrap">
           {feedback ? (
             <div className={`alert alert-${feedback.kind === "success" ? "success" : "error"}`}>
               <button
-                aria-label="button.close"
+                aria-label={messages.t("button.close", { fallback: "button.close" })}
                 className="close"
                 data-dismiss="alert"
                 type="button"
               >
                 &times;
               </button>
-              <h4>{feedback.heading}</h4>
-              {feedback.body ? feedback.body : null}
+              <h4>{messages.t(feedback.heading, { fallback: feedback.heading })}</h4>
+              {feedback.body ? messages.t(feedback.body, { fallback: feedback.body }) : null}
             </div>
           ) : null}
           <form action={appHref(runtimeConfig, "/lostPassword")} method="post">
@@ -626,7 +688,7 @@ export function LostPasswordPage({
                   className="text"
                   id="loginId"
                   name="loginId"
-                  placeholder="user.loginId"
+                  placeholder={messages.t("user.loginId", { fallback: "user.loginId" })}
                   required
                   type="text"
                 />
@@ -636,7 +698,7 @@ export function LostPasswordPage({
                   className="text"
                   id="emailAddress"
                   name="emailAddress"
-                  placeholder="user.email"
+                  placeholder={messages.t("user.email", { fallback: "user.email" })}
                   required
                   type="email"
                 />
@@ -644,7 +706,7 @@ export function LostPasswordPage({
             </dl>
             <div className="btns-row">
               <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
-                button.confirm
+                {messages.t("button.confirm", { fallback: "button.confirm" })}
               </button>
             </div>
           </form>
@@ -661,6 +723,7 @@ export function ResetPasswordPage({
   routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   const searchParams = readSearchParams(routeHref);
   const hashString = searchParams.get("s") ?? searchParams.get("hashString") ?? "";
   const message =
@@ -673,10 +736,14 @@ export function ResetPasswordPage({
           <h1 className="title">
             <ResetPasswordForTitle runtimeConfig={runtimeConfig} />
           </h1>
-          <p className="tag-line">app.description</p>
+          <p className="tag-line">
+            {messages.t("app.description", { fallback: "app.description" })}
+          </p>
         </div>
         <div className="login-form-wrap frm-wrap">
-          {message ? <div className="alert alert-error">{message}</div> : null}
+          {message ? (
+            <div className="alert alert-error">{messages.t(message, { fallback: message })}</div>
+          ) : null}
           <form
             action={appHref(runtimeConfig, "/resetPassword")}
             method="post"
@@ -690,7 +757,7 @@ export function ResetPasswordPage({
                   className="text password"
                   id="password"
                   name="password"
-                  placeholder="user.password"
+                  placeholder={messages.t("user.password", { fallback: "user.password" })}
                   type="password"
                 />
               </dd>
@@ -700,14 +767,16 @@ export function ResetPasswordPage({
                   className="text password"
                   id="retypedPassword"
                   name="retypedPassword"
-                  placeholder="validation.retypePassword"
+                  placeholder={messages.t("validation.retypePassword", {
+                    fallback: "validation.retypePassword",
+                  })}
                   type="password"
                 />
               </dd>
             </dl>
             <div className="btns-row">
               <button className="ybtn ybtn-primary ybtn-fullsize" type="submit">
-                button.confirm
+                {messages.t("button.confirm", { fallback: "button.confirm" })}
               </button>
             </div>
           </form>
@@ -725,6 +794,7 @@ export function VerifyUserPage({
   loginId: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const messages = useLegacyMessages();
   if (invalid) {
     return (
       <main className="app-shell">
@@ -736,10 +806,12 @@ export function VerifyUserPage({
   return (
     <main className="app-shell page full">
       <div className="center-wrap tag-line-wrap reset-password">
-        <h1 className="title">user.verified</h1>
+        <h1 className="title">{messages.t("user.verified", { fallback: "user.verified" })}</h1>
         <p>{loginId}</p>
         <hr />
-        <p className="tag-line">user.verified.detail</p>
+        <p className="tag-line">
+          {messages.t("user.verified.detail", { fallback: "user.verified.detail" })}
+        </p>
       </div>
     </main>
   );

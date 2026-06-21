@@ -276,6 +276,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
+      /^frontend\/src\/i18n\.tsx$/i,
       /^frontend\/.*auth/i,
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
       /^crates\/persistence\/.*(auth|user|session|workspace)/i,

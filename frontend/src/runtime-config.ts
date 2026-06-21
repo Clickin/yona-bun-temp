@@ -142,9 +142,26 @@ function normalizeProjectMenuKey(value: string): string | null {
 }
 
 export function normalizeSupportedLanguages(input: string[] | string | null | undefined): string[] {
+  const legacyLanguageCodes = ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"];
   const values = Array.isArray(input) ? input : (input ?? "").split(",");
-  const normalized = values.map((value) => value.trim()).filter(Boolean);
-  return normalized.length > 0 ? normalized : ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"];
+  const normalized = values.flatMap((value) => {
+    const candidate = value.trim().replace(/_/g, "-").toLowerCase();
+    if (candidate === "") {
+      return [];
+    }
+
+    const exactMatch = legacyLanguageCodes.find((code) => code.toLowerCase() === candidate);
+    if (exactMatch) {
+      return [exactMatch];
+    }
+
+    const languageOnlyMatch = legacyLanguageCodes.find(
+      (code) => code.slice(0, 2).toLowerCase() === candidate,
+    );
+    return languageOnlyMatch ? [languageOnlyMatch] : [];
+  });
+  const deduped = Array.from(new Set(normalized));
+  return deduped.length > 0 ? deduped : legacyLanguageCodes;
 }
 
 export function normalizeShowUserEmail(input: boolean | string | null | undefined): boolean {

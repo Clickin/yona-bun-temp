@@ -270,6 +270,88 @@ draft_time = "1s"
 }
 
 #[test]
+fn loads_legacy_ldap_keys_and_yona_env_overrides() {
+    let dir = tempdir().expect("tempdir");
+    let config_path = dir.path().join("yona.toml");
+    fs::write(
+        &config_path,
+        r#"
+application.use.ldap.login.supoort = true
+protocol = "ldap"
+
+[ldap]
+host = "ldap.example.com"
+port = 389
+baseDN = "ou=people,dc=example,dc=com"
+distinguishedNamePostfix = "OU=user,DC=example,DC=com"
+loginProperty = "uid"
+displayNameProperty = "displayName"
+userNameProperty = "CN"
+emailProperty = "mail"
+fixture_users = [
+  { login_id = "door", email = "door@example.com", display_name = "Door", password = "ldap-pass", department = "Dev", english_name = "Door" },
+]
+
+[ldap.options]
+useEmailBaseLogin = true
+fallbackToLocalLogin = false
+englishNameAttributeName = "givenName"
+"#,
+    )
+    .expect("write config");
+
+    let config = load_startup_config(
+        BTreeMap::from([
+            (
+                "YONA_CONFIG_TOML".to_string(),
+                config_path.to_string_lossy().into_owned(),
+            ),
+            (
+                "YONA_LDAP_FALLBACK_TO_LOCAL_LOGIN".to_string(),
+                "true".to_string(),
+            ),
+            (
+                "YONA_LDAP_FIXTURE_USERS".to_string(),
+                "pt-door|pt-door@example.com|PT Door|secret|QA|Peter".to_string(),
+            ),
+        ]),
+        dir.path(),
+    )
+    .expect("load startup config");
+
+    assert_eq!(config.ldap_enabled, Some(true));
+    assert_eq!(config.ldap_host.as_deref(), Some("ldap.example.com"));
+    assert_eq!(config.ldap_port, Some(389));
+    assert_eq!(config.ldap_protocol.as_deref(), Some("ldap"));
+    assert_eq!(
+        config.ldap_base_dn.as_deref(),
+        Some("ou=people,dc=example,dc=com")
+    );
+    assert_eq!(
+        config.ldap_distinguished_name_postfix.as_deref(),
+        Some("OU=user,DC=example,DC=com")
+    );
+    assert_eq!(config.ldap_login_property.as_deref(), Some("uid"));
+    assert_eq!(
+        config.ldap_display_name_property.as_deref(),
+        Some("displayName")
+    );
+    assert_eq!(config.ldap_user_name_property.as_deref(), Some("CN"));
+    assert_eq!(config.ldap_email_property.as_deref(), Some("mail"));
+    assert_eq!(config.ldap_use_email_base_login, Some(true));
+    assert_eq!(config.ldap_fallback_to_local_login, Some(true));
+    assert_eq!(
+        config.ldap_english_name_attribute_name.as_deref(),
+        Some("givenName")
+    );
+    let fixtures = config.ldap_fixture_users.expect("ldap fixtures");
+    assert_eq!(fixtures.len(), 1);
+    assert_eq!(fixtures[0].login_id, "pt-door");
+    assert_eq!(fixtures[0].email, "pt-door@example.com");
+    assert_eq!(fixtures[0].department.as_deref(), Some("QA"));
+}
+
+#[test]
 fn environment_overrides_toml_values() {
     let dir = tempdir().expect("tempdir");
     let config_path = dir.path().join("yona.toml");

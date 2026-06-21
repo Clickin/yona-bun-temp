@@ -1303,9 +1303,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 
 - `frontend` route foundation now resolves legacy home, canonical auth GET surfaces, public directories, search, site admin, and anchored org/project deep links through the file-route tree under `src/routes/**`.
 - Local repo-root dev startup now defaults to `/` while keeping explicit `/yona` mounted smoke coverage available; this follows legacy Yona's configurable `application.context` intent instead of hard-coding a subdirectory mount for every local run.
-- Browser runtime config now preserves legacy `application.langs` through `YONA_LANGS` as `supportedLanguages`, retaining the legacy default `en-US, ko-KR, ja-JP, ru-RU, uz-UZ` while leaving dynamic i18n switching deferred.
+- Browser runtime config now preserves legacy `application.langs` through `YONA_LANGS` as `supportedLanguages`, retaining the legacy default `en-US, ko-KR, ja-JP, ru-RU, uz-UZ`. 2026-06-21 P4-A adds a bounded frontend language runtime that normalizes configured languages to the legacy message dictionaries, exposes `language`/`setLanguage`/`messages` through `AppRuntimeContext`, and switches auth/runtime shell message lookup without route reload while preserving current fallback copy for missing keys. Evidence read: `yona-original/conf/application.conf.default`, `yona-original/conf/messages*`, `Application.jsMessages()`, `UserApp` language persistence, and the absence of a legacy language settings/selector surface beyond translation buttons. Remaining follow-up: app-wide message-key opt-in and legacy preferred-language/session persistence.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
-- `pnpm --dir frontend check` is green.
+- 2026-06-21 deferred-slice verification note: `pnpm --dir frontend check`
+  currently fails on pre-existing type drift in `frontend/src/app-view-models.ts`
+  and `frontend/src/route-parity.spec.tsx`; the P4-A i18n touched files pass the
+  focused frontend specs listed in `docs/plans/2026-06-21-deferred-parity-goal-directive.md`.
 - `pnpm --dir frontend test` is green, including `src/route-parity.spec.tsx`.
 - `pnpm --dir frontend build` is green.
 - `pnpm --dir frontend test:e2e` is green for `tests/shell-routing-smoke.e2e.ts`.

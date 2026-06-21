@@ -242,6 +242,7 @@ async fn inspect_schema(db: &DatabaseConnection) -> Result<SchemaInspection, DbE
     let non_migration_tables = user_tables
         .into_iter()
         .filter(|table| table != "seaql_migrations")
+        .filter(|table| !is_runtime_auxiliary_table_name(table))
         .collect();
 
     Ok(SchemaInspection {
@@ -318,6 +319,7 @@ async fn validate_schema_against_manifest(db: &DatabaseConnection) -> Result<(),
         .await?
         .into_iter()
         .filter(|table| table != "seaql_migrations")
+        .filter(|table| !is_runtime_auxiliary_table_name(table))
         .collect();
     let actual_required_tables: std::collections::BTreeSet<String> = actual_tables
         .iter()
@@ -399,6 +401,10 @@ where
     rows.into_iter()
         .map(|row| row.try_get("", "name"))
         .collect()
+}
+
+fn is_runtime_auxiliary_table_name(table_name: &str) -> bool {
+    table_name.starts_with("yona_search_fts_")
 }
 
 async fn list_columns(

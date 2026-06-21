@@ -32,6 +32,7 @@ pub struct AppRuntimeConfig {
     pub auth_ui: AuthUiConfig,
     pub data_root: PathBuf,
     pub integrations: IntegrationConfig,
+    pub ldap: LdapRuntimeConfig,
     pub max_uploaded_file_size: usize,
     pub project_default_menus: Vec<String>,
     pub project_default_scope: String,
@@ -53,6 +54,55 @@ pub struct AuthUiConfig {
     pub password_placeholder: String,
     pub signup_require_confirm: bool,
     pub social_login_only: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LdapRuntimeConfig {
+    pub base_dn: String,
+    pub display_name_property: String,
+    pub distinguished_name_postfix: String,
+    pub email_property: String,
+    pub enabled: bool,
+    pub english_name_attribute_name: String,
+    pub fallback_to_local_login: bool,
+    pub fixture_users: Vec<LdapFixtureUser>,
+    pub host: String,
+    pub login_property: String,
+    pub port: u16,
+    pub protocol: String,
+    pub use_email_base_login: bool,
+    pub user_name_property: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LdapFixtureUser {
+    pub department: String,
+    pub display_name: String,
+    pub email: String,
+    pub english_name: String,
+    pub login_id: String,
+    pub password: String,
+}
+
+impl Default for LdapRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            base_dn: String::new(),
+            display_name_property: "displayName".to_string(),
+            distinguished_name_postfix: String::new(),
+            email_property: "mail".to_string(),
+            enabled: false,
+            english_name_attribute_name: String::new(),
+            fallback_to_local_login: false,
+            fixture_users: Vec::new(),
+            host: "127.0.0.1".to_string(),
+            login_property: "sAMAccountName".to_string(),
+            port: 389,
+            protocol: "ldap".to_string(),
+            use_email_base_login: false,
+            user_name_property: "CN".to_string(),
+        }
+    }
 }
 
 impl AuthUiConfig {
@@ -122,6 +172,7 @@ impl Default for AppRuntimeConfig {
             auth_ui: AuthUiConfig::default(),
             data_root: PathBuf::from(".yona-data"),
             integrations: IntegrationConfig::default(),
+            ldap: LdapRuntimeConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
@@ -147,6 +198,7 @@ impl AppRuntimeConfig {
                 .map(PathBuf::from)
                 .unwrap_or_else(|| PathBuf::from(".yona-data")),
             integrations: integration_config_from_startup(config),
+            ldap: LdapRuntimeConfig::from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             project_default_menus: project_default_menus_from_option(
                 config.project_default_menus.as_deref(),
@@ -164,6 +216,51 @@ impl AppRuntimeConfig {
                 config.supported_languages.as_deref(),
             ),
             translation_proxy: TranslationProxyConfig::from_startup(config),
+        }
+    }
+}
+
+impl LdapRuntimeConfig {
+    pub(crate) fn from_startup(config: &runtime_config::StartupConfig) -> Self {
+        let defaults = Self::default();
+        Self {
+            base_dn: trimmed_option(config.ldap_base_dn.as_deref()).unwrap_or_default(),
+            display_name_property: trimmed_option(config.ldap_display_name_property.as_deref())
+                .unwrap_or(defaults.display_name_property),
+            distinguished_name_postfix: trimmed_option(
+                config.ldap_distinguished_name_postfix.as_deref(),
+            )
+            .unwrap_or_default(),
+            email_property: trimmed_option(config.ldap_email_property.as_deref())
+                .unwrap_or(defaults.email_property),
+            enabled: config.ldap_enabled.unwrap_or(false),
+            english_name_attribute_name: trimmed_option(
+                config.ldap_english_name_attribute_name.as_deref(),
+            )
+            .unwrap_or_default(),
+            fallback_to_local_login: config.ldap_fallback_to_local_login.unwrap_or(false),
+            fixture_users: config
+                .ldap_fixture_users
+                .clone()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|user| LdapFixtureUser {
+                    department: trimmed_option(user.department.as_deref()).unwrap_or_default(),
+                    display_name: user.display_name.trim().to_string(),
+                    email: user.email.trim().to_string(),
+                    english_name: trimmed_option(user.english_name.as_deref()).unwrap_or_default(),
+                    login_id: user.login_id.trim().to_string(),
+                    password: user.password,
+                })
+                .collect(),
+            host: trimmed_option(config.ldap_host.as_deref()).unwrap_or(defaults.host),
+            login_property: trimmed_option(config.ldap_login_property.as_deref())
+                .unwrap_or(defaults.login_property),
+            port: config.ldap_port.unwrap_or(defaults.port),
+            protocol: trimmed_option(config.ldap_protocol.as_deref()).unwrap_or(defaults.protocol),
+            use_email_base_login: config.ldap_use_email_base_login.unwrap_or(false),
+            user_name_property: trimmed_option(config.ldap_user_name_property.as_deref())
+                .unwrap_or(defaults.user_name_property),
         }
     }
 }

@@ -916,7 +916,7 @@ impl AppRepository {
         keyword: &str,
     ) -> Result<NativeSearchCandidates, DbErr> {
         let backend = DatabaseBackend::Sqlite;
-        let fts_table = format!("yona_search_fts_{}", sanitize_sqlite_temp_name(table));
+        let fts_table = persistent_sqlite_fts_table_name(table);
         let quoted_fts_table = quote_sql_identifier(backend, &fts_table);
         let fts_columns = columns
             .iter()
@@ -924,7 +924,8 @@ impl AppRepository {
             .collect::<Vec<_>>()
             .join(", ");
         let create_sql = format!(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS temp.{quoted_fts_table} USING fts5(row_id UNINDEXED, {fts_columns})"
+            "CREATE VIRTUAL TABLE IF NOT EXISTS {quoted_fts_table} USING fts5({fts_columns}, content={}, content_rowid='id')",
+            quote_sql_string(table)
         );
         if self
             .db
@@ -935,34 +936,20 @@ impl AppRepository {
             return Ok(NativeSearchCandidates::fallback_scan());
         }
 
-        self.db
-            .execute(Statement::from_string(
-                backend,
-                format!("DELETE FROM temp.{quoted_fts_table}"),
-            ))
-            .await?;
-
-        let select_columns = columns
-            .iter()
-            .map(|column| format!("COALESCE({}, '')", quote_sql_identifier(backend, column)))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let insert_sql = format!(
-            "INSERT INTO temp.{quoted_fts_table} (row_id, {fts_columns}) SELECT id, {select_columns} FROM {}",
-            quote_sql_identifier(backend, table)
-        );
         if self
             .db
-            .execute(Statement::from_string(backend, insert_sql))
+            .execute(Statement::from_string(
+                backend,
+                format!("INSERT INTO {quoted_fts_table}({quoted_fts_table}) VALUES ('rebuild')"),
+            ))
             .await
             .is_err()
         {
             return Ok(NativeSearchCandidates::fallback_scan());
         }
 
-        let query_sql = format!(
-            "SELECT row_id AS id FROM temp.{quoted_fts_table} WHERE {quoted_fts_table} MATCH ?"
-        );
+        let query_sql =
+            format!("SELECT rowid AS id FROM {quoted_fts_table} WHERE {quoted_fts_table} MATCH ?");
         self.search_candidate_ids_from_statement(
             backend,
             query_sql,
@@ -1045,7 +1032,11 @@ fn quote_sql_identifier(backend: DatabaseBackend, value: &str) -> String {
     format!("{quote}{escaped}{quote}")
 }
 
-fn sanitize_sqlite_temp_name(value: &str) -> String {
+fn persistent_sqlite_fts_table_name(table: &str) -> String {
+    format!("yona_search_fts_{}", sanitize_sqlite_identifier_part(table))
+}
+
+fn sanitize_sqlite_identifier_part(value: &str) -> String {
     value
         .chars()
         .map(|ch| {
@@ -1056,6 +1047,10 @@ fn sanitize_sqlite_temp_name(value: &str) -> String {
             }
         })
         .collect()
+}
+
+fn quote_sql_string(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
 }
 
 fn sqlite_fts_phrase(keyword: &str) -> String {
@@ -1101,6 +1096,48 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn sqlite_fts5_candidate_lookup_refreshes_persistent_index() {
+        let repo = sqlite_probe_repo().await;
+
+        let initial = repo
+            .search_native_text_candidates("search_probe", &["title", "body"], "Native")
+            .await
+            .expect("initial candidate lookup");
+        assert!(initial.is_native_match(1));
+
+        repo.db
+            .execute(Statement::from_string(
+                DatabaseBackend::Sqlite,
+                "UPDATE search_probe SET title = 'Updated title', body = 'updated body' WHERE id = 1"
+                    .to_string(),
+            ))
+            .await
+            .expect("update source row");
+
+        let refreshed = repo
+            .search_native_text_candidates("search_probe", &["title", "body"], "Native")
+            .await
+            .expect("refreshed candidate lookup");
+        assert_eq!(refreshed.source, NativeSearchCandidateSource::DbNativeFts);
+        assert!(!refreshed.is_native_match(1));
+
+        repo.db
+            .execute(Statement::from_string(
+                DatabaseBackend::Sqlite,
+                "DELETE FROM search_probe WHERE id = 2".to_string(),
+            ))
+            .await
+            .expect("delete source row");
+
+        let deleted = repo
+            .search_native_text_candidates("search_probe", &["title", "body"], "CamelNeedle")
+            .await
+            .expect("deleted candidate lookup");
+        assert_eq!(deleted.source, NativeSearchCandidateSource::DbNativeFts);
+        assert!(!deleted.is_native_match(2));
+    }
+
+    #[tokio::test]
     async fn sqlite_fts5_candidate_lookup_falls_back_when_table_is_unavailable() {
         let repo = sqlite_probe_repo().await;
 
@@ -1118,6 +1155,14 @@ mod tests {
         assert_eq!(
             sqlite_fts_phrase("a \"quoted\" value"),
             "\"a \"\"quoted\"\" value\""
+        );
+    }
+
+    #[test]
+    fn persistent_sqlite_fts_table_name_sanitizes_source_table() {
+        assert_eq!(
+            persistent_sqlite_fts_table_name("issue-comment"),
+            "yona_search_fts_issue_comment"
         );
     }
 

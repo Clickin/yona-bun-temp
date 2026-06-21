@@ -22,7 +22,7 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
-    RuntimeConfig, SmtpRuntimeConfig,
+    LdapFixtureUser, LdapRuntimeConfig, RuntimeConfig, SmtpRuntimeConfig,
 };
 
 // Workspace route-module ownership guard: the legacy `/info/leave/:owner/:project`
@@ -1632,6 +1632,184 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
         .unwrap()
         .expect("registered guest-prefix user");
     assert_eq!(registered_user.is_guest, Some(1));
+}
+
+#[tokio::test]
+async fn ldap_sign_in_provisions_fixture_user_and_guest_prefix() {
+    let ldap = LdapRuntimeConfig {
+        enabled: true,
+        fixture_users: vec![LdapFixtureUser {
+            department: "QA".to_string(),
+            display_name: "PT Door".to_string(),
+            email: "pt-door@example.com".to_string(),
+            english_name: "Peter".to_string(),
+            login_id: "PT-door".to_string(),
+            password: "ldap-pass".to_string(),
+        }],
+        ..LdapRuntimeConfig::default()
+    };
+    let (app, _repo, db) = build_auth_router_with_configs(
+        true,
+        AppRuntimeConfig {
+            ldap,
+            ..AppRuntimeConfig::default()
+        },
+        RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "pt-")]),
+    )
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header("content-type", "application/json")
+                .header("cookie", cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"pt-door\",\"password\":\"ldap-pass\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("\"loginId\":\"pt-door\""));
+    let created = n4user::Entity::find()
+        .filter(n4user::Column::Email.eq(Some("pt-door@example.com".to_string())))
+        .one(&db)
+        .await
+        .expect("query user")
+        .expect("ldap-provisioned user");
+    assert_eq!(created.name.as_deref(), Some("PT Door [QA]"));
+    assert_eq!(created.is_guest, Some(1));
+    assert!(bcrypt::verify("ldap-pass", created.password.as_deref().unwrap()).unwrap());
+}
+
+#[tokio::test]
+async fn ldap_sign_in_uses_email_base_login_and_updates_existing_local_user() {
+    let ldap = LdapRuntimeConfig {
+        enabled: true,
+        use_email_base_login: true,
+        fixture_users: vec![LdapFixtureUser {
+            department: "Ops".to_string(),
+            display_name: "Directory Door".to_string(),
+            email: "door@example.com".to_string(),
+            english_name: String::new(),
+            login_id: "ldap-door".to_string(),
+            password: "new-ldap-pass".to_string(),
+        }],
+        ..LdapRuntimeConfig::default()
+    };
+    let (app, _repo, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            ldap,
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header("content-type", "application/json")
+                .header("cookie", cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"oldpass1\",\"retypedPassword\":\"oldpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+    let (login_csrf, login_cookie_header) = bootstrap(app.clone()).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header("content-type", "application/json")
+                .header("cookie", login_cookie_header)
+                .header("x-csrf-token", login_csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"new-ldap-pass\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let updated = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("door".to_string())))
+        .one(&db)
+        .await
+        .expect("query user")
+        .expect("updated local user");
+    assert_eq!(updated.name.as_deref(), Some("Directory Door [Ops]"));
+    assert_eq!(updated.email.as_deref(), Some("door@example.com"));
+    assert!(bcrypt::verify("new-ldap-pass", updated.password.as_deref().unwrap()).unwrap());
+}
+
+#[tokio::test]
+async fn ldap_sign_in_falls_back_to_local_password_when_configured() {
+    let ldap = LdapRuntimeConfig {
+        enabled: true,
+        fallback_to_local_login: true,
+        ..LdapRuntimeConfig::default()
+    };
+    let (app, _repo, _db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            ldap,
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header("content-type", "application/json")
+                .header("cookie", cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+    let (login_csrf, login_cookie_header) = bootstrap(app.clone()).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header("content-type", "application/json")
+                .header("cookie", login_cookie_header)
+                .header("x-csrf-token", login_csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("\"loginId\":\"door\""));
 }
 
 #[tokio::test]

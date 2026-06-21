@@ -22,6 +22,20 @@ pub struct StartupConfig {
     pub database_url: String,
     pub guest_login_prefix: Option<String>,
     pub issue_event_draft_time: Option<String>,
+    pub ldap_base_dn: Option<String>,
+    pub ldap_display_name_property: Option<String>,
+    pub ldap_distinguished_name_postfix: Option<String>,
+    pub ldap_email_property: Option<String>,
+    pub ldap_enabled: Option<bool>,
+    pub ldap_english_name_attribute_name: Option<String>,
+    pub ldap_fallback_to_local_login: Option<bool>,
+    pub ldap_fixture_users: Option<Vec<LdapFixtureUserConfig>>,
+    pub ldap_host: Option<String>,
+    pub ldap_login_property: Option<String>,
+    pub ldap_port: Option<u16>,
+    pub ldap_protocol: Option<String>,
+    pub ldap_use_email_base_login: Option<bool>,
+    pub ldap_user_name_property: Option<String>,
     pub mailbox_fetch_command: Option<String>,
     pub mailbox_imap_address: Option<String>,
     pub mailbox_polling_enabled: Option<bool>,
@@ -72,6 +86,7 @@ pub struct StartupConfig {
 
 #[derive(Default, Deserialize)]
 struct StartupConfigFile {
+    application: Option<ApplicationConfigFile>,
     asset_root: Option<String>,
     auth: Option<AuthConfigFile>,
     base_path: Option<String>,
@@ -79,6 +94,7 @@ struct StartupConfigFile {
     data_root: Option<String>,
     database: Option<DatabaseConfigFile>,
     issue: Option<IssueConfigFile>,
+    ldap: Option<LdapConfigFile>,
     mailbox: Option<MailboxConfigFile>,
     database_url: Option<String>,
     project: Option<ProjectConfigFile>,
@@ -94,6 +110,28 @@ struct StartupConfigFile {
     update: Option<UpdateConfigFile>,
     use_embedded_assets: Option<bool>,
     webhook: Option<WebhookConfigFile>,
+    protocol: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+struct ApplicationConfigFile {
+    #[serde(rename = "use")]
+    use_config: Option<ApplicationUseConfigFile>,
+}
+
+#[derive(Default, Deserialize)]
+struct ApplicationUseConfigFile {
+    ldap: Option<ApplicationUseLdapConfigFile>,
+}
+
+#[derive(Default, Deserialize)]
+struct ApplicationUseLdapConfigFile {
+    login: Option<ApplicationUseLdapLoginConfigFile>,
+}
+
+#[derive(Default, Deserialize)]
+struct ApplicationUseLdapLoginConfigFile {
+    supoort: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -131,6 +169,48 @@ struct DatabaseConfigFile {
 #[derive(Default, Deserialize)]
 struct IssueConfigFile {
     event_draft_time: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct LdapFixtureUserConfig {
+    pub department: Option<String>,
+    pub display_name: String,
+    pub email: String,
+    pub english_name: Option<String>,
+    pub login_id: String,
+    pub password: String,
+}
+
+#[derive(Default, Deserialize)]
+struct LdapConfigFile {
+    #[serde(alias = "baseDN")]
+    base_dn: Option<String>,
+    #[serde(alias = "displayNameProperty")]
+    display_name_property: Option<String>,
+    #[serde(alias = "distinguishedNamePostfix")]
+    distinguished_name_postfix: Option<String>,
+    #[serde(alias = "emailProperty")]
+    email_property: Option<String>,
+    enabled: Option<bool>,
+    fixture_users: Option<Vec<LdapFixtureUserConfig>>,
+    host: Option<String>,
+    #[serde(alias = "loginProperty")]
+    login_property: Option<String>,
+    port: Option<u16>,
+    protocol: Option<String>,
+    options: Option<LdapOptionsConfigFile>,
+    #[serde(alias = "userNameProperty")]
+    user_name_property: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+struct LdapOptionsConfigFile {
+    #[serde(alias = "englishNameAttributeName")]
+    english_name_attribute_name: Option<String>,
+    #[serde(alias = "fallbackToLocalLogin")]
+    fallback_to_local_login: Option<bool>,
+    #[serde(alias = "useEmailBaseLogin")]
+    use_email_base_login: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -194,10 +274,13 @@ pub fn load_startup_config(
     current_dir: &Path,
 ) -> anyhow::Result<StartupConfig> {
     let file = read_startup_config_file(&env, current_dir)?;
+    let application = file.application.unwrap_or_default();
     let site = file.site.unwrap_or_default();
     let auth = file.auth.unwrap_or_default();
     let database = file.database.unwrap_or_default();
     let issue = file.issue.unwrap_or_default();
+    let ldap = file.ldap.unwrap_or_default();
+    let ldap_options = ldap.options.unwrap_or_default();
     let mailbox = file.mailbox.unwrap_or_default();
     let notification = file.notification.unwrap_or_default();
     let project = file.project.unwrap_or_default();
@@ -284,6 +367,61 @@ pub fn load_startup_config(
         .or(session.max_age);
     let issue_event_draft_time = env_string(&env, "YONA_ISSUE_EVENT_DRAFT_TIME")
         .or_else(|| non_empty_string(issue.event_draft_time));
+    let ldap_enabled = env_bool(&env, "YONA_LDAP_ENABLED")
+        .or_else(|| env_bool(&env, "application.use.ldap.login.supoort"))
+        .or_else(|| {
+            application
+                .use_config
+                .as_ref()
+                .and_then(|use_config| use_config.ldap.as_ref())
+                .and_then(|ldap| ldap.login.as_ref())
+                .and_then(|login| login.supoort)
+        })
+        .or(ldap.enabled);
+    let ldap_host = env_string(&env, "YONA_LDAP_HOST")
+        .or_else(|| env_string(&env, "ldap.host"))
+        .or_else(|| non_empty_string(ldap.host));
+    let ldap_port = env
+        .get("YONA_LDAP_PORT")
+        .or_else(|| env.get("ldap.port"))
+        .and_then(|value| value.trim().parse::<u16>().ok())
+        .or(ldap.port);
+    let ldap_protocol = env_string(&env, "YONA_LDAP_PROTOCOL")
+        .or_else(|| env_string(&env, "ldap.protocol"))
+        .or_else(|| env_string(&env, "protocol"))
+        .or(file.protocol)
+        .or_else(|| non_empty_string(ldap.protocol));
+    let ldap_base_dn = env_string(&env, "YONA_LDAP_BASE_DN")
+        .or_else(|| env_string(&env, "ldap.baseDN"))
+        .or_else(|| non_empty_string(ldap.base_dn));
+    let ldap_distinguished_name_postfix = env_string(&env, "YONA_LDAP_DISTINGUISHED_NAME_POSTFIX")
+        .or_else(|| env_string(&env, "ldap.distinguishedNamePostfix"))
+        .or_else(|| non_empty_string(ldap.distinguished_name_postfix));
+    let ldap_login_property = env_string(&env, "YONA_LDAP_LOGIN_PROPERTY")
+        .or_else(|| env_string(&env, "ldap.loginProperty"))
+        .or_else(|| non_empty_string(ldap.login_property));
+    let ldap_display_name_property = env_string(&env, "YONA_LDAP_DISPLAY_NAME_PROPERTY")
+        .or_else(|| env_string(&env, "ldap.displayNameProperty"))
+        .or_else(|| non_empty_string(ldap.display_name_property));
+    let ldap_user_name_property = env_string(&env, "YONA_LDAP_USER_NAME_PROPERTY")
+        .or_else(|| env_string(&env, "ldap.userNameProperty"))
+        .or_else(|| non_empty_string(ldap.user_name_property));
+    let ldap_email_property = env_string(&env, "YONA_LDAP_EMAIL_PROPERTY")
+        .or_else(|| env_string(&env, "ldap.emailProperty"))
+        .or_else(|| non_empty_string(ldap.email_property));
+    let ldap_use_email_base_login = env_bool(&env, "YONA_LDAP_USE_EMAIL_BASE_LOGIN")
+        .or_else(|| env_bool(&env, "ldap.options.useEmailBaseLogin"))
+        .or(ldap_options.use_email_base_login);
+    let ldap_fallback_to_local_login = env_bool(&env, "YONA_LDAP_FALLBACK_TO_LOCAL_LOGIN")
+        .or_else(|| env_bool(&env, "ldap.options.fallbackToLocalLogin"))
+        .or(ldap_options.fallback_to_local_login);
+    let ldap_english_name_attribute_name =
+        env_string(&env, "YONA_LDAP_ENGLISH_NAME_ATTRIBUTE_NAME")
+            .or_else(|| env_string(&env, "ldap.options.englishNameAttributeName"))
+            .or_else(|| non_empty_string(ldap_options.english_name_attribute_name));
+    let ldap_fixture_users = env_string(&env, "YONA_LDAP_FIXTURE_USERS")
+        .map(|value| parse_ldap_fixture_users(&value))
+        .or(ldap.fixture_users);
     let mailbox_fetch_command = env_string(&env, "YONA_MAILBOX_FETCH_COMMAND")
         .or_else(|| non_empty_string(mailbox.fetch_command));
     let mailbox_imap_address = env_string(&env, "YONA_MAILBOX_IMAP_ADDRESS")
@@ -385,6 +523,20 @@ pub fn load_startup_config(
         database_url,
         guest_login_prefix,
         issue_event_draft_time,
+        ldap_base_dn,
+        ldap_display_name_property,
+        ldap_distinguished_name_postfix,
+        ldap_email_property,
+        ldap_enabled,
+        ldap_english_name_attribute_name,
+        ldap_fallback_to_local_login,
+        ldap_fixture_users,
+        ldap_host,
+        ldap_login_property,
+        ldap_port,
+        ldap_protocol,
+        ldap_use_email_base_login,
+        ldap_user_name_property,
         mailbox_fetch_command,
         mailbox_imap_address,
         mailbox_polling_enabled,
@@ -501,6 +653,44 @@ fn split_csv(value: &str) -> Vec<String> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToString::to_string)
+        .collect()
+}
+
+fn parse_ldap_fixture_users(value: &str) -> Vec<LdapFixtureUserConfig> {
+    value
+        .split(';')
+        .filter_map(|entry| {
+            let mut parts = entry.split('|');
+            let login_id = parts.next()?.trim();
+            let email = parts.next()?.trim();
+            let display_name = parts.next()?.trim();
+            let password = parts.next()?.trim();
+            if login_id.is_empty()
+                || email.is_empty()
+                || display_name.is_empty()
+                || password.is_empty()
+            {
+                return None;
+            }
+            let department = parts
+                .next()
+                .map(str::trim)
+                .filter(|part| !part.is_empty())
+                .map(str::to_string);
+            let english_name = parts
+                .next()
+                .map(str::trim)
+                .filter(|part| !part.is_empty())
+                .map(str::to_string);
+            Some(LdapFixtureUserConfig {
+                department,
+                display_name: display_name.to_string(),
+                email: email.to_string(),
+                english_name,
+                login_id: login_id.to_string(),
+                password: password.to_string(),
+            })
+        })
         .collect()
 }
 

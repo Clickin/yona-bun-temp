@@ -157,6 +157,7 @@ fn build_router_with_app_config(
         data_root: runtime.data_root.clone(),
         public_origin: public_origin.clone(),
         integrations: runtime.integrations.clone(),
+        ldap: runtime.ldap.clone(),
         max_uploaded_file_size: runtime.max_uploaded_file_size,
         session_manager: session_manager.clone(),
         backend: backend.clone(),

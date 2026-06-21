@@ -31,8 +31,8 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
 | Production migration/import/export hardening | Site-admin `yobi-data` import/export and adopt/validate exist, but production migration hardening remains follow-up. | Harden validators, dry-run reports, rollback/no-partial-write behavior, and fixture coverage. |
-| Full-text/index-backed search | P3-B partial DB-native FTS slice in progress. Current app search now has an advisory native candidate layer while preserving legacy tabs, scope/type behavior, ACL filtering, snippets, and fallback ordering. | Continue DB-native FTS only: SQLite FTS5, PostgreSQL built-in text search, and MySQL FULLTEXT where available. Do not add Elastic/OpenSearch or change response shape/UX/ranking semantics. |
-| Dynamic i18n switching | `YONA_LANGS` is parsed and projected; runtime language switching remains deferred. | Introduce runtime switching only against legacy message keys and copy parity. |
+| Full-text/index-backed search | P3-B partial DB-native FTS slice in progress. Current app search now has DB-native candidate retrieval while preserving legacy tabs, scope/type behavior, ACL filtering, snippets, and fallback ordering. SQLite now uses persistent FTS5 external-content tables with query-time rebuild so backfill/update/delete cannot return stale native candidates. | Continue DB-native FTS only: PostgreSQL built-in maintained text-search indexing and MySQL FULLTEXT orchestration remain follow-up where available. Do not add Elastic/OpenSearch or change response shape/UX/ranking semantics. |
+| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload. | Remaining follow-up is app-wide message-key opt-in and legacy preferred-language/session persistence; no new visible selector/settings UX was added because no legacy surface was found. |
 | Slack webhook detail compatibility | Closed by P4-B re-audit. `DETAIL_SLACK` is the legacy project webhook type, not a separate Slack integration surface; Rust now preserves Slack attachment `text`, nullable/array `fields`, and `slack.<EventType>` color config via `[slack]` TOML or legacy-style env keys. | Retire stale deferred wording. Signature compatibility was separately retired by P4-C as not applicable. Evidence: `Webhook.java` `buildAttachmentJSON`, `project/webhooks.scala.html`, `crates/server/src/routes/projects/webhooks.rs`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | Optional webhook signature compatibility | P4-C re-audit complete: not applicable for legacy parity. Legacy `Webhook.java` only sets `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and optional `Authorization: token <secret> `; `project.webhook.help` documents only that token header; targeted legacy/current searches found no `X-Hub-Signature`, `X-Yona-*`, SHA/HMAC signing, or equivalent behavior. | Retire deferred wording; preserve the implemented token secret header and do not add a new signature surface. |
 | IMAP mailbox service | P4-D re-audit complete: the old deferred wording is stale for the current app-runtime mailbox surface. Legacy `Global.onStart()` starts `MailboxService.start()`, which opens configured IMAP and feeds messages into `EmailHandler`; Rust starts `spawn_mailbox_polling_scheduler` from `crates/server/src/main.rs`, runs the configured `YONA_MAILBOX_FETCH_COMMAND`, appends the configured mailbox address, and feeds NUL-separated raw RFC822 stdout through `process_mailbox_raw_message` into the same DB-backed parsed/raw mailbox bridge. | No new runtime work assigned. The live IMAP socket/client implementation remains intentionally replaced by an executable-backed fetch boundary; current parity evidence is `crates/server/src/mailbox.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and `docs/provenance/core-parity-audit.md`. |
@@ -148,6 +148,17 @@ then frontend shell updates.
 | P2-C LDAP runtime | Yes | auth runtime, integrations/domain as needed, tests | Implement legacy `application.use.ldap.login.supoort` spelling, `ldap.*` config, bind/search, email login option, fallback-to-local option, user provisioning/update, and guest flag propagation. |
 | P2-D BasicAuth LDAP | Yes after P2-C core | Smart HTTP/SVN auth boundary tests | Route legacy BasicAuth through LDAP when enabled without breaking local-token/session auth. |
 
+P2-C sub-slice status: form-login LDAP runtime now parses the legacy typo
+`application.use.ldap.login.supoort`, legacy `ldap.*`, and `YONA_LDAP_*`
+equivalents, then authenticates through a deterministic fixture-backed LDAP
+boundary. The slice covers enabled LDAP login, `useEmailBaseLogin`,
+`fallbackToLocalLogin`, local user provisioning/update by LDAP email, password
+refresh, and guest-prefix propagation for newly provisioned LDAP users. Focused
+coverage lives in `runtime_config_contract` and `auth_workspace_contract`.
+Remaining P2-C/P2-D work is real LDAP bind/search connector support, existing
+LDAP user's English-name/guest refresh if the persistence boundary is expanded,
+and BasicAuth LDAP coverage.
+
 Exit criteria: password, OAuth, LDAP, and BasicAuth LDAP paths have isolated
 contract coverage and share the same legacy login UX.
 
@@ -156,7 +167,7 @@ contract coverage and share the same legacy login UX.
 | Worker | Parallel? | Write scope | Responsibility |
 | --- | --- | --- | --- |
 | P3-A SVN PROPFIND edge closure | Closed | provenance + existing SVN contract evidence | Complete: current `svn_protocol_contract` coverage closes the former broader VCC/baseline PROPFIND edge list, including root/default VCC Label selection, allprop DeltaV metadata, baseline invalid/out-of-range mapping, baseline requested/propname/allprop metadata, supported-report discovery, and baseline collection Depth 0/1/infinity behavior. |
-| P3-B full-text search | Partial / in progress | `crates/search`, persistence search/repo tests, search provenance docs | Implement DB-native FTS candidate retrieval behind the existing legacy UX contract. Current slice adds SQLite FTS5 temporary candidates plus PostgreSQL/MySQL best-effort native candidate queries with fallback to the existing literal scan/ranking path. Remaining work is persistent DB-native index schema/backfill/update/delete orchestration, without Elastic/OpenSearch and without changing tabs, ACL filtering, snippet copy, response shape, or fallback ordering semantics. |
+| P3-B full-text search | Partial / in progress | `crates/search`, persistence search/repo tests, search provenance docs | Implement DB-native FTS candidate retrieval behind the existing legacy UX contract. Current slice uses persistent SQLite FTS5 external-content candidate tables with query-time rebuild/backfill/update/delete safety, plus PostgreSQL/MySQL best-effort native candidate queries with fallback to the existing literal scan/ranking path. Remaining work is backend-specific maintained PostgreSQL text-search and MySQL FULLTEXT index orchestration, without Elastic/OpenSearch and without changing tabs, ACL filtering, snippet copy, response shape, or fallback ordering semantics. |
 | P3-C external search API boundary | Closed by re-audit | provenance only | Retired as not applicable: `yona-original/conf/routes` exposes search through `/search`, `/organizations/:organizationName/search`, and `/:user/:project/search`, but no `/-_-api/v1/**` search compatibility route or `controllers.api.SearchApi` exists. Keep app search on canonical `/api/v1/search`, `/api/v1/projects/:owner/:project/search`, and `/api/v1/organizations/:organization/search` only; do not add migration descriptors/tests for a non-existent legacy external search endpoint. |
 
 Exit criteria: VCS and search docs no longer contain ambiguous deferred wording;
@@ -166,11 +177,25 @@ each remaining item is either implemented or explicitly deferred with reason.
 
 | Worker | Parallel? | Write scope | Responsibility |
 | --- | --- | --- | --- |
-| P4-A dynamic i18n switching | Yes | frontend runtime i18n, message loading tests | Implement runtime language switching from legacy message keys without changing labels or adding new UX. |
+| P4-A dynamic i18n switching | Closed | frontend runtime i18n, message loading tests | Bounded runtime switch implemented from legacy message keys/copy for auth/runtime shell. Remaining broader app-wide opt-in and preferred-language persistence stay follow-up. |
 | P4-B Slack webhook detail re-audit | Closed | webhook provenance, `crates/server` webhook tests | Confirmed `DETAIL_SLACK` is already the legacy project webhook UI type. Implemented the missing legacy-backed `slack.<EventType>` attachment color config while preserving existing text/fields payloads and avoiding any new Slack integration surface. Evidence lives in `SPEC.md`, `docs/provenance/phase-0b/project.md`, `docs/provenance/core-parity-audit.md`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | P4-C webhook signature decision | Closed | webhook provenance/docs | Re-audit found no legacy HMAC/signature behavior beyond the documented `Authorization: token <secret> ` header, so the optional signature item is retired as `not applicable` rather than implemented. Evidence lives in `SPEC.md`, `docs/provenance/phase-0b/project.md`, `docs/provenance/core-parity-audit.md`, `yona-original/app/models/Webhook.java`, `yona-original/conf/messages`, and current webhook delivery/header tests. |
 | P4-D mailbox re-audit | Yes | docs/tests only unless real gap found | Complete: no real gap found. The stale deferred label is retired in plan/provenance status based on `crates/server/src/mailbox.rs`, `crates/server/src/main.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and legacy `Global.java` / `mailbox/MailboxService.java` / `EmailHandler` evidence. |
 | P4-E update-notification reclassification | Yes | provenance/docs status | Complete: no active update-notification gap found. The stale deferred label is retired in SPEC/plan/provenance status based on `crates/server/src/routes/site_admin/update.rs`, `crates/server/tests/site_admin_contract.rs`, `frontend/tests/site-admin-update-parity.e2e.ts`, and legacy `YobiUpdate.java` / `partial_update_notification.scala.html` / `site/update.scala.html` evidence. |
+
+P4-A sub-slice status: `frontend/src/i18n.tsx` now defines the bounded legacy
+message runtime for the configured legacy languages (`en-US`, `ko-KR`, `ja-JP`,
+`ru-RU`, `uz-UZ`), normalizes `YONA_LANGS`/runtime-config supported languages,
+and exposes `language`, `setLanguage`, and `messages` through
+`AppRuntimeContext`. The auth/runtime shell resolves only existing legacy keys
+with exact current fallback copy, so missing dictionary entries preserve prior
+labels. Focused coverage is `frontend/src/i18n.spec.tsx`,
+`frontend/src/runtime-config.spec.ts`, `frontend/src/auth-workspace-shell.spec.tsx`,
+and `frontend/src/wave1-auth-workspace-parity.spec.tsx`. Remaining follow-up:
+opt more screens into the lookup boundary only where legacy message keys/copy
+are already known, and restore legacy preferred-language/session persistence if
+that user-language behavior is prioritized. No language selector or settings
+screen was added because the re-audit found no corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

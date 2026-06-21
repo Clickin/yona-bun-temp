@@ -12,6 +12,7 @@ use std::collections::HashMap;
 
 use crate::assets::serve_frontend_page;
 use crate::generated::yona::pilot::v1::*;
+use crate::persistence::{AppUserRecord, CreateUserInput};
 #[cfg(debug_assertions)]
 use crate::resolve_current_session_response;
 use crate::{
@@ -19,8 +20,9 @@ use crate::{
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode,
-    BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
-    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    BrowserRuntimeConfig, ConnectError, Context, LdapFixtureUser, LdapRuntimeConfig, PilotBackend,
+    PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
+    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -221,18 +223,18 @@ pub(crate) async fn auth_sign_in_with_password(
         ));
     }
 
-    let Some(user) = repository
-        .find_user_by_identifier(&identifier)
-        .await
-        .map_err(crate::internal_error)?
-    else {
-        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    let user = if service.ldap.enabled {
+        authenticate_with_ldap_or_legacy_fallback(
+            service,
+            repository,
+            &identifier,
+            &request.password,
+        )
+        .await?
+    } else {
+        authenticate_local_user(repository, &identifier, &request.password).await?
     };
 
-    let verified = verify(&request.password, &user.password_hash).map_err(crate::internal_error)?;
-    if !verified {
-        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
-    }
     if crate::confirmation_session_required_from_config(&service.auth_ui) && !user.is_confirmed {
         return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
     }
@@ -252,6 +254,204 @@ pub(crate) async fn auth_sign_in_with_password(
         crate::current_session_response_from_user(&user, default_landing_path),
         ctx,
     ))
+}
+
+async fn authenticate_local_user(
+    repository: &PilotRepository,
+    identifier: &str,
+    password: &str,
+) -> Result<AppUserRecord, ConnectError> {
+    let Some(user) = repository
+        .find_user_by_identifier(identifier)
+        .await
+        .map_err(crate::internal_error)?
+    else {
+        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    };
+
+    let verified = verify(password, &user.password_hash).map_err(crate::internal_error)?;
+    if verified {
+        Ok(user)
+    } else {
+        Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE))
+    }
+}
+
+#[derive(Debug)]
+enum LdapAuthFailure {
+    Authentication,
+    ConnectionUnavailable,
+    Internal(ConnectError),
+}
+
+async fn authenticate_with_ldap_or_legacy_fallback(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    identifier: &str,
+    password: &str,
+) -> Result<AppUserRecord, ConnectError> {
+    match authenticate_with_configured_ldap(service, repository, identifier, password).await {
+        Ok(user) => Ok(user),
+        Err(LdapAuthFailure::Authentication | LdapAuthFailure::ConnectionUnavailable)
+            if service.ldap.fallback_to_local_login =>
+        {
+            authenticate_local_user(repository, identifier, password).await
+        }
+        Err(LdapAuthFailure::Authentication | LdapAuthFailure::ConnectionUnavailable) => {
+            Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE))
+        }
+        Err(LdapAuthFailure::Internal(error)) => Err(error),
+    }
+}
+
+async fn authenticate_with_configured_ldap(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    identifier: &str,
+    password: &str,
+) -> Result<AppUserRecord, LdapAuthFailure> {
+    let ldap_identity = ldap_login_identity(&service.ldap, repository, identifier).await?;
+    if service.ldap.fixture_users.is_empty() {
+        return Err(LdapAuthFailure::ConnectionUnavailable);
+    }
+    let Some(ldap_user) = fixture_ldap_authenticate(&service.ldap, &ldap_identity, password) else {
+        return Err(LdapAuthFailure::Authentication);
+    };
+    provision_or_update_ldap_user(service, repository, &ldap_user, password)
+        .await
+        .map_err(LdapAuthFailure::Internal)
+}
+
+async fn ldap_login_identity(
+    ldap: &LdapRuntimeConfig,
+    repository: &PilotRepository,
+    identifier: &str,
+) -> Result<String, LdapAuthFailure> {
+    if !ldap.use_email_base_login || identifier.contains('@') {
+        return Ok(identifier.to_string());
+    }
+    match repository.find_user_by_login_id(identifier).await {
+        Ok(Some(user)) => Ok(user.email_address),
+        Ok(None) => Ok(identifier.to_string()),
+        Err(_) => Err(LdapAuthFailure::ConnectionUnavailable),
+    }
+}
+
+fn fixture_ldap_authenticate<'a>(
+    ldap: &'a LdapRuntimeConfig,
+    identity: &str,
+    password: &str,
+) -> Option<LdapFixtureUser> {
+    let normalized_identity = normalize_identifier(identity);
+    ldap.fixture_users
+        .iter()
+        .find(|user| {
+            let candidate = if normalized_identity.contains('@') {
+                &user.email
+            } else {
+                &user.login_id
+            };
+            normalize_identifier(candidate) == normalized_identity && user.password == password
+        })
+        .cloned()
+}
+
+async fn provision_or_update_ldap_user(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    ldap_user: &LdapFixtureUser,
+    password: &str,
+) -> Result<AppUserRecord, ConnectError> {
+    let email = normalize_identifier(&ldap_user.email);
+    if email.is_empty() {
+        return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
+    }
+    let display_name = legacy_ldap_display_name(ldap_user);
+    let password_hash = hash(password, DEFAULT_COST).map_err(crate::internal_error)?;
+    if let Some(existing) = repository
+        .find_user_by_identifier(&email)
+        .await
+        .map_err(crate::internal_error)?
+    {
+        if !verify(password, &existing.password_hash).map_err(crate::internal_error)? {
+            repository
+                .update_password_hash_for_user(existing.id, &password_hash)
+                .await
+                .map_err(crate::internal_error)?;
+        }
+        return repository
+            .update_profile_for_user(existing.id, &display_name, &email)
+            .await
+            .map_err(crate::internal_error);
+    }
+
+    let login_id = ldap_local_login_id(service, repository, ldap_user).await?;
+    repository
+        .create_user(CreateUserInput {
+            display_name,
+            email_address: email,
+            is_confirmed: !crate::confirmation_session_required_from_config(&service.auth_ui),
+            is_site_admin: false,
+            login_id,
+            password_hash,
+        })
+        .await
+        .map_err(crate::internal_error)
+}
+
+fn legacy_ldap_display_name(ldap_user: &LdapFixtureUser) -> String {
+    let display_name = ldap_user.display_name.trim();
+    let department = ldap_user.department.trim();
+    if department.is_empty() {
+        display_name.to_string()
+    } else {
+        format!("{display_name} [{department}]")
+    }
+}
+
+async fn ldap_local_login_id(
+    service: &PilotServiceImpl,
+    repository: &PilotRepository,
+    ldap_user: &LdapFixtureUser,
+) -> Result<String, ConnectError> {
+    let configured_login_id = normalize_identifier(&ldap_user.login_id);
+    if !service.ldap.use_email_base_login {
+        return Ok(configured_login_id);
+    }
+    let email = normalize_identifier(&ldap_user.email);
+    let local_part = email
+        .split_once('@')
+        .map(|(local, _)| normalize_identifier(local))
+        .filter(|local| !local.is_empty())
+        .unwrap_or(configured_login_id);
+    unique_legacy_ldap_login_id(repository, &local_part).await
+}
+
+async fn unique_legacy_ldap_login_id(
+    repository: &PilotRepository,
+    candidate: &str,
+) -> Result<String, ConnectError> {
+    if !repository
+        .user_login_id_exists(candidate)
+        .await
+        .map_err(crate::internal_error)?
+    {
+        return Ok(candidate.to_string());
+    }
+    let mut next_candidate = candidate.to_string();
+    let mut suffix = 1;
+    loop {
+        let proposed = format!("{next_candidate}{suffix}");
+        if !repository
+            .user_login_id_exists(&proposed)
+            .await
+            .map_err(crate::internal_error)?
+        {
+            return Ok(proposed);
+        }
+        next_candidate = proposed;
+        suffix += 1;
+    }
 }
 
 pub(crate) async fn auth_register_with_password(
