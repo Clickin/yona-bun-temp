@@ -25,7 +25,7 @@ export const Route = createFileRoute("/$owner/$projectName/newFork")({
 
 function ProjectForkRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/newFork`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
@@ -68,7 +68,7 @@ function ProjectForkRouteComponent() {
         ...input,
         ownerName: owner,
         projectName,
-    }),
+      }),
     onError: (error) => {
       setErrorMessage(error instanceof Error ? error.message : "fork.failed");
     },
@@ -91,7 +91,7 @@ function ProjectForkRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

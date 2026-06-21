@@ -8,14 +8,14 @@ export const Route = createFileRoute("/restricted")({
 });
 
 function RestrictedRouteComponent() {
-  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   useDocumentTitle(runtimeConfig.siteName ?? "Yona");
   const canRender = useRequireAuthenticatedRoute("/restricted");
 
   if (bootstrapping || !canRender || !currentSession || currentSession.isAnonymous) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

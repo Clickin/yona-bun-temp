@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_import")({
 });
 
 function ProjectImportRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
@@ -49,7 +49,7 @@ function ProjectImportRouteComponent() {
     }
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

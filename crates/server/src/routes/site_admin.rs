@@ -2285,10 +2285,9 @@ async fn rest_import_site_data(
                 rollback.cleanup_staged_uploads();
                 return Err(RestRouteError::internal(error.to_string()));
             }
-            rollback.promote_staged_uploads().map_err(|error| {
-                rollback.cleanup_staged_uploads();
-                RestRouteError::internal(error.to_string())
-            })?;
+            rollback
+                .promote_staged_uploads()
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
             Ok((StatusCode::OK, Json(response)))
         }
         Err(_error) => {
@@ -4426,6 +4425,14 @@ fn promote_site_import_staged_upload_file(
         std::fs::create_dir_all(parent)?;
     }
     if upload.final_path.exists() {
+        let final_bytes = std::fs::read(&upload.final_path)?;
+        let staged_bytes = std::fs::read(&upload.staging_path)?;
+        if final_bytes != staged_bytes {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "site import staged upload final file mismatch",
+            ));
+        }
         std::fs::remove_file(&upload.staging_path)?;
     } else {
         std::fs::rename(&upload.staging_path, &upload.final_path)?;

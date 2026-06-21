@@ -24,6 +24,7 @@ function UserIssuesLeafRouteComponent() {
     bootstrapping,
     csrfToken,
     currentSession,
+    messages,
     runtimeConfig,
     setErrorMessage,
     syncWorkspaceFromOverview,
@@ -80,7 +81,7 @@ function UserIssuesLeafRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -94,8 +95,7 @@ function UserIssuesLeafRouteComponent() {
     : currentSession?.defaultLandingPath
       ? `/${currentSession.defaultLandingPath}`
       : "";
-  const canSetDefaultLoginPage =
-    routePath !== "/" && normalizedDefaultLandingPath !== routePath;
+  const canSetDefaultLoginPage = routePath !== "/" && normalizedDefaultLandingPath !== routePath;
   const setDefaultLoginPage = async () => {
     try {
       const overview = await setDefaultLandingPathRest(runtimeConfig, csrfToken, routePath);

@@ -77,7 +77,7 @@ function userFilesQueryFromLocation(): { filter: string; page: number } {
 }
 
 function UserFilesRouteComponent() {
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/files");
   const [query, setQuery] = React.useState(() => userFilesQueryFromLocation());
   const [files, setFiles] = React.useState<WorkspaceFilesResponse | null>(null);
@@ -113,7 +113,7 @@ function UserFilesRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

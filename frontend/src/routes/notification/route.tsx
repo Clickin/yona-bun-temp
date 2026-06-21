@@ -23,6 +23,7 @@ export function NotificationRouteComponent({
     bootstrapping,
     csrfToken,
     currentSession,
+    messages,
     runtimeConfig,
     setErrorMessage,
     syncWorkspaceFromOverview,
@@ -53,7 +54,9 @@ export function NotificationRouteComponent({
       <main className="app-shell notification-page">
         <div className="page-wrap-outer">
           <div className="page-wrap">
-            <div className="warning-none">common.loading</div>
+            <div className="warning-none">
+              {messages("common.loading", { fallback: "common.loading" })}
+            </div>
           </div>
         </div>
       </main>

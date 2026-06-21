@@ -145,13 +145,15 @@ export function NotFoundPage({ href }: { href: string }) {
 }
 
 export function RedirectPage({ basePath, to }: { basePath: string; to: string }) {
+  const messages = useLegacyMessages();
+
   React.useEffect(() => {
     navigateToAppHref(basePath, to);
   }, [basePath, to]);
 
   return (
     <main className="app-shell">
-      <h1>common.loading</h1>
+      <h1>{messages.t("common.loading", { fallback: "common.loading" })}</h1>
     </main>
   );
 }

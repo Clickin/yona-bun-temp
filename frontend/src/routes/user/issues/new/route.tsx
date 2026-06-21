@@ -35,7 +35,7 @@ function DirectIssueCreateRouteComponent() {
 }
 
 export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; routeHref: string }) {
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(props.routeHref);
   const [options, setOptions] = React.useState<Awaited<
     ReturnType<typeof readDirectIssueFormOptions>
@@ -108,7 +108,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -124,7 +124,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
   if (!options) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }

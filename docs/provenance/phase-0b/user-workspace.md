@@ -16,6 +16,7 @@
 - App-owned legacy external user helpers under `/-_-api/v1/**` include user statistics, default-login-page mutation, site-admin active-user listing, and site-admin user-state mutation as inventoried in `docs/provenance/legacy-external-api.md`; broader user create/export issue-list compatibility remains migrator scope.
 - `frontend/src/routes/$user/route.tsx` mounts the single-segment file route and redirects organization names to `/organizations/:name`.
 - `frontend/src/routes/-workspace-views.tsx` renders `PublicUserProfilePage` with the legacy user card, tab/list anchors, two-column mode checkbox shell, and show-subtasks checkbox shell without inheriting private `/me` workspace controls.
+- 2026-06-21 P4-A loading-shell i18n refresh: the public `/:user` route keeps the same bootstrapping shell and resolves legacy `common.loading` through `AppRuntimeContext.messages("common.loading", { fallback: "common.loading" })`, with focused source/render coverage in `frontend/src/user-profile-route-loading-shell-i18n.spec.tsx`.
 - `crates/server/src/lib.rs` reuses existing workspace profile, issue, pull-request, and member-project projections, then filters project-backed rows by the current viewer's READ ACL. Anonymous viewers see public projects only.
 - `YONA_ALLOW_ANONYMOUS_ACCESS=false` installs the global anonymous-access gate for app-runtime pages and non-auth `/api/v1` calls while preserving public auth/bootstrap/reset/verify/static entrypoints.
 

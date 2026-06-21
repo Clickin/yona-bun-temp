@@ -32,7 +32,7 @@ checked `docs/provenance/legacy-porting-progress.md`,
 | Legacy external `/-_-api/v1/**` broad compatibility | P1-B re-audit closed for current migration-tool scope. App server owns only documented helper rows; broad runtime compatibility is rejected. | Keep the bounded `crates/migration/src/legacy_external/**` adapters as the tool-side compatibility boundary. Future adapter depth requires a concrete migration/operator replay flow and must not mount broad app-server routes. |
 | Production migration/import/export hardening | Site-admin `yobi-data` import/export and adopt/validate exist, but production migration hardening remains follow-up. | Harden validators, dry-run reports, rollback/no-partial-write behavior, and fixture coverage. |
 | Full-text/index-backed search | P3-B DB-native FTS slice implemented. Current app search now has DB-native candidate retrieval while preserving legacy tabs, scope/type behavior, ACL filtering, snippets, and fallback ordering. SQLite uses persistent FTS5 external-content tables with query-time rebuild, PostgreSQL assures built-in GIN text-search indexes, and MySQL assures FULLTEXT indexes before native candidate queries. | Keep search inside the selected DB engine's built-in FTS/query facilities: SQLite FTS5, PostgreSQL built-in text search, or MySQL FULLTEXT. Do not add Elastic/OpenSearch or change response shape/UX/ranking semantics; unsupported DB-native paths fall back to the existing literal scan. |
-| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload, auth/session requests persist legacy preferred-language context into `User.lang`, and the project navigation/keymap, workspace/public profile stream-tab, organization menu/header/settings-tab, search tab/shell labels, site-admin shell/sidebar/top-level asserted labels, issue/board/PR/milestone list/detail/form controls, workspace/project settings controls, issue label settings controls, and code/review detail controls now opt known legacy message-key labels into the same lookup boundary. | Remaining follow-up is app-wide message-key opt-in for other existing screens/components where legacy keys/copy are known; no new visible selector/settings UX was added because no legacy surface was found. |
+| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload, auth/session requests persist legacy preferred-language context into `User.lang`, and the project navigation/keymap, workspace/public profile stream-tab, organization menu/header/settings-tab, search tab/shell labels, site-admin shell/sidebar/top-level asserted labels, issue/board/PR/milestone list/detail/form controls, workspace/project settings controls, issue label settings controls, code/review detail controls, and bounded app-wide route loading shells now opt known legacy message-key labels into the same lookup boundary. | Remaining follow-up is app-wide message-key opt-in for other existing screens/components where legacy keys/copy are known; no new visible selector/settings UX was added because no legacy surface was found. |
 | Slack webhook detail compatibility | Closed by P4-B re-audit. `DETAIL_SLACK` is the legacy project webhook type, not a separate Slack integration surface; Rust now preserves Slack attachment `text`, nullable/array `fields`, and `slack.<EventType>` color config via `[slack]` TOML or legacy-style env keys. | Retire stale deferred wording. Signature compatibility was separately retired by P4-C as not applicable. Evidence: `Webhook.java` `buildAttachmentJSON`, `project/webhooks.scala.html`, `crates/server/src/routes/projects/webhooks.rs`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | Optional webhook signature compatibility | P4-C re-audit complete: not applicable for legacy parity. Legacy `Webhook.java` only sets `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and optional `Authorization: token <secret> `; `project.webhook.help` documents only that token header; targeted legacy/current searches found no `X-Hub-Signature`, `X-Yona-*`, SHA/HMAC signing, or equivalent behavior. | Retire deferred wording; preserve the implemented token secret header and do not add a new signature surface. |
 | IMAP mailbox service | P4-D re-audit complete: the old deferred wording is stale for the current app-runtime mailbox surface. Legacy `Global.onStart()` starts `MailboxService.start()`, which opens configured IMAP and feeds messages into `EmailHandler`; Rust starts `spawn_mailbox_polling_scheduler` from `crates/server/src/main.rs`, runs the configured `YONA_MAILBOX_FETCH_COMMAND`, appends the configured mailbox address, and feeds NUL-separated raw RFC822 stdout through `process_mailbox_raw_message` into the same DB-backed parsed/raw mailbox bridge. | No new runtime work assigned. The live IMAP socket/client implementation remains intentionally replaced by an executable-backed fetch boundary; current parity evidence is `crates/server/src/mailbox.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and `docs/provenance/core-parity-audit.md`. |
@@ -161,9 +161,13 @@ Each route-created portable staged file now also has an import-local journal
 written beside it after the attachment row is created inside the transaction.
 Before a later live import removes stale staging leftovers, `/sites/import`
 reconciles journaled staged files against committed attachment rows and promotes
-matching hashes to `uploads/<hash>`, reducing the documented post-commit
-process-kill window without adding a new legacy-visible UI. Remaining limit:
-repair runs on the next live import rather than as a background startup service.
+matching hashes to `uploads/<hash>`, treats an already-existing identical final
+upload file as an idempotent completed promotion, and preserves the staged bytes
+plus journal with an error when the existing final file differs. This reduces
+the documented post-commit process-kill window without adding a new
+legacy-visible UI. Remaining limit: repair runs on the next live import rather
+than as a background startup service, and final-file mismatches require operator
+inspection because the route cannot prove which file is authoritative.
 The dry-run/live import report now also carries a bounded `checkpoint` artifact
 for migration/operator tooling: versioned section entries, stable resource keys
 capped at 256 per section with truncation flags, total/validated/completed/
@@ -202,8 +206,10 @@ guards the preexisting attachment-id rebinding restoration path.
 `site_admin_contract::site_admin_import_restores_portable_attachment_content_from_yobi_data_snapshot`
 now also proves post-commit promotion still serves restored portable
 attachments through `/files/:id`, while the failure tests assert no final upload
-files and no staging directory survive normal downstream failures. The import
-dry-run/preflight report now also treats duplicate/conflicting payload keys for
+files and no staging directory survive normal downstream failures.
+`site_admin_contract::site_admin_import_preserves_committed_staging_when_final_upload_differs`
+proves a journal/final-file mismatch is not silently treated as repaired. The
+import dry-run/preflight report now also treats duplicate/conflicting payload keys for
 users, projects, project members, labels, and milestones as validation errors
 instead of silent skips; live import rejects those reports before any mutation.
 Focused coverage:
@@ -565,8 +571,17 @@ pagination/loading labels now flow from the same lookup boundary while
 preserving literal key fallback without a provider. Focused coverage is
 `frontend/src/pull-request-list-form-review-i18n.spec.tsx`. Remaining app-wide
 opt-in scope is other existing controls that still render known legacy keys/copy
-as literal fallback text. No language selector or settings screen was added
-because the re-audit found no corresponding legacy UI surface.
+as literal fallback text. P4-A-RemainingRouteLoadingShellI18n continuation
+covers the next bounded app-wide loading-shell pass for shared redirect, public
+profile, `/me`, auth/restricted, import, notification, project create,
+organization create, user issue/file/settings, and project fork route shells:
+`common.loading` now flows through `AppRuntimeContext.messages` or
+`useLegacyMessages()` with exact `common.loading` fallback and no layout or UI
+change. Focused coverage is `frontend/src/user-profile-route-loading-shell-i18n.spec.tsx`.
+Remaining literal route-loading scope is site-admin internal read-failure shells
+and PR detail/change shells pending separate evidence/slice. No language
+selector or settings screen was added because the re-audit found no
+corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/projectform")({
 });
 
 function ProjectNewRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/projectform");
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
@@ -50,7 +50,7 @@ function ProjectNewRouteComponent() {
     }
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
