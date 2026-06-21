@@ -27,6 +27,12 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "button.close": "Close",
     "button.confirm": "Confirm",
     "button.login": "Log in",
+    "common.loading": "Loading",
+    "error.badrequest": "The request cannot be fulfilled due to bad syntax",
+    "error.forbidden": "You are not authorized",
+    "error.internalServerError": "Server error occurred; service is not available",
+    "error.notfound": "Page not found",
+    "menu.home": "Home",
     "site.mail.fail": "Failed to send mail.",
     "site.mail.sended": "Mail has been sent.",
     "site.resetPasswordEmail.invalidRequest": "Invalid password reset request",
@@ -42,7 +48,23 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "title.signupConfirmDesc": "Administrator admission is required for activation.",
     "title.signupFor": 'Sign up for <span class="highlight">{0}</span>',
     "user.email": "Email address",
+    "user.enroll.failed":
+      "Failed to sign-up. A server error may have occurred or the request may be invalid.",
+    "user.enroll.failed.client":
+      "Failed to sign-up. The request is invalid.\\nPlease ask site admin.",
+    "user.enroll.failed.network":
+      "Failed to sign-up because of network trouble.\\nPlease ask site admin.",
+    "user.enroll.failed.server":
+      "Failed to sign-up because a server error has occurred.\\nPlease ask site admin.",
     "user.isAlreadySignupUser": "Already signed up?",
+    "user.login.failed":
+      "Failed to log in. A serve error may have occurred or the request may be invalid.",
+    "user.login.failed.client":
+      "Failed to log in. The request is invalid.\\nPlease ask site admin.",
+    "user.login.failed.network":
+      "Failed to log in because of network trouble.\\nPlease ask site admin.",
+    "user.login.failed.server":
+      "Failed to log in because a server error has occurred.\\nPlease ask site admin.",
     "user.login.key": "Login ID or E-mail",
     "user.loginId": "Login ID",
     "user.name": "Name",
@@ -59,6 +81,12 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "button.close": "닫기",
     "button.confirm": "확인",
     "button.login": "로그인",
+    "common.loading": "불러오는 중",
+    "error.badrequest": "잘못된 요청입니다",
+    "error.forbidden": "권한이 없습니다",
+    "error.internalServerError": "서버 오류가 발생하여 서비스를 이용할 수 없습니다",
+    "error.notfound": "페이지를 찾을 수 없습니다",
+    "menu.home": "홈",
     "site.mail.fail": "메일 발송에 실패했습니다.",
     "site.mail.sended": "메일을 발송하였습니다.",
     "site.resetPasswordEmail.invalidRequest": "잘못된 비밀번호 재 설정 요청입니다.",
@@ -74,7 +102,23 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "title.signupConfirmDesc": "가입 후 사용을 위해서는 관리자의 승인이 필요합니다",
     "title.signupFor": '<span class="highlight">{0}</span> 멤버 가입',
     "user.email": "이메일",
+    "user.enroll.failed":
+      "멤버 등록 요청에 실패하였습니다. 서버에 문제가 있거나 올바른 요청이 아닐 수 있습니다.",
+    "user.enroll.failed.client":
+      "멤버 등록 요청에 실패하였습니다. 올바른 요청이 아닙니다.\\n관리자에게 문의해주세요.",
+    "user.enroll.failed.network":
+      "네트워크 문제로 인해 멤버 등록 요청에 실패하였습니다.\\n관리자에게 문의해주세요.",
+    "user.enroll.failed.server":
+      "서버의 문제로 인해 멤버 등록 요청에 실패하였습니다.\\n관리자에게 문의해주세요.",
     "user.isAlreadySignupUser": "이미 가입하셨나요?",
+    "user.login.failed":
+      "로그인에 실패하였습니다. 서버에 문제가 있거나 올바른 요청이 아닐 수 있습니다.",
+    "user.login.failed.client":
+      "로그인에 실패하였습니다. 올바른 요청이 아닙니다.\\n관리자에게 문의해주세요.",
+    "user.login.failed.network":
+      "네트워크 문제로 인해 로그인에 실패하였습니다.\\n관리자에게 문의해주세요.",
+    "user.login.failed.server":
+      "서버의 문제로 인해 로그인에 실패하였습니다.\\n관리자에게 문의해주세요.",
     "user.login.key": "아이디 또는 이메일",
     "user.loginId": "아이디",
     "user.name": "이름",
@@ -89,6 +133,12 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "app.description": "ウェブ基盤のソフト開発プラットフォーム",
     "button.confirm": "確認",
     "button.login": "ログイン",
+    "common.loading": "読み込み中",
+    "error.badrequest": "間違った要請です",
+    "error.forbidden": "権限がありません",
+    "error.internalServerError": "サーバエラーでサービスを利用できません",
+    "error.notfound": "存在しないページです",
+    "menu.home": "ホーム",
     "site.mail.fail": "メール送信に失敗しました",
     "site.mail.sended": "メールを送信しました",
     "site.resetPasswordEmail.invalidRequest": "間違ったパスワード再設定要請です。",
@@ -102,6 +152,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "title.signupFor": '<span class="highlight">{0}</span> 新規取得',
     "user.email": "メール",
     "user.isAlreadySignupUser": "アカウントを持っている",
+    "user.login.failed": "IDまたはパスワードが間違っています",
     "user.loginId": "ID",
     "user.name": "名前",
     "user.password": "パスワード",
@@ -115,6 +166,12 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "button.close": "Закрыть",
     "button.confirm": "подтвердить",
     "button.login": "Авторизоваться",
+    "common.loading": "загрузка",
+    "error.badrequest": "Запрос не может быть выполнен из-за плохой синтаксис",
+    "error.forbidden": "Вы не авторизованы",
+    "error.internalServerError": "Произошла ошибка сервера; Услуга не предоставляется",
+    "error.notfound": "Страница не найдена",
+    "menu.home": "Главная",
     "site.mail.fail": "Не удалось отправить почту.",
     "site.mail.sended": "Письмо было отправлено.",
     "site.resetPasswordEmail.invalidRequest": "Запрос сброса Неверный пароль",
@@ -124,7 +181,23 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "title.resetPassword": "Сброс пароля",
     "title.signup": "зарегистрироваться",
     "user.email": "Адрес электронной почты",
+    "user.enroll.failed":
+      "Не удалось регистрации. Ошибка сервера может иметь место или запрос может быть недействительным.",
+    "user.enroll.failed.client":
+      "Не удалось регистрации. Запрос недействителен. \\N Пожалуйста задать администратору сайта.",
+    "user.enroll.failed.network":
+      "Не удалось зарегистрироваться, потому что проблемы сети. \\N Пожалуйста задать администратору сайта.",
+    "user.enroll.failed.server":
+      "Не удались Регистрации потому произошла ошибка сервера. \\N Пожалуйста задать администратор сайта.",
     "user.isAlreadySignupUser": "Уже зарегистрировались?",
+    "user.login.failed":
+      "Не удалось войти в систему. Ошибка сервера может иметь место или запрос может быть недействительным.",
+    "user.login.failed.client":
+      "Не удалось войти в систему. Запрос недействителен. \\N Пожалуйста задать администратору сайта.",
+    "user.login.failed.network":
+      "Не удалось войти из-за проблемы сети. \\N Пожалуйста задать администратору сайта.",
+    "user.login.failed.server":
+      "Не удалось войти в систему, потому что произошла ошибка сервера. \\N Пожалуйста задать администратору сайта.",
     "user.login.key": "Логин ID или адрес электронной почты",
     "user.loginId": "Логин ID",
     "user.name": "имя",
@@ -141,6 +214,12 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "button.close": "Yopish",
     "button.confirm": "Tasdiqlash",
     "button.login": "Kirish",
+    "common.loading": "Yuklanmoqda",
+    "error.badrequest": "So`rov yomon sintaksisi tufayli bajo bo`lmaydi",
+    "error.forbidden": "Siz vakolatli emas",
+    "error.internalServerError": "Server xato ro`y berdi; xizmati bo`lmaydi",
+    "error.notfound": "Sahifa topilmadi",
+    "menu.home": "Bosh sahifa",
     "site.mail.fail": "Elektron pochta yuborish bo`lmadi.",
     "site.mail.sended": "Elektron pochta yuborildi.",
     "site.resetPasswordEmail.invalidRequest": "Noto`g`ri parolni qayta tiklash uchun talabdir.",
@@ -150,7 +229,22 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "title.resetPassword": "Parolni qayta tiklash",
     "title.signup": "Ro`yxatdan o`tish",
     "user.email": "Elektron pochta manzili",
+    "user.enroll.failed":
+      "Kirish bo`lmadi. Serverda muammo borish mumkin, yoki talab noto`g`ri bo`lishi mumkin.",
+    "user.enroll.failed.client": "Kirish bo`lmadi. So`rov noto`g`ri.\\n Sayt adminga so`rang.",
+    "user.enroll.failed.network":
+      "Kirish bo`lmadi. tarmoqda muammo borish mumkin.\\n Sayt adminga so`rang.",
+    "user.enroll.failed.server":
+      "Kirish bo`lmadi. Serverda muammo borish mumkin.\\n Sayt adminga so`rang.",
     "user.isAlreadySignupUser": "Allaqachon ro`yxatga o`tgansiz?",
+    "user.login.failed":
+      "Kirish bo`lmadi. Serverda muammo ro`y berdi, yoki talabda muammo bo`lishi mumkin.",
+    "user.login.failed.client":
+      "Kirish bo`lmadi. Talabda muammo bo`lishi mumkin.\\n Sayt adminga so`rang.",
+    "user.login.failed.network":
+      "Kirish bo`lmadi. Tarmoqda muammo bo`lishi mumkin.\\n Sayt adminga so`rang.",
+    "user.login.failed.server":
+      "Kirish bo`lmadi. Serverda muammo bo`lishi mumkin.\\n Sayt adminga so`rang.",
     "user.login.key": "Kirish ID yoki Elektron pochta",
     "user.loginId": "Kirsh ID",
     "user.name": "Ismi",

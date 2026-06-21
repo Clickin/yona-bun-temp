@@ -2658,6 +2658,11 @@ async fn rest_import_site_data_live(
 struct RestSiteImportDryRunState {
     labels: HashSet<(String, String, String, String)>,
     milestones: HashSet<(String, String, String)>,
+    payload_labels: HashSet<(String, String, String, String)>,
+    payload_milestones: HashSet<(String, String, String)>,
+    payload_project_members: HashSet<(String, String, String)>,
+    payload_projects: HashSet<(String, String)>,
+    payload_users: HashSet<String>,
     projects: HashSet<(String, String)>,
     users: HashSet<String>,
 }
@@ -2672,8 +2677,19 @@ async fn rest_site_import_dry_run_report(
     let mut would_skip = RestSiteImportCountSet::default();
     let mut validation_errors = Vec::new();
 
-    for user in &payload.users {
+    for (index, user) in payload.users.iter().enumerate() {
         let login_id = user.login_id.trim();
+        if !login_id.is_empty() && !state.payload_users.insert(login_id.to_string()) {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "users",
+                index,
+                "loginId",
+                "site.import.duplicateResource",
+            );
+            would_skip.users += 1;
+            continue;
+        }
         if login_id.is_empty()
             || rest_site_import_dry_run_user_available(repository, &mut state, login_id).await?
         {
@@ -2698,6 +2714,21 @@ async fn rest_site_import_dry_run_report(
             );
             invalid = true;
         }
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !state
+                .payload_projects
+                .insert((owner_name.to_string(), project_name.to_string()))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "projects",
+                index,
+                "projectName",
+                "site.import.duplicateResource",
+            );
+            invalid = true;
+        }
         if owner_name.is_empty()
             || project_name.is_empty()
             || invalid
@@ -2719,10 +2750,29 @@ async fn rest_site_import_dry_run_report(
             .insert((owner_name.to_string(), project_name.to_string()));
     }
 
-    for member in &payload.project_members {
+    for (index, member) in payload.project_members.iter().enumerate() {
         let owner_name = member.owner_name.trim();
         let project_name = member.project_name.trim();
         let login_id = member.login_id.trim();
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !login_id.is_empty()
+            && !state.payload_project_members.insert((
+                owner_name.to_string(),
+                project_name.to_string(),
+                login_id.to_string(),
+            ))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "projectMembers",
+                index,
+                "loginId",
+                "site.import.duplicateResource",
+            );
+            would_skip.project_members += 1;
+            continue;
+        }
         if !rest_site_import_dry_run_project_available(
             repository,
             &mut state,
@@ -2743,6 +2793,7 @@ async fn rest_site_import_dry_run_report(
         let project_name = label.project_name.trim();
         let label_name = label.name.trim();
         let category_name = rest_site_import_label_category_name(label.category_name.trim());
+        let mut invalid = false;
         if !label.color.trim().is_empty() {
             if let Err(error) = normalize_issue_label_color(label.color.trim()) {
                 rest_site_import_push_validation_error(
@@ -2752,9 +2803,31 @@ async fn rest_site_import_dry_run_report(
                     "color",
                     error.to_string(),
                 );
-                would_skip.labels += 1;
-                continue;
+                invalid = true;
             }
+        }
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !label_name.is_empty()
+            && !state.payload_labels.insert((
+                owner_name.to_string(),
+                project_name.to_string(),
+                category_name.to_string(),
+                label_name.to_string(),
+            ))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "labels",
+                index,
+                "name",
+                "site.import.duplicateResource",
+            );
+            invalid = true;
+        }
+        if invalid {
+            would_skip.labels += 1;
+            continue;
         }
         if owner_name.is_empty()
             || project_name.is_empty()
@@ -2821,6 +2894,24 @@ async fn rest_site_import_dry_run_report(
                 index,
                 "state",
                 error.to_string(),
+            );
+            invalid = true;
+        }
+        if !owner_name.is_empty()
+            && !project_name.is_empty()
+            && !title.is_empty()
+            && !state.payload_milestones.insert((
+                owner_name.to_string(),
+                project_name.to_string(),
+                title.to_string(),
+            ))
+        {
+            rest_site_import_push_validation_error(
+                &mut validation_errors,
+                "milestones",
+                index,
+                "title",
+                "site.import.duplicateResource",
             );
             invalid = true;
         }

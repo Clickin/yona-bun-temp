@@ -4,10 +4,12 @@ import { describe, expect, it } from "vitest";
 import {
   LegacyI18nProvider,
   createLegacyI18nRuntime,
+  lookupLegacyMessage,
   normalizeLegacyLanguageCode,
   normalizeSupportedLanguages,
 } from "./i18n";
 import { LoginPage } from "./routes/-auth-views";
+import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
 
 describe("legacy i18n runtime", () => {
   it("normalizes supported legacy languages and ignores unsupported dictionaries", () => {
@@ -31,6 +33,11 @@ describe("legacy i18n runtime", () => {
 
     expect(runtime.language).toBe("ko-KR");
     expect(runtime.t("button.login")).toBe("로그인");
+    expect(runtime.t("error.badrequest")).toBe("잘못된 요청입니다");
+    expect(runtime.t("menu.home")).toBe("홈");
+    expect(runtime.t("user.login.failed.network")).toBe(
+      "네트워크 문제로 인해 로그인에 실패하였습니다.\\n관리자에게 문의해주세요.",
+    );
     expect(runtime.t("title.loginFor", { args: ["Yona"] })).toBe(
       '<span class="highlight">Yona</span> 로그인',
     );
@@ -84,5 +91,36 @@ describe("legacy i18n runtime", () => {
     expect(html).toContain('Log in to <span class="highlight">Yona</span>');
     expect(html).toContain(">app.description<");
     expect(html).toContain(">button.login<");
+  });
+
+  it("opts common runtime shell message keys into legacy lookup without adding UI", () => {
+    const badRequestHtml = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <BadRequestPage href="/yona/" />
+      </LegacyI18nProvider>,
+    );
+    const forbiddenHtml = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <ForbiddenPage href="/yona/" />
+      </LegacyI18nProvider>,
+    );
+    const notFoundHtml = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <NotFoundPage href="/yona/missing" />
+      </LegacyI18nProvider>,
+    );
+
+    expect(badRequestHtml).toContain(">잘못된 요청입니다</p>");
+    expect(badRequestHtml).toContain(">홈</a>");
+    expect(forbiddenHtml).toContain(">권한이 없습니다</p>");
+    expect(notFoundHtml).toContain(">페이지를 찾을 수 없습니다</p>");
+  });
+
+  it("keeps non-message runtime text unchanged", () => {
+    expect(
+      lookupLegacyMessage("ko-KR", "REST request failed with 500.", {
+        fallback: "REST request failed with 500.",
+      }),
+    ).toBe("REST request failed with 500.");
   });
 });

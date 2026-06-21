@@ -2054,6 +2054,198 @@ async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
 }
 
 #[tokio::test]
+async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_without_partial_writes() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_members = project_user::Entity::find().all(&db).await.unwrap().len();
+    let before_labels = issue_label::Entity::find().all(&db).await.unwrap().len();
+    let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "duplicate-owner",
+            "displayName": "Duplicate Owner",
+            "emailAddress": "duplicate-owner@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }, {
+            "loginId": "duplicate-owner",
+            "displayName": "Conflicting Owner Name",
+            "emailAddress": "conflicting-owner@example.com",
+            "isSiteAdmin": true,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "overview": "First project payload",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }, {
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "overview": "Conflicting project payload",
+            "projectScope": "private",
+            "projectVcs": "SVN"
+        }],
+        "projectMembers": [{
+            "loginId": "duplicate-owner",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "role": "manager"
+        }, {
+            "loginId": "duplicate-owner",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "role": "member"
+        }],
+        "labels": [{
+            "categoryIsExclusive": false,
+            "categoryName": "Type",
+            "color": "#4caf50",
+            "name": "Duplicate label",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project"
+        }, {
+            "categoryIsExclusive": true,
+            "categoryName": "Type",
+            "color": "#f44336",
+            "name": "Duplicate label",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project"
+        }],
+        "milestones": [{
+            "attachments": [],
+            "contentsMarkdown": "first milestone",
+            "dueDate": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "open",
+            "title": "Duplicate milestone"
+        }, {
+            "attachments": [],
+            "contentsMarkdown": "conflicting milestone",
+            "dueDate": "",
+            "ownerName": "duplicate-owner",
+            "projectName": "duplicate-project",
+            "state": "closed",
+            "title": "Duplicate milestone"
+        }],
+        "posts": [],
+        "issues": []
+    });
+
+    let dry_run_response = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import?dryRun=true",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let dry_run_report = response_json(dry_run_response).await;
+    assert_eq!(dry_run_report["dryRun"], true);
+    assert_eq!(dry_run_report["wouldImportUsers"], 1);
+    assert_eq!(dry_run_report["wouldSkipUsers"], 1);
+    assert_eq!(dry_run_report["wouldImportProjects"], 1);
+    assert_eq!(dry_run_report["wouldSkipProjects"], 1);
+    assert_eq!(dry_run_report["wouldImportProjectMembers"], 1);
+    assert_eq!(dry_run_report["wouldSkipProjectMembers"], 1);
+    assert_eq!(dry_run_report["wouldImportLabels"], 1);
+    assert_eq!(dry_run_report["wouldSkipLabels"], 1);
+    assert_eq!(dry_run_report["wouldImportMilestones"], 1);
+    assert_eq!(dry_run_report["wouldSkipMilestones"], 1);
+    let validation_errors = dry_run_report["validationErrors"]
+        .as_array()
+        .expect("validation errors");
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "users"
+            && error["field"] == "loginId"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "projects"
+            && error["field"] == "projectName"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "projectMembers"
+            && error["field"] == "loginId"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "labels"
+            && error["field"] == "name"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "milestones"
+            && error["field"] == "title"
+            && error["message"] == "site.import.duplicateResource"
+    }));
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.duplicateResource"));
+
+    assert!(repo
+        .find_user_by_login_id("duplicate-owner")
+        .await
+        .expect("read rejected user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name("duplicate-owner", "duplicate-project")
+        .await
+        .expect("read rejected project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        project_user::Entity::find().all(&db).await.unwrap().len(),
+        before_members
+    );
+    assert_eq!(
+        issue_label::Entity::find().all(&db).await.unwrap().len(),
+        before_labels
+    );
+    assert_eq!(
+        milestone::Entity::find().all(&db).await.unwrap().len(),
+        before_milestones
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "duplicate preflight must reject before portable file writes"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_live_preflight_rejects_invalid_portable_attachment_without_partial_writes(
 ) {
     let data_dir = tempfile::tempdir().expect("yona data");

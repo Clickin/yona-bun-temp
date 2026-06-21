@@ -1,6 +1,9 @@
 use yona_rust_pilot_migration::legacy_external::{
     find_endpoint,
-    milestones::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
+    milestones::{
+        find_fixture, fixtures, parse_milestone_import_request, AuthRequirement,
+        MigrationDirection, MilestoneAdapterError, MilestoneImportAction, MilestoneState,
+    },
     EndpointStatus,
 };
 
@@ -118,4 +121,112 @@ fn milestone_payload_fixture_stays_app_owned_adapter_metadata_only() {
         serde_json::from_str::<serde_json::Value>(fixture.payload.success_json).unwrap();
         serde_json::from_str::<serde_json::Value>(fixture.payload.alternate_json.unwrap()).unwrap();
     }
+}
+
+#[test]
+fn milestone_adapter_normalizes_recursive_legacy_import_payload() {
+    let fixture = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/milestones",
+    )
+    .unwrap();
+
+    let batch = parse_milestone_import_request(
+        fixture.payload.sample_path,
+        fixture.payload.request_json,
+        &[],
+    )
+    .unwrap();
+
+    assert_eq!(batch.owner, "alice");
+    assert_eq!(batch.project_name, "demo");
+    assert_eq!(batch.endpoint_method, "POST");
+    assert_eq!(
+        batch.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/milestones"
+    );
+    assert_eq!(batch.entries.len(), 2);
+
+    let first = &batch.entries[0];
+    assert_eq!(first.title, "Legacy Milestone");
+    assert_eq!(first.description, "legacy milestone body");
+    assert_eq!(first.state, MilestoneState::Closed);
+    assert_eq!(first.due_on.as_deref(), Some("2026-07-15"));
+    assert_eq!(
+        first.due_date_end_of_day.as_deref(),
+        Some("2026-07-15T23:59:59")
+    );
+    assert_eq!(first.action, MilestoneImportAction::Create);
+
+    let second = &batch.entries[1];
+    assert_eq!(second.title, "No title");
+    assert_eq!(second.description, "fallback title body");
+    assert_eq!(second.state, MilestoneState::Open);
+    assert_eq!(second.due_on, None);
+    assert_eq!(second.due_date_end_of_day, None);
+    assert_eq!(second.action, MilestoneImportAction::Create);
+}
+
+#[test]
+fn milestone_adapter_marks_existing_and_in_batch_duplicates_without_dropping_rows() {
+    let payload = r#"{
+      "outer": {
+        "milestones": [
+          { "title": "Existing", "description": "already there" },
+          { "title": "Fresh", "description": "first fresh" },
+          { "wrapper": { "title": "Fresh", "state": "CLOSED" } }
+        ]
+      }
+    }"#;
+
+    let batch = parse_milestone_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/milestones",
+        payload,
+        &["Existing"],
+    )
+    .unwrap();
+
+    assert_eq!(batch.entries.len(), 3);
+    assert_eq!(
+        batch.entries[0].action,
+        MilestoneImportAction::DuplicateExisting
+    );
+    assert_eq!(batch.entries[1].action, MilestoneImportAction::Create);
+    assert_eq!(
+        batch.entries[2].action,
+        MilestoneImportAction::DuplicateEarlierInBatch
+    );
+    assert_eq!(batch.creatable_entries().count(), 1);
+    assert_eq!(batch.duplicate_entries().count(), 2);
+    assert_eq!(batch.entries[2].state, MilestoneState::Closed);
+}
+
+#[test]
+fn milestone_adapter_rejects_non_array_milestones_like_legacy_bad_request_boundary() {
+    let error = parse_milestone_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/milestones",
+        r#"{"milestones":{"title":"not an array"}}"#,
+        &[],
+    )
+    .unwrap_err();
+
+    assert_eq!(error, MilestoneAdapterError::MissingMilestonesArray);
+}
+
+#[test]
+fn milestone_adapter_validates_due_on_before_tool_consumption() {
+    let error = parse_milestone_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/milestones",
+        r#"{"milestones":[{"title":"Bad date","due_on":"2026-7-15"}]}"#,
+        &[],
+    )
+    .unwrap_err();
+
+    assert_eq!(
+        error,
+        MilestoneAdapterError::InvalidDueOn {
+            title: "Bad date".to_string(),
+            value: "2026-7-15".to_string(),
+        }
+    );
 }

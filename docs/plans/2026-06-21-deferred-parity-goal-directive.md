@@ -70,6 +70,22 @@ not merely theoretical, Docker/SFX deployment evidence is current, and k8s
 guidance is either validated or explicitly recorded as non-blocking deployment
 follow-up.
 
+P0-A runnable app smoke refresh, 2026-06-21:
+
+- The local debug server was built with the required cargo wrapper
+  (`pnpm agent:cargo -- --outside-sandbox build -p yona-rust-pilot-server`)
+  after `pnpm --dir frontend build`, then launched outside the Codex sandbox
+  because sandboxed localhost binding was denied. Runtime env:
+  `YONA_BASE_PATH=/yona`, `YONA_DATABASE_URL=sqlite::memory:`,
+  `YONA_SCHEMA_POLICY=up`, `YONA_SEED_PILOT=1`,
+  `YONA_USE_EMBEDDED_ASSETS=0`, and `YONA_ASSET_ROOT=frontend/dist`.
+  Smoke result: `/yona/api/auth/session` returned 200 with CSRF header,
+  `/yona/projects` returned 200, `/yona/api/v1/projects` returned 200 with the
+  seeded `projectName:"yona"` payload, and `/yona/yobi/yona`,
+  `/yona/yobi/yona/issues`, and `/yona/yobi/yona/posts` returned 200. Git
+  clone/push smoke remains covered by the existing Smart HTTP/SVN focused
+  contracts rather than this minimal seeded in-memory smoke.
+
 P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
 
 - P0-B existing DB adopt: no checked-in unmodified legacy-like MariaDB/MySQL dump
@@ -143,7 +159,12 @@ and
 `site_admin_contract::site_admin_import_restores_existing_project_sequence_counters_after_downstream_failure`
 guards the project counter restoration path, and
 `site_admin_contract::site_admin_import_restores_preexisting_attachment_rebinding_after_downstream_failure`
-guards the preexisting attachment-id rebinding restoration path.
+guards the preexisting attachment-id rebinding restoration path. The import
+dry-run/preflight report now also treats duplicate/conflicting payload keys for
+users, projects, project members, labels, and milestones as validation errors
+instead of silent skips; live import rejects those reports before any mutation.
+Focused coverage:
+`site_admin_contract::site_admin_import_live_preflight_rejects_duplicate_resource_keys_without_partial_writes`.
 True all-DB transaction protection for downstream non-validation failures during
 non-dry-run `/sites/import` remains a P1-A follow-up, especially for crash
 boundaries and concurrent project counter advances beyond import-created
@@ -173,8 +194,15 @@ the empty-OK invalid-type boundary, the 100-row list cap, and local UserApi
 favorite-helper boundary descriptors that do not leak into WatcherApi fixtures.
 Shared legacy-external module wiring now exposes stable endpoint group summaries,
 status counts, and duplicate method/path guards for migration-tool inventory
-checks. Remaining P1-B work is executable adapter depth beyond these descriptor
-fixtures, only where a migration tool needs it.
+checks. Milestone adapter depth now goes beyond descriptors:
+`parse_milestone_import_request` normalizes legacy `MilestoneApi.newMilestone`
+payloads into deterministic migration-tool structs, preserving recursive
+`findValue` behavior, `"No title"` fallback, empty description fallback,
+open/closed state normalization, end-of-day due date normalization, bad
+milestone-array and bad due-date boundaries, and duplicate classification for
+existing or earlier-in-batch titles without mounting broad app-runtime routes.
+Remaining P1-B work is executable adapter depth for other descriptor-only groups,
+only where a migration tool needs it.
 
 P1-D sub-slice status: `tools/h2-to-sqlite` release evidence was refreshed on
 2026-06-21 with `mvn -f tools/h2-to-sqlite/pom.xml test`; the README now
@@ -258,13 +286,17 @@ message runtime for the configured legacy languages (`en-US`, `ko-KR`, `ja-JP`,
 and exposes `language`, `setLanguage`, and `messages` through
 `AppRuntimeContext`. The auth/runtime shell resolves only existing legacy keys
 with exact current fallback copy, so missing dictionary entries preserve prior
-labels. Focused coverage is `frontend/src/i18n.spec.tsx`,
-`frontend/src/runtime-config.spec.ts`, `frontend/src/auth-workspace-shell.spec.tsx`,
-and `frontend/src/wave1-auth-workspace-parity.spec.tsx`. Remaining follow-up:
-opt more screens into the lookup boundary only where legacy message keys/copy
-are already known, and restore legacy preferred-language/session persistence if
-that user-language behavior is prioritized. No language selector or settings
-screen was added because the re-audit found no corresponding legacy UI surface.
+labels. The common error shell and runtime error banner now opt known legacy
+keys into the same lookup boundary for `error.badrequest`, `error.forbidden`,
+`error.notfound`, `error.internalServerError`, `menu.home`, `button.close`, and
+known auth failure keys without adding a new selector or settings UI. Focused
+coverage is `frontend/src/i18n.spec.tsx`, `frontend/src/runtime-config.spec.ts`,
+`frontend/src/auth-workspace-shell.spec.tsx`, and
+`frontend/src/wave1-auth-workspace-parity.spec.tsx`. Remaining follow-up: opt
+more screens into the lookup boundary only where legacy message keys/copy are
+already known, and restore legacy preferred-language/session persistence if that
+user-language behavior is prioritized. No language selector or settings screen
+was added because the re-audit found no corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

@@ -2,6 +2,7 @@ import * as React from "react";
 import { RestApiError } from "../api/rest-client";
 import { prefixBasePath } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
+import { useLegacyMessages } from "../i18n";
 
 export function useCurrentHref() {
   if (typeof window === "undefined") {
@@ -88,7 +89,10 @@ function RouteStatusPage({
   href: string;
   title: string;
 }) {
-  useDocumentTitle(title);
+  const messages = useLegacyMessages();
+  const translatedTitle = messages.t(title, { fallback: title });
+  const homeLabel = messages.t("menu.home", { fallback: "menu.home" });
+  useDocumentTitle(translatedTitle);
 
   return (
     <main className="app-shell">
@@ -96,9 +100,9 @@ function RouteStatusPage({
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
-            <p>{title}</p>
+            <p>{translatedTitle}</p>
             <a className={buttonClassName} href={href}>
-              menu.home
+              {homeLabel}
             </a>
           </div>
         </div>
@@ -108,7 +112,10 @@ function RouteStatusPage({
 }
 
 export function BadRequestPage({ href = "/" }: { href?: string }) {
-  useDocumentTitle("error.badrequest");
+  const messages = useLegacyMessages();
+  const title = messages.t("error.badrequest", { fallback: "error.badrequest" });
+  const homeLabel = messages.t("menu.home", { fallback: "menu.home" });
+  useDocumentTitle(title);
 
   return (
     <main className="app-shell">
@@ -116,9 +123,9 @@ export function BadRequestPage({ href = "/" }: { href?: string }) {
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico-404"></i>
-            <p>error.badrequest</p>
+            <p>{title}</p>
             <a className="ybtn ybtn-info" href={href}>
-              menu.home
+              {homeLabel}
             </a>
           </div>
         </div>
@@ -129,21 +136,12 @@ export function BadRequestPage({ href = "/" }: { href?: string }) {
 
 export function ForbiddenPage({ href }: { href: string }) {
   return (
-    <RouteStatusPage
-      buttonClassName="ybtn ybtn-primary"
-      href={href}
-      title="error.forbidden"
-    />
+    <RouteStatusPage buttonClassName="ybtn ybtn-primary" href={href} title="error.forbidden" />
   );
 }
 
 export function NotFoundPage({ href }: { href: string }) {
-  return (
-    <RouteStatusPage
-      href={href}
-      title="error.notfound"
-    />
-  );
+  return <RouteStatusPage href={href} title="error.notfound" />;
 }
 
 export function RedirectPage({ basePath, to }: { basePath: string; to: string }) {

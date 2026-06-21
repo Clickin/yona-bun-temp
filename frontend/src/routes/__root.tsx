@@ -40,17 +40,20 @@ function RootLoginDialog() {
 }
 
 function RuntimeErrorBanner() {
-  const { errorMessage, setErrorMessage } = useAppRuntime();
+  const { errorMessage, messages, setErrorMessage } = useAppRuntime();
 
   if (!errorMessage) {
     return null;
   }
 
+  const translatedErrorMessage = messages(errorMessage, { fallback: errorMessage });
+  const closeLabel = messages("button.close", { fallback: "button.close" });
+
   return (
     <div className="runtime-error-banner" role="alert">
-      <span>{errorMessage}</span>
+      <span>{translatedErrorMessage}</span>
       <button onClick={() => setErrorMessage(null)} type="button">
-        button.close
+        {closeLabel}
       </button>
     </div>
   );

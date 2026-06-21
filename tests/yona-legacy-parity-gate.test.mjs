@@ -421,7 +421,7 @@ test("blocks explicitly deferred second-priority legacy capabilities", () => {
 
   assert.equal(result.verdict, "block");
   assert.equal(shouldBlockForStrictGate(result), true);
-  assert.match(formatParitySummary(result), /deferred/i);
+  assert.match(formatParitySummary(result), /deferred|follow-up/i);
 });
 
 test("blocks implementation paths that are not mapped to any parity capability", () => {

@@ -123,7 +123,7 @@ non-existent legacy external search API.
 
 | Endpoint | Legacy source | Legacy intent | Implementation status |
 | --- | --- | --- | --- |
-| `POST /-_-api/v1/owners/:owner/projects/:projectName/milestones` | `MilestoneApi.newMilestone()` | Bulk milestone creation/import with title, description, due date, state. | Implemented in app server with legacy recursive `JsonNode.findValue("milestones")` request parsing, per-milestone recursive scalar lookup/fallbacks, duplicate-title item payload, untrimmed title scalar preservation, and `201 Created` array response. `crates/migration` carries deterministic app-owned adapter metadata for this legacy shape without broad route expansion. |
+| `POST /-_-api/v1/owners/:owner/projects/:projectName/milestones` | `MilestoneApi.newMilestone()` | Bulk milestone creation/import with title, description, due date, state. | Implemented in app server with legacy recursive `JsonNode.findValue("milestones")` request parsing, per-milestone recursive scalar lookup/fallbacks, duplicate-title item payload, untrimmed title scalar preservation, and `201 Created` array response. `crates/migration` now also carries a deterministic app-owned adapter parser/normalizer for this legacy shape without broad route expansion, including recursive payload lookup, fallback title/body behavior, state and due-date normalization, and duplicate classification for migration-tool consumption. |
 
 ### Watchers / Favorites
 
@@ -157,7 +157,7 @@ tests.
 | Projects/export/import | `crates/migration/src/legacy_external/projects.rs` | `crates/migration/tests/legacy_external_projects.rs` | Project export, project create/import, labels, title-head helper if required by migrator flows. |
 | Issues/comments | `crates/migration/src/legacy_external/issues.rs` | `crates/migration/tests/legacy_external_issues.rs` | Issue bulk import/export, comments, labels, assignee/share/weight/change-detection compatibility needed by migration. |
 | Board/posts/comments | `crates/migration/src/legacy_external/boards.rs` | `crates/migration/tests/legacy_external_boards.rs` | Board post/comment import and post-label compatibility. |
-| Milestones | `crates/migration/src/legacy_external/milestones.rs` | `crates/migration/tests/legacy_external_milestones.rs` | Milestone import compatibility. |
+| Milestones | `crates/migration/src/legacy_external/milestones.rs` | `crates/migration/tests/legacy_external_milestones.rs` | Milestone import compatibility now includes deterministic parser/normalizer depth for `MilestoneApi.newMilestone` payloads while keeping the route app-owned and avoiding broad app-server route expansion. |
 | Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Keep the watcher list helper classified as app-owned runtime compatibility with deterministic watcher response fixtures while preventing UserApi favorite helpers from leaking into WatcherApi migration fixtures; broader watcher/favorite export snapshots remain future migrator scope only if a migration tool needs them. |
 | Module wiring | `crates/migration/src/legacy_external/mod.rs` | `crates/migration/tests/legacy_external_mod.rs` | Shared endpoint group summaries, status counts, duplicate method/path guards, and module registration for migration tooling, without app-server route mounting. |
 

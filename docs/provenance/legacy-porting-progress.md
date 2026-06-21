@@ -156,8 +156,8 @@ Interpretation:
 - [x] Unsupported/denied OAuth provider warning states (`/authenticate/:provider`, `/authenticate/:provider/denied`) with message-key copy instead of temporary English text, plus `application.social.login.support`-style configured provider buttons through auth UI capabilities
 - [x] Anonymous `/_help` route from legacy `HelpApp.help()` with `help/toc.scala.html` breadcrumb/page-wrap/Q&A anchors, FAQ copy including `@Messages("app.name")` site-name interpolation, and item-wide `.qas > .qa` click toggle behavior
 - [x] Authenticated `/restricted` route from legacy `Restricted.index()` with `restricted.scala.html` current-user identity, verified marker, provider/user-id, session-expiry, YouTube iframe sample shell, plus route bootstrap/redirect shells using the legacy `common.loading` scalar and runtime error banner `button.close` / `error.internalServerError` fallback scalars
-- Deferred: OAuth social login provider runtime/linking flow.
-- Deferred: LDAP authentication integration.
+- [x] Bounded configured GitHub/Google OAuth runtime/linking flow with legacy local logout parity.
+- [x] Bounded LDAP authentication integration for form login plus Smart HTTP/SVN BasicAuth, including real bind/search connector coverage.
 
 ## Workspace / User
 

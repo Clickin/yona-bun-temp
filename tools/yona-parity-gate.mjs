@@ -275,6 +275,7 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
+      /^frontend\/src\/routes\/-shared\.tsx$/i,
       /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
