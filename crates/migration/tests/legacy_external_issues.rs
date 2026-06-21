@@ -226,6 +226,7 @@ fn import_classification_and_app_owned_export_shape_match_legacy_inventory() {
     )
     .unwrap();
     assert_eq!(imports.direction, MigrationDirection::Import);
+    assert_eq!(imports.auth, AuthRequirement::AnonymousCheck);
     assert_eq!(imports.request.query_fields, &["postNumber"]);
     assert_eq!(imports.response.response_fields, &["number"]);
 
@@ -238,6 +239,9 @@ fn import_classification_and_app_owned_export_shape_match_legacy_inventory() {
     assert_eq!(bulk.auth, AuthRequirement::IssueCreatePermission);
     assert!(bulk.request.body_fields.contains(&"issues"));
     assert!(bulk.request.body_fields.contains(&"sendNotification"));
+    assert!(bulk.request.body_fields.contains(&"email"));
+    assert!(bulk.request.body_fields.contains(&"labelName"));
+    assert!(bulk.request.body_fields.contains(&"category"));
     assert!(bulk.request.body_fields.contains(&"temporaryUploadFiles"));
 
     let app_owned_export = find_fixture(
@@ -255,6 +259,146 @@ fn import_classification_and_app_owned_export_shape_match_legacy_inventory() {
         .response_fields
         .contains(&"events"));
     assert!(app_owned_export.response.response_fields.contains(&"actor"));
+}
+
+#[test]
+fn issue_imports_descriptor_includes_post_to_issue_payload_fixture() {
+    let fixture = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+    )
+    .unwrap();
+    let payload = fixture
+        .migration_payload
+        .expect("IssueApi.imports should have a migrator payload fixture");
+
+    assert_eq!(fixture.legacy_controller, "controllers.api.IssueApi");
+    assert_eq!(fixture.legacy_action, "imports");
+    assert_eq!(fixture.direction, MigrationDirection::Import);
+    assert_eq!(fixture.auth, AuthRequirement::AnonymousCheck);
+    assert_eq!(
+        payload.sample_path,
+        "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4"
+    );
+    assert_eq!(payload.request_json, None);
+    assert_eq!(payload.success_status, 200);
+    assert_eq!(payload.alternate_status, Some(400));
+    assert_eq!(payload.alternate_json, None);
+
+    let success: serde_json::Value = serde_json::from_str(payload.success_json).unwrap();
+    assert_eq!(success["number"], 5);
+}
+
+#[test]
+fn bulk_issue_import_descriptor_includes_deterministic_payload_and_error_shape() {
+    let fixture = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/issues",
+    )
+    .unwrap();
+    let payload = fixture
+        .migration_payload
+        .expect("IssueApi.newIssues should have a migrator payload fixture");
+
+    assert_eq!(fixture.legacy_controller, "controllers.api.IssueApi");
+    assert_eq!(fixture.legacy_action, "newIssues");
+    assert_eq!(fixture.direction, MigrationDirection::Import);
+    assert_eq!(fixture.auth, AuthRequirement::IssueCreatePermission);
+    assert_eq!(
+        fixture.request.body_fields,
+        &[
+            "issues",
+            "sendNotification",
+            "author",
+            "loginId",
+            "name",
+            "email",
+            "title",
+            "body",
+            "state",
+            "createdAt",
+            "updatedAt",
+            "assignees",
+            "milestoneTitle",
+            "dueDate",
+            "labels",
+            "labelName",
+            "category",
+            "temporaryUploadFiles",
+            "number",
+        ]
+    );
+    assert_eq!(
+        payload.sample_path,
+        "/-_-api/v1/owners/alice/projects/demo/issues"
+    );
+    assert_eq!(payload.success_status, 201);
+    assert_eq!(payload.alternate_status, Some(400));
+
+    let request: serde_json::Value =
+        serde_json::from_str(payload.request_json.expect("issue import request JSON")).unwrap();
+    assert_eq!(request["sendNotification"], true);
+
+    let issue = &request["issues"][0];
+    assert_eq!(issue["number"], 3);
+    assert_eq!(issue["author"]["loginId"], "author");
+    assert_eq!(issue["author"]["email"], "author@example.com");
+    assert_eq!(issue["title"], "Legacy issue");
+    assert_eq!(issue["body"], "legacy issue body");
+    assert_eq!(issue["state"], "CLOSED");
+    assert_eq!(issue["createdAt"], "2026-06-01 AM 09:00:00 +0900");
+    assert_eq!(issue["updatedAt"], "2026-06-02 PM 03:30:00 +0900");
+    assert_eq!(issue["assignees"][0]["email"], "assignee@example.com");
+    assert_eq!(issue["milestoneTitle"], "M1");
+    assert_eq!(issue["dueDate"], "2026-06-30 PM 11:59:59 +0900");
+    assert_eq!(issue["labels"][0]["labelName"], "Bug");
+    assert_eq!(issue["labels"][0]["category"], "Type");
+    assert_eq!(issue["temporaryUploadFiles"][0], "tmp-issue-upload");
+
+    let success: serde_json::Value = serde_json::from_str(payload.success_json).unwrap();
+    assert_eq!(success[0]["status"], 201);
+    assert_eq!(success[0]["location"], "/alice/demo/issue/3");
+
+    let alternate: serde_json::Value =
+        serde_json::from_str(payload.alternate_json.expect("issue import error JSON")).unwrap();
+    assert_eq!(
+        alternate["message"],
+        "No issues key exists or value wasn't array!"
+    );
+}
+
+#[test]
+fn only_migrator_issue_descriptors_carry_payload_samples() {
+    for fixture in fixtures() {
+        let inventory = find_endpoint(fixture.method, fixture.path).unwrap_or_else(|| {
+            panic!(
+                "missing endpoint inventory entry: {} {}",
+                fixture.method, fixture.path
+            )
+        });
+
+        assert_eq!(fixture.direction.endpoint_status(), inventory.status);
+        assert_ne!(fixture.direction, MigrationDirection::Deferred);
+
+        if fixture.direction.endpoint_status().is_migrator_scope() {
+            assert_eq!(fixture.direction, MigrationDirection::Import);
+            assert_ne!(inventory.status, EndpointStatus::AppOwned);
+            assert!(
+                fixture.migration_payload.is_some(),
+                "{} {} should carry a deterministic migration payload",
+                fixture.method,
+                fixture.path
+            );
+        } else {
+            assert_eq!(inventory.status, EndpointStatus::AppOwned);
+            assert!(
+                fixture.migration_payload.is_none(),
+                "{} {} is app-owned and must not be treated as a migration payload source",
+                fixture.method,
+                fixture.path
+            );
+        }
+    }
 }
 
 #[test]

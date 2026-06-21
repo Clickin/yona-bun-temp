@@ -39,6 +39,17 @@ pub struct MilestoneEndpointFixture {
     pub auth: AuthRequirement,
     pub request: FixtureShape,
     pub response: FixtureShape,
+    pub payload: LegacyPayloadFixture,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LegacyPayloadFixture {
+    pub sample_path: &'static str,
+    pub request_json: &'static str,
+    pub success_status: u16,
+    pub success_json: &'static str,
+    pub alternate_status: Option<u16>,
+    pub alternate_json: Option<&'static str>,
 }
 
 pub fn fixtures() -> &'static [MilestoneEndpointFixture] {
@@ -107,4 +118,60 @@ const MILESTONE_ENDPOINT_FIXTURES: &[MilestoneEndpointFixture] = &[MilestoneEndp
             "message",
         ],
     ),
+    payload: MILESTONE_CREATE_PAYLOAD,
 }];
+
+const MILESTONE_CREATE_PAYLOAD: LegacyPayloadFixture = LegacyPayloadFixture {
+    sample_path: "/-_-api/v1/owners/alice/projects/demo/milestones",
+    request_json: r##"{
+  "import": {
+    "milestones": [
+      {
+        "meta": {
+          "title": "Legacy Milestone",
+          "state": "closed"
+        },
+        "body": {
+          "description": "legacy milestone body"
+        },
+        "schedule": {
+          "due_on": "2026-07-15"
+        }
+      },
+      {
+        "body": {
+          "description": "fallback title body"
+        }
+      }
+    ]
+  }
+}"##,
+    success_status: 201,
+    success_json: r##"[
+  {
+    "id": 7,
+    "title": "Legacy Milestone",
+    "state": "closed",
+    "description": "legacy milestone body",
+    "due_on": "2026-07-15"
+  },
+  {
+    "id": 8,
+    "title": "No title",
+    "state": "open",
+    "description": "fallback title body"
+  }
+]"##,
+    alternate_status: Some(201),
+    alternate_json: Some(
+        r##"[
+  {
+    "milestone": {
+      "title": "Legacy Milestone",
+      "description": "duplicate milestone body"
+    },
+    "message": "This milestone title already exists. Please enter a different title."
+  }
+]"##,
+    ),
+};

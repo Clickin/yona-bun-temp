@@ -83,17 +83,26 @@ protects users moving real legacy installations.
 | P1-D H2 bridge release check | Yes | `tools/h2-to-sqlite`, docs | Verify the existing H2-to-SQLite bridge against current SQLite adopt expectations and document limits. |
 
 P1-A sub-slice status: `/sites/import?dryRun=true` now covers a no-write
-validate-only report for the existing `yobi-data` import shape. It does not
-close the live import no-partial-write requirement; true transaction/rollback
-protection for non-dry-run `/sites/import` remains a P1-A follow-up and is
-recorded in `docs/provenance/phase-0b/yona-export.md`.
+validate-only report for the existing `yobi-data` import shape. Non-dry-run
+`/sites/import` reuses that report as a preflight before mutation, so invalid
+portable attachment content/size/max-upload payloads fail without creating
+earlier records or portable files. True transaction/rollback protection for
+downstream non-validation failures during non-dry-run `/sites/import` remains a
+P1-A follow-up and is recorded in `docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now
 has deterministic migration payload fixtures for legacy `ProjectApi.exports`
 and `ProjectApi.newProject`, with tests proving those project export/create
-descriptors remain migrator-owned and do not become app-runtime routes. Issue,
-board, milestone, and remaining shared adapter depth still need follow-up
-slices.
+descriptors remain migrator-owned and do not become app-runtime routes. Issue
+descriptors now have deterministic migrator payload fixtures for
+`IssueApi.imports` and `IssueApi.newIssues`, while app-owned issue helper rows
+remain payload-free. Board and milestone descriptors now have deterministic
+legacy external adapter payload fixtures for `BoardApi.newPostings`,
+`BoardApi.updatePostingContent`, `BoardApi.newPostingComment`,
+`BoardApi.updatePostLabel`, and `MilestoneApi.newMilestone`, with tests proving
+those rows remain app-owned direct compatibility metadata rather than broad
+migrator/server route expansion. Remaining shared adapter wiring and
+watcher/favorites boundary depth still need follow-up slices.
 
 P1-D sub-slice status: `tools/h2-to-sqlite` release evidence was refreshed on
 2026-06-21 with `mvn -f tools/h2-to-sqlite/pom.xml test`; the README now

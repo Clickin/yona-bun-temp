@@ -1826,6 +1826,10 @@ async fn rest_import_site_data(
             rest_site_import_dry_run_report(&service, repository, &payload).await?,
         ));
     }
+    let preflight = rest_site_import_dry_run_report(&service, repository, &payload).await?;
+    if let Some(error) = preflight.validation_errors.first() {
+        return Err(RestRouteError::bad_request(error.message.clone()));
+    }
 
     let mut imported_users = 0;
     let mut skipped_users = 0;
@@ -2951,7 +2955,7 @@ async fn rest_site_import_attachments(
             }
             std::fs::write(&path, &bytes)
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
-            let created = repository
+            let created = match repository
                 .create_user_attachment_upload(
                     actor.id,
                     &actor.login_id,
@@ -2961,7 +2965,13 @@ async fn rest_site_import_attachments(
                     &hash,
                 )
                 .await
-                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            {
+                Ok(created) => created,
+                Err(error) => {
+                    let _ = std::fs::remove_file(&path);
+                    return Err(RestRouteError::internal(error.to_string()));
+                }
+            };
             attachment_ids.push(created.id);
             if attachment.id > 0 && attachment.id != created.id {
                 link_rewrites.push((attachment.id, created.id));

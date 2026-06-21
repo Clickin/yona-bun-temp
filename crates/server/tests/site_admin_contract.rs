@@ -1909,6 +1909,128 @@ async fn site_admin_import_dry_run_reports_counts_and_never_writes() {
 }
 
 #[tokio::test]
+async fn site_admin_import_live_preflight_rejects_invalid_portable_attachment_without_partial_writes(
+) {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_issues = issue::Entity::find().all(&db).await.unwrap().len();
+    let before_milestones = milestone::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "preflight-owner",
+            "displayName": "Preflight Owner",
+            "emailAddress": "preflight-owner@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "preflight-owner",
+            "projectName": "preflight-project",
+            "overview": "Should not survive failed live preflight",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "milestones": [{
+            "attachments": [{
+                "contentBase64": "cHJlZmxpZ2h0LW1pbGVzdG9uZS1maWxl",
+                "id": 801,
+                "mimeType": "text/plain",
+                "name": "preflight-milestone.txt",
+                "size": 24
+            }],
+            "contentsMarkdown": "milestone with valid portable attachment /files/801",
+            "dueDate": "",
+            "ownerName": "preflight-owner",
+            "projectName": "preflight-project",
+            "state": "open",
+            "title": "Preflight milestone"
+        }],
+        "posts": [{
+            "authorLoginId": "preflight-owner",
+            "attachments": [{
+                "contentBase64": "not-valid-base64",
+                "id": 802,
+                "mimeType": "text/plain",
+                "name": "invalid-post.txt",
+                "size": 12
+            }],
+            "bodyMarkdown": "post with invalid portable attachment",
+            "comments": [],
+            "ownerName": "preflight-owner",
+            "projectName": "preflight-project",
+            "title": "Rejected preflight post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.invalidContent"));
+
+    assert!(repo
+        .find_user_by_login_id("preflight-owner")
+        .await
+        .expect("read rejected user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name("preflight-owner", "preflight-project")
+        .await
+        .expect("read rejected project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        issue::Entity::find().all(&db).await.unwrap().len(),
+        before_issues
+    );
+    assert_eq!(
+        milestone::Entity::find().all(&db).await.unwrap().len(),
+        before_milestones
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "live preflight must reject before portable attachment file writes"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_rejects_portable_attachment_size_mismatch() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {

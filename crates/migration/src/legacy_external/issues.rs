@@ -4,6 +4,7 @@ use super::EndpointStatus;
 pub enum AuthRequirement {
     AuthorizationTokenHeader,
     AuthorizationTokenOrImportSession,
+    AnonymousCheck,
     CurrentUserSession,
     IssueCreatePermission,
     IssueUpdatePermission,
@@ -50,6 +51,17 @@ pub struct IssueEndpointFixture {
     pub auth: AuthRequirement,
     pub request: FixtureShape,
     pub response: FixtureShape,
+    pub migration_payload: Option<IssueMigrationPayloadFixture>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct IssueMigrationPayloadFixture {
+    pub sample_path: &'static str,
+    pub request_json: Option<&'static str>,
+    pub success_status: u16,
+    pub success_json: &'static str,
+    pub alternate_status: Option<u16>,
+    pub alternate_json: Option<&'static str>,
 }
 
 pub fn fixtures() -> &'static [IssueEndpointFixture] {
@@ -85,7 +97,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
         legacy_controller: "controllers.api.IssueApi",
         legacy_action: "imports",
         direction: MigrationDirection::Import,
-        auth: AuthRequirement::CurrentUserSession,
+        auth: AuthRequirement::AnonymousCheck,
         request: shape(
             &["owner", "projectName"],
             &["postNumber"],
@@ -94,6 +106,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["badRequest"],
         ),
         response: shape(&[], &[], &[], &[], &["number"]),
+        migration_payload: Some(ISSUE_IMPORTS_PAYLOAD),
     },
     IssueEndpointFixture {
         method: "POST",
@@ -110,6 +123,9 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
                 "issues",
                 "sendNotification",
                 "author",
+                "loginId",
+                "name",
+                "email",
                 "title",
                 "body",
                 "state",
@@ -119,12 +135,15 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
                 "milestoneTitle",
                 "dueDate",
                 "labels",
+                "labelName",
+                "category",
                 "temporaryUploadFiles",
                 "number",
             ],
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["status", "location"]),
+        migration_payload: Some(ISSUE_BULK_IMPORT_PAYLOAD),
     },
     IssueEndpointFixture {
         method: "GET",
@@ -164,6 +183,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
                 "actor",
             ],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "PUT",
@@ -180,6 +200,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["result", "events"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "PATCH",
@@ -196,6 +217,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["result", "state", "events"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "PATCH",
@@ -212,6 +234,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["storedContent", "body"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -234,6 +257,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["status", "location", "result"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "PUT",
@@ -256,6 +280,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
             &["result", "id", "contents", "createdDate", "author"],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -272,6 +297,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["receivers", "loginId", "name"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -288,6 +314,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
         ),
         response: shape(&[], &[], &[], &[], &["id", "labels"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "GET",
@@ -310,6 +337,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
             &["loginId", "name", "avatarUrl"],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "GET",
@@ -332,6 +360,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
             &["loginId", "name", "avatarUrl"],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -354,6 +383,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
             &["assignee", "loginId", "name", "issue"],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "GET",
@@ -370,6 +400,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
         ),
         response: shape(&[], &[], &[], &[], &["loginId", "name", "avatarUrl"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "GET",
@@ -392,6 +423,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
             &["loginId", "name", "avatarUrl", "projectName"],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -408,6 +440,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["action", "sharer"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -424,6 +457,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["weight"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -440,6 +474,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &["message"],
         ),
         response: shape(&[], &[], &[], &[], &["weight"]),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -469,6 +504,7 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
                 "issueUpdateDate",
             ],
         ),
+        migration_payload: None,
     },
     IssueEndpointFixture {
         method: "POST",
@@ -485,5 +521,73 @@ const ISSUE_ENDPOINT_FIXTURES: &[IssueEndpointFixture] = &[
             &[],
         ),
         response: shape(&[], &[], &[], &[], &["translated", "Precondition Failed"]),
+        migration_payload: None,
     },
 ];
+
+const ISSUE_IMPORTS_PAYLOAD: IssueMigrationPayloadFixture = IssueMigrationPayloadFixture {
+    sample_path: "/-_-api/v1/owners/alice/projects/demo/issues/imports?postNumber=4",
+    request_json: None,
+    success_status: 200,
+    success_json: r##"{
+  "number": 5
+}"##,
+    alternate_status: Some(400),
+    alternate_json: None,
+};
+
+const ISSUE_BULK_IMPORT_PAYLOAD: IssueMigrationPayloadFixture = IssueMigrationPayloadFixture {
+    sample_path: "/-_-api/v1/owners/alice/projects/demo/issues",
+    request_json: Some(
+        r##"{
+  "sendNotification": true,
+  "issues": [
+    {
+      "number": 3,
+      "author": {
+        "loginId": "author",
+        "name": "Author User",
+        "email": "author@example.com"
+      },
+      "title": "Legacy issue",
+      "body": "legacy issue body",
+      "state": "CLOSED",
+      "createdAt": "2026-06-01 AM 09:00:00 +0900",
+      "updatedAt": "2026-06-02 PM 03:30:00 +0900",
+      "assignees": [
+        {
+          "loginId": "assignee",
+          "name": "Assignee User",
+          "email": "assignee@example.com"
+        }
+      ],
+      "milestoneTitle": "M1",
+      "dueDate": "2026-06-30 PM 11:59:59 +0900",
+      "labels": [
+        {
+          "labelName": "Bug",
+          "labelColor": "#2196f3",
+          "category": "Type"
+        }
+      ],
+      "temporaryUploadFiles": [
+        "tmp-issue-upload"
+      ]
+    }
+  ]
+}"##,
+    ),
+    success_status: 201,
+    success_json: r##"[
+  {
+    "status": 201,
+    "location": "/alice/demo/issue/3"
+  }
+]"##,
+    alternate_status: Some(400),
+    alternate_json: Some(
+        r##"{
+  "message": "No issues key exists or value wasn't array!"
+}"##,
+    ),
+};
