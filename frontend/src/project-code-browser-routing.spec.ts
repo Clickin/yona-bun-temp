@@ -3,6 +3,7 @@ import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { createLegacyI18nRuntime } from "./i18n";
 import {
   CodeBranchListPage,
   CodeBrowserPage,
@@ -17,6 +18,7 @@ import {
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
 
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+type LegacyMessageLookup = ReturnType<typeof createLegacyI18nRuntime>["t"];
 
 const projectDetail: ProjectDetailViewModel = {
   enrollmentRequested: false,
@@ -30,7 +32,10 @@ const projectDetail: ProjectDetailViewModel = {
   viewerCanUpdate: true,
 };
 
-function renderCodeFile(file: NonNullable<CodeBrowserViewModel["file"]>) {
+function renderCodeFile(
+  file: NonNullable<CodeBrowserViewModel["file"]>,
+  messages?: LegacyMessageLookup,
+) {
   return renderToStaticMarkup(
     React.createElement(CodeBrowserPage, {
       code: {
@@ -45,46 +50,54 @@ function renderCodeFile(file: NonNullable<CodeBrowserViewModel["file"]>) {
         selectedBranch: "main",
       },
       detail: projectDetail,
+      messages,
       runtimeConfig,
     }),
   );
 }
 
-function renderCodeHistory(history: CodeHistoryViewModel) {
+function renderCodeHistory(history: CodeHistoryViewModel, messages?: LegacyMessageLookup) {
   return renderToStaticMarkup(
     React.createElement(CodeHistoryPage, {
       detail: projectDetail,
       history,
+      messages,
       runtimeConfig,
     }),
   );
 }
 
-function renderCommitDetail(commitDetail: CodeCommitDetailViewModel) {
+function renderCommitDetail(
+  commitDetail: CodeCommitDetailViewModel,
+  messages?: LegacyMessageLookup,
+) {
   return renderToStaticMarkup(
     React.createElement(CodeCommitDetailPage, {
       commitDetail,
       detail: projectDetail,
+      messages,
       runtimeConfig,
     }),
   );
 }
 
-function renderCompare(compare: CodeCompareViewModel) {
+function renderCompare(compare: CodeCompareViewModel, messages?: LegacyMessageLookup) {
   return renderToStaticMarkup(
     React.createElement(CodeComparePage, {
       compare,
       detail: projectDetail,
+      messages,
       runtimeConfig,
     }),
   );
 }
 
-function renderBranches(branchList: CodeBranchListViewModel) {
+function renderBranches(branchList: CodeBranchListViewModel, messages?: LegacyMessageLookup) {
   return renderToStaticMarkup(
     React.createElement(CodeBranchListPage, {
       branchList,
       detail: projectDetail,
+      messages,
       runtimeConfig,
       onDeleteBranch: async () => {},
       onSetDefaultBranch: async () => {},
@@ -239,6 +252,108 @@ describe("project code browser routing", () => {
       'class="filehref ybtn" href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/bin/archive.bin"',
     );
     expect(binaryHtml).toContain("</i> button.download</a>");
+  });
+
+  it("uses Korean legacy messages for code browser and review controls when provided", () => {
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+    const messages = runtime.t;
+
+    const textHtml = renderCodeFile(
+      {
+        commitId: "abcdef1234567890abcdef1234567890abcdef12",
+        isBinary: false,
+        isTooLarge: false,
+        mimeType: "text/x-rust",
+        name: "main.rs",
+        path: "src/main.rs",
+        size: 13,
+        text: "fn main() {}\n",
+      },
+      messages,
+    );
+    expect(textHtml).toContain("</i> Raw</a>");
+    expect(textHtml).toContain("</i> 브라우저로 열기</a>");
+    expect(textHtml).toContain(">변경이력</a>");
+    expect(textHtml).not.toContain("</i> code.open</a>");
+
+    const branchHtml = renderBranches(
+      {
+        branches: [
+          {
+            commitDate: "2026-04-21",
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitMessage: "Branch commit",
+            commitShortId: "abcdef1",
+            isDefault: false,
+            name: "topic",
+            pullRequest: null,
+            shortName: "topic",
+          },
+        ],
+        defaultBranch: "main",
+        noHead: false,
+        ownerName: "owner",
+        permissions: { canDelete: true, canUpdate: true },
+        projectName: "projectYobi",
+      },
+      messages,
+    );
+    expect(branchHtml).toContain(">파일</a>");
+    expect(branchHtml).toContain(">커밋</a>");
+    expect(branchHtml).toContain(">브랜치</a>");
+    expect(branchHtml).toContain("<th>최근 커밋</th>");
+    expect(branchHtml).toContain("<th>최근 코드 주고받기</th>");
+    expect(branchHtml).toContain(">주고받은 코드가 없습니다</span>");
+    expect(branchHtml).toContain(">기본 브랜치로 설정</button>");
+    expect(branchHtml).toContain(">삭제</a>");
+
+    const compareHtml = renderCompare(
+      {
+        commitA: null,
+        commitB: null,
+        files: [],
+        noHead: false,
+        ownerName: "owner",
+        projectName: "projectYobi",
+        revA: "a",
+        revB: "b",
+      },
+      messages,
+    );
+    expect(compareHtml).toContain('<div class="alert">변경 없음</div>');
+
+    const commitHtml = renderCommitDetail(
+      {
+        branches: [{ name: "main" }],
+        breadcrumbs: [],
+        commit: {
+          authorDate: "2026-04-21",
+          authorEmail: "",
+          authorName: "",
+          commentCount: 0,
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          commitShortId: "abcdef1",
+          message: "",
+          shortMessage: "",
+        },
+        files: [],
+        noHead: false,
+        ownerName: "owner",
+        parentCommit: null,
+        path: "",
+        permissions: { canComment: true, canUpdateThreadState: true },
+        projectName: "projectYobi",
+        selectedBranch: "main",
+        threads: [],
+      },
+      messages,
+    );
+    expect(commitHtml).toContain(">지켜보기</button>");
+    expect(commitHtml).toContain(">목록</a>");
+    expect(commitHtml).toContain(">댓글 입력</button>");
+    expect(commitHtml).toContain(">열림 0</a>");
+    expect(commitHtml).not.toContain(">button.comment.new</button>");
   });
 
   it("renders markdown files with the legacy codebrowser markdown wrapper", () => {

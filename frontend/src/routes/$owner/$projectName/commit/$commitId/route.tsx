@@ -52,7 +52,7 @@ function toCodeCommitDetailView(response: CodeCommitDetailResponse): CodeCommitD
 
 function CodeCommitDetailRouteComponent() {
   const { commitId, owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const searchParams = new URLSearchParams(window.location.search);
   const query = {
@@ -171,6 +171,7 @@ function CodeCommitDetailRouteComponent() {
       commitDetail={commitDetailQuery.data ? toCodeCommitDetailView(commitDetailQuery.data) : null}
       csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       onCloseThread={async (threadId) => {
         await closeThreadMutation.mutateAsync(threadId);

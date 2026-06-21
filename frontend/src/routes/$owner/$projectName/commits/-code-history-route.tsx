@@ -109,7 +109,7 @@ export function CodeHistoryRouteView(props: {
   const projectName = props.projectName;
   const branch = props.branch ?? "";
   const path = props.path ?? "";
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/commits`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -170,5 +170,12 @@ export function CodeHistoryRouteView(props: {
     return <BadRequestPage href={routeHref} />;
   }
 
-  return <CodeHistoryPage detail={detail} history={history} runtimeConfig={runtimeConfig} />;
+  return (
+    <CodeHistoryPage
+      detail={detail}
+      history={history}
+      messages={messages}
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }

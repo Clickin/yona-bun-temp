@@ -13,6 +13,7 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
+import type { LegacyI18nContextValue } from "../../../../../i18n";
 import {
   buildProjectHref,
   ProjectHeader,
@@ -47,6 +48,19 @@ type CategoryView = {
   isExclusive: boolean;
   name: string;
 };
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  options: { args?: Array<number | string>; fallback?: string } = {},
+) {
+  const fallback =
+    options.fallback ??
+    (options.args && options.args.length > 0 ? `${key} ${options.args.join(" ")}` : key);
+  return messages ? messages(key, { ...options, fallback }) : fallback;
+}
 
 const NEW_LABEL_PRESET_COLORS = [
   "#f44336",
@@ -85,7 +99,7 @@ const EDIT_LABEL_PRESET_COLORS = [
 
 function IssueLabelsFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/labelsform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -155,6 +169,7 @@ function IssueLabelsFormRouteComponent() {
       csrfToken={csrfToken}
       detail={detail}
       labels={labels}
+      messages={messages}
       onChanged={reload}
       owner={owner}
       projectName={projectName}
@@ -186,11 +201,12 @@ function toCategoryView(
   };
 }
 
-function IssueLabelsFormPage(props: {
+export function IssueLabelsFormPage(props: {
   categories: CategoryView[];
   csrfToken: string;
   detail: ProjectDetailViewModel | null;
   labels: LabelView[];
+  messages?: LegacyMessageLookup;
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -232,16 +248,16 @@ function IssueLabelsFormPage(props: {
             {props.labels.length === 0 ? (
               <div className="error-wrap">
                 <i className="ico ico-err1" />
-                <p>label.list.empty</p>
+                <p>{legacyMessage(props.messages, "label.list.empty")}</p>
               </div>
             ) : (
               <>
                 <div className="row-fluid list-head">
                   <div className="span3 category">
-                    <strong>label.category</strong>
+                    <strong>{legacyMessage(props.messages, "label.category")}</strong>
                   </div>
                   <div className="span9 name">
-                    <strong>label.name</strong>
+                    <strong>{legacyMessage(props.messages, "label.name")}</strong>
                   </div>
                 </div>
                 {grouped.map((group) => (
@@ -263,10 +279,10 @@ function IssueLabelsFormPage(props: {
                             }`}
                             data-html="true"
                             data-toggle="tooltip"
-                            title={`label.category.option<br>${
+                            title={`${legacyMessage(props.messages, "label.category.option")}<br>${
                               group.categoryIsExclusive
-                                ? "label.category.option.single"
-                                : "label.category.option.multiple"
+                                ? legacyMessage(props.messages, "label.category.option.single")
+                                : legacyMessage(props.messages, "label.category.option.multiple")
                             }`}
                           />
                           <IssueCategoryEditForm category={group} {...props} />
@@ -300,7 +316,11 @@ function IssueLabelsFormPage(props: {
                                   )}
                                   data-label-id={label.id}
                                   onClick={() => {
-                                    if (!window.confirm("label.confirm.delete")) {
+                                    if (
+                                      !window.confirm(
+                                        legacyMessage(props.messages, "label.confirm.delete"),
+                                      )
+                                    ) {
                                       return;
                                     }
                                     setDeleteErrorMessage("");
@@ -318,7 +338,7 @@ function IssueLabelsFormPage(props: {
                                   }}
                                   type="button"
                                 >
-                                  button.delete
+                                  {legacyMessage(props.messages, "button.delete")}
                                 </button>
                                 <IssueLabelEditForm label={label} {...props} />
                               </td>
@@ -345,14 +365,15 @@ function IssueLabelsFormPage(props: {
         </div>
       </div>
 
-      <IssueLabelEditModal categories={props.categories} />
-      <IssueCategoryEditModal />
+      <IssueLabelEditModal categories={props.categories} messages={props.messages} />
+      <IssueCategoryEditModal messages={props.messages} />
     </main>
   );
 }
 
 function IssueLabelCopyForm(props: {
   csrfToken: string;
+  messages?: LegacyMessageLookup;
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -382,7 +403,7 @@ function IssueLabelCopyForm(props: {
           );
       }}
     >
-      <strong className="form-legend">label.copy.append</strong>
+      <strong className="form-legend">{legacyMessage(props.messages, "label.copy.append")}</strong>
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
           {errorMessage}
@@ -393,7 +414,7 @@ function IssueLabelCopyForm(props: {
           className="input-label mr5"
           name="owner"
           onChange={(event) => setFromOwnerName(event.currentTarget.value)}
-          placeholder="project.owner"
+          placeholder={legacyMessage(props.messages, "project.owner")}
           type="text"
           value={fromOwnerName}
         />
@@ -401,16 +422,16 @@ function IssueLabelCopyForm(props: {
           className="input-label"
           name="projectName"
           onChange={(event) => setFromProjectName(event.currentTarget.value)}
-          placeholder="project.name"
+          placeholder={legacyMessage(props.messages, "project.name")}
           type="text"
           value={fromProjectName}
         />
       </div>
       <button className="ybtn ybtn-info btn-submit" type="submit">
-        label.copy
+        {legacyMessage(props.messages, "label.copy")}
       </button>
-      <div>label.copy.description</div>
-      <div>label.copy.description2</div>
+      <div>{legacyMessage(props.messages, "label.copy.description")}</div>
+      <div>{legacyMessage(props.messages, "label.copy.description2")}</div>
     </form>
   );
 }
@@ -418,6 +439,7 @@ function IssueLabelCopyForm(props: {
 function IssueLabelCreateForm(props: {
   csrfToken: string;
   labels: LabelView[];
+  messages?: LegacyMessageLookup;
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -468,7 +490,7 @@ function IssueLabelCreateForm(props: {
           );
       }}
     >
-      <strong className="form-legend">label.new</strong>
+      <strong className="form-legend">{legacyMessage(props.messages, "label.new")}</strong>
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
           {errorMessage}
@@ -483,7 +505,7 @@ function IssueLabelCreateForm(props: {
             maxLength={250}
             name="category"
             onChange={(event) => setCategoryName(event.currentTarget.value)}
-            placeholder="label.category"
+            placeholder={legacyMessage(props.messages, "label.category")}
             type="text"
             value={categoryName}
           />
@@ -493,7 +515,7 @@ function IssueLabelCreateForm(props: {
             maxLength={250}
             name="name"
             onChange={(event) => setLabelName(event.currentTarget.value)}
-            placeholder="label.name"
+            placeholder={legacyMessage(props.messages, "label.name")}
             type="text"
             value={labelName}
           />
@@ -512,14 +534,14 @@ function IssueLabelCreateForm(props: {
             className="input-small input-label-color"
             name="color"
             onChange={(event) => setLabelColor(event.currentTarget.value)}
-            placeholder="label.customColor"
+            placeholder={legacyMessage(props.messages, "label.customColor")}
             type="text"
             value={labelColor}
           />
         </div>
       </div>
       <button className="ybtn ybtn-primary btn-submit" type="submit">
-        label.add
+        {legacyMessage(props.messages, "label.add")}
       </button>
     </form>
   );
@@ -530,6 +552,7 @@ function IssueLabelEditForm(props: {
   csrfToken: string;
   label: LabelView;
   labels: LabelView[];
+  messages?: LegacyMessageLookup;
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -556,7 +579,7 @@ function IssueLabelEditForm(props: {
         onClick={() => setEditing(true)}
         type="button"
       >
-        button.edit
+        {legacyMessage(props.messages, "button.edit")}
       </button>
     );
   }
@@ -622,7 +645,7 @@ function IssueLabelEditForm(props: {
         maxLength={250}
         name="name"
         onChange={(event) => setLabelName(event.currentTarget.value)}
-        placeholder="label.name"
+        placeholder={legacyMessage(props.messages, "label.name")}
         type="text"
         value={labelName}
       />
@@ -630,15 +653,15 @@ function IssueLabelEditForm(props: {
         className="input-small input-label-color"
         name="color"
         onChange={(event) => setLabelColor(event.currentTarget.value)}
-        placeholder="label.customColor"
+        placeholder={legacyMessage(props.messages, "label.customColor")}
         type="text"
         value={labelColor}
       />
       <button className="ybtn ybtn-info btnSubmit" type="submit">
-        button.save
+        {legacyMessage(props.messages, "button.save")}
       </button>
       <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
-        button.cancel
+        {legacyMessage(props.messages, "button.cancel")}
       </button>
     </form>
   );
@@ -647,6 +670,7 @@ function IssueLabelEditForm(props: {
 function IssueCategoryEditForm(props: {
   category: LabelGroup;
   csrfToken: string;
+  messages?: LegacyMessageLookup;
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -672,7 +696,7 @@ function IssueCategoryEditForm(props: {
         onClick={() => setEditing(true)}
         type="button"
       >
-        label.category.edit
+        {legacyMessage(props.messages, "label.category.edit")}
       </button>
     );
   }
@@ -707,7 +731,7 @@ function IssueCategoryEditForm(props: {
         className="text category-name"
         name="name"
         onChange={(event) => setCategoryName(event.currentTarget.value)}
-        placeholder="label.category"
+        placeholder={legacyMessage(props.messages, "label.category")}
         type="text"
         value={categoryName}
       />
@@ -718,14 +742,18 @@ function IssueCategoryEditForm(props: {
         onChange={(event) => setIsExclusive(event.currentTarget.value === "true")}
         value={String(isExclusive)}
       >
-        <option value="false">label.category.option.multiple</option>
-        <option value="true">label.category.option.single</option>
+        <option value="false">
+          {legacyMessage(props.messages, "label.category.option.multiple")}
+        </option>
+        <option value="true">
+          {legacyMessage(props.messages, "label.category.option.single")}
+        </option>
       </select>
       <button className="ybtn ybtn-info btnSubmit" type="submit">
-        button.save
+        {legacyMessage(props.messages, "button.save")}
       </button>
       <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
-        button.cancel
+        {legacyMessage(props.messages, "button.cancel")}
       </button>
       <button
         className="ybtn ybtn-danger"
@@ -743,13 +771,16 @@ function IssueCategoryEditForm(props: {
         }}
         type="button"
       >
-        button.delete
+        {legacyMessage(props.messages, "button.delete")}
       </button>
     </form>
   );
 }
 
-function IssueLabelEditModal(props: { categories: CategoryView[] }) {
+function IssueLabelEditModal(props: {
+  categories: CategoryView[];
+  messages?: LegacyMessageLookup;
+}) {
   return (
     <div
       aria-hidden="true"
@@ -780,7 +811,7 @@ function IssueLabelEditModal(props: { categories: CategoryView[] }) {
             className="text input-label-name"
             maxLength={250}
             name="name"
-            placeholder="label.name"
+            placeholder={legacyMessage(props.messages, "label.name")}
             type="text"
           />
           <div className="label-preset-colors edit">
@@ -795,17 +826,17 @@ function IssueLabelEditModal(props: { categories: CategoryView[] }) {
             <input
               className="input-small input-label-color"
               name="color"
-              placeholder="label.customColor"
+              placeholder={legacyMessage(props.messages, "label.customColor")}
               type="text"
             />
           </div>
         </div>
         <div className="center-txt buttons mt20 mb20">
           <button className="ybtn ybtn-info btnSubmit" type="button">
-            button.save
+            {legacyMessage(props.messages, "button.save")}
           </button>
           <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
-            button.cancel
+            {legacyMessage(props.messages, "button.cancel")}
           </button>
         </div>
       </div>
@@ -813,7 +844,7 @@ function IssueLabelEditModal(props: { categories: CategoryView[] }) {
   );
 }
 
-function IssueCategoryEditModal() {
+function IssueCategoryEditModal(props: { messages?: LegacyMessageLookup }) {
   return (
     <div
       aria-hidden="true"
@@ -832,27 +863,31 @@ function IssueCategoryEditModal() {
           <input
             className="text category-name"
             name="name"
-            placeholder="label.category"
+            placeholder={legacyMessage(props.messages, "label.category")}
             type="text"
           />
           <div className="desc">
-            label.category.option
+            {legacyMessage(props.messages, "label.category.option")}
             <select
               data-dropdown-css-class="select2-without-searchbox"
               data-toggle="select2"
               name="isExclusive"
             >
-              <option value="false">label.category.option.multiple</option>
-              <option value="true">label.category.option.single</option>
+              <option value="false">
+                {legacyMessage(props.messages, "label.category.option.multiple")}
+              </option>
+              <option value="true">
+                {legacyMessage(props.messages, "label.category.option.single")}
+              </option>
             </select>
           </div>
         </div>
         <div className="center-txt buttons mt20 mb20">
           <button className="ybtn ybtn-info btnSubmit" type="button">
-            button.save
+            {legacyMessage(props.messages, "button.save")}
           </button>
           <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
-            button.cancel
+            {legacyMessage(props.messages, "button.cancel")}
           </button>
         </div>
       </div>

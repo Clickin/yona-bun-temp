@@ -61,7 +61,7 @@ function toCodeCompareView(response: CodeCompareResponse): CodeCompareViewModel 
 
 function CodeCompareRouteComponent() {
   const { owner, projectName, revisionRange } = Route.useParams();
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
@@ -119,5 +119,12 @@ function CodeCompareRouteComponent() {
     return <BadRequestPage href={`/${owner}/${projectName}/compare/${revisionRange}`} />;
   }
 
-  return <CodeComparePage compare={compare} detail={detail} runtimeConfig={runtimeConfig} />;
+  return (
+    <CodeComparePage
+      compare={compare}
+      detail={detail}
+      messages={messages}
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }

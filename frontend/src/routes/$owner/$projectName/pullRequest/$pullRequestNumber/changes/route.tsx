@@ -80,11 +80,11 @@ export function PullRequestChangesRouteContent(props: {
     bootstrapping,
     csrfToken,
     currentSession,
+    messages,
     runtimeConfig,
     setErrorMessage,
     workspaceOverview,
-  } =
-    useAppRuntime();
+  } = useAppRuntime();
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
   const scope = { ownerName: owner, projectName, pullRequestNumber: parsedNumber };
@@ -152,7 +152,11 @@ export function PullRequestChangesRouteContent(props: {
     },
   });
   const commentMutation = useMutation({
-    mutationFn: (input: { attachmentIds?: number[]; contentsMarkdown: string; threadId?: number }) =>
+    mutationFn: (input: {
+      attachmentIds?: number[];
+      contentsMarkdown: string;
+      threadId?: number;
+    }) =>
       createPullRequestCommentRest(runtimeConfig, csrfToken, {
         ...scope,
         attachmentIds: input.attachmentIds,
@@ -310,6 +314,7 @@ export function PullRequestChangesRouteContent(props: {
           : undefined
       }
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       runtimeConfig={runtimeConfig}
       selectedCommitId={selectedCommitId}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}

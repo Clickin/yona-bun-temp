@@ -49,7 +49,7 @@ function PullRequestDetailRouteComponent() {
 
 function PullRequestDetailLeafRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
@@ -67,12 +67,6 @@ function PullRequestDetailLeafRouteComponent() {
   );
   const error = containerQuery.error ?? pullRequestQuery.error;
   const failureKind = classifyConnectFailure(error);
-  const mutationError = React.useCallback(
-    (fallback: string) => (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : fallback);
-    },
-    [setErrorMessage],
-  );
   const commonMutationError = React.useCallback(
     (error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
@@ -362,6 +356,7 @@ function PullRequestDetailLeafRouteComponent() {
     <ProjectPullRequestDetailPage
       csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       pullRequest={pullRequestQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}

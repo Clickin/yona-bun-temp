@@ -954,9 +954,7 @@ test("organization admin routes render forbidden and not-found shells for authen
   await page.goto("/yona/organizations/weblabs/members");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText(
-    "/organizations/weblabs/members",
-  );
+  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/organizations/weblabs/members");
 
   await page.goto("/yona/organizations/missinglabs/deleteForm");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
@@ -1038,10 +1036,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.getByText("Pilot issue")).toBeVisible();
   await expect(page.getByText("2026-04-15")).toBeVisible();
-  await expect(page.locator("#issue-item-101")).toHaveAttribute(
-    "data-value",
-    "nori 1 Pilot issue",
-  );
+  await expect(page.locator("#issue-item-101")).toHaveAttribute("data-value", "nori 1 Pilot issue");
   await expect(page.locator("#issue-101")).toHaveAttribute("data-issue-id", "101");
   await expect(page.locator('.issue-item-row[data-for="issue-101"]')).toBeAttached();
   await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "issue.weight 2");
@@ -1051,10 +1046,9 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator(".yobicon-clock2.mr3.vmiddle")).toBeAttached();
   await expect(page.locator(".span3.hide-in-mobile span.vmiddle")).toHaveText("2026-05-09");
-  await expect(page.locator(".subtask-progress.upload-progress.red-outline .bar.red")).toHaveAttribute(
-    "style",
-    "width: 0%;",
-  );
+  await expect(
+    page.locator(".subtask-progress.upload-progress.red-outline .bar.red"),
+  ).toHaveAttribute("style", "width: 0%;");
   await expect(page.locator(".subtask-progress.completion-ratio")).toHaveText("0/1");
   await expect(page.locator(".child-issue-list.hide .child-issue")).toContainText(
     "Child issue row",
@@ -1795,20 +1789,22 @@ test("project issue label management route renders the legacy label editor shell
   await page.goto("/yona/admin/projectYobi/issue/labelsform");
   await expect(page.locator(".project-page-wrap.label-editor-wrap")).toBeVisible();
   await expect(page.locator("#copyLabel")).toBeVisible();
-  await expect(page.getByText("label.copy.append")).toBeVisible();
-  await expect(page.getByPlaceholder("project.owner")).toBeVisible();
-  await expect(page.getByPlaceholder("project.name")).toBeVisible();
-  await expect(page.locator("#frmNewLabel")).toBeVisible();
-  await expect(page.getByText("label.new")).toBeVisible();
-  await expect(page.locator("#frmNewLabel").getByPlaceholder("label.category")).toBeVisible();
   await expect(
-    page.locator("#frmNewLabel").getByPlaceholder("label.name", { exact: true }),
+    page.getByText("Copy all labels from a project and append to current project"),
+  ).toBeVisible();
+  await expect(page.getByPlaceholder("Owner Name")).toBeVisible();
+  await expect(page.getByPlaceholder("Project name")).toBeVisible();
+  await expect(page.locator("#frmNewLabel")).toBeVisible();
+  await expect(page.getByText("Add new label")).toBeVisible();
+  await expect(page.locator("#frmNewLabel").getByPlaceholder("Category")).toBeVisible();
+  await expect(
+    page.locator("#frmNewLabel").getByPlaceholder("Name", { exact: true }),
   ).toBeVisible();
   await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
-  await expect(page.locator("#labelsList .error-wrap")).toContainText("label.list.empty");
+  await expect(page.locator("#labelsList .error-wrap")).toContainText("No label exists");
   await page.locator('#copyLabel input[name="owner"]').fill("owner");
   await page.locator('#copyLabel input[name="projectName"]').fill("sourceLabels");
-  await page.locator("#copyLabel").getByRole("button", { name: "label.copy" }).click();
+  await page.locator("#copyLabel").getByRole("button", { name: "Copy labels" }).click();
   await expect(page.locator("#labelsList .issue-label.active")).toHaveText("Copied");
   await expect(
     page.locator('#labelsList .category-wrap[data-category-name="FromSource"]'),
@@ -1834,7 +1830,9 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await page.goto("/yona/admin/projectYobi/milestones?state=open");
   await expect(page.locator(".project-page-wrap .tab-wrap")).toBeVisible();
   await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.open" })).toBeVisible();
-  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.closed" })).toBeVisible();
+  await expect(
+    page.locator(".nav.nav-tabs a", { hasText: "milestone.state.closed" }),
+  ).toBeVisible();
   await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.all" })).toBeVisible();
   await expect(page.locator(".milestones .milestone")).toHaveCount(1);
   await expect(page.locator(".milestone-name")).toHaveText("v1.0");
@@ -1849,9 +1847,15 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Ship parity");
   await expect(page.locator(".badge.badge-issue-open")).toContainText("milestone.state.open");
-  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.open" })).toBeVisible();
-  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.closed" })).toBeVisible();
-  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.all" })).toBeVisible();
+  await expect(
+    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.open" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.closed" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.all" }),
+  ).toBeVisible();
   await expect(page.getByPlaceholder("milestone.searchPlaceholder")).toBeVisible();
   await expect(page.locator(".issue-link", { hasText: "Closed milestone issue" })).toBeVisible();
   await expect(page.locator(".actrow .ybtn", { hasText: "button.list" })).toBeVisible();

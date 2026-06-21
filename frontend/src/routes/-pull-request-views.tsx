@@ -31,8 +31,20 @@ import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-vie
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
-function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  argsOrOptions?: (number | string)[] | { args?: (number | string)[]; fallback?: string },
+) {
+  const args = Array.isArray(argsOrOptions) ? argsOrOptions : argsOrOptions?.args;
+  const fallback = args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
+  const fallbackText = Array.isArray(argsOrOptions)
+    ? fallback
+    : (argsOrOptions?.fallback ?? fallback);
+  if (messages) {
+    return messages(key, { args, fallback: fallbackText });
+  }
+  return fallbackText;
 }
 
 function fallbackProjectDetail(): ProjectDetailViewModel {
@@ -1520,6 +1532,7 @@ export function ProjectPullRequestFormPage(props: {
 }
 
 function PullRequestActionBar(props: {
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   onClose?: () => Promise<void>;
@@ -1539,7 +1552,7 @@ function PullRequestActionBar(props: {
             onClick={() => void props.onWatchToggle?.()}
             type="button"
           >
-            {pr.isWatching ? "project.unwatch" : "project.watch"}
+            {legacyMessage(props.messages, pr.isWatching ? "project.unwatch" : "project.watch")}
           </button>
         ) : null}
       </div>
@@ -1555,7 +1568,7 @@ function PullRequestActionBar(props: {
               "editform",
             )}
           >
-            button.edit
+            {legacyMessage(props.messages, "button.edit")}
           </a>
         ) : null}
         {pr.permissions.canUpdateState && pr.state === "open" ? (
@@ -1574,7 +1587,7 @@ function PullRequestActionBar(props: {
               void props.onClose?.();
             }}
           >
-            pullRequest.close
+            {legacyMessage(props.messages, "pullRequest.close")}
           </a>
         ) : null}
         {pr.permissions.canUpdateState && pr.state === "closed" ? (
@@ -1593,7 +1606,7 @@ function PullRequestActionBar(props: {
               void props.onOpen?.();
             }}
           >
-            pullRequest.reopen
+            {legacyMessage(props.messages, "pullRequest.reopen")}
           </a>
         ) : null}
       </div>
@@ -1602,6 +1615,7 @@ function PullRequestActionBar(props: {
 }
 
 function PullRequestReviewMergeControls(props: {
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
@@ -1625,7 +1639,7 @@ function PullRequestReviewMergeControls(props: {
     <>
       <div id="reviewers" style={{ display: "inline-block", marginRight: 5 }}>
         <span style={{ fontSize: 13, margin: "0 10px", verticalAlign: "middle" }}>
-          {`pullRequest.review.participants ${pr.reviewers.length}`}
+          {legacyMessage(props.messages, "pullRequest.review.participants", [pr.reviewers.length])}
         </span>
         {pr.reviewers.map((reviewer) => (
           <a
@@ -1644,10 +1658,14 @@ function PullRequestReviewMergeControls(props: {
           </a>
         ))}
         <span className={`reviewer-status ${pr.reviewed ? "reviewed" : "lacking"}`}>
-          {`pullRequest.review.required ${pr.reviewers.length}/${pr.requiredReviewerCount}`}
+          {legacyMessage(props.messages, "pullRequest.review.required", [
+            `${pr.reviewers.length}/${pr.requiredReviewerCount}`,
+          ])}
           {pr.reviewed
-            ? " pullRequest.review.complete"
-            : ` pullRequest.review.lacking ${pr.lackingReviewerCount}`}
+            ? ` ${legacyMessage(props.messages, "pullRequest.review.complete")}`
+            : ` ${legacyMessage(props.messages, "pullRequest.review.lacking", [
+                pr.lackingReviewerCount,
+              ])}`}
         </span>
       </div>
       {pr.permissions.canReview && pr.state === "open" ? (
@@ -1658,7 +1676,7 @@ function PullRequestReviewMergeControls(props: {
             onClick={() => void props.onUnreview?.()}
             type="button"
           >
-            pullRequest.unreview
+            {legacyMessage(props.messages, "pullRequest.unreview")}
           </button>
         ) : (
           <button
@@ -1667,7 +1685,7 @@ function PullRequestReviewMergeControls(props: {
             onClick={() => void props.onReview?.()}
             type="button"
           >
-            pullRequest.review
+            {legacyMessage(props.messages, "pullRequest.review")}
           </button>
         )
       ) : null}
@@ -1689,7 +1707,7 @@ function PullRequestReviewMergeControls(props: {
               void props.onAccept?.();
             }}
           >
-            pullRequest.merge
+            {legacyMessage(props.messages, "pullRequest.merge")}
           </a>
         ) : (
           <>
@@ -1698,13 +1716,15 @@ function PullRequestReviewMergeControls(props: {
               data-placement="top"
               data-toggle="tooltip"
               disabled
-              title={disabledMergeTitle}
+              title={legacyMessage(props.messages, disabledMergeTitle)}
               type="button"
             >
-              pullRequest.merge
+              {legacyMessage(props.messages, "pullRequest.merge")}
             </button>
             {pr.conflict ? (
-              <p className="merge-conflict-help">pullRequest.conflict.manualResolve</p>
+              <p className="merge-conflict-help">
+                {legacyMessage(props.messages, "pullRequest.conflict.manualResolve")}
+              </p>
             ) : null}
           </>
         )
@@ -1714,6 +1734,7 @@ function PullRequestReviewMergeControls(props: {
 }
 
 function PullRequestBranchInfo(props: {
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1721,7 +1742,11 @@ function PullRequestBranchInfo(props: {
   return (
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
-      <code className="from" data-original-title="pullRequest.from" data-toggle="tooltip">
+      <code
+        className="from"
+        data-original-title={legacyMessage(props.messages, "pullRequest.from")}
+        data-toggle="tooltip"
+      >
         <a href={`${props.runtimeConfig.basePath}/${encodeURIComponent(pr.fromOwnerName)}`}>
           {pr.fromOwnerName}
         </a>
@@ -1743,7 +1768,11 @@ function PullRequestBranchInfo(props: {
         </a>
       </code>
       <i className="yobicon-right-2 ml10"></i>
-      <code className="to" data-original-title="pullRequest.to" data-toggle="tooltip">
+      <code
+        className="to"
+        data-original-title={legacyMessage(props.messages, "pullRequest.to")}
+        data-toggle="tooltip"
+      >
         <a href={`${props.runtimeConfig.basePath}/${encodeURIComponent(pr.ownerName)}`}>
           {pr.ownerName}
         </a>
@@ -1770,6 +1799,7 @@ function PullRequestBranchInfo(props: {
 
 function PullRequestOverviewTabs(props: {
   active: "changes" | "overview";
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1781,7 +1811,7 @@ function PullRequestOverviewTabs(props: {
     <ul className="nav nav-tabs nm pull-request-overview-tabs">
       <li className={props.active === "overview" ? "active" : undefined}>
         <a href={prHref(props.runtimeConfig, pr.ownerName, pr.projectName, pr.pullRequestNumber)}>
-          pullRequest.menu.overview
+          {legacyMessage(props.messages, "pullRequest.menu.overview")}
         </a>
       </li>
       <li className={props.active === "changes" ? "active" : undefined}>
@@ -1794,7 +1824,7 @@ function PullRequestOverviewTabs(props: {
             "changes",
           )}
         >
-          pullRequest.menu.changes
+          {legacyMessage(props.messages, "pullRequest.menu.changes")}
           {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
         </a>
       </li>
@@ -1803,6 +1833,7 @@ function PullRequestOverviewTabs(props: {
 }
 
 function PullRequestConflictGuide(props: {
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
@@ -1822,41 +1853,48 @@ function PullRequestConflictGuide(props: {
   return (
     <div className="alert alert-error pull-request-conflict-guide">
       <i className="yobicon-error mr5"></i>
-      <span>pullRequest.is.not.safe</span>
+      <span>{legacyMessage(props.messages, "pullRequest.is.not.safe")}</span>
       {isContributor ? (
         <div className="howto-resolve-conflict">
-          <h6>pullRequest.resolve.conflict</h6>
+          <h6>{legacyMessage(props.messages, "pullRequest.resolve.conflict")}</h6>
           <div className="help">
             <ol>
               <li>
-                pullRequest.resolver.step1 <code>{`git checkout ${pr.fromBranch}`}</code>
+                {legacyMessage(props.messages, "pullRequest.resolver.step1")}{" "}
+                <code>{`git checkout ${pr.fromBranch}`}</code>
               </li>
               <li>
-                pullRequest.resolver.step2 <code>{`git remote add upstream ${upstreamUrl}`}</code>
+                {legacyMessage(props.messages, "pullRequest.resolver.step2")}{" "}
+                <code>{`git remote add upstream ${upstreamUrl}`}</code>
               </li>
               <li>
-                pullRequest.resolver.step3 <code>git fetch upstream</code>
+                {legacyMessage(props.messages, "pullRequest.resolver.step3")}{" "}
+                <code>git fetch upstream</code>
               </li>
               <li>
-                pullRequest.resolver.step4 <code>{`git rebase upstream/${pr.toBranch}`}</code>
+                {legacyMessage(props.messages, "pullRequest.resolver.step4")}{" "}
+                <code>{`git rebase upstream/${pr.toBranch}`}</code>
               </li>
-              <li>pullRequest.resolver.step5</li>
+              <li>{legacyMessage(props.messages, "pullRequest.resolver.step5")}</li>
               <li>
-                pullRequest.resolver.step6 <code>git add resolved_file</code>
-              </li>
-              <li>
-                pullRequest.resolver.step7 <code>git rebase --continue</code>
-              </li>
-              <li>pullRequest.resolver.step8</li>
-              <li>
-                pullRequest.resolver.step9 <code>{`git push -f origin ${pr.fromBranch}`}</code>
+                {legacyMessage(props.messages, "pullRequest.resolver.step6")}{" "}
+                <code>git add resolved_file</code>
               </li>
               <li>
-                pullRequest.resolver.step10{" "}
+                {legacyMessage(props.messages, "pullRequest.resolver.step7")}{" "}
+                <code>git rebase --continue</code>
+              </li>
+              <li>{legacyMessage(props.messages, "pullRequest.resolver.step8")}</li>
+              <li>
+                {legacyMessage(props.messages, "pullRequest.resolver.step9")}{" "}
+                <code>{`git push -f origin ${pr.fromBranch}`}</code>
+              </li>
+              <li>
+                {legacyMessage(props.messages, "pullRequest.resolver.step10")}{" "}
                 <a className="ybtn ybtn-mini ybtn-primary" href={refreshHref}>
-                  button.page.refresh
+                  {legacyMessage(props.messages, "button.page.refresh")}
                 </a>
-                pullRequest.resolver.step11
+                {legacyMessage(props.messages, "pullRequest.resolver.step11")}
               </li>
             </ol>
           </div>
@@ -1867,6 +1905,7 @@ function PullRequestConflictGuide(props: {
 }
 
 function PullRequestStateNotice(props: {
+  messages?: LegacyMessageLookup;
   onDeleteSourceBranch?: () => Promise<void>;
   onRestoreSourceBranch?: () => Promise<void>;
   pullRequest: PullRequestDetailResponse;
@@ -1878,7 +1917,7 @@ function PullRequestStateNotice(props: {
     return (
       <div className="alert alert-success">
         <i className="yobicon-check-circle-alt mr5"></i>
-        <span>pullRequest.is.safe</span>
+        <span>{legacyMessage(props.messages, "pullRequest.is.safe")}</span>
       </div>
     );
   }
@@ -1886,6 +1925,7 @@ function PullRequestStateNotice(props: {
     return (
       <PullRequestConflictGuide
         pullRequest={pr}
+        messages={props.messages}
         runtimeConfig={props.runtimeConfig}
         viewerId={props.viewerId}
       />
@@ -1895,7 +1935,7 @@ function PullRequestStateNotice(props: {
     return (
       <div className="alert alert-warnning">
         <i className="yobicon-supportrequest mr5"></i>
-        <span>pullRequest.is.merging</span>
+        <span>{legacyMessage(props.messages, "pullRequest.is.merging")}</span>
       </div>
     );
   }
@@ -1938,13 +1978,15 @@ function PullRequestStateNotice(props: {
           {pr.receiver.loginId}
         </span>
       </a>{" "}
-      {`pullRequest.merged.the.pullrequest ${pr.receiver.userLabel || pr.receiver.loginId}`}{" "}
+      {legacyMessage(props.messages, "pullRequest.merged.the.pullrequest", [
+        pr.receiver.userLabel || pr.receiver.loginId,
+      ])}{" "}
       {pr.permissions.canDeleteSourceBranch || pr.permissions.canRestoreSourceBranch ? (
         <>
           <code>{pr.fromBranch}</code>{" "}
           {pr.permissions.canDeleteSourceBranch
-            ? "pullRequest.delete.frombranch.message"
-            : "pullRequest.restore.frombranch.message"}
+            ? legacyMessage(props.messages, "pullRequest.delete.frombranch.message")
+            : legacyMessage(props.messages, "pullRequest.restore.frombranch.message")}
         </>
       ) : null}
       {pr.permissions.canDeleteSourceBranch ? (
@@ -1955,7 +1997,7 @@ function PullRequestStateNotice(props: {
           onClick={() => void props.onDeleteSourceBranch?.()}
           type="button"
         >
-          pullRequest.delete.branch
+          {legacyMessage(props.messages, "pullRequest.delete.branch")}
         </button>
       ) : null}
       {pr.permissions.canRestoreSourceBranch ? (
@@ -1968,7 +2010,7 @@ function PullRequestStateNotice(props: {
             void props.onRestoreSourceBranch?.();
           }}
         >
-          pullRequest.restore.branch
+          {legacyMessage(props.messages, "pullRequest.restore.branch")}
         </a>
       ) : null}
     </section>
@@ -2030,6 +2072,7 @@ function pullRequestEventHasMergedCommit(event: PullRequestEvent) {
 
 function PullRequestEventTimeline(props: {
   events: PullRequestEvent[];
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -2045,7 +2088,7 @@ function PullRequestEventTimeline(props: {
           return (
             <li className="event" id={`comment-${event.id}`} key={event.id}>
               <span className={`state ${eventStateClass}`}>
-                {pullRequestEventStateLabel(event)}
+                {legacyMessage(props.messages, pullRequestEventStateLabel(event))}
               </span>
               {event.senderLoginId ? (
                 <a
@@ -2067,9 +2110,11 @@ function PullRequestEventTimeline(props: {
                 href={`${props.runtimeConfig.basePath}/${encodeURIComponent(event.senderLoginId)}`}
                 title={event.senderLoginId}
               >
-                <strong>{event.senderLoginId || "User.anonymous.name"}</strong>
+                <strong>
+                  {event.senderLoginId || legacyMessage(props.messages, "User.anonymous.name")}
+                </strong>
               </a>
-              <span>{` ${pullRequestEventMessage(event)}`}</span>
+              <span>{` ${legacyMessage(props.messages, pullRequestEventMessage(event))}`}</span>
               {pullRequestEventHasMergedCommit(event) && mergedCommitId ? (
                 <a
                   className="link"
@@ -2079,7 +2124,7 @@ function PullRequestEventTimeline(props: {
                     props.pullRequest.projectName,
                     `commit/${encodeURIComponent(mergedCommitId)}`,
                   )}
-                  title="code.showCommit"
+                  title={legacyMessage(props.messages, "code.showCommit")}
                 >
                   {pullRequestCommitShortId(mergedCommitId)}
                 </a>
@@ -2096,7 +2141,7 @@ function PullRequestEventTimeline(props: {
                     )}`,
                   )}
                 >
-                  pullRequest.additional.changes
+                  {legacyMessage(props.messages, "pullRequest.additional.changes")}
                 </a>
               ) : null}
               <span className="date">
@@ -2152,6 +2197,7 @@ function PullRequestEventTimeline(props: {
 export function ProjectPullRequestDetailPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
@@ -2193,7 +2239,10 @@ export function ProjectPullRequestDetailPage(props: {
                       pr.conflict ? "badge-issue-conflict" : `badge-issue-${pr.state}`
                     }`}
                   >
-                    {pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`}
+                    {legacyMessage(
+                      props.messages,
+                      pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`,
+                    )}
                   </span>
                 </div>
                 <div className="title">
@@ -2203,6 +2252,7 @@ export function ProjectPullRequestDetailPage(props: {
               <div className="pull-right">
                 <PullRequestReviewMergeControls
                   pullRequest={pr}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   viewerId={props.viewerId}
                   onAccept={props.onAccept}
@@ -2212,6 +2262,7 @@ export function ProjectPullRequestDetailPage(props: {
               </div>
               <PullRequestOverviewTabs
                 active="overview"
+                messages={props.messages}
                 pullRequest={pr}
                 runtimeConfig={props.runtimeConfig}
               />
@@ -2240,7 +2291,11 @@ export function ProjectPullRequestDetailPage(props: {
                       {pr.contributor.loginId}
                     </span>
                   </a>
-                  <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
+                  <PullRequestBranchInfo
+                    messages={props.messages}
+                    pullRequest={pr}
+                    runtimeConfig={props.runtimeConfig}
+                  />
                 </div>
                 <MarkdownRenderer
                   className="content markdown-wrap"
@@ -2257,6 +2312,7 @@ export function ProjectPullRequestDetailPage(props: {
               <div id="state" className="pullRequest-stateInfo">
                 <PullRequestStateNotice
                   pullRequest={pr}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   onDeleteSourceBranch={props.onDeleteSourceBranch}
                   onRestoreSourceBranch={props.onRestoreSourceBranch}
@@ -2266,6 +2322,7 @@ export function ProjectPullRequestDetailPage(props: {
               <div className="board-footer board-actrow">
                 <PullRequestActionBar
                   pullRequest={pr}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   onClose={props.onClose}
                   onOpen={props.onOpen}
@@ -2275,6 +2332,7 @@ export function ProjectPullRequestDetailPage(props: {
               <hr className="nm" />
               <PullRequestEventTimeline
                 events={pr.events}
+                messages={props.messages}
                 pullRequest={pr}
                 runtimeConfig={props.runtimeConfig}
               />
@@ -2315,6 +2373,7 @@ export function ProjectPullRequestDetailPage(props: {
 function ReviewThreadItem(props: {
   csrfToken?: string;
   currentUser?: PullRequestCurrentUser;
+  messages?: LegacyMessageLookup;
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
@@ -2391,11 +2450,17 @@ function ReviewThreadItem(props: {
       </div>
       {isCodeThread ? (
         <div className="thread-header">
-          <span className={`badge state ${threadState}`}>{`issue.state.${threadState}`}</span>
+          <span className={`badge state ${threadState}`}>
+            {legacyMessage(props.messages, `issue.state.${threadState}`)}
+          </span>
           <button className="ybtn ybtn-default ybtn-small btn-thread-minimize" type="button">
             <i className="yobicon-maximize"></i>
           </button>
-          {isOutdated ? <span className="outdated-label">review.outdated</span> : null}
+          {isOutdated ? (
+            <span className="outdated-label">
+              {legacyMessage(props.messages, "review.outdated")}
+            </span>
+          ) : null}
         </div>
       ) : null}
       {!props.onThreadCommentSubmit ? (
@@ -2408,7 +2473,7 @@ function ReviewThreadItem(props: {
               onClick={() => void props.onThreadOpen?.(props.thread.id)}
               type="button"
             >
-              commentThread.open
+              {legacyMessage(props.messages, "commentThread.open")}
             </button>
           ) : (
             <button
@@ -2422,14 +2487,17 @@ function ReviewThreadItem(props: {
               onClick={() => void props.onThreadClose?.(props.thread.id)}
               type="button"
             >
-              commentThread.close
+              {legacyMessage(props.messages, "commentThread.close")}
             </button>
           )}
         </div>
       ) : null}
       <ul className="comments">
         {props.thread.comments.map((comment) => {
-          const authorLabel = comment.authorLabel || comment.authorLoginId || "issue.noAuthor";
+          const authorLabel =
+            comment.authorLabel ||
+            comment.authorLoginId ||
+            legacyMessage(props.messages, "issue.noAuthor");
           const authorHref =
             props.runtimeConfig && comment.authorLoginId
               ? `${props.runtimeConfig.basePath}/${encodeURIComponent(comment.authorLoginId)}`
@@ -2483,11 +2551,11 @@ function ReviewThreadItem(props: {
                           onClick={() => beginEdit(comment)}
                           type="button"
                         >
-                          button.edit
+                          {legacyMessage(props.messages, "button.edit")}
                         </button>
                       ) : null}
                       <button
-                        aria-label="common.comment.delete"
+                        aria-label={legacyMessage(props.messages, "common.comment.delete")}
                         className="btn-transparent pull-right close"
                         data-request-method="delete"
                         data-request-uri={pullRequestApiHref(
@@ -2497,7 +2565,7 @@ function ReviewThreadItem(props: {
                         )}
                         data-toggle="comment-delete"
                         onClick={() => void props.onCommentDelete?.(comment.id)}
-                        title="common.comment.delete"
+                        title={legacyMessage(props.messages, "common.comment.delete")}
                         type="button"
                       >
                         <i className="yobicon-trash"></i>
@@ -2545,7 +2613,9 @@ function ReviewThreadItem(props: {
                           </LegacyMarkdownEditorShell>
                           <div className="upload-drop-here">
                             <div className="msg-wrap">
-                              <div className="msg">common.attach.dropFilesHere</div>
+                              <div className="msg">
+                                {legacyMessage(props.messages, "common.attach.dropFilesHere")}
+                              </div>
                             </div>
                           </div>
                           <div className="right-txt comment-update-button upload-button-line">
@@ -2555,10 +2625,10 @@ function ReviewThreadItem(props: {
                               onClick={() => setEditingCommentId(null)}
                               type="button"
                             >
-                              button.cancel
+                              {legacyMessage(props.messages, "button.cancel")}
                             </button>
                             <button className="ybtn ybtn-info" type="submit">
-                              button.save
+                              {legacyMessage(props.messages, "button.save")}
                             </button>
                           </div>
                         </div>
@@ -2716,7 +2786,7 @@ function ReviewThreadItem(props: {
                     </div>
                     <div className="notification-receiver">
                       <span className="notification-receiver-title">
-                        notification.receiver.list.title
+                        {legacyMessage(props.messages, "notification.receiver.list.title")}
                       </span>
                       <span className="notification-receiver-list"></span>
                     </div>
@@ -2724,24 +2794,34 @@ function ReviewThreadItem(props: {
                 </div>
                 <div className="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT">
                   <div className="attach-wrap">
-                    <span className="help help-droppable">common.attach.drophere</span>
+                    <span className="help help-droppable">
+                      {legacyMessage(props.messages, "common.attach.drophere")}
+                    </span>
                     <div className="btn-wrap">
                       <div className="nbtn medium white fake-file-wrap">
-                        <i className="yobicon-upload"></i> button.upload
+                        <i className="yobicon-upload"></i>{" "}
+                        {legacyMessage(props.messages, "button.upload")}
                         <input className="file" multiple={true} name="filePath" type="file" />
                       </div>
                     </div>
-                    <span className="plain">common.attach.clickbutton</span>
-                    <span className="help help-pastable">common.attach.pastehere</span>
+                    <span className="plain">
+                      {legacyMessage(props.messages, "common.attach.clickbutton")}
+                    </span>
+                    <span className="help help-pastable">
+                      {legacyMessage(props.messages, "common.attach.pastehere")}
+                    </span>
                   </div>
                   <ul className="attached-files unstyled"></ul>
                   <p className="right-txt help">
-                    <i className="yobicon-supportrequest"></i> common.attach.attachIfYouSave
+                    <i className="yobicon-supportrequest"></i>{" "}
+                    {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
                   </p>
                 </div>
                 <div className="upload-drop-here">
                   <div className="msg-wrap">
-                    <div className="msg">common.attach.dropFilesHere</div>
+                    <div className="msg">
+                      {legacyMessage(props.messages, "common.attach.dropFilesHere")}
+                    </div>
                   </div>
                 </div>
                 <div className="right-txt">
@@ -2757,7 +2837,7 @@ function ReviewThreadItem(props: {
                       onClick={() => void props.onThreadOpen?.(props.thread.id)}
                       type="button"
                     >
-                      commentThread.open
+                      {legacyMessage(props.messages, "commentThread.open")}
                     </button>
                   ) : (
                     <button
@@ -2771,11 +2851,11 @@ function ReviewThreadItem(props: {
                       onClick={() => void props.onThreadClose?.(props.thread.id)}
                       type="button"
                     >
-                      commentThread.close
+                      {legacyMessage(props.messages, "commentThread.close")}
                     </button>
                   )}
                   <button className="ybtn ybtn-success ybtn-small" type="submit">
-                    button.comment.new
+                    {legacyMessage(props.messages, "button.comment.new")}
                   </button>
                 </div>
               </div>
@@ -2788,6 +2868,7 @@ function ReviewThreadItem(props: {
 }
 
 function ReviewThreadCards(props: {
+  messages?: LegacyMessageLookup;
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   threads: ReviewThread[];
@@ -2808,12 +2889,12 @@ function ReviewThreadCards(props: {
         <ul className="nav nav-tabs" style={{ marginBottom: 10 }}>
           <li className="active">
             <a data-toggle="tab" href="#reviewcards-open">
-              {`issue.state.open ${openThreads.length}`}
+              {`${legacyMessage(props.messages, "issue.state.open")} ${openThreads.length}`}
             </a>
           </li>
           <li>
             <a data-toggle="tab" href="#reviewcards-closed">
-              {`issue.state.closed ${closedThreads.length}`}
+              {`${legacyMessage(props.messages, "issue.state.closed")} ${closedThreads.length}`}
             </a>
           </li>
         </ul>
@@ -2825,6 +2906,7 @@ function ReviewThreadCards(props: {
                 pullRequest={props.pullRequest}
                 runtimeConfig={props.runtimeConfig}
                 thread={thread}
+                messages={props.messages}
               />
             ))}
           </div>
@@ -2835,6 +2917,7 @@ function ReviewThreadCards(props: {
                 pullRequest={props.pullRequest}
                 runtimeConfig={props.runtimeConfig}
                 thread={thread}
+                messages={props.messages}
               />
             ))}
           </div>
@@ -2845,6 +2928,7 @@ function ReviewThreadCards(props: {
 }
 
 function ReviewThreadCard(props: {
+  messages?: LegacyMessageLookup;
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
@@ -2865,7 +2949,7 @@ function ReviewThreadCard(props: {
             <i className="yobicon-comments"></i> {replyCount}
           </span>
         ) : null}
-        <span className="outdated-label">review.outdated</span>
+        <span className="outdated-label">{legacyMessage(props.messages, "review.outdated")}</span>
         <span className="date" title={props.thread.createdLabel}>
           {props.thread.createdLabel}
         </span>
@@ -2880,8 +2964,12 @@ function ReviewThreadCard(props: {
   );
 }
 
-function SelectedPullRequestCommitInfo(props: { commit: PullRequestCommitViewModel }) {
-  const authorLabel = props.commit.authorEmail || "User.anonymous.name";
+function SelectedPullRequestCommitInfo(props: {
+  commit: PullRequestCommitViewModel;
+  messages?: LegacyMessageLookup;
+}) {
+  const authorLabel =
+    props.commit.authorEmail || legacyMessage(props.messages, "User.anonymous.name");
   return (
     <>
       <p className="commitInfo">
@@ -2899,6 +2987,7 @@ function SelectedPullRequestCommitInfo(props: { commit: PullRequestCommitViewMod
 function PullRequestBlockReviewForm(props: {
   csrfToken?: string;
   draft: InlineReviewDraft | null;
+  messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -2977,7 +3066,7 @@ function PullRequestBlockReviewForm(props: {
             )}
             <div className="right-txt">
               <button className="ybtn ybtn-success ybtn-small" type="submit">
-                button.comment.new
+                {legacyMessage(props.messages, "button.comment.new")}
               </button>
             </div>
           </div>
@@ -2992,6 +3081,7 @@ export function PullRequestChangesPage(props: {
   changes: PullRequestChangesResponse | undefined;
   currentUser?: PullRequestCurrentUser;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   selectedCommitId?: string;
   viewerId?: number;
@@ -3121,6 +3211,7 @@ export function PullRequestChangesPage(props: {
       <ReviewThreadItem
         key={thread.id}
         currentUser={props.currentUser}
+        messages={props.messages}
         pullRequest={pr}
         runtimeConfig={props.runtimeConfig}
         thread={thread}
@@ -3179,7 +3270,7 @@ export function PullRequestChangesPage(props: {
                           }
                           type="button"
                         >
-                          button.comment.new
+                          {legacyMessage(props.messages, "button.comment.new")}
                         </button>
                       ) : null}
                       <div className="line-number" data-line-num={line.oldLine ?? ""}>
@@ -3235,7 +3326,7 @@ export function PullRequestChangesPage(props: {
                             disabled={!canComment}
                             type="submit"
                           >
-                            button.comment.new
+                            {legacyMessage(props.messages, "button.comment.new")}
                           </button>
                         </form>
                       </td>
@@ -3271,6 +3362,7 @@ export function PullRequestChangesPage(props: {
               <>
                 <PullRequestOverviewTabs
                   active="changes"
+                  messages={props.messages}
                   pullRequest={pr}
                   runtimeConfig={props.runtimeConfig}
                 />
@@ -3296,7 +3388,11 @@ export function PullRequestChangesPage(props: {
                         {pr.contributor.loginId}
                       </span>
                     </a>
-                    <PullRequestBranchInfo pullRequest={pr} runtimeConfig={props.runtimeConfig} />
+                    <PullRequestBranchInfo
+                      messages={props.messages}
+                      pullRequest={pr}
+                      runtimeConfig={props.runtimeConfig}
+                    />
                   </div>
                 </div>
               </>
@@ -3324,22 +3420,26 @@ export function PullRequestChangesPage(props: {
                             {isOutdatedPullRequestCommit(selectedCommit) ? (
                               <>
                                 {" "}
-                                <span className="outdated-label">review.outdated</span>
+                                <span className="outdated-label">
+                                  {legacyMessage(props.messages, "review.outdated")}
+                                </span>
                               </>
                             ) : null}
                           </span>
                         </>
                       ) : props.selectedCommitId ? (
                         <>
-                          pullRequest.changes.all{" "}
-                          <span className="outdated-label">review.outdated</span>
+                          {legacyMessage(props.messages, "pullRequest.changes.all")}{" "}
+                          <span className="outdated-label">
+                            {legacyMessage(props.messages, "review.outdated")}
+                          </span>
                           {" - "}
                           <strong className="blue-txt mr10 commit-hash">
                             {pullRequestCommitShortId(props.selectedCommitId)}
                           </strong>
                         </>
                       ) : (
-                        "pullRequest.changes.all"
+                        legacyMessage(props.messages, "pullRequest.changes.all")
                       )}
                     </span>
                     <span className="d-caret">
@@ -3349,7 +3449,7 @@ export function PullRequestChangesPage(props: {
                   <ul className="dropdown-menu">
                     <li data-value="All">
                       <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
-                        pullRequest.changes.all
+                        {legacyMessage(props.messages, "pullRequest.changes.all")}
                       </a>
                     </li>
                     <li className="divider"></li>
@@ -3380,7 +3480,9 @@ export function PullRequestChangesPage(props: {
                               {outdated ? (
                                 <>
                                   {" "}
-                                  <span className="outdated-label">review.outdated</span>
+                                  <span className="outdated-label">
+                                    {legacyMessage(props.messages, "review.outdated")}
+                                  </span>
                                 </>
                               ) : null}
                             </span>
@@ -3390,7 +3492,12 @@ export function PullRequestChangesPage(props: {
                     })}
                   </ul>
                 </div>
-                {selectedCommit ? <SelectedPullRequestCommitInfo commit={selectedCommit} /> : null}
+                {selectedCommit ? (
+                  <SelectedPullRequestCommitInfo
+                    commit={selectedCommit}
+                    messages={props.messages}
+                  />
+                ) : null}
                 <div className="diff-body diffs-wrap-scroll">
                   {pr ? (
                     <>
@@ -3399,11 +3506,15 @@ export function PullRequestChangesPage(props: {
                           pr.conflict ? "conflict" : pr.state
                         }`}
                       >
-                        {pr.conflict
-                          ? "pullRequest.state.conflict"
-                          : `pullRequest.state.${pr.state}`}
+                        {legacyMessage(
+                          props.messages,
+                          pr.conflict
+                            ? "pullRequest.state.conflict"
+                            : `pullRequest.state.${pr.state}`,
+                        )}
                       </div>
                       <PullRequestConflictGuide
+                        messages={props.messages}
                         pullRequest={pr}
                         runtimeConfig={props.runtimeConfig}
                         viewerId={props.viewerId}
@@ -3458,7 +3569,7 @@ export function PullRequestChangesPage(props: {
                               type="button"
                             ></button>
                             <button className="ybtn ybtn-success" type="submit">
-                              button.comment.new
+                              {legacyMessage(props.messages, "button.comment.new")}
                             </button>
                           </div>
                         </div>
@@ -3470,12 +3581,14 @@ export function PullRequestChangesPage(props: {
                   <PullRequestBlockReviewForm
                     csrfToken={props.csrfToken}
                     draft={inlineDraft}
+                    messages={props.messages}
                     pullRequest={pr}
                     runtimeConfig={props.runtimeConfig}
                   />
                 ) : null}
               </div>
               <ReviewThreadCards
+                messages={props.messages}
                 pullRequest={pr}
                 runtimeConfig={props.runtimeConfig}
                 threads={cardThreads}

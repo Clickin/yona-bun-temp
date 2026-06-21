@@ -55,6 +55,33 @@ app search boundary therefore remains the canonical `/api/v1` app surface only:
 `crates/migration/src/legacy_external` descriptors or app-server routes for a
 non-existent legacy external search API.
 
+## P1-B Closeout Re-audit
+
+Re-audit on 2026-06-21 found no remaining descriptor-only legacy external
+groups that justify new executable adapter depth. The audited source set is the
+`/-_-api/v1/**` route block in `yona-original/conf/routes`, the corresponding
+legacy controllers listed below, and the 47-row
+`crates/migration/src/legacy_external/mod.rs` descriptor inventory. The
+registry has zero `MigratorDeferred` rows; the four broad migrator-owned rows
+(`ProjectApi.exports`, `ProjectApi.newProject`, `IssueApi.imports`, and
+`IssueApi.newIssues`) already have bounded parser/normalizer coverage, and the
+recent users/projects/issues/boards/milestones/watchers/favorites slices cover
+the app-owned helper payloads with deterministic migration/operator-tool value.
+
+The rows left as sample/metadata-only are intentionally narrow:
+
+- `GET /-_-api/v1/users?query=` returns `loginId` plus an HTML `info`
+  presentation string for the members-page mention helper. Migration tooling has
+  no current need to parse that HTML presentation payload.
+- `GET /-_-api`, `GET /-_-api/v1/`, and `GET /-_-api/v1/hello` are app
+  index/health helpers. Their payloads are already direct runtime compatibility
+  evidence and do not carry legacy migration data.
+
+Therefore P1-B is closed for the current migration-tool scope. Future adapter
+depth requires a concrete migration/operator replay flow and must keep app-owned
+helper rows classified as app-owned without mounting broad runtime
+`/-_-api/v1/**` routes.
+
 ## Legacy Sources
 
 - Route table: `yona-original/conf/routes`, lines 40-90 for `/-_-api/v1/**`.
@@ -160,6 +187,10 @@ tests.
 | Milestones | `crates/migration/src/legacy_external/milestones.rs` | `crates/migration/tests/legacy_external_milestones.rs` | Milestone import compatibility now includes deterministic parser/normalizer depth for `MilestoneApi.newMilestone` payloads while keeping the route app-owned and avoiding broad app-server route expansion. |
 | Watchers/favorites boundary | `crates/migration/src/legacy_external/watchers.rs` | `crates/migration/tests/legacy_external_watchers.rs` | Watcher/favorite helper compatibility now includes deterministic parser/normalizer depth for the existing descriptor-only group that migration/operator tooling can consume: watcher path/query handling for `type=issues|posts`, empty-OK invalid/missing type behavior, watcher response counts/list entries, favorite project/organization/issue list responses, and favorite toggle responses. The adapter preserves recursive wrapped payload consumption and scalar fallbacks where useful for tool-side legacy payload normalization, keeps all rows app-owned, and still prevents UserApi favorite helpers from leaking into WatcherApi route fixtures or broad app-server route expansion. Broader watcher/favorite export snapshots remain future migrator scope only if a migration tool needs them. |
 | Module wiring | `crates/migration/src/legacy_external/mod.rs` | `crates/migration/tests/legacy_external_mod.rs` | Shared endpoint group summaries, status counts, duplicate method/path guards, and module registration for migration tooling, without app-server route mounting. |
+
+The worker split above is complete for P1-B. The only remaining descriptor
+metadata without parser depth is intentionally non-migratory sample evidence
+listed in the closeout re-audit section.
 
 ## Consistency Notes
 

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/$owner/$projectName/branches")({
 
 function CodeBranchesRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const [pendingBranchName, setPendingBranchName] = React.useState("");
   const routeHref = `/${owner}/${projectName}/branches`;
@@ -105,6 +105,7 @@ function CodeBranchesRouteComponent() {
     <CodeBranchListPage
       branchList={branchQuery.data ?? null}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       pendingBranchName={pendingBranchName}
       runtimeConfig={runtimeConfig}
       onDeleteBranch={async (branchName) => {

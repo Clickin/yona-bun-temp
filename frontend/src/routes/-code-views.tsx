@@ -8,6 +8,27 @@ import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-rendere
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
 
+type LegacyMessageLookup = (
+  key: string,
+  options?: { args?: (number | string)[]; fallback?: string },
+) => string;
+
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  argsOrOptions?: (number | string)[] | { args?: (number | string)[]; fallback?: string },
+) {
+  const args = Array.isArray(argsOrOptions) ? argsOrOptions : argsOrOptions?.args;
+  const fallback = args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
+  const fallbackText = Array.isArray(argsOrOptions)
+    ? fallback
+    : (argsOrOptions?.fallback ?? fallback);
+  if (messages) {
+    return messages(key, { args, fallback: fallbackText });
+  }
+  return fallbackText;
+}
+
 const MARKDOWN_CODE_EXTENSIONS = new Set([
   "license",
   "markdown",
@@ -163,7 +184,11 @@ function isSvnProject(detail: ProjectDetailViewModel) {
   );
 }
 
-function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel; runtimeConfig: RuntimeConfig }) {
+function CodeNoHeadBlock(props: {
+  detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
   const detail = props.detail;
   const projectName = detail.projectName || "project";
   const cloneUrl = codeCloneUrl(detail);
@@ -174,12 +199,12 @@ function CodeNoHeadBlock(props: { detail: ProjectDetailViewModel; runtimeConfig:
     <div className="row-fluid code-nohead-wrap">
       <div className="span12">
         <div className="alert alert-block">
-          <h4>code.nohead</h4>
+          <h4>{legacyMessage(props.messages, "code.nohead")}</h4>
         </div>
         {detail.viewerCanUpdate ? (
           isSvn ? (
             <>
-              <h5>code.nohead.svn.clone {siteName}</h5>
+              <h5>{legacyMessage(props.messages, "code.nohead.svn.clone", [siteName])}</h5>
               <pre>
                 <code>{`svn co ${cloneUrl}
 cd ${projectName}/
@@ -190,7 +215,7 @@ svn commit -m "first commit"`}</code>
             </>
           ) : (
             <>
-              <h5>code.nohead.clone {siteName}</h5>
+              <h5>{legacyMessage(props.messages, "code.nohead.clone", [siteName])}</h5>
               <pre>
                 <code>{`git clone ${cloneUrl} ${projectName}
 cd ${projectName}/
@@ -199,7 +224,7 @@ git add README.md
 git commit -m "Hello ${siteName}"
 git push origin master`}</code>
               </pre>
-              <h5>code.nohead.init {siteName}</h5>
+              <h5>{legacyMessage(props.messages, "code.nohead.init", [siteName])}</h5>
               <pre>
                 <code>{`mkdir ${projectName}
 cd ${projectName}/
@@ -210,12 +235,12 @@ git commit -m "Hello ${siteName}"
 git remote add origin ${cloneUrl}
 git push origin master`}</code>
               </pre>
-              <h5>code.nohead.remote {siteName}</h5>
+              <h5>{legacyMessage(props.messages, "code.nohead.remote", [siteName])}</h5>
               <pre>
                 <code>{`git remote add origin ${cloneUrl}
 git push origin master`}</code>
               </pre>
-              <h5>code.nohead.pull.push</h5>
+              <h5>{legacyMessage(props.messages, "code.nohead.pull.push")}</h5>
               <pre>
                 <code>{`git pull origin master
 git push origin master`}</code>
@@ -613,6 +638,7 @@ function commitDiscussionMarkdownCommitReferences(commitDetail: CodeCommitDetail
 export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -647,7 +673,7 @@ export function CodeBrowserPage(props: {
                     "code",
                   )}
                 >
-                  code.files
+                  {legacyMessage(props.messages, "code.files")}
                 </a>
                 <a
                   href={buildProjectHref(
@@ -657,7 +683,7 @@ export function CodeBrowserPage(props: {
                     "commits",
                   )}
                 >
-                  code.commits
+                  {legacyMessage(props.messages, "code.commits")}
                 </a>
                 <a
                   href={buildProjectHref(
@@ -667,12 +693,16 @@ export function CodeBrowserPage(props: {
                     "branches",
                   )}
                 >
-                  title.branches
+                  {legacyMessage(props.messages, "title.branches")}
                 </a>
               </nav>
             ) : null}
             {code?.noHead ? (
-              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
+              <CodeNoHeadBlock
+                detail={detail}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
             ) : (
               <>
                 <div className="code-browse-header">
@@ -747,7 +777,7 @@ export function CodeBrowserPage(props: {
                           selectedBranch,
                         )}
                       >
-                        code.download
+                        {legacyMessage(props.messages, "code.download")}
                       </a>
                     </div>
                   ) : null}
@@ -765,7 +795,7 @@ export function CodeBrowserPage(props: {
                         )}
                         id="new-file-link"
                       >
-                        code.new.file
+                        {legacyMessage(props.messages, "code.new.file")}
                       </a>
                     </div>
                   ) : null}
@@ -780,6 +810,7 @@ export function CodeBrowserPage(props: {
                       runtimeConfig={props.runtimeConfig}
                       selectedBranch={selectedBranch}
                       viewerCanUpdate={detail.viewerCanUpdate}
+                      messages={props.messages}
                     />
                   ) : (
                     <CodeFolderView
@@ -789,6 +820,7 @@ export function CodeBrowserPage(props: {
                       projectName={detail.projectName}
                       runtimeConfig={props.runtimeConfig}
                       selectedBranch={selectedBranch}
+                      messages={props.messages}
                     />
                   )}
                 </div>
@@ -805,6 +837,7 @@ export function CodeCommitDetailPage(props: {
   commitDetail: CodeCommitDetailViewModel | null;
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
@@ -844,7 +877,7 @@ export function CodeCommitDetailPage(props: {
                   selectedBranch,
                 )}
               >
-                code.files
+                {legacyMessage(props.messages, "code.files")}
               </a>
               <a
                 aria-current="page"
@@ -855,7 +888,7 @@ export function CodeCommitDetailPage(props: {
                   selectedBranch,
                 )}
               >
-                code.commits
+                {legacyMessage(props.messages, "code.commits")}
               </a>
               <a
                 href={buildProjectHref(
@@ -865,11 +898,15 @@ export function CodeCommitDetailPage(props: {
                   "branches",
                 )}
               >
-                title.branches
+                {legacyMessage(props.messages, "title.branches")}
               </a>
             </nav>
             {commitDetail?.noHead ? (
-              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
+              <CodeNoHeadBlock
+                detail={detail}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
             ) : (
               <CodeCommitDiffView
                 commitDetail={commitDetail}
@@ -880,14 +917,15 @@ export function CodeCommitDetailPage(props: {
                 onDeleteComment={props.onDeleteComment}
                 onOpenThread={props.onOpenThread}
                 onUpdateComment={props.onUpdateComment}
+                messages={props.messages}
               />
             )}
           </div>
           <button className="pull-left ybtn" id="watch-button" type="button">
-            notification.watch
+            {legacyMessage(props.messages, "notification.watch")}
           </button>
           <a className="ybtn pull-right" href={listHref}>
-            button.list
+            {legacyMessage(props.messages, "button.list")}
           </a>
         </div>
       </div>
@@ -898,6 +936,7 @@ export function CodeCommitDetailPage(props: {
 export function CodeComparePage(props: {
   compare: CodeCompareViewModel | null;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -914,14 +953,18 @@ export function CodeComparePage(props: {
         <div className="project-page-wrap">
           <div className="code-browse-wrap">
             {compare?.noHead ? (
-              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
+              <CodeNoHeadBlock
+                detail={detail}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
             ) : (
               <>
                 <p className="commitInfo">
                   <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
                 </p>
                 {files.length === 0 ? (
-                  <div className="alert">code.noChanges</div>
+                  <div className="alert">{legacyMessage(props.messages, "code.noChanges")}</div>
                 ) : (
                   <div className="diff-body discommentable">
                     {files.map((file) => (
@@ -946,6 +989,7 @@ export function CodeComparePage(props: {
 export function CodeBranchListPage(props: {
   branchList: CodeBranchListViewModel | null;
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   onDeleteBranch: (branchName: string) => Promise<void>;
   onSetDefaultBranch: (branchName: string) => Promise<void>;
   pendingBranchName?: string;
@@ -973,7 +1017,7 @@ export function CodeBranchListPage(props: {
                       defaultBranch,
                     )}
                   >
-                    code.files
+                    {legacyMessage(props.messages, "code.files")}
                   </a>
                 </li>
                 <li>
@@ -985,7 +1029,7 @@ export function CodeBranchListPage(props: {
                       defaultBranch,
                     )}
                   >
-                    code.commits
+                    {legacyMessage(props.messages, "code.commits")}
                   </a>
                 </li>
                 <li className="active">
@@ -998,12 +1042,16 @@ export function CodeBranchListPage(props: {
                       "branches",
                     )}
                   >
-                    title.branches
+                    {legacyMessage(props.messages, "title.branches")}
                   </a>
                 </li>
               </ul>
               {branchList?.noHead ? (
-                <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
+                <CodeNoHeadBlock
+                  detail={detail}
+                  messages={props.messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
               ) : (
                 <CodeBranchTable
                   branchList={branchList}
@@ -1012,6 +1060,7 @@ export function CodeBranchListPage(props: {
                   onSetDefaultBranch={props.onSetDefaultBranch}
                   pendingBranchName={props.pendingBranchName}
                   runtimeConfig={props.runtimeConfig}
+                  messages={props.messages}
                 />
               )}
             </div>
@@ -1025,6 +1074,7 @@ export function CodeBranchListPage(props: {
 function CodeBranchTable(props: {
   branchList: CodeBranchListViewModel | null;
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   onDeleteBranch: (branchName: string) => Promise<void>;
   onSetDefaultBranch: (branchName: string) => Promise<void>;
   pendingBranchName?: string;
@@ -1038,9 +1088,9 @@ function CodeBranchTable(props: {
     <table className="table branch-list-wrap">
       <thead className="thead">
         <tr>
-          <th>title.branches</th>
-          <th>code.branches.commit</th>
-          <th>code.branches.pullRequest</th>
+          <th>{legacyMessage(props.messages, "title.branches")}</th>
+          <th>{legacyMessage(props.messages, "code.branches.commit")}</th>
+          <th>{legacyMessage(props.messages, "code.branches.pullRequest")}</th>
           {showActions ? <th></th> : null}
         </tr>
       </thead>
@@ -1057,6 +1107,7 @@ function CodeBranchTable(props: {
             pending={props.pendingBranchName === branch.name}
             runtimeConfig={props.runtimeConfig}
             showActions={showActions}
+            messages={props.messages}
           />
         ))}
       </tbody>
@@ -1069,6 +1120,7 @@ function CodeBranchRow(props: {
   canDelete: boolean;
   canUpdate: boolean;
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   onDeleteBranch: (branchName: string) => Promise<void>;
   onSetDefaultBranch: (branchName: string) => Promise<void>;
   pending: boolean;
@@ -1090,7 +1142,9 @@ function CodeBranchRow(props: {
           {branch.shortName || branch.name}
         </a>
         {branch.isDefault ? (
-          <span className="headBranch ml10">code.branches.defaultBranch</span>
+          <span className="headBranch ml10">
+            {legacyMessage(props.messages, "code.branches.defaultBranch")}
+          </span>
         ) : null}
       </td>
       <td className="commit">
@@ -1125,12 +1179,17 @@ function CodeBranchRow(props: {
               branch.pullRequest.projectName,
               branch.pullRequest.pullRequestNumber,
             )}
-            title={`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`}
+            title={legacyMessage(
+              props.messages,
+              `pullRequest.state.${branch.pullRequest.state.toLowerCase()}`,
+            )}
           >
             {`pullRequest-${branch.pullRequest.pullRequestNumber}`}
           </a>
         ) : (
-          <span className="disabled">code.branches.noPullRequest</span>
+          <span className="disabled">
+            {legacyMessage(props.messages, "code.branches.noPullRequest")}
+          </span>
         )}
       </td>
       {props.showActions ? (
@@ -1151,7 +1210,7 @@ function CodeBranchRow(props: {
               }}
               type="button"
             >
-              code.branches.setAsDefault
+              {legacyMessage(props.messages, "code.branches.setAsDefault")}
             </button>
           ) : null}
           {props.canDelete && !branch.isDefault ? (
@@ -1169,7 +1228,7 @@ function CodeBranchRow(props: {
                 void props.onDeleteBranch(branch.name);
               }}
             >
-              button.delete
+              {legacyMessage(props.messages, "button.delete")}
             </a>
           ) : null}
         </td>
@@ -1181,6 +1240,7 @@ function CodeBranchRow(props: {
 function CodeCommitDiffView(props: {
   commitDetail: CodeCommitDetailViewModel | null;
   csrfToken?: string;
+  messages?: LegacyMessageLookup;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
@@ -1269,7 +1329,9 @@ function CodeCommitDiffView(props: {
       <div className="diffs-wrap">
         <div className="commitInfo">
           <div className="commitAuthor">
-            <strong>{commit?.authorName || "User.anonymous.name"}</strong>
+            <strong>
+              {commit?.authorName || legacyMessage(props.messages, "User.anonymous.name")}
+            </strong>
             {commit?.authorEmail ? <span>{` <${commit.authorEmail}>`}</span> : null}
             {commit?.authorDate ? (
               <span className="ago" title={commit.authorDate}>
@@ -1420,7 +1482,7 @@ function CodeCommitDiffView(props: {
                                     disabled={!canComment}
                                     type="submit"
                                   >
-                                    button.comment.new
+                                    {legacyMessage(props.messages, "button.comment.new")}
                                   </button>
                                 </form>
                               </td>
@@ -1444,6 +1506,7 @@ function CodeCommitDiffView(props: {
                                     onDeleteComment={props.onDeleteComment}
                                     onOpenThread={props.onOpenThread}
                                     onUpdateComment={props.onUpdateComment}
+                                    messages={props.messages}
                                   />
                                 ))}
                               </td>
@@ -1479,6 +1542,7 @@ function CodeCommitDiffView(props: {
                     onDeleteComment={props.onDeleteComment}
                     onOpenThread={props.onOpenThread}
                     onUpdateComment={props.onUpdateComment}
+                    messages={props.messages}
                   />
                 ))
               : null}
@@ -1520,7 +1584,7 @@ function CodeCommitDiffView(props: {
               <div className="write-comment-wrap">
                 <div className="right-txt">
                   <button className="ybtn ybtn-success" disabled={!canComment} type="submit">
-                    button.comment.new
+                    {legacyMessage(props.messages, "button.comment.new")}
                   </button>
                 </div>
               </div>
@@ -1537,19 +1601,19 @@ function CodeCommitDiffView(props: {
           <ul className="nav nav-tabs">
             <li className="active">
               <a data-toggle="tab" href="#reviewcards-open">
-                {`issue.state.open ${openThreads.length}`}
+                {`${legacyMessage(props.messages, "issue.state.open")} ${openThreads.length}`}
               </a>
             </li>
             <li>
               <a data-toggle="tab" href="#reviewcards-closed">
-                {`issue.state.closed ${closedThreads.length}`}
+                {`${legacyMessage(props.messages, "issue.state.closed")} ${closedThreads.length}`}
               </a>
             </li>
           </ul>
           <div className="tab-content review-list">
             <div className="tab-pane active" id="reviewcards-open">
               {openThreads.length === 0 ? (
-                <span>issue.state.open 0</span>
+                <span>{`${legacyMessage(props.messages, "issue.state.open")} 0`}</span>
               ) : (
                 openThreads.map((thread) => (
                   <CommitDiscussionReviewCard key={thread.id} thread={thread} />
@@ -1558,7 +1622,7 @@ function CodeCommitDiffView(props: {
             </div>
             <div className="tab-pane" id="reviewcards-closed">
               {closedThreads.length === 0 ? (
-                <span>issue.state.closed 0</span>
+                <span>{`${legacyMessage(props.messages, "issue.state.closed")} 0`}</span>
               ) : (
                 closedThreads.map((thread) => (
                   <CommitDiscussionReviewCard key={thread.id} thread={thread} />
@@ -1590,6 +1654,7 @@ function CommitDiscussionReviewCard(props: { thread: CodeReviewThreadViewModel }
 function CommitDiscussionThread(props: {
   commitDetail: CodeCommitDetailViewModel;
   csrfToken?: string;
+  messages?: LegacyMessageLookup;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
@@ -1677,7 +1742,9 @@ function CommitDiscussionThread(props: {
                   {comment.authorLoginId}
                 </a>
               ) : (
-                <span className="avatar-wrap">{comment.authorLabel || "issue.noAuthor"}</span>
+                <span className="avatar-wrap">
+                  {comment.authorLabel || legacyMessage(props.messages, "issue.noAuthor")}
+                </span>
               )}
             </div>
             <div className="media-body">
@@ -1693,7 +1760,9 @@ function CommitDiscussionThread(props: {
                       <strong>{comment.authorLoginId} </strong>
                     </a>
                   ) : (
-                    <strong>{comment.authorLabel || "issue.noAuthor"}</strong>
+                    <strong>
+                      {comment.authorLabel || legacyMessage(props.messages, "issue.noAuthor")}
+                    </strong>
                   )}
                 </span>
                 <span className="ago">
@@ -1715,7 +1784,7 @@ function CommitDiscussionThread(props: {
                         onClick={() => beginEdit(comment)}
                         type="button"
                       >
-                        button.edit
+                        {legacyMessage(props.messages, "button.edit")}
                       </button>
                     ) : null}
                     <button
@@ -1729,7 +1798,7 @@ function CommitDiscussionThread(props: {
                       onClick={() => {
                         void props.onDeleteComment?.(comment.id);
                       }}
-                      title="common.comment.delete"
+                      title={legacyMessage(props.messages, "common.comment.delete")}
                       type="button"
                     >
                       <i className="yobicon-trash"></i>
@@ -1758,7 +1827,7 @@ function CommitDiscussionThread(props: {
                     previewId={`preview-${comment.id}`}
                   >
                     <MarkdownAttachmentTextarea
-                      ariaLabel="Edit commit comment"
+                      ariaLabel={legacyMessage(props.messages, "button.edit")}
                       className="editorSeries content comment nm"
                       csrfToken={props.csrfToken}
                       editorMode="update-comment-body"
@@ -1774,18 +1843,20 @@ function CommitDiscussionThread(props: {
                   </LegacyMarkdownEditorShell>
                   <div className="upload-drop-here">
                     <div className="msg-wrap">
-                      <div className="msg">common.attach.dropFilesHere</div>
+                      <div className="msg">
+                        {legacyMessage(props.messages, "common.attach.dropFilesHere")}
+                      </div>
                     </div>
                   </div>
                   <button className="ybtn ybtn-success ybtn-small" type="submit">
-                    button.save
+                    {legacyMessage(props.messages, "button.save")}
                   </button>
                   <button
                     className="ybtn ybtn-small"
                     onClick={() => setEditingCommentId(null)}
                     type="button"
                   >
-                    button.cancel
+                    {legacyMessage(props.messages, "button.cancel")}
                   </button>
                 </form>
               ) : (
@@ -1819,7 +1890,10 @@ function CommitDiscussionThread(props: {
           }}
           type="button"
         >
-          {state === "closed" ? "commentThread.open" : "commentThread.close"}
+          {legacyMessage(
+            props.messages,
+            state === "closed" ? "commentThread.open" : "commentThread.close",
+          )}
         </button>
       </div>
       <form
@@ -1837,7 +1911,7 @@ function CommitDiscussionThread(props: {
           previewId={`preview-thread-comment-${props.thread.id}`}
         >
           <MarkdownAttachmentTextarea
-            ariaLabel="Reply to commit comment"
+            ariaLabel={legacyMessage(props.messages, "button.comment.new")}
             className="editorSeries content comment nm"
             csrfToken={props.csrfToken}
             disabled={!canComment}
@@ -1853,7 +1927,7 @@ function CommitDiscussionThread(props: {
           />
         </LegacyMarkdownEditorShell>
         <button className="ybtn" disabled={!canComment} type="submit">
-          button.comment.new
+          {legacyMessage(props.messages, "button.comment.new")}
         </button>
       </form>
     </div>
@@ -1863,6 +1937,7 @@ function CommitDiscussionThread(props: {
 export function CodeHistoryPage(props: {
   detail: ProjectDetailViewModel | null;
   history: CodeHistoryViewModel | null;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -1881,7 +1956,11 @@ export function CodeHistoryPage(props: {
         <div className="project-page-wrap">
           <section className="code-browse-wrap">
             {history?.noHead ? (
-              <CodeNoHeadBlock detail={detail} runtimeConfig={props.runtimeConfig} />
+              <CodeNoHeadBlock
+                detail={detail}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
             ) : (
               <>
                 {selectedPath ? (
@@ -1947,7 +2026,7 @@ export function CodeHistoryPage(props: {
                           selectedBranch,
                         )}
                       >
-                        code.files
+                        {legacyMessage(props.messages, "code.files")}
                       </a>
                       <a
                         aria-current="page"
@@ -1958,7 +2037,7 @@ export function CodeHistoryPage(props: {
                           selectedBranch,
                         )}
                       >
-                        code.commits
+                        {legacyMessage(props.messages, "code.commits")}
                       </a>
                       <a
                         href={buildProjectHref(
@@ -1968,7 +2047,7 @@ export function CodeHistoryPage(props: {
                           "branches",
                         )}
                       >
-                        title.branches
+                        {legacyMessage(props.messages, "title.branches")}
                       </a>
                     </nav>
                   </div>
@@ -1979,6 +2058,7 @@ export function CodeHistoryPage(props: {
                   projectName={detail.projectName}
                   runtimeConfig={props.runtimeConfig}
                   selectedBranch={selectedBranch}
+                  messages={props.messages}
                 />
               </>
             )}
@@ -1991,6 +2071,7 @@ export function CodeHistoryPage(props: {
 
 function CodeHistoryTable(props: {
   history: CodeHistoryViewModel | null;
+  messages?: LegacyMessageLookup;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -2056,14 +2137,14 @@ function CodeHistoryTable(props: {
                 <strong>@</strong>
               </td>
               <td className="messages">
-                <strong>code.commitMsg</strong>
+                <strong>{legacyMessage(props.messages, "code.commitMsg")}</strong>
               </td>
               {path ? <td className="browse"></td> : null}
               <td className="date">
-                <strong>code.authorDate</strong>
+                <strong>{legacyMessage(props.messages, "code.authorDate")}</strong>
               </td>
               <td className="author">
-                <strong>code.author</strong>
+                <strong>{legacyMessage(props.messages, "code.author")}</strong>
               </td>
             </tr>
           </thead>
@@ -2071,7 +2152,7 @@ function CodeHistoryTable(props: {
             {commits.length === 0 ? (
               <tr>
                 <td className="warning-none" colSpan={path ? 5 : 4}>
-                  code.nocommits
+                  {legacyMessage(props.messages, "code.nocommits")}
                 </td>
               </tr>
             ) : (
@@ -2090,12 +2171,15 @@ function CodeHistoryTable(props: {
                       <button
                         className="ybtn ybtn-mini btn-copy-commitId"
                         data-commit-id={commit.commitId}
-                        title="code.copyCommitId"
+                        title={legacyMessage(props.messages, "code.copyCommitId")}
                         type="button"
                       >
                         <i className="yobicon-copy"></i>
                       </button>
-                      <a href={showCommitHref} title="code.showCommit">
+                      <a
+                        href={showCommitHref}
+                        title={legacyMessage(props.messages, "code.showCommit")}
+                      >
                         {commit.commitShortId}
                       </a>
                     </td>
@@ -2105,7 +2189,11 @@ function CodeHistoryTable(props: {
                           <i className="yobicon-comments"></i> {commit.commentCount}
                         </span>
                       ) : null}
-                      <CodeCommitMessage commit={commit} href={showCommitHref} />
+                      <CodeCommitMessage
+                        commit={commit}
+                        href={showCommitHref}
+                        messages={props.messages}
+                      />
                     </td>
                     {path ? (
                       <td className="browse">
@@ -2118,9 +2206,9 @@ function CodeHistoryTable(props: {
                             commit.commitShortId,
                             path,
                           )}
-                          title="code.showCodeAtThisCommit"
+                          title={legacyMessage(props.messages, "code.showCodeAtThisCommit")}
                         >
-                          code.showCode
+                          {legacyMessage(props.messages, "code.showCode")}
                         </a>
                       </td>
                     ) : null}
@@ -2128,7 +2216,11 @@ function CodeHistoryTable(props: {
                       {commit.authorDate}
                     </td>
                     <td className="author">
-                      <CodeHistoryAuthorCell commit={commit} runtimeConfig={props.runtimeConfig} />
+                      <CodeHistoryAuthorCell
+                        commit={commit}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                     </td>
                   </tr>
                 );
@@ -2140,12 +2232,12 @@ function CodeHistoryTable(props: {
       <div className="actrow margin-top-20">
         {history && history.hasNewer ? (
           <a className="ybtn pull-left" href={newerHref}>
-            code.newer
+            {legacyMessage(props.messages, "code.newer")}
           </a>
         ) : null}
         {history && history.hasOlder ? (
           <a className="ybtn pull-left" href={olderHref}>
-            code.older
+            {legacyMessage(props.messages, "code.older")}
           </a>
         ) : null}
       </div>
@@ -2156,6 +2248,7 @@ function CodeHistoryTable(props: {
 function CodeFolderView(props: {
   entries: CodeBrowserViewModel["entries"];
   listPath: string;
+  messages?: LegacyMessageLookup;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -2164,7 +2257,7 @@ function CodeFolderView(props: {
   if (props.entries.length === 0) {
     return (
       <div className="alert alert-warning nm" style={{ borderTop: 0, paddingLeft: 23 }}>
-        code.nofiles
+        {legacyMessage(props.messages, "code.nofiles")}
       </div>
     );
   }
@@ -2176,13 +2269,13 @@ function CodeFolderView(props: {
     >
       <div className="row-fluid listhead">
         <div className="span6 filename">
-          <strong>code.filename</strong>
+          <strong>{legacyMessage(props.messages, "code.filename")}</strong>
         </div>
         <div className="span4 commitMsg">
-          <strong>code.commitMsg</strong>
+          <strong>{legacyMessage(props.messages, "code.commitMsg")}</strong>
         </div>
         <div className="span2 commitDate">
-          <strong>code.commitDate</strong>
+          <strong>{legacyMessage(props.messages, "code.commitDate")}</strong>
         </div>
       </div>
       {props.entries.map((entry) => {
@@ -2229,7 +2322,9 @@ function CodeFolderView(props: {
                 </a>
               ) : null}
               <span className="ml5">
-                <a href={commitHref}>{entry.commitMessage || "code.commitMsg.empty"}</a>
+                <a href={commitHref}>
+                  {entry.commitMessage || legacyMessage(props.messages, "code.commitMsg.empty")}
+                </a>
               </span>
             </div>
             <div className="span1 commitDate">{entry.commitDate}</div>
@@ -2242,6 +2337,7 @@ function CodeFolderView(props: {
 
 function CodeFileView(props: {
   file: NonNullable<CodeBrowserViewModel["file"]>;
+  messages?: LegacyMessageLookup;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -2274,6 +2370,7 @@ function CodeFileView(props: {
     runtimeConfig: props.runtimeConfig,
     selectedBranch: props.selectedBranch,
     viewerCanUpdate: props.viewerCanUpdate,
+    messages: props.messages,
   };
   if (props.file.isBinary) {
     return (
@@ -2291,7 +2388,8 @@ function CodeFileView(props: {
               <span className="filesize">{`${props.file.size} bytes`}</span>
               <br />
               <a className="filehref ybtn" href={rawHref} target="_blank">
-                <i className="yobicon-download-alt yobicon-white vmiddle"></i> button.download
+                <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
+                {legacyMessage(props.messages, "button.download")}
               </a>
             </p>
           </div>
@@ -2304,10 +2402,10 @@ function CodeFileView(props: {
       <div className="file-wrap" data-type="file">
         <CodeFileHeader {...headerProps} showRaw={false} />
         <p>
-          code.tooBigFileForCodeBrowser
+          {legacyMessage(props.messages, "code.tooBigFileForCodeBrowser")}
           <br />
           <a className="filehref ybtn" href={rawHref} target="_blank">
-            code.viewRaw
+            {legacyMessage(props.messages, "code.viewRaw")}
           </a>
         </p>
       </div>
@@ -2505,6 +2603,7 @@ function codeLineEndingType(file: NonNullable<CodeBrowserViewModel["file"]>) {
 
 function CodeFileHeader(props: {
   file: NonNullable<CodeBrowserViewModel["file"]>;
+  messages?: LegacyMessageLookup;
   openHref: string;
   ownerName?: string;
   projectName?: string;
@@ -2569,7 +2668,7 @@ function CodeFileHeader(props: {
             </a>
           ) : null}
           <a className="ml5" href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}>
-            {props.file.authorLabel || "User.anonymous.name"}
+            {props.file.authorLabel || legacyMessage(props.messages, "User.anonymous.name")}
           </a>
         </span>
         <span id="commitDate" className="commitDate">
@@ -2590,7 +2689,7 @@ function CodeFileHeader(props: {
           )}
         </span>
         <span id="commitMessage" className="commitMsg">
-          {props.file.commitMessage || "code.commitMsg.empty"}
+          {props.file.commitMessage || legacyMessage(props.messages, "code.commitMsg.empty")}
         </span>
         {!props.file.isBinary ? <span>{codeLineEndingType(props.file)}</span> : null}
       </div>
@@ -2602,21 +2701,22 @@ function CodeFileHeader(props: {
         ) : null}
         {props.showRaw && editHref ? (
           <a className="ybtn" href={editHref}>
-            Edit
+            {legacyMessage(props.messages, "button.edit", { fallback: "Edit" })}
           </a>
         ) : null}
         <a
           className="ybtn"
-          data-content="code.open.desc"
+          data-content={legacyMessage(props.messages, "code.open.desc")}
           href={props.openHref}
           id="open-in-browser"
           target="_blank"
         >
-          <i className="yobicon-download-alt yobicon-white vmiddle"></i> code.open
+          <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
+          {legacyMessage(props.messages, "code.open")}
         </a>
         {historyHref ? (
           <a className="ybtn" href={historyHref}>
-            code.history
+            {legacyMessage(props.messages, "code.history")}
           </a>
         ) : null}
       </div>
@@ -2627,8 +2727,10 @@ function CodeFileHeader(props: {
 function CodeCommitMessage(props: {
   commit: CodeHistoryViewModel["commits"][number];
   href: string;
+  messages?: LegacyMessageLookup;
 }) {
-  const shortMessage = props.commit.shortMessage || "code.commitMsg.empty";
+  const shortMessage =
+    props.commit.shortMessage || legacyMessage(props.messages, "code.commitMsg.empty");
   const messageLines = props.commit.message.split("\n");
   const hasDescription = messageLines.length > 1;
   const description = messageLines.slice(1).join("\n");
@@ -2651,6 +2753,7 @@ function CodeCommitMessage(props: {
 
 function CodeHistoryAuthorCell(props: {
   commit: CodeHistoryViewModel["commits"][number];
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const commit = props.commit;
@@ -2682,7 +2785,7 @@ function CodeHistoryAuthorCell(props: {
   if (commit.authorName) {
     return <span>{commit.authorName}</span>;
   }
-  return <span>User.anonymous.name</span>;
+  return <span>{legacyMessage(props.messages, "User.anonymous.name")}</span>;
 }
 
 function codeAuthorHref(runtimeConfig: RuntimeConfig | undefined, loginId: string | undefined) {

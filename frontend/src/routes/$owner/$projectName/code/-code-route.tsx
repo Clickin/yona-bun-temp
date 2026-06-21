@@ -21,7 +21,7 @@ export function CodeBrowserRouteView(props: {
   const projectName = props.projectName;
   const branch = props.branch ?? "";
   const path = props.path ?? "";
-  const { bootstrapping, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/code`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -80,5 +80,12 @@ export function CodeBrowserRouteView(props: {
     return <BadRequestPage href={routeHref} />;
   }
 
-  return <CodeBrowserPage code={code} detail={detail} runtimeConfig={runtimeConfig} />;
+  return (
+    <CodeBrowserPage
+      code={code}
+      detail={detail}
+      messages={messages}
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }
