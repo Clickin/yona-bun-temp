@@ -116,9 +116,14 @@ P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
   base-path, asset, session, and REST project smoke endpoints.
 - P0-D Kubernetes viability: no canonical k8s, Kubernetes, Helm, or manifest
   files were found in the repo. No local manifest smoke was run. Kubernetes
-  remains a non-blocking deployment guidance follow-up; `SPEC.md` Section 1.4
-  release baseline is still SFX plus Docker/base-path, not maintained k8s
-  manifests.
+  remains non-baseline: `SPEC.md` Section 1.4 release baseline is still SFX plus
+  Docker/base-path, not maintained k8s manifests. The deployment guidance
+  follow-up is refined in `docs/deployment/kubernetes-reference.md` as a
+  reference-only operator checklist aligned with the current Docker image,
+  `YONA_BASE_PATH`, `YONA_CONFIG_TOML`, `YONA_DATABASE_URL`,
+  `YONA_SCHEMA_POLICY`, `YONA_USE_EMBEDDED_ASSETS`, `YONA_DATA`, and the
+  `repo/` plus `uploads/` data-root split; the text-level contract is covered
+  by `tests/kubernetes-guidance-contract.test.mjs`.
 
 ## Phase 1: Migration And Data Safety
 
@@ -196,6 +201,11 @@ users, projects, project members, labels, and milestones as validation errors
 instead of silent skips; live import rejects those reports before any mutation.
 Focused coverage:
 `site_admin_contract::site_admin_import_live_preflight_rejects_duplicate_resource_keys_without_partial_writes`.
+Portable embedded attachments now also require a positive legacy attachment
+`id`; dry-run/live preflight rejects non-positive portable IDs with
+`site.import.attachment.invalidId` before creating DB rows, final upload files,
+or staging directories. Focused coverage:
+`site_admin_contract::site_admin_import_live_preflight_rejects_non_positive_portable_attachment_id_without_partial_writes`.
 `crates/migration` now provides the bounded external consumer for that artifact:
 the `import_checkpoint` library module and `yobi-import-checkpoint` CLI read a
 saved dry-run or live `/sites/import` JSON report from stdin or a file and emit a
@@ -536,12 +546,20 @@ review controls from `code/view.scala.html`, `code/partial_view_file.scala.html`
 pull-request review, reviewer, and shared button labels now flow from the same
 lookup boundary while preserving literal key fallback without a provider.
 Focused coverage is `frontend/src/project-code-browser-routing.spec.ts` and
-`frontend/src/pull-request-review-i18n.spec.tsx`. Remaining app-wide opt-in
-scope is other existing controls that still render known legacy keys/copy as
-literal fallback text, including route loading shells and broader PR
-list/form/review-list controls not covered by the detail/change slices. No
-language selector or settings screen was added because the re-audit found no
-corresponding legacy UI surface.
+`frontend/src/pull-request-review-i18n.spec.tsx`. P4-A-PrListFormReviewI18n
+continuation covers PR/review route loading shells plus the remaining PR list,
+recently-pushed branch prompt, PR create/edit form, merge-result commit table,
+and project review-list controls from `git/list.scala.html`,
+`git/partial_search.scala.html`, `git/partial_recently_pushed_branches.scala.html`,
+`git/create.scala.html`, `git/edit.scala.html`, `reviewthread/list.scala.html`,
+and `reviewthread/partial_list.scala.html`: the known `pullRequest.*`,
+`review.*`, `title.*`, `code.*`, `issue.downloadAsExcel`, and shared
+pagination/loading labels now flow from the same lookup boundary while
+preserving literal key fallback without a provider. Focused coverage is
+`frontend/src/pull-request-list-form-review-i18n.spec.tsx`. Remaining app-wide
+opt-in scope is other existing controls that still render known legacy keys/copy
+as literal fallback text. No language selector or settings screen was added
+because the re-audit found no corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

@@ -3834,6 +3834,17 @@ fn rest_site_import_dry_run_attachments(
     for attachment in attachments {
         match rest_site_import_portable_attachment_bytes(service, attachment) {
             Ok(Some(_bytes)) => {
+                if attachment.id <= 0 {
+                    would_skip.attachments += 1;
+                    rest_site_import_push_validation_error(
+                        validation_errors,
+                        section,
+                        section_index,
+                        "id",
+                        "site.import.attachment.invalidId",
+                    );
+                    continue;
+                }
                 if attachment.id > 0 && !state.payload_portable_attachment_ids.insert(attachment.id)
                 {
                     would_skip.attachments += 1;

@@ -884,6 +884,7 @@ function LegacyPageNavigation(props: {
 
 function ProjectRecentlyPushedBranches(props: {
   branches: PullRequestPushedBranch[];
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   if (props.branches.length === 0) {
@@ -892,7 +893,7 @@ function ProjectRecentlyPushedBranches(props: {
 
   return (
     <>
-      <h5>pullRequest.pushed.branches.title</h5>
+      <h5>{legacyMessage(props.messages, "pullRequest.pushed.branches.title")}</h5>
       <div className="alert alert-info">
         {props.branches.map((branch) => {
           const params = new URLSearchParams();
@@ -913,7 +914,7 @@ function ProjectRecentlyPushedBranches(props: {
                   `newPullRequestForm?${params.toString()}`,
                 )}
               >
-                pullRequest
+                {legacyMessage(props.messages, "pullRequest")}
               </a>
               <a
                 className="close"
@@ -976,6 +977,7 @@ export function ProjectPullRequestListPage(props: {
             <div className="span10 span-hard-wrap" id="span10">
               <ProjectRecentlyPushedBranches
                 branches={list?.recentlyPushedBranches ?? []}
+                messages={props.messages}
                 runtimeConfig={props.runtimeConfig}
               />
               <div className="pull-right">
@@ -1206,6 +1208,7 @@ export function ProjectPullRequestFormPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   formOptions: PullRequestFormOptionsResponse | undefined;
+  messages?: LegacyMessageLookup;
   mode: "create" | "edit";
   runtimeConfig: RuntimeConfig;
   onSubmit: (input: PullRequestFormSubmitInput) => Promise<void>;
@@ -1275,7 +1278,7 @@ export function ProjectPullRequestFormPage(props: {
           <div className="content-wrap frm-wrap">
             <section className="pull-request-wrap">
               <header className="board-header issue">
-                <h1>{formTitle}</h1>
+                <h1>{legacyMessage(props.messages, formTitle)}</h1>
                 <div className="pullRequest-branchInfo">
                   <span>{`${detail.ownerName}/${detail.projectName}`}</span>
                   {initialPullRequest ? (
@@ -1321,7 +1324,7 @@ export function ProjectPullRequestFormPage(props: {
               >
                 <div className="pull-request-branches">
                   <label htmlFor="fromProjectId">
-                    pullRequest.from
+                    {legacyMessage(props.messages, "pullRequest.from")}
                     <select
                       disabled={editMode}
                       id="fromProjectId"
@@ -1337,7 +1340,7 @@ export function ProjectPullRequestFormPage(props: {
                     </select>
                   </label>
                   <label htmlFor="fromBranch">
-                    pullRequest.select.branch
+                    {legacyMessage(props.messages, "pullRequest.select.branch")}
                     <select
                       disabled={editMode}
                       id="fromBranch"
@@ -1356,7 +1359,7 @@ export function ProjectPullRequestFormPage(props: {
                     </select>
                   </label>
                   <label htmlFor="toProjectId">
-                    pullRequest.to
+                    {legacyMessage(props.messages, "pullRequest.to")}
                     <select
                       disabled={editMode}
                       id="toProjectId"
@@ -1372,7 +1375,7 @@ export function ProjectPullRequestFormPage(props: {
                     </select>
                   </label>
                   <label htmlFor="toBranch">
-                    pullRequest.select.branch
+                    {legacyMessage(props.messages, "pullRequest.select.branch")}
                     <select
                       disabled={editMode}
                       id="toBranch"
@@ -1392,7 +1395,7 @@ export function ProjectPullRequestFormPage(props: {
                   </label>
                 </div>
                 <label htmlFor="pullRequestState">
-                  title
+                  {legacyMessage(props.messages, "title")}
                   <input
                     id="pullRequestState"
                     name="title"
@@ -1441,7 +1444,7 @@ export function ProjectPullRequestFormPage(props: {
                   <span className="num-badge vmiddle-inline" id="numOfCommits">
                     {formCommitCount}
                   </span>
-                  <span> pullRequest.menu.commit</span>
+                  <span> {legacyMessage(props.messages, "pullRequest.menu.commit")}</span>
                   <div
                     className="code-browser-wrap"
                     data-commits={formCommitCount}
@@ -1452,7 +1455,7 @@ export function ProjectPullRequestFormPage(props: {
                   >
                     {mergeResultQuery.isError ? (
                       <div>
-                        <h5>pullRequest.diff.noChanges</h5>
+                        <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
                       </div>
                     ) : mergeResult?.commits.length ? (
                       <div className="commit-wrap">
@@ -1463,13 +1466,13 @@ export function ProjectPullRequestFormPage(props: {
                                 <strong>@</strong>
                               </td>
                               <td className="messages">
-                                <strong>code.commitMsg</strong>
+                                <strong>{legacyMessage(props.messages, "code.commitMsg")}</strong>
                               </td>
                               <td className="date">
-                                <strong>code.commitDate</strong>
+                                <strong>{legacyMessage(props.messages, "code.commitDate")}</strong>
                               </td>
                               <td className="author">
-                                <strong>code.author</strong>
+                                <strong>{legacyMessage(props.messages, "code.author")}</strong>
                               </td>
                             </tr>
                           </thead>
@@ -1504,22 +1507,22 @@ export function ProjectPullRequestFormPage(props: {
                       </div>
                     ) : (
                       <div>
-                        <h5>pullRequest.diff.noChanges</h5>
+                        <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="actions">
                   <button className="ybtn ybtn-success" disabled={submitting} type="submit">
-                    {editMode ? "button.save" : "pullRequest.send"}
+                    {legacyMessage(props.messages, editMode ? "button.save" : "pullRequest.send")}
                   </button>
                   <a className="ybtn" href={backHref}>
-                    button.cancel
+                    {legacyMessage(props.messages, "button.cancel")}
                   </a>
                 </div>
                 {validationMessage ? (
                   <div className="alert alert-error" role="alert">
-                    {validationMessage}
+                    {legacyMessage(props.messages, validationMessage)}
                   </div>
                 ) : null}
               </form>
@@ -3630,6 +3633,7 @@ function projectReviewThreadHref(
 
 function ProjectReviewListRows(props: {
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   threads: ReviewThread[];
 }) {
@@ -3637,7 +3641,7 @@ function ProjectReviewListRows(props: {
     return (
       <div className="error-wrap">
         <i className="ico ico-err1"></i>
-        <p>review.is.empty</p>
+        <p>{legacyMessage(props.messages, "review.is.empty")}</p>
       </div>
     );
   }
@@ -3677,7 +3681,9 @@ function ProjectReviewListRows(props: {
                   {thread.authorLabel}
                 </a>
               ) : (
-                <span className="infos-item">issue.noAuthor</span>
+                <span className="infos-item">
+                  {legacyMessage(props.messages, "issue.noAuthor")}
+                </span>
               )}
               <span className="infos-item" title={thread.createdLabel}>
                 {thread.createdLabel}
@@ -3699,6 +3705,7 @@ function ProjectReviewListRows(props: {
 
 function ProjectReviewPagination(props: {
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   query: ReviewThreadListQuery;
   reviews: ReviewThreadListResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -3716,12 +3723,18 @@ function ProjectReviewPagination(props: {
     );
 
   return (
-    <LegacyPageNavigation currentPage={currentPage} hrefForPage={pageHref} pageCount={pageCount} />
+    <LegacyPageNavigation
+      currentPage={currentPage}
+      hrefForPage={pageHref}
+      messages={props.messages}
+      pageCount={pageCount}
+    />
   );
 }
 
 export function ProjectReviewsPage(props: {
   detail: ProjectDetailViewModel | null;
+  messages?: LegacyMessageLookup;
   query: ReviewThreadListQuery;
   reviews: ReviewThreadListResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -3760,7 +3773,7 @@ export function ProjectReviewsPage(props: {
                         }),
                       )}
                     >
-                      review.allReview
+                      {legacyMessage(props.messages, "review.allReview")}
                       <span className="num-badge pull-right">{props.reviews?.allCount ?? 0}</span>
                     </a>
                   </li>
@@ -3780,7 +3793,7 @@ export function ProjectReviewsPage(props: {
                         }),
                       )}
                     >
-                      review.involvingYou
+                      {legacyMessage(props.messages, "review.involvingYou")}
                       <span className="num-badge pull-right">
                         {props.reviews?.participantCount ?? 0}
                       </span>
@@ -3800,7 +3813,7 @@ export function ProjectReviewsPage(props: {
                         }),
                       )}
                     >
-                      review.createdByYou
+                      {legacyMessage(props.messages, "review.createdByYou")}
                       <span className="num-badge pull-right">
                         {props.reviews?.authorCount ?? 0}
                       </span>
@@ -3859,7 +3872,7 @@ export function ProjectReviewsPage(props: {
                   <i
                     className={`ico btn-gray-arrow ${currentOrderDir === "desc" ? "down" : ""}`}
                   ></i>
-                  common.order.date
+                  {legacyMessage(props.messages, "common.order.date")}
                 </a>
               </div>
               <ul className="nav nav-tabs nm">
@@ -3870,7 +3883,7 @@ export function ProjectReviewsPage(props: {
                     data-value="open"
                     href={reviewsHref(reviewQueryString(props.query, "open"))}
                   >
-                    issue.state.open
+                    {legacyMessage(props.messages, "issue.state.open")}
                     <span className="num-badge">{props.reviews?.openCount ?? 0}</span>
                   </a>
                 </li>
@@ -3881,7 +3894,7 @@ export function ProjectReviewsPage(props: {
                     data-value="closed"
                     href={reviewsHref(reviewQueryString(props.query, "closed"))}
                   >
-                    issue.state.closed
+                    {legacyMessage(props.messages, "issue.state.closed")}
                     <span className="num-badge">{props.reviews?.closedCount ?? 0}</span>
                   </a>
                 </li>
@@ -3889,6 +3902,7 @@ export function ProjectReviewsPage(props: {
               <div className="review-list-wrap">
                 <ProjectReviewListRows
                   detail={detail}
+                  messages={props.messages}
                   runtimeConfig={props.runtimeConfig}
                   threads={props.reviews?.items ?? []}
                 />
@@ -3904,11 +3918,13 @@ export function ProjectReviewsPage(props: {
                     state,
                   )}
                 >
-                  <i className="yobicon-file-excel"></i> issue.downloadAsExcel
+                  <i className="yobicon-file-excel"></i>{" "}
+                  {legacyMessage(props.messages, "issue.downloadAsExcel")}
                 </a>
               </div>
               <ProjectReviewPagination
                 detail={detail}
+                messages={props.messages}
                 query={props.query}
                 reviews={props.reviews}
                 runtimeConfig={props.runtimeConfig}

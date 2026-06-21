@@ -22,7 +22,7 @@ export const Route = createFileRoute("/$owner/$projectName/reviews")({
 
 function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/reviews`;
   const searchParams = new URLSearchParams(window.location.search);
   const query: ReviewThreadListQuery = {
@@ -53,7 +53,7 @@ function ProjectReviewsRouteComponent() {
   if (bootstrapping || containerQuery.isLoading || reviewsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -70,6 +70,7 @@ function ProjectReviewsRouteComponent() {
   return (
     <ProjectReviewsPage
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      messages={messages}
       query={query}
       reviews={reviewsQuery.data}
       runtimeConfig={runtimeConfig}

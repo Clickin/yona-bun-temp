@@ -26,7 +26,7 @@ export const Route = createFileRoute(
 
 function PullRequestEditFormRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
   const containerQuery = useQuery({
@@ -72,7 +72,9 @@ function PullRequestEditFormRouteComponent() {
       );
     },
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "pullRequest.error.newPullRequestForm");
+      setErrorMessage(
+        error instanceof Error ? error.message : "pullRequest.error.newPullRequestForm",
+      );
     },
   });
   const error = containerQuery.error ?? formOptionsQuery.error;
@@ -83,7 +85,7 @@ function PullRequestEditFormRouteComponent() {
   if (bootstrapping || containerQuery.isLoading || formOptionsQuery.isLoading) {
     return (
       <main className="app-shell">
-        <h1>common.loading</h1>
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
   }
@@ -108,6 +110,7 @@ function PullRequestEditFormRouteComponent() {
       csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       formOptions={formOptionsQuery.data}
+      messages={messages}
       mode="edit"
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {

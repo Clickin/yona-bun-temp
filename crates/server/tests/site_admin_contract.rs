@@ -2649,6 +2649,126 @@ async fn site_admin_import_live_preflight_rejects_duplicate_portable_attachment_
 }
 
 #[tokio::test]
+async fn site_admin_import_live_preflight_rejects_non_positive_portable_attachment_id_without_partial_writes(
+) {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "invalid-attachment-owner",
+            "displayName": "Invalid Attachment Owner",
+            "emailAddress": "invalid-attachment-owner@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "invalid-attachment-owner",
+            "projectName": "invalid-attachment-project",
+            "overview": "Should not survive invalid portable attachment preflight",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "posts": [{
+            "authorLoginId": "invalid-attachment-owner",
+            "attachments": [{
+                "contentBase64": "aW52YWxpZC1pZC1wb3J0YWJsZS1maWxl",
+                "id": 0,
+                "mimeType": "text/plain",
+                "name": "invalid-id-portable.txt",
+                "size": 24
+            }],
+            "bodyMarkdown": "invalid portable attachment /files/0",
+            "ownerName": "invalid-attachment-owner",
+            "projectName": "invalid-attachment-project",
+            "title": "Rejected invalid attachment id"
+        }],
+        "issues": []
+    });
+
+    let dry_run_response = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import?dryRun=true",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let dry_run_report = response_json(dry_run_response).await;
+    assert_eq!(dry_run_report["dryRun"], true);
+    assert_eq!(dry_run_report["wouldImportAttachments"], 0);
+    assert_eq!(dry_run_report["wouldSkipAttachments"], 1);
+    assert_eq!(dry_run_report["wouldImportPosts"], 0);
+    assert_eq!(dry_run_report["wouldSkipPosts"], 1);
+    let validation_errors = dry_run_report["validationErrors"]
+        .as_array()
+        .expect("validation errors");
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "posts.attachments"
+            && error["field"] == "id"
+            && error["message"] == "site.import.attachment.invalidId"
+    }));
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.invalidId"));
+
+    assert!(repo
+        .find_user_by_login_id("invalid-attachment-owner")
+        .await
+        .expect("read rejected user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name("invalid-attachment-owner", "invalid-attachment-project")
+        .await
+        .expect("read rejected project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "invalid portable attachment id preflight must reject before file writes"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_live_preflight_rejects_invalid_portable_attachment_without_partial_writes(
 ) {
     let data_dir = tempfile::tempdir().expect("yona data");
