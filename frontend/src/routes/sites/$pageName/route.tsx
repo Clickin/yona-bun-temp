@@ -95,6 +95,14 @@ function useSiteAdminMessages(messages: LegacyMessageLookup | undefined): Legacy
   return messages ?? legacyMessages.t;
 }
 
+export function SiteAdminLoadingShell({ messages }: { messages?: LegacyMessageLookup }) {
+  return (
+    <main className="app-shell site-admin-page">
+      <h1>{legacyMessage(messages, "common.loading", undefined, "common.loading")}</h1>
+    </main>
+  );
+}
+
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
@@ -389,11 +397,7 @@ function SiteDataRoute({
   const canRender = useRequireAuthenticatedRoute(href);
 
   if (bootstrapping || !canRender) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin) {
     return <ForbiddenPage href="/sites/data" />;
@@ -431,11 +435,7 @@ function SiteUpdateRoute({
   });
 
   if (bootstrapping || !canRender) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin) {
     return <ForbiddenPage href="/sites/update" />;
@@ -530,11 +530,7 @@ function SiteUserListRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/userList" />;
@@ -613,11 +609,7 @@ function SiteProjectListRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/projectList" />;
@@ -669,11 +661,7 @@ function SitePostListRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/postList" />;
@@ -720,11 +708,7 @@ function SiteIssueListRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/issueList" />;
@@ -786,11 +770,7 @@ function SiteMailRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/mail" />;
@@ -849,11 +829,7 @@ function SiteMassMailRoute({
   });
 
   if (bootstrapping || !canRender) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin) {
     return <ForbiddenPage href="/sites/massmail" />;
@@ -894,11 +870,7 @@ function SiteDiagnosticRoute({
   const failureKind = query.error ? (classifyConnectFailure(query.error) ?? "bad-request") : null;
 
   if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
-    return (
-      <main className="app-shell site-admin-page">
-        <h1>common.loading</h1>
-      </main>
-    );
+    return <SiteAdminLoadingShell messages={messages} />;
   }
   if (!currentIsSiteAdmin || failureKind === "forbidden") {
     return <ForbiddenPage href="/sites/diagnostic" />;

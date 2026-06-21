@@ -8,6 +8,7 @@ import {
   SiteAdminDataPage,
   SiteAdminDiagnosticPage,
   SiteAdminIssueListPage,
+  SiteAdminLoadingShell,
   SiteAdminMailPage,
   SiteAdminMassMailPage,
   SiteAdminPostListPage,
@@ -202,6 +203,28 @@ describe("site-admin route parity harness", () => {
     expect(html).toContain(">2개의 문제점이 발견되었습니다.<");
     expect(html).toContain("Yona 1.1.0 버전으로 업데이트 할 수 있습니다");
     expect(html).not.toContain(">Site management<");
+  });
+
+  it("switches the site-admin internal loading shell through legacy messages", () => {
+    const fallbackHtml = renderToStaticMarkup(<SiteAdminLoadingShell />);
+
+    expect(fallbackHtml).toContain(
+      '<main class="app-shell site-admin-page"><h1>common.loading</h1></main>',
+    );
+
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    const englishHtml = renderToStaticMarkup(<SiteAdminLoadingShell messages={runtime.t} />);
+    expect(englishHtml).toContain(
+      '<main class="app-shell site-admin-page"><h1>Loading</h1></main>',
+    );
+    expect(englishHtml).not.toContain("<h1>common.loading</h1>");
+
+    runtime.setLanguage("ko-KR");
+    const koreanHtml = renderToStaticMarkup(<SiteAdminLoadingShell messages={runtime.t} />);
+    expect(koreanHtml).toContain(
+      '<main class="app-shell site-admin-page"><h1>불러오는 중</h1></main>',
+    );
+    expect(koreanHtml).not.toContain("<h1>Loading</h1>");
   });
 
   it("renders legacy user and project search forms without temporary English placeholders", () => {

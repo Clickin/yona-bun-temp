@@ -578,8 +578,17 @@ organization create, user issue/file/settings, and project fork route shells:
 `common.loading` now flows through `AppRuntimeContext.messages` or
 `useLegacyMessages()` with exact `common.loading` fallback and no layout or UI
 change. Focused coverage is `frontend/src/user-profile-route-loading-shell-i18n.spec.tsx`.
-Remaining literal route-loading scope is site-admin internal read-failure shells
-and PR detail/change shells pending separate evidence/slice. No language
+P4-A-SiteAdminLoadingShellI18n continuation covers the remaining site-admin
+internal read-failure route shells in `frontend/src/routes/sites/$pageName/route.tsx`:
+`common.loading` now resolves through the existing site-admin runtime message
+lookup with exact `common.loading` fallback and no route error/layout change.
+Focused coverage is `frontend/src/site-admin-route-parity.spec.tsx`.
+P4-A-PullRequestRouteLoadingShellI18n continuation covers the PR detail/change
+route bootstrapping shells from `git/view.scala.html` and
+`git/viewChanges.scala.html`: `common.loading` now flows through
+`AppRuntimeContext.messages("common.loading", { fallback: "common.loading" })`
+with no layout or UI change. Focused coverage is
+`frontend/src/pull-request-route-loading-shell-i18n.spec.tsx`. No language
 selector or settings screen was added because the re-audit found no
 corresponding legacy UI surface.
 
