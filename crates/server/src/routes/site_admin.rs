@@ -2660,6 +2660,7 @@ struct RestSiteImportDryRunState {
     milestones: HashSet<(String, String, String)>,
     payload_labels: HashSet<(String, String, String, String)>,
     payload_milestones: HashSet<(String, String, String)>,
+    payload_portable_attachment_ids: HashSet<i64>,
     payload_project_members: HashSet<(String, String, String)>,
     payload_projects: HashSet<(String, String)>,
     payload_users: HashSet<String>,
@@ -2865,6 +2866,7 @@ async fn rest_site_import_dry_run_report(
         let attachment_errors_before = validation_errors.len();
         rest_site_import_dry_run_attachments(
             service,
+            &mut state,
             "milestones.attachments",
             index,
             &milestone.attachments,
@@ -2951,6 +2953,7 @@ async fn rest_site_import_dry_run_report(
         let attachment_errors_before = validation_errors.len();
         rest_site_import_dry_run_attachments(
             service,
+            &mut state,
             "posts.attachments",
             index,
             &post.attachments,
@@ -2960,6 +2963,7 @@ async fn rest_site_import_dry_run_report(
         );
         rest_site_import_dry_run_comment_attachments(
             service,
+            &mut state,
             "posts.comments.attachments",
             &post.comments,
             &mut would_import,
@@ -3000,6 +3004,7 @@ async fn rest_site_import_dry_run_report(
         let attachment_errors_before = validation_errors.len();
         rest_site_import_dry_run_attachments(
             service,
+            &mut state,
             "issues.attachments",
             index,
             &issue.attachments,
@@ -3009,6 +3014,7 @@ async fn rest_site_import_dry_run_report(
         );
         rest_site_import_dry_run_comment_attachments(
             service,
+            &mut state,
             "issues.comments.attachments",
             &issue.comments,
             &mut would_import,
@@ -3198,6 +3204,7 @@ fn rest_site_import_dry_run_validate_labels(
 
 fn rest_site_import_dry_run_comment_attachments(
     service: &PilotServiceImpl,
+    state: &mut RestSiteImportDryRunState,
     section: &str,
     comments: &[RestSiteExportCommentItem],
     would_import: &mut RestSiteImportCountSet,
@@ -3207,6 +3214,7 @@ fn rest_site_import_dry_run_comment_attachments(
     for (index, comment) in comments.iter().enumerate() {
         rest_site_import_dry_run_attachments(
             service,
+            state,
             section,
             index,
             &comment.attachments,
@@ -3216,6 +3224,7 @@ fn rest_site_import_dry_run_comment_attachments(
         );
         rest_site_import_dry_run_comment_attachments(
             service,
+            state,
             section,
             &comment.child_comments,
             would_import,
@@ -3227,6 +3236,7 @@ fn rest_site_import_dry_run_comment_attachments(
 
 fn rest_site_import_dry_run_attachments(
     service: &PilotServiceImpl,
+    state: &mut RestSiteImportDryRunState,
     section: &str,
     section_index: usize,
     attachments: &[RestSiteExportAttachmentItem],
@@ -3236,7 +3246,21 @@ fn rest_site_import_dry_run_attachments(
 ) {
     for attachment in attachments {
         match rest_site_import_portable_attachment_bytes(service, attachment) {
-            Ok(Some(_bytes)) => would_import.attachments += 1,
+            Ok(Some(_bytes)) => {
+                if attachment.id > 0 && !state.payload_portable_attachment_ids.insert(attachment.id)
+                {
+                    would_skip.attachments += 1;
+                    rest_site_import_push_validation_error(
+                        validation_errors,
+                        section,
+                        section_index,
+                        "id",
+                        "site.import.attachment.duplicateId",
+                    );
+                    continue;
+                }
+                would_import.attachments += 1;
+            }
             Ok(None) => {}
             Err(message) => {
                 would_skip.attachments += 1;

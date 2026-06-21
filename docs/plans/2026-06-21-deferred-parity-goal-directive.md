@@ -25,14 +25,14 @@ checked `docs/provenance/legacy-porting-progress.md`,
 
 | Scope | Current status | Treatment |
 | --- | --- | --- |
-| OAuth provider login/linking | Deferred second-priority. Unsupported/denied route state and UI gating already exist. | Implement only legacy provider behavior with evidence, or keep explicitly deferred if provider fixtures cannot be made deterministic. |
+| OAuth provider login/linking | P2-A/P2-B bounded runtime slices implemented for configured GitHub/Google start/callback/token/userinfo/link/session behavior, denied/unsupported state, connected-provider profile projection, and local logout parity. | Keep deterministic provider fixtures and legacy local logout evidence; broader provider-specific edge behavior remains follow-up only where legacy evidence exists. |
 | LDAP login and BasicAuth LDAP | P2-C/P2-D bounded runtime slices implemented with deterministic LDAP fixtures; real LDAP bind/search connector implemented for non-fixture runtime LDAP; existing-user display-name/nonblank-English-name/password/guest refresh implemented. | Keep fixture-backed form-login and Smart HTTP/SVN BasicAuth coverage; broader external-directory/runtime edge behavior remains bounded by existing connector evidence. |
 | Broader SVN/WebDAV PROPFIND edge completeness | Closed by P3-A re-audit. Current `svn_protocol_contract` evidence covers the former VCC/baseline PROPFIND edge list. | Retire ambiguous deferred wording; keep `svn_protocol_contract` as the guard for root/default VCC, baseline resource, and baseline collection metadata/property behavior. |
 | Git import / GitHub migration ambiguity | Evidence decision complete in `docs/provenance/github-migration-decision.md`. Legacy `/_import` Git URL clone behavior is already implemented and separate. Legacy GitHub API evidence exists under disabled `/migration` and `yona.Migration.js`, but the direction is outbound Yona-to-GitHub; no GitHub-to-Yona/Rust import route/controller/test was found. | Do not duplicate implemented `/_import`. Keep GitHub-to-Rust import not-applicable until legacy evidence exists. Treat outbound Yona-to-GitHub migration as optional migration-tool destination-adapter work with deterministic GitHub API fixtures/mocks if revived; do not mount it in app runtime. |
 | Legacy external `/-_-api/v1/**` broad compatibility | App server owns only documented helper rows; broad runtime compatibility is rejected. | Build migration-tool adapters in `crates/migration` and tool code, without mounting broad app-server routes. |
 | Production migration/import/export hardening | Site-admin `yobi-data` import/export and adopt/validate exist, but production migration hardening remains follow-up. | Harden validators, dry-run reports, rollback/no-partial-write behavior, and fixture coverage. |
 | Full-text/index-backed search | P3-B DB-native FTS slice implemented. Current app search now has DB-native candidate retrieval while preserving legacy tabs, scope/type behavior, ACL filtering, snippets, and fallback ordering. SQLite uses persistent FTS5 external-content tables with query-time rebuild, PostgreSQL assures built-in GIN text-search indexes, and MySQL assures FULLTEXT indexes before native candidate queries. | Keep DB-native FTS only. Do not add Elastic/OpenSearch or change response shape/UX/ranking semantics; unsupported DB-native paths fall back to the existing literal scan. |
-| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload. | Remaining follow-up is app-wide message-key opt-in and legacy preferred-language/session persistence; no new visible selector/settings UX was added because no legacy surface was found. |
+| Dynamic i18n switching | P4-A bounded frontend slice implemented. `YONA_LANGS` is parsed/projected, normalized to legacy message dictionaries, and `AppRuntimeContext` exposes language state plus legacy message lookup. Auth/runtime shell keys can switch without a route reload, and auth/session requests persist legacy preferred-language context into `User.lang`. | Remaining follow-up is app-wide message-key opt-in; no new visible selector/settings UX was added because no legacy surface was found. |
 | Slack webhook detail compatibility | Closed by P4-B re-audit. `DETAIL_SLACK` is the legacy project webhook type, not a separate Slack integration surface; Rust now preserves Slack attachment `text`, nullable/array `fields`, and `slack.<EventType>` color config via `[slack]` TOML or legacy-style env keys. | Retire stale deferred wording. Signature compatibility was separately retired by P4-C as not applicable. Evidence: `Webhook.java` `buildAttachmentJSON`, `project/webhooks.scala.html`, `crates/server/src/routes/projects/webhooks.rs`, `runtime_config_contract`, and `project_webhook_contract::project_webhooks_enqueue_legacy_board_comment_payloads_for_non_json_hooks`. |
 | Optional webhook signature compatibility | P4-C re-audit complete: not applicable for legacy parity. Legacy `Webhook.java` only sets `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and optional `Authorization: token <secret> `; `project.webhook.help` documents only that token header; targeted legacy/current searches found no `X-Hub-Signature`, `X-Yona-*`, SHA/HMAC signing, or equivalent behavior. | Retire deferred wording; preserve the implemented token secret header and do not add a new signature surface. |
 | IMAP mailbox service | P4-D re-audit complete: the old deferred wording is stale for the current app-runtime mailbox surface. Legacy `Global.onStart()` starts `MailboxService.start()`, which opens configured IMAP and feeds messages into `EmailHandler`; Rust starts `spawn_mailbox_polling_scheduler` from `crates/server/src/main.rs`, runs the configured `YONA_MAILBOX_FETCH_COMMAND`, appends the configured mailbox address, and feeds NUL-separated raw RFC822 stdout through `process_mailbox_raw_message` into the same DB-backed parsed/raw mailbox bridge. | No new runtime work assigned. The live IMAP socket/client implementation remains intentionally replaced by an executable-backed fetch boundary; current parity evidence is `crates/server/src/mailbox.rs`, `crates/server/tests/mailbox_contract.rs`, `crates/integrations/tests/mailbox_contract.rs`, and `docs/provenance/core-parity-audit.md`. |
@@ -183,12 +183,21 @@ keys while keeping those rows classified as direct app-owned compatibility.
 Issue
 descriptors now have deterministic migrator payload fixtures for
 `IssueApi.imports` and `IssueApi.newIssues`, while app-owned issue helper rows
-remain payload-free. Board and milestone descriptors now have deterministic
-legacy external adapter payload fixtures for `BoardApi.newPostings`,
-`BoardApi.updatePostingContent`, `BoardApi.newPostingComment`,
-`BoardApi.updatePostLabel`, and `MilestoneApi.newMilestone`, with tests proving
-those rows remain app-owned direct compatibility metadata rather than broad
-migrator/server route expansion. Watcher descriptors now have deterministic
+remain payload-free. Board adapter depth now goes beyond descriptors:
+`parse_board_post_import_request`, `parse_board_content_update_request`,
+`parse_board_comment_import_request`, and `parse_board_label_replace_request`
+normalize the existing legacy `BoardApi.newPostings`,
+`BoardApi.updatePostingContent`, `BoardApi.newPostingComment`, and
+`BoardApi.updatePostLabel` fixture payloads into deterministic migration-tool
+structs. The adapter preserves recursive `JsonNode.findValue` lookup, scalar
+fallbacks, requested post-number/timestamp/upload metadata, body edit
+`content`/`original` conflict inputs, comment author/body/timestamp/upload
+metadata, label-array integer normalization, and bad-request boundaries for
+missing posts arrays, invalid post path numbers, and invalid label IDs without
+mounting broad app-runtime routes. Milestone descriptors now have deterministic
+legacy external adapter payload fixtures for `MilestoneApi.newMilestone`, with
+tests proving those rows remain app-owned direct compatibility metadata rather
+than broad migrator/server route expansion. Watcher descriptors now have deterministic
 app-owned `WatcherApi.getWatchers` response fixtures for `type=issues|posts`,
 the empty-OK invalid-type boundary, the 100-row list cap, and local UserApi
 favorite-helper boundary descriptors that do not leak into WatcherApi fixtures.
@@ -292,11 +301,12 @@ keys into the same lookup boundary for `error.badrequest`, `error.forbidden`,
 known auth failure keys without adding a new selector or settings UI. Focused
 coverage is `frontend/src/i18n.spec.tsx`, `frontend/src/runtime-config.spec.ts`,
 `frontend/src/auth-workspace-shell.spec.tsx`, and
-`frontend/src/wave1-auth-workspace-parity.spec.tsx`. Remaining follow-up: opt
+`frontend/src/wave1-auth-workspace-parity.spec.tsx`. Auth/session request
+context now persists legacy preferred-language state into `User.lang` from the
+`PLAY_LANG` cookie or `Accept-Language` negotiation. Remaining follow-up: opt
 more screens into the lookup boundary only where legacy message keys/copy are
-already known, and restore legacy preferred-language/session persistence if that
-user-language behavior is prioritized. No language selector or settings screen
-was added because the re-audit found no corresponding legacy UI surface.
+already known. No language selector or settings screen was added because the
+re-audit found no corresponding legacy UI surface.
 
 Exit criteria: optional integration deferred items are either shipped with
 legacy evidence or retired/reclassified with provenance.

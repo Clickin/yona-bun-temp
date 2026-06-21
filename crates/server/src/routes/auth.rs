@@ -204,6 +204,18 @@ pub(crate) async fn auth_session_read(
     let session = service
         .session_manager
         .read_session_from_headers(&ctx.headers);
+    if let (PilotBackend::Repository(repository), Some(user_id)) = (
+        &service.backend,
+        session.as_ref().and_then(|session| session.user_id),
+    ) {
+        crate::persist_preferred_language_from_headers(
+            repository,
+            user_id,
+            &ctx.headers,
+            &service.supported_languages,
+        )
+        .await?;
+    }
     let response = resolve_current_session_response(&service.backend, session.as_ref()).await?;
     Ok((response, ctx))
 }
@@ -250,6 +262,13 @@ pub(crate) async fn auth_sign_in_with_password(
         user.id,
         request.remember_me,
     );
+    crate::persist_preferred_language_from_headers(
+        repository,
+        user.id,
+        &ctx.headers,
+        &service.supported_languages,
+    )
+    .await?;
     attach_session_headers(&mut ctx, &service.session_manager, &authenticated_session);
 
     let default_landing_path = repository
@@ -550,6 +569,13 @@ pub(crate) async fn auth_register_with_password(
         service
             .session_manager
             .create_authenticated_session(Some(&session.token), user.id, false);
+    crate::persist_preferred_language_from_headers(
+        repository,
+        user.id,
+        &ctx.headers,
+        &service.supported_languages,
+    )
+    .await?;
     attach_session_headers(&mut ctx, &service.session_manager, &authenticated_session);
 
     Ok((crate::current_session_response_from_user(&user, None), ctx))
@@ -1185,6 +1211,16 @@ pub(crate) async fn direct_authenticate_provider(
         service
             .session_manager
             .create_authenticated_session(Some(&session.token), user.id, false);
+    if let Err(error) = crate::persist_preferred_language_from_headers(
+        repository,
+        user.id,
+        &headers,
+        &service.supported_languages,
+    )
+    .await
+    {
+        return RestRouteError::from_connect_error(error).into_response();
+    }
     let default_landing_path = repository
         .read_default_landing_path(user.id)
         .await

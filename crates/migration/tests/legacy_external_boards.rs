@@ -1,5 +1,9 @@
 use yona_rust_pilot_migration::legacy_external::{
-    boards::{find_fixture, fixtures, AuthRequirement, MigrationDirection},
+    boards::{
+        find_fixture, fixtures, parse_board_comment_import_request,
+        parse_board_content_update_request, parse_board_label_replace_request,
+        parse_board_post_import_request, AuthRequirement, BoardAdapterError, MigrationDirection,
+    },
     find_endpoint, EndpointStatus,
 };
 
@@ -223,4 +227,175 @@ fn board_payload_fixtures_are_app_owned_adapter_metadata_only() {
             assert!(fixture.payload.alternate_status.is_some());
         }
     }
+}
+
+#[test]
+fn board_adapter_normalizes_recursive_legacy_post_import_payload() {
+    let fixture = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts",
+    )
+    .unwrap();
+
+    let batch =
+        parse_board_post_import_request(fixture.payload.sample_path, fixture.payload.request_json)
+            .unwrap();
+
+    assert_eq!(batch.endpoint_method, "POST");
+    assert_eq!(
+        batch.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts"
+    );
+    assert_eq!(batch.owner, "alice");
+    assert_eq!(batch.project_name, "demo");
+    assert_eq!(batch.entries.len(), 1);
+
+    let post = &batch.entries[0];
+    assert_eq!(post.source_index, 0);
+    assert_eq!(
+        post.author.as_ref().unwrap().login_id.as_deref(),
+        Some("author")
+    );
+    assert_eq!(
+        post.author.as_ref().unwrap().email.as_deref(),
+        Some("author@example.com")
+    );
+    assert_eq!(post.title, "Legacy post");
+    assert_eq!(post.body, "legacy post body");
+    assert_eq!(post.requested_number, Some(4));
+    assert_eq!(post.created_at.as_deref(), Some("2026-06-04T00:00:00Z"));
+    assert_eq!(post.updated_at.as_deref(), Some("2026-06-05T00:00:00Z"));
+    assert_eq!(post.temporary_upload_files, vec!["901", "902"]);
+}
+
+#[test]
+fn board_adapter_preserves_find_value_first_match_and_scalar_fallbacks() {
+    let payload = r#"{
+      "outer": {
+        "posts": [
+          {
+            "wrapper": {
+              "author": { "loginId": 1001, "email": "numeric@example.com" },
+              "content": { "title": 77, "body": true },
+              "createdAt": false,
+              "number": "42",
+              "temporaryUploadFiles": 951
+            }
+          }
+        ]
+      }
+    }"#;
+
+    let batch =
+        parse_board_post_import_request("/-_-api/v1/owners/alice/projects/demo/posts", payload)
+            .unwrap();
+
+    let post = &batch.entries[0];
+    assert_eq!(
+        post.author.as_ref().unwrap().login_id.as_deref(),
+        Some("1001")
+    );
+    assert_eq!(post.title, "77");
+    assert_eq!(post.body, "true");
+    assert_eq!(post.created_at.as_deref(), Some("false"));
+    assert_eq!(post.requested_number, Some(42));
+    assert_eq!(post.temporary_upload_files, vec!["951"]);
+}
+
+#[test]
+fn board_adapter_normalizes_content_comment_and_label_payloads() {
+    let content = find_fixture(
+        "PATCH",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+    )
+    .unwrap();
+    let update = parse_board_content_update_request(
+        content.payload.sample_path,
+        content.payload.request_json,
+    )
+    .unwrap();
+
+    assert_eq!(update.endpoint_method, "PATCH");
+    assert_eq!(update.owner, "alice");
+    assert_eq!(update.project_name, "demo");
+    assert_eq!(update.number, 4);
+    assert_eq!(update.content, "legacy post body updated");
+    assert_eq!(update.original, "legacy post body");
+
+    let comment = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+    )
+    .unwrap();
+    let import = parse_board_comment_import_request(
+        comment.payload.sample_path,
+        comment.payload.request_json,
+    )
+    .unwrap();
+
+    assert_eq!(import.endpoint_method, "POST");
+    assert_eq!(
+        import.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments"
+    );
+    assert_eq!(import.post_number, 4);
+    assert_eq!(
+        import.author.as_ref().unwrap().login_id.as_deref(),
+        Some("commenter")
+    );
+    assert_eq!(import.body, "legacy post comment");
+    assert_eq!(import.created_at.as_deref(), Some("2026-06-06T00:00:00Z"));
+    assert_eq!(import.temporary_upload_files, vec!["951"]);
+
+    let labels = find_fixture(
+        "POST",
+        "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+    )
+    .unwrap();
+    let replace =
+        parse_board_label_replace_request(labels.payload.sample_path, labels.payload.request_json)
+            .unwrap();
+
+    assert_eq!(replace.endpoint_method, "POST");
+    assert_eq!(
+        replace.endpoint_path,
+        "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number"
+    );
+    assert_eq!(replace.post_number, 4);
+    assert_eq!(replace.label_ids, vec![301, 302]);
+}
+
+#[test]
+fn board_adapter_rejects_legacy_bad_request_boundaries_before_tool_consumption() {
+    let missing_posts = parse_board_post_import_request(
+        "/-_-api/v1/owners/alice/projects/demo/posts",
+        r#"{"posts":{"title":"not an array"}}"#,
+    )
+    .unwrap_err();
+    assert_eq!(missing_posts, BoardAdapterError::MissingPostsArray);
+
+    let bad_path = parse_board_content_update_request(
+        "/-_-api/v1/owners/alice/projects/demo/posts/not-a-number/content",
+        r#"{"content":"new","original":"old"}"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        bad_path,
+        BoardAdapterError::InvalidNumber {
+            segment: "not-a-number".to_string()
+        }
+    );
+
+    let bad_label = parse_board_label_replace_request(
+        "/-_-api/v1/owners/alice/projects/demo/postlabel/4",
+        r#"[301, {"id": 302}]"#,
+    )
+    .unwrap_err();
+    assert_eq!(
+        bad_label,
+        BoardAdapterError::InvalidLabelId {
+            index: 1,
+            value: r#"{"id":302}"#.to_string()
+        }
+    );
 }

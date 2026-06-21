@@ -167,6 +167,7 @@ fn build_router_with_app_config(
         site_update: runtime.site_update.clone(),
         slack_webhook_colors: runtime.slack_webhook_colors.clone(),
         smtp: runtime.smtp.clone(),
+        supported_languages: app_config.supported_languages.clone(),
         translation_proxy: runtime.translation_proxy.clone(),
     };
     let browser_runtime = BrowserRuntimeConfig::from_base_path(

@@ -2246,6 +2246,140 @@ async fn site_admin_import_live_preflight_rejects_duplicate_resource_keys_withou
 }
 
 #[tokio::test]
+async fn site_admin_import_live_preflight_rejects_duplicate_portable_attachment_ids_without_partial_writes(
+) {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let before_users = n4user::Entity::find().all(&db).await.unwrap().len();
+    let before_projects = project::Entity::find().all(&db).await.unwrap().len();
+    let before_posts = posting::Entity::find().all(&db).await.unwrap().len();
+    let before_attachments = attachment::Entity::find().all(&db).await.unwrap().len();
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "duplicate-attachment-owner",
+            "displayName": "Duplicate Attachment Owner",
+            "emailAddress": "duplicate-attachment-owner@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "duplicate-attachment-owner",
+            "projectName": "duplicate-attachment-project",
+            "overview": "Should not survive failed portable attachment preflight",
+            "projectScope": "public",
+            "projectVcs": "GIT"
+        }],
+        "posts": [{
+            "authorLoginId": "duplicate-attachment-owner",
+            "attachments": [{
+                "contentBase64": "Zmlyc3QtcG9ydGFibGUtZmlsZQ==",
+                "id": 8801,
+                "mimeType": "text/plain",
+                "name": "first-portable.txt",
+                "size": 19
+            }],
+            "bodyMarkdown": "first portable attachment /files/8801",
+            "comments": [{
+                "attachments": [{
+                    "contentBase64": "Y29uZmxpY3RpbmctcG9ydGFibGUtZmlsZQ==",
+                    "id": 8801,
+                    "mimeType": "text/plain",
+                    "name": "conflicting-portable.txt",
+                    "size": 25
+                }],
+                "authorLoginId": "duplicate-attachment-owner",
+                "contentsMarkdown": "conflicting portable attachment /files/8801"
+            }],
+            "ownerName": "duplicate-attachment-owner",
+            "projectName": "duplicate-attachment-project",
+            "title": "Rejected duplicate portable attachment"
+        }],
+        "issues": []
+    });
+
+    let dry_run_response = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import?dryRun=true",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let dry_run_report = response_json(dry_run_response).await;
+    assert_eq!(dry_run_report["dryRun"], true);
+    assert_eq!(dry_run_report["wouldImportAttachments"], 1);
+    assert_eq!(dry_run_report["wouldSkipAttachments"], 1);
+    assert_eq!(dry_run_report["wouldImportPosts"], 0);
+    assert_eq!(dry_run_report["wouldSkipPosts"], 1);
+    let validation_errors = dry_run_report["validationErrors"]
+        .as_array()
+        .expect("validation errors");
+    assert!(validation_errors.iter().any(|error| {
+        error["section"] == "posts.comments.attachments"
+            && error["field"] == "id"
+            && error["message"] == "site.import.attachment.duplicateId"
+    }));
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(response)
+        .await
+        .contains("site.import.attachment.duplicateId"));
+
+    assert!(repo
+        .find_user_by_login_id("duplicate-attachment-owner")
+        .await
+        .expect("read rejected user")
+        .is_none());
+    assert!(repo
+        .read_project_by_owner_and_name(
+            "duplicate-attachment-owner",
+            "duplicate-attachment-project",
+        )
+        .await
+        .expect("read rejected project")
+        .is_none());
+    assert_eq!(
+        n4user::Entity::find().all(&db).await.unwrap().len(),
+        before_users
+    );
+    assert_eq!(
+        project::Entity::find().all(&db).await.unwrap().len(),
+        before_projects
+    );
+    assert_eq!(
+        posting::Entity::find().all(&db).await.unwrap().len(),
+        before_posts
+    );
+    assert_eq!(
+        attachment::Entity::find().all(&db).await.unwrap().len(),
+        before_attachments
+    );
+    assert!(
+        !data_dir.path().join("uploads").exists(),
+        "duplicate portable attachment preflight must reject before file writes"
+    );
+}
+
+#[tokio::test]
 async fn site_admin_import_live_preflight_rejects_invalid_portable_attachment_without_partial_writes(
 ) {
     let data_dir = tempfile::tempdir().expect("yona data");

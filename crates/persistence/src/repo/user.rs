@@ -97,6 +97,25 @@ impl AppRepository {
         self.app_user_record_from_model(user).await.map(Some)
     }
 
+    pub async fn update_user_preferred_language(
+        &self,
+        user_id: i64,
+        language: &str,
+    ) -> Result<(), DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(());
+        };
+        let language = language.trim().chars().take(255).collect::<String>();
+        if language.is_empty() || model.lang.as_deref() == Some(language.as_str()) {
+            return Ok(());
+        }
+
+        let mut active = n4user::ActiveModel::from(model);
+        active.lang = Set(Some(language));
+        active.update(&self.db).await?;
+        Ok(())
+    }
+
     pub async fn update_ldap_user_profile(
         &self,
         user_id: i64,

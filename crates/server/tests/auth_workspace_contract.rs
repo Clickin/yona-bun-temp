@@ -1663,6 +1663,73 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
 }
 
 #[tokio::test]
+async fn auth_session_persists_legacy_preferred_language_from_request_context() {
+    let (app, _, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            supported_languages: vec![
+                "ko-KR".to_string(),
+                "en-US".to_string(),
+                "ja-JP".to_string(),
+            ],
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::ACCEPT_LANGUAGE, "fr-FR, ko;q=0.9, en-US;q=0.8")
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+    let authenticated_cookie_header = cookie_header_from_set_cookie_response(&register);
+
+    let user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("door".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("registered user");
+    assert_eq!(user.lang.as_deref(), Some("ko-KR"));
+
+    let current = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(
+                    http::header::COOKIE,
+                    format!("PLAY_LANG=ja-JP; {authenticated_cookie_header}"),
+                )
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(current.status(), StatusCode::OK);
+
+    let user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("door".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("registered user");
+    assert_eq!(user.lang.as_deref(), Some("ja-JP"));
+}
+
+#[tokio::test]
 async fn remember_me_controls_session_cookie_persistence() {
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;

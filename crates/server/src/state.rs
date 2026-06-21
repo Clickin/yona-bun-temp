@@ -125,6 +125,7 @@ pub(crate) struct RuntimeRegistry {
     pub(crate) site_update: SiteUpdateConfig,
     pub(crate) slack_webhook_colors: BTreeMap<String, String>,
     pub(crate) smtp: SmtpRuntimeConfig,
+    pub(crate) supported_languages: Vec<String>,
     pub(crate) translation_proxy: TranslationProxyConfig,
 }
 
@@ -142,6 +143,7 @@ impl RuntimeRegistry {
             site_update: config.site_update.clone(),
             slack_webhook_colors: config.slack_webhook_colors.clone(),
             smtp: config.smtp.clone(),
+            supported_languages: config.supported_languages.clone(),
             translation_proxy: config.translation_proxy.clone(),
         }
     }
@@ -164,6 +166,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) site_update: SiteUpdateConfig,
     pub(crate) slack_webhook_colors: BTreeMap<String, String>,
     pub(crate) smtp: SmtpRuntimeConfig,
+    pub(crate) supported_languages: Vec<String>,
     pub(crate) translation_proxy: TranslationProxyConfig,
 }
 

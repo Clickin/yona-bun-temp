@@ -1,4 +1,5 @@
 use super::{EndpointDescriptor, EndpointStatus, LegacySource};
+use serde_json::Value;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AuthRequirement {
@@ -57,6 +58,122 @@ pub struct LegacyPayloadFixture {
     pub alternate_json: Option<&'static str>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LegacyAuthorRef {
+    pub login_id: Option<String>,
+    pub name: Option<String>,
+    pub email: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedBoardPostImport {
+    pub source_index: usize,
+    pub author: Option<LegacyAuthorRef>,
+    pub title: String,
+    pub body: String,
+    pub requested_number: Option<i64>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub temporary_upload_files: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BoardPostImportBatch {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub entries: Vec<NormalizedBoardPostImport>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedBoardContentUpdate {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub number: i64,
+    pub content: String,
+    pub original: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedBoardCommentImport {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub post_number: i64,
+    pub author: Option<LegacyAuthorRef>,
+    pub body: String,
+    pub created_at: Option<String>,
+    pub temporary_upload_files: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedBoardLabelReplace {
+    pub endpoint_method: &'static str,
+    pub endpoint_path: &'static str,
+    pub owner: String,
+    pub project_name: String,
+    pub post_number: i64,
+    pub label_ids: Vec<i64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BoardAdapterError {
+    InvalidJson(String),
+    InvalidPath {
+        path: String,
+        expected: &'static str,
+    },
+    InvalidNumber {
+        segment: String,
+    },
+    MissingPostsArray,
+    InvalidPostItem {
+        index: usize,
+    },
+    MissingField {
+        field: &'static str,
+    },
+    InvalidLabelArray,
+    InvalidLabelId {
+        index: usize,
+        value: String,
+    },
+}
+
+impl std::fmt::Display for BoardAdapterError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidJson(error) => write!(formatter, "invalid board legacy JSON: {error}"),
+            Self::InvalidPath { path, expected } => {
+                write!(formatter, "invalid board legacy path `{path}`; expected {expected}")
+            }
+            Self::InvalidNumber { segment } => {
+                write!(formatter, "invalid board post number `{segment}`")
+            }
+            Self::MissingPostsArray => {
+                write!(formatter, "No posts key exists or value wasn't array!")
+            }
+            Self::InvalidPostItem { index } => {
+                write!(formatter, "board post item at index {index} must be a JSON object")
+            }
+            Self::MissingField { field } => {
+                write!(formatter, "missing required board field `{field}`")
+            }
+            Self::InvalidLabelArray => write!(formatter, "board post labels payload must be an array"),
+            Self::InvalidLabelId { index, value } => write!(
+                formatter,
+                "invalid board label id `{value}` at index {index}; expected integer-compatible scalar"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for BoardAdapterError {}
+
 pub fn fixtures() -> &'static [BoardEndpointFixture] {
     BOARD_ENDPOINT_FIXTURES
 }
@@ -65,6 +182,267 @@ pub fn find_fixture(method: &str, path: &str) -> Option<&'static BoardEndpointFi
     BOARD_ENDPOINT_FIXTURES
         .iter()
         .find(|fixture| fixture.method == method && fixture.path == path)
+}
+
+pub fn parse_board_post_import_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<BoardPostImportBatch, BoardAdapterError> {
+    let (owner, project_name) = parse_owner_project_path(
+        sample_path,
+        "posts",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts",
+    )?;
+    let payload = parse_json(request_json)?;
+    let posts = find_value(&payload, "posts")
+        .and_then(Value::as_array)
+        .ok_or(BoardAdapterError::MissingPostsArray)?;
+    let mut entries = Vec::with_capacity(posts.len());
+
+    for (source_index, post) in posts.iter().enumerate() {
+        if !post.is_object() {
+            return Err(BoardAdapterError::InvalidPostItem {
+                index: source_index,
+            });
+        }
+
+        entries.push(NormalizedBoardPostImport {
+            source_index,
+            author: find_value(post, "author").map(author_ref),
+            title: required_text_field(post, "title")?,
+            body: required_text_field(post, "body")?,
+            requested_number: find_value(post, "number").and_then(integer_field),
+            created_at: optional_text_field(post, "createdAt"),
+            updated_at: optional_text_field(post, "updatedAt"),
+            temporary_upload_files: upload_files(post),
+        });
+    }
+
+    Ok(BoardPostImportBatch {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/posts",
+        owner,
+        project_name,
+        entries,
+    })
+}
+
+pub fn parse_board_content_update_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<NormalizedBoardContentUpdate, BoardAdapterError> {
+    let (owner, project_name, number) = parse_post_path(
+        sample_path,
+        "content",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+    )?;
+    let payload = parse_json(request_json)?;
+
+    Ok(NormalizedBoardContentUpdate {
+        endpoint_method: "PATCH",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+        owner,
+        project_name,
+        number,
+        content: required_text_field(&payload, "content")?,
+        original: required_text_field(&payload, "original")?,
+    })
+}
+
+pub fn parse_board_comment_import_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<NormalizedBoardCommentImport, BoardAdapterError> {
+    let (owner, project_name, post_number) = parse_post_path(
+        sample_path,
+        "comments",
+        "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+    )?;
+    let payload = parse_json(request_json)?;
+
+    Ok(NormalizedBoardCommentImport {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+        owner,
+        project_name,
+        post_number,
+        author: find_value(&payload, "author").map(author_ref),
+        body: required_text_field(&payload, "body")?,
+        created_at: optional_text_field(&payload, "createdAt"),
+        temporary_upload_files: upload_files(&payload),
+    })
+}
+
+pub fn parse_board_label_replace_request(
+    sample_path: &str,
+    request_json: &str,
+) -> Result<NormalizedBoardLabelReplace, BoardAdapterError> {
+    let (owner, project_name, post_number) = parse_post_path(
+        sample_path,
+        "postlabel",
+        "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+    )?;
+    let payload = parse_json(request_json)?;
+    let labels = payload
+        .as_array()
+        .ok_or(BoardAdapterError::InvalidLabelArray)?;
+    let mut label_ids = Vec::with_capacity(labels.len());
+
+    for (index, label) in labels.iter().enumerate() {
+        let Some(label_id) = integer_field(label) else {
+            return Err(BoardAdapterError::InvalidLabelId {
+                index,
+                value: label.to_string(),
+            });
+        };
+        label_ids.push(label_id);
+    }
+
+    Ok(NormalizedBoardLabelReplace {
+        endpoint_method: "POST",
+        endpoint_path: "/-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+        owner,
+        project_name,
+        post_number,
+        label_ids,
+    })
+}
+
+fn parse_json(request_json: &str) -> Result<Value, BoardAdapterError> {
+    serde_json::from_str(request_json)
+        .map_err(|error| BoardAdapterError::InvalidJson(error.to_string()))
+}
+
+fn parse_owner_project_path(
+    path: &str,
+    terminal: &str,
+    expected: &'static str,
+) -> Result<(String, String), BoardAdapterError> {
+    let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
+    match parts.as_slice() {
+        ["-_-api", "v1", "owners", owner, "projects", project_name, found]
+            if *found == terminal =>
+        {
+            Ok(((*owner).to_string(), (*project_name).to_string()))
+        }
+        _ => Err(BoardAdapterError::InvalidPath {
+            path: path.to_string(),
+            expected,
+        }),
+    }
+}
+
+fn parse_post_path(
+    path: &str,
+    terminal: &str,
+    expected: &'static str,
+) -> Result<(String, String, i64), BoardAdapterError> {
+    let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
+    match parts.as_slice() {
+        ["-_-api", "v1", "owners", owner, "projects", project_name, "posts", number, found]
+            if terminal != "postlabel" && *found == terminal =>
+        {
+            Ok((
+                (*owner).to_string(),
+                (*project_name).to_string(),
+                parse_i64(number)?,
+            ))
+        }
+        ["-_-api", "v1", "owners", owner, "projects", project_name, "postlabel", number]
+            if terminal == "postlabel" =>
+        {
+            Ok((
+                (*owner).to_string(),
+                (*project_name).to_string(),
+                parse_i64(number)?,
+            ))
+        }
+        _ => Err(BoardAdapterError::InvalidPath {
+            path: path.to_string(),
+            expected,
+        }),
+    }
+}
+
+fn parse_i64(value: &str) -> Result<i64, BoardAdapterError> {
+    value
+        .parse::<i64>()
+        .map_err(|_| BoardAdapterError::InvalidNumber {
+            segment: value.to_string(),
+        })
+}
+
+fn author_ref(value: &Value) -> LegacyAuthorRef {
+    LegacyAuthorRef {
+        login_id: optional_text_field(value, "loginId"),
+        name: optional_text_field(value, "name"),
+        email: optional_text_field(value, "email"),
+    }
+}
+
+fn required_text_field(value: &Value, key: &'static str) -> Result<String, BoardAdapterError> {
+    optional_text_field(value, key).ok_or(BoardAdapterError::MissingField { field: key })
+}
+
+fn optional_text_field(value: &Value, key: &str) -> Option<String> {
+    find_value(value, key).and_then(|value| match value {
+        Value::Null => None,
+        Value::String(text) => Some(text.clone()),
+        Value::Bool(flag) => Some(flag.to_string()),
+        Value::Number(number) => Some(number.to_string()),
+        other => Some(other.to_string()),
+    })
+}
+
+fn integer_field(value: &Value) -> Option<i64> {
+    match value {
+        Value::Number(number) => number.as_i64(),
+        Value::String(text) => text.parse::<i64>().ok(),
+        Value::Bool(flag) => Some(i64::from(*flag)),
+        _ => None,
+    }
+}
+
+fn upload_files(value: &Value) -> Vec<String> {
+    match find_value(value, "temporaryUploadFiles") {
+        Some(Value::Array(files)) => files
+            .iter()
+            .filter_map(|file| match file {
+                Value::Null => None,
+                Value::String(text) => Some(text.clone()),
+                Value::Bool(flag) => Some(flag.to_string()),
+                Value::Number(number) => Some(number.to_string()),
+                other => Some(other.to_string()),
+            })
+            .collect(),
+        Some(Value::Null) => Vec::new(),
+        Some(Value::String(text)) if text.is_empty() => Vec::new(),
+        Some(value) => vec![optional_scalar_text(value)],
+        None => Vec::new(),
+    }
+}
+
+fn optional_scalar_text(value: &Value) -> String {
+    match value {
+        Value::Null => String::new(),
+        Value::String(text) => text.clone(),
+        Value::Bool(flag) => flag.to_string(),
+        Value::Number(number) => number.to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn find_value<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
+    match value {
+        Value::Object(map) => {
+            if let Some(found) = map.get(key) {
+                return Some(found);
+            }
+            map.values().find_map(|nested| find_value(nested, key))
+        }
+        Value::Array(values) => values.iter().find_map(|nested| find_value(nested, key)),
+        _ => None,
+    }
 }
 
 const fn source(controller: &'static str, action: &'static str) -> LegacySource {

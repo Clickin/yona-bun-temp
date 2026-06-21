@@ -324,6 +324,100 @@ pub(crate) fn default_supported_languages() -> Vec<String> {
     ]
 }
 
+pub(crate) async fn persist_preferred_language_from_headers(
+    repository: &PilotRepository,
+    user_id: i64,
+    headers: &HeaderMap,
+    supported_languages: &[String],
+) -> Result<(), ConnectError> {
+    let Some(language) = preferred_language_from_headers(headers, supported_languages) else {
+        return Ok(());
+    };
+    repository
+        .update_user_preferred_language(user_id, &language)
+        .await
+        .map_err(internal_error)
+}
+
+pub(crate) fn preferred_language_from_headers(
+    headers: &HeaderMap,
+    supported_languages: &[String],
+) -> Option<String> {
+    let supported = supported_languages_from_option(Some(supported_languages));
+    headers
+        .get(http::header::COOKIE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|cookie_header| read_cookie_value(cookie_header, "PLAY_LANG"))
+        .and_then(|language| normalize_preferred_language(&language, &supported))
+        .or_else(|| {
+            headers
+                .get(http::header::ACCEPT_LANGUAGE)
+                .and_then(|value| value.to_str().ok())
+                .and_then(|header| preferred_language_from_accept_language(header, &supported))
+        })
+}
+
+fn preferred_language_from_accept_language(header: &str, supported: &[String]) -> Option<String> {
+    let mut candidates = header
+        .split(',')
+        .enumerate()
+        .filter_map(|(index, part)| {
+            let mut segments = part.split(';').map(str::trim);
+            let language = segments.next()?;
+            if language.is_empty() || language == "*" {
+                return None;
+            }
+            let quality = segments
+                .find_map(|segment| segment.strip_prefix("q="))
+                .and_then(|value| value.parse::<f32>().ok())
+                .unwrap_or(1.0);
+            Some((index, quality, language.to_string()))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|lhs, rhs| {
+        rhs.1
+            .partial_cmp(&lhs.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| lhs.0.cmp(&rhs.0))
+    });
+    candidates.into_iter().find_map(|(_, quality, language)| {
+        (quality > 0.0)
+            .then(|| normalize_preferred_language(&language, supported))
+            .flatten()
+    })
+}
+
+fn normalize_preferred_language(input: &str, supported: &[String]) -> Option<String> {
+    let normalized = input.trim().replace('_', "-").to_ascii_lowercase();
+    if normalized.is_empty() {
+        return None;
+    }
+    supported
+        .iter()
+        .find(|language| language.to_ascii_lowercase() == normalized)
+        .cloned()
+        .or_else(|| {
+            supported
+                .iter()
+                .find(|language| {
+                    language
+                        .split_once('-')
+                        .map(|(prefix, _)| prefix)
+                        .unwrap_or(language)
+                        .eq_ignore_ascii_case(&normalized)
+                })
+                .cloned()
+        })
+}
+
+fn read_cookie_value(cookie_header: &str, name: &str) -> Option<String> {
+    cookie_header.split(';').find_map(|part| {
+        let trimmed = part.trim();
+        let (key, value) = trimmed.split_once('=')?;
+        (key == name).then(|| value.to_string())
+    })
+}
+
 pub(crate) const LEGACY_DEFAULT_MAX_FILE_SIZE: usize = 2_147_483_454;
 
 pub(crate) fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
@@ -650,6 +744,18 @@ pub(crate) async fn rest_read_current_session(
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let session = service.session_manager.ensure_anonymous_session(&headers);
+    if let (PilotBackend::Repository(repository), Some(user_id)) =
+        (&service.backend, session.user_id)
+    {
+        persist_preferred_language_from_headers(
+            repository,
+            user_id,
+            &headers,
+            &service.supported_languages,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    }
     let payload = resolve_current_session_response(&service.backend, Some(&session))
         .await
         .map_err(RestRouteError::from_connect_error)?;

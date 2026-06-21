@@ -7,6 +7,7 @@ import {
   lookupLegacyMessage,
   normalizeLegacyLanguageCode,
   normalizeSupportedLanguages,
+  resolveInitialLanguage,
 } from "./i18n";
 import { LoginPage } from "./routes/-auth-views";
 import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
@@ -48,6 +49,12 @@ describe("legacy i18n runtime", () => {
     expect(runtime.t("missing.legacy.key", { fallback: "missing.legacy.key" })).toBe(
       "missing.legacy.key",
     );
+  });
+
+  it("uses browser preferred languages for initial state when they match configured legacy languages", () => {
+    expect(resolveInitialLanguage(["en-US", "ko-KR"], ["ko-KR", "en-US"])).toBe("ko-KR");
+    expect(resolveInitialLanguage(["en-US", "ko-KR"], ["fr-FR", "ko"])).toBe("ko-KR");
+    expect(resolveInitialLanguage(["en-US", "ko-KR"], ["fr-FR"])).toBe("en-US");
   });
 
   it("changes auth message lookup through the runtime provider without changing the route href", () => {

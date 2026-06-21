@@ -287,8 +287,16 @@ export function normalizeSupportedLanguages(input: string[] | string | null | un
 
 export function resolveInitialLanguage(
   supportedLanguages: readonly string[] | null | undefined,
+  preferredLanguages: readonly string[] | null | undefined = readBrowserPreferredLanguages(),
 ): LegacyLanguageCode {
   const supported = normalizeSupportedLanguages([...(supportedLanguages ?? [])]);
+  const supportedSet = new Set(supported);
+  for (const preferredLanguage of preferredLanguages ?? []) {
+    const normalized = normalizeLegacyLanguageCode(preferredLanguage);
+    if (normalized && supportedSet.has(normalized)) {
+      return normalized;
+    }
+  }
   return (supported[0] as LegacyLanguageCode | undefined) ?? LEGACY_DEFAULT_LANGUAGE;
 }
 
@@ -317,11 +325,12 @@ export function lookupLegacyMessage(
 
 export function createLegacyI18nRuntime(
   supportedLanguages: readonly string[] | null | undefined,
+  preferredLanguages: readonly string[] | null | undefined = [],
 ): LegacyI18nContextValue {
   const normalizedSupportedLanguages = normalizeSupportedLanguages([
     ...(supportedLanguages ?? []),
   ]) as LegacyLanguageCode[];
-  let currentLanguage = resolveInitialLanguage(normalizedSupportedLanguages);
+  let currentLanguage = resolveInitialLanguage(normalizedSupportedLanguages, preferredLanguages);
   return {
     get language() {
       return currentLanguage;
@@ -405,6 +414,14 @@ export function LegacyI18nProvider({
 
 export function useLegacyMessages(): LegacyI18nContextValue {
   return React.use(LegacyI18nContext);
+}
+
+function readBrowserPreferredLanguages(): string[] {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return [];
+  }
+  const languages = Array.isArray(navigator.languages) ? navigator.languages : [];
+  return languages.length > 0 ? [...languages] : navigator.language ? [navigator.language] : [];
 }
 
 export function renderLegacyHighlightedMessage(message: string): React.ReactNode {
