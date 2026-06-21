@@ -25,6 +25,22 @@ const detail: ProjectDetailViewModel = {
   viewerCanUpdate: true,
 };
 
+const boardItem = {
+  authorAvatarUrl: "/yona/avatar/owner.png",
+  authorLabel: "Owner",
+  authorLoginId: "owner",
+  commentCount: 0,
+  createdLabel: "now",
+  labels: [],
+  notice: false,
+  ownerName: "yobi",
+  postNumber: "16",
+  projectName: "yona",
+  readme: false,
+  title: "Second page post",
+  updatedLabel: "later",
+};
+
 function renderIssueBoardPrMilestoneControls(messages?: LegacyMessageLookup) {
   return renderToStaticMarkup(
     <>
@@ -114,6 +130,62 @@ function renderIssueBoardPrMilestoneControls(messages?: LegacyMessageLookup) {
   );
 }
 
+function renderBoardDetailCommentHelpers(messages?: LegacyMessageLookup) {
+  return renderToStaticMarkup(
+    <ProjectBoardDetailPage
+      messages={messages}
+      post={{
+        ...boardItem,
+        attachments: [],
+        authorId: "1",
+        bodyHtml: "",
+        bodyMarkdown: "body",
+        comments: [
+          {
+            attachments: [],
+            authorId: "1",
+            authorLabel: "Owner User",
+            authorLoginId: "owner",
+            contentsHtml: "",
+            contentsMarkdown: "parent",
+            createdLabel: "now",
+            id: "9",
+            parentCommentId: "",
+            viaEmail: false,
+          },
+          {
+            attachments: [],
+            authorId: "2",
+            authorLabel: "Reply User",
+            authorLoginId: "reply",
+            contentsHtml: "",
+            contentsMarkdown: "child reply",
+            createdLabel: "later",
+            id: "10",
+            parentCommentId: "9",
+            viaEmail: false,
+          },
+        ],
+        historyHtml: "",
+        historyMarkdown: "old body",
+        id: "16",
+        isWatching: true,
+        permissions: {
+          canComment: true,
+          canCreate: true,
+          canDelete: true,
+          canRead: true,
+          canSetNotice: false,
+          canUpdate: true,
+          canWatch: true,
+        },
+        watcherCount: 2,
+      }}
+      runtimeConfig={testRuntimeConfig}
+    />,
+  );
+}
+
 describe("issue/board/PR/milestone legacy i18n opt-in", () => {
   it("opts project issue, board/post, and milestone loading shells into legacy messages", () => {
     const routePaths = [
@@ -194,5 +266,35 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(html).not.toContain(">issue.menu.new</a>");
     expect(html).not.toContain(">post.write</a>");
     expect(html).not.toContain(">milestone.menu.new</a>");
+  });
+
+  it("opts board detail auxiliary comment controls into legacy messages", () => {
+    const fallbackHtml = renderBoardDetailCommentHelpers();
+
+    expect(fallbackHtml).toContain(">change.history</span>");
+    expect(fallbackHtml).toContain("<strong>common.comment</strong>");
+    expect(fallbackHtml).toContain('title="button.translation"');
+    expect(fallbackHtml).toContain('aria-label="common.comment.edit"');
+    expect(fallbackHtml).toContain('aria-label="common.comment.delete"');
+    expect(fallbackHtml).toContain(">post.unwatch</button>");
+    expect(fallbackHtml).toContain(">comment.save</button>");
+    expect(fallbackHtml).toContain(
+      'placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"',
+    );
+
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    runtime.setLanguage("ko-KR");
+    const koreanHtml = renderBoardDetailCommentHelpers(runtime.t);
+
+    expect(koreanHtml).toContain(">변경 이력</span>");
+    expect(koreanHtml).toContain("<strong>댓글</strong>");
+    expect(koreanHtml).toContain('title="번역"');
+    expect(koreanHtml).toContain('aria-label="댓글 수정"');
+    expect(koreanHtml).toContain('aria-label="댓글 삭제"');
+    expect(koreanHtml).toContain(">글 그만 지켜보기</button>");
+    expect(koreanHtml).toContain(">comment.save</button>");
+    expect(koreanHtml).toContain('placeholder="대댓글 추가 (CTRL + ENTER)"');
+    expect(koreanHtml).not.toContain(">change.history</span>");
+    expect(koreanHtml).not.toContain("<strong>common.comment</strong>");
   });
 });

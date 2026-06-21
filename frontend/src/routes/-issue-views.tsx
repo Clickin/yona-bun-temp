@@ -10,7 +10,7 @@ import type {
 } from "../api/issue-meta";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
-import type { LegacyI18nContextValue } from "../i18n";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import {
   addLegacyTasklistTemplateFromButton,
@@ -265,6 +265,7 @@ function IssueDetailSelectedLabels(props: {
 
 function IssueDetailVoters(props: {
   issue: ProjectIssueDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const voters = props.issue.issueVoters ?? [];
@@ -317,10 +318,15 @@ function IssueDetailVoters(props: {
       </div>
       <div className="modal hide voters-dialog" id="voters">
         <div className="modal-header">
-          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
             ×
           </button>
-          <h5 className="nm">issue.voters</h5>
+          <h5 className="nm">{legacyMessage(props.messages, "issue.voters")}</h5>
         </div>
         <div className="modal-body">
           <ul className="unstyled">
@@ -355,7 +361,7 @@ function IssueDetailVoters(props: {
         <div className="modal-footer">
           {clipboardMessage ? (
             <span className="clipboard-alert" role="alert">
-              {clipboardMessage}
+              {legacyMessage(props.messages, clipboardMessage)}
             </span>
           ) : null}
           {props.runtimeConfig.showUserEmail ? (
@@ -375,11 +381,11 @@ function IssueDetailVoters(props: {
               }}
               type="button"
             >
-              button.copy.email
+              {legacyMessage(props.messages, "button.copy.email")}
             </button>
           ) : null}
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
-            button.close
+            {legacyMessage(props.messages, "button.close")}
           </button>
         </div>
       </div>
@@ -479,6 +485,7 @@ function PostingHistoryModal(props: {
   historyMarkdown?: string;
   issueReferences?: ProjectIssueDetailViewModel["issueReferences"];
   linkLabel: string;
+  messages?: LegacyMessageLookup;
   mentionReferences?: ProjectIssueDetailViewModel["mentionReferences"];
   ownerName?: string;
   projectName?: string;
@@ -491,14 +498,19 @@ function PostingHistoryModal(props: {
   return (
     <div className="posting-history">
       <a data-toggle="modal" href="#-yona-posting-history">
-        <span>{props.linkLabel}</span>
+        <span>{legacyMessage(props.messages, props.linkLabel)}</span>
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
             ×
           </button>
-          <h5 className="nm">change.history</h5>
+          <h5 className="nm">{legacyMessage(props.messages, "change.history")}</h5>
         </div>
         <MarkdownRenderer
           className="modal-body"
@@ -511,7 +523,7 @@ function PostingHistoryModal(props: {
         />
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
-            button.confirm
+            {legacyMessage(props.messages, "button.confirm")}
           </button>
         </div>
       </div>
@@ -1434,6 +1446,7 @@ export function ProjectIssueDetailPage(props: {
   csrfToken?: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t: messages } = useLegacyMessages();
   const detail = props.detail ?? fallbackProjectDetail();
   const issue = props.issue;
   const onDeleteIssue = props.onDeleteIssue;
@@ -1612,6 +1625,7 @@ export function ProjectIssueDetailPage(props: {
                 historyMarkdown={issue.historyMarkdown}
                 issueReferences={issue.issueReferences}
                 linkLabel="change.edited"
+                messages={messages}
                 mentionReferences={issue.mentionReferences}
                 ownerName={issue.ownerName}
                 projectName={issue.projectName}
@@ -1767,7 +1781,11 @@ export function ProjectIssueDetailPage(props: {
                         </span>
                       </button>
                     ) : null}
-                    <IssueDetailVoters issue={issue} runtimeConfig={props.runtimeConfig} />
+                    <IssueDetailVoters
+                      issue={issue}
+                      messages={messages}
+                      runtimeConfig={props.runtimeConfig}
+                    />
                   </div>
                 ) : null}
                 <span className="act-row">
@@ -2201,7 +2219,10 @@ export function ProjectIssueDetailPage(props: {
                                             [comment.id]: event.target.value,
                                           }))
                                         }
-                                        placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
+                                        placeholder={`${legacyMessage(
+                                          messages,
+                                          "comment.oneline.comment.placeholder",
+                                        )} (CTRL + ENTER)`}
                                         rows={1}
                                         value={childCommentDrafts[comment.id] ?? ""}
                                         {...({
@@ -2213,12 +2234,15 @@ export function ProjectIssueDetailPage(props: {
                                         data-legacy-label="OK"
                                         type="submit"
                                       >
-                                        comment.save
+                                        {legacyMessage(messages, "OK")}
                                       </button>
                                     </div>
                                     <div className="notification-receiver">
                                       <span className="notification-receiver-title">
-                                        notification.receiver.list.title
+                                        {legacyMessage(
+                                          messages,
+                                          "notification.receiver.list.title",
+                                        )}
                                       </span>
                                       <span className="notification-receiver-list"></span>
                                     </div>
@@ -2242,12 +2266,13 @@ export function ProjectIssueDetailPage(props: {
                     )}
                     csrfToken={props.csrfToken}
                     getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                    messages={messages}
                     onSearchMentionUsers={props.onSearchMentionUsers}
                     onSubmit={props.onCommentSubmit}
                     runtimeConfig={props.runtimeConfig}
                   />
                 ) : issue ? (
-                  <DisabledIssueCommentBox />
+                  <DisabledIssueCommentBox messages={messages} />
                 ) : null}
               </section>
             </div>
@@ -2322,7 +2347,7 @@ export function ProjectIssueDetailPage(props: {
                 <h3>issue.delete</h3>
               </div>
               <div className="modal-body">
-                <p>post.delete.confirm</p>
+                <p>{legacyMessage(messages, "post.delete.confirm")}</p>
               </div>
               <div className="modal-footer">
                 <button
@@ -3766,6 +3791,7 @@ function IssueCommentForm(props: {
   action: string;
   csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
+  messages?: LegacyMessageLookup;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
@@ -3865,7 +3891,9 @@ function IssueCommentForm(props: {
               <div className="markdown-preview markdown-wrap comment-body"></div>
             </div>
             <div className="notification-receiver">
-              <span className="notification-receiver-title">notification.receiver.list.title</span>
+              <span className="notification-receiver-title">
+                {legacyMessage(props.messages, "notification.receiver.list.title")}
+              </span>
               <span className="notification-receiver-list"></span>
             </div>
           </div>
@@ -3883,7 +3911,7 @@ function IssueCommentForm(props: {
           <div className="right-txt">
             <button className="ybtn hidden" id="dynamic-comment-btn" type="button"></button>
             <button className="ybtn ybtn-success" disabled={submitting} type="submit">
-              button.comment.new
+              {legacyMessage(props.messages, "button.comment.new")}
             </button>
           </div>
         </div>
@@ -3892,7 +3920,7 @@ function IssueCommentForm(props: {
   );
 }
 
-function DisabledIssueCommentBox() {
+function DisabledIssueCommentBox(props: { messages?: LegacyMessageLookup }) {
   return (
     <div
       className="write-comment-box mt20"
@@ -3904,7 +3932,9 @@ function DisabledIssueCommentBox() {
           <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
         </div>
         <div className="right-txt mt10">
-          <span className="ybtn ybtn-disabled">button.comment.new</span>
+          <span className="ybtn ybtn-disabled">
+            {legacyMessage(props.messages, "button.comment.new")}
+          </span>
         </div>
       </div>
     </div>
@@ -4064,6 +4094,7 @@ export function ProjectIssueFormPage(props: {
   referCommentId?: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t: messages } = useLegacyMessages();
   const detail = props.detail ?? fallbackProjectDetail();
   const [title, setTitle] = React.useState(props.initialIssue?.title ?? "");
   const [bodyMarkdown, setBodyMarkdown] = React.useState(
@@ -4236,7 +4267,10 @@ export function ProjectIssueFormPage(props: {
                           <select
                             data-container-css-class="fullsize"
                             data-format="projects"
-                            data-placeholder="organization.choose.projects"
+                            data-placeholder={legacyMessage(
+                              messages,
+                              "organization.choose.projects",
+                            )}
                             data-toggle="select2"
                             disabled={parentIssueOptions.length === 0}
                             id="targetProjectId"
@@ -4249,7 +4283,10 @@ export function ProjectIssueFormPage(props: {
                           <select
                             data-container-css-class="fullsize"
                             data-format="issues"
-                            data-placeholder="organization.choose.projects"
+                            data-placeholder={legacyMessage(
+                              messages,
+                              "organization.choose.projects",
+                            )}
                             data-toggle="select2"
                             id="parentId"
                             name="parentIssueId"

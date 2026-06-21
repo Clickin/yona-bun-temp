@@ -570,7 +570,7 @@ export function ProjectMilestoneDetailPage(props: {
             <div className="modal hide fade" id="deleteConfirm">
               <div className="modal-header">
                 <button
-                  aria-label="button.close"
+                  aria-label={legacyMessage(props.messages, "button.close")}
                   className="close"
                   data-dismiss="modal"
                   type="button"
@@ -580,7 +580,7 @@ export function ProjectMilestoneDetailPage(props: {
                 <h3>{legacyMessage(props.messages, "milestone.delete")}</h3>
               </div>
               <div className="modal-body">
-                <p>post.delete.confirm</p>
+                <p>{legacyMessage(props.messages, "post.delete.confirm")}</p>
               </div>
               <div className="modal-footer">
                 <button
@@ -710,7 +710,7 @@ export function ProjectMilestoneFormPage(props: {
                           setTitle(event.currentTarget.value);
                           setValidationMessage(null);
                         }}
-                        placeholder="title.text"
+                        placeholder={legacyMessage(props.messages, "title.text")}
                         data-legacy-tabindex="1"
                         type="text"
                         value={title}
@@ -800,7 +800,10 @@ export function ProjectMilestoneFormPage(props: {
                       <dt>{legacyMessage(props.messages, "milestone.form.dueDate")}</dt>
                       <dd>
                         <div>
-                          <label aria-label="milestone.dueDate" htmlFor="dueDate">
+                          <label
+                            aria-label={legacyMessage(props.messages, "milestone.dueDate")}
+                            htmlFor="dueDate"
+                          >
                             <input
                               autoComplete="off"
                               className="validate due-date"

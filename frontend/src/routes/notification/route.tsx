@@ -5,14 +5,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { listNotificationsQueryOptions } from "../../api/notifications";
 import { setDefaultLandingPathRest } from "../../api/workspace";
 import { useAppRuntime } from "../../app-runtime-context";
+import type { LegacyI18nContextValue } from "../../i18n";
 import { prefixBasePath } from "../../runtime-config";
 import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../-shared";
 
 const NOTIFICATION_PAGE_SIZE = 20;
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 export const Route = createFileRoute("/notification")({
   component: () => <NotificationRouteComponent routePath="/notifications" />,
 });
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
 
 export function NotificationRouteComponent({
   routePath = "/notifications",
@@ -123,6 +129,7 @@ export function NotificationRouteComponent({
         <div className="page-wrap">
           <NotificationWelcomeGuide
             basePath={runtimeConfig.basePath}
+            messages={messages}
             siteName={runtimeConfig.siteName}
           />
           <div className="page on-fold-intro">
@@ -131,13 +138,15 @@ export function NotificationRouteComponent({
                 <MySeriesMenuTabs
                   basePath={runtimeConfig.basePath}
                   canSetDefaultLoginPage={canSetDefaultLoginPage}
+                  messages={messages}
                   onSetDefaultLoginPage={setDefaultLoginPage}
                   routePath={normalizedRoutePath}
                 />
                 <ul className="activity-streams notification-wrap unstyled">
                   {notificationsQuery.isLoading ? null : items.length === 0 ? (
                     <li className="warning-none">
-                      <i className="yobicon-danger"></i> notification.none
+                      <i className="yobicon-danger"></i>{" "}
+                      {legacyMessage(messages, "notification.none")}
                     </li>
                   ) : (
                     items.map((item) => {
@@ -300,9 +309,11 @@ function NotificationMessage({
 
 export function NotificationWelcomeGuide({
   basePath,
+  messages,
   siteName = "Yona",
 }: {
   basePath: string;
+  messages?: LegacyMessageLookup;
   siteName?: string;
 }) {
   const [visible, setVisible] = React.useState(() => {
@@ -332,10 +343,10 @@ export function NotificationWelcomeGuide({
             <tr>
               <td>
                 <a className="ybtn ybtn-success" href={prefixBasePath(basePath, "/projects/new")}>
-                  button.newProject
+                  {legacyMessage(messages, "button.newProject")}
                 </a>
               </td>
-              <td>app.welcome.project.desc</td>
+              <td>{legacyMessage(messages, "app.welcome.project.desc")}</td>
             </tr>
             <tr>
               <td>
@@ -343,18 +354,18 @@ export function NotificationWelcomeGuide({
                   className="ybtn ybtn-success"
                   href={prefixBasePath(basePath, "/organizations/new")}
                 >
-                  title.newOrganization
+                  {legacyMessage(messages, "title.newOrganization")}
                 </a>
               </td>
-              <td>app.welcome.group.desc</td>
+              <td>{legacyMessage(messages, "app.welcome.group.desc")}</td>
             </tr>
             <tr>
               <td>
                 <a className="ybtn ybtn-success" href={prefixBasePath(basePath, "/projects")}>
-                  title.projectList
+                  {legacyMessage(messages, "title.projectList")}
                 </a>
               </td>
-              <td>app.welcome.searchProject.desc</td>
+              <td>{legacyMessage(messages, "app.welcome.searchProject.desc")}</td>
             </tr>
           </tbody>
         </table>
@@ -371,40 +382,48 @@ export function NotificationWelcomeGuide({
 function MySeriesMenuTabs({
   basePath,
   canSetDefaultLoginPage,
+  messages,
   onSetDefaultLoginPage,
   routePath,
 }: {
   basePath: string;
   canSetDefaultLoginPage: boolean;
+  messages?: LegacyMessageLookup;
   onSetDefaultLoginPage: () => void;
   routePath: string;
 }) {
   return (
     <ul className="nav nav-tabs">
       <li className="active">
-        <a href={prefixBasePath(basePath, "/notifications")}>notification</a>
+        <a href={prefixBasePath(basePath, "/notifications")}>
+          {legacyMessage(messages, "notification")}
+        </a>
       </li>
       <li>
-        <a href={prefixBasePath(basePath, "/user/issues")}>issue.myIssue</a>
+        <a href={prefixBasePath(basePath, "/user/issues")}>
+          {legacyMessage(messages, "issue.myIssue")}
+        </a>
       </li>
       <li>
-        <a href={prefixBasePath(basePath, "/user/files")}>user.files</a>
+        <a href={prefixBasePath(basePath, "/user/files")}>
+          {legacyMessage(messages, "user.files")}
+        </a>
       </li>
       <li>
         {canSetDefaultLoginPage ? (
           <button
             className="ybtn hide-in-mobile"
-            data-content="button.setDefaultLoginPage.desc"
+            data-content={legacyMessage(messages, "button.setDefaultLoginPage.desc")}
             data-placement="bottom"
             data-toggle="popover"
             data-trigger="hover"
             data-url={routePath.replace(/^\//, "")}
             id="setDefaultLoginPage"
             onClick={onSetDefaultLoginPage}
-            title="button.setDefaultLoginPage"
+            title={legacyMessage(messages, "button.setDefaultLoginPage")}
             type="button"
           >
-            button.setDefaultLoginPage
+            {legacyMessage(messages, "button.setDefaultLoginPage")}
           </button>
         ) : null}
       </li>

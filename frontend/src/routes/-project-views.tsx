@@ -231,6 +231,7 @@ function ProjectHomeHistoryPane(props: { detail: ProjectDetailViewModel }) {
 
 function ProjectHomeDashboardPane(props: {
   detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
@@ -263,13 +264,13 @@ function ProjectHomeDashboardPane(props: {
         <div className="span6">
           {detail.showIssue ? (
             <>
-              <h5>project.dashboard.openIssuesByAssignee</h5>
+              <h5>{legacyMessage(props.messages, "project.dashboard.openIssuesByAssignee")}</h5>
               <div className="overview-assignee">
                 {openIssueCount === 0 ? (
                   <div className="empty">
-                    <p>issue.is.empty</p>
+                    <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
                     <a className="ybtn ybtn-small" href={projectHref("issue/new")} target="_blank">
-                      issue.menu.new
+                      {legacyMessage(props.messages, "issue.menu.new")}
                     </a>
                   </div>
                 ) : hasAssigneeDashboardData ? (
@@ -299,7 +300,7 @@ function ProjectHomeDashboardPane(props: {
                   <ProjectDashboardMetric
                     count={openIssueCount}
                     href={projectHref("issues?state=open")}
-                    label="issue.noAssignee"
+                    label={legacyMessage(props.messages, "issue.noAssignee")}
                     percent={100}
                   />
                 )}
@@ -307,7 +308,7 @@ function ProjectHomeDashboardPane(props: {
 
               <hr />
 
-              <h5>project.dashboard.openIssuesByMilestone</h5>
+              <h5>{legacyMessage(props.messages, "project.dashboard.openIssuesByMilestone")}</h5>
               <div className="overview-milestone">
                 {detail.currentMilestone ? (
                   <ProjectDashboardMetric
@@ -320,7 +321,7 @@ function ProjectHomeDashboardPane(props: {
                   <ProjectDashboardMetric
                     count={openIssueCount}
                     href={projectHref("issues?state=open")}
-                    label="milestone.none"
+                    label={legacyMessage(props.messages, "milestone.none")}
                     percent={0}
                   />
                 )}
@@ -331,24 +332,24 @@ function ProjectHomeDashboardPane(props: {
           {detail.showPullRequest ? (
             <>
               {detail.showIssue ? <hr /> : null}
-              <h5>project.dashboard.pullRequests</h5>
+              <h5>{legacyMessage(props.messages, "project.dashboard.pullRequests")}</h5>
               <div className="overview-pullrequest">
                 {pullRequestCount === 0 ? (
                   <div className="empty">
-                    <p>pullRequest.is.empty</p>
+                    <p>{legacyMessage(props.messages, "pullRequest.is.empty")}</p>
                     <a
                       className="ybtn ybtn-small"
                       href={projectHref("newPullRequestForm")}
                       target="_blank"
                     >
-                      pullRequest.new
+                      {legacyMessage(props.messages, "pullRequest.new")}
                     </a>
                   </div>
                 ) : (
                   <ProjectDashboardMetric
                     count={pullRequestCount}
                     href={projectHref("pullRequests")}
-                    label="project.dashboard.pullRequests"
+                    label={legacyMessage(props.messages, "project.dashboard.pullRequests")}
                     percent={100}
                   />
                 )}
@@ -359,11 +360,11 @@ function ProjectHomeDashboardPane(props: {
 
         {detail.showIssue ? (
           <div className="span6">
-            <h5>project.dashboard.openIssuesByLabel</h5>
+            <h5>{legacyMessage(props.messages, "project.dashboard.openIssuesByLabel")}</h5>
             {dashboardLabelCategories.length > 0 ? (
               dashboardLabelCategories.map((category) => (
                 <dl className="dl-horizontal overview-label" key={category.categoryName}>
-                  <dt>{category.categoryName}</dt>
+                  <dt>{legacyMessage(props.messages, category.categoryName)}</dt>
                   <dd>
                     {category.labels.map((label) => (
                       <ProjectDashboardLabelMetric
@@ -379,12 +380,12 @@ function ProjectHomeDashboardPane(props: {
               ))
             ) : (
               <dl className="dl-horizontal overview-label">
-                <dt>project.dashboard.openIssuesByLabel</dt>
+                <dt>{legacyMessage(props.messages, "project.dashboard.openIssuesByLabel")}</dt>
                 <dd>
                   <ProjectDashboardMetric
                     count={openIssueCount}
                     href={projectHref("issues?state=open")}
-                    label="label.none"
+                    label={legacyMessage(props.messages, "label.none")}
                     percent={openIssueCount > 0 ? 100 : 0}
                   />
                 </dd>
@@ -883,6 +884,7 @@ export function ProjectNewPage(props: {
   pending?: boolean;
   selectedOwnerName?: string;
 }) {
+  const { t: messages } = useLegacyMessages();
   const selectedOwnerName =
     props.selectedOwnerName ||
     props.ownerOptions?.find((option) => option.selected)?.ownerName ||
@@ -925,18 +927,19 @@ export function ProjectNewPage(props: {
             }}
           >
             <legend>
-              title.newProject
+              {legacyMessage(messages, "title.newProject")}
               <span>
-                <small>project.import.or &nbsp; </small>
+                <small>{legacyMessage(messages, "project.import.or")} &nbsp; </small>
                 <a className="ybtn ybtn-small nm" href={importFormHref}>
-                  <strong>project.import.from.git</strong>
+                  <strong>{legacyMessage(messages, "project.import.from.git")}</strong>
                 </a>
               </span>
             </legend>
             <dl>
               <dt>
                 <label htmlFor="project-owner">
-                  project.owner <strong className="orange-txt">*</strong>
+                  {legacyMessage(messages, "project.owner")}{" "}
+                  <strong className="orange-txt">*</strong>
                 </label>
               </dt>
               <dd>
@@ -968,7 +971,8 @@ export function ProjectNewPage(props: {
               </dd>
               <dt>
                 <label htmlFor="project-name">
-                  project.name <strong className="orange-txt">*</strong>
+                  {legacyMessage(messages, "project.name")}{" "}
+                  <strong className="orange-txt">*</strong>
                 </label>
               </dt>
               <dd>
@@ -977,7 +981,7 @@ export function ProjectNewPage(props: {
                   id="project-name"
                   maxLength={250}
                   name="name"
-                  placeholder="project.name.placeholder"
+                  placeholder={legacyMessage(messages, "project.name.placeholder")}
                   type="text"
                   value={formState.projectName}
                   onChange={(event) =>
@@ -989,7 +993,9 @@ export function ProjectNewPage(props: {
                 />
               </dd>
               <dt>
-                <label htmlFor="description">project.description</label>
+                <label htmlFor="description">
+                  {legacyMessage(messages, "project.description")}
+                </label>
               </dt>
               <dd>
                 <textarea
@@ -1008,7 +1014,9 @@ export function ProjectNewPage(props: {
             </dl>
             <div className="advanced-options">
               <div className="row-fluid">
-                <div className="span2 right-txt mt10">project.shareOption</div>
+                <div className="span2 right-txt mt10">
+                  {legacyMessage(messages, "project.shareOption")}
+                </div>
                 <div className="span10">
                   <ul className="unstyled project-scopes mt10">
                     {[
@@ -1048,8 +1056,8 @@ export function ProjectNewPage(props: {
                           value={scope.id.toUpperCase()}
                         />
                         <label htmlFor={scope.id}>
-                          <strong className="ml5">{scope.label}</strong>
-                          <p className="note">{scope.notice}</p>
+                          <strong className="ml5">{legacyMessage(messages, scope.label)}</strong>
+                          <p className="note">{legacyMessage(messages, scope.notice)}</p>
                         </label>
                       </li>
                     ))}
@@ -1059,7 +1067,7 @@ export function ProjectNewPage(props: {
               <hr />
               <div className="row-fluid">
                 <div className="span2 right-txt mt10">
-                  <label htmlFor="vcs">project.vcs</label>
+                  <label htmlFor="vcs">{legacyMessage(messages, "project.vcs")}</label>
                 </div>
                 <div className="span10 cu-desc">
                   <select
@@ -1077,17 +1085,23 @@ export function ProjectNewPage(props: {
                     style={{ minWidth: 220 }}
                     value={formState.vcs}
                   >
-                    <option value="GIT">project.new.vcsType.git</option>
-                    <option value="SVN">project.new.vcsType.subversion</option>
+                    <option value="GIT">
+                      {legacyMessage(messages, "project.new.vcsType.git")}
+                    </option>
+                    <option value="SVN">
+                      {legacyMessage(messages, "project.new.vcsType.subversion")}
+                    </option>
                   </select>
                   <span className="ml10 notice" id="svn" style={{ display: "none" }}>
-                    project.svn.warning
+                    {legacyMessage(messages, "project.svn.warning")}
                   </span>
                 </div>
               </div>
               <hr />
               <div className="row-fluid">
-                <div className="span2 right-txt">project.menu.setting</div>
+                <div className="span2 right-txt">
+                  {legacyMessage(messages, "project.menu.setting")}
+                </div>
                 <div className="span10">
                   {PROJECT_MENU_SETTINGS.map((item) => (
                     <label
@@ -1109,7 +1123,7 @@ export function ProjectNewPage(props: {
                         type="checkbox"
                         value="true"
                       />
-                      {item.label}
+                      {legacyMessage(messages, item.label)}
                     </label>
                   ))}
                 </div>
@@ -1117,10 +1131,10 @@ export function ProjectNewPage(props: {
             </div>
             <div className="actions mt20">
               <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
-                project.create
+                {legacyMessage(messages, "project.create")}
               </button>
               <a className="ybtn" href="/">
-                button.cancel
+                {legacyMessage(messages, "button.cancel")}
               </a>
             </div>
           </form>
@@ -1155,6 +1169,7 @@ export function ProjectImportPage(props: {
   pending?: boolean;
   selectedOwnerName?: string;
 }) {
+  const { t: messages } = useLegacyMessages();
   const selectedOwnerName =
     props.selectedOwnerName ||
     props.ownerOptions?.find((option) => option.selected)?.ownerName ||
@@ -1207,18 +1222,19 @@ export function ProjectImportPage(props: {
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <legend>
-              project.import.from.git
+              {legacyMessage(messages, "project.import.from.git")}
               <span>
-                <small>project.import.or &nbsp; </small>
+                <small>{legacyMessage(messages, "project.import.or")} &nbsp; </small>
                 <a className="ybtn ybtn-small nm" href={createFormHref}>
-                  <strong>title.newProject</strong>
+                  <strong>{legacyMessage(messages, "title.newProject")}</strong>
                 </a>
               </span>
             </legend>
             <dl>
               <dt>
                 <label htmlFor="url">
-                  project.git.url <strong className="orange-txt">*</strong>
+                  {legacyMessage(messages, "project.git.url")}{" "}
+                  <strong className="orange-txt">*</strong>
                 </label>
               </dt>
               <dd>
@@ -1226,7 +1242,7 @@ export function ProjectImportPage(props: {
                   className="text"
                   id="url"
                   name="url"
-                  placeholder="project.git.url.alert"
+                  placeholder={legacyMessage(messages, "project.git.url.alert")}
                   type="text"
                   value={formState.url}
                   onChange={(event) =>
@@ -1246,7 +1262,7 @@ export function ProjectImportPage(props: {
                     type="checkbox"
                     onChange={(event) => setRepoAuthOpen(event.target.checked)}
                   />
-                  project.git.useRepoAuth
+                  {legacyMessage(messages, "project.git.useRepoAuth")}
                 </label>
                 <div
                   className="repo-auth-wrap"
@@ -1283,7 +1299,8 @@ export function ProjectImportPage(props: {
               </dd>
               <dt>
                 <label htmlFor="project-owner">
-                  project.owner <strong className="orange-txt">*</strong>
+                  {legacyMessage(messages, "project.owner")}{" "}
+                  <strong className="orange-txt">*</strong>
                 </label>
               </dt>
               <dd>
@@ -1315,7 +1332,8 @@ export function ProjectImportPage(props: {
               </dd>
               <dt>
                 <label htmlFor="project-name">
-                  project.name <strong className="orange-txt">*</strong>
+                  {legacyMessage(messages, "project.name")}{" "}
+                  <strong className="orange-txt">*</strong>
                 </label>
               </dt>
               <dd>
@@ -1324,7 +1342,7 @@ export function ProjectImportPage(props: {
                   id="project-name"
                   maxLength={250}
                   name="name"
-                  placeholder="project.name.placeholder"
+                  placeholder={legacyMessage(messages, "project.name.placeholder")}
                   type="text"
                   value={formState.projectName}
                   onChange={(event) =>
@@ -1336,7 +1354,9 @@ export function ProjectImportPage(props: {
                 />
               </dd>
               <dt>
-                <label htmlFor="description">project.description</label>
+                <label htmlFor="description">
+                  {legacyMessage(messages, "project.description")}
+                </label>
               </dt>
               <dd>
                 <textarea
@@ -1355,7 +1375,9 @@ export function ProjectImportPage(props: {
             </dl>
             <div className="advanced-options">
               <div className="row-fluid">
-                <div className="span2 right-txt mt10">project.shareOption</div>
+                <div className="span2 right-txt mt10">
+                  {legacyMessage(messages, "project.shareOption")}
+                </div>
                 <div className="span10">
                   <ul className="unstyled project-scopes mt10">
                     {[
@@ -1395,8 +1417,8 @@ export function ProjectImportPage(props: {
                           }
                         />
                         <label htmlFor={scope.id}>
-                          <strong className="ml5">{scope.label}</strong>
-                          <p className="note">{scope.notice}</p>
+                          <strong className="ml5">{legacyMessage(messages, scope.label)}</strong>
+                          <p className="note">{legacyMessage(messages, scope.notice)}</p>
                         </label>
                       </li>
                     ))}
@@ -1406,7 +1428,7 @@ export function ProjectImportPage(props: {
               <hr />
               <div className="row-fluid">
                 <div className="span2 right-txt mt10">
-                  <label htmlFor="vcs">project.vcs</label>
+                  <label htmlFor="vcs">{legacyMessage(messages, "project.vcs")}</label>
                 </div>
                 <div className="span10 cu-desc">
                   <select
@@ -1419,14 +1441,18 @@ export function ProjectImportPage(props: {
                     style={{ minWidth: 220 }}
                     defaultValue={formState.vcs}
                   >
-                    <option value="GIT">project.new.vcsType.git</option>
+                    <option value="GIT">
+                      {legacyMessage(messages, "project.new.vcsType.git")}
+                    </option>
                   </select>
                   <input name="vcs" type="hidden" value={formState.vcs} />
                 </div>
               </div>
               <hr />
               <div className="row-fluid">
-                <div className="span2 right-txt">project.menu.setting</div>
+                <div className="span2 right-txt">
+                  {legacyMessage(messages, "project.menu.setting")}
+                </div>
                 <div className="span10">
                   {PROJECT_MENU_SETTINGS.map((item) => (
                     <label
@@ -1448,7 +1474,7 @@ export function ProjectImportPage(props: {
                           }))
                         }
                       />
-                      {item.label}
+                      {legacyMessage(messages, item.label)}
                     </label>
                   ))}
                 </div>
@@ -1456,10 +1482,10 @@ export function ProjectImportPage(props: {
             </div>
             <div className="actions mt20">
               <button className="ybtn ybtn-primary" disabled={props.pending} type="submit">
-                project.create
+                {legacyMessage(messages, "project.create")}
               </button>
               <a className="ybtn" href="/">
-                button.cancel
+                {legacyMessage(messages, "button.cancel")}
               </a>
             </div>
           </form>
@@ -1480,6 +1506,7 @@ export function ProjectDetailPage(props: {
   onToggleProjectWatch?: (ownerName: string, projectName: string, watching: boolean) => void;
   onUpdateProjectOverview?: (ownerName: string, projectName: string, overview: string) => void;
 }) {
+  const { t: messages } = useLegacyMessages();
   const detail = React.useMemo(
     () =>
       props.detail ?? {
@@ -1580,13 +1607,13 @@ export function ProjectDetailPage(props: {
                       className="span6"
                       id="project-description-input"
                       name="overview"
-                      placeholder="project.description.placeholder"
+                      placeholder={legacyMessage(messages, "project.description.placeholder")}
                       type="text"
                       value={overviewDraft}
                       onChange={(event) => setOverviewDraft(event.target.value)}
                     />
                     <button className="ybtn ybtn-success" id="descriptionSaveBtn" type="submit">
-                      button.save
+                      {legacyMessage(messages, "button.save")}
                     </button>{" "}
                     <button
                       className="ybtn"
@@ -1594,7 +1621,7 @@ export function ProjectDetailPage(props: {
                       type="button"
                       onClick={() => setEditingOverview(false)}
                     >
-                      button.cancel
+                      {legacyMessage(messages, "button.cancel")}
                     </button>
                   </form>
                 </div>
@@ -1629,10 +1656,14 @@ export function ProjectDetailPage(props: {
                   <a href={projectHref}>README</a>
                 </li>
                 <li className={activeTab === "history" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=history`}>project.history.recent</a>
+                  <a href={`${projectHref}?tabId=history`}>
+                    {legacyMessage(messages, "project.history.recent")}
+                  </a>
                 </li>
                 <li className={activeTab === "dashboard" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=dashboard`}>project.dashboard</a>
+                  <a href={`${projectHref}?tabId=dashboard`}>
+                    {legacyMessage(messages, "project.dashboard")}
+                  </a>
                 </li>
               </ul>
               <div className="tab-content">
@@ -1670,17 +1701,17 @@ export function ProjectDetailPage(props: {
                         <p className="default">
                           {isGitProject ? (
                             <>
-                              <span>project.readme</span>
+                              <span>{legacyMessage(messages, "project.readme")}</span>
                               <br />
                               <br />
                               {detail.viewerCanUpdate ? (
                                 <a className="ybtn" href={`${projectHref}/postform?readme=true`}>
-                                  project.readme.create
+                                  {legacyMessage(messages, "project.readme.create")}
                                 </a>
                               ) : null}
                             </>
                           ) : (
-                            <span>project.svn.readme</span>
+                            <span>{legacyMessage(messages, "project.svn.readme")}</span>
                           )}
                         </p>
                       </div>
@@ -1688,7 +1719,11 @@ export function ProjectDetailPage(props: {
                   ) : null}
                   {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
                   {activeTab === "dashboard" ? (
-                    <ProjectHomeDashboardPane detail={detail} runtimeConfig={props.runtimeConfig} />
+                    <ProjectHomeDashboardPane
+                      detail={detail}
+                      messages={messages}
+                      runtimeConfig={props.runtimeConfig}
+                    />
                   ) : null}
                 </div>
               </div>
@@ -1699,7 +1734,7 @@ export function ProjectDetailPage(props: {
                   {detail.showIssue ? (
                     <span className="project-btn-item">
                       <a className="ybtn ybtn-success" href={`${projectHref}/issues/new`}>
-                        button.newIssue
+                        {legacyMessage(messages, "button.newIssue")}
                       </a>
                     </span>
                   ) : null}
@@ -1712,11 +1747,11 @@ export function ProjectDetailPage(props: {
                   ) : null}
                 </div>
                 <section>
-                  <h3>project.dashboard</h3>
+                  <h3>{legacyMessage(messages, "project.dashboard")}</h3>
                   <div className="runtime-grid">
                     <button
                       type="button"
-                      title="title.favorite"
+                      title={legacyMessage(messages, "title.favorite")}
                       onClick={() =>
                         props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
                       }
@@ -1738,7 +1773,10 @@ export function ProjectDetailPage(props: {
                           )
                         }
                       >
-                        {detail.isWatching ? "project.unwatch" : "project.watch"}
+                        {legacyMessage(
+                          messages,
+                          detail.isWatching ? "project.unwatch" : "project.watch",
+                        )}
                       </button>
                     ) : null}
                     {detail.viewerCanEnroll ? (
@@ -1749,7 +1787,7 @@ export function ProjectDetailPage(props: {
                             props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)
                           }
                         >
-                          button.cancel.enrollment
+                          {legacyMessage(messages, "button.cancel.enrollment")}
                         </button>
                       ) : (
                         <button
@@ -1758,14 +1796,14 @@ export function ProjectDetailPage(props: {
                             props.onEnrollProject?.(detail.ownerName, detail.projectName)
                           }
                         >
-                          button.new.enrollment
+                          {legacyMessage(messages, "button.new.enrollment")}
                         </button>
                       )
                     ) : null}
                   </div>
                 </section>
                 <section>
-                  <h3>project.watcher.title</h3>
+                  <h3>{legacyMessage(messages, "project.watcher.title")}</h3>
                   <a
                     className="btn watcher-count no-border"
                     href={buildProjectHref(
@@ -1780,7 +1818,7 @@ export function ProjectDetailPage(props: {
                 </section>
                 <section className="inner member-info">
                   <header>
-                    <h3>project.members</h3>
+                    <h3>{legacyMessage(messages, "project.members")}</h3>
                   </header>
                   <ul>
                     {(detail.members ?? []).map((member) => (

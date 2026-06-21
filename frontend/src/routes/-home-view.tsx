@@ -1,10 +1,25 @@
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
 
-export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
+export function HomePage({
+  messages: providedMessages,
+  runtimeConfig,
+}: {
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const runtimeMessages = useLegacyMessages().t;
+  const messages = providedMessages ?? runtimeMessages;
   const siteName = runtimeConfig.siteName?.trim() || "Yona";
 
   return (
@@ -23,14 +38,17 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 className="ybtn ybtn-success ybtn-padding"
                 href={appHref(runtimeConfig, "/users/signupform")}
               >
-                {`Sign up for ${siteName}`}
+                {messages("button.signup", {
+                  args: [siteName],
+                  fallback: `Sign up for ${siteName}`,
+                })}
               </a>
             </div>
           </div>
         </div>
         <div className="feature">
           <h2>
-            <span>title.features</span>
+            <span>{legacyMessage(messages, "title.features")}</span>
           </h2>
           <ul className="feature-wrap row">
             <li>
@@ -38,8 +56,12 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-cgicenter"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.unlimitedProjects</h3>
-                <p className="feature-desc">site.features.unlimitedProjects</p>
+                <h3 className="feature-title">
+                  {legacyMessage(messages, "title.unlimitedProjects")}
+                </h3>
+                <p className="feature-desc">
+                  {legacyMessage(messages, "site.features.unlimitedProjects")}
+                </p>
               </div>
             </li>
             <li>
@@ -47,8 +69,10 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-code"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.codeManagement</h3>
-                <p className="feature-desc">site.features.codeManagement</p>
+                <h3 className="feature-title">{legacyMessage(messages, "title.codeManagement")}</h3>
+                <p className="feature-desc">
+                  {legacyMessage(messages, "site.features.codeManagement")}
+                </p>
               </div>
             </li>
             <li>
@@ -56,8 +80,10 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-articles"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.issueTracker</h3>
-                <p className="feature-desc">site.features.issueTracker</p>
+                <h3 className="feature-title">{legacyMessage(messages, "title.issueTracker")}</h3>
+                <p className="feature-desc">
+                  {legacyMessage(messages, "site.features.issueTracker")}
+                </p>
               </div>
             </li>
             <li>
@@ -65,8 +91,10 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-lock"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.privateProject</h3>
-                <p className="feature-desc">site.features.privateRepositories</p>
+                <h3 className="feature-title">{legacyMessage(messages, "title.privateProject")}</h3>
+                <p className="feature-desc">
+                  {legacyMessage(messages, "site.features.privateRepositories")}
+                </p>
               </div>
             </li>
             <li>
@@ -74,8 +102,10 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-preview"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.codeReview</h3>
-                <p className="feature-desc">site.features.codeReview</p>
+                <h3 className="feature-title">{legacyMessage(messages, "title.codeReview")}</h3>
+                <p className="feature-desc">
+                  {legacyMessage(messages, "site.features.codeReview")}
+                </p>
               </div>
             </li>
             <li>
@@ -83,8 +113,8 @@ export function HomePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-friends"></i>
               </div>
               <div className="feature-info">
-                <h3 className="feature-title">title.workTeam</h3>
-                <p className="feature-desc">site.features.workTeam</p>
+                <h3 className="feature-title">{legacyMessage(messages, "title.workTeam")}</h3>
+                <p className="feature-desc">{legacyMessage(messages, "site.features.workTeam")}</p>
               </div>
             </li>
           </ul>

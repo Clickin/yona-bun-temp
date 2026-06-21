@@ -8,7 +8,7 @@ import type {
 } from "../api/boards";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
-import type { LegacyI18nContextValue } from "../i18n";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
@@ -115,6 +115,7 @@ function PostingHistoryModal(props: {
   historyMarkdown?: string;
   issueReferences?: BoardPostDetail["issueReferences"];
   linkLabel: string;
+  messages?: LegacyMessageLookup;
   mentionReferences?: BoardPostDetail["mentionReferences"];
   ownerName?: string;
   basePath?: string;
@@ -128,14 +129,19 @@ function PostingHistoryModal(props: {
   return (
     <div className="posting-history">
       <a data-toggle="modal" href="#-yona-posting-history">
-        <span>{props.linkLabel}</span>
+        <span>{legacyMessage(props.messages, props.linkLabel)}</span>
       </a>
       <div className="modal hide" id="-yona-posting-history">
         <div className="modal-header">
-          <button aria-label="button.close" className="close" data-dismiss="modal" type="button">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            type="button"
+          >
             ×
           </button>
-          <h5 className="nm">change.history</h5>
+          <h5 className="nm">{legacyMessage(props.messages, "change.history")}</h5>
         </div>
         <MarkdownRenderer
           className="modal-body"
@@ -148,7 +154,7 @@ function PostingHistoryModal(props: {
         />
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
-            button.confirm
+            {legacyMessage(props.messages, "button.confirm")}
           </button>
         </div>
       </div>
@@ -903,6 +909,7 @@ export function ProjectBoardDetailPage(props: {
                   basePath={props.runtimeConfig.basePath}
                   issueReferences={post.issueReferences}
                   linkLabel="change.history"
+                  messages={props.messages}
                   mentionReferences={post.mentionReferences}
                   ownerName={post.ownerName}
                   projectName={post.projectName}
@@ -949,10 +956,13 @@ export function ProjectBoardDetailPage(props: {
                         data-toggle="tooltip"
                         data-watching={post.isWatching ? "true" : "false"}
                         onClick={props.onWatchToggle}
-                        title="issue.watch.description"
+                        title={legacyMessage(props.messages, "issue.watch.description")}
                         type="button"
                       >
-                        {post.isWatching ? "post.unwatch" : "post.watch"}
+                        {legacyMessage(
+                          props.messages,
+                          post.isWatching ? "post.unwatch" : "post.watch",
+                        )}
                       </button>
                     ) : null}
                   </div>
@@ -964,32 +974,36 @@ export function ProjectBoardDetailPage(props: {
                     disabled={translatingPost || translatedPostMarkdown !== null}
                     id="translate"
                     onClick={() => void translatePost()}
-                    title="button.translation"
+                    title={legacyMessage(props.messages, "button.translation")}
                     type="button"
                   >
                     <i className="yobicon-lang" />
                   </button>
                   {post.permissions.canUpdate ? (
                     <a
-                      aria-label="button.edit"
+                      aria-label={legacyMessage(props.messages, "button.edit")}
                       className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
                       data-toggle="tooltip"
                       href={editPostHref}
-                      title="button.edit"
+                      title={legacyMessage(props.messages, "button.edit")}
                     >
                       <i className="yobicon-edit-2" />
-                      <span className="sr-only">button.edit</span>
+                      <span className="sr-only">
+                        {legacyMessage(props.messages, "button.edit")}
+                      </span>
                     </a>
                   ) : (
                     <a href={editPostHref}>
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
                         data-toggle="tooltip"
-                        title="button.show.original"
+                        title={legacyMessage(props.messages, "button.show.original")}
                         type="button"
                       >
                         <i className="yobicon-edit-2" />
-                        <span className="sr-only">button.show.original</span>
+                        <span className="sr-only">
+                          {legacyMessage(props.messages, "button.show.original")}
+                        </span>
                       </button>
                     </a>
                   )}
@@ -999,11 +1013,13 @@ export function ProjectBoardDetailPage(props: {
                         className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
                         data-toggle="tooltip"
                         onClick={props.onDeletePost}
-                        title="button.delete"
+                        title={legacyMessage(props.messages, "button.delete")}
                         type="button"
                       >
                         <i className="yobicon-trash" />
-                        <span className="sr-only">button.delete</span>
+                        <span className="sr-only">
+                          {legacyMessage(props.messages, "button.delete")}
+                        </span>
                       </button>
                     </a>
                   ) : null}
@@ -1014,7 +1030,8 @@ export function ProjectBoardDetailPage(props: {
                 <div id="timeline">
                   <div className="timeline-list">
                     <div className="comment-header">
-                      <i className="yobicon-comments" /> <strong>common.comment</strong>{" "}
+                      <i className="yobicon-comments" />{" "}
+                      <strong>{legacyMessage(props.messages, "common.comment")}</strong>{" "}
                       <strong className="num">{post.comments.length}</strong>
                     </div>
                     <hr className="nm" />
@@ -1105,14 +1122,17 @@ export function ProjectBoardDetailPage(props: {
                                       Boolean(translatedCommentMarkdownById[comment.id])
                                     }
                                     onClick={() => void translatePostComment(comment)}
-                                    title="button.translation"
+                                    title={legacyMessage(props.messages, "button.translation")}
                                     type="button"
                                   >
                                     <i className="yobicon-lang" />
                                   </button>
                                   {canEdit ? (
                                     <button
-                                      aria-label="common.comment.edit"
+                                      aria-label={legacyMessage(
+                                        props.messages,
+                                        "common.comment.edit",
+                                      )}
                                       className="btn-transparent ml10"
                                       data-comment-id={comment.id}
                                       data-toggle="comment-edit"
@@ -1121,25 +1141,32 @@ export function ProjectBoardDetailPage(props: {
                                         setEditingCommentDraft(comment.contentsMarkdown);
                                         setEditingCommentAttachmentIds([]);
                                       }}
-                                      title="common.comment.edit"
+                                      title={legacyMessage(props.messages, "common.comment.edit")}
                                       type="button"
                                     >
                                       <i className="yobicon-edit-2" />
-                                      <span className="sr-only">common.comment.edit</span>
+                                      <span className="sr-only">
+                                        {legacyMessage(props.messages, "common.comment.edit")}
+                                      </span>
                                     </button>
                                   ) : null}
                                   {canDelete ? (
                                     <button
-                                      aria-label="common.comment.delete"
+                                      aria-label={legacyMessage(
+                                        props.messages,
+                                        "common.comment.delete",
+                                      )}
                                       className="btn-transparent ml6 danger"
                                       data-request-uri={commentAction}
                                       data-toggle="comment-delete"
                                       onClick={() => void props.onCommentDelete?.(comment.id)}
-                                      title="common.comment.delete"
+                                      title={legacyMessage(props.messages, "common.comment.delete")}
                                       type="button"
                                     >
                                       <i className="yobicon-trash" />
-                                      <span className="sr-only">common.comment.delete</span>
+                                      <span className="sr-only">
+                                        {legacyMessage(props.messages, "common.comment.delete")}
+                                      </span>
                                     </button>
                                   ) : null}
                                 </span>
@@ -1209,10 +1236,10 @@ export function ProjectBoardDetailPage(props: {
                                           onClick={() => setEditingCommentId(null)}
                                           type="button"
                                         >
-                                          button.cancel
+                                          {legacyMessage(props.messages, "button.cancel")}
                                         </button>
                                         <button className="ybtn ybtn-info" type="submit">
-                                          button.save
+                                          {legacyMessage(props.messages, "button.save")}
                                         </button>
                                       </div>
                                     </div>
@@ -1246,7 +1273,10 @@ export function ProjectBoardDetailPage(props: {
                                 </div>
                               )}
                               <div className="add-a-comment pull-right">
-                                comment.oneline.comment.placeholder
+                                {legacyMessage(
+                                  props.messages,
+                                  "comment.oneline.comment.placeholder",
+                                )}
                               </div>
                               <div className="subcomment-media-body">
                                 <div className="child-comments">
@@ -1310,7 +1340,10 @@ export function ProjectBoardDetailPage(props: {
                                                 onClick={() =>
                                                   void props.onCommentDelete?.(childComment.id)
                                                 }
-                                                title="common.comment.delete"
+                                                title={legacyMessage(
+                                                  props.messages,
+                                                  "common.comment.delete",
+                                                )}
                                                 type="button"
                                               >
                                                 x
@@ -1367,7 +1400,10 @@ export function ProjectBoardDetailPage(props: {
                                               [comment.id]: event.target.value,
                                             }))
                                           }
-                                          placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"
+                                          placeholder={`${legacyMessage(
+                                            props.messages,
+                                            "comment.oneline.comment.placeholder",
+                                          )} (CTRL + ENTER)`}
                                           rows={1}
                                           value={childCommentDrafts[comment.id] ?? ""}
                                           {...({
@@ -1379,12 +1415,15 @@ export function ProjectBoardDetailPage(props: {
                                           data-legacy-label="OK"
                                           type="submit"
                                         >
-                                          comment.save
+                                          {legacyMessage(props.messages, "comment.save")}
                                         </button>
                                       </div>
                                       <div className="notification-receiver">
                                         <span className="notification-receiver-title">
-                                          notification.receiver.list.title
+                                          {legacyMessage(
+                                            props.messages,
+                                            "notification.receiver.list.title",
+                                          )}
                                         </span>
                                         <span className="notification-receiver-list"></span>
                                       </div>
@@ -1439,7 +1478,7 @@ export function ProjectBoardDetailPage(props: {
                         <div className="right-txt">
                           <button className="ybtn hidden" id="dynamic-comment-btn" type="button" />
                           <button className="ybtn ybtn-success" type="submit">
-                            button.comment.new
+                            {legacyMessage(props.messages, "button.comment.new")}
                           </button>
                         </div>
                       </div>
@@ -1460,7 +1499,9 @@ export function ProjectBoardDetailPage(props: {
                         />
                       </div>
                       <div className="right-txt mt10">
-                        <span className="ybtn ybtn-disabled">button.comment.new</span>
+                        <span className="ybtn ybtn-disabled">
+                          {legacyMessage(props.messages, "button.comment.new")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1479,7 +1520,7 @@ export function ProjectBoardDetailPage(props: {
                           `/${post.ownerName}/${post.projectName}/postform`,
                         )}
                       >
-                        post.write
+                        {legacyMessage(props.messages, "post.write")}
                       </a>
                     </dd>
                   ) : null}
@@ -1490,12 +1531,18 @@ export function ProjectBoardDetailPage(props: {
                     <button
                       className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
                       data-toggle="tooltip"
-                      title={post.permissions.canUpdate ? "button.edit" : "button.show.original"}
+                      title={legacyMessage(
+                        props.messages,
+                        post.permissions.canUpdate ? "button.edit" : "button.show.original",
+                      )}
                       type="button"
                     >
                       <i className="yobicon-edit-2" />
                       <span className="sr-only">
-                        {post.permissions.canUpdate ? "button.edit" : "button.show.original"}
+                        {legacyMessage(
+                          props.messages,
+                          post.permissions.canUpdate ? "button.edit" : "button.show.original",
+                        )}
                       </span>
                     </button>
                   </a>
@@ -1505,11 +1552,13 @@ export function ProjectBoardDetailPage(props: {
                         className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
                         data-toggle="tooltip"
                         onClick={props.onDeletePost}
-                        title="button.delete"
+                        title={legacyMessage(props.messages, "button.delete")}
                         type="button"
                       >
                         <i className="yobicon-trash" />
-                        <span className="sr-only">button.delete</span>
+                        <span className="sr-only">
+                          {legacyMessage(props.messages, "button.delete")}
+                        </span>
                       </button>
                     </a>
                   ) : null}
@@ -1552,6 +1601,7 @@ export function ProjectPostFormPage(props: {
     newFileName?: string;
   }) => Promise<void>;
 }) {
+  const { t: messages } = useLegacyMessages();
   const onlineCommit = props.onlineCommit;
   const isOnlineCommit = Boolean(onlineCommit?.path || onlineCommit?.issueTemplate);
   const [title, setTitle] = React.useState(props.initialPost?.title ?? onlineCommit?.title ?? "");
@@ -1597,7 +1647,9 @@ export function ProjectPostFormPage(props: {
 
   return (
     <main className="app-shell board-page">
-      <h1 className="sr-only">{props.mode === "create" ? "post.write" : "post.modify"}</h1>
+      <h1 className="sr-only">
+        {legacyMessage(messages, props.mode === "create" ? "post.write" : "post.modify")}
+      </h1>
       <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="board" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
@@ -1653,7 +1705,7 @@ export function ProjectPostFormPage(props: {
                   {onlineCommit?.issueTemplate ? (
                     <div className="attach-wrap">
                       <span className="help help-droppable">
-                        issue.template.no.attachment.allow
+                        {legacyMessage(messages, "issue.template.no.attachment.allow")}
                       </span>
                     </div>
                   ) : null}
@@ -1741,7 +1793,7 @@ export function ProjectPostFormPage(props: {
                       onChange={(event) => setNotice(event.target.checked)}
                       type="checkbox"
                     />
-                    post.notice.label
+                    {legacyMessage(messages, "post.notice.label")}
                   </label>
                 ) : null}
                 <input
@@ -1771,7 +1823,7 @@ export function ProjectPostFormPage(props: {
                       onChange={(event) => setReadme(event.target.checked)}
                       type="checkbox"
                     />
-                    post.readmefy
+                    {legacyMessage(messages, "post.readmefy")}
                   </label>
                 ) : null}
               </div>
@@ -1786,7 +1838,7 @@ export function ProjectPostFormPage(props: {
                         type="checkbox"
                         value="yes"
                       />
-                      <strong>notification.send.mail</strong>
+                      <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
                     </label>
                   </span>
                 ) : null}
@@ -1795,7 +1847,7 @@ export function ProjectPostFormPage(props: {
                   data-legacy-tabindex="3"
                   type="submit"
                 >
-                  button.save
+                  {legacyMessage(messages, "button.save")}
                 </button>
                 <a
                   className="ybtn"
@@ -1807,12 +1859,12 @@ export function ProjectPostFormPage(props: {
                   )}
                   data-legacy-tabindex="4"
                 >
-                  button.cancel
+                  {legacyMessage(messages, "button.cancel")}
                 </a>
               </div>
               {validationMessage ? (
                 <div className="alert alert-error" role="alert">
-                  {validationMessage}
+                  {legacyMessage(messages, validationMessage)}
                 </div>
               ) : null}
             </div>
@@ -1866,10 +1918,10 @@ export function OrganizationBoardListPage(props: {
               <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
               <div className="project-selects span7">
                 <select
-                  aria-label="organization.choose.projects"
+                  aria-label={legacyMessage(props.messages, "organization.choose.projects")}
                   data-container-css-class="fullsize"
                   data-format="projects"
-                  data-placeholder="organization.choose.projects"
+                  data-placeholder={legacyMessage(props.messages, "organization.choose.projects")}
                   data-toggle="select2"
                   defaultValue={props.projectNames}
                   id="projects"
@@ -1893,7 +1945,7 @@ export function OrganizationBoardListPage(props: {
                   className="textbox group-board"
                   defaultValue={props.filter}
                   name="filter"
-                  placeholder="title.searchByKeyword"
+                  placeholder={legacyMessage(props.messages, "title.searchByKeyword")}
                   type="text"
                 />
                 <button className="search-btn" type="submit">

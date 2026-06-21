@@ -1,8 +1,19 @@
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { OrganizationDirectoryViewModel, ProjectDirectoryViewModel } from "./-view-models";
 
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
+
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
+}
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
+}
+
+function publicProjectListLabel(messages: LegacyMessageLookup | undefined) {
+  return `${legacyMessage(messages, "project.public")} ${legacyMessage(messages, "title.projectList")}`;
 }
 
 function readSearchParams(href: string): URLSearchParams {
@@ -17,12 +28,16 @@ function parsePositiveInt(value: string | null, fallback: number): number {
 export function ProjectDirectoryPage({
   directory,
   href,
+  messages: providedMessages,
   runtimeConfig,
 }: {
   directory: ProjectDirectoryViewModel | null | undefined;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
+  const runtimeMessages = useLegacyMessages().t;
+  const messages = providedMessages ?? runtimeMessages;
   const params = readSearchParams(href);
   const filter = (params.get("filter") ?? "").trim().toLowerCase();
   const pageNum = parsePositiveInt(params.get("pageNum"), 1);
@@ -51,10 +66,12 @@ export function ProjectDirectoryPage({
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li className="active">
-                <a href={appHref(runtimeConfig, "/projects")}>project.public title.projectList</a>
+                <a href={appHref(runtimeConfig, "/projects")}>{publicProjectListLabel(messages)}</a>
               </li>
               <li>
-                <a href={appHref(runtimeConfig, "/orgs")}>title.organization.list</a>
+                <a href={appHref(runtimeConfig, "/orgs")}>
+                  {legacyMessage(messages, "title.organization.list")}
+                </a>
               </li>
             </ul>
           </div>
@@ -70,7 +87,7 @@ export function ProjectDirectoryPage({
                     className="textbox"
                     defaultValue={params.get("filter") ?? ""}
                     name="filter"
-                    placeholder="site.project.filter"
+                    placeholder={legacyMessage(messages, "site.project.filter")}
                     type="text"
                   />
                   <button className="search-btn" type="submit">
@@ -83,7 +100,7 @@ export function ProjectDirectoryPage({
           {visibleProjects.length === 0 ? (
             <div className="error-wrap">
               <i className="ico ico-err1"></i>
-              <p>project.is.empty</p>
+              <p>{legacyMessage(messages, "project.is.empty")}</p>
             </div>
           ) : (
             <>
@@ -130,12 +147,15 @@ export function ProjectDirectoryPage({
                           {project.createdLabel ? (
                             <>
                               at{" "}
-                              <strong title={project.createdLabel}>{project.createdLabel}</strong>{" "}
+                              <strong title={project.createdLabel}>
+                                {project.createdLabel}
+                              </strong>{" "}
                             </>
                           ) : null}
                           {project.lastPushedLabel ? (
                             <span className="small-font">
-                              , project.codeUpdate <strong>{project.lastPushedLabel}</strong>
+                              , {legacyMessage(messages, "project.codeUpdate")}{" "}
+                              <strong>{project.lastPushedLabel}</strong>
                             </span>
                           ) : null}
                         </p>
@@ -169,12 +189,16 @@ export function ProjectDirectoryPage({
 export function OrganizationDirectoryPage({
   directory,
   href,
+  messages: providedMessages,
   runtimeConfig,
 }: {
   directory: OrganizationDirectoryViewModel | null | undefined;
   href: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
+  const runtimeMessages = useLegacyMessages().t;
+  const messages = providedMessages ?? runtimeMessages;
   const params = readSearchParams(href);
   const filter = (params.get("filter") ?? "").trim().toLowerCase();
   const pageNum = parsePositiveInt(params.get("pageNum"), 1);
@@ -203,10 +227,12 @@ export function OrganizationDirectoryPage({
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li>
-                <a href={appHref(runtimeConfig, "/projects")}>project.public title.projectList</a>
+                <a href={appHref(runtimeConfig, "/projects")}>{publicProjectListLabel(messages)}</a>
               </li>
               <li className="active">
-                <a href={appHref(runtimeConfig, "/orgs")}>title.organization.list</a>
+                <a href={appHref(runtimeConfig, "/orgs")}>
+                  {legacyMessage(messages, "title.organization.list")}
+                </a>
               </li>
             </ul>
           </div>
@@ -222,7 +248,7 @@ export function OrganizationDirectoryPage({
                     className="textbox"
                     defaultValue={params.get("filter") ?? ""}
                     name="filter"
-                    placeholder="site.organization.filter"
+                    placeholder={legacyMessage(messages, "site.organization.filter")}
                     type="text"
                   />
                   <button className="search-btn" type="submit">
@@ -235,7 +261,7 @@ export function OrganizationDirectoryPage({
           {visibleOrganizations.length === 0 ? (
             <div className="error-wrap">
               <i className="ico ico-err1"></i>
-              <p>organization.is.empty</p>
+              <p>{legacyMessage(messages, "organization.is.empty")}</p>
             </div>
           ) : (
             <>

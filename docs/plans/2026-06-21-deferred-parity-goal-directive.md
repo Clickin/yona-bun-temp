@@ -569,9 +569,21 @@ and `reviewthread/partial_list.scala.html`: the known `pullRequest.*`,
 `review.*`, `title.*`, `code.*`, `issue.downloadAsExcel`, and shared
 pagination/loading labels now flow from the same lookup boundary while
 preserving literal key fallback without a provider. Focused coverage is
-`frontend/src/pull-request-list-form-review-i18n.spec.tsx`. Remaining app-wide
-opt-in scope is other existing controls that still render known legacy keys/copy
-as literal fallback text. P4-A-RemainingRouteLoadingShellI18n continuation
+`frontend/src/pull-request-list-form-review-i18n.spec.tsx`.
+P4-A-AuxiliaryRouteI18n continuation covers remaining known-key auxiliary
+controls in project/organization directories, the anonymous home feature panel,
+notification welcome/my-series tabs, user files tabs/search, organization
+create/settings/member/delete helpers, project create/import/home/dashboard/
+watcher/fork helpers, board detail/comment helpers, issue detail/form side
+controls, and milestone detail/form helpers. The touched `app.welcome.*`,
+`site.features.*`, `title.*`, `project.*`, `organization.*`, `post.*`,
+`common.*`, `notification.*`, `button.*`, and related legacy message keys now
+flow through the same lookup boundary while preserving exact key-text fallback
+without a provider or new selector UI. Focused coverage is
+`frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, with the
+full `pnpm --dir frontend test` suite green after the continuation. Remaining
+app-wide opt-in scope is other existing controls that still render known legacy
+keys/copy as literal fallback text. P4-A-RemainingRouteLoadingShellI18n continuation
 covers the next bounded app-wide loading-shell pass for shared redirect, public
 profile, `/me`, auth/restricted, import, notification, project create,
 organization create, user issue/file/settings, and project fork route shells:

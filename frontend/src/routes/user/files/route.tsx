@@ -2,8 +2,11 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { listWorkspaceFilesRest, type WorkspaceFilesResponse } from "../../../api/workspace";
 import { useAppRuntime } from "../../../app-runtime-context";
+import type { LegacyI18nContextValue } from "../../../i18n";
 import { prefixBasePath } from "../../../runtime-config";
 import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
+
+type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 export const Route = createFileRoute("/user/files")({
   component: UserFilesRouteComponent,
@@ -11,6 +14,10 @@ export const Route = createFileRoute("/user/files")({
 
 function appHref(basePath: string, href: string): string {
   return prefixBasePath(basePath, href);
+}
+
+function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+  return messages ? messages(key, { fallback: key }) : key;
 }
 
 function legacyUserFileIconClass(fileName: string): string {
@@ -121,12 +128,20 @@ function UserFilesRouteComponent() {
     return <BadRequestPage href="/user/files" />;
   }
 
-  return <UserFilesPage basePath={runtimeConfig.basePath} files={files} query={query} />;
+  return (
+    <UserFilesPage
+      basePath={runtimeConfig.basePath}
+      files={files}
+      messages={messages}
+      query={query}
+    />
+  );
 }
 
 export function UserFilesPage(props: {
   basePath: string;
   files: WorkspaceFilesResponse | null;
+  messages?: LegacyMessageLookup;
   query: { filter: string; page: number };
 }) {
   const files = props.files?.files ?? [];
@@ -136,14 +151,14 @@ export function UserFilesPage(props: {
     <main className="app-shell user-files-page">
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <MySeriesMenuTabs basePath={props.basePath} />
+          <MySeriesMenuTabs basePath={props.basePath} messages={props.messages} />
           <form action={appHref(props.basePath, "/user/files")}>
             <div className="user-file-search search search-bar">
               <input
                 className="textbox"
                 defaultValue=""
                 name="filter"
-                placeholder="search.title"
+                placeholder={legacyMessage(props.messages, "search.title")}
                 type="text"
               />
               <button className="search-btn" type="submit">
@@ -222,17 +237,23 @@ export function UserFilesPage(props: {
   );
 }
 
-function MySeriesMenuTabs({ basePath }: { basePath: string }) {
+function MySeriesMenuTabs({
+  basePath,
+  messages,
+}: {
+  basePath: string;
+  messages?: LegacyMessageLookup;
+}) {
   return (
     <ul className="nav nav-tabs">
       <li>
-        <a href={appHref(basePath, "/notifications")}>notification</a>
+        <a href={appHref(basePath, "/notifications")}>{legacyMessage(messages, "notification")}</a>
       </li>
       <li>
-        <a href={appHref(basePath, "/user/issues")}>issue.myIssue</a>
+        <a href={appHref(basePath, "/user/issues")}>{legacyMessage(messages, "issue.myIssue")}</a>
       </li>
       <li className="active">
-        <a href={appHref(basePath, "/user/files")}>user.files</a>
+        <a href={appHref(basePath, "/user/files")}>{legacyMessage(messages, "user.files")}</a>
       </li>
     </ul>
   );

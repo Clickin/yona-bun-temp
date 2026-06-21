@@ -1,6 +1,6 @@
 import * as React from "react";
 import { uploadTemporaryAttachment } from "../api/attachments";
-import type { LegacyI18nContextValue } from "../i18n";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type {
   OrganizationAdminViewModel,
@@ -373,6 +373,7 @@ export function OrganizationNewPage(props: {
   onCreateOrganization?: (input: { description: string; organizationName: string }) => void;
   pending?: boolean;
 }) {
+  const { t: messages } = useLegacyMessages();
   const [formState, setFormState] = React.useState({
     description: "",
     organizationName: "",
@@ -399,10 +400,12 @@ export function OrganizationNewPage(props: {
                 props.onCreateOrganization?.(formState);
               }}
             >
-              <legend>title.newOrganization</legend>
+              <legend>{legacyMessage(messages, "title.newOrganization")}</legend>
               <dl>
                 <dt>
-                  <label htmlFor="name">organization.name.placeholder</label>
+                  <label htmlFor="name">
+                    {legacyMessage(messages, "organization.name.placeholder")}
+                  </label>
                 </dt>
                 <dd>
                   <input
@@ -427,13 +430,15 @@ export function OrganizationNewPage(props: {
                         className="msg wrongName"
                         style={{ display: validationMessage ? undefined : "none" }}
                       >
-                        {validationMessage}
+                        {validationMessage ? legacyMessage(messages, validationMessage) : null}
                       </span>
                     </div>
                   </div>
                 </dd>
                 <dt>
-                  <label htmlFor="descr">organization.description.placeholder</label>
+                  <label htmlFor="descr">
+                    {legacyMessage(messages, "organization.description.placeholder")}
+                  </label>
                 </dt>
                 <dd>
                   <textarea
@@ -454,10 +459,10 @@ export function OrganizationNewPage(props: {
               <div className="actions">
                 <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
                   <i className="yobicon-friends" />
-                  {" organization.create"}
+                  {` ${legacyMessage(messages, "organization.create")}`}
                 </button>
                 <a className="ybtn" href="/">
-                  button.cancel
+                  {legacyMessage(messages, "button.cancel")}
                 </a>
               </div>
             </form>
@@ -835,7 +840,7 @@ export function OrganizationIssueListPage(props: {
                 >
                   <select
                     data-container-css-class="fullsize"
-                    data-placeholder="organization.choose.projects"
+                    data-placeholder={legacyMessage(props.messages, "organization.choose.projects")}
                     data-toggle="select2"
                     defaultValue={query.projectNames}
                     id="projects"
@@ -1206,14 +1211,14 @@ export function OrganizationSettingsPage(props: {
                     }
                   />
                   <div className="logo-desc">
-                    <strong>organization.logo</strong>
+                    <strong>{legacyMessage(props.messages, "organization.logo")}</strong>
                     <ul className="unstyled descs">
-                      <li>organization.logo.type</li>
-                      <li>organization.logo.maxFileSize</li>
+                      <li>{legacyMessage(props.messages, "organization.logo.type")}</li>
+                      <li>{legacyMessage(props.messages, "organization.logo.maxFileSize")}</li>
                     </ul>
                     <div className="nbtn medium white fake-file-wrap">
                       <i className="yobicon-upload" />
-                      {" button.upload"}
+                      {` ${legacyMessage(props.messages, "button.upload")}`}
                       <input
                         accept="image/*"
                         className="file"
@@ -1249,7 +1254,9 @@ export function OrganizationSettingsPage(props: {
                 </div>
                 <dl className="setting-box right">
                   <dt>
-                    <label htmlFor="project-name">organization.name.placeholder</label>
+                    <label htmlFor="project-name">
+                      {legacyMessage(props.messages, "organization.name.placeholder")}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -1270,12 +1277,16 @@ export function OrganizationSettingsPage(props: {
                         className="msg wrongName"
                         style={{ display: validationMessage ? undefined : "none" }}
                       >
-                        {validationMessage}
+                        {validationMessage
+                          ? legacyMessage(props.messages, validationMessage)
+                          : null}
                       </span>
                     </div>
                   </dd>
                   <dt>
-                    <label htmlFor="project-desc">organization.description.placeholder</label>
+                    <label htmlFor="project-desc">
+                      {legacyMessage(props.messages, "organization.description.placeholder")}
+                    </label>
                   </dt>
                   <dd>
                     <textarea
@@ -1301,7 +1312,7 @@ export function OrganizationSettingsPage(props: {
                   id="save"
                   type="submit"
                 >
-                  button.save
+                  {legacyMessage(props.messages, "button.save")}
                 </button>
               </div>
             </div>
@@ -1379,14 +1390,14 @@ export function OrganizationMembersPage(props: {
                 name="loginId"
                 onChange={(event) => setLoginId(event.target.value)}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
-                placeholder="project.members.addMember"
+                placeholder={legacyMessage(props.messages, "project.members.addMember")}
                 required
                 title="user.wrongloginId.alert"
                 type="text"
                 value={loginId}
               />
               <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
-                <i className="yobicon-addfriend" /> button.add
+                <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
               </button>
             </form>
           </div>
@@ -1475,7 +1486,7 @@ export function OrganizationMembersPage(props: {
                       setDeleteTarget(member.userId);
                     }}
                   >
-                    button.delete
+                    {legacyMessage(props.messages, "button.delete")}
                   </a>
                 </div>
               </li>
@@ -1485,17 +1496,17 @@ export function OrganizationMembersPage(props: {
           <div className={`modal hide${deleteTarget ? " in" : ""}`} id="alertDeletion">
             <div className="modal-header">
               <button
-                aria-label="button.close"
+                aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
                 type="button"
               >
                 ×
               </button>
-              <h3>organization.member.delete</h3>
+              <h3>{legacyMessage(props.messages, "organization.member.delete")}</h3>
             </div>
             <div className="modal-body">
-              <p>organization.member.deleteConfirm</p>
+              <p>{legacyMessage(props.messages, "organization.member.deleteConfirm")}</p>
             </div>
             <div className="modal-footer">
               <button
@@ -1509,10 +1520,10 @@ export function OrganizationMembersPage(props: {
                 }}
                 type="button"
               >
-                button.yes
+                {legacyMessage(props.messages, "button.yes")}
               </button>
               <button className="ybtn ybtn-mini" data-dismiss="modal" type="button">
-                button.no
+                {legacyMessage(props.messages, "button.no")}
               </button>
             </div>
           </div>
@@ -1520,7 +1531,7 @@ export function OrganizationMembersPage(props: {
           {detail.enrollmentRequests.length > 0 ? (
             <>
               <legend>
-                <h3>{`project.member.enrollment.request (${detail.enrollmentRequests.length})`}</h3>
+                <h3>{`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}</h3>
               </legend>
               <div className="row-fluid">
                 {detail.enrollmentRequests.map((request) => (
@@ -1555,7 +1566,8 @@ export function OrganizationMembersPage(props: {
                         type="button"
                         data-loginid={request.loginId}
                       >
-                        <i className="yobicon-addfriend" /> button.add
+                        <i className="yobicon-addfriend" />{" "}
+                        {legacyMessage(props.messages, "button.add")}
                       </button>
                     </div>
                   </div>
@@ -1620,14 +1632,14 @@ export function OrganizationDeletePage(props: {
               onClick={() => setModalOpen(true)}
               type="button"
             >
-              organization.delete.this
+              {legacyMessage(props.messages, "organization.delete.this")}
             </button>
           </div>
 
           <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
             <div className="modal-header">
               <button
-                aria-label="button.close"
+                aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
                 onClick={() => setModalOpen(false)}
@@ -1635,10 +1647,10 @@ export function OrganizationDeletePage(props: {
               >
                 ×
               </button>
-              <h3>organization.delete.requestion</h3>
+              <h3>{legacyMessage(props.messages, "organization.delete.requestion")}</h3>
             </div>
             <div className="modal-body">
-              <p> organization.delete.reaccept </p>
+              <p> {legacyMessage(props.messages, "organization.delete.reaccept")} </p>
             </div>
             <div className="modal-footer">
               <button
@@ -1648,7 +1660,7 @@ export function OrganizationDeletePage(props: {
                 onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
                 type="button"
               >
-                button.yes
+                {legacyMessage(props.messages, "button.yes")}
               </button>
               <button
                 className="ybtn"
@@ -1656,7 +1668,7 @@ export function OrganizationDeletePage(props: {
                 onClick={() => setModalOpen(false)}
                 type="button"
               >
-                button.no
+                {legacyMessage(props.messages, "button.no")}
               </button>
             </div>
           </div>
