@@ -1579,7 +1579,7 @@ export function ProjectDetailPage(props: {
                     />
                   ) : (
                     <span className="markdown-wrap" id="project-description">
-                      project.description.placeholder
+                      {legacyMessage(messages, "project.description.placeholder")}
                     </span>
                   )}
                   {detail.overviewEditable || detail.viewerCanUpdate ? (
@@ -1851,7 +1851,8 @@ export function ProjectDetailPage(props: {
                       </a>
                       {detail.currentMilestone.dueDateLabel ? (
                         <span className="due-date">
-                          label.dueDate <strong>{detail.currentMilestone.dueDateLabel}</strong>
+                          {legacyMessage(messages, "label.dueDate")}{" "}
+                          <strong>{detail.currentMilestone.dueDateLabel}</strong>
                         </span>
                       ) : null}
                     </div>
@@ -2765,7 +2766,7 @@ export function ProjectForkPage(props: {
 
                 <div className="control-group">
                   <label className="control-label" htmlFor="project-owner">
-                    project.owner
+                    {legacyMessage(messages, "project.owner")}
                   </label>
                   <div className="controls">
                     <select
@@ -2794,7 +2795,7 @@ export function ProjectForkPage(props: {
 
                 <div className="control-group">
                   <label className="control-label" htmlFor="inputName">
-                    project.name
+                    {legacyMessage(messages, "project.name")}
                   </label>
                   <div className="controls">
                     <input
@@ -2814,7 +2815,7 @@ export function ProjectForkPage(props: {
 
                 <div className="control-group project-share-option">
                   <label className="control-label" htmlFor="public">
-                    project.shareOption
+                    {legacyMessage(messages, "project.shareOption")}
                   </label>
                   <div className="controls">
                     {[
@@ -2847,7 +2848,7 @@ export function ProjectForkPage(props: {
                           type="radio"
                           value={scope.id.toUpperCase()}
                         />
-                        {scope.label}
+                        {legacyMessage(messages, scope.label)}
                       </label>
                     ))}
                   </div>
@@ -2870,7 +2871,7 @@ export function ProjectForkPage(props: {
                       "pullRequests",
                     )}
                   >
-                    button.cancel
+                    {legacyMessage(messages, "button.cancel")}
                   </a>
                 </div>
               </fieldset>

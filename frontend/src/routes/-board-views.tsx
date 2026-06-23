@@ -290,10 +290,10 @@ function BoardPagination(props: {
   );
 }
 
-function boardLabels(labels: BoardLabel[]) {
+function boardLabels(labels: BoardLabel[], messages?: LegacyMessageLookup) {
   return labels.length === 0 ? null : (
     <dl>
-      <dt>label</dt>
+      <dt>{legacyMessage(messages, "label")}</dt>
       <dd>
         {labels.map((label) => (
           <a
@@ -1223,7 +1223,10 @@ export function ProjectBoardDetailPage(props: {
                                         previewId={`preview-${comment.id}`}
                                       >
                                         <BoardMarkdownTextarea
-                                          ariaLabel="common.comment.edit"
+                                          ariaLabel={legacyMessage(
+                                            props.messages,
+                                            "common.comment.edit",
+                                          )}
                                           className="editorSeries content comment nm"
                                           csrfToken={props.csrfToken}
                                           dataEditorMode="update-comment-body"
@@ -1509,7 +1512,7 @@ export function ProjectBoardDetailPage(props: {
                   <div
                     className="write-comment-box mt20"
                     data-login="required"
-                    title="error.auth.unauthorized.comment"
+                    title={legacyMessage(props.messages, "error.auth.unauthorized.comment")}
                   >
                     <div className="write-comment-wrap">
                       <div className="textarea-box">
@@ -1546,7 +1549,7 @@ export function ProjectBoardDetailPage(props: {
                     </dd>
                   ) : null}
                 </dl>
-                {boardLabels(post.labels)}
+                {boardLabels(post.labels, props.messages)}
                 <div className="right-menu-icons">
                   <a href={editPostHref}>
                     <button
@@ -1702,7 +1705,7 @@ export function ProjectPostFormPage(props: {
               <dl>
                 {props.mode === "edit" ? (
                   <dt>
-                    <label htmlFor="title">title</label>
+                    <label htmlFor="title">{legacyMessage(messages, "title")}</label>
                   </dt>
                 ) : null}
                 <dd>
@@ -1782,7 +1785,7 @@ export function ProjectPostFormPage(props: {
               </dl>
               {props.labels.length && !isOnlineCommit ? (
                 <fieldset className="board-label-picker">
-                  <legend>label</legend>
+                  <legend>{legacyMessage(messages, "label")}</legend>
                   {props.labels.map((label) => (
                     <label key={label.id}>
                       <input

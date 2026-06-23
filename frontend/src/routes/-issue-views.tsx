@@ -248,6 +248,7 @@ function IssueSubtaskItem(props: {
 
 function IssueDetailSelectedLabels(props: {
   issue: ProjectIssueDetailViewModel | null | undefined;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
   const { issue, runtimeConfig } = props;
@@ -260,7 +261,7 @@ function IssueDetailSelectedLabels(props: {
   );
   return (
     <dl>
-      <dt>label</dt>
+      <dt>{legacyMessage(props.messages, "label")}</dt>
       <dd>
         {issue.labels.map((label) => (
           <a
@@ -1216,7 +1217,7 @@ function ProjectIssueRows(props: {
                         data-placement="bottom"
                         data-toggle="tooltip"
                         href={issueHref}
-                        title="milestone"
+                        title={legacyMessage(props.messages, "milestone")}
                       >
                         {item.milestoneTitle}
                       </a>
@@ -1726,23 +1727,26 @@ export function ProjectIssueDetailPage(props: {
                         data-watching={String(issue.isWatching)}
                         id="watch-button"
                         onClick={() => void props.onWatchToggle?.()}
-                        title="issue.watch.description"
+                        title={legacyMessage(messages, "issue.watch.description")}
                         type="button"
                       >
-                        {issue.isWatching ? "issue.unwatch" : "issue.watch"}
+                        {legacyMessage(
+                          messages,
+                          issue.isWatching ? "issue.unwatch" : "issue.watch",
+                        )}
                       </button>
                     ) : null}
                     {issue?.viewerCanUpdate ? (
                       <button
                         className="ybtn"
-                        data-content="issue.sharer.description"
+                        data-content={legacyMessage(messages, "issue.sharer.description")}
                         data-placement="top"
                         data-toggle="popover"
                         data-trigger="hover"
                         id="issue-share-button"
                         type="button"
                       >
-                        button.share.issue
+                        {legacyMessage(messages, "button.share.issue")}
                       </button>
                     ) : null}
                     {issue ? (
@@ -1758,7 +1762,7 @@ export function ProjectIssueDetailPage(props: {
                             }`,
                           )}
                         >
-                          button.newSubtask
+                          {legacyMessage(messages, "button.newSubtask")}
                         </a>
                       </span>
                     ) : null}
@@ -1791,7 +1795,7 @@ export function ProjectIssueDetailPage(props: {
                         </button>
                         <span
                           className="weight-number"
-                          data-content="issue.weight.description"
+                          data-content={legacyMessage(messages, "issue.weight.description")}
                           data-placement="top"
                           data-toggle="popover"
                           data-trigger="hover"
@@ -2146,7 +2150,7 @@ export function ProjectIssueDetailPage(props: {
                               </div>
                             </div>
                             <div className="add-a-comment pull-right">
-                              comment.oneline.comment.placeholder
+                              {legacyMessage(messages, "comment.oneline.comment.placeholder")}
                             </div>
                             <div className="subcomment-media-body">
                               <div className="child-comments">
@@ -2363,7 +2367,11 @@ export function ProjectIssueDetailPage(props: {
                   runtimeConfig={props.runtimeConfig}
                 />
               ) : null}
-              <IssueDetailSelectedLabels issue={issue} runtimeConfig={props.runtimeConfig} />
+              <IssueDetailSelectedLabels
+                issue={issue}
+                messages={messages}
+                runtimeConfig={props.runtimeConfig}
+              />
               {issue?.viewerCanUpdate && props.onAssign ? (
                 <IssueAssignForm
                   initialAssignee={issue.assigneeLoginId}
@@ -2854,7 +2862,7 @@ export function UserIssueListPage(props: {
                                   data-placement="bottom"
                                   data-toggle="tooltip"
                                   href={projectHref}
-                                  title="project.name"
+                                  title={legacyMessage(props.messages, "project.name")}
                                 >
                                   {item.projectName}
                                 </a>
@@ -3094,17 +3102,17 @@ function UserIssueMySeriesMenuTabs(props: {
         {props.canSetDefaultLoginPage ? (
           <button
             className="ybtn hide-in-mobile"
-            data-content="button.setDefaultLoginPage.desc"
+            data-content={legacyMessage(props.messages, "button.setDefaultLoginPage.desc")}
             data-placement="bottom"
             data-toggle="popover"
             data-trigger="hover"
             data-url="user/issues"
             id="setDefaultLoginPage"
             onClick={props.onSetDefaultLoginPage}
-            title="button.setDefaultLoginPage"
+            title={legacyMessage(props.messages, "button.setDefaultLoginPage")}
             type="button"
           >
-            button.setDefaultLoginPage
+            {legacyMessage(props.messages, "button.setDefaultLoginPage")}
           </button>
         ) : null}
       </li>
@@ -3174,7 +3182,7 @@ function IssueSharerPanel(props: {
                 <button
                   className="select2-search-choice-close"
                   onClick={() => void props.onUnshareIssue?.(sharer.loginId)}
-                  title="issue.event.sharer.deleted.title"
+                  title={legacyMessage(props.messages, "issue.event.sharer.deleted.title")}
                   type="button"
                 />
               ) : null}
@@ -3216,7 +3224,7 @@ function IssueSharerPanel(props: {
               value={loginId}
             />
             <button className="ybtn" disabled={submitting} type="submit">
-              button.share.issue
+              {legacyMessage(props.messages, "button.share.issue")}
             </button>
           </form>
         </dd>
@@ -3898,12 +3906,12 @@ function IssueCommentForm(props: {
           <ul className="nav nav-tabs nm small">
             <li className="active">
               <a href="#edit-comment-body" data-toggle="tab" data-mode="edit">
-                common.editor.edit
+                {legacyMessage(props.messages, "common.editor.edit")}
               </a>
             </li>
             <li>
               <a href="#preview-comment-body" data-toggle="tab" data-mode="preview">
-                common.editor.preview
+                {legacyMessage(props.messages, "common.editor.preview")}
               </a>
             </li>
             <li>
@@ -3913,7 +3921,8 @@ function IssueCommentForm(props: {
                   onClick={(event) => addLegacyTasklistTemplateFromButton(event.currentTarget)}
                   type="button"
                 >
-                  <i className="yobicon-list task-list-icon"></i> button.add.checklist
+                  <i className="yobicon-list task-list-icon"></i>{" "}
+                  {legacyMessage(props.messages, "button.add.checklist")}
                 </button>
               </div>
             </li>
@@ -3925,7 +3934,7 @@ function IssueCommentForm(props: {
                     id="button-clear-temporary"
                     type="button"
                   >
-                    button.clear.temporary
+                    {legacyMessage(props.messages, "button.clear.temporary")}
                   </button>
                 </div>
               </div>
@@ -3994,7 +4003,7 @@ function DisabledIssueCommentBox(props: { messages?: LegacyMessageLookup }) {
   return (
     <div
       className="write-comment-box mt20"
-      title="error.auth.unauthorized.comment"
+      title={legacyMessage(props.messages, "error.auth.unauthorized.comment")}
       data-login="required"
     >
       <div className="write-comment-wrap">
@@ -4327,9 +4336,13 @@ export function ProjectIssueFormPage(props: {
                               setValidationMessage(null);
                               setTitle(event.currentTarget.value);
                             }}
-                            placeholder="title"
+                            placeholder={legacyMessage(messages, "title")}
                             data-legacy-tabindex="1"
-                            title={props.mode === "create" ? "title.help.key" : undefined}
+                            title={
+                              props.mode === "create"
+                                ? legacyMessage(messages, "title.help.key")
+                                : undefined
+                            }
                             type="text"
                             value={title}
                           />
@@ -4462,7 +4475,7 @@ export function ProjectIssueFormPage(props: {
                             disabled={submitting}
                             id="button-draft-publish"
                             onClick={() => submitIssueForm("publish")}
-                            title="button.draft.publish.description"
+                            title={legacyMessage(messages, "button.draft.publish.description")}
                             type="button"
                           >
                             {legacyMessage(messages, "button.draft.publish")}
@@ -4472,7 +4485,7 @@ export function ProjectIssueFormPage(props: {
                             disabled={submitting}
                             id="draft-save-btn"
                             onClick={() => submitIssueForm("draft")}
-                            title="button.draft.save.description"
+                            title={legacyMessage(messages, "button.draft.save.description")}
                             type="button"
                           >
                             {legacyMessage(messages, "button.draft.save")}
@@ -4484,7 +4497,7 @@ export function ProjectIssueFormPage(props: {
                           disabled={submitting}
                           id="draft-save-btn"
                           onClick={() => submitIssueForm("draft")}
-                          title="button.draft.save.description"
+                          title={legacyMessage(messages, "button.draft.save.description")}
                           type="button"
                         >
                           {legacyMessage(messages, "button.draft.save")}
@@ -4599,7 +4612,7 @@ export function ProjectIssueFormPage(props: {
                             )}
                             target="_blank"
                           >
-                            milestone.menu.new
+                            {legacyMessage(messages, "milestone.menu.new")}
                           </a>
                         ) : (
                           <select

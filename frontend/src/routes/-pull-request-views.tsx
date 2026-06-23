@@ -2341,25 +2341,25 @@ export function ProjectPullRequestDetailPage(props: {
               />
               <div className="right-txt">
                 <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpMessage">
-                  title.help
+                  {legacyMessage(props.messages, "title.help")}
                 </a>
               </div>
               <div id="helpMessage" className="modal hide fade pullreq-info">
                 <div className="modal-header">
-                  <h5>pullRequest.merge.help.1</h5>
+                  <h5>{legacyMessage(props.messages, "pullRequest.merge.help.1")}</h5>
                 </div>
                 <div className="modal-body">
                   <div className="row-fluid">
                     <div className="pull-left help-messages mt10">
-                      <p>pullRequest.merge.help.2</p>
-                      <p>pullRequest.merge.help.3</p>
-                      <p>pullRequest.merge.help.4</p>
+                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.2")}</p>
+                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.3")}</p>
+                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.4")}</p>
                     </div>
                   </div>
                 </div>
                 <div className="modal-footer">
                   <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
-                    button.confirm
+                    {legacyMessage(props.messages, "button.confirm")}
                   </button>
                 </div>
               </div>
@@ -2717,7 +2717,7 @@ function ReviewThreadItem(props: {
                         data-toggle="tab"
                         href={`#edit-thread-${props.thread.id}`}
                       >
-                        common.editor.edit
+                        {legacyMessage(props.messages, "common.editor.edit")}
                       </a>
                     </li>
                     <li>
@@ -2726,7 +2726,7 @@ function ReviewThreadItem(props: {
                         data-toggle="tab"
                         href={`#preview-thread-${props.thread.id}`}
                       >
-                        common.editor.preview
+                        {legacyMessage(props.messages, "common.editor.preview")}
                       </a>
                     </li>
                     <li>
@@ -2738,7 +2738,8 @@ function ReviewThreadItem(props: {
                           }
                           type="button"
                         >
-                          <i className="yobicon-list task-list-icon"></i> button.add.checklist
+                          <i className="yobicon-list task-list-icon"></i>{" "}
+                          {legacyMessage(props.messages, "button.add.checklist")}
                         </button>
                       </div>
                     </li>
@@ -2750,7 +2751,7 @@ function ReviewThreadItem(props: {
                             id="button-clear-temporary"
                             type="button"
                           >
-                            button.clear.temporary
+                            {legacyMessage(props.messages, "button.clear.temporary")}
                           </button>
                         </div>
                       </div>
@@ -3034,12 +3035,12 @@ function PullRequestBlockReviewForm(props: {
               <ul className="nav nav-tabs nm small">
                 <li className="active">
                   <a data-mode="edit" data-toggle="tab" href="#edit-review">
-                    common.editor.edit
+                    {legacyMessage(props.messages, "common.editor.edit")}
                   </a>
                 </li>
                 <li>
                   <a data-mode="preview" data-toggle="tab" href="#preview-review">
-                    common.editor.preview
+                    {legacyMessage(props.messages, "common.editor.preview")}
                   </a>
                 </li>
               </ul>

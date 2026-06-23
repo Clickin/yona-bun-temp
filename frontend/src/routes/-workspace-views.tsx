@@ -651,7 +651,7 @@ function PublicProfileIssueItems(props: {
                       props.runtimeConfig,
                       projectHref(issue.ownerName, issue.projectName),
                     )}
-                    title="project.name"
+                    title={legacyMessage(props.messages, "project.name")}
                   >
                     {issue.projectName}
                   </a>

@@ -409,7 +409,8 @@ describe("file-route parity harness", () => {
         expect(
           closeButton.includes('aria-label="button.close"') ||
             closeButton.includes('aria-label={legacyMessage(messages, "button.close")}') ||
-            closeButton.includes('aria-label={legacyMessage(props.messages, "button.close")}'),
+            closeButton.includes('aria-label={legacyMessage(props.messages, "button.close")}') ||
+            closeButton.includes('aria-label={messages.t("button.close",'),
         ).toBe(true);
         expect(closeButton).not.toMatch(/>\s*x\s*<\/button>/);
       }

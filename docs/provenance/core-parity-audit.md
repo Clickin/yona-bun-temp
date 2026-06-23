@@ -1334,6 +1334,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - P4-A-WorkspaceHelpI18n opts the remaining workspace/public-profile auxiliary controls and anonymous help title into the same legacy message lookup boundary without changing layout or adding selector/settings UI. Covered workspace/profile keys come from `user/view.scala.html`, `user/partial_issues.scala.html`, `user/partial_pullRequests.scala.html`, `common/twoColumnModeCheckboxArea.scala.html`, `common/showSubtasksCheckbox.scala.html`, and `common/mySeriesMenuTab.scala.html`, including `userinfo.since`, `user.connected.social.login`, `userinfo.daysAgo.*`, `common.two.column.*`, `common.show.subtasks*`, `issue.noAuthor`, empty stream copy, default-login-page/favorite/recent/logout controls, and project/PR state labels. The `/_help` breadcrumb title now resolves `title.help` from `help/toc.scala.html`. Focused coverage: `frontend/src/workspace-profile-i18n.spec.tsx` and `frontend/src/help-route-parity.spec.tsx`.
 - P4-A-SharedMarkdownIssueBoardOrgProjectI18n opts the shared Markdown editor/help shell plus remaining known issue, board, organization, and project controls into the same legacy message lookup boundary without changing layout or adding selector/settings UI. Covered Markdown keys come from `common/editor.scala.html` and related legacy comment forms, including `title.markdown.help` and `notification.receiver.list.title`; issue/board/project/organization keys come from the templates already listed in the P4-A slices above. The repo-root implementation surfaces are `frontend/src/routes/-markdown-renderer.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/-organization-views.tsx`, and `frontend/src/routes/-project-views.tsx`, with focused coverage in `frontend/src/markdown-renderer.spec.tsx`, `frontend/src/issue-board-pr-milestone-i18n.spec.tsx`, `frontend/src/organization-shell-i18n.spec.tsx`, and `frontend/src/project-settings-parity.spec.tsx`.
 - P4-A-RouteMutationFallbackI18n opts remaining code and pull-request route mutation fallback keys into `AppRuntimeContext.messages(...)` while preserving exact key fallback and leaving legacy-key `useDocumentTitle(...)` calls unchanged where route-parity intentionally pins them as the title source. Covered routes include project branch/default-branch/delete, commit discussion mutation, PR create/edit, PR detail mutations, and PR changes inline review mutations. Focused coverage: `frontend/src/project-code-browser-routing.spec.ts` and `frontend/src/pull-request-list-form-review-i18n.spec.tsx`.
+- 2026-06-23 R4 final known-key sweep wraps the remaining visible raw legacy
+  keys found in board, issue, project, pull-request, shared Markdown editor,
+  milestone, workspace, and auth route controls with the existing
+  `legacyMessage`/`messages.t` lookup boundary. The sweep deliberately leaves
+  no-provider fallback text and prop-key values alone where the owning helper
+  already translates at render time. Focused coverage:
+  `frontend/src/issue-board-pr-milestone-i18n.spec.tsx`,
+  `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx`,
+  `frontend/src/project-settings-parity.spec.tsx`,
+  `frontend/src/pull-request-review-i18n.spec.tsx`,
+  `frontend/src/markdown-renderer.spec.tsx`,
+  `frontend/src/workspace-profile-i18n.spec.tsx`, and
+  `frontend/src/organization-shell-i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

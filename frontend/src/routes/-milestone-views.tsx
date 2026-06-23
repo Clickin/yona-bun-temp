@@ -725,10 +725,11 @@ export function ProjectMilestoneFormPage(props: {
                         <LegacyMarkdownEditorShell
                           editId="edit-content-body"
                           editorMode="content-body"
+                          messages={props.messages}
                           previewId="preview-content-body"
                         >
                           <MarkdownAttachmentTextarea
-                            ariaLabel="milestone.form.content"
+                            ariaLabel={legacyMessage(props.messages, "milestone.form.content")}
                             className="editorSeries content comment nm"
                             csrfToken={props.csrfToken}
                             editorMode="content-body"

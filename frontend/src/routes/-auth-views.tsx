@@ -346,7 +346,7 @@ export function LegacyLoginDialog({
       <div className="modal-body">
         <div className="pull-right">
           <button
-            aria-label="button.close"
+            aria-label={messages.t("button.close", { fallback: "button.close" })}
             className="close mr10"
             data-dismiss="modal"
             type="button"
@@ -672,7 +672,7 @@ export function LostPasswordPage({
           {feedback ? (
             <div className={`alert alert-${feedback.kind === "success" ? "success" : "error"}`}>
               <button
-                aria-label="button.close"
+                aria-label={messages.t("button.close", { fallback: "button.close" })}
                 className="close"
                 data-dismiss="alert"
                 type="button"
