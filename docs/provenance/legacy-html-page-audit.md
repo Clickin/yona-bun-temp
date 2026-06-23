@@ -34,6 +34,12 @@ diff.
 evidence. This is still static evidence, but it ties the curl-observed legacy
 HTML anchors to committed Rust UI code.
 
+`pnpm smoke:legacy-e2e-render-coverage` reads route coverage and scans existing
+Playwright e2e tests for literal `page.goto(...)` navigations that render the
+same Rust route. This does not replace a fresh browser diff, but it separates
+pages already covered by rendered e2e flows from pages that still need one; it
+exits non-zero while any audited URL lacks rendered e2e evidence.
+
 Latest local run against the homelab instance on 2026-06-23:
 `50` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
@@ -60,6 +66,29 @@ pass found that the logged-in root page's legacy `admin-logged-in-affix` anchor
 was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
 site-admin user-menu affix for site admins.
 
+The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
+Playwright e2e navigation evidence for `33` of the same `50` audited legacy
+URLs. The remaining `17` URLs still need rendered Rust DOM coverage before an
+all-page parity claim:
+
+- `/lostPassword`
+- `/_help`
+- `/projectform`
+- `/_import`
+- `/organizations/new`
+- `/notifications`
+- `/notification?from=0&limit=20`
+- `/user/issues`
+- `/user/files`
+- `/user/editform`
+- `/user/editform/notifications`
+- `/user/editform/emails`
+- `/user/editform/token`
+- `/sites/data`
+- `/admin/sample`
+- `/admin/sample/issueform`
+- `/admin/sample/settingform`
+
 ## Current Coverage
 
 The initial curl baseline covers:
@@ -80,7 +109,8 @@ The initial curl baseline covers:
 ## Remaining Work Before Claiming All-Page Parity
 
 - Compare the captured legacy anchors against rendered Rust React pages, not
-  only against existing static parity specs.
+  only against existing static parity specs; start with the 17 URLs missing
+  rendered e2e navigation evidence above.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes
