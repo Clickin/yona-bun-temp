@@ -1,6 +1,8 @@
 /* eslint-disable no-useless-escape */
 import * as React from "react";
 
+const maxHighlightedCodeBlockLength = 65_536;
+
 const commonKeywords = new Set([
   "break",
   "case",
@@ -1782,6 +1784,10 @@ const clojureKeywords = new Set([
 ]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
+  if (code.length > maxHighlightedCodeBlockLength) {
+    return code;
+  }
+
   const lines = code.split("\n");
   const normalizedLanguage = normalizeCodeLanguage(language ?? "");
   if (normalizedLanguage === "asciidoc") {

@@ -7,7 +7,7 @@ describe("root custom navbar link parity", () => {
 
     expect(source).toContain("navbarCustomLinkName");
     expect(source).toContain("navbarCustomLinkUrl");
-    expect(source).toContain('className="gnb-usermenu"');
+    expect(source).toContain("gnb-usermenu");
     expect(source).toContain('className="user-item-btn loggged-in"');
     expect(source).toContain("admin-logged-in-affix");
     expect(source).toContain("currentSession.isSiteAdmin");

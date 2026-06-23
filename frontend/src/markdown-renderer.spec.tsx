@@ -1074,6 +1074,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-punctuation">{</span>');
   });
 
+  it("renders very long SQL fenced blocks as plain source without syntax highlighting", () => {
+    const longSql = Array.from({ length: 2_200 }, (_, index) => {
+      return `SELECT ${index} AS value FROM release_candidate_table WHERE body LIKE '%markdown%';`;
+    }).join("\n");
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={`\`\`\`sql\n${longSql}\n\`\`\``} />,
+    );
+
+    expect(html).toContain('class="sql"');
+    expect(html).toContain("release_candidate_table");
+    expect(html).not.toContain("syntax-token");
+  });
+
   it("recognizes legacy Highlight.js Rust numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
