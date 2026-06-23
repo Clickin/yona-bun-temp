@@ -13,8 +13,8 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 
 - Bounded LDAP and configured GitHub/Google OAuth runtime slices are implemented as second-priority parity work; broader external-directory/OAuth edge behavior remains follow-up scope.
 - Broad legacy external `/-_-api/v1/**` compatibility remains migrator/export/import scope except for the direct app-owned helper rows documented in `SPEC.md` and `docs/provenance/legacy-external-api.md`.
-- Broader SVN VCC/baseline PROPFIND edge completeness remains a VCS follow-up beyond the implemented app-runtime SVN boundary and external-client smoke coverage.
-- Dynamic i18n switching, optional webhook signature compatibility, and production migration/import hardening remain follow-up/deferred boundaries unless `SPEC.md` changes. App search uses DB-native FTS where each supported DB provides it, with Elastic/OpenSearch out of scope.
+- Broader SVN VCC/baseline PROPFIND edge completeness was closed by the later P3-A `svn_protocol_contract` evidence recorded in the deferred parity directive.
+- Dynamic i18n known-key opt-in and production migration/import hardening remain follow-up/deferred boundaries unless `SPEC.md` changes; optional webhook signature compatibility was retired as not applicable. App search uses DB-native FTS where each supported DB provides it, with Elastic/OpenSearch out of scope.
 
 ## Completion Matrix
 

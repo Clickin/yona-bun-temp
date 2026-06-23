@@ -647,6 +647,9 @@ legacy evidence or retired/reclassified with provenance.
 ## Phase 5: Final Closure Before SPA Improvements
 
 The main orchestrator runs this phase after all subagent slices are merged.
+`docs/provenance/deferred-parity-closure-inventory.md` is the closure ledger
+for deciding whether any remaining deferred/unimplemented item blocks the shift
+from 1:1 conversion work to improvement work.
 
 - Run the parity gate and confirm the core audit has no active first-priority or
   second-priority rows mislabeled as generic gaps.
@@ -659,6 +662,9 @@ The main orchestrator runs this phase after all subagent slices are merged.
 - Update `SPEC.md`, `docs/provenance/*`, and `docs/agents/06-phase-plan.md` so
   every completed item moves out of deferred status and every remaining item has
   a deliberate deferred/deviation record.
+- Confirm every row in `docs/provenance/deferred-parity-closure-inventory.md`
+  is either implemented with tests/provenance or explicitly accepted as a
+  non-blocking follow-up before starting product-improvement work.
 - Commit through the turn commit hook.
 
 ## Default Verification Commands
