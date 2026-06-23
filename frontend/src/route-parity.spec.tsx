@@ -236,6 +236,14 @@ describe("file-route parity harness", () => {
     expect(directIssueFormRouteSource).not.toContain("Read direct issue form failed.");
     expect(directIssueFormRouteSource).toContain("BadRequestPage");
     expect(directIssueFormRouteSource).toContain('"bad-request"');
+    const directMyIssueFormRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/issues/new/mine/route.tsx"),
+      "utf8",
+    );
+    expect(directMyIssueFormRouteSource).toContain('createFileRoute("/user/issues/new/mine")');
+    expect(directMyIssueFormRouteSource).toContain(
+      '<DirectIssueCreateFormRouteComponent mine={true} routeHref="/user/issues/new/mine" />',
+    );
 
     const issueCreateRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issueform/route.tsx"),

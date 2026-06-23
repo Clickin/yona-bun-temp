@@ -24,6 +24,11 @@ checks whether each audited legacy URL has a corresponding Rust TanStack Router
 `fullPath` in `frontend/src/routeTree.gen.ts`. Its output is written to
 `.agent/legacy-html-page-audit/route-coverage.json`.
 
+`pnpm smoke:legacy-parity-spec-coverage` reads route coverage and checks that
+each audited route has at least one existing frontend parity spec evidence
+match. This is a coverage guard for the verification ledger, not a browser DOM
+diff.
+
 Latest local run against the homelab instance on 2026-06-23:
 `50` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
@@ -37,6 +42,12 @@ The same `50` audited URLs route-map to Rust frontend routes with
 sample-data URLs are normalized to their TanStack `fullPath`, for example
 `/search?keyword=...` to `/search`, `/sites/userList` to `/sites/$pageName`,
 and `/admin/sample/issues` to `/$owner/$projectName/issues`.
+
+The same `50` routed URLs have frontend parity spec evidence with
+`pnpm smoke:legacy-parity-spec-coverage`: `50` with spec evidence, `0` missing.
+This pass found a missing explicit alias assertion for `/user/issues/new/mine`;
+`frontend/src/route-parity.spec.tsx` now pins that route to
+`DirectIssueCreateFormRouteComponent mine={true}`.
 
 ## Current Coverage
 
