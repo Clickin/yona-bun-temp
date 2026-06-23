@@ -42,10 +42,10 @@ diff.
 evidence. This is still static evidence, but it ties the curl-observed legacy
 HTML anchors to committed Rust UI code.
 
-The HTML audit also records diagnostic `checkedStructuralTokens` and
-`missingStructuralTokens` fields for `id`, `name`, or class-token matches. These
-fields are not a hard gate yet because some legacy anchors are message text,
-JavaScript strings, or template fragments rather than DOM selector tokens.
+The HTML audit also records `checkedStructuralTokens` and
+`missingStructuralTokens` fields for `id`, `name`, or class-token matches. Text
+or message-key anchors are excluded from `checkedStructuralTokens`; any missing
+structural token now fails the smoke.
 
 `pnpm smoke:legacy-e2e-render-coverage` reads route coverage and scans existing
 Playwright e2e tests for literal `page.goto(...)` navigations that render the
@@ -137,9 +137,6 @@ The initial curl baseline covers:
 
 - Compare richer DOM structure/content beyond the current anchor smoke where
   the anchor-level check is too weak to catch visual or copy drift.
-- Classify diagnostic structural-token misses into real selector gaps versus
-  expected text/template-only anchors, then promote the real selector set into
-  a hard rendered-page check.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes

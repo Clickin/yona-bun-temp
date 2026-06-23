@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -30,26 +31,70 @@ const authenticatedPages = [
   { path: "/_import", anchors: ["importGit", "url", "project-name"] },
   { path: "/orgs", anchors: ["page-wrap-outer"] },
   { path: "/organizations/new", anchors: ["page-wrap-outer", "name"] },
-  { path: "/search?keyword=yona&searchType=auto", anchors: ["search", "keyword"] },
-  { path: "/notifications", anchors: ["notification"] },
-  { path: "/notification?from=0&limit=20", anchors: ["notification"] },
+  {
+    path: "/search?keyword=yona&searchType=auto",
+    anchors: ["search", "keyword"],
+    structuralTokens: ["keyword"],
+  },
+  { path: "/notifications", anchors: ["notification"], structuralTokens: [] },
+  { path: "/notification?from=0&limit=20", anchors: ["notification"], structuralTokens: [] },
   { path: "/user/issues", anchors: ["page-wrap-outer"] },
   { path: "/user/issues/new", anchors: ["page-wrap-outer"] },
   { path: "/user/issues/new/mine", anchors: ["page-wrap-outer"] },
   { path: "/user/files", anchors: ["attachment-files"] },
   { path: "/user/editform", anchors: ["page-wrap-outer"] },
   { path: "/user/editform/password", anchors: ["page-wrap-outer", "password"] },
-  { path: "/user/editform/notifications", anchors: ["page-wrap-outer", "notification"] },
+  {
+    path: "/user/editform/notifications",
+    anchors: ["page-wrap-outer", "notification"],
+    structuralTokens: ["page-wrap-outer"],
+  },
   { path: "/user/editform/emails", anchors: ["page-wrap-outer", "email"] },
-  { path: "/user/editform/token", anchors: ["page-wrap-outer", "token"] },
-  { path: "/sites/userList", anchors: ["site-breadcrumb-outer", "userList"] },
-  { path: "/sites/projectList", anchors: ["site-breadcrumb-outer", "projectList"] },
-  { path: "/sites/postList", anchors: ["site-breadcrumb-outer", "postList"] },
-  { path: "/sites/issueList", anchors: ["site-breadcrumb-outer", "issueList"] },
-  { path: "/sites/mail", anchors: ["site-breadcrumb-outer", "mail"] },
-  { path: "/sites/massmail", anchors: ["site-breadcrumb-outer", "mail"] },
-  { path: "/sites/update", anchors: ["site-breadcrumb-outer", "update"] },
-  { path: "/sites/diagnostic", anchors: ["site-breadcrumb-outer", "diagnostic"] },
+  {
+    path: "/user/editform/token",
+    anchors: ["page-wrap-outer", "token"],
+    structuralTokens: ["page-wrap-outer"],
+  },
+  {
+    path: "/sites/userList",
+    anchors: ["site-breadcrumb-outer", "userList"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/projectList",
+    anchors: ["site-breadcrumb-outer", "projectList"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/postList",
+    anchors: ["site-breadcrumb-outer", "postList"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/issueList",
+    anchors: ["site-breadcrumb-outer", "issueList"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/mail",
+    anchors: ["site-breadcrumb-outer", "mail"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/massmail",
+    anchors: ["site-breadcrumb-outer", "mail"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/update",
+    anchors: ["site-breadcrumb-outer", "update"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
+  {
+    path: "/sites/diagnostic",
+    anchors: ["site-breadcrumb-outer", "diagnostic"],
+    structuralTokens: ["site-breadcrumb-outer"],
+  },
   { path: "/sites/data", anchors: ["site-breadcrumb-outer", "data"] },
   { path: "/admin", anchors: ["user-info-box", "page-wrap-outer"] },
 ];
@@ -108,9 +153,19 @@ function hasStructuralToken(html, token) {
   return (
     new RegExp(`\\bid=["']${escaped}["']`).test(html) ||
     new RegExp(`\\bname=["']${escaped}["']`).test(html) ||
-    new RegExp(`\\bclass=["'][^"']*(?:^|\\s)${escaped}(?:\\s|$)[^"']*["']`).test(html)
+    new RegExp(`\\bclass=["'](?:[^"']*\\s)?${escaped}(?:\\s|["'])`).test(html)
   );
 }
+
+assert.equal(
+  hasStructuralToken('<div class="project-header-outer other"></div>', "project-header-outer"),
+  true,
+);
+assert.equal(hasStructuralToken('<input name="loginIdOrEmail">', "loginIdOrEmail"), true);
+assert.equal(
+  hasStructuralToken('<div class="not-project-header-outer"></div>', "project-header-outer"),
+  false,
+);
 
 function normalizeDiscoveredPageLink(href) {
   try {
@@ -147,19 +202,23 @@ function discoverPageLinks(html) {
 function auditPage(page) {
   const response = fetchPage(page.path);
   const expectedStatuses = page.statuses ?? [200];
+  const structuralTokens = page.structuralTokens ?? page.anchors;
   const missingAnchors =
     response.status === 200 ? page.anchors.filter((anchor) => !response.html.includes(anchor)) : [];
   const missingStructuralTokens =
     response.status === 200
-      ? page.anchors.filter((anchor) => !hasStructuralToken(response.html, anchor))
+      ? structuralTokens.filter((anchor) => !hasStructuralToken(response.html, anchor))
       : [];
   return {
     path: page.path,
     status: response.status,
-    ok: expectedStatuses.includes(response.status) && missingAnchors.length === 0,
+    ok:
+      expectedStatuses.includes(response.status) &&
+      missingAnchors.length === 0 &&
+      missingStructuralTokens.length === 0,
     expectedNonOk: response.status !== 200 && expectedStatuses.includes(response.status),
     checkedAnchors: page.anchors,
-    checkedStructuralTokens: page.anchors,
+    checkedStructuralTokens: structuralTokens,
     missingAnchors,
     missingStructuralTokens,
     discoveredPageLinks: response.status === 200 ? discoverPageLinks(response.html) : [],
@@ -205,8 +264,14 @@ function discoverProjectPages() {
     { path: `/${projectPath}/posts`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/postform`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/milestones`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/newMilestoneForm`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/pullRequests`, anchors: ["project-header-outer", "project-menu-outer"] },
+    {
+      path: `/${projectPath}/newMilestoneForm`,
+      anchors: ["project-header-outer", "project-menu-outer"],
+    },
+    {
+      path: `/${projectPath}/pullRequests`,
+      anchors: ["project-header-outer", "project-menu-outer"],
+    },
     { path: `/${projectPath}/newPullRequestForm`, anchors: [], statuses: [200, 400] },
     { path: `/${projectPath}/reviews`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/code`, anchors: ["project-header-outer", "project-menu-outer"] },
@@ -214,7 +279,10 @@ function discoverProjectPages() {
     { path: `/${projectPath}/branches`, anchors: [], statuses: [200, 500] },
     { path: `/${projectPath}/members`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/watchers`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/settingform`, anchors: ["project-header-outer", "project-menu-outer"] },
+    {
+      path: `/${projectPath}/settingform`,
+      anchors: ["project-header-outer", "project-menu-outer"],
+    },
     { path: `/${projectPath}/webhooks`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/deleteform`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/transfer`, anchors: ["project-header-outer", "project-menu-outer"] },
@@ -255,7 +323,9 @@ try {
   const results = [...publicResults, ...authResults];
   const auditedPagePaths = new Set(results.map((result) => result.path.split("?")[0]));
   const discoveredPageLinks = [
-    ...new Set(results.flatMap((result) => result.discoveredPageLinks.map((link) => link.split("?")[0]))),
+    ...new Set(
+      results.flatMap((result) => result.discoveredPageLinks.map((link) => link.split("?")[0])),
+    ),
   ].sort();
   const unauditedDiscoveredPageLinks = discoveredPageLinks.filter(
     (link) => !auditedPagePaths.has(link),
