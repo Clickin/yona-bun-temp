@@ -74,7 +74,7 @@ Each goal packet should close these checks for its page group:
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
 | `rc-ux-public-auth`          | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/_help`                                                                                                                                                              | Public/auth route, copy, form, redirect, validation, and direct backend route parity.                                                                        | `pass`      |
 | `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `pass`      |
-| `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `unchecked` |
+| `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `pass`      |
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `unchecked` |
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `unchecked` |
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `unchecked` |
@@ -127,8 +127,27 @@ src/root-custom-navbar-link.spec.ts src/auth-workspace-shell.spec.tsx
 src/route-parity.spec.tsx` passed with 3 files and 117 tests.
 - Rendered e2e verification: `pnpm --dir frontend test:e2e --
 tests/legacy-rendered-page-audit.e2e.ts -g "renders legacy audited anchors for
-logged-in /"` was rerun outside the sandbox after localhost `listen EPERM`;
+  logged-in /"` was rerun outside the sandbox after localhost `listen EPERM`;
   the wrapper executed the whole file and passed 43 tests.
+
+### `rc-ux-directory-create`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/projects`, `/projectform`,
+  `/_import`, `/orgs`, and `/organizations/new`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, and `e2e-render-coverage.json` map those paths to
+  Rust routes and rendered legacy signal evidence, including `all-projects`,
+  `newProjectForm`, `project-name`, `advanced-options`, `importGit`, `url`,
+  `page-wrap-outer`, and `name`.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/project-create-parity.spec.tsx src/project-import-parity.spec.tsx
+src/organization-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx
+src/route-parity.spec.tsx` passed with 5 files and 131 tests.
+- Backend direct-route verification: `pnpm agent:cargo-test --
+--outside-sandbox -p yona-rust-pilot-server --test org_project_contract
+project_import_direct_route_clones_git_repository_and_preserves_legacy_errors
+-- --nocapture` passed with 1 test.
 
 ## Goal Packet Template
 
