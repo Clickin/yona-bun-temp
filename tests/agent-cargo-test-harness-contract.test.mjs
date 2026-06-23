@@ -93,6 +93,19 @@ describe("agent cargo test harness contract", () => {
     assert.equal(result.logPath, null);
   });
 
+  it("refuses execution without the outside-sandbox assertion", async () => {
+    const result = await runAgentCargoTest(
+      {
+        ...parseArgs(["sandbox-marker-smoke"]),
+        cargoBin: "/bin/echo",
+      },
+      {},
+    );
+
+    assert.equal(result.status, 1);
+    assert.equal(result.logPath, null);
+  });
+
   it("allows intentional sandbox execution when explicitly requested", async () => {
     const logDir = mkdtempSync(join(tmpdir(), "agent-cargo-test-contract-"));
     try {
