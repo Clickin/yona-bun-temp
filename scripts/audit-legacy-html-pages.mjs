@@ -83,18 +83,37 @@ function fetchPage(path, follow = true) {
   };
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasStructuralToken(html, token) {
+  const escaped = escapeRegex(token);
+  return (
+    new RegExp(`\\bid=["']${escaped}["']`).test(html) ||
+    new RegExp(`\\bname=["']${escaped}["']`).test(html) ||
+    new RegExp(`\\bclass=["'][^"']*(?:^|\\s)${escaped}(?:\\s|$)[^"']*["']`).test(html)
+  );
+}
+
 function auditPage(page) {
   const response = fetchPage(page.path);
   const expectedStatuses = page.statuses ?? [200];
   const missingAnchors =
     response.status === 200 ? page.anchors.filter((anchor) => !response.html.includes(anchor)) : [];
+  const missingStructuralTokens =
+    response.status === 200
+      ? page.anchors.filter((anchor) => !hasStructuralToken(response.html, anchor))
+      : [];
   return {
     path: page.path,
     status: response.status,
     ok: expectedStatuses.includes(response.status) && missingAnchors.length === 0,
     expectedNonOk: response.status !== 200 && expectedStatuses.includes(response.status),
     checkedAnchors: page.anchors,
+    checkedStructuralTokens: page.anchors,
     missingAnchors,
+    missingStructuralTokens,
     bytes: Buffer.byteLength(response.html),
   };
 }

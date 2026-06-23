@@ -8,10 +8,12 @@ Last updated: 2026-06-23
 ## Scope
 
 The homelab legacy instance at `http://192.168.45.10:9000` is reachable with
-host `curl`, but the Playwright CLI Chromium process still returns
+host `curl`, but Playwright-launched Chrome and Edge still return
 `net::ERR_ADDRESS_UNREACHABLE` even when the tool invocation runs outside the
-Codex sandbox. Because legacy Yona is server-rendered Play templates, curl HTML
-is a valid first-pass source for legacy page anchors.
+Codex sandbox. The host is addressed by IP, so this is not a browser DNS
+resolution failure. Because legacy Yona is server-rendered Play templates, curl
+HTML is a valid first-pass source for legacy page anchors while browser routing
+is blocked.
 
 `pnpm smoke:legacy-html-pages` logs in with `admin` / `admin` by default and
 checks representative public, authenticated workspace, user, search, and
@@ -33,6 +35,11 @@ diff.
 `checkedAnchors` and verifies that each anchor has Rust frontend source/spec
 evidence. This is still static evidence, but it ties the curl-observed legacy
 HTML anchors to committed Rust UI code.
+
+The HTML audit also records diagnostic `checkedStructuralTokens` and
+`missingStructuralTokens` fields for `id`, `name`, or class-token matches. These
+fields are not a hard gate yet because some legacy anchors are message text,
+JavaScript strings, or template fragments rather than DOM selector tokens.
 
 `pnpm smoke:legacy-e2e-render-coverage` reads route coverage and scans existing
 Playwright e2e tests for literal `page.goto(...)` navigations that render the
@@ -70,7 +77,9 @@ The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
 Playwright e2e navigation evidence for all `50` audited legacy URLs:
 `50` with rendered e2e evidence, `0` missing. The final 17 routes are covered
 by `frontend/tests/legacy-rendered-page-audit.e2e.ts`, which renders each page
-and checks the curl-observed legacy anchors against the Rust DOM.
+and checks the curl-observed legacy anchors against the Rust DOM. Where the
+legacy anchor represents an actual DOM structure token, that e2e file also
+checks selector presence through `id`, `name`, or class lookup.
 
 That rendered pass also found a dev-only proxy mismatch: Vite was proxying
 `/lostPassword` GET requests to the backend, so direct React route rendering of
@@ -100,6 +109,9 @@ The initial curl baseline covers:
 
 - Compare richer DOM structure/content beyond the current anchor smoke where
   the anchor-level check is too weak to catch visual or copy drift.
+- Classify diagnostic structural-token misses into real selector gaps versus
+  expected text/template-only anchors, then promote the real selector set into
+  a hard rendered-page check.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes

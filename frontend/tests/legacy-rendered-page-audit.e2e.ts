@@ -194,7 +194,7 @@ test.beforeEach(async ({ page }) => {
   await routeAuditApis(page);
 });
 
-async function expectLegacyAnchors(page: Page, anchors: string[]) {
+async function expectLegacySignals(page: Page, anchors: string[], structuralTokens = anchors) {
   await page.waitForLoadState("networkidle");
   for (const anchor of anchors) {
     await expect
@@ -203,89 +203,96 @@ async function expectLegacyAnchors(page: Page, anchors: string[]) {
       })
       .toContain(anchor);
   }
+  for (const anchor of structuralTokens) {
+    await expect
+      .poll(() => page.locator(`#${anchor}, [name="${anchor}"], .${anchor}`).count(), {
+        message: `body has structural token ${anchor}`,
+      })
+      .toBeGreaterThan(0);
+  }
 }
 
 test("renders legacy audited anchors for /lostPassword", async ({ page }) => {
   await page.goto("/yona/lostPassword");
-  await expectLegacyAnchors(page, ["login-form-wrap", "email"]);
+  await expectLegacySignals(page, ["login-form-wrap", "email"]);
 });
 
 test("renders legacy audited anchors for /_help", async ({ page }) => {
   await page.goto("/yona/_help");
-  await expectLegacyAnchors(page, ["site-breadcrumb-outer", "qas", "answer-wrap"]);
+  await expectLegacySignals(page, ["site-breadcrumb-outer", "qas", "answer-wrap"]);
 });
 
 test("renders legacy audited anchors for /projectform", async ({ page }) => {
   await page.goto("/yona/projectform");
-  await expectLegacyAnchors(page, ["newProjectForm", "project-name", "advanced-options"]);
+  await expectLegacySignals(page, ["newProjectForm", "project-name", "advanced-options"]);
 });
 
 test("renders legacy audited anchors for /_import", async ({ page }) => {
   await page.goto("/yona/_import");
-  await expectLegacyAnchors(page, ["importGit", "url", "project-name"]);
+  await expectLegacySignals(page, ["importGit", "url", "project-name"]);
 });
 
 test("renders legacy audited anchors for /organizations/new", async ({ page }) => {
   await page.goto("/yona/organizations/new");
-  await expectLegacyAnchors(page, ["page-wrap-outer", "name"]);
+  await expectLegacySignals(page, ["page-wrap-outer", "name"]);
 });
 
 test("renders legacy audited anchors for /notifications", async ({ page }) => {
   await page.goto("/yona/notifications");
-  await expectLegacyAnchors(page, ["notification"]);
+  await expectLegacySignals(page, ["notification"], []);
 });
 
 test("renders legacy audited anchors for /notification", async ({ page }) => {
   await page.goto("/yona/notification?from=0&limit=20");
-  await expectLegacyAnchors(page, ["notification"]);
+  await expectLegacySignals(page, ["notification"], []);
 });
 
 test("renders legacy audited anchors for /user/issues", async ({ page }) => {
   await page.goto("/yona/user/issues");
-  await expectLegacyAnchors(page, ["page-wrap-outer"]);
+  await expectLegacySignals(page, ["page-wrap-outer"]);
 });
 
 test("renders legacy audited anchors for /user/files", async ({ page }) => {
   await page.goto("/yona/user/files");
-  await expectLegacyAnchors(page, ["attachment-files"]);
+  await expectLegacySignals(page, ["attachment-files"]);
 });
 
 test("renders legacy audited anchors for /user/editform", async ({ page }) => {
   await page.goto("/yona/user/editform");
-  await expectLegacyAnchors(page, ["page-wrap-outer"]);
+  await expectLegacySignals(page, ["page-wrap-outer"]);
 });
 
 test("renders legacy audited anchors for /user/editform/notifications", async ({ page }) => {
   await page.goto("/yona/user/editform/notifications");
-  await expectLegacyAnchors(page, ["page-wrap-outer", "notification"]);
+  await expectLegacySignals(page, ["page-wrap-outer", "notification"], ["page-wrap-outer"]);
 });
 
 test("renders legacy audited anchors for /user/editform/emails", async ({ page }) => {
   await page.goto("/yona/user/editform/emails");
-  await expectLegacyAnchors(page, ["page-wrap-outer", "email"]);
+  await expectLegacySignals(page, ["page-wrap-outer", "email"]);
 });
 
 test("renders legacy audited anchors for /user/editform/token", async ({ page }) => {
   await page.goto("/yona/user/editform/token");
-  await expectLegacyAnchors(page, ["page-wrap-outer", "token"]);
+  await expectLegacySignals(page, ["page-wrap-outer", "token"], ["page-wrap-outer"]);
 });
 
 test("renders legacy audited anchors for /sites/data", async ({ page }) => {
   await page.goto("/yona/sites/data");
-  await expectLegacyAnchors(page, ["site-breadcrumb-outer", "data"]);
+  await expectLegacySignals(page, ["site-breadcrumb-outer", "data"]);
 });
 
 test("renders legacy audited anchors for project home", async ({ page }) => {
   await page.goto("/yona/admin/sample");
-  await expectLegacyAnchors(page, ["project-header-outer", "project-menu-outer"]);
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
 test("renders legacy audited anchors for project issue form", async ({ page }) => {
   await page.goto("/yona/admin/sample/issueform");
-  await expectLegacyAnchors(page, ["project-header-outer", "project-menu-outer"]);
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
 test("renders legacy audited anchors for project settings", async ({ page }) => {
   await page.goto("/yona/admin/sample/settingform");
-  await expectLegacyAnchors(page, ["project-header-outer", "project-menu-outer"]);
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
