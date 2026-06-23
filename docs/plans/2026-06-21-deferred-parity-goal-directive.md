@@ -88,18 +88,24 @@ P0-A runnable app smoke refresh, 2026-06-21:
 
 P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
 
-- P0-B existing DB adopt: no checked-in unmodified legacy-like MariaDB/MySQL dump
-  or external-service-free MySQL fixture was found. The evidence now goes beyond
-  schema-only validation with a deterministic populated SQLite surrogate fixture:
+- P0-B existing DB adopt: an unmodified sample-project MariaDB dump is now
+  available at the ignored local path `.agent/legacy-dumps/yona-dump.sql`.
+  Because the dump is sample data, it remains outside git. `pnpm
+  smoke:legacy-mariadb-dump` passed on 2026-06-23 after importing that dump into
+  `mariadb:10.3`, starting Rust with `YONA_SCHEMA_POLICY=validate_only`, then
+  starting with `YONA_SCHEMA_POLICY=adopt` and checking that only adopt writes
+  the Rust migration baseline. The adopt path now creates the current-only
+  `webhook_delivery` table and nullable OAuth profile/token columns absent from
+  the legacy dump. The checked-in evidence still includes the
+  deterministic populated SQLite surrogate fixture:
   `crates/migration/tests/fixtures/p0b_legacy_like_sqlite_adopt.sql` loads
   representative legacy-like users, project membership, issue/comment, posting,
   and `play_evolutions` rows on top of the current manifest-backed runtime
   schema. `runtime_schema_contract::p0b_legacy_like_sqlite_fixture_validates_without_write_then_adopts_preserving_rows`
   first runs `validate_only` and asserts no `seaql_migrations` table is written,
   then runs `adopt` and asserts the baseline marker is written while fixture data
-  remains. Live MariaDB evidence is still limited to managed-schema validation in
-  `db_matrix_testcontainers`; do not claim full unmodified legacy MariaDB/MySQL
-  dump adoption until such a dump/fixture is checked in or provided. The
+  remains. Live MariaDB evidence is no longer blocked on fixture availability.
+  The
   refreshed focused command
   `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration runtime_schema_contract -- --nocapture`
   passed on 2026-06-21.

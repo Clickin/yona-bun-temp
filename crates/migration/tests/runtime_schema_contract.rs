@@ -171,6 +171,74 @@ async fn validate_only_policy_accepts_precreated_schema_without_writing_migratio
 }
 
 #[tokio::test]
+async fn validate_only_accepts_legacy_schema_missing_current_only_webhook_delivery_then_adopt_creates_it(
+) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    entity_schema::create_schema(&SchemaManager::new(&db))
+        .await
+        .expect("precreate current manifest-backed sqlite schema");
+    db.execute_unprepared("DROP TABLE webhook_delivery")
+        .await
+        .expect("drop current-only webhook delivery table");
+    for statement in [
+        "ALTER TABLE linked_account DROP COLUMN provider_display_name",
+        "ALTER TABLE linked_account DROP COLUMN avatar_url",
+        "ALTER TABLE linked_account DROP COLUMN password",
+        "ALTER TABLE linked_account DROP COLUMN access_token",
+        "ALTER TABLE linked_account DROP COLUMN refresh_token",
+        "ALTER TABLE linked_account DROP COLUMN id_token",
+        "ALTER TABLE linked_account DROP COLUMN access_token_expires_at",
+        "ALTER TABLE linked_account DROP COLUMN refresh_token_expires_at",
+        "ALTER TABLE linked_account DROP COLUMN scope",
+        "ALTER TABLE linked_account DROP COLUMN created_at",
+        "ALTER TABLE linked_account DROP COLUMN updated_at",
+        "ALTER TABLE user_credential DROP COLUMN image",
+        "ALTER TABLE user_credential DROP COLUMN created_at",
+        "ALTER TABLE user_credential DROP COLUMN updated_at",
+    ] {
+        db.execute_unprepared(statement)
+            .await
+            .expect("drop current-only adopt column");
+    }
+
+    let manager = SchemaManager::new(&db);
+    Migrator::ensure_runtime_schema_with_policy(&db, RuntimeSchemaPolicy::ValidateOnly)
+        .await
+        .expect("validate-only accepts legacy schema without current-only table");
+    assert!(!manager
+        .has_table("webhook_delivery")
+        .await
+        .expect("webhook_delivery remains absent after validate-only"));
+
+    Migrator::ensure_runtime_schema_with_policy(&db, RuntimeSchemaPolicy::Adopt)
+        .await
+        .expect("adopt creates current-only webhook delivery table");
+    assert!(manager
+        .has_table("webhook_delivery")
+        .await
+        .expect("webhook_delivery created after adopt"));
+    assert_eq!(scalar_count(&db, "webhook_delivery").await, 0);
+    assert!(
+        list_columns(&db, "linked_account")
+            .await
+            .expect("linked_account columns")
+            .iter()
+            .any(|column| column.name == "access_token"),
+        "adopt should add current-only linked_account token columns"
+    );
+    assert!(
+        list_columns(&db, "user_credential")
+            .await
+            .expect("user_credential columns")
+            .iter()
+            .any(|column| column.name == "image"),
+        "adopt should add current-only user_credential profile columns"
+    );
+}
+
+#[tokio::test]
 async fn p0b_legacy_like_sqlite_fixture_validates_without_write_then_adopts_preserving_rows() {
     let db = Database::connect("sqlite::memory:")
         .await

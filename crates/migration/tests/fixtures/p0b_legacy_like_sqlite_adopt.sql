@@ -2,8 +2,8 @@
 --
 -- Source: representative legacy Yona table/data shape from yona-original test
 -- fixture identifiers, loaded on top of the current manifest-backed SQLite schema.
--- This is not an unmodified MariaDB/MySQL production dump; it is the strongest
--- no-external-service surrogate currently checked into the repo.
+-- This is not an unmodified MariaDB/MySQL production dump; it stays checked in
+-- as the external-service-free fallback beside the ignored local dump smoke.
 
 INSERT INTO `role` (`id`, `name`, `active`) VALUES
   (1, 'manager', 1),

@@ -1,11 +1,13 @@
 use sea_orm::{
-    ActiveValue, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, QueryOrder, Statement,
+    ActiveValue, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, QueryOrder, Schema,
+    Statement,
 };
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::seaql_migrations;
 use serde::Deserialize;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
+use yona_rust_persistence_entities::webhook_delivery;
 
 pub mod entity_schema;
 pub mod import_checkpoint;
@@ -15,7 +17,27 @@ mod m20260409_000001_create_legacy_start_schema;
 pub struct Migrator;
 
 const MANIFEST_JSON: &str = include_str!("../legacy-final-schema-manifest.json");
-const OPTIONAL_LEGACY_TABLES: &[&str] = &["play_evolutions"];
+const OPTIONAL_LEGACY_TABLES: &[&str] = &["play_evolutions", "webhook_delivery"];
+const ADOPT_CREATE_IF_MISSING_TABLES: &[&str] = &["webhook_delivery"];
+const ADOPT_ADD_IF_MISSING_COLUMNS: &[(&str, &[&str])] = &[
+    (
+        "linked_account",
+        &[
+            "provider_display_name",
+            "avatar_url",
+            "password",
+            "access_token",
+            "refresh_token",
+            "id_token",
+            "access_token_expires_at",
+            "refresh_token_expires_at",
+            "scope",
+            "created_at",
+            "updated_at",
+        ],
+    ),
+    ("user_credential", &["image", "created_at", "updated_at"]),
+];
 
 #[derive(Deserialize)]
 struct LegacySchemaManifest {
@@ -210,6 +232,8 @@ where
     }
 
     validate_schema_against_manifest(db).await?;
+    create_missing_adopt_tables(db).await?;
+    validate_schema_against_manifest(db).await?;
 
     let applied = applied_migration_versions(db).await?;
     let unsupported = unsupported_migration_versions::<M>(&applied);
@@ -235,6 +259,79 @@ async fn ensure_validate_only_policy(
     }
 
     validate_schema_against_manifest(db).await
+}
+
+async fn create_missing_adopt_tables(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let existing: std::collections::BTreeSet<String> =
+        list_user_tables(db).await?.into_iter().collect();
+    for table in ADOPT_CREATE_IF_MISSING_TABLES {
+        if existing.contains(*table) {
+            continue;
+        }
+        match *table {
+            "webhook_delivery" => {
+                let backend = db.get_database_backend();
+                let schema = Schema::new(backend);
+                let mut stmt = schema.create_table_from_entity(webhook_delivery::Entity);
+                stmt.if_not_exists();
+                db.execute(backend.build(&stmt)).await?;
+            }
+            other => {
+                return Err(DbErr::Custom(format!(
+                    "unsupported adopt-created table: {other}"
+                )))
+            }
+        }
+    }
+    create_missing_adopt_columns(db).await?;
+    Ok(())
+}
+
+async fn create_missing_adopt_columns(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let backend = db.get_database_backend();
+    for (table, columns) in ADOPT_ADD_IF_MISSING_COLUMNS {
+        let existing: std::collections::BTreeSet<String> = list_columns(db, table)
+            .await?
+            .into_iter()
+            .map(|column| column.name)
+            .collect();
+        for column in *columns {
+            if existing.contains(*column) {
+                continue;
+            }
+            db.execute_unprepared(&adopt_add_column_sql(backend, table, column)?)
+                .await?;
+        }
+    }
+    Ok(())
+}
+
+fn adopt_add_column_sql(backend: DbBackend, table: &str, column: &str) -> Result<String, DbErr> {
+    let column_type = match column {
+        "access_token" | "refresh_token" | "id_token" => match backend {
+            DbBackend::MySql => "LONGTEXT",
+            DbBackend::Postgres | DbBackend::Sqlite => "TEXT",
+        },
+        "access_token_expires_at" | "refresh_token_expires_at" | "created_at" | "updated_at" => {
+            match backend {
+                DbBackend::Postgres => "TIMESTAMP",
+                DbBackend::MySql | DbBackend::Sqlite => "DATETIME",
+            }
+        }
+        "provider_display_name" | "avatar_url" | "password" | "scope" | "image" => "VARCHAR(255)",
+        other => {
+            return Err(DbErr::Custom(format!(
+                "unsupported adopt-added column: {other}"
+            )))
+        }
+    };
+    let (open, close) = match backend {
+        DbBackend::Postgres => ('"', '"'),
+        DbBackend::MySql | DbBackend::Sqlite => ('`', '`'),
+    };
+    Ok(format!(
+        "ALTER TABLE {open}{table}{close} ADD COLUMN {open}{column}{close} {column_type}"
+    ))
 }
 
 async fn inspect_schema(db: &DatabaseConnection) -> Result<SchemaInspection, DbErr> {
@@ -341,20 +438,50 @@ async fn validate_schema_against_manifest(db: &DatabaseConnection) -> Result<(),
         }
 
         let actual_columns = list_columns(db, &table.name).await?;
-        if actual_columns.len() != table.columns.len() {
+        let actual_column_names: std::collections::BTreeSet<String> = actual_columns
+            .iter()
+            .map(|column| column.name.clone())
+            .collect();
+        let expected_column_names: std::collections::BTreeSet<String> = table
+            .columns
+            .iter()
+            .map(|column| column.name.clone())
+            .collect();
+
+        let missing_required: Vec<String> = expected_column_names
+            .difference(&actual_column_names)
+            .filter(|column| !is_adopt_added_column(&table.name, column))
+            .cloned()
+            .collect();
+        if !missing_required.is_empty() {
             return Err(DbErr::Custom(format!(
-                "{}: column count mismatch (expected {}, actual {})",
+                "{}: missing required columns: {}",
                 table.name,
-                table.columns.len(),
-                actual_columns.len()
+                missing_required.join(", ")
+            )));
+        }
+
+        let extra_columns: Vec<String> = actual_column_names
+            .difference(&expected_column_names)
+            .cloned()
+            .collect();
+        if !extra_columns.is_empty() {
+            return Err(DbErr::Custom(format!(
+                "{}: unexpected columns: {}",
+                table.name,
+                extra_columns.join(", ")
             )));
         }
 
         for expected in table.columns {
-            let Some(actual) = actual_columns
+            let actual = if let Some(actual) = actual_columns
                 .iter()
                 .find(|column| column.name == expected.name)
-            else {
+            {
+                actual
+            } else if is_adopt_added_column(&table.name, &expected.name) {
+                continue;
+            } else {
                 return Err(DbErr::Custom(format!(
                     "{}: missing column {}",
                     table.name, expected.name
@@ -377,6 +504,12 @@ async fn validate_schema_against_manifest(db: &DatabaseConnection) -> Result<(),
     }
 
     Ok(())
+}
+
+fn is_adopt_added_column(table_name: &str, column_name: &str) -> bool {
+    ADOPT_ADD_IF_MISSING_COLUMNS
+        .iter()
+        .any(|(table, columns)| *table == table_name && columns.contains(&column_name))
 }
 
 async fn list_user_tables<C>(db: &C) -> Result<Vec<String>, DbErr>
