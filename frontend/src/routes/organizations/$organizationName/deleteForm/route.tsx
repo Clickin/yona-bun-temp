@@ -85,7 +85,11 @@ function OrganizationDeleteRouteComponent() {
           const result = await deleteOrganization(runtimeConfig, csrfToken, nextOrganizationName);
           navigateToAppHref(runtimeConfig.basePath, result.redirectPath || "/");
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "organization.delete.error");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("organization.delete.error", { fallback: "organization.delete.error" }),
+          );
         }
       }}
     />

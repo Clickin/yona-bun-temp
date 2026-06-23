@@ -1,9 +1,0 @@
-[package]
-name = "yona-rust-pilot-protocol"
-edition.workspace = true
-license.workspace = true
-version.workspace = true
-
-[dependencies]
-buffa.workspace = true
-serde.workspace = true

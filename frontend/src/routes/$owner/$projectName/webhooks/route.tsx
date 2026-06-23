@@ -71,7 +71,11 @@ function ProjectWebhooksRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("error.badrequest", { fallback: "error.badrequest" }),
+      );
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(webhooksQueryKey, detail);
@@ -89,7 +93,11 @@ function ProjectWebhooksRouteComponent() {
         webhookId,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("error.badrequest", { fallback: "error.badrequest" }),
+      );
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(webhooksQueryKey, detail);

@@ -6,7 +6,7 @@ use axum::{
     Json, Router,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use buffa::view::OwnedView;
+use crate::buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -233,7 +233,7 @@ pub(crate) async fn auth_sign_in_with_password(
         ));
     };
 
-    let identifier = normalize_identifier(request.identifier);
+    let identifier = normalize_identifier(&request.identifier);
     if identifier.is_empty() || request.password.is_empty() {
         return Err(ConnectError::invalid_argument(
             LEGACY_LOGIN_REQUIRED_MESSAGE,
@@ -495,8 +495,8 @@ pub(crate) async fn auth_register_with_password(
     };
 
     let capabilities = auth_ui_capabilities_from_config(&service.auth_ui);
-    let login_id = normalize_identifier(request.login_id);
-    let email_address = normalize_identifier(request.email_address);
+    let login_id = normalize_identifier(&request.login_id);
+    let email_address = normalize_identifier(&request.email_address);
     if login_id.is_empty() {
         return Err(ConnectError::invalid_argument("user.wrongloginId.alert"));
     }
@@ -607,7 +607,7 @@ pub(crate) async fn auth_verify_user(
         ));
     };
     let Some(user_id) = repository
-        .find_valid_signup_verification_user_id(request.login_id, request.verification_code)
+        .find_valid_signup_verification_user_id(&request.login_id, &request.verification_code)
         .await
         .map_err(crate::internal_error)?
     else {
@@ -618,7 +618,7 @@ pub(crate) async fn auth_verify_user(
         .await
         .map_err(crate::internal_error)?;
     repository
-        .delete_signup_verification(request.verification_code)
+        .delete_signup_verification(&request.verification_code)
         .await
         .map_err(crate::internal_error)?;
     Ok((

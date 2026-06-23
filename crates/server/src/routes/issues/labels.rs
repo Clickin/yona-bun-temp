@@ -705,13 +705,13 @@ pub(crate) async fn project_labels_list(
         .read_session_from_headers(&ctx.headers);
     require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.as_ref().and_then(|session| session.user_id),
     )
     .await?;
     let labels = repository
-        .list_project_labels(request.owner_name, request.project_name)
+        .list_project_labels(&request.owner_name, &request.project_name)
         .await
         .map_err(internal_error)?
         .iter()
@@ -741,8 +741,8 @@ pub(crate) async fn project_label_create(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -751,7 +751,7 @@ pub(crate) async fn project_label_create(
             "issue label create is not allowed",
         ));
     }
-    let color = normalize_issue_label_color(request.label_color)?;
+    let color = normalize_issue_label_color(&request.label_color)?;
     let Some((label, created)) = repository
         .create_project_label(persistence::CreateProjectLabelInput {
             category_is_exclusive: request.category_is_exclusive,
@@ -791,8 +791,8 @@ pub(crate) async fn project_label_update(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -801,7 +801,7 @@ pub(crate) async fn project_label_update(
             "issue label update is not allowed",
         ));
     }
-    let color = normalize_issue_label_color(request.label_color)?;
+    let color = normalize_issue_label_color(&request.label_color)?;
     let Some(label) = repository
         .update_project_label(persistence::UpdateProjectLabelInput {
             category_id: request.category_id,
@@ -841,8 +841,8 @@ pub(crate) async fn project_label_delete(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -852,7 +852,7 @@ pub(crate) async fn project_label_delete(
         ));
     }
     let ok = repository
-        .delete_project_label(request.owner_name, request.project_name, request.label_id)
+        .delete_project_label(&request.owner_name, &request.project_name, request.label_id)
         .await
         .map_err(internal_error)?;
     if !ok {
@@ -882,13 +882,13 @@ pub(crate) async fn project_label_categories_list(
         .read_session_from_headers(&ctx.headers);
     require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.as_ref().and_then(|session| session.user_id),
     )
     .await?;
     let categories = repository
-        .list_project_label_categories(request.owner_name, request.project_name)
+        .list_project_label_categories(&request.owner_name, &request.project_name)
         .await
         .map_err(internal_error)?
         .iter()
@@ -918,8 +918,8 @@ pub(crate) async fn project_label_category_create(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -965,8 +965,8 @@ pub(crate) async fn project_label_category_update(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -1013,8 +1013,8 @@ pub(crate) async fn project_label_category_delete(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -1025,8 +1025,8 @@ pub(crate) async fn project_label_category_delete(
     }
     let ok = repository
         .delete_project_label_category(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.category_id,
         )
         .await

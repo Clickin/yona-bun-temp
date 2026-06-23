@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
 import { renderWorkspaceSettings, testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
@@ -111,5 +113,24 @@ describe("workspace settings legacy i18n opt-in", () => {
     expect(tokenHtml).toContain("<h3>사용자토큰</h3>");
     expect(tokenHtml).toContain(">사용자토큰 다시생성</button>");
     expect(passwordHtml).toContain(">신규 비밀번호</dt>");
+  });
+
+  it("looks up workspace settings mutation fallback keys through the runtime messages", () => {
+    const routeFiles = [
+      ["routes/user/editform/index.tsx", "error.badrequest"],
+      ["routes/user/editform/password/route.tsx", "error.badrequest"],
+      ["routes/user/editform/emails/route.tsx", "error.badrequest"],
+      ["routes/user/editform/token/route.tsx", "error.badrequest"],
+      [
+        "routes/user/editform/notifications/route.tsx",
+        "error.failedTo userinfo.changeNotifications",
+      ],
+    ];
+
+    for (const [routeFile, key] of routeFiles) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source).toContain(`messages("${key}", {`);
+      expect(source).toContain(`fallback: "${key}"`);
+    }
   });
 });

@@ -15,7 +15,7 @@ pub(crate) async fn organization_detail_read(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, actor_id)
+        .read_organization_authorization(&request.organization_name, actor_id)
         .await
         .map_err(internal_error)?;
     if let Some(authorization) = authorization {
@@ -35,7 +35,7 @@ pub(crate) async fn organization_detail_read(
     }
 
     let organization = repository
-        .read_organization_by_name(request.organization_name)
+        .read_organization_by_name(&request.organization_name)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -74,17 +74,17 @@ pub(crate) async fn organization_create(
         ));
     }
 
-    if !is_valid_organization_name(request.organization_name) || request.description.len() > 255 {
+    if !is_valid_organization_name(&request.organization_name) || request.description.len() > 255 {
         return Err(ConnectError::invalid_argument(
             "invalid organization request",
         ));
     }
     if repository
-        .organization_name_exists(request.organization_name)
+        .organization_name_exists(&request.organization_name)
         .await
         .map_err(internal_error)?
         || repository
-            .user_login_id_exists(request.organization_name)
+            .user_login_id_exists(&request.organization_name)
             .await
             .map_err(internal_error)?
     {
@@ -137,14 +137,14 @@ pub(crate) async fn organization_update(
             "organization requires repository backend",
         ));
     };
-    if !is_valid_organization_name(request.organization_name) || request.description.len() > 255 {
+    if !is_valid_organization_name(&request.organization_name) || request.description.len() > 255 {
         return Err(ConnectError::invalid_argument(
             "invalid organization request",
         ));
     }
 
     let authorization = repository
-        .read_organization_authorization(request.current_organization_name, Some(user_id))
+        .read_organization_authorization(&request.current_organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -157,14 +157,14 @@ pub(crate) async fn organization_update(
         ));
     }
 
-    if normalize_identifier(request.current_organization_name)
-        != normalize_identifier(request.organization_name)
+    if normalize_identifier(&request.current_organization_name)
+        != normalize_identifier(&request.organization_name)
         && (repository
-            .organization_name_exists(request.organization_name)
+            .organization_name_exists(&request.organization_name)
             .await
             .map_err(internal_error)?
             || repository
-                .user_login_id_exists(request.organization_name)
+                .user_login_id_exists(&request.organization_name)
                 .await
                 .map_err(internal_error)?)
     {
@@ -213,7 +213,7 @@ pub(crate) async fn organization_settings_read(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -253,7 +253,7 @@ pub(crate) async fn organization_container_read(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, actor_id)
+        .read_organization_authorization(&request.organization_name, actor_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -287,7 +287,7 @@ pub(crate) async fn organization_members_read(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -301,7 +301,7 @@ pub(crate) async fn organization_members_read(
     }
 
     let directory = repository
-        .read_organization_members(request.organization_name)
+        .read_organization_members(&request.organization_name)
         .await
         .map_err(internal_error)?;
     Ok((
@@ -348,7 +348,7 @@ pub(crate) async fn organization_admin_read(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -385,7 +385,7 @@ pub(crate) async fn organization_member_add(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -399,7 +399,7 @@ pub(crate) async fn organization_member_add(
     }
 
     let target_user = repository
-        .find_user_by_login_id(request.login_id)
+        .find_user_by_login_id(&request.login_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::invalid_argument("organization member is unknown"))?;
@@ -418,7 +418,7 @@ pub(crate) async fn organization_member_add(
         .map_err(internal_error)?;
 
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -452,7 +452,7 @@ pub(crate) async fn organization_member_role_update(
     }
 
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -466,7 +466,7 @@ pub(crate) async fn organization_member_role_update(
     }
 
     let directory = repository
-        .read_organization_members(request.organization_name)
+        .read_organization_members(&request.organization_name)
         .await
         .map_err(internal_error)?;
     let current_member = directory
@@ -488,14 +488,14 @@ pub(crate) async fn organization_member_role_update(
             .add_organization_membership(
                 authorization.organization.id,
                 request.user_id,
-                request.role,
+                &request.role,
             )
             .await
             .map_err(internal_error)?;
     }
 
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -523,7 +523,7 @@ pub(crate) async fn organization_member_delete(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -538,7 +538,7 @@ pub(crate) async fn organization_member_delete(
     }
 
     let directory = repository
-        .read_organization_members(request.organization_name)
+        .read_organization_members(&request.organization_name)
         .await
         .map_err(internal_error)?;
     if let Some(current_member) = directory
@@ -563,7 +563,7 @@ pub(crate) async fn organization_member_delete(
     }
 
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -591,7 +591,7 @@ pub(crate) async fn organization_enrollment_accept(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -614,7 +614,7 @@ pub(crate) async fn organization_enrollment_accept(
         .map_err(internal_error)?;
 
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -642,7 +642,7 @@ pub(crate) async fn organization_enroll(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::invalid_argument("organization not found"))?;
@@ -661,7 +661,7 @@ pub(crate) async fn organization_enroll(
         .await
         .map_err(internal_error)?;
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -695,7 +695,7 @@ pub(crate) async fn organization_enroll_cancel(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::invalid_argument("organization not found"))?;
@@ -714,7 +714,7 @@ pub(crate) async fn organization_enroll_cancel(
         .await
         .map_err(internal_error)?;
     let refreshed = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -748,7 +748,7 @@ pub(crate) async fn organization_leave(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -759,7 +759,7 @@ pub(crate) async fn organization_leave(
     }
 
     let directory = repository
-        .read_organization_members(request.organization_name)
+        .read_organization_members(&request.organization_name)
         .await
         .map_err(internal_error)?;
     let admin_count = directory
@@ -808,7 +808,7 @@ pub(crate) async fn organization_delete(
         ));
     };
     let authorization = repository
-        .read_organization_authorization(request.organization_name, Some(user_id))
+        .read_organization_authorization(&request.organization_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -830,7 +830,7 @@ pub(crate) async fn organization_delete(
     }
 
     repository
-        .delete_organization_by_name(request.organization_name)
+        .delete_organization_by_name(&request.organization_name)
         .await
         .map_err(internal_error)?;
     Ok((

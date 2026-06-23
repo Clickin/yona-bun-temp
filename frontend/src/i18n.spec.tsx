@@ -130,4 +130,32 @@ describe("legacy i18n runtime", () => {
       }),
     ).toBe("REST request failed with 500.");
   });
+
+  it("uses legacy error fallback dictionaries only where the language has evidence", () => {
+    expect(lookupLegacyMessage("en-US", "post.update.error")).toBe("Errors in input values.");
+    expect(lookupLegacyMessage("ko-KR", "post.update.error")).toBe("입력값 오류");
+    expect(lookupLegacyMessage("ja-JP", "post.update.error")).toBe("入力エラー");
+    expect(lookupLegacyMessage("ru-RU", "post.update.error")).toBe("Ошибки в входных значений.");
+    expect(lookupLegacyMessage("uz-UZ", "post.update.error")).toBe("Kirishda xatolar bori.");
+
+    expect(
+      lookupLegacyMessage("ko-KR", "pullRequest.error.newPullRequestForm", {
+        args: ["repo", "main"],
+      }),
+    ).toBe("코드를 보낼 수 없는 프로젝트 또는 브랜치입니다<br>(repo main)");
+    expect(lookupLegacyMessage("en-US", "pullRequest.error.newPullRequestForm")).toBe(
+      "Invalid project or branch<br>({0} {1})",
+    );
+    expect(lookupLegacyMessage("ru-RU", "pullRequest.error.newPullRequestForm")).toBe(
+      "Неверный проект или филиал <br> ({0} {1})",
+    );
+    expect(lookupLegacyMessage("uz-UZ", "pullRequest.error.newPullRequestForm")).toBe(
+      "Pull-so`rov qilomaydigan loyiha yoki bo`lakdir<br>({0} {1})",
+    );
+    expect(
+      lookupLegacyMessage("ja-JP", "pullRequest.error.newPullRequestForm", {
+        fallback: "pullRequest.error.newPullRequestForm",
+      }),
+    ).toBe("pullRequest.error.newPullRequestForm");
+  });
 });

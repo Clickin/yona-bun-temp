@@ -18,7 +18,7 @@ pub(crate) async fn project_enroll(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -66,7 +66,7 @@ pub(crate) async fn project_enroll_cancel(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -114,7 +114,7 @@ pub(crate) async fn project_favorite_toggle(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -138,7 +138,7 @@ pub(crate) async fn project_favorite_toggle(
         ));
     }
     let result = repository
-        .toggle_favorite_project(user_id, request.owner_name, request.project_name)
+        .toggle_favorite_project(user_id, &request.owner_name, &request.project_name)
         .await
         .map_err(internal_error)?;
     Ok((
@@ -170,7 +170,7 @@ pub(crate) async fn recent_project_visit_record(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -194,7 +194,7 @@ pub(crate) async fn recent_project_visit_record(
         ));
     }
     let result = repository
-        .record_recent_project_visit(user_id, request.owner_name, request.project_name)
+        .record_recent_project_visit(user_id, &request.owner_name, &request.project_name)
         .await
         .map_err(internal_error)?;
     Ok((
@@ -225,7 +225,7 @@ pub(crate) async fn project_watch_toggle(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -241,7 +241,7 @@ pub(crate) async fn project_watch_toggle(
         .map_err(internal_error)?;
 
     let refreshed = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;

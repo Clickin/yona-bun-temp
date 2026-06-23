@@ -7,9 +7,9 @@ use yona_rust_pilot_server::{
     create_router_with_repository_and_embedded_assets_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config,
     mailbox_polling_config_from_startup, notification_mail_scheduler_config_from_startup,
-    repository_config_from_startup, spawn_mailbox_polling_scheduler,
-    spawn_notification_mail_scheduler, AppRuntimeConfig, NotificationMailDeliveryConfig,
-    RuntimeConfig,
+    reconcile_site_import_staging_uploads_for_startup, repository_config_from_startup,
+    spawn_mailbox_polling_scheduler, spawn_notification_mail_scheduler, AppRuntimeConfig,
+    NotificationMailDeliveryConfig, RuntimeConfig,
 };
 
 #[tokio::main]
@@ -29,6 +29,9 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let repository = PilotRepository::new_with_config(db, repository_config);
+    reconcile_site_import_staging_uploads_for_startup(&app_config.data_root, &repository)
+        .await
+        .map_err(anyhow::Error::msg)?;
     let _notification_mail_scheduler = spawn_notification_mail_scheduler(
         repository.clone(),
         config.public_origin.clone(),

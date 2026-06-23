@@ -183,9 +183,12 @@ matching hashes to `uploads/<hash>`, treats an already-existing identical final
 upload file as an idempotent completed promotion, and preserves the staged bytes
 plus journal with an error when the existing final file differs. This reduces
 the documented post-commit process-kill window without adding a new
-legacy-visible UI. Remaining limit: repair runs on the next live import rather
-than as a background startup service, and final-file mismatches require operator
-inspection because the route cannot prove which file is authoritative.
+legacy-visible UI. Startup now invokes the same bounded reconciliation before
+the router starts serving, so clear committed journal/staged-byte rows can be
+promoted without waiting for the next live import. Remaining limit: final-file
+mismatches require operator inspection because the app cannot prove which file
+is authoritative, and non-journaled or uncommitted staging leftovers are still
+left to the existing live-import cleanup path rather than deleted on startup.
 The dry-run/live import report now also carries a bounded `checkpoint` artifact
 for migration/operator tooling: versioned section entries, stable resource keys
 capped at 256 per section with truncation flags, total/validated/completed/
@@ -257,7 +260,8 @@ process-local serialized after preflight, and the route removes prior
 import-local `uploads/.site-import-staging` leftovers before mutation starts
 while preserving normal upload files; this narrows pre-commit process-kill
 leftovers to cleanup-on-next-valid-live-import rather than committed final
-upload state. Repository content transfer is explicitly retired from the
+upload state, while startup repair narrows committed final-upload missing-file
+state for journaled staged uploads. Repository content transfer is explicitly retired from the
 site-admin `yobi-data` import/export hardening list: legacy `SiteApp.exportData`
 / `SiteApp.importData` delegate to `DataService`, whose fixed exchanger list
 serializes database tables and sequences only; `ProjectDataExchanger` carries
@@ -268,8 +272,9 @@ change-VCS storage provisioning, or a future external migration-tool path with
 separate evidence, not to `/sites/export` or `/sites/import`. A process kill before
 DB commit can now leave only import-local staging files, not committed final
 upload files; a process kill after DB commit but before or during staged file
-promotion can still leave committed attachment rows whose final upload file
-has not been promoted. The current status is recorded in
+promotion can still leave committed attachment rows whose final upload file has
+not been promoted until the next startup or live-import reconciliation. The
+current status is recorded in
 `docs/provenance/phase-0b/yona-export.md`.
 
 P1-B sub-slice status: `crates/migration/src/legacy_external/projects.rs` now

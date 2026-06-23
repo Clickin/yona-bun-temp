@@ -118,7 +118,11 @@ function PostEditRouteComponent() {
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
           navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/post/${postNumber}`);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "post.update.error");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("post.update.error", { fallback: "post.update.error" }),
+          );
         }
       }}
     />

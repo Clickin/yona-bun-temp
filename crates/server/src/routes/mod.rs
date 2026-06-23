@@ -90,6 +90,7 @@ pub(crate) use pull_requests::{
     RestReviewThreadListQuery,
 };
 pub(crate) use search::routes as search_routes;
+pub(crate) use site_admin::reconcile_site_import_staging_uploads_for_startup;
 pub(crate) use site_admin::rest_routes as site_admin_rest_routes;
 pub(crate) use site_admin::routes as site_admin_routes;
 pub(crate) use users::rest_routes as user_rest_routes;

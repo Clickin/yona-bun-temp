@@ -234,6 +234,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "post.write": "New post",
     "post.is.empty": "No post has been added.",
     "post.modify": "Edit post",
+    "post.update.error": "Errors in input values.",
     "post.notice": "Notice",
     "post.unwatch": "Stop watching",
     "post.watch": "Watch",
@@ -346,6 +347,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "pullRequest.delete.branch": "Delete branch",
     "pullRequest.delete.frombranch.message": "You can delete the branch.",
     "pullRequest.diff.noChanges": "No changes have been made.",
+    "pullRequest.error.newPullRequestForm": "Invalid project or branch<br>({0} {1})",
     "pullRequest.from": "From",
     "pullRequest.is.merging": "Checking whether this code can be merged safely. Please wait.",
     "pullRequest.is.not.safe":
@@ -772,6 +774,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "post.write": "새 글쓰기",
     "post.is.empty": "등록된 게시물이 없습니다.",
     "post.modify": "게시물 수정",
+    "post.update.error": "입력값 오류",
     "post.notice": "공지",
     "post.unwatch": "글 그만 지켜보기",
     "post.watch": "글 지켜보기",
@@ -884,6 +887,8 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "pullRequest.delete.branch": "브랜치 삭제",
     "pullRequest.delete.frombranch.message": "브랜치를 삭제할 수 있습니다.",
     "pullRequest.diff.noChanges": "변경 내역이 없습니다.",
+    "pullRequest.error.newPullRequestForm":
+      "코드를 보낼 수 없는 프로젝트 또는 브랜치입니다<br>({0} {1})",
     "pullRequest.from": "코드 보내는 곳",
     "pullRequest.is.merging":
       "코드가 안전한지 확인하고 있습니다. 완료될때까지 잠시만 기다려주십시오.",
@@ -1161,6 +1166,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "pullRequest.sender": "送り主",
     "pullRequest.sentByMe": "私が送ったリクエスト",
     "pullRequest.to": "コード 受ける場所",
+    "post.update.error": "入力エラー",
     "post.write": "スレッド投稿",
     "project.projects": "プロジェクト",
     "project.name": "プロジェクト名",
@@ -1289,6 +1295,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     milestone: "веха",
     pullRequest: "запрос Прицепные",
     "pullRequest.diff.noChanges": "Никаких изменений не было сделано.",
+    "pullRequest.error.newPullRequestForm": "Неверный проект или филиал <br> ({0} {1})",
     "pullRequest.from": "Из",
     "pullRequest.menu.commit": "Фиксации",
     "pullRequest.pushed.branches.title": "В последнее время толкнул филиал",
@@ -1314,6 +1321,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "organization.settingFrom": "настройка",
     "organization.you.may.want.to.be.a.member": "Вы можете быть членом {0} группы.",
     "organization.you.want.to.be.a.member": "Вы хотите быть членом {0} группы.",
+    "post.update.error": "Ошибки в входных значений.",
     "post.write": "Новый пост",
     "project.projects": "проектов",
     "project.name": "Название проекта",
@@ -1475,6 +1483,8 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     milestone: "Maqsadi belgisi",
     pullRequest: "Pul-so`rov",
     "pullRequest.diff.noChanges": "O`zgartirilganlar yo`q.",
+    "pullRequest.error.newPullRequestForm":
+      "Pull-so`rov qilomaydigan loyiha yoki bo`lakdir<br>({0} {1})",
     "pullRequest.from": "Dan",
     "pullRequest.menu.commit": "Komitlar",
     "pullRequest.pushed.branches.title": "Yaqinda push qilingan bo`lak",
@@ -1500,6 +1510,7 @@ const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
     "organization.settingFrom": "Sozlash",
     "organization.you.may.want.to.be.a.member": "Siz {0} guruhining a`zosi bo`lishi mumkin.",
     "organization.you.want.to.be.a.member": "{0} guruhi a`zosi bo`lish so`rovni jo`natgan.",
+    "post.update.error": "Kirishda xatolar bori.",
     "post.write": "Yangi yozuv",
     "project.projects": "Loyihalar",
     "project.name": "Loyiha nomi",
@@ -1638,11 +1649,7 @@ export function lookupLegacyMessage(
   key: string,
   options: TranslateOptions = {},
 ): string {
-  const raw =
-    LEGACY_MESSAGES[language][key] ??
-    LEGACY_MESSAGES[LEGACY_DEFAULT_LANGUAGE][key] ??
-    options.fallback ??
-    key;
+  const raw = LEGACY_MESSAGES[language][key] ?? options.fallback ?? key;
   return formatLegacyMessage(raw, options.args);
 }
 

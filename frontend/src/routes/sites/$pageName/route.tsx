@@ -482,9 +482,14 @@ function SiteUserListRoute({
   });
   const mutationError = React.useCallback(
     (error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : (messages?.("error.badrequest", { fallback: "error.badrequest" }) ??
+              "error.badrequest"),
+      );
     },
-    [setErrorMessage],
+    [messages, setErrorMessage],
   );
   const adminMutation = useMutation({
     mutationFn: (loginId: string) => toggleSiteUserAdminRest(runtimeConfig, csrfToken, loginId),
@@ -599,7 +604,12 @@ function SiteProjectListRoute({
   const deleteMutation = useMutation({
     mutationFn: (projectId: number) => deleteSiteProjectRest(runtimeConfig, csrfToken, projectId),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : (messages?.("error.badrequest", { fallback: "error.badrequest" }) ??
+              "error.badrequest"),
+      );
     },
     onSuccess: async () => {
       setDeleteTarget(null);
@@ -760,7 +770,11 @@ function SiteMailRoute({
   const sendMutation = useMutation({
     mutationFn: (input: SiteMailSendInput) => sendSiteMailRest(runtimeConfig, csrfToken, input),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "site.mail.fail");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : (messages?.("site.mail.fail", { fallback: "site.mail.fail" }) ?? "site.mail.fail"),
+      );
     },
     onSuccess: (response) => {
       setSent(response.sent);
@@ -820,7 +834,12 @@ function SiteMassMailRoute({
   const mailListMutation = useMutation({
     mutationFn: (input: SiteMailListInput) => readSiteMailListRest(runtimeConfig, csrfToken, input),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : (messages?.("error.badrequest", { fallback: "error.badrequest" }) ??
+              "error.badrequest"),
+      );
     },
     onSuccess: async (response) => {
       setMailtoHref(`mailto:${response.recipients.join(",")}`);

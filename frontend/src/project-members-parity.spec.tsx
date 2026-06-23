@@ -88,7 +88,9 @@ describe("project members parity", () => {
     expect(routeSource).not.toContain("Add project member failed.");
     expect(routeSource).not.toContain("Update project member role failed.");
     expect(routeSource).not.toContain("Delete project member failed.");
-    expect(routeSource).toContain('"error.badrequest"');
-    expect(routeSource).toContain('"project.member.ownerMustBeAManager"');
+    expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
+    expect(routeSource).toContain(
+      'messages("project.member.ownerMustBeAManager", {\n              fallback: "project.member.ownerMustBeAManager",',
+    );
   });
 });

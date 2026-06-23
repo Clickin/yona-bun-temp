@@ -1,5 +1,16 @@
 use super::*;
 
+fn milestone_to_summary(milestone: IssueMilestone) -> ProjectMilestoneSummary {
+    ProjectMilestoneSummary {
+        title: milestone.title,
+        due_date_label: milestone.due_date_label,
+        open_issue_count: milestone.open_issue_count,
+        closed_issue_count: milestone.closed_issue_count,
+        completion_percent: milestone.completion_percent,
+        id: milestone.id,
+    }
+}
+
 pub(crate) fn milestone_list_filter_from_request(
     request: &ListProjectMilestonesRequestView<'_>,
 ) -> persistence::MilestoneListFilter {
@@ -64,8 +75,8 @@ pub(crate) async fn project_milestone_state_mutation(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -76,8 +87,8 @@ pub(crate) async fn project_milestone_state_mutation(
     }
     let milestone = repository
         .update_project_milestone_state(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.milestone_id,
             state,
         )
@@ -96,7 +107,7 @@ pub(crate) async fn project_milestone_state_mutation(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone).into(),
+            milestone: Some(milestone_to_summary(milestone)),
             ..Default::default()
         },
         ctx,
@@ -119,22 +130,22 @@ pub(crate) async fn project_milestone_list(
     let actor_id = session.as_ref().and_then(|session| session.user_id);
     require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         actor_id,
     )
     .await?;
     let records = repository
         .list_project_milestones(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             milestone_list_filter_from_request(&request),
         )
         .await
         .map_err(internal_error)?;
     let milestones = records
         .iter()
-        .map(|record| issue_milestone_from_record(record, &service.base_path))
+        .map(|record| milestone_to_summary(issue_milestone_from_record(record, &service.base_path)))
         .collect();
     Ok((
         ListProjectMilestonesResponse {
@@ -160,16 +171,16 @@ pub(crate) async fn project_milestone_read(
         .read_session_from_headers(&ctx.headers);
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.as_ref().and_then(|session| session.user_id),
     )
     .await?;
     let viewer_can_update = project_update_allowed(&authorization).unwrap_or(false);
     let milestone = repository
         .read_project_milestone(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.milestone_id,
         )
         .await
@@ -187,7 +198,7 @@ pub(crate) async fn project_milestone_read(
     milestone.viewer_can_delete = viewer_can_update;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone).into(),
+            milestone: Some(milestone_to_summary(milestone)),
             ..Default::default()
         },
         ctx,
@@ -209,8 +220,8 @@ pub(crate) async fn project_milestone_create(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -220,19 +231,19 @@ pub(crate) async fn project_milestone_create(
         ));
     }
     let input = milestone_mutation_input(
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
-        request.title,
-        request.contents_markdown,
-        request.due_date,
-        request.state,
+        &request.title,
+        &request.contents_markdown,
+        &request.due_date,
+        &request.state,
         &request.attachment_ids,
     )?;
     if repository
         .project_milestone_title_exists(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             &input.title,
             None,
         )
@@ -260,7 +271,7 @@ pub(crate) async fn project_milestone_create(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone).into(),
+            milestone: Some(milestone_to_summary(milestone)),
             ..Default::default()
         },
         ctx,
@@ -282,8 +293,8 @@ pub(crate) async fn project_milestone_update(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -293,19 +304,19 @@ pub(crate) async fn project_milestone_update(
         ));
     }
     let input = milestone_mutation_input(
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
-        request.title,
-        request.contents_markdown,
-        request.due_date,
-        request.state,
+        &request.title,
+        &request.contents_markdown,
+        &request.due_date,
+        &request.state,
         &request.attachment_ids,
     )?;
     if repository
         .project_milestone_title_exists(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             &input.title,
             Some(request.milestone_id),
         )
@@ -336,7 +347,7 @@ pub(crate) async fn project_milestone_update(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone).into(),
+            milestone: Some(milestone_to_summary(milestone)),
             ..Default::default()
         },
         ctx,
@@ -358,8 +369,8 @@ pub(crate) async fn project_milestone_delete(
     require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
@@ -370,8 +381,8 @@ pub(crate) async fn project_milestone_delete(
     }
     let ok = repository
         .delete_project_milestone(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.milestone_id,
         )
         .await

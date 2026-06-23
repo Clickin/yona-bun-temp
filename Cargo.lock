@@ -347,33 +347,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "buffa"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fb26cf6d5fa531c242d47df5d6bad0e379c26dcfa0270680a028d09030f7f1a"
-dependencies = [
- "base64 0.22.1",
- "bytes",
- "hashbrown 0.15.5",
- "once_cell",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "buffa-types"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b54aecde6e64e9eef13c01ae60b2813a941a48569fe02bf7e5fb9a3ed7e52037"
-dependencies = [
- "buffa",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1111,7 +1084,6 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
- "serde",
 ]
 
 [[package]]
@@ -4871,14 +4843,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "yona-rust-pilot-protocol"
-version = "0.1.0"
-dependencies = [
- "buffa",
- "serde",
-]
-
-[[package]]
 name = "yona-rust-pilot-server"
 version = "0.1.0"
 dependencies = [
@@ -4887,8 +4851,6 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bcrypt",
- "buffa",
- "buffa-types",
  "bytes",
  "futures",
  "http",
@@ -4919,7 +4881,6 @@ dependencies = [
  "yona-rust-integrations",
  "yona-rust-persistence",
  "yona-rust-pilot-migration",
- "yona-rust-pilot-protocol",
  "yona-rust-search",
  "yona-rust-vcs",
 ]

@@ -5,7 +5,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
-use buffa::view::OwnedView;
+use crate::buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -339,7 +339,7 @@ pub(crate) async fn organization_issues_list(
     let state = if request.state.trim().is_empty() {
         "open".to_string()
     } else {
-        normalize_identifier(request.state)
+        normalize_identifier(&request.state)
     };
     if !matches!(state.as_str(), "open" | "closed") {
         return Err(ConnectError::invalid_argument(
@@ -357,7 +357,7 @@ pub(crate) async fn organization_issues_list(
         .read_session_from_headers(&ctx.headers);
     let actor_id = session.as_ref().and_then(|session| session.user_id);
     let authorization = repository
-        .read_organization_authorization(request.organization_name, actor_id)
+        .read_organization_authorization(&request.organization_name, actor_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("organization not found"))?;
@@ -443,16 +443,16 @@ pub(crate) async fn project_issues_list(
 
         let authorization = require_project_read(
             repository,
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             actor_id,
         )
         .await?;
 
         let record = repository
             .list_project_issues_filtered(
-                request.owner_name,
-                request.project_name,
+                &request.owner_name,
+                &request.project_name,
                 issue_list_filter_from_request(&request),
             )
             .await
@@ -518,8 +518,8 @@ pub(crate) async fn issue_detail_read(
         let actor_id = session.as_ref().and_then(|session| session.user_id);
         let access = read_issue_access(
             repository,
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.issue_number,
             actor_id,
         )
@@ -546,7 +546,7 @@ pub(crate) async fn issue_state_update(
 ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
     let session = require_session(&service.session_manager, &ctx.headers)?;
 
-    if request.issue_number <= 0 || !matches!(request.state, "open" | "closed") {
+    if request.issue_number <= 0 || !matches!(request.state.as_str(), "open" | "closed") {
         return Err(ConnectError::invalid_argument(
             "invalid pilot issue state request",
         ));
@@ -558,15 +558,15 @@ pub(crate) async fn issue_state_update(
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
             repository,
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             session.user_id,
         )
         .await?;
         let existing = repository
             .read_issue_detail(
-                request.owner_name,
-                request.project_name,
+                &request.owner_name,
+                &request.project_name,
                 request.issue_number,
             )
             .await
@@ -579,10 +579,10 @@ pub(crate) async fn issue_state_update(
         }
         let issue = repository
             .update_issue_state_as_actor(
-                request.owner_name,
-                request.project_name,
+                &request.owner_name,
+                &request.project_name,
                 request.issue_number,
-                request.state,
+                &request.state,
                 actor.id,
                 &actor.login_id,
             )
@@ -610,7 +610,7 @@ pub(crate) async fn issue_state_update(
         return Err(ConnectError::not_found("pilot issue not found"));
     }
 
-    Ok((pilot_issue_response(request.state), ctx))
+    Ok((pilot_issue_response(&request.state), ctx))
 }
 
 #[cfg(debug_assertions)]

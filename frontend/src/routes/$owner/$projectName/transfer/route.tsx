@@ -69,7 +69,11 @@ function ProjectTransferRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "project.transfer.error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("project.transfer.error", { fallback: "project.transfer.error" }),
+      );
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(transferQueryKey, detail);

@@ -4,7 +4,7 @@ use axum::{
     Json,
 };
 use bcrypt::{hash, DEFAULT_COST};
-use buffa::view::{MessageView, OwnedView};
+
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
@@ -13,16 +13,13 @@ use std::{collections::HashMap, time::SystemTime};
 use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
-#[cfg(debug_assertions)]
-use crate::generated::yona::pilot::v1::OrganizationIssueListItem;
 use crate::{
-    generated::yona::pilot::v1::{
-        IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
-        OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
-        OrganizationMemberSummary, OrganizationProjectCard, OrganizationRoleOption,
-        ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
-        ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
-    },
+    IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
+    OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
+    OrganizationMemberSummary, OrganizationProjectCard, OrganizationRoleOption,
+    ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
+    ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
+    OrganizationIssueListItem,
     persistence,
     session::{Session, SessionManager},
     AuthUiConfig, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
@@ -678,6 +675,12 @@ impl RestRouteError {
     }
 }
 
+impl std::fmt::Display for RestRouteError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "{}", self.message)
+    }
+}
+
 impl IntoResponse for RestRouteError {
     fn into_response(self) -> Response {
         let code = self.code.unwrap_or(match self.status {
@@ -718,13 +721,12 @@ pub(crate) struct RestProjectDeleteResponse {
     pub(crate) redirect_path: String,
 }
 
-pub(crate) fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
+pub(crate) fn rest_owned_view<T>(input: &T) -> Result<T, RestRouteError>
 where
-    V: MessageView<'static>,
+    T: Clone
 {
-    OwnedView::<V>::from_owned(message).map_err(|error| {
-        RestRouteError::internal(format!("failed to encode REST request: {error}"))
-    })
+    // ponytail: simplified to just clone the input, buffa conversion removed
+    Ok(input.clone())
 }
 
 pub(crate) fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap) {

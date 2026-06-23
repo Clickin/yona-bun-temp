@@ -56,7 +56,11 @@ function ProjectDeleteFormRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "project.delete.error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("project.delete.error", { fallback: "project.delete.error" }),
+      );
     },
     onSuccess: (result) => {
       queryClient.removeQueries({ queryKey: apiQueryKeys.project.base(owner, projectName) });

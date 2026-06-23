@@ -389,4 +389,18 @@ describe("organization shell legacy i18n opt-in", () => {
       expect(source).toContain("messages={messages}");
     }
   });
+
+  it("looks up organization mutation fallback keys through the runtime messages", () => {
+    const routeFiles = [
+      ["routes/organizations/new/route.tsx", "error.badrequest"],
+      ["routes/organizations/$organizationName/settingform/route.tsx", "error.badrequest"],
+      ["routes/organizations/$organizationName/members/route.tsx", "error.badrequest"],
+      ["routes/organizations/$organizationName/deleteForm/route.tsx", "organization.delete.error"],
+    ];
+
+    for (const [routeFile, key] of routeFiles) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source).toContain(`messages("${key}", { fallback: "${key}" })`);
+    }
+  });
 });

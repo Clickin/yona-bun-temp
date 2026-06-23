@@ -46,7 +46,11 @@ function EditEmailsRouteComponent() {
           const overview = await addWorkspaceEmail(runtimeConfig, csrfToken, email);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onDeleteWorkspaceEmail={async (id) => {
@@ -54,7 +58,11 @@ function EditEmailsRouteComponent() {
           const overview = await deleteWorkspaceEmail(runtimeConfig, csrfToken, id);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onSetMainWorkspaceEmail={async (id) => {
@@ -62,7 +70,11 @@ function EditEmailsRouteComponent() {
           const overview = await setMainWorkspaceEmail(runtimeConfig, csrfToken, id);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
     />

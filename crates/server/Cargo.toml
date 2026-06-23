@@ -31,8 +31,6 @@ ammonia.workspace = true
 axum = { workspace = true, features = ["multipart"] }
 base64.workspace = true
 bcrypt.workspace = true
-buffa.workspace = true
-buffa-types.workspace = true
 bytes.workspace = true
 futures.workspace = true
 http.workspace = true
@@ -61,7 +59,6 @@ yona-rust-domain = { path = "../domain" }
 yona-rust-integrations = { path = "../integrations" }
 yona-rust-persistence = { path = "../persistence" }
 yona-rust-pilot-migration = { path = "../migration" }
-yona-rust-pilot-protocol = { path = "../protocol" }
 yona-rust-search = { path = "../search" }
 yona-rust-vcs = { path = "../vcs" }
 

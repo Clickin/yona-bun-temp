@@ -120,6 +120,15 @@ pub mod session;
 mod smart_http;
 mod svn_protocol;
 
+pub async fn reconcile_site_import_staging_uploads_for_startup(
+    data_root: &std::path::Path,
+    repository: &persistence::PilotRepository,
+) -> Result<(), String> {
+    routes::reconcile_site_import_staging_uploads_for_startup(data_root, repository)
+        .await
+        .map_err(|error| error.to_string())
+}
+
 pub use mailbox::{
     mailbox_polling_config_from_startup, poll_mailbox_scheduler_tick,
     process_mailbox_parsed_message, process_mailbox_raw_message, spawn_mailbox_polling_scheduler,
@@ -141,4 +150,21 @@ pub(crate) use smart_http::{
     smart_http_principal_from_headers, SmartHttpAccessFailure, SmartHttpPermission,
 };
 
-pub use yona_rust_pilot_protocol as generated;
+mod proto_types;
+pub use proto_types::*;
+
+// ponytail: compatibility shims — remove after route files are migrated
+pub mod buffa {
+    pub mod view {
+        pub type OwnedView<T> = T;
+    }
+}
+pub mod generated {
+    pub mod yona {
+        pub mod pilot {
+            pub mod v1 {
+                pub use crate::proto_types::*;
+            }
+        }
+    }
+}

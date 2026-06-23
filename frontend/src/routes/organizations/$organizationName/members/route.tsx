@@ -93,7 +93,11 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onAddMember={async (nextOrganizationName, loginId) => {
@@ -104,7 +108,11 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onDeleteMember={async (nextOrganizationName, userId) => {
@@ -115,7 +123,11 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onUpdateMemberRole={async (nextOrganizationName, userId, role) => {
@@ -127,7 +139,11 @@ function OrganizationMembersRouteComponent() {
           });
           setDetail(toOrganizationAdminView(nextDetail));
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
     />

@@ -6,7 +6,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
-use buffa::view::OwnedView;
+use crate::buffa::view::OwnedView;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -165,7 +165,7 @@ pub(crate) async fn project_detail_read(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, actor_id)
+        .read_project_authorization(&request.owner_name, &request.project_name, actor_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -263,11 +263,11 @@ pub(crate) async fn project_create(
         request_scope
     };
     let scope = map_project_scope(scope_value)?;
-    if !is_valid_project_name(request.project_name) || request.overview.len() > 255 {
+    if !is_valid_project_name(&request.project_name) || request.overview.len() > 255 {
         return Err(ConnectError::invalid_argument("invalid project request"));
     }
     if repository
-        .project_identifier_exists(request.owner_name, request.project_name)
+        .project_identifier_exists(&request.owner_name, &request.project_name)
         .await
         .map_err(internal_error)?
     {
@@ -280,7 +280,7 @@ pub(crate) async fn project_create(
         .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))?;
 
     let organization = repository
-        .read_organization_authorization(request.owner_name, Some(user_id))
+        .read_organization_authorization(&request.owner_name, Some(user_id))
         .await
         .map_err(internal_error)?;
     let created = if let Some(organization) = organization {
@@ -301,7 +301,7 @@ pub(crate) async fn project_create(
             .await
             .map_err(internal_error)?
     } else {
-        if !can_create_personal_project(Some(&actor.login_id), request.owner_name) {
+        if !can_create_personal_project(Some(&actor.login_id), &request.owner_name) {
             return Err(ConnectError::invalid_argument("project owner is invalid"));
         }
         repository
@@ -405,7 +405,7 @@ pub(crate) async fn project_settings_read(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -457,7 +457,7 @@ pub(crate) async fn project_container_read(
         ));
     };
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, actor_id)
+        .read_project_authorization(&request.owner_name, &request.project_name, actor_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -473,7 +473,7 @@ pub(crate) async fn project_container_read(
 
     if let Some(user_id) = actor_id {
         repository
-            .record_recent_project_visit(user_id, request.owner_name, request.project_name)
+            .record_recent_project_visit(user_id, &request.owner_name, &request.project_name)
             .await
             .map_err(internal_error)?;
     }
@@ -513,7 +513,7 @@ pub(crate) async fn project_overview_update(
     }
 
     let authorization = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -536,7 +536,7 @@ pub(crate) async fn project_overview_update(
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
 
     let refreshed = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
@@ -571,13 +571,13 @@ pub(crate) async fn project_update(
             "project requires repository backend",
         ));
     };
-    if !is_valid_project_name(request.project_name) || request.overview.len() > 255 {
+    if !is_valid_project_name(&request.project_name) || request.overview.len() > 255 {
         return Err(ConnectError::invalid_argument("invalid project request"));
     }
     let authorization = repository
         .read_project_authorization(
-            request.current_owner_name,
-            request.current_project_name,
+            &request.current_owner_name,
+            &request.current_project_name,
             Some(user_id),
         )
         .await
@@ -602,18 +602,18 @@ pub(crate) async fn project_update(
             "project update is not allowed",
         ));
     }
-    if normalize_identifier(request.current_owner_name) != normalize_identifier(request.owner_name)
+    if normalize_identifier(&request.current_owner_name) != normalize_identifier(&request.owner_name)
     {
         return Err(ConnectError::invalid_argument(
             "project owner change is not supported in this packet",
         ));
     }
-    if (normalize_identifier(request.current_owner_name)
-        != normalize_identifier(request.owner_name)
-        || normalize_identifier(request.current_project_name)
-            != normalize_identifier(request.project_name))
+    if (normalize_identifier(&request.current_owner_name)
+        != normalize_identifier(&request.owner_name)
+        || normalize_identifier(&request.current_project_name)
+            != normalize_identifier(&request.project_name))
         && repository
-            .project_identifier_exists(request.owner_name, request.project_name)
+            .project_identifier_exists(&request.owner_name, &request.project_name)
             .await
             .map_err(internal_error)?
     {
@@ -626,7 +626,7 @@ pub(crate) async fn project_update(
             current_project_name: request.current_project_name.trim().to_string(),
             overview: Some(request.overview.trim().to_string()),
             project_name: request.project_name.trim().to_string(),
-            project_scope: map_project_scope(request.project_scope)?
+            project_scope: map_project_scope(&request.project_scope)?
                 .as_str()
                 .to_string(),
         })
@@ -634,7 +634,7 @@ pub(crate) async fn project_update(
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
     let updated = repository
-        .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+        .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;

@@ -4428,15 +4428,20 @@ fn site_import_staging_upload_journal_path(staging_path: &StdPath) -> PathBuf {
 }
 
 fn site_import_staging_upload_root(service: &PilotServiceImpl) -> PathBuf {
-    service
-        .data_root
-        .join("uploads")
-        .join(".site-import-staging")
+    site_import_staging_upload_root_at(&service.data_root)
+}
+
+fn site_import_staging_upload_root_at(data_root: &StdPath) -> PathBuf {
+    data_root.join("uploads").join(".site-import-staging")
 }
 
 fn cleanup_site_import_staging_uploads(service: &PilotServiceImpl) -> Result<(), RestRouteError> {
     let staging_root = site_import_staging_upload_root(service);
-    match std::fs::remove_dir_all(&staging_root) {
+    cleanup_site_import_staging_uploads_at(&staging_root)
+}
+
+fn cleanup_site_import_staging_uploads_at(staging_root: &StdPath) -> Result<(), RestRouteError> {
+    match std::fs::remove_dir_all(staging_root) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(RestRouteError::internal(error.to_string())),
@@ -4510,7 +4515,22 @@ async fn reconcile_site_import_staging_uploads(
     service: &PilotServiceImpl,
     repository: &persistence::AppRepositoryImpl<'_>,
 ) -> Result<(), RestRouteError> {
-    let staging_root = site_import_staging_upload_root(service);
+    reconcile_site_import_staging_uploads_at(&service.data_root, repository).await
+}
+
+pub(crate) async fn reconcile_site_import_staging_uploads_for_startup(
+    data_root: &StdPath,
+    repository: &persistence::AppRepositoryImpl<'_>,
+) -> Result<(), RestRouteError> {
+    let _site_import_guard = site_import_staging_lock().lock().await;
+    reconcile_site_import_staging_uploads_at(data_root, repository).await
+}
+
+async fn reconcile_site_import_staging_uploads_at(
+    data_root: &StdPath,
+    repository: &persistence::AppRepositoryImpl<'_>,
+) -> Result<(), RestRouteError> {
+    let staging_root = site_import_staging_upload_root_at(data_root);
     let entries = match std::fs::read_dir(&staging_root) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -4560,7 +4580,7 @@ async fn reconcile_site_import_staging_uploads(
             }
             let upload = RestSiteImportStagedUpload {
                 attachment_id: journal.attachment_id,
-                final_path: uploaded_file_path_with_root(&service.data_root, &journal.hash),
+                final_path: uploaded_file_path_with_root(data_root, &journal.hash),
                 hash: journal.hash,
                 journal_path,
                 staging_path,

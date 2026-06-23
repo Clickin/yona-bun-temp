@@ -22,7 +22,8 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
-    AppRuntimeConfig, RuntimeConfig, SiteUpdateConfig, SmtpRuntimeConfig,
+    reconcile_site_import_staging_uploads_for_startup, AppRuntimeConfig, RuntimeConfig,
+    SiteUpdateConfig, SmtpRuntimeConfig,
 };
 
 mod rest_test_support;
@@ -2196,6 +2197,95 @@ async fn site_admin_import_repairs_committed_staged_attachment_before_live_impor
     assert!(
         !staging_dir.exists(),
         "repair should promote committed staged bytes before cleanup removes stale staging"
+    );
+}
+
+#[tokio::test]
+async fn site_admin_startup_reconciles_committed_staged_attachment_before_serving_files() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let app_config = AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    };
+    let (setup_app, repo, db) = build_app_with_app_config(app_config.clone()).await;
+    let (_member_csrf, member_cookie, member_id) = register_user(setup_app, "member").await;
+
+    let committed_attachment = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("startup-crash-window.txt".to_string())),
+        hash: Set(Some("site-import-startup-crash-window-hash".to_string())),
+        container_type: Set(Some("USER_AVATAR".to_string())),
+        mime_type: Set(Some("text/plain".to_string())),
+        size: Set(Some(33)),
+        container_id: Set(member_id),
+        created_date: Set(Some(
+            DateTime::parse_from_str("2020-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+                .expect("attachment timestamp"),
+        )),
+        owner_login_id: Set(Some("member".to_string())),
+    }
+    .insert(&db)
+    .await
+    .expect("committed attachment row");
+    let hash = committed_attachment
+        .hash
+        .as_deref()
+        .expect("attachment hash");
+    let staging_dir = imported_upload_staging_dir(&data_dir);
+    let staged_import_dir = staging_dir.join("startup-committed-import");
+    std::fs::create_dir_all(&staged_import_dir).expect("staged import dir");
+    std::fs::write(
+        staged_import_dir.join(hash),
+        b"committed staged startup crash bytes",
+    )
+    .expect("staged bytes");
+    std::fs::write(
+        staged_import_dir.join(format!("{hash}.json")),
+        json!({
+            "attachmentId": committed_attachment.id,
+            "hash": hash,
+            "version": 1
+        })
+        .to_string(),
+    )
+    .expect("staged journal");
+    let final_path = data_dir.path().join("uploads").join(hash);
+    assert!(
+        !final_path.exists(),
+        "fixture should model the post-commit/pre-promotion crash window"
+    );
+
+    reconcile_site_import_staging_uploads_for_startup(data_dir.path(), &repo)
+        .await
+        .expect("startup staging reconciliation");
+    assert_eq!(
+        std::fs::read(&final_path).expect("repaired final upload"),
+        b"committed staged startup crash bytes"
+    );
+    assert!(
+        !staging_dir.exists(),
+        "startup repair should remove the repaired staged file and empty staging parents"
+    );
+
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repo,
+        app_config,
+    );
+    let download = rest_get(
+        app,
+        &format!("/yona/files/{}", committed_attachment.id),
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(download.status(), StatusCode::OK);
+    assert_eq!(
+        response_bytes(download).await,
+        b"committed staged startup crash bytes"
     );
 }
 

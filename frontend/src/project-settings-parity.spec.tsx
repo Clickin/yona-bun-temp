@@ -65,6 +65,22 @@ describe("project settings parity", () => {
     }
   });
 
+  it("looks up project settings mutation fallback keys through the runtime messages", () => {
+    const routeFiles = [
+      ["routes/$owner/$projectName/settingform/route.tsx", "error.badrequest"],
+      ["routes/$owner/$projectName/webhooks/route.tsx", "error.badrequest"],
+      ["routes/$owner/$projectName/deleteform/route.tsx", "project.delete.error"],
+      ["routes/$owner/$projectName/transfer/route.tsx", "project.transfer.error"],
+      ["routes/$owner/$projectName/changeVCS/route.tsx", "project.changeVCS.error"],
+      ["routes/$owner/$projectName/newFork/route.tsx", "fork.failed"],
+    ];
+
+    for (const [routeFile, key] of routeFiles) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source).toContain(`messages("${key}", { fallback: "${key}" })`);
+    }
+  });
+
   it("renders the legacy project setting form shell and controls", () => {
     const html = renderToStaticMarkup(
       <ProjectSettingsPage detail={projectDetail} runtimeConfig={runtimeConfig} />,

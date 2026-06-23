@@ -117,7 +117,11 @@ function PostCreateRouteComponent() {
             );
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
     />

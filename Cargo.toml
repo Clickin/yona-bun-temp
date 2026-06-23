@@ -3,7 +3,6 @@ members = [
     "crates/server",
     "crates/migration",
     "crates/domain",
-    "crates/protocol",
     "crates/persistence",
     "crates/persistence-entities",
     "crates/vcs",
@@ -24,8 +23,6 @@ async-trait = "0.1"
 axum = "0.8"
 base64 = "0.22"
 bcrypt = "0.16"
-buffa = { version = "0.2", features = ["json"] }
-buffa-types = { version = "0.2", features = ["json"] }
 bytes = "1.10"
 futures = "0.3"
 http = "1.3"

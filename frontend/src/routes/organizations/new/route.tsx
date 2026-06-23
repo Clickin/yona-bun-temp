@@ -27,7 +27,11 @@ function OrganizationNewRouteComponent() {
           const detail = await createOrganization(runtimeConfig, csrfToken, input);
           navigateToAppHref(runtimeConfig.basePath, `/organizations/${detail.organizationName}`);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
     />

@@ -229,18 +229,22 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     );
 
     expect(rootSource).toContain("messages(errorMessage, { fallback: errorMessage })");
-    expect(boardDetailRouteSource).toContain('"error.badrequest"');
-    expect(boardCreateRouteSource).toContain('"error.badrequest"');
-    expect(boardEditRouteSource).toContain('"post.update.error"');
+    expect(boardDetailRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(boardCreateRouteSource).toContain(
+      'messages("error.badrequest", { fallback: "error.badrequest" })',
+    );
+    expect(boardEditRouteSource).toContain(
+      'messages("post.update.error", { fallback: "post.update.error" })',
+    );
 
     const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
     runtime.setLanguage("ko-KR");
     expect(runtime.t("error.badrequest", { fallback: "error.badrequest" })).toBe(
       "잘못된 요청입니다",
     );
-    expect(runtime.t("post.update.error", { fallback: "post.update.error" })).toBe(
-      "post.update.error",
-    );
+    expect(runtime.t("post.update.error", { fallback: "post.update.error" })).toBe("입력값 오류");
   });
 
   it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {

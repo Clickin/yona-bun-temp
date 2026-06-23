@@ -81,7 +81,11 @@ function BoardDetailRouteComponent() {
   }
 
   const reportMutationError = (error: unknown) => {
-    setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : messages("error.badrequest", { fallback: "error.badrequest" }),
+    );
   };
 
   return (

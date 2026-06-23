@@ -132,7 +132,7 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
       ),
       "utf8",
     );
-    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
+    const runtime = createLegacyI18nRuntime(["en-US", "ko-KR", "ja-JP"]);
     runtime.setLanguage("ko-KR");
 
     for (const routePath of routePaths) {
@@ -150,6 +150,12 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     expect(runtime.t("error.badrequest", { fallback: "error.badrequest" })).toBe(
       "잘못된 요청입니다",
     );
+    expect(
+      runtime.t("pullRequest.error.newPullRequestForm", {
+        fallback: "pullRequest.error.newPullRequestForm",
+      }),
+    ).toBe("코드를 보낼 수 없는 프로젝트 또는 브랜치입니다<br>({0} {1})");
+    runtime.setLanguage("ja-JP");
     expect(
       runtime.t("pullRequest.error.newPullRequestForm", {
         fallback: "pullRequest.error.newPullRequestForm",

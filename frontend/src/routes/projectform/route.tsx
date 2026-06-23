@@ -65,7 +65,11 @@ function ProjectNewRouteComponent() {
           const detail = await createProject(runtimeConfig, csrfToken, input);
           navigateToAppHref(runtimeConfig.basePath, `/${detail.ownerName}/${detail.projectName}`);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       selectedOwnerName={formOptions.selectedOwnerName}

@@ -69,7 +69,11 @@ function ProjectChangeVcsRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "project.changeVCS.error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("project.changeVCS.error", { fallback: "project.changeVCS.error" }),
+      );
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(changeVcsQueryKey, detail);

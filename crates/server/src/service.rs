@@ -1,7 +1,5 @@
-use buffa::view::OwnedView;
-
-use crate::generated::yona::pilot::v1::*;
-use crate::*;
+use crate::buffa::view::OwnedView;
+use crate::*; // This now includes all our proto_types
 
 impl PilotServiceImpl {
     #[cfg(debug_assertions)]

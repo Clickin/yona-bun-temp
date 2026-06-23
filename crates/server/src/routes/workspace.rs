@@ -6,7 +6,7 @@ use axum::{
     Json, Router,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use buffa::view::OwnedView;
+use crate::buffa::view::OwnedView;
 use http::header::SET_COOKIE;
 use std::collections::HashMap;
 
@@ -57,12 +57,10 @@ fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
 
 pub(crate) const WORKSPACE_DAYS_AGO: u32 = 14;
 
-fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> ProjectListItem {
-    ProjectListItem {
+fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> WorkspaceMemberProjectItem {
+    WorkspaceMemberProjectItem {
         owner_name: item.owner_name.clone(),
         project_name: item.project_name.clone(),
-        overview: String::new(),
-        project_scope: String::new(),
         ..Default::default()
     }
 }
@@ -194,7 +192,7 @@ fn workspace_pull_request_item_from_record(
 async fn load_workspace_project_lists(
     repository: &PilotRepository,
     user_id: i64,
-) -> Result<(Vec<ProjectListItem>, Vec<ProjectListItem>), ConnectError> {
+) -> Result<(Vec<WorkspaceMemberProjectItem>, Vec<WorkspaceMemberProjectItem>), ConnectError> {
     let favorite_projects = repository
         .list_favorite_projects_for_user(user_id)
         .await

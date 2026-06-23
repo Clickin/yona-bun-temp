@@ -722,8 +722,10 @@ describe("site-admin route parity harness", () => {
       path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
       "utf8",
     );
-    expect(routeSource).toContain("site.mail.fail");
-    expect(routeSource).toContain("error.badrequest");
+    expect(routeSource).toContain('messages?.("site.mail.fail", { fallback: "site.mail.fail" })');
+    expect(routeSource).toContain(
+      'messages?.("error.badrequest", { fallback: "error.badrequest" })',
+    );
     expect(routeSource).not.toContain("Mail send failed.");
     expect(routeSource).not.toContain("Mail recipient lookup failed.");
 

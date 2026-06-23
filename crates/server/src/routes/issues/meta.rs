@@ -76,8 +76,8 @@ pub(crate) async fn issue_participation_mutation(
     let actor = require_authenticated_user(repository, session.user_id).await?;
     let access = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         Some(actor.id),
     )
@@ -107,8 +107,8 @@ pub(crate) async fn issue_participation_mutation(
     }
     let updated = repository
         .read_issue_detail(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.issue_number,
         )
         .await
@@ -188,8 +188,8 @@ pub(crate) async fn issue_comment_participation_mutation(
     let actor = require_authenticated_user(repository, session.user_id).await?;
     let access = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         Some(actor.id),
     )
@@ -231,8 +231,8 @@ pub(crate) async fn issue_comment_participation_mutation(
 
     let updated = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         Some(actor.id),
     )
@@ -258,8 +258,8 @@ pub(crate) async fn issue_favorite_toggle(
     let actor = require_authenticated_user(repository, session.user_id).await?;
     let access = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         Some(actor.id),
     )
@@ -270,8 +270,8 @@ pub(crate) async fn issue_favorite_toggle(
         .map_err(internal_error)?;
     let updated = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         Some(actor.id),
     )
@@ -307,8 +307,8 @@ pub(crate) async fn issue_sharer_mutation(
     };
     let access = read_issue_access(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         request.issue_number,
         session.user_id,
     )
@@ -336,7 +336,7 @@ pub(crate) async fn issue_sharer_mutation(
             .map_err(internal_error)?
     } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
         vec![repository
-            .find_user_by_login_id(request.login_id)
+            .find_user_by_login_id(&request.login_id)
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
@@ -378,8 +378,8 @@ pub(crate) async fn issue_sharer_mutation(
     }
     let updated = repository
         .read_issue_detail(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.issue_number,
         )
         .await
@@ -421,15 +421,15 @@ pub(crate) async fn issue_assignment_mutation(
     let actor = require_authenticated_user(repository, session.user_id).await?;
     let authorization = require_project_read(
         repository,
-        request.owner_name,
-        request.project_name,
+        &request.owner_name,
+        &request.project_name,
         session.user_id,
     )
     .await?;
     let existing = repository
         .read_issue_detail(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.issue_number,
         )
         .await
@@ -442,10 +442,10 @@ pub(crate) async fn issue_assignment_mutation(
     }
     let issue = repository
         .assign_issue(
-            request.owner_name,
-            request.project_name,
+            &request.owner_name,
+            &request.project_name,
             request.issue_number,
-            Some(request.assignee_login_id).filter(|value| !value.trim().is_empty()),
+            Some(request.assignee_login_id).filter(|value| !value.trim().is_empty()).as_deref(),
             &actor.login_id,
         )
         .await

@@ -83,6 +83,6 @@ describe("project create parity", () => {
     );
 
     expect(routeSource).not.toContain("Create project failed.");
-    expect(routeSource).toContain('"error.badrequest"');
+    expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
   });
 });

@@ -70,7 +70,11 @@ function ProjectForkRouteComponent() {
         projectName,
       }),
     onError: (error) => {
-      setErrorMessage(error instanceof Error ? error.message : "fork.failed");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : messages("fork.failed", { fallback: "fork.failed" }),
+      );
     },
     onSuccess: (detail) => {
       queryClient.setQueryData(forkOptionsQueryKey, undefined);

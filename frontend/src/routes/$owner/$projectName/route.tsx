@@ -55,6 +55,7 @@ export function ProjectDetailRouteComponent() {
     bootstrapping,
     csrfToken,
     currentSession,
+    messages,
     refreshWorkspace,
     runtimeConfig,
     setErrorMessage,
@@ -123,7 +124,11 @@ export function ProjectDetailRouteComponent() {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onToggleProjectWatch={async (nextOwnerName, nextProjectName, watching) => {
@@ -137,7 +142,11 @@ export function ProjectDetailRouteComponent() {
           );
           await detailQuery.refetch();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onUpdateProjectOverview={async (nextOwnerName, nextProjectName, overview) => {
@@ -149,7 +158,11 @@ export function ProjectDetailRouteComponent() {
           });
           await detailQuery.refetch();
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : "error.badrequest");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
     />
