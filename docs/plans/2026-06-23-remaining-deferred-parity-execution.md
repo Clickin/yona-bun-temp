@@ -39,14 +39,13 @@ explicitly retained as non-blocking with legacy evidence.
 | R8 | Markdown/Highlight.js breadth | Closed by 2026-06-23 re-audit as non-blocking sample-driven scope. Current renderer has broad legacy marked/Highlight.js samples; no newly proven failing legacy sample was found for this closure pass. | Add focused failing legacy samples only when found; do not rewrite the renderer for theoretical GFM/Highlight.js completeness. |
 | R9 | Kubernetes manifests | Closed by 2026-06-23 re-audit as non-baseline. Maintained manifests are not part of the release baseline; Kubernetes remains operator packaging guidance for the Docker/SFX contract. | `docs/deployment/kubernetes-reference.md` and `tests/kubernetes-guidance-contract.test.mjs` stay current. |
 | R10 | External search engines | Closed by 2026-06-23 re-audit as out of scope. Search remains DB-native FTS/query where supported with literal fallback; there is no legacy external search API route. | No Elastic/OpenSearch implementation unless `SPEC.md` changes. |
-| R11 | SVN commit detail comments | Active gap found during 2026-06-23 completion audit. Legacy `CodeHistoryApp.show/newComment/deleteComment` supports SVN commit diff comments via `CommitComment`, `svnDiff.scala.html`, attachment move, delete redirect, and `NotificationEvent.afterNewSVNCommitComment`; current Rust commit discussion evidence is Git-centered. | Implement SVN commit detail/comment/delete parity or prove by code/tests that the current commit discussion path covers SVN projects. Evidence must cite legacy `CodeHistoryApp` and current `crates/server/src/routes/code.rs`/contract coverage. |
+| R11 | SVN commit detail comments | Closed by 2026-06-23 implementation. Legacy `CodeHistoryApp.show/newComment/deleteComment` supports SVN commit diff comments via `CommitComment`, `svnDiff.scala.html`, attachment move, delete redirect, and `NotificationEvent.afterNewSVNCommitComment`; Rust now branches commit detail by `project.vcs`, reads SVN revision metadata/diff from `YONA_DATA/repo/<project_id>.svn`, and reuses the existing commit discussion create/delete/redirect UX for Subversion projects. | `crates/vcs/src/lib.rs::read_svn_commit_detail`, `crates/server/src/routes/code.rs::rest_code_commit_detail_response`, and `code_browser_contract::rest_commit_detail_creates_comments_from_svn_revision`; existing Git regression remains covered by `rest_commit_detail_creates_comments_and_updates_threads_from_git_repo`. |
 
 ## Execution Order
 
 1. R5 through R10 reclassification checks are complete as of 2026-06-23. No new
    legacy evidence required implementation before improvement work.
-2. R11 is the next active implementation/re-audit slice before claiming full
-   legacy feature parity.
+2. R11 is closed by SVN commit detail/comment/delete contract evidence.
 
 ## Completion Gate
 

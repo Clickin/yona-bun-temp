@@ -469,9 +469,10 @@ const DOMAIN_BUCKETS = [
   {
     id: "repository-and-smart-http",
     label: "Repository and smart HTTP",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/.*(repo|code|branches|commit)/i,
+      /^crates\/vcs\//i,
       /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart[_-]http|inline-edit)/i,
     ],
     testKeywords: [

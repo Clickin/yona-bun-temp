@@ -699,6 +699,21 @@ pub fn svn_changed_paths(repo_path: &Path, revision: i64) -> Result<Vec<SvnChang
     parse_svnlook_changed(&String::from_utf8_lossy(&output.stdout))
 }
 
+fn svnlook_diff(repo_path: &Path, revision: i64) -> Result<String, VcsError> {
+    let output = svn_command("svnlook")
+        .args(["diff", "-r", &revision.to_string()])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        return Err(VcsError::SvnLookFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 pub fn svn_path_last_changed_revision(
     repo_path: &Path,
     revision: Option<i64>,
@@ -2234,6 +2249,74 @@ pub fn read_commit_detail(
     })
 }
 
+pub fn read_svn_commit_detail(
+    repo_path: &Path,
+    commit_id: &str,
+    path: &str,
+) -> Result<CodeCommitDetailSnapshot, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Ok(no_head_commit_detail_snapshot());
+    }
+    let revision = commit_id
+        .trim()
+        .parse::<i64>()
+        .map_err(|_| VcsError::NotFound)?;
+    if revision <= 0 {
+        return Err(VcsError::NotFound);
+    }
+    let youngest_revision = svn_youngest_revision(repo_path)?;
+    if revision > youngest_revision {
+        return Err(VcsError::NotFound);
+    }
+
+    let clean_path = normalize_repo_path(path)?;
+    let mut entries = svn_log_entries(repo_path, revision, revision, 1)?;
+    let Some(entry) = entries.pop() else {
+        return Err(VcsError::NotFound);
+    };
+    let changed_paths = svn_changed_paths(repo_path, revision)?;
+    let diff = svnlook_diff(repo_path, revision)?;
+    let files = changed_paths
+        .into_iter()
+        .filter(|changed| {
+            !changed.is_dir
+                && (clean_path.is_empty()
+                    || changed.path == clean_path
+                    || changed.path.starts_with(&format!("{clean_path}/")))
+        })
+        .map(|changed| CodeCommitFileDiffRecord {
+            path: changed.path,
+            patch: diff.clone(),
+        })
+        .collect::<Vec<_>>();
+    let parent_commit = (revision > 1).then(|| CodeCommitParentRecord {
+        commit_id: (revision - 1).to_string(),
+        commit_short_id: (revision - 1).to_string(),
+    });
+
+    Ok(CodeCommitDetailSnapshot {
+        branches: vec![CodeBranchRecord {
+            name: "HEAD".to_string(),
+        }],
+        breadcrumbs: breadcrumbs_for_path(&clean_path),
+        commit: Some(CodeCommitRecord {
+            author_date: entry.date.trim().to_string(),
+            author_email: String::new(),
+            author_name: entry.author,
+            comment_count: 0,
+            commit_id: revision.to_string(),
+            commit_short_id: revision.to_string(),
+            short_message: first_line(&entry.message).to_string(),
+            message: entry.message,
+        }),
+        files,
+        no_head: false,
+        parent_commit,
+        path: clean_path,
+        selected_branch: "HEAD".to_string(),
+    })
+}
+
 pub fn read_compare_diff(
     repo_path: &Path,
     rev_a: &str,
@@ -3111,6 +3194,10 @@ fn read_parent_commit(
         commit_id: parent_commit_id.to_string(),
         commit_short_id,
     }))
+}
+
+fn first_line(text: &str) -> &str {
+    text.lines().next().unwrap_or_default()
 }
 
 fn parse_commit_diff_files(diff: &str) -> Vec<CodeCommitFileDiffRecord> {

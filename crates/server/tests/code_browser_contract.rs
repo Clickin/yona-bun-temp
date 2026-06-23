@@ -426,6 +426,47 @@ fn run_git(args: &[&str], cwd: Option<&Path>) {
     );
 }
 
+fn svn_tools_available() -> bool {
+    Command::new(yona_rust_vcs::svn_executable("svnadmin"))
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+        && Command::new(yona_rust_vcs::svn_executable("svnlook"))
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
+        && Command::new(yona_rust_vcs::svn_executable("svn"))
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
+}
+
+fn svn_file_url(path: &Path) -> String {
+    format!("file:///{}", path.display().to_string().replace('\\', "/"))
+}
+
+fn seed_svn_readme(repo_path: &Path, contents: &str) -> Option<i64> {
+    if !svn_tools_available() {
+        return None;
+    }
+    let import_dir = tempdir().expect("svn import tempdir");
+    let trunk_dir = import_dir.path().join("trunk");
+    fs::create_dir_all(&trunk_dir).expect("create svn trunk");
+    fs::write(trunk_dir.join("README.md"), contents).expect("write svn readme");
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .args(["import", "-m", "seed svn readme"])
+        .arg(import_dir.path())
+        .arg(svn_file_url(repo_path))
+        .output()
+        .expect("run svn import");
+    assert!(
+        output.status.success(),
+        "svn import should seed executable-backed repository: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+}
+
 fn seed_bare_repository(yona_data: &Path, project_id: i64) {
     let repo_root = yona_data.join("repo");
     fs::create_dir_all(&repo_root).expect("repo root");
@@ -1106,7 +1147,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         .await,
     )
     .await;
-    assert_eq!(linked_issue["issueNumber"], "1");
+    assert_eq!(linked_issue["issueNumber"], 1);
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
         .await
@@ -1382,6 +1423,116 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         count_event_rows(&db, "REVIEW_THREAD_STATE_CHANGED").await,
         2
     );
+}
+
+#[tokio::test]
+async fn rest_commit_detail_creates_comments_from_svn_revision() {
+    if !svn_tools_available() {
+        eprintln!("skipping SVN commit detail parity contract: svn tools unavailable");
+        return;
+    }
+
+    let data_dir = tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_data_root_and_db(data_dir.path()).await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    db.execute_unprepared(&format!(
+        "UPDATE \"project\" SET vcs = 'Subversion' WHERE id = {}",
+        project.id
+    ))
+    .await
+    .expect("mark project as svn");
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project.id);
+    yona_rust_vcs::create_svn_repository(&repo_path).expect("create svn repository");
+    let revision = seed_svn_readme(&repo_path, "# Hello SVN\n").expect("seed svn revision");
+    let commit_id = revision.to_string();
+    let detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}");
+    let comments_path = format!("/projects/owner/projectYobi/commit/{commit_id}/comments");
+
+    let initial = response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(initial["commit"]["commitId"], commit_id);
+    assert_eq!(initial["commit"]["commitShortId"], commit_id);
+    assert_eq!(initial["commit"]["shortMessage"], "seed svn readme");
+    assert_eq!(initial["permissions"]["canComment"], true);
+    assert_eq!(initial["files"][0]["path"], "trunk/README.md");
+    assert!(
+        initial["files"][0]["patch"]
+            .as_str()
+            .unwrap()
+            .contains("# Hello SVN")
+    );
+
+    let created = response_json(
+        rest_post_json(
+            app.clone(),
+            &comments_path,
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "contentsMarkdown": "SVN revision note"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["commit"]["commentCount"], 1);
+    assert_eq!(created["threads"][0]["commitId"], commit_id);
+    assert_eq!(
+        created["threads"][0]["comments"][0]["contentsMarkdown"],
+        "SVN revision note"
+    );
+
+    let direct_created = direct_post_form(
+        app.clone(),
+        &format!("/owner/projectYobi/commit/{commit_id}/comments"),
+        Some(&cookie),
+        Some(&csrf),
+        "contents=Legacy+SVN+direct+comment",
+    )
+    .await;
+    assert_eq!(direct_created.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_created
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/commit/{commit_id}").as_str())
+    );
+    let after_direct_create =
+        response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(after_direct_create["commit"]["commentCount"], 2);
+    let direct_comment_id = after_direct_create["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|thread| thread["comments"].as_array().unwrap().iter())
+        .find(|comment| comment["contentsMarkdown"] == "Legacy SVN direct comment")
+        .and_then(|comment| comment["id"].as_i64())
+        .expect("direct legacy svn comment id");
+
+    let direct_deleted = direct_delete(
+        app.clone(),
+        &format!("/owner/projectYobi/commit/{commit_id}/comments/{direct_comment_id}/delete"),
+        Some(&cookie),
+        Some(&csrf),
+    )
+    .await;
+    assert_eq!(direct_deleted.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_deleted
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/commit/{commit_id}").as_str())
+    );
+    let after_direct_delete =
+        response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    assert_eq!(after_direct_delete["commit"]["commentCount"], 1);
 }
 
 #[tokio::test]

@@ -1502,13 +1502,20 @@ async fn rest_code_commit_detail_response(
     query: &RestCodeCommitDetailQuery,
     service: &PilotServiceImpl,
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let mut snapshot = yona_rust_vcs::read_commit_detail(
-        &repo_path,
-        commit_id,
-        Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
-        &query.path,
-    )
+    let mut snapshot = if authorization.project.vcs == "Subversion" {
+        let repo_path =
+            yona_rust_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        yona_rust_vcs::read_svn_commit_detail(&repo_path, commit_id, &query.path)
+    } else {
+        let repo_path =
+            yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+        yona_rust_vcs::read_commit_detail(
+            &repo_path,
+            commit_id,
+            Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
+            &query.path,
+        )
+    }
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
     let threads = repository
