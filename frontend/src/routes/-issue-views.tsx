@@ -2862,7 +2862,7 @@ export function UserIssueListPage(props: {
                                   data-placement="bottom"
                                   data-toggle="tooltip"
                                   href={projectHref}
-                                  title={legacyMessage(props.messages, "project.name")}
+                                  title={legacyMessage(messages, "project.name")}
                                 >
                                   {item.projectName}
                                 </a>

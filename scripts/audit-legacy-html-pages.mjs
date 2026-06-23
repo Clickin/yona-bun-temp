@@ -257,6 +257,9 @@ try {
   const discoveredPageLinks = [
     ...new Set(results.flatMap((result) => result.discoveredPageLinks.map((link) => link.split("?")[0]))),
   ].sort();
+  const unauditedDiscoveredPageLinks = discoveredPageLinks.filter(
+    (link) => !auditedPagePaths.has(link),
+  );
   const summary = {
     baseUrl,
     checkedAt: new Date().toISOString(),
@@ -266,13 +269,13 @@ try {
     expectedNonOk: results.filter((result) => result.expectedNonOk).length,
     discoveredDynamicPages: dynamicPages.map((page) => page.path),
     discoveredPageLinks,
-    unauditedDiscoveredPageLinks: discoveredPageLinks.filter((link) => !auditedPagePaths.has(link)),
+    unauditedDiscoveredPageLinks,
     results,
   };
   const outputPath = join(outputDir, "latest.json");
   writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
   console.log(JSON.stringify(summary, null, 2));
-  if (summary.failed > 0) {
+  if (summary.failed > 0 || unauditedDiscoveredPageLinks.length > 0) {
     process.exitCode = 1;
   }
 } finally {

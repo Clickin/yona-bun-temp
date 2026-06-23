@@ -25,6 +25,7 @@ The same smoke now also records internal `href` page discovery from each
 audited HTML response. It filters assets, API endpoints, logout/oauth links,
 template placeholders, and obvious state-changing action URLs, then writes
 `discoveredPageLinks` and `unauditedDiscoveredPageLinks` to the latest JSON.
+The smoke exits non-zero if any discovered page link remains unaudited.
 
 `pnpm smoke:legacy-route-coverage` reads that latest legacy audit output and
 checks whether each audited legacy URL has a corresponding Rust TanStack Router
@@ -90,7 +91,20 @@ Playwright e2e navigation evidence for all `57` audited legacy URLs:
 by `frontend/tests/legacy-rendered-page-audit.e2e.ts`, which renders each page
 and checks the curl-observed legacy anchors against the Rust DOM. Where the
 legacy anchor represents an actual DOM structure token, that e2e file also
-checks selector presence through `id`, `name`, or class lookup.
+checks selector presence through `id`, `name`, or class lookup. It also checks
+the legacy authenticated sidebar shell (`#mySidenav`,
+`#usermenu-tab-content-list`, and the three user-menu tab panes), because that
+surface is now a React-rendered root shell rather than a server-returned HTML
+fragment. Direct legacy Java endpoints that returned HTML fragments are treated
+as compatibility references only for the converted app path: the Rust/React
+implementation must expose data through API returns and render the equivalent
+legacy UX in React.
+
+Security regression coverage is part of the converted-page smoke surface:
+`frontend/tests/search-parity.e2e.ts` renders hostile search result text and
+asserts that script/image payloads remain inert text, while
+`crates/server/tests/search_contract.rs` checks that SQL metacharacters in a
+search keyword do not widen results.
 
 That rendered pass also found a dev-only proxy mismatch: Vite was proxying
 `/lostPassword` GET requests to the backend, so direct React route rendering of

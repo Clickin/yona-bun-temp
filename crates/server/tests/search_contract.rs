@@ -518,6 +518,28 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
 }
 
 #[tokio::test]
+async fn global_search_treats_sql_injection_probe_as_plain_keyword() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
+    let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=NoSuchNeedle%27%20OR%201%3D1%20--&searchType=issue&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(payload["keyword"], "NoSuchNeedle' OR 1=1 --");
+    assert_eq!(payload["searchType"], "issue");
+    assert_eq!(payload["counts"]["issues"], 0);
+    assert!(payload["items"].as_array().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn global_project_search_matches_legacy_anonymous_public_private_acl() {
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, _, _) = build_app_with_repository_in_data_root(data_dir.path()).await;

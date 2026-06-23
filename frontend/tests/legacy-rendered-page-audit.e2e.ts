@@ -206,6 +206,11 @@ test.beforeEach(async ({ page }) => {
 
 async function expectLegacySignals(page: Page, anchors: string[], structuralTokens = anchors) {
   await page.waitForLoadState("networkidle");
+  await expect(page.locator("#mySidenav")).toHaveCount(1);
+  await expect(page.locator("#usermenu-tab-content-list")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList")).toHaveCount(1);
+  await expect(page.locator("#myProjectList")).toHaveCount(1);
+  await expect(page.locator("#myRecentIssueList")).toHaveCount(1);
   for (const anchor of anchors) {
     await expect
       .poll(() => page.locator("body").evaluate((body) => body.innerHTML), {

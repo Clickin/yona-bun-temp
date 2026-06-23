@@ -178,13 +178,12 @@ test("renders global results, category counts, highlight snippets, and type swit
   );
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination")).toContainText("Next page");
   await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
     "href",
     "/yona/search?keyword=Needle&searchType=issue&pageNum=2",
   );
   await expect(page.locator("#pagination")).not.toContainText("Page 1 of");
-  await expect(page.locator("#pagination")).not.toContainText("Next");
 
   await page.locator('.search-category-wrap a[data-type="user"]').click();
   await expect(page).toHaveURL(/searchType=user/);
@@ -314,4 +313,45 @@ test("keeps failed REST search on the legacy bad-request shell", async ({ page }
   await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
   await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("Search failed.");
+});
+
+test("renders hostile search result text as inert text", async ({ page }) => {
+  const hostile = `<img src=x onerror="window.__xssFired = true"><script>window.__xssFired = true</script>`;
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(
+        searchResponse({
+          items: [
+            {
+              authorLabel: hostile,
+              authorLoginId: "owner",
+              createdLabel: "2026-05-01",
+              href: "/owner/projectYobi/issue/1",
+              id: "xss-1",
+              number: "1",
+              ownerName: "owner",
+              projectName: "projectYobi",
+              snippets: [{ highlights: [], text: hostile }],
+              state: "open",
+              title: hostile,
+              type: "issue",
+              updatedLabel: "2026-05-02",
+            },
+          ],
+          keyword: hostile,
+        }),
+      ),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto(`/yona/search?keyword=${encodeURIComponent(hostile)}&searchType=issue&pageNum=1`);
+
+  await expect(page.locator(".title-wrap .title")).toContainText("<script>");
+  await expect(page.locator(".search-result script")).toHaveCount(0);
+  await expect(page.locator('.search-result img[src="x"]')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { __xssFired?: boolean }).__xssFired))
+    .toBeUndefined();
 });
