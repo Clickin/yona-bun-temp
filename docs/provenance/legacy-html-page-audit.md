@@ -67,27 +67,17 @@ was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
 site-admin user-menu affix for site admins.
 
 The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
-Playwright e2e navigation evidence for `33` of the same `50` audited legacy
-URLs. The remaining `17` URLs still need rendered Rust DOM coverage before an
-all-page parity claim:
+Playwright e2e navigation evidence for all `50` audited legacy URLs:
+`50` with rendered e2e evidence, `0` missing. The final 17 routes are covered
+by `frontend/tests/legacy-rendered-page-audit.e2e.ts`, which renders each page
+and checks the curl-observed legacy anchors against the Rust DOM.
 
-- `/lostPassword`
-- `/_help`
-- `/projectform`
-- `/_import`
-- `/organizations/new`
-- `/notifications`
-- `/notification?from=0&limit=20`
-- `/user/issues`
-- `/user/files`
-- `/user/editform`
-- `/user/editform/notifications`
-- `/user/editform/emails`
-- `/user/editform/token`
-- `/sites/data`
-- `/admin/sample`
-- `/admin/sample/issueform`
-- `/admin/sample/settingform`
+That rendered pass also found a dev-only proxy mismatch: Vite was proxying
+`/lostPassword` GET requests to the backend, so direct React route rendering of
+the legacy forgot-password page failed under the managed e2e frontend. The Vite
+dev proxy no longer captures `lostPassword`, leaving the browser route to render
+through the React fallback while backend direct-route tests still cover the
+server endpoint.
 
 ## Current Coverage
 
@@ -108,9 +98,8 @@ The initial curl baseline covers:
 
 ## Remaining Work Before Claiming All-Page Parity
 
-- Compare the captured legacy anchors against rendered Rust React pages, not
-  only against existing static parity specs; start with the 17 URLs missing
-  rendered e2e navigation evidence above.
+- Compare richer DOM structure/content beyond the current anchor smoke where
+  the anchor-level check is too weak to catch visual or copy drift.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes
