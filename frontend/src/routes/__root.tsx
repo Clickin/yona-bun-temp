@@ -2,7 +2,7 @@ import * as React from "react";
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { LegacyLoginDialog } from "./-auth-views";
 
 export interface AppRouterContext {
@@ -20,10 +20,33 @@ function RootRouteComponent() {
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
+        <RootCustomNavbarLink />
         <Outlet />
         <RootLoginDialog />
       </AppRuntimeProvider>
     </YonaQueryProvider>
+  );
+}
+
+function RootCustomNavbarLink() {
+  const { currentSession, runtimeConfig } = useAppRuntime();
+  const name = runtimeConfig.navbarCustomLinkName?.trim();
+
+  if (!name || !currentSession || currentSession.isAnonymous) {
+    return null;
+  }
+
+  return (
+    <ul className="gnb-usermenu">
+      <li className="gnb-usermenu-item">
+        <a
+          className="user-item-btn loggged-in"
+          href={prefixBasePath(runtimeConfig.basePath, runtimeConfig.navbarCustomLinkUrl || "/")}
+        >
+          {name}
+        </a>
+      </li>
+    </ul>
   );
 }
 

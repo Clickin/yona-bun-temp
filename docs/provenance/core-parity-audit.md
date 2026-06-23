@@ -1302,6 +1302,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   instead of separately threaded route fragments. Focused board, workspace,
   user, issue comment, and project mention/go/label contracts preserve the
   same legacy URLs, redirect/status behavior, and payload shapes.
+- 2026-06-23 runtime config note: the remaining analytics/custom-user-menu
+  deferred slice is closed against legacy `Application.SEND_YONA_USAGE`,
+  `layout.scala.html`, `layout_framed.scala.html`, and
+  `common/usermenu.scala.html`. Rust startup config accepts
+  `YONA_SEND_YONA_USAGE` plus the legacy `application.send.yona.usage` alias
+  with legacy default `true`; asset HTML serving injects the legacy GA snippet
+  at the layout boundary and suppresses it when disabled. Rust startup/browser
+  runtime config also projects `application.navbar.custom.link.name/url`
+  through `YONA_NAVBAR_CUSTOM_LINK_NAME/URL`, and the React root renders the
+  authenticated `gnb-usermenu` custom link only when the configured name is
+  nonblank. Focused coverage: `runtime_config_contract`, `assets_contract`,
+  `frontend/src/runtime-config.spec.ts`, and
+  `frontend/src/root-custom-navbar-link.spec.ts`.
 
 ## Wave 0 Exit Snapshot
 

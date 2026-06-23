@@ -43,12 +43,15 @@ pub struct StartupConfig {
     pub mailbox_polling_initial_delay: Option<String>,
     pub mailbox_polling_interval: Option<String>,
     pub max_file_size: Option<usize>,
+    pub navbar_custom_link_name: Option<String>,
+    pub navbar_custom_link_url: Option<String>,
     pub project_default_menus: Option<Vec<String>>,
     pub project_default_scope: Option<String>,
     pub runtime: RuntimeConfig,
     pub schema_policy: RuntimeSchemaPolicy,
     pub seed_pilot: bool,
     pub session_timeout_seconds: Option<u64>,
+    pub send_yona_usage: Option<bool>,
     pub show_user_email: Option<bool>,
     pub site_allow_anonymous_access: Option<bool>,
     pub site_hostname: Option<String>,
@@ -145,6 +148,9 @@ struct SiteConfigFile {
     hostname: Option<String>,
     langs: Option<Vec<String>>,
     name: Option<String>,
+    navbar_custom_link_name: Option<String>,
+    navbar_custom_link_url: Option<String>,
+    send_yona_usage: Option<bool>,
     show_user_email: Option<bool>,
 }
 
@@ -352,6 +358,15 @@ pub fn load_startup_config(
     let supported_languages = env_string(&env, "YONA_LANGS")
         .map(|value| split_csv(&value))
         .or(site.langs);
+    let navbar_custom_link_name = env_string(&env, "YONA_NAVBAR_CUSTOM_LINK_NAME")
+        .or_else(|| env_string(&env, "application.navbar.custom.link.name"))
+        .or_else(|| non_empty_string(site.navbar_custom_link_name));
+    let navbar_custom_link_url = env_string(&env, "YONA_NAVBAR_CUSTOM_LINK_URL")
+        .or_else(|| env_string(&env, "application.navbar.custom.link.url"))
+        .or_else(|| non_empty_string(site.navbar_custom_link_url));
+    let send_yona_usage = env_bool(&env, "YONA_SEND_YONA_USAGE")
+        .or_else(|| env_bool(&env, "application.send.yona.usage"))
+        .or(site.send_yona_usage);
     let translation_api = env_string(&env, "YONA_TRANSLATION_API")
         .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_API"));
     let translation_header_key = env_string(&env, "YONA_TRANSLATION_HEADER_KEY")
@@ -558,6 +573,8 @@ pub fn load_startup_config(
         mailbox_polling_initial_delay,
         mailbox_polling_interval,
         max_file_size,
+        navbar_custom_link_name,
+        navbar_custom_link_url,
         project_default_menus,
         project_default_scope,
         runtime: RuntimeConfig {
@@ -568,6 +585,7 @@ pub fn load_startup_config(
         schema_policy,
         seed_pilot,
         session_timeout_seconds,
+        send_yona_usage,
         show_user_email,
         site_allow_anonymous_access,
         site_hostname,

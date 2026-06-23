@@ -174,9 +174,12 @@ fn build_router_with_app_config(
         &base_path,
         app_config.project_default_menus.clone(),
         runtime.project_default_scope.clone(),
+        app_config.navbar_custom_link_name.clone(),
+        app_config.navbar_custom_link_url.clone(),
         runtime.site_name.clone(),
         app_config.supported_languages.clone(),
         app_config.show_user_email,
+        app_config.send_yona_usage,
     );
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();

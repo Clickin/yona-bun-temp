@@ -427,6 +427,7 @@ pub(crate) async fn serve_embedded_index_html(browser_runtime: BrowserRuntimeCon
 }
 
 fn html_with_runtime(index_html: String, browser_runtime: BrowserRuntimeConfig) -> Response {
+    let send_yona_usage = browser_runtime.send_yona_usage();
     let runtime_json = serde_json::to_string(&browser_runtime).expect("runtime config json");
     let runtime_script = format!(
         "<script>window.__YONA_RUNTIME_CONFIG__ = {};</script>",
@@ -439,12 +440,35 @@ fn html_with_runtime(index_html: String, browser_runtime: BrowserRuntimeConfig) 
     } else {
         format!("{runtime_script}{index_html}")
     };
+    let injected = if send_yona_usage {
+        inject_legacy_yona_usage_script(injected)
+    } else {
+        injected
+    };
 
     (
         [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
         injected,
     )
         .into_response()
+}
+
+fn inject_legacy_yona_usage_script(index_html: String) -> String {
+    let script = r#"<script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-102735758-1', 'auto');
+        ga('send', 'pageview');
+    </script>"#;
+
+    if index_html.contains("</body>") {
+        index_html.replacen("</body>", &format!("{script}</body>"), 1)
+    } else {
+        format!("{index_html}{script}")
+    }
 }
 
 fn sanitize_relative_path(requested_path: &str) -> Option<PathBuf> {

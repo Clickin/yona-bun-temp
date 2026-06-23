@@ -1,6 +1,8 @@
 export interface RuntimeConfig {
   apiBaseUrl: string;
   basePath: string;
+  navbarCustomLinkName?: string;
+  navbarCustomLinkUrl?: string;
   projectDefaultMenus?: string[];
   projectDefaultScope?: string;
   showUserEmail?: boolean;
@@ -10,8 +12,14 @@ export interface RuntimeConfig {
 
 type RuntimeConfigInput = Omit<
   Partial<RuntimeConfig>,
-  "projectDefaultMenus" | "showUserEmail" | "supportedLanguages"
+  | "navbarCustomLinkName"
+  | "navbarCustomLinkUrl"
+  | "projectDefaultMenus"
+  | "showUserEmail"
+  | "supportedLanguages"
 > & {
+  navbarCustomLinkName?: string | null;
+  navbarCustomLinkUrl?: string | null;
   projectDefaultMenus?: string[] | string | null;
   showUserEmail?: boolean | string | null;
   supportedLanguages?: string[] | string | null;
@@ -22,6 +30,8 @@ declare global {
     readonly VITE_YONA_API_BASE_URL?: string;
     readonly VITE_YONA_BASE_PATH?: string;
     readonly VITE_YONA_LANGS?: string;
+    readonly VITE_YONA_NAVBAR_CUSTOM_LINK_NAME?: string;
+    readonly VITE_YONA_NAVBAR_CUSTOM_LINK_URL?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_MENUS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_SCOPE?: string;
     readonly VITE_YONA_SITE_NAME?: string;
@@ -50,6 +60,8 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
   return {
     apiBaseUrl: input.apiBaseUrl ?? joinBasePath(basePath, "api"),
     basePath,
+    navbarCustomLinkName: normalizeOptionalString(input.navbarCustomLinkName),
+    navbarCustomLinkUrl: normalizeOptionalString(input.navbarCustomLinkUrl),
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
     projectDefaultScope: normalizeProjectDefaultScope(input.projectDefaultScope),
     showUserEmail: normalizeShowUserEmail(input.showUserEmail),
@@ -62,6 +74,8 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
   return {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
     basePath: import.meta.env.VITE_YONA_BASE_PATH,
+    navbarCustomLinkName: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME,
+    navbarCustomLinkUrl: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_URL,
     projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
     supportedLanguages: import.meta.env.VITE_YONA_LANGS,
     projectDefaultScope: import.meta.env.VITE_YONA_PROJECT_DEFAULT_SCOPE,
@@ -101,6 +115,10 @@ export function prefixBasePath(basePath: string, href: string): string {
 
   const normalizedHref = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return basePath === "/" ? normalizedHref : `${basePath}${normalizedHref}`;
+}
+
+function normalizeOptionalString(input: string | null | undefined): string {
+  return (input ?? "").trim();
 }
 
 export function normalizeProjectDefaultScope(input: string | null | undefined): string {

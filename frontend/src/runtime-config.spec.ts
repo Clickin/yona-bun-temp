@@ -17,6 +17,8 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/api",
       basePath: "/",
+      navbarCustomLinkName: "",
+      navbarCustomLinkUrl: "",
       projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
       projectDefaultScope: "public",
       showUserEmail: true,
@@ -33,6 +35,8 @@ describe("readRuntimeConfig", () => {
     browserWindow.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
+      navbarCustomLinkName: "Docs",
+      navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pull-request", "unknown"],
       projectDefaultScope: "private",
       showUserEmail: false,
@@ -43,6 +47,8 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      navbarCustomLinkName: "Docs",
+      navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pullRequest"],
       projectDefaultScope: "private",
       showUserEmail: false,
@@ -56,12 +62,16 @@ describe("readRuntimeConfig", () => {
     process.env.VITE_YONA_BASE_PATH = "/yona";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
     process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
+    process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME = " Support ";
+    process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_URL = "/support";
     process.env.VITE_YONA_SITE_NAME = "Dev Yona";
     process.env.VITE_YONA_SHOW_USER_EMAIL = "false";
     (import.meta as { env?: Record<string, string> }).env = {
       ...originalImportMetaEnv,
       VITE_YONA_BASE_PATH: "/yona",
       VITE_YONA_LANGS: "ja-JP, en-US",
+      VITE_YONA_NAVBAR_CUSTOM_LINK_NAME: " Support ",
+      VITE_YONA_NAVBAR_CUSTOM_LINK_URL: "/support",
       VITE_YONA_PROJECT_DEFAULT_MENUS: "issue,board",
       VITE_YONA_SITE_NAME: "Dev Yona",
       VITE_YONA_SHOW_USER_EMAIL: "false",
@@ -70,6 +80,8 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      navbarCustomLinkName: "Support",
+      navbarCustomLinkUrl: "/support",
       projectDefaultMenus: ["issue", "board"],
       projectDefaultScope: "public",
       showUserEmail: false,

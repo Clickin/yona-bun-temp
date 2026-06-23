@@ -81,6 +81,9 @@ base_path = "/sectioned"
 allow_anonymous_access = false
 allowed_sending_mail_domains = ["allowed.example.com", "other.example.com"]
 guest_login_prefix = "guest-"
+navbar_custom_link_name = "Docs"
+navbar_custom_link_url = "https://docs.example.com"
+send_yona_usage = false
 show_user_email = false
 langs = ["ko-KR", "en-US"]
 
@@ -186,6 +189,12 @@ draft_time = "1s"
         ])
     );
     assert_eq!(config.guest_login_prefix.as_deref(), Some("guest-"));
+    assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Docs"));
+    assert_eq!(
+        config.navbar_custom_link_url.as_deref(),
+        Some("https://docs.example.com")
+    );
+    assert_eq!(config.send_yona_usage, Some(false));
     assert_eq!(config.show_user_email, Some(false));
     assert_eq!(
         config.supported_languages,
@@ -497,7 +506,16 @@ draft_time = "30s"
             ),
             ("YONA_SEED_PILOT".to_string(), "1".to_string()),
             ("YONA_SHOW_USER_EMAIL".to_string(), "yes".to_string()),
+            ("YONA_SEND_YONA_USAGE".to_string(), "false".to_string()),
             ("YONA_SITE_NAME".to_string(), "Env Yona".to_string()),
+            (
+                "YONA_NAVBAR_CUSTOM_LINK_NAME".to_string(),
+                "Env Docs".to_string(),
+            ),
+            (
+                "YONA_NAVBAR_CUSTOM_LINK_URL".to_string(),
+                "https://env.example/docs".to_string(),
+            ),
             (
                 "YONA_APPLICATION_HOSTNAME".to_string(),
                 "env.example.com".to_string(),
@@ -682,7 +700,13 @@ draft_time = "30s"
     assert_eq!(config.schema_policy, RuntimeSchemaPolicy::ValidateOnly);
     assert_eq!(config.seed_pilot, true);
     assert_eq!(config.show_user_email, Some(true));
+    assert_eq!(config.send_yona_usage, Some(false));
     assert_eq!(config.site_name.as_deref(), Some("Env Yona"));
+    assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Env Docs"));
+    assert_eq!(
+        config.navbar_custom_link_url.as_deref(),
+        Some("https://env.example/docs")
+    );
     assert_eq!(config.site_hostname.as_deref(), Some("env.example.com"));
     assert_eq!(
         config.allowed_sending_mail_domains,

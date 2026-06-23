@@ -341,7 +341,10 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
             public_origin: String::new(),
         },
         AppRuntimeConfig {
+            navbar_custom_link_name: "Docs".to_string(),
+            navbar_custom_link_url: "https://docs.example.com".to_string(),
             project_default_scope: "private".to_string(),
+            send_yona_usage: false,
             supported_languages: vec![
                 "ko-KR".to_string(),
                 "en-US".to_string(),
@@ -369,10 +372,13 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let html = String::from_utf8(index_body.to_vec()).unwrap();
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
+    assert!(html.contains("\"navbarCustomLinkName\":\"Docs\""));
+    assert!(html.contains("\"navbarCustomLinkUrl\":\"https://docs.example.com\""));
     assert!(html.contains("\"projectDefaultScope\":\"private\""));
     assert!(html.contains("\"siteName\":\"Legacy Yona\""));
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
+    assert!(!html.contains("https://www.google-analytics.com/analytics.js"));
 
     let asset = app
         .clone()

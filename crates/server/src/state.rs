@@ -194,6 +194,10 @@ pub(crate) struct BrowserRuntimeConfig {
     api_base_url: String,
     #[serde(rename = "basePath")]
     base_path: String,
+    #[serde(rename = "navbarCustomLinkName")]
+    navbar_custom_link_name: String,
+    #[serde(rename = "navbarCustomLinkUrl")]
+    navbar_custom_link_url: String,
     #[serde(rename = "projectDefaultMenus")]
     project_default_menus: Vec<String>,
     #[serde(rename = "projectDefaultScope")]
@@ -204,6 +208,8 @@ pub(crate) struct BrowserRuntimeConfig {
     supported_languages: Vec<String>,
     #[serde(rename = "showUserEmail")]
     show_user_email: bool,
+    #[serde(skip)]
+    send_yona_usage: bool,
 }
 
 impl BrowserRuntimeConfig {
@@ -211,9 +217,12 @@ impl BrowserRuntimeConfig {
         base_path: &str,
         project_default_menus: Vec<String>,
         project_default_scope: String,
+        navbar_custom_link_name: String,
+        navbar_custom_link_url: String,
         site_name: String,
         supported_languages: Vec<String>,
         show_user_email: bool,
+        send_yona_usage: bool,
     ) -> Self {
         let base_path = normalize_base_path(base_path);
         let api_base_url = if base_path == "/" {
@@ -224,12 +233,19 @@ impl BrowserRuntimeConfig {
         Self {
             api_base_url,
             base_path,
+            navbar_custom_link_name,
+            navbar_custom_link_url,
             project_default_menus,
             project_default_scope,
             site_name,
             supported_languages,
             show_user_email,
+            send_yona_usage,
         }
+    }
+
+    pub(crate) fn send_yona_usage(&self) -> bool {
+        self.send_yona_usage
     }
 }
 
