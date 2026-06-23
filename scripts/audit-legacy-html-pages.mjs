@@ -13,6 +13,7 @@ const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
 const outputDir = resolve(repoRoot, ".agent/legacy-html-page-audit");
 const cookieDir = mkdtempSync(join(tmpdir(), "yona-legacy-cookies-"));
 const cookieJar = join(cookieDir, "cookies.txt");
+const legacyOrigin = new URL(baseUrl).origin;
 
 const publicPages = [
   { path: "/", anchors: ["gnb-outer", "siteintro-bg", "loginDialog"] },
@@ -51,6 +52,19 @@ const authenticatedPages = [
   { path: "/sites/diagnostic", anchors: ["site-breadcrumb-outer", "diagnostic"] },
   { path: "/sites/data", anchors: ["site-breadcrumb-outer", "data"] },
 ];
+
+const blockedPageLinkPrefixes = [
+  "/-_-api/",
+  "/assets/",
+  "/authenticate/",
+  "/favicon.ico",
+  "/files/",
+  "/messages.js",
+  "/noti/toggle/",
+  "/users/logout",
+];
+const blockedPageLinkExtensions = /\.(?:css|gif|ico|jpeg|jpg|js|map|png|svg|woff2?)$/u;
+const blockedPageLinkActions = /\/(?:delete|unwatch)(?:\/|$)/u;
 
 function curl(args) {
   const result = spawnSync("curl", ["-sS", "--max-time", "20", ...args], {
@@ -96,6 +110,37 @@ function hasStructuralToken(html, token) {
   );
 }
 
+function normalizeDiscoveredPageLink(href) {
+  try {
+    const url = new URL(href, baseUrl);
+    if (url.origin !== legacyOrigin) {
+      return null;
+    }
+    const decodedPathname = decodeURIComponent(url.pathname);
+    if (
+      /[{}]/u.test(decodedPathname) ||
+      blockedPageLinkPrefixes.some((prefix) => url.pathname.startsWith(prefix)) ||
+      blockedPageLinkActions.test(url.pathname) ||
+      blockedPageLinkExtensions.test(url.pathname)
+    ) {
+      return null;
+    }
+    return `${url.pathname}${url.search}`.replace(/\/$/, "") || "/";
+  } catch {
+    return null;
+  }
+}
+
+function discoverPageLinks(html) {
+  return [
+    ...new Set(
+      [...html.matchAll(/\bhref=["']([^"']+)["']/gu)]
+        .map((match) => normalizeDiscoveredPageLink(match[1]))
+        .filter(Boolean),
+    ),
+  ].sort();
+}
+
 function auditPage(page) {
   const response = fetchPage(page.path);
   const expectedStatuses = page.statuses ?? [200];
@@ -114,6 +159,7 @@ function auditPage(page) {
     checkedStructuralTokens: page.anchors,
     missingAnchors,
     missingStructuralTokens,
+    discoveredPageLinks: response.status === 200 ? discoverPageLinks(response.html) : [],
     bytes: Buffer.byteLength(response.html),
   };
 }
@@ -195,6 +241,10 @@ try {
   const dynamicPages = discoverProjectPages();
   const authResults = [...authenticatedPages, ...dynamicPages].map(auditPage);
   const results = [...publicResults, ...authResults];
+  const auditedPagePaths = new Set(results.map((result) => result.path.split("?")[0]));
+  const discoveredPageLinks = [
+    ...new Set(results.flatMap((result) => result.discoveredPageLinks.map((link) => link.split("?")[0]))),
+  ].sort();
   const summary = {
     baseUrl,
     checkedAt: new Date().toISOString(),
@@ -203,6 +253,8 @@ try {
     failed: results.filter((result) => !result.ok).length,
     expectedNonOk: results.filter((result) => result.expectedNonOk).length,
     discoveredDynamicPages: dynamicPages.map((page) => page.path),
+    discoveredPageLinks,
+    unauditedDiscoveredPageLinks: discoveredPageLinks.filter((link) => !auditedPagePaths.has(link)),
     results,
   };
   const outputPath = join(outputDir, "latest.json");

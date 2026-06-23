@@ -21,6 +21,11 @@ site-admin pages for HTTP 200 plus legacy DOM/message-key anchors. The output is
 written to `.agent/legacy-html-page-audit/latest.json`, which is intentionally
 ignored by git.
 
+The same smoke now also records internal `href` page discovery from each
+audited HTML response. It filters assets, API endpoints, logout/oauth links,
+template placeholders, and obvious state-changing action URLs, then writes
+`discoveredPageLinks` and `unauditedDiscoveredPageLinks` to the latest JSON.
+
 `pnpm smoke:legacy-route-coverage` reads that latest legacy audit output and
 checks whether each audited legacy URL has a corresponding Rust TanStack Router
 `fullPath` in `frontend/src/routeTree.gen.ts`. Its output is written to
@@ -54,6 +59,13 @@ as source behavior:
 - `/admin/sample/newPullRequestForm` returned `400`
 - `/admin/sample/commits` returned `404`
 - `/admin/sample/branches` returned `500`
+
+That same run discovered `51` unique internal page links from the audited SSR
+HTML. `9` discovered page candidates are not yet in the audited URL set:
+`/admin`, `/admin/sample/deleteform`, `/admin/sample/issue/1`,
+`/admin/sample/issue/labelsform`, `/admin/sample/newFork`,
+`/admin/sample/reviews`, `/admin/sample/transfer`, `/info`, and
+`/sites/export`.
 
 The same `50` audited URLs route-map to Rust frontend routes with
 `pnpm smoke:legacy-route-coverage`: `50` routed, `0` missing. Query-bearing and
@@ -112,6 +124,8 @@ The initial curl baseline covers:
 - Classify diagnostic structural-token misses into real selector gaps versus
   expected text/template-only anchors, then promote the real selector set into
   a hard rendered-page check.
+- Promote the discovered unaudited page candidates into the canonical curl
+  audit after classifying legacy status and minimum anchors for each page.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes
