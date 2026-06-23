@@ -75,7 +75,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-public-auth`          | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/_help`                                                                                                                                                              | Public/auth route, copy, form, redirect, validation, and direct backend route parity.                                                                        | `pass`      |
 | `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `pass`      |
 | `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `pass`      |
-| `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `unchecked` |
+| `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `pass`      |
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `unchecked` |
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `unchecked` |
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `unchecked` |
@@ -146,8 +146,32 @@ src/organization-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx
 src/route-parity.spec.tsx` passed with 5 files and 131 tests.
 - Backend direct-route verification: `pnpm agent:cargo-test --
 --outside-sandbox -p yona-rust-pilot-server --test org_project_contract
-project_import_direct_route_clones_git_repository_and_preserves_legacy_errors
--- --nocapture` passed with 1 test.
+  project_import_direct_route_clones_git_repository_and_preserves_legacy_errors
+  -- --nocapture` passed with 1 test.
+
+### `rc-ux-user-workspace`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin`, `/user/issues`,
+  `/user/issues/new/mine`, `/user/files`, `/user/editform`,
+  `/user/editform/password`, `/user/editform/notifications`,
+  `/user/editform/emails`, and `/user/editform/token`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, and `e2e-render-coverage.json` map those paths to
+  Rust routes and rendered legacy signal evidence, including `user-info-box`,
+  `page-wrap-outer`, `attachment-files`, `password`, `notification`, `email`,
+  and `token`.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/user-files-parity.spec.tsx src/workspace-settings-i18n.spec.tsx
+src/workspace-profile-i18n.spec.tsx src/wave1-auth-workspace-parity.spec.tsx
+src/auth-workspace-shell.spec.tsx src/route-parity.spec.tsx` passed with 6
+  files and 134 tests.
+- Backend direct-route verification: these `auth_workspace_contract` tests
+  passed outside the sandbox:
+  `direct_legacy_profile_and_email_routes_accept_form_csrf_redirect_and_mutate_workspace_state`,
+  `direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_email_state`,
+  `direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates_api_token`,
+  and `direct_legacy_reset_visited_and_default_login_page_routes_match_workspace_state`.
 
 ## Goal Packet Template
 
