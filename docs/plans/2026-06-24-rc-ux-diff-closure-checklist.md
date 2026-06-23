@@ -73,7 +73,7 @@ Each goal packet should close these checks for its page group:
 | Goal packet                  | Legacy surface                                                                                                                                                                                                                       | Required evidence                                                                                                                                            | Status      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
 | `rc-ux-public-auth`          | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/_help`                                                                                                                                                              | Public/auth route, copy, form, redirect, validation, and direct backend route parity.                                                                        | `pass`      |
-| `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `unchecked` |
+| `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `pass`      |
 | `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `unchecked` |
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `unchecked` |
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `unchecked` |
@@ -111,6 +111,24 @@ direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_
 --nocapture` currently fails before running this row's tests because
   `crates/server/tests/server_core_contract.rs` references missing module
   `protocol_foundation_contract`.
+
+### `rc-ux-auth-shell`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has the
+  logged-in `/` audit with HTTP 200 and no missing anchors or structural tokens
+  for `gnb-outer` and `admin-logged-in-affix`.
+- Rendered shell evidence:
+  `frontend/tests/legacy-rendered-page-audit.e2e.ts` checks `#mySidenav`,
+  `#usermenu-tab-content-list`, `#myOrganizationList`, `#myProjectList`,
+  `#myRecentIssueList`, `gnb-outer`, and `admin-logged-in-affix` on the
+  logged-in root shell.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/root-custom-navbar-link.spec.ts src/auth-workspace-shell.spec.tsx
+src/route-parity.spec.tsx` passed with 3 files and 117 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/legacy-rendered-page-audit.e2e.ts -g "renders legacy audited anchors for
+logged-in /"` was rerun outside the sandbox after localhost `listen EPERM`;
+  the wrapper executed the whole file and passed 43 tests.
 
 ## Goal Packet Template
 
