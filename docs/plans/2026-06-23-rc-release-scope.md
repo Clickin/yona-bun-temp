@@ -18,6 +18,7 @@ guards that prevent legacy failure modes from taking the service down.
 | Release packaging             | Single binary and Docker image must serve the embedded frontend and REST API.                                                                  | `pnpm smoke:embedded-assets`; `pnpm smoke:docker`.                                     |
 | Markdown stability            | Pathological Markdown must not crash the app. Very long fenced code blocks render as escaped plain source instead of syntax-highlighted spans. | `frontend/src/markdown-renderer.spec.tsx` long SQL fenced-block regression.            |
 | Legacy page baseline          | Existing curl HTML page audit remains the UI parity baseline for RC.                                                                           | `pnpm smoke:legacy-html-pages` plus route/spec/anchor/e2e-render coverage smokes.      |
+| UX diff closure               | Audited RC page groups must have no remaining unchecked, blocked, or diff rows before claiming user-invisible replacement parity.              | `docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md`.                               |
 
 ## Not In This RC
 
