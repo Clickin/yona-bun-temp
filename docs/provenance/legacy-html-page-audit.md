@@ -19,6 +19,11 @@ site-admin pages for HTTP 200 plus legacy DOM/message-key anchors. The output is
 written to `.agent/legacy-html-page-audit/latest.json`, which is intentionally
 ignored by git.
 
+`pnpm smoke:legacy-route-coverage` reads that latest legacy audit output and
+checks whether each audited legacy URL has a corresponding Rust TanStack Router
+`fullPath` in `frontend/src/routeTree.gen.ts`. Its output is written to
+`.agent/legacy-html-page-audit/route-coverage.json`.
+
 Latest local run against the homelab instance on 2026-06-23:
 `50` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
@@ -26,6 +31,12 @@ as source behavior:
 - `/admin/sample/newPullRequestForm` returned `400`
 - `/admin/sample/commits` returned `404`
 - `/admin/sample/branches` returned `500`
+
+The same `50` audited URLs route-map to Rust frontend routes with
+`pnpm smoke:legacy-route-coverage`: `50` routed, `0` missing. Query-bearing and
+sample-data URLs are normalized to their TanStack `fullPath`, for example
+`/search?keyword=...` to `/search`, `/sites/userList` to `/sites/$pageName`,
+and `/admin/sample/issues` to `/$owner/$projectName/issues`.
 
 ## Current Coverage
 
