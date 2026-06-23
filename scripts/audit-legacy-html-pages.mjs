@@ -93,6 +93,7 @@ function auditPage(page) {
     status: response.status,
     ok: expectedStatuses.includes(response.status) && missingAnchors.length === 0,
     expectedNonOk: response.status !== 200 && expectedStatuses.includes(response.status),
+    checkedAnchors: page.anchors,
     missingAnchors,
     bytes: Buffer.byteLength(response.html),
   };

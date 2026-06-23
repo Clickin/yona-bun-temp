@@ -20,7 +20,7 @@ function RootRouteComponent() {
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
-        <RootCustomNavbarLink />
+        <RootUserMenu />
         <Outlet />
         <RootLoginDialog />
       </AppRuntimeProvider>
@@ -28,24 +28,40 @@ function RootRouteComponent() {
   );
 }
 
-function RootCustomNavbarLink() {
+function RootUserMenu() {
   const { currentSession, runtimeConfig } = useAppRuntime();
-  const name = runtimeConfig.navbarCustomLinkName?.trim();
 
-  if (!name || !currentSession || currentSession.isAnonymous) {
+  if (!currentSession || currentSession.isAnonymous) {
+    return null;
+  }
+
+  const customLinkName = runtimeConfig.navbarCustomLinkName?.trim();
+  if (!customLinkName && !currentSession.isSiteAdmin) {
     return null;
   }
 
   return (
     <ul className="gnb-usermenu">
-      <li className="gnb-usermenu-item">
-        <a
-          className="user-item-btn loggged-in"
-          href={prefixBasePath(runtimeConfig.basePath, runtimeConfig.navbarCustomLinkUrl || "/")}
-        >
-          {name}
-        </a>
-      </li>
+      {currentSession.isSiteAdmin ? (
+        <li className="gnb-usermenu-item admin-logged-in-affix">
+          <a
+            className="user-item-btn loggged-in"
+            href={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
+          >
+            <i className="yobicon-wrench"></i>
+          </a>
+        </li>
+      ) : null}
+      {customLinkName ? (
+        <li className="gnb-usermenu-item">
+          <a
+            className="user-item-btn loggged-in"
+            href={prefixBasePath(runtimeConfig.basePath, runtimeConfig.navbarCustomLinkUrl || "/")}
+          >
+            {customLinkName}
+          </a>
+        </li>
+      ) : null}
     </ul>
   );
 }

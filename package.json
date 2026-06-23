@@ -14,6 +14,7 @@
     "doctor:react:precommit": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
     "smoke:docker": "node scripts/smoke-docker.mjs",
     "smoke:embedded-assets": "node scripts/smoke-embedded-assets.mjs",
+    "smoke:legacy-anchor-coverage": "node scripts/audit-legacy-anchor-coverage.mjs",
     "smoke:legacy-html-pages": "node scripts/audit-legacy-html-pages.mjs",
     "smoke:legacy-mariadb-dump": "node scripts/smoke-legacy-mariadb-dump.mjs",
     "smoke:legacy-parity-spec-coverage": "node scripts/audit-legacy-parity-spec-coverage.mjs",

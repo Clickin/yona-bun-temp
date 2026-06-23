@@ -1312,7 +1312,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   runtime config also projects `application.navbar.custom.link.name/url`
   through `YONA_NAVBAR_CUSTOM_LINK_NAME/URL`, and the React root renders the
   authenticated `gnb-usermenu` custom link only when the configured name is
-  nonblank. Focused coverage: `runtime_config_contract`, `assets_contract`,
+  nonblank. The 2026-06-23 curl-based homelab HTML audit also found the legacy
+  logged-in root layout includes the site-admin `admin-logged-in-affix` user-menu
+  link to `/sites/userList`; the React root now renders that affix for
+  `currentSession.isSiteAdmin`, and `pnpm smoke:legacy-anchor-coverage` covers
+  90 curl-observed anchors with zero missing Rust source/spec evidence. Focused
+  coverage: `runtime_config_contract`, `assets_contract`,
   `frontend/src/runtime-config.spec.ts`, and
   `frontend/src/root-custom-navbar-link.spec.ts`.
 

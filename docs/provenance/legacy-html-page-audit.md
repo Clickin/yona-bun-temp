@@ -29,6 +29,11 @@ each audited route has at least one existing frontend parity spec evidence
 match. This is a coverage guard for the verification ledger, not a browser DOM
 diff.
 
+`pnpm smoke:legacy-anchor-coverage` reads the latest legacy HTML audit
+`checkedAnchors` and verifies that each anchor has Rust frontend source/spec
+evidence. This is still static evidence, but it ties the curl-observed legacy
+HTML anchors to committed Rust UI code.
+
 Latest local run against the homelab instance on 2026-06-23:
 `50` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
@@ -48,6 +53,12 @@ The same `50` routed URLs have frontend parity spec evidence with
 This pass found a missing explicit alias assertion for `/user/issues/new/mine`;
 `frontend/src/route-parity.spec.tsx` now pins that route to
 `DirectIssueCreateFormRouteComponent mine={true}`.
+
+The latest `pnpm smoke:legacy-anchor-coverage` run checks `90` curl-observed
+legacy anchors across those pages: `90` with Rust evidence, `0` missing. This
+pass found that the logged-in root page's legacy `admin-logged-in-affix` anchor
+was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
+site-admin user-menu affix for site admins.
 
 ## Current Coverage
 
