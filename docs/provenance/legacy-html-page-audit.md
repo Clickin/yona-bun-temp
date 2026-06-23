@@ -47,11 +47,14 @@ The HTML audit also records `checkedStructuralTokens` and
 or message-key anchors are excluded from `checkedStructuralTokens`; any missing
 structural token now fails the smoke.
 
-`pnpm smoke:legacy-e2e-render-coverage` reads route coverage and scans existing
-Playwright e2e tests for literal `page.goto(...)` navigations that render the
-same Rust route. This does not replace a fresh browser diff, but it separates
-pages already covered by rendered e2e flows from pages that still need one; it
-exits non-zero while any audited URL lacks rendered e2e evidence.
+`pnpm smoke:legacy-e2e-render-coverage` reads route coverage plus the latest
+legacy HTML audit and scans existing Playwright e2e tests for literal
+`page.goto(...)` navigations that render the same Rust route. It now also
+requires the matched e2e source to contain each curl-observed legacy anchor or
+structural token for that page. This does not replace a fresh browser diff, but
+it separates pages covered by rendered e2e flows that assert the legacy signals
+from pages that still need one; it exits non-zero while any audited URL lacks
+rendered e2e or rendered legacy signal evidence.
 
 Latest local run against the homelab instance on 2026-06-23:
 `57` URL checks passed, with `3` expected legacy non-200 observations retained
@@ -86,13 +89,15 @@ was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
 site-admin user-menu affix for site admins.
 
 The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
-Playwright e2e navigation evidence for all `57` audited legacy URLs:
-`57` with rendered e2e evidence, `0` missing. The final 18 route checks are covered
-by `frontend/tests/legacy-rendered-page-audit.e2e.ts`, which renders each page
-and checks the curl-observed legacy anchors against the Rust DOM. Where the
-legacy anchor represents an actual DOM structure token, that e2e file also
-checks selector presence through `id`, `name`, or class lookup. It also checks
-the legacy authenticated sidebar shell (`#mySidenav`,
+Playwright e2e navigation evidence and rendered legacy signal evidence for all
+`57` audited legacy URLs: `57` with rendered e2e evidence, `0` missing, and
+`57` with rendered legacy signal evidence, `0` missing. The
+`frontend/tests/legacy-rendered-page-audit.e2e.ts` file now renders each
+curl-audited public/auth/user/site-admin/sample-project route that lacked
+same-file signal assertions and checks the curl-observed legacy anchors against
+the Rust DOM. Where the legacy anchor represents an actual DOM structure token,
+that e2e file also checks selector presence through `id`, `name`, or class
+lookup. It also checks the legacy authenticated sidebar shell (`#mySidenav`,
 `#usermenu-tab-content-list`, and the three user-menu tab panes), because that
 surface is now a React-rendered root shell rather than a server-returned HTML
 fragment. Direct legacy Java endpoints that returned HTML fragments are treated
@@ -101,10 +106,14 @@ implementation must expose data through API returns and render the equivalent
 legacy UX in React.
 
 Security regression coverage is part of the converted-page smoke surface:
-`frontend/tests/search-parity.e2e.ts` renders hostile search result text and
-asserts that script/image payloads remain inert text, while
+`frontend/tests/legacy-rendered-page-audit.e2e.ts` renders legacy issue-detail
+title/body XSS payloads and asserts that script nodes and image/event-handler
+payloads do not execute; `frontend/tests/search-parity.e2e.ts` renders hostile
+search result text and asserts that script/image payloads remain inert text.
 `crates/server/tests/search_contract.rs` checks that SQL metacharacters in a
-search keyword do not widen results.
+search keyword do not widen results. The DB smoke matrix must keep this class of
+probe as a literal keyword check for SQLite, PostgreSQL, MySQL, and the adopted
+legacy MariaDB dump scenario rather than treating it as a query fragment.
 
 That rendered pass also found a dev-only proxy mismatch: Vite was proxying
 `/lostPassword` GET requests to the backend, so direct React route rendering of

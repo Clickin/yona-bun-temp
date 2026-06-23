@@ -433,12 +433,12 @@ test("treats canonical migration crate as active canonical work, not deferred sc
   );
 });
 
-test("blocks explicitly deferred second-priority legacy capabilities", () => {
-  const result = runGate(["crates/vcs/src/svn/service.rs"]);
+test("blocks second-priority legacy capabilities without closure evidence", () => {
+  const result = runGate(["crates/integrations/src/ldap/service.rs"]);
 
   assert.equal(result.verdict, "block");
   assert.equal(shouldBlockForStrictGate(result), true);
-  assert.match(formatParitySummary(result), /deferred|follow-up/i);
+  assert.match(formatParitySummary(result), /without tests|provenance|legacy references/i);
 });
 
 test("blocks implementation paths that are not mapped to any parity capability", () => {
@@ -454,6 +454,17 @@ test("passes runtime foundation config changes when spec and provenance updates 
     "frontend/src/runtime-config.ts",
     "frontend/src/runtime-config.spec.ts",
     "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+});
+
+test("passes root shell changes when legacy HTML audit provenance updates land together", () => {
+  const result = runGate([
+    "frontend/src/routes/__root.tsx",
+    "frontend/tests/legacy-rendered-page-audit.e2e.ts",
+    "docs/provenance/legacy-html-page-audit.md",
   ]);
 
   assert.equal(result.verdict, "pass");

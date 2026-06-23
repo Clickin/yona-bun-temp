@@ -200,7 +200,7 @@ function RootUserMenu() {
   }
 
   return (
-    <ul className="gnb-usermenu">
+    <ul className="gnb-outer gnb-usermenu">
       {currentSession.isSiteAdmin ? (
         <li className="gnb-usermenu-item admin-logged-in-affix">
           <a
