@@ -39,11 +39,14 @@ explicitly retained as non-blocking with legacy evidence.
 | R8 | Markdown/Highlight.js breadth | Closed by 2026-06-23 re-audit as non-blocking sample-driven scope. Current renderer has broad legacy marked/Highlight.js samples; no newly proven failing legacy sample was found for this closure pass. | Add focused failing legacy samples only when found; do not rewrite the renderer for theoretical GFM/Highlight.js completeness. |
 | R9 | Kubernetes manifests | Closed by 2026-06-23 re-audit as non-baseline. Maintained manifests are not part of the release baseline; Kubernetes remains operator packaging guidance for the Docker/SFX contract. | `docs/deployment/kubernetes-reference.md` and `tests/kubernetes-guidance-contract.test.mjs` stay current. |
 | R10 | External search engines | Closed by 2026-06-23 re-audit as out of scope. Search remains DB-native FTS/query where supported with literal fallback; there is no legacy external search API route. | No Elastic/OpenSearch implementation unless `SPEC.md` changes. |
+| R11 | SVN commit detail comments | Active gap found during 2026-06-23 completion audit. Legacy `CodeHistoryApp.show/newComment/deleteComment` supports SVN commit diff comments via `CommitComment`, `svnDiff.scala.html`, attachment move, delete redirect, and `NotificationEvent.afterNewSVNCommitComment`; current Rust commit discussion evidence is Git-centered. | Implement SVN commit detail/comment/delete parity or prove by code/tests that the current commit discussion path covers SVN projects. Evidence must cite legacy `CodeHistoryApp` and current `crates/server/src/routes/code.rs`/contract coverage. |
 
 ## Execution Order
 
 1. R5 through R10 reclassification checks are complete as of 2026-06-23. No new
    legacy evidence required implementation before improvement work.
+2. R11 is the next active implementation/re-audit slice before claiming full
+   legacy feature parity.
 
 ## Completion Gate
 

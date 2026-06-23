@@ -3,20 +3,20 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-06-21
+Last updated: 2026-06-23
 
 ## Progress Estimate
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~50% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
-| Current first-priority conversion scope | audit closed; completion review ongoing | App-runtime `core-parity-audit.md` no longer has active `semantic-drift`, `ux-drift`, `missing`, or `gap` rows. `docs/provenance/first-priority-completion-review.md` tracks closure evidence for settings migration, migration/adopt, Smart HTTP, single-binary, Docker, and full gates. Remaining named gaps are deferred/follow-up scopes such as production migration/import hardening, broader external-directory/OAuth edge behavior beyond the bounded runtime slices, app-wide i18n opt-in, and broader legacy external API/migrator compatibility. |
+| Full legacy Yona parity                 | closure ledger complete; release gates still required | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separated migrator/external API compatibility. |
+| Current first-priority conversion scope | audit closed; deferred rows closed or non-blocking | App-runtime `core-parity-audit.md` no longer has active `semantic-drift`, `ux-drift`, `missing`, or `gap` rows. `docs/provenance/first-priority-completion-review.md`, `docs/provenance/deferred-parity-closure-inventory.md`, and `docs/plans/2026-06-23-remaining-deferred-parity-execution.md` track closure evidence for settings migration, migration/adopt, Smart HTTP, single-binary, Docker, import/export hardening, OAuth/LDAP, i18n, legacy external API boundaries, and full gates. |
 | Mechanical SPEC row count               |     ~49% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3L closes Git browser/history/compare/branch-admin/provisioning/Smart HTTP transport and push post-receive rows, Phase 3N mounts the SVN auth/DAV boundary, Phase 4B closes PR interaction rows, the fork/clone slice closes native bare-repo fork creation, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, user statistics counts, plus site-admin mail/mass-mail are now implemented while remaining full-product rows are tracked as deferred or follow-up scope. |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
-- The app-runtime first-priority core parity audit is closed at the provenance-row level; full goal completion still requires closing `docs/provenance/first-priority-completion-review.md` rather than treating deferred second-priority or migrator scope as implemented.
+- The app-runtime first-priority core parity audit is closed at the provenance-row level, and the 2026-06-23 deferred closure directive records every remaining row as implemented, retired by re-audit, or explicitly non-blocking/not-applicable.
 - Legacy `PullRequestApp.doClone` direct fork creation is restored as `POST /:owner/:project/clone`, returning the legacy `{status,url}` JSON wrapper while reusing the app fork implementation for native bare repository clone and `original_project_id` persistence.
 - Workspace and public profile PR streams now follow legacy `user/partial_pullRequests.scala.html` scalar output for PR number, author/no-author fallback, comment icon counts, receiver avatar shell, and `pullRequest.state.*` state labels instead of temporary English prefixes.
 - Workspace and public profile project streams now follow legacy `user/partial_projectlist.scala.html` scalar output for `project.onmember`, owner link, created date title scalar, `project.codeUpdate` title scalar, and stats badge shell instead of temporary `Owner:` / `Created` / `Updated` / `State:` / `Members:` / `Watchers:` prefixes.
