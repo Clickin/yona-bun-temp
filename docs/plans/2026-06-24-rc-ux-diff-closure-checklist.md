@@ -76,7 +76,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `pass`      |
 | `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `pass`      |
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `pass`      |
-| `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `unchecked` |
+| `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `pass`      |
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `unchecked` |
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `unchecked` |
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
@@ -172,6 +172,30 @@ src/auth-workspace-shell.spec.tsx src/route-parity.spec.tsx` passed with 6
   `direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_email_state`,
   `direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates_api_token`,
   and `direct_legacy_reset_visited_and_default_login_page_routes_match_workspace_state`.
+
+### `rc-ux-search-notification`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for
+  `/search?keyword=yona&searchType=auto`, `/notifications`, and
+  `/notification?from=0&limit=20`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, and `e2e-render-coverage.json` map those paths to
+  Rust routes and rendered legacy signal evidence, including `search`, `keyword`,
+  and `notification`.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/search-i18n.spec.tsx
+src/directory-home-user-files-notification-i18n.spec.tsx
+src/user-profile-route-loading-shell-i18n.spec.tsx src/route-parity.spec.tsx`
+  passed with 4 files and 68 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/search-parity.e2e.ts` passed outside the sandbox with 6 tests, including
+  hostile search result text rendered as inert text.
+- Backend verification: these focused contracts passed outside the sandbox:
+  `search_contract::global_search_treats_sql_injection_probe_as_plain_keyword`,
+  `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
+  and
+  `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
 
 ## Goal Packet Template
 
