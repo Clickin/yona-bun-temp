@@ -72,7 +72,7 @@ Each goal packet should close these checks for its page group:
 
 | Goal packet                  | Legacy surface                                                                                                                                                                                                                       | Required evidence                                                                                                                                            | Status      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| `rc-ux-public-auth`          | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/_help`                                                                                                                                                              | Public/auth route, copy, form, redirect, validation, and direct backend route parity.                                                                        | `unchecked` |
+| `rc-ux-public-auth`          | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/_help`                                                                                                                                                              | Public/auth route, copy, form, redirect, validation, and direct backend route parity.                                                                        | `pass`      |
 | `rc-ux-auth-shell`           | Logged-in `/`, global navigation, user menu, sidebar, notification affordances                                                                                                                                                       | React-rendered root shell matches legacy navbar, `#mySidenav`, user menu tab panes, site-admin affix, and notification entry points.                         | `unchecked` |
 | `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `unchecked` |
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `unchecked` |
@@ -87,6 +87,30 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                     | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `unchecked` |
 | `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                    | XSS, SQLi literal keyword behavior, long SQL fenced code block fallback, and invalid Markdown recovery stay green.                                           | `unchecked` |
 | `rc-ux-db-migration-smoke`   | Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL/MariaDB runtime matrix                                                                                                                                                         | In-place legacy MariaDB adopt and supported DB matrix prove the same pages work from migrated data, including DB-specific search behavior.                   | `unchecked` |
+
+## Closed Row Evidence
+
+### `rc-ux-public-auth`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/`, `/users/loginform`,
+  `/users/signupform`, `/lostPassword`, and `/_help`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, and `e2e-render-coverage.json` map those paths to
+  Rust routes and rendered legacy signal evidence.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/wave1-auth-workspace-parity.spec.tsx src/auth-workspace-shell.spec.tsx
+src/help-route-parity.spec.tsx src/route-parity.spec.tsx` passed with 4 files
+  and 129 tests.
+- Backend direct-route verification: `pnpm agent:cargo-test --
+--outside-sandbox -p yona-rust-pilot-server --test auth_workspace_contract
+direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate
+-- --nocapture` passed.
+- Note: the broader filtered cargo command `pnpm agent:cargo-test --
+--outside-sandbox -p yona-rust-pilot-server auth_workspace_contract --
+--nocapture` currently fails before running this row's tests because
+  `crates/server/tests/server_core_contract.rs` references missing module
+  `protocol_foundation_contract`.
 
 ## Goal Packet Template
 
