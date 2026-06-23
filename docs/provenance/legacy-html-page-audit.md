@@ -126,18 +126,18 @@ The initial curl baseline covers:
 - Site-admin pages: `/sites/userList`, `/sites/projectList`, `/sites/postList`,
   `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`,
   `/sites/diagnostic`, `/sites/data`
-- Discovered sample project pages from `/projects`, currently `/admin/sample/**`
-  for home, issue list/detail/label settings/create, board list/create,
-  milestone list/create, pull-request list/create/review, code, member, watcher,
-  settings, webhook, delete, transfer, fork, statistics, and change-VCS
-  surfaces.
+- Discovered project pages from every project root exposed by `/projects`;
+  the current homelab snapshot exposes `/admin/sample/**` for home, issue
+  list/detail/label settings/create, board list/create, milestone list/create,
+  pull-request list/create/review, code, member, watcher, settings, webhook,
+  delete, transfer, fork, statistics, and change-VCS surfaces.
 - Discovered user profile page: `/admin`.
 
 ## Remaining Work Before Claiming All-Page Parity
 
 - Compare richer DOM structure/content beyond the current anchor smoke where
   the anchor-level check is too weak to catch visual or copy drift.
-- Extend discovery beyond the first project when the homelab instance contains
-  multiple projects or organizations with distinct route states.
+- Add organization-specific page templates once `/orgs` exposes concrete
+  organization roots with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes
   available; browser diff remains stronger evidence for interactive UI parity.

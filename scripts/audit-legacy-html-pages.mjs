@@ -244,51 +244,65 @@ function discoverProjectPages() {
     "user",
     "users",
   ]);
-  const matches = [...response.html.matchAll(/href="\/([^/?#"']+)\/([^/?#"']+)"/g)]
-    .map((match) => `${match[1]}/${match[2]}`)
-    .filter((path) => !blockedOwners.has(path.split("/")[0]))
-    .filter((path) => !path.includes("."));
-  const projectPath = matches[0];
-  if (!projectPath) {
-    return [];
-  }
+  const projectPaths = [
+    ...new Set(
+      [...response.html.matchAll(/href="\/([^/?#"']+)\/([^/?#"']+)"/g)]
+        .map((match) => `${match[1]}/${match[2]}`)
+        .filter((path) => !blockedOwners.has(path.split("/")[0]))
+        .filter((path) => !path.includes(".")),
+    ),
+  ].sort();
   return [
-    { path: `/${projectPath}`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/issues`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/issue/1`, anchors: ["project-header-outer", "project-menu-outer"] },
-    {
-      path: `/${projectPath}/issue/labelsform`,
-      anchors: ["project-header-outer", "project-menu-outer"],
-    },
-    { path: `/${projectPath}/issueform`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/posts`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/postform`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/milestones`, anchors: ["project-header-outer", "project-menu-outer"] },
-    {
-      path: `/${projectPath}/newMilestoneForm`,
-      anchors: ["project-header-outer", "project-menu-outer"],
-    },
-    {
-      path: `/${projectPath}/pullRequests`,
-      anchors: ["project-header-outer", "project-menu-outer"],
-    },
-    { path: `/${projectPath}/newPullRequestForm`, anchors: [], statuses: [200, 400] },
-    { path: `/${projectPath}/reviews`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/code`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/commits`, anchors: [], statuses: [200, 404] },
-    { path: `/${projectPath}/branches`, anchors: [], statuses: [200, 500] },
-    { path: `/${projectPath}/members`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/watchers`, anchors: ["project-header-outer", "project-menu-outer"] },
-    {
-      path: `/${projectPath}/settingform`,
-      anchors: ["project-header-outer", "project-menu-outer"],
-    },
-    { path: `/${projectPath}/webhooks`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/deleteform`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/transfer`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/newFork`, anchors: ["project-header-outer", "project-menu-outer"] },
-    { path: `/${projectPath}/statistics`, anchors: ["project-header-outer"] },
-    { path: `/${projectPath}/changeVCS`, anchors: ["project-header-outer", "project-menu-outer"] },
+    ...projectPaths.flatMap((projectPath) => [
+      { path: `/${projectPath}`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/issues`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/issue/1`, anchors: ["project-header-outer", "project-menu-outer"] },
+      {
+        path: `/${projectPath}/issue/labelsform`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      {
+        path: `/${projectPath}/issueform`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      { path: `/${projectPath}/posts`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/postform`, anchors: ["project-header-outer", "project-menu-outer"] },
+      {
+        path: `/${projectPath}/milestones`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      {
+        path: `/${projectPath}/newMilestoneForm`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      {
+        path: `/${projectPath}/pullRequests`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      { path: `/${projectPath}/newPullRequestForm`, anchors: [], statuses: [200, 400] },
+      { path: `/${projectPath}/reviews`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/code`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/commits`, anchors: [], statuses: [200, 404] },
+      { path: `/${projectPath}/branches`, anchors: [], statuses: [200, 500] },
+      { path: `/${projectPath}/members`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/watchers`, anchors: ["project-header-outer", "project-menu-outer"] },
+      {
+        path: `/${projectPath}/settingform`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      { path: `/${projectPath}/webhooks`, anchors: ["project-header-outer", "project-menu-outer"] },
+      {
+        path: `/${projectPath}/deleteform`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+      { path: `/${projectPath}/transfer`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/newFork`, anchors: ["project-header-outer", "project-menu-outer"] },
+      { path: `/${projectPath}/statistics`, anchors: ["project-header-outer"] },
+      {
+        path: `/${projectPath}/changeVCS`,
+        anchors: ["project-header-outer", "project-menu-outer"],
+      },
+    ]),
   ];
 }
 
