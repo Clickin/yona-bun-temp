@@ -26,7 +26,9 @@ function routeKey(input) {
     !cleanPath.startsWith("/sites/") &&
     !cleanPath.startsWith("/organizations/")
   ) {
-    return `/$owner/$projectName${projectMatch.groups.suffix ?? ""}`;
+    let suffix = projectMatch.groups.suffix ?? "";
+    suffix = suffix.replace(/^\/issue\/\d+$/, "/issue/$issueNumber");
+    return `/$owner/$projectName${suffix}`;
   }
 
   return cleanPath;

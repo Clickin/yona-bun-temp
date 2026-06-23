@@ -53,41 +53,40 @@ pages already covered by rendered e2e flows from pages that still need one; it
 exits non-zero while any audited URL lacks rendered e2e evidence.
 
 Latest local run against the homelab instance on 2026-06-23:
-`50` URL checks passed, with `3` expected legacy non-200 observations retained
+`57` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
 
 - `/admin/sample/newPullRequestForm` returned `400`
 - `/admin/sample/commits` returned `404`
 - `/admin/sample/branches` returned `500`
 
-That same run discovered `51` unique internal page links from the audited SSR
-HTML. `9` discovered page candidates are not yet in the audited URL set:
-`/admin`, `/admin/sample/deleteform`, `/admin/sample/issue/1`,
-`/admin/sample/issue/labelsform`, `/admin/sample/newFork`,
-`/admin/sample/reviews`, `/admin/sample/transfer`, `/info`, and
-`/sites/export`.
+That same run discovered `49` unique internal page links from the audited SSR
+HTML after filtering assets, API/action URLs, `/sites/export` download, and the
+legacy `/info` broken help link. `0` discovered page links remain unaudited.
 
-The same `50` audited URLs route-map to Rust frontend routes with
-`pnpm smoke:legacy-route-coverage`: `50` routed, `0` missing. Query-bearing and
+The same `57` audited URLs route-map to Rust frontend routes with
+`pnpm smoke:legacy-route-coverage`: `57` routed, `0` missing. Query-bearing and
 sample-data URLs are normalized to their TanStack `fullPath`, for example
 `/search?keyword=...` to `/search`, `/sites/userList` to `/sites/$pageName`,
-and `/admin/sample/issues` to `/$owner/$projectName/issues`.
+`/admin` to `/$user`, `/admin/sample/issues` to
+`/$owner/$projectName/issues`, and `/admin/sample/issue/1` to
+`/$owner/$projectName/issue/$issueNumber`.
 
-The same `50` routed URLs have frontend parity spec evidence with
-`pnpm smoke:legacy-parity-spec-coverage`: `50` with spec evidence, `0` missing.
+The same `57` routed URLs have frontend parity spec evidence with
+`pnpm smoke:legacy-parity-spec-coverage`: `57` with spec evidence, `0` missing.
 This pass found a missing explicit alias assertion for `/user/issues/new/mine`;
 `frontend/src/route-parity.spec.tsx` now pins that route to
 `DirectIssueCreateFormRouteComponent mine={true}`.
 
-The latest `pnpm smoke:legacy-anchor-coverage` run checks `90` curl-observed
-legacy anchors across those pages: `90` with Rust evidence, `0` missing. This
+The latest `pnpm smoke:legacy-anchor-coverage` run checks `104` curl-observed
+legacy anchors across those pages: `104` with Rust evidence, `0` missing. This
 pass found that the logged-in root page's legacy `admin-logged-in-affix` anchor
 was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
 site-admin user-menu affix for site admins.
 
 The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
-Playwright e2e navigation evidence for all `50` audited legacy URLs:
-`50` with rendered e2e evidence, `0` missing. The final 17 routes are covered
+Playwright e2e navigation evidence for all `57` audited legacy URLs:
+`57` with rendered e2e evidence, `0` missing. The final 18 route checks are covered
 by `frontend/tests/legacy-rendered-page-audit.e2e.ts`, which renders each page
 and checks the curl-observed legacy anchors against the Rust DOM. Where the
 legacy anchor represents an actual DOM structure token, that e2e file also
@@ -114,8 +113,11 @@ The initial curl baseline covers:
   `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`,
   `/sites/diagnostic`, `/sites/data`
 - Discovered sample project pages from `/projects`, currently `/admin/sample/**`
-  for home, issue, board, milestone, pull-request, code, member, watcher,
-  settings, webhook, statistics, and change-VCS surfaces.
+  for home, issue list/detail/label settings/create, board list/create,
+  milestone list/create, pull-request list/create/review, code, member, watcher,
+  settings, webhook, delete, transfer, fork, statistics, and change-VCS
+  surfaces.
+- Discovered user profile page: `/admin`.
 
 ## Remaining Work Before Claiming All-Page Parity
 
@@ -124,8 +126,6 @@ The initial curl baseline covers:
 - Classify diagnostic structural-token misses into real selector gaps versus
   expected text/template-only anchors, then promote the real selector set into
   a hard rendered-page check.
-- Promote the discovered unaudited page candidates into the canonical curl
-  audit after classifying legacy status and minimum anchors for each page.
 - Extend discovery beyond the first project when the homelab instance contains
   multiple projects or organizations with distinct route states.
 - Revisit Playwright/browser execution if Chromium local-network routing becomes

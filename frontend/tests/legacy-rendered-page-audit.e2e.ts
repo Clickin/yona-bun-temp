@@ -136,6 +136,16 @@ async function routeAuditApis(page: Page) {
       };
     } else if (path === "/workspace") {
       body = workspaceOverview();
+    } else if (path === "/users/admin/profile") {
+      body = {
+        daysAgo: 0,
+        issueItems: [],
+        memberProjects: [],
+        profile: workspaceOverview().profile,
+        pullRequestItems: [],
+        selected: "activity",
+        viewerCanEditProfile: true,
+      };
     } else if (path === "/workspace/files") {
       body = { files: [], filter: "", page: 1, pageSize: 50, total: 0, totalPages: 0 };
     } else if (path === "/notifications") {
@@ -280,6 +290,11 @@ test("renders legacy audited anchors for /user/editform/token", async ({ page })
 test("renders legacy audited anchors for /sites/data", async ({ page }) => {
   await page.goto("/yona/sites/data");
   await expectLegacySignals(page, ["site-breadcrumb-outer", "data"]);
+});
+
+test("renders legacy audited anchors for /admin profile", async ({ page }) => {
+  await page.goto("/yona/admin");
+  await expectLegacySignals(page, ["user-info-box", "page-wrap-outer"]);
 });
 
 test("renders legacy audited anchors for project home", async ({ page }) => {

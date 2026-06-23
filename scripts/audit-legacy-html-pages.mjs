@@ -51,6 +51,7 @@ const authenticatedPages = [
   { path: "/sites/update", anchors: ["site-breadcrumb-outer", "update"] },
   { path: "/sites/diagnostic", anchors: ["site-breadcrumb-outer", "diagnostic"] },
   { path: "/sites/data", anchors: ["site-breadcrumb-outer", "data"] },
+  { path: "/admin", anchors: ["user-info-box", "page-wrap-outer"] },
 ];
 
 const blockedPageLinkPrefixes = [
@@ -63,8 +64,9 @@ const blockedPageLinkPrefixes = [
   "/noti/toggle/",
   "/users/logout",
 ];
+const blockedPageLinks = new Set(["/info", "/sites/export"]);
 const blockedPageLinkExtensions = /\.(?:css|gif|ico|jpeg|jpg|js|map|png|svg|woff2?)$/u;
-const blockedPageLinkActions = /\/(?:delete|unwatch)(?:\/|$)/u;
+const blockedPageLinkActions = /\/(?:delete|unwatch|vote)(?:\/|$)/u;
 
 function curl(args) {
   const result = spawnSync("curl", ["-sS", "--max-time", "20", ...args], {
@@ -119,6 +121,7 @@ function normalizeDiscoveredPageLink(href) {
     const decodedPathname = decodeURIComponent(url.pathname);
     if (
       /[{}]/u.test(decodedPathname) ||
+      blockedPageLinks.has(url.pathname) ||
       blockedPageLinkPrefixes.some((prefix) => url.pathname.startsWith(prefix)) ||
       blockedPageLinkActions.test(url.pathname) ||
       blockedPageLinkExtensions.test(url.pathname)
@@ -193,6 +196,11 @@ function discoverProjectPages() {
   return [
     { path: `/${projectPath}`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/issues`, anchors: ["project-header-outer", "project-menu-outer"] },
+    { path: `/${projectPath}/issue/1`, anchors: ["project-header-outer", "project-menu-outer"] },
+    {
+      path: `/${projectPath}/issue/labelsform`,
+      anchors: ["project-header-outer", "project-menu-outer"],
+    },
     { path: `/${projectPath}/issueform`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/posts`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/postform`, anchors: ["project-header-outer", "project-menu-outer"] },
@@ -200,6 +208,7 @@ function discoverProjectPages() {
     { path: `/${projectPath}/newMilestoneForm`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/pullRequests`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/newPullRequestForm`, anchors: [], statuses: [200, 400] },
+    { path: `/${projectPath}/reviews`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/code`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/commits`, anchors: [], statuses: [200, 404] },
     { path: `/${projectPath}/branches`, anchors: [], statuses: [200, 500] },
@@ -207,6 +216,9 @@ function discoverProjectPages() {
     { path: `/${projectPath}/watchers`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/settingform`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/webhooks`, anchors: ["project-header-outer", "project-menu-outer"] },
+    { path: `/${projectPath}/deleteform`, anchors: ["project-header-outer", "project-menu-outer"] },
+    { path: `/${projectPath}/transfer`, anchors: ["project-header-outer", "project-menu-outer"] },
+    { path: `/${projectPath}/newFork`, anchors: ["project-header-outer", "project-menu-outer"] },
     { path: `/${projectPath}/statistics`, anchors: ["project-header-outer"] },
     { path: `/${projectPath}/changeVCS`, anchors: ["project-header-outer", "project-menu-outer"] },
   ];

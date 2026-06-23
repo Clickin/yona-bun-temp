@@ -15,6 +15,17 @@ const routeTree = readFileSync(routeTreePath, "utf8");
 const rustRoutes = new Set(
   [...routeTree.matchAll(/fullPath: '([^']+)'/g)].map((match) => match[1].replace(/\/$/, "") || "/"),
 );
+const reservedRootPaths = new Set([
+  "/_help",
+  "/_import",
+  "/lostPassword",
+  "/notification",
+  "/notifications",
+  "/orgs",
+  "/projectform",
+  "/projects",
+  "/search",
+]);
 
 function normalize(path) {
   const cleanPath = path.split("?")[0].replace(/\/$/, "") || "/";
@@ -24,9 +35,14 @@ function normalize(path) {
   if (cleanPath.startsWith("/sites/")) {
     return "/sites/$pageName";
   }
+  if (/^\/[^/]+$/.test(cleanPath) && !reservedRootPaths.has(cleanPath)) {
+    return "/$user";
+  }
   const projectMatch = cleanPath.match(/^\/[^/]+\/[^/]+(?<suffix>\/.*)?$/);
   if (projectMatch && !cleanPath.startsWith("/user/") && !cleanPath.startsWith("/users/")) {
-    return `/$owner/$projectName${projectMatch.groups.suffix ?? ""}`;
+    let suffix = projectMatch.groups.suffix ?? "";
+    suffix = suffix.replace(/^\/issue\/\d+$/, "/issue/$issueNumber");
+    return `/$owner/$projectName${suffix}`;
   }
   return cleanPath;
 }
