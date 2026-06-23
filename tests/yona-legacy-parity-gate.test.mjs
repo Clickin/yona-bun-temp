@@ -183,6 +183,23 @@ test("maps shared frontend view model changes to shared view model evidence", ()
   );
 });
 
+test("maps frontend REST API wrapper changes to the API query boundary slice", () => {
+  const result = runGate([
+    "frontend/src/api/types.ts",
+    "frontend/src/api/milestones.ts",
+    "frontend/src/api/session.ts",
+    "frontend/src/api-query.spec.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["frontend-api-query-boundary"],
+  );
+});
+
 test("maps notification inbox frontend files to the issue notification slice", () => {
   const result = runGate([
     "frontend/src/api/notifications.ts",

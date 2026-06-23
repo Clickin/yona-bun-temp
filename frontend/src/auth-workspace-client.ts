@@ -1,67 +1,30 @@
-import type { MessageInitShape } from "@bufbuild/protobuf";
-import {
-  AcceptOrganizationEnrollmentRequestSchema,
-  AddOrganizationMemberRequestSchema,
-  ChangePasswordRequestSchema,
-  AssignIssueRequestSchema,
-  CreateIssueCommentRequestSchema,
-  CreateIssueRequestSchema,
-  CreateProjectMilestoneRequestSchema,
-  CreateProjectLabelCategoryRequestSchema,
-  CreateProjectLabelRequestSchema,
-  DeleteIssueCommentRequestSchema,
-  CreateOrganizationRequestSchema,
-  CreateProjectRequestSchema,
-  DeleteIssueRequestSchema,
-  DeleteProjectMilestoneRequestSchema,
-  DeleteProjectLabelCategoryRequestSchema,
-  DeleteProjectLabelRequestSchema,
-  DeleteOrganizationMemberRequestSchema,
-  IssueCommentParticipationRequestSchema,
-  IssueParticipationRequestSchema,
-  IssueShareRequestSchema,
-  MassUpdateIssuesRequestSchema,
-  MilestoneStateMutationRequestSchema,
-  RegisterWithPasswordRequestSchema,
-  SignInWithPasswordRequestSchema,
-  UpdateOrganizationMemberRoleRequestSchema,
-  UpdateProfileRequestSchema,
-  UpdateOrganizationRequestSchema,
-  UpdateProjectRequestSchema,
-  UpdateProjectOverviewRequestSchema,
-  UpdateIssueStateRequestSchema,
-  UpdateIssueCommentRequestSchema,
-  UpdateIssueRequestSchema,
-  UpdateProjectMilestoneRequestSchema,
-  UpdateProjectLabelCategoryRequestSchema,
-  UpdateProjectLabelRequestSchema,
-  VerifyUserRequestSchema,
-  type ListProjectLabelCategoriesResponse,
-  type ListProjectIssuesResponse,
-  type ListProjectLabelsResponse,
-  type ListProjectMilestonesResponse,
-  type MassUpdateIssuesResponse,
-  type OrganizationAdminView,
-  type OrganizationContainer,
-  type OrganizationDetail,
-  type OrganizationRedirectResult,
-  type ListOrganizationsResponse,
-  type ListProjectsResponse,
-  type ProjectContainer,
-  type ProjectDetail,
-  type ProjectLabelCategoryMutationResponse,
-  type ProjectLabelMutationResponse,
-  type ProjectMilestoneDeleteResponse,
-  type ProjectMilestoneMutationResponse,
-  type ReadCodeBrowserResponse,
-  type ReadIssueDetailResponse,
-  type ReadCurrentSessionResponse,
-  type ReadOrganizationMembersResponse,
-  type ReadProjectMembersResponse,
-  type ReadWorkspaceOverviewResponse,
-  type RecordRecentProjectVisitResponse,
-  type ToggleFavoriteProjectResponse,
-} from "./gen/yona/pilot/v1/pilot_pb";
+import type {
+  ListProjectIssuesResponse,
+  ListProjectLabelCategoriesResponse,
+  ListProjectLabelsResponse,
+  ListProjectMilestonesResponse,
+  ListOrganizationsResponse,
+  ListProjectsResponse,
+  MassUpdateIssuesResponse,
+  OrganizationAdminView,
+  OrganizationContainer,
+  OrganizationDetail,
+  OrganizationRedirectResult,
+  ProjectContainer,
+  ProjectDetail,
+  ProjectLabelCategoryMutationResponse,
+  ProjectLabelMutationResponse,
+  ProjectMilestoneDeleteResponse,
+  ProjectMilestoneMutationResponse,
+  ReadCodeBrowserResponse,
+  ReadCurrentSessionResponse,
+  ReadIssueDetailResponse,
+  ReadOrganizationMembersResponse,
+  ReadProjectMembersResponse,
+  ReadWorkspaceOverviewResponse,
+  RecordRecentProjectVisitResponse,
+  ToggleFavoriteProjectResponse,
+} from "./api/types";
 import {
   readAuthUiCapabilitiesRest,
   registerWithPasswordRest,
@@ -173,6 +136,8 @@ import {
 } from "./api/workspace";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
+type RequestInput = Record<string, any>;
+
 export interface SessionBootstrapPayload {
   session: null | {
     csrfToken: string;
@@ -217,7 +182,7 @@ export interface OrganizationIssueListOptions {
   state?: string;
 }
 
-type IssueShareClientInput = MessageInitShape<typeof IssueShareRequestSchema> & {
+type IssueShareClientInput = RequestInput & {
   targetType?: "project" | "user" | string;
 };
 
@@ -428,7 +393,7 @@ export async function readAuthUiCapabilities(
 export async function signInWithPassword(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof SignInWithPasswordRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ) {
   return signInWithPasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
@@ -437,7 +402,7 @@ export async function signInWithPassword(
 export async function registerWithPassword(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof RegisterWithPasswordRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ) {
   return registerWithPasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
@@ -453,7 +418,7 @@ export async function signOut(
 
 export async function verifyUser(
   runtimeConfig: RuntimeConfig,
-  input: MessageInitShape<typeof VerifyUserRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ) {
   return verifyUserRest(runtimeConfig, input, fetchImpl);
@@ -565,10 +530,7 @@ function projectIssueDetailRestPath(
   return `${projectIssuesRestPath(ownerName, projectName)}/${String(issueNumber)}`;
 }
 
-type IssueMutationRestInput = (
-  | MessageInitShape<typeof CreateIssueRequestSchema>
-  | MessageInitShape<typeof UpdateIssueRequestSchema>
-) & {
+type IssueMutationRestInput = (RequestInput | RequestInput) & {
   dueDate?: string;
   isDraft?: boolean;
   isPublish?: boolean;
@@ -595,10 +557,10 @@ function issueMutationRestBody(input: IssueMutationRestInput) {
 
 function issueCommentRestBody(
   input:
-    | (MessageInitShape<typeof CreateIssueCommentRequestSchema> & {
+    | (RequestInput & {
         parentCommentId?: bigint | number | string | null;
       })
-    | MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
+    | RequestInput,
 ) {
   return {
     attachmentIds: input.attachmentIds ?? [],
@@ -607,7 +569,7 @@ function issueCommentRestBody(
   };
 }
 
-function massUpdateIssuesRestBody(input: MessageInitShape<typeof MassUpdateIssuesRequestSchema>) {
+function massUpdateIssuesRestBody(input: RequestInput) {
   return {
     addLabelIds: input.addLabelIds ?? [],
     assigneeLoginId: input.assigneeLoginId ?? "",
@@ -742,7 +704,7 @@ export async function listIssueParentOptions(
 export async function updateIssueState(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateIssueStateRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(
@@ -760,7 +722,7 @@ export async function updateIssueState(
 export async function updateIssueWeight(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateIssueRequestSchema>,
+  input: RequestInput,
   delta: 1 | -1,
   fetchImpl: typeof fetch = fetch,
 ): Promise<IssueWeightResponse> {
@@ -782,7 +744,7 @@ export async function updateIssueWeight(
 export async function createIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateIssueRequestSchema> & {
+  input: RequestInput & {
     dueDate?: string;
     isDraft?: boolean;
     isPublish?: boolean;
@@ -806,7 +768,7 @@ export async function createIssue(
 export async function updateIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateIssueRequestSchema> & {
+  input: RequestInput & {
     dueDate?: string;
     isDraft?: boolean;
     isPublish?: boolean;
@@ -833,7 +795,7 @@ export async function updateIssue(
 export async function deleteIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteIssueRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
   await restFetch(
@@ -854,7 +816,7 @@ export async function deleteIssue(
 export async function createIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateIssueCommentRequestSchema> & {
+  input: RequestInput & {
     parentCommentId?: bigint | number | string | null;
   },
   fetchImpl: typeof fetch = fetch,
@@ -874,7 +836,7 @@ export async function createIssueComment(
 export async function updateIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(
@@ -892,7 +854,7 @@ export async function updateIssueComment(
 export async function deleteIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteIssueCommentRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(
@@ -909,7 +871,7 @@ export async function deleteIssueComment(
 export async function watchIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return watchIssueRest(
@@ -927,7 +889,7 @@ export async function watchIssue(
 export async function unwatchIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return unwatchIssueRest(
@@ -945,7 +907,7 @@ export async function unwatchIssue(
 export async function voteIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return voteIssueRest(
@@ -963,7 +925,7 @@ export async function voteIssue(
 export async function unvoteIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return unvoteIssueRest(
@@ -981,7 +943,7 @@ export async function unvoteIssue(
 export async function voteIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return voteIssueCommentRest(
@@ -1000,7 +962,7 @@ export async function voteIssueComment(
 export async function unvoteIssueComment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return unvoteIssueCommentRest(
@@ -1019,7 +981,7 @@ export async function unvoteIssueComment(
 export async function toggleFavoriteIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return toggleFavoriteIssueRest(
@@ -1037,7 +999,7 @@ export async function toggleFavoriteIssue(
 export async function assignIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof AssignIssueRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return assignIssueRest(
@@ -1144,7 +1106,7 @@ export async function unshareIssue(
 export async function massUpdateIssues(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof MassUpdateIssuesRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<MassUpdateIssuesResponse> {
   return restFetch<MassUpdateIssuesResponse>(
@@ -1180,7 +1142,7 @@ export async function listProjectLabelCategories(
 export async function createProjectLabel(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateProjectLabelRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
   return createProjectLabelRest(
@@ -1201,7 +1163,7 @@ export async function createProjectLabel(
 export async function updateProjectLabel(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectLabelRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
   return updateProjectLabelRest(
@@ -1222,7 +1184,7 @@ export async function updateProjectLabel(
 export async function deleteProjectLabel(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteProjectLabelRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
   await deleteProjectLabelRest(
@@ -1254,7 +1216,7 @@ export async function copyProjectLabels(
 export async function createProjectLabelCategory(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateProjectLabelCategoryRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
   return createProjectLabelCategoryRest(
@@ -1273,7 +1235,7 @@ export async function createProjectLabelCategory(
 export async function updateProjectLabelCategory(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectLabelCategoryRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
   return updateProjectLabelCategoryRest(
@@ -1293,7 +1255,7 @@ export async function updateProjectLabelCategory(
 export async function deleteProjectLabelCategory(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteProjectLabelCategoryRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
   await deleteProjectLabelCategoryRest(
@@ -1331,7 +1293,7 @@ export async function readProjectMilestone(
 export async function createProjectMilestone(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateProjectMilestoneRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
   return createProjectMilestoneRest(
@@ -1353,7 +1315,7 @@ export async function createProjectMilestone(
 export async function updateProjectMilestone(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectMilestoneRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
   return updateProjectMilestoneRest(
@@ -1376,7 +1338,7 @@ export async function updateProjectMilestone(
 export async function deleteProjectMilestone(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteProjectMilestoneRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneDeleteResponse> {
   return deleteProjectMilestoneRest(
@@ -1394,7 +1356,7 @@ export async function deleteProjectMilestone(
 export async function openProjectMilestone(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
   return openProjectMilestoneRest(
@@ -1412,7 +1374,7 @@ export async function openProjectMilestone(
 export async function closeProjectMilestone(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
   return closeProjectMilestoneRest(
@@ -1439,7 +1401,7 @@ export async function setDefaultLandingPath(
 export async function updateProfile(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProfileRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
   return updateProfileRest(runtimeConfig, csrfToken, input, fetchImpl);
@@ -1448,7 +1410,7 @@ export async function updateProfile(
 export async function changePassword(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof ChangePasswordRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ) {
   return changePasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
@@ -1524,7 +1486,7 @@ export async function toggleWorkspaceNotification(
 export async function createOrganization(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateOrganizationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
   return createOrganizationRest(
@@ -1581,7 +1543,7 @@ export async function readOrganizationMembers(
 export async function updateOrganization(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateOrganizationRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
   return updateOrganizationRest(
@@ -1599,7 +1561,7 @@ export async function updateOrganization(
 export async function addOrganizationMember(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof AddOrganizationMemberRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
   return addOrganizationMemberRest(
@@ -1616,7 +1578,7 @@ export async function addOrganizationMember(
 export async function updateOrganizationMemberRole(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateOrganizationMemberRoleRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
   return updateOrganizationMemberRoleRest(
@@ -1634,7 +1596,7 @@ export async function updateOrganizationMemberRole(
 export async function deleteOrganizationMember(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof DeleteOrganizationMemberRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
   return deleteOrganizationMemberRest(
@@ -1651,7 +1613,7 @@ export async function deleteOrganizationMember(
 export async function acceptOrganizationEnrollment(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof AcceptOrganizationEnrollmentRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
   return acceptOrganizationEnrollmentRest(
@@ -1704,7 +1666,7 @@ export async function deleteOrganization(
 export async function createProject(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateProjectRequestSchema> & ProjectMenuSettingsInput,
+  input: RequestInput & ProjectMenuSettingsInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
   return createProjectRest(
@@ -1761,7 +1723,7 @@ export async function readProjectMembers(
 export async function updateProject(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectRequestSchema> & ProjectMenuSettingsInput,
+  input: RequestInput & ProjectMenuSettingsInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
   return updateProjectRest(
@@ -1832,7 +1794,7 @@ export async function readCodeBrowser(
 export async function updateProjectOverview(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectOverviewRequestSchema>,
+  input: RequestInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectContainer> {
   return updateProjectOverviewRest(

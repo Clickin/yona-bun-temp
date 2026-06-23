@@ -4,7 +4,7 @@ import type {
   ReadAuthUiCapabilitiesResponse,
   ReadCurrentSessionResponse,
   VerifyUserResponse,
-} from "../gen/yona/pilot/v1/pilot_pb";
+} from "./types";
 
 export function readAuthUiCapabilitiesRest(
   runtimeConfig: RuntimeConfig,

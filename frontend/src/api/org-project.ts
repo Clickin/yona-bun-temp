@@ -11,7 +11,7 @@ import type {
   ReadOrganizationMembersResponse,
   ReadProjectMembersResponse,
   ToggleFavoriteProjectResponse,
-} from "../gen/yona/pilot/v1/pilot_pb";
+} from "./types";
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";

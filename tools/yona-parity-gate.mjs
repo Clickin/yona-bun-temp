@@ -199,6 +199,7 @@ const DOMAIN_BUCKETS = [
     label: "Frontend API query boundary",
     status: "partial",
     implementationPatterns: [
+      /^frontend\/src\/api\/(?:milestones|session|types)\.ts$/i,
       /^frontend\/src\/api\/query-keys\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
     ],

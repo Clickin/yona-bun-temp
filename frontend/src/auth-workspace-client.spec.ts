@@ -1190,6 +1190,7 @@ describe("REST auth wrappers", () => {
       password: "doorpass1",
       rememberMe: true,
     });
+    expect(requestInit.body).not.toContain("$typeName");
     expect(result.loginId).toBe("door");
   });
 

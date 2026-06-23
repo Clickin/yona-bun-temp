@@ -4,7 +4,7 @@ import type {
   WorkspaceMemberProjectItem,
   WorkspaceProfile,
   WorkspacePullRequestItem,
-} from "../gen/yona/pilot/v1/pilot_pb";
+} from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";

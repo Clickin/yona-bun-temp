@@ -2,7 +2,7 @@ import type {
   ReadCurrentSessionResponse,
   ReadWorkspaceOverviewResponse,
   RecordRecentProjectVisitResponse,
-} from "../gen/yona/pilot/v1/pilot_pb";
+} from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { restFetch, type RestFetchOptions } from "./rest-client";
 
@@ -60,7 +60,7 @@ function normalizeWorkspaceOverview(
     issueItems: response.issueItems ?? [],
     memberProjects: response.memberProjects ?? [],
     profile: response.profile
-      ? {
+      ? ({
           ...response.profile,
           avatarUrl: response.profile.avatarUrl ?? "",
           connectedSocialProviders: response.profile.connectedSocialProviders ?? [],
@@ -72,7 +72,7 @@ function normalizeWorkspaceOverview(
           loginId: response.profile.loginId ?? "",
           primaryEmailAddress: response.profile.primaryEmailAddress ?? "",
           sinceLabel: response.profile.sinceLabel ?? "",
-        } as NonNullable<ReadWorkspaceOverviewResponse["profile"]>
+        } as NonNullable<ReadWorkspaceOverviewResponse["profile"]>)
       : undefined,
     pullRequestItems: response.pullRequestItems ?? [],
     recentProjects: response.recentProjects ?? [],

@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { ReadIssueDetailResponse } from "../gen/yona/pilot/v1/pilot_pb";
+import type { ReadIssueDetailResponse } from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";

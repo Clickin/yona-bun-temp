@@ -2,7 +2,7 @@ import type {
   ListProjectMilestonesResponse,
   ProjectMilestoneDeleteResponse,
   ProjectMilestoneMutationResponse,
-} from "../gen/yona/pilot/v1/pilot_pb";
+} from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { restFetch } from "./rest-client";
 
@@ -38,7 +38,10 @@ function projectPath(ownerName: string, projectName: string, suffix = ""): strin
   return `/owners/${encodeURIComponent(ownerName)}/projects/${encodeURIComponent(projectName)}${suffix}`;
 }
 
-function milestonePath(input: ProjectScope & { milestoneId: bigint | number }, suffix = ""): string {
+function milestonePath(
+  input: ProjectScope & { milestoneId: bigint | number },
+  suffix = "",
+): string {
   return `${projectPath(input.ownerName, input.projectName)}/milestones/${toInt64Number(
     input.milestoneId,
   )}${suffix}`;
@@ -172,16 +175,12 @@ export function updateProjectMilestoneRest(
   input: ProjectMilestoneInput & { title: string },
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return restFetch<ProjectMilestoneMutationResponse>(
-    runtimeConfig,
-    milestonePath(input),
-    {
-      body: milestoneBody(input),
-      csrfToken,
-      fetchImpl,
-      method: "PATCH",
-    },
-  ).then(normalizeMilestoneMutationResponse);
+  return restFetch<ProjectMilestoneMutationResponse>(runtimeConfig, milestonePath(input), {
+    body: milestoneBody(input),
+    csrfToken,
+    fetchImpl,
+    method: "PATCH",
+  }).then(normalizeMilestoneMutationResponse);
 }
 
 export function deleteProjectMilestoneRest(
