@@ -1,7 +1,7 @@
 # Deferred Parity Closure Inventory
 
 > Status: current closure ledger for the deferred parity goal directive.
-> Source of truth remains `AGENTS.md`, `SPEC.md`, `docs/plans/2026-06-21-deferred-parity-goal-directive.md`, and the narrower provenance documents referenced below.
+> Source of truth remains `AGENTS.md`, `SPEC.md`, `docs/plans/2026-06-21-deferred-parity-goal-directive.md`, `docs/plans/2026-06-23-remaining-deferred-parity-execution.md`, and the narrower provenance documents referenced below.
 
 Last updated: 2026-06-23
 
@@ -9,7 +9,7 @@ Last updated: 2026-06-23
 
 The checked canonical/provenance documents no longer show an active first-priority app-runtime parity blocker. The remaining items are either production migration/data-safety hardening, evidence-driven follow-up, or explicitly not-applicable/out-of-scope surfaces.
 
-Do not start product-improvement work by treating these as silently implemented. The deferred goal directive is complete only when each row below is either implemented with tests/provenance or deliberately accepted as a non-blocking follow-up with the listed rationale.
+Do not start product-improvement work by treating these as silently implemented. The deferred goal directive is complete only when each row below is implemented, retired by re-audit, or deliberately accepted as a non-blocking follow-up through `docs/plans/2026-06-23-remaining-deferred-parity-execution.md`.
 
 ## Remaining Items
 
@@ -22,7 +22,7 @@ Do not start product-improvement work by treating these as silently implemented.
 | Broad legacy `/-_-api/v1/**` compatibility | Current migrator/tool boundary closed for known value. App server owns only direct helper rows; broad runtime compatibility is rejected. | Future depth needs a concrete migration/operator replay flow and must stay in `crates/migration/src/legacy_external/**`, not broad app-runtime routes. |
 | Legacy outbound GitHub migration under `/migration` | Optional external destination-adapter follow-up. Evidence points to Yona-to-GitHub export/migration, not GitHub-to-Yona import; `/_import` Git URL clone is already separate and implemented. | Keep GitHub-to-Rust import not-applicable unless legacy evidence appears. Implement outbound GitHub API fixtures only if that migration-tool destination is revived. |
 | Full GFM/Highlight.js Markdown breadth | Evidence-backed app-runtime Markdown coverage is closed; full parser/highlighter breadth remains sample-driven follow-up. | Add only focused legacy samples that fail current rendering. Do not replace the renderer or chase unsupported Markdown breadth as product improvement. |
-| Analytics/custom navbar config | Deferred/follow-up boundary named in `SPEC.md` Appendix A; no active deferred-goal implementation slice currently owns it. | Before improvement, either re-audit legacy evidence and add a bounded directive slice, or explicitly keep it outside the current parity closure. |
+| Analytics/custom navbar config | Active re-audit slice in `docs/plans/2026-06-23-remaining-deferred-parity-execution.md`. Legacy evidence exists for `Application.SEND_YONA_USAGE`, the layout GA script, and `application.navbar.custom.link.name/url`; the checked navbar view did not directly render the custom link. | Execute R2/R3 before improvement: either implement the proven surface with tests or record not-applicable decisions with legacy source citations. |
 | Kubernetes manifests | Non-baseline deployment follow-up. Release baseline remains SFX plus Docker/base-path; reference-only operator guidance exists. | Do not block parity on k8s unless maintained manifests become part of the release baseline. |
 | External search engines | Out of scope. App search now uses DB-native FTS where supported with literal-scan fallback. | Keep Elastic/OpenSearch out of parity and future tuning unless a new product scope replaces the DB-native decision. |
 

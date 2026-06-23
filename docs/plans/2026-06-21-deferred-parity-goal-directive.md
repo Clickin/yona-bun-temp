@@ -105,8 +105,7 @@ P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
   first runs `validate_only` and asserts no `seaql_migrations` table is written,
   then runs `adopt` and asserts the baseline marker is written while fixture data
   remains. Live MariaDB evidence is no longer blocked on fixture availability.
-  The
-  refreshed focused command
+  The refreshed focused command
   `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration runtime_schema_contract -- --nocapture`
   passed on 2026-06-21.
 - P0-C packaging smoke: `pnpm smoke:embedded-assets` passed on 2026-06-21,
@@ -656,6 +655,9 @@ The main orchestrator runs this phase after all subagent slices are merged.
 `docs/provenance/deferred-parity-closure-inventory.md` is the closure ledger
 for deciding whether any remaining deferred/unimplemented item blocks the shift
 from 1:1 conversion work to improvement work.
+`docs/plans/2026-06-23-remaining-deferred-parity-execution.md` is the active
+execution queue for closing those rows; the MariaDB dump smoke is only R0 in
+that queue, not the whole deferred goal.
 
 - Run the parity gate and confirm the core audit has no active first-priority or
   second-priority rows mislabeled as generic gaps.
@@ -671,6 +673,9 @@ from 1:1 conversion work to improvement work.
 - Confirm every row in `docs/provenance/deferred-parity-closure-inventory.md`
   is either implemented with tests/provenance or explicitly accepted as a
   non-blocking follow-up before starting product-improvement work.
+- Execute or retire every row in
+  `docs/plans/2026-06-23-remaining-deferred-parity-execution.md` before treating
+  the deferred parity goal as complete.
 - Commit through the turn commit hook.
 
 ## Default Verification Commands
