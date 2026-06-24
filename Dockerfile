@@ -12,7 +12,6 @@ RUN pnpm --dir frontend build
 FROM rust:1-bookworm AS builder
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
-COPY proto ./proto
 COPY crates ./crates
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 ENV YONA_EMBED_ASSET_ROOT=/app/frontend/dist
