@@ -3,7 +3,7 @@ use serde::Deserialize;
 use testcontainers_modules::{mariadb, postgres, testcontainers::runners::AsyncRunner};
 use yona_rust_persistence::{AppRepository, SearchRepositoryInput, SearchScope};
 use yona_rust_pilot_migration::{
-    Migrator, optional_legacy_table_names, required_runtime_table_names, seed_pilot_data,
+    optional_legacy_table_names, required_runtime_table_names, seed_pilot_data, Migrator,
 };
 use yona_rust_pilot_server::persistence::PilotRepository;
 

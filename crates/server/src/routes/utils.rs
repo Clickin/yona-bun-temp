@@ -14,16 +14,14 @@ use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMai
 use yona_rust_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
-    IssueLabel, IssueLabelCategory, OrganizationAdminMember, OrganizationAdminView,
-    OrganizationContainer, OrganizationDetail, OrganizationEnrollmentRequestSummary,
-    OrganizationMemberSummary, OrganizationProjectCard, OrganizationRoleOption,
-    ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
-    ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
-    OrganizationIssueListItem,
     persistence,
     session::{Session, SessionManager},
-    AuthUiConfig, ConnectError, Context, ErrorCode, PilotBackend, PilotRepository,
-    PilotServiceImpl,
+    AuthUiConfig, ConnectError, Context, ErrorCode, IssueLabel, IssueLabelCategory,
+    OrganizationAdminMember, OrganizationAdminView, OrganizationContainer, OrganizationDetail,
+    OrganizationEnrollmentRequestSummary, OrganizationIssueListItem, OrganizationMemberSummary,
+    OrganizationProjectCard, OrganizationRoleOption, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
+    ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
 };
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_request_project_enrollment,
@@ -723,9 +721,9 @@ pub(crate) struct RestProjectDeleteResponse {
 
 pub(crate) fn rest_owned_view<T>(input: &T) -> Result<T, RestRouteError>
 where
-    T: Clone
+    T: Clone,
 {
-    // ponytail: simplified to just clone the input, buffa conversion removed
+    // ponytail: plain REST JSON request clone; add conversion only if a non-JSON caller returns.
     Ok(input.clone())
 }
 
@@ -991,7 +989,7 @@ pub(crate) fn issue_label_category_from_record(
     }
 }
 
-pub(crate) fn project_issue_list_item_to_proto(
+pub(crate) fn project_issue_list_item_to_api(
     item: persistence::ProjectIssueListItemRecord,
 ) -> ProjectIssueListItem {
     ProjectIssueListItem {
@@ -1014,7 +1012,7 @@ pub(crate) fn project_issue_list_item_to_proto(
 }
 
 #[cfg(debug_assertions)]
-pub(crate) fn organization_issue_list_item_to_proto(
+pub(crate) fn organization_issue_list_item_to_api(
     item: persistence::ProjectIssueListItemRecord,
 ) -> OrganizationIssueListItem {
     OrganizationIssueListItem {

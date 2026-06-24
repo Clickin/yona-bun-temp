@@ -1,6 +1,6 @@
 use axum::{extract::Path, http::HeaderMap, response::Response, routing::post, Json, Router};
 
-use crate::generated::yona::pilot::v1::*;
+use crate::api_types::*;
 use crate::{
     auth_ui_capabilities_from_config, rest_json_response, rest_owned_view, Context,
     PilotServiceImpl, RestRouteError,

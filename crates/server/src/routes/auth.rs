@@ -1,3 +1,4 @@
+use crate::api_types::OwnedView;
 use axum::{
     extract::{Form, Path, Query},
     http::{HeaderMap, Method},
@@ -6,13 +7,12 @@ use axum::{
     Json, Router,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use crate::buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+use crate::api_types::*;
 use crate::assets::serve_frontend_page;
-use crate::generated::yona::pilot::v1::*;
 use crate::ldap::{
     authenticate_with_real_ldap_connector, fixture_ldap_authenticate, LdapConnectorError,
     RealLdapDirectoryConnector,

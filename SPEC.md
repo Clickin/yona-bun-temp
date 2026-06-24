@@ -1855,7 +1855,7 @@ Environment variable equivalents use the names exercised by `crates/server/tests
 
 `proto/yona/pilot/v1/pilot.proto`는 REST pivot 이전 임시 구현의 message schema snapshot이다.
 Phase -1 이후 runtime `/rpc` registration, frontend ConnectRPC generated client, and ConnectRPC package dependencies are removed.
-서버 build는 필요한 legacy message shape만 `buffa-codegen`으로 생성한다.
+서버 runtime은 legacy message shape를 checked-in REST JSON Rust types로 소유하며 protobuf/buffa generation shim을 사용하지 않는다.
 
 Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기반 contract tests를 REST route로 우회시키기 위해 `/api/v1/_pilot/{method_name}` harness가 있다. 이 route는 application contract가 아니며 frontend/runtime code에서 사용하면 안 된다.
 

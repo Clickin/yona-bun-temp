@@ -2645,7 +2645,7 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
 }
 
 #[tokio::test]
-// Guards the auth route-owned verify helper through the proto adapter.
+// Guards the auth route-owned verify helper through the api adapter.
 async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_links() {
     let _outbox_guard = auth_outbox_lock().lock().unwrap();
     clear_test_outbox();
@@ -3475,7 +3475,7 @@ async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_passwo
 }
 
 #[tokio::test]
-// Guards workspace route-owned settings/password helpers through REST and proto routes.
+// Guards workspace route-owned settings/password helpers through REST and API routes.
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -4123,7 +4123,7 @@ async fn update_profile_replaces_existing_avatar_attachment() {
 }
 
 #[tokio::test]
-// Guards workspace route-owned overview/default-landing helpers through proto adapters.
+// Guards workspace route-owned overview/default-landing helpers through api adapters.
 async fn workspace_overview_reads_and_updates_default_landing() {
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;

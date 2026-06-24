@@ -1,5 +1,5 @@
-use crate::buffa::view::OwnedView;
-use crate::*; // This now includes all our proto_types
+use crate::api_types::OwnedView;
+use crate::*; // This now includes all our api_types
 
 impl PilotServiceImpl {
     #[cfg(debug_assertions)]

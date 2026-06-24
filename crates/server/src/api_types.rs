@@ -1,9 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-// Compatibility shims for service.rs until it's migrated
 pub type OwnedView<T> = T;
 
-// Add missing request types
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadCurrentSessionRequest {
@@ -13,7 +11,7 @@ pub struct ReadCurrentSessionRequest {
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SignOutRequest {
-    // Empty request  
+    // Empty request
 }
 
 // ResetVisitedProjectsRequest already defined below
@@ -77,14 +75,14 @@ pub type MilestoneStateMutationRequestView<'a> = MilestoneStateMutationRequest;
 pub type UpdateProjectRequestView<'a> = UpdateProjectRequest;
 pub type ReadWorkspaceOverviewRequestView<'a> = ReadWorkspaceOverviewRequest;
 pub type SetDefaultLandingPathRequestView<'a> = SetDefaultLandingPathRequest;
-pub type UpdateProfileRequestView<'a> = UpdateProfileRequest; 
+pub type UpdateProfileRequestView<'a> = UpdateProfileRequest;
 pub type ChangePasswordRequestView<'a> = ChangePasswordRequest;
 pub type AddWorkspaceEmailRequestView<'a> = AddWorkspaceEmailRequest;
 pub type DeleteWorkspaceEmailRequestView<'a> = DeleteWorkspaceEmailRequest;
 pub type SendWorkspaceEmailValidationRequestView<'a> = SendWorkspaceEmailValidationRequest;
 pub type SetMainWorkspaceEmailRequestView<'a> = SetMainWorkspaceEmailRequest;
 
-// Additional missing view aliases 
+// Additional missing view aliases
 pub type ReadAuthUiCapabilitiesRequestView<'a> = ReadAuthUiCapabilitiesRequest;
 pub type IssueShareRequestView<'a> = IssueShareRequest;
 pub type AssignIssueRequestView<'a> = AssignIssueRequest;
@@ -622,7 +620,7 @@ pub struct IssueLabelCategory {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]  
+#[serde(rename_all = "camelCase")]
 pub struct OrganizationIssueListItem {
     #[serde(default)]
     pub owner_name: String,
@@ -1271,7 +1269,7 @@ pub struct ResetApiTokenRequest {
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResetVisitedProjectsRequest {
-    // Empty request  
+    // Empty request
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]

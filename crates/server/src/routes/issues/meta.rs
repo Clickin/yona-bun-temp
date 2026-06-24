@@ -445,7 +445,9 @@ pub(crate) async fn issue_assignment_mutation(
             &request.owner_name,
             &request.project_name,
             request.issue_number,
-            Some(request.assignee_login_id).filter(|value| !value.trim().is_empty()).as_deref(),
+            Some(request.assignee_login_id)
+                .filter(|value| !value.trim().is_empty())
+                .as_deref(),
             &actor.login_id,
         )
         .await

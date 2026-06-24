@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use yona_rust_vcs::{CodeCommitFileDiffRecord, VcsError};
 
-use crate::generated::yona::pilot::v1::IssueAttachment;
+use crate::api_types::IssueAttachment;
 use crate::{
     code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
     internal_error, issue_attachment_from_record, markdown_issue_references_for_project,

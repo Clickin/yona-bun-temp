@@ -4,7 +4,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-use crate::generated::yona::pilot::v1::WorkspaceIssueItem;
+use crate::api_types::WorkspaceIssueItem;
 use crate::persistence::{self, PilotRepository};
 use crate::{
     base_path_href, escape_html_attr, escape_html_text, normalize_identifier,

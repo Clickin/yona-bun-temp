@@ -1460,12 +1460,10 @@ async fn rest_commit_detail_creates_comments_from_svn_revision() {
     assert_eq!(initial["commit"]["shortMessage"], "seed svn readme");
     assert_eq!(initial["permissions"]["canComment"], true);
     assert_eq!(initial["files"][0]["path"], "trunk/README.md");
-    assert!(
-        initial["files"][0]["patch"]
-            .as_str()
-            .unwrap()
-            .contains("# Hello SVN")
-    );
+    assert!(initial["files"][0]["patch"]
+        .as_str()
+        .unwrap()
+        .contains("# Hello SVN"));
 
     let created = response_json(
         rest_post_json(
@@ -1530,8 +1528,7 @@ async fn rest_commit_detail_creates_comments_from_svn_revision() {
             .and_then(|value| value.to_str().ok()),
         Some(format!("/yona/owner/projectYobi/commit/{commit_id}").as_str())
     );
-    let after_direct_delete =
-        response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    let after_direct_delete = response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
     assert_eq!(after_direct_delete["commit"]["commentCount"], 1);
 }
 

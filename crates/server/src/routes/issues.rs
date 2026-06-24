@@ -1,3 +1,4 @@
+use crate::api_types::OwnedView;
 use axum::{
     extract::{Path, Query, RawQuery},
     http::{HeaderMap, StatusCode},
@@ -5,21 +6,20 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Form, Json, Router,
 };
-use crate::buffa::view::OwnedView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[cfg(debug_assertions)]
-use super::utils::organization_issue_list_item_to_proto;
+use super::utils::organization_issue_list_item_to_api;
 use super::utils::{
     accepts_legacy_json, base_path_href, gravatar_url, legacy_content_update_body_from_value,
     legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_proto,
+    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_api,
 };
-use crate::generated::yona::pilot::v1::*;
+use crate::api_types::*;
 use crate::{
     absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
@@ -401,7 +401,7 @@ pub(crate) async fn organization_issues_list(
             items: record
                 .items
                 .into_iter()
-                .map(organization_issue_list_item_to_proto)
+                .map(organization_issue_list_item_to_api)
                 .collect(),
             open_issue_count: record.open_issue_count,
             organization_name: record.organization_name,
@@ -463,7 +463,7 @@ pub(crate) async fn project_issues_list(
                 items: record
                     .items
                     .into_iter()
-                    .map(project_issue_list_item_to_proto)
+                    .map(project_issue_list_item_to_api)
                     .collect(),
                 owner_name: authorization.project.owner_name,
                 page_num: record.page_num,
@@ -3627,7 +3627,7 @@ pub(crate) fn issue_milestone_from_record(
             .closed_issues
             .clone()
             .into_iter()
-            .map(project_issue_list_item_to_proto)
+            .map(project_issue_list_item_to_api)
             .collect(),
         completion_percent: record.completion_percent,
         contents_html: String::new(),
@@ -3639,7 +3639,7 @@ pub(crate) fn issue_milestone_from_record(
             .open_issues
             .clone()
             .into_iter()
-            .map(project_issue_list_item_to_proto)
+            .map(project_issue_list_item_to_api)
             .collect(),
         state: record.state.clone(),
         title: record.title.clone(),

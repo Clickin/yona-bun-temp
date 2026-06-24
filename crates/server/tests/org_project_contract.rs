@@ -1246,7 +1246,7 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
 
 #[tokio::test]
 // Guards projects/participation.rs enrollment, favorite, and recent-visit
-// helpers through proto-compatible routes.
+// helpers through API-compatible routes.
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let yona_data = temp_yona_data_root();
     let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;

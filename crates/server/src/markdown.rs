@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::generated::yona::pilot::v1::{IssueReferenceMetadata, MentionReferenceMetadata};
+use crate::api_types::{IssueReferenceMetadata, MentionReferenceMetadata};
 use crate::{
     base_path_href, internal_error, persistence, resolve_issue_reference_search_project,
     ConnectError, PilotRepository,

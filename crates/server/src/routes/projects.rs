@@ -1,3 +1,4 @@
+use crate::api_types::OwnedView;
 use axum::{
     body::Bytes,
     extract::{Form, Path, Query},
@@ -6,12 +7,11 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
-use crate::buffa::view::OwnedView;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::generated::yona::pilot::v1::*;
+use crate::api_types::*;
 use crate::routes::utils::gravatar_url;
 use crate::{
     absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
@@ -602,7 +602,8 @@ pub(crate) async fn project_update(
             "project update is not allowed",
         ));
     }
-    if normalize_identifier(&request.current_owner_name) != normalize_identifier(&request.owner_name)
+    if normalize_identifier(&request.current_owner_name)
+        != normalize_identifier(&request.owner_name)
     {
         return Err(ConnectError::invalid_argument(
             "project owner change is not supported in this packet",

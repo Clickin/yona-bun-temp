@@ -150,21 +150,5 @@ pub(crate) use smart_http::{
     smart_http_principal_from_headers, SmartHttpAccessFailure, SmartHttpPermission,
 };
 
-mod proto_types;
-pub use proto_types::*;
-
-// ponytail: compatibility shims — remove after route files are migrated
-pub mod buffa {
-    pub mod view {
-        pub type OwnedView<T> = T;
-    }
-}
-pub mod generated {
-    pub mod yona {
-        pub mod pilot {
-            pub mod v1 {
-                pub use crate::proto_types::*;
-            }
-        }
-    }
-}
+mod api_types;
+pub use api_types::*;

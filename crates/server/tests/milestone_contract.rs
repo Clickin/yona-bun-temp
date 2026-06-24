@@ -416,9 +416,7 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
         .await,
     )
     .await;
-    assert!(
-        issue_after_delete["milestoneId"].is_null() || issue_after_delete["milestoneId"] == 0
-    );
+    assert!(issue_after_delete["milestoneId"].is_null() || issue_after_delete["milestoneId"] == 0);
     assert!(
         issue_after_delete["milestoneTitle"].is_null()
             || issue_after_delete["milestoneTitle"] == ""

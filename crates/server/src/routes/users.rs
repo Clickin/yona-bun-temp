@@ -14,7 +14,7 @@ use super::{
     utils::{legacy_external_random_storage_token, legacy_external_user_statistics_result},
     RestDirectIssueFormQuery, RestUserIssuesQuery,
 };
-use crate::generated::yona::pilot::v1::{
+use crate::api_types::{
     WorkspaceIssueItem, WorkspaceMemberProjectItem, WorkspaceProfile, WorkspacePullRequestItem,
 };
 use crate::{
