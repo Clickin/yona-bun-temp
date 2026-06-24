@@ -157,24 +157,24 @@ describe("site-admin route parity harness", () => {
     const html = renderSiteAdminI18nShell(runtime.t);
 
     expect(html).toContain(">Site management<");
-    expect(html).toContain(">site.sidebar.userList<");
-    expect(html).toContain(">site.sidebar.postList<");
-    expect(html).toContain(">site.sidebar.issueList<");
-    expect(html).toContain(">site.sidebar.projectList<");
-    expect(html).toContain(">Mail Send<");
-    expect(html).toContain(">Mass Mail<");
-    expect(html).toContain(">Update<span");
-    expect(html).toContain(">site.sidebar.diagnostics<");
+    expect(html).toContain(">Users<");
+    expect(html).toContain(">Posts<");
+    expect(html).toContain(">Issues<");
+    expect(html).toContain(">Projects<");
+    expect(html).toContain(">Send email<");
+    expect(html).toContain(">Send mass emails<");
+    expect(html).toContain(">Software Update<span");
+    expect(html).toContain(">Diagnostics<");
     expect(html).toContain('placeholder="Find user by login ID, user name or email"');
-    expect(html).toContain(">site.userList.unlocked<");
+    expect(html).toContain(">Unlocked user<");
     expect(html).toContain(">Name<");
-    expect(html).toContain(">button.user.make.guest.mode<");
+    expect(html).toContain(">Make Guest<");
     expect(html).toContain(">Reset password<");
-    expect(html).toContain("user.newPassword: new-secret");
+    expect(html).toContain("New password: new-secret");
     expect(html).toContain(">Delete<");
     expect(html).toContain('aria-label="Close"');
-    expect(html).toContain(">site.diagnostic.errorFound 2<");
-    expect(html).toContain("site.update.isAvailable 1.1.0");
+    expect(html).toContain(">2 errors were found<");
+    expect(html).toContain("Yona 1.1.0 is available");
   });
 
   it("switches site-admin shell labels to Korean legacy messages", () => {
@@ -183,24 +183,24 @@ describe("site-admin route parity harness", () => {
     const html = renderSiteAdminI18nShell(runtime.t);
 
     expect(html).toContain(">사이트 관리<");
-    expect(html).toContain(">site.sidebar.userList<");
-    expect(html).toContain(">site.sidebar.postList<");
-    expect(html).toContain(">site.sidebar.issueList<");
-    expect(html).toContain(">site.sidebar.projectList<");
-    expect(html).toContain(">Mail Send<");
-    expect(html).toContain(">Mass Mail<");
-    expect(html).toContain(">Update<span");
-    expect(html).toContain(">site.sidebar.diagnostics<");
+    expect(html).toContain(">사용자<");
+    expect(html).toContain(">게시물<");
+    expect(html).toContain(">이슈<");
+    expect(html).toContain(">프로젝트<");
+    expect(html).toContain(">메일 발송<");
+    expect(html).toContain(">대량 메일 발송<");
+    expect(html).toContain(">업데이트<span");
+    expect(html).toContain(">시스템 진단<");
     expect(html).toContain('placeholder="찾으려는 사용자의 ID, 이름 또는 이메일을 입력하세요"');
-    expect(html).toContain(">site.userList.unlocked<");
+    expect(html).toContain(">활성화된 사용자<");
     expect(html).toContain(">이름<");
-    expect(html).toContain(">button.user.make.guest.mode<");
+    expect(html).toContain(">게스트로 전환<");
     expect(html).toContain(">비밀번호 재설정<");
-    expect(html).toContain("user.newPassword: new-secret");
+    expect(html).toContain("신규 비밀번호: new-secret");
     expect(html).toContain(">삭제<");
     expect(html).toContain('aria-label="닫기"');
-    expect(html).toContain(">site.diagnostic.errorFound 2<");
-    expect(html).toContain("site.update.isAvailable 1.1.0");
+    expect(html).toContain(">2개의 문제점이 발견되었습니다.<");
+    expect(html).toContain("Yona 1.1.0 버전으로 업데이트 할 수 있습니다");
     expect(html).not.toContain(">Site management<");
   });
 

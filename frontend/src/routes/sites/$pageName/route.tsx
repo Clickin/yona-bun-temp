@@ -132,10 +132,13 @@ function legacySiteAdminMessage(
   args?: Array<number | string>,
 ): string {
   const copy = SITE_ADMIN_LEGACY_COPY[key];
+  if (messages) {
+    return messages(key, { args, fallback: copy ?? key });
+  }
   if (copy) {
     return copy.replace(/\{(\d+)\}/g, (_, index) => String(args?.[Number(index)] ?? ""));
   }
-  return legacyMessage(messages, key, args);
+  return legacyMessage(undefined, key, args);
 }
 
 function useSiteAdminMessages(messages: LegacyMessageLookup | undefined): LegacyMessageLookup {
