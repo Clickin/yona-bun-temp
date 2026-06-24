@@ -6,9 +6,12 @@ import { UIKitPage } from "./routes/-ui-kit-views";
 
 describe("legacy UIKit route parity", () => {
   it("keeps the legacy /_UIKit route mounted in React", () => {
-    const legacyRoutes = fs.readFileSync(path.resolve(__dirname, "../../yona-original/conf/routes"), {
-      encoding: "utf8",
-    });
+    const legacyRoutes = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/conf/routes"),
+      {
+        encoding: "utf8",
+      },
+    );
     const legacyController = fs.readFileSync(
       path.resolve(__dirname, "../../yona-original/app/controllers/Application.java"),
       { encoding: "utf8" },
@@ -25,7 +28,20 @@ describe("legacy UIKit route parity", () => {
   });
 
   it("renders the legacy UIKit sample sections and class names", () => {
-    const html = renderToStaticMarkup(<UIKitPage />);
+    const html = renderToStaticMarkup(
+      <UIKitPage
+        runtimeConfig={{
+          apiBaseUrl: "/yona/api",
+          basePath: "/yona",
+          navbarCustomLinkName: "",
+          navbarCustomLinkUrl: "",
+          projectDefaultScope: "public",
+          showUserEmail: true,
+          siteName: "Yona",
+          supportedLanguages: ["en-US"],
+        }}
+      />,
+    );
 
     expect(html).toContain('class="gnb-outer"');
     expect(html).toContain('class="subtitle">Yobi UI</span>');
@@ -44,7 +60,7 @@ describe("legacy UIKit route parity", () => {
     expect(html).toContain('class="issue-label active editable"');
     expect(html).toContain("<h3>Avatar</h3>");
     expect(html).toContain('class="avatar-wrap xlarge"');
-    expect(html).toContain("/assets/images/default-avatar-128.png");
+    expect(html).toContain("/yona/assets/images/default-avatar-128.png");
     expect(html).toContain("<h3>Tabs</h3>");
     expect(html).toContain('class="nav nav-tabs"');
     expect(html).toContain("파일");

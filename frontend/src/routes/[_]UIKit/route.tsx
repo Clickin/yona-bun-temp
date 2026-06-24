@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAppRuntime } from "../../app-runtime-context";
 import { UIKitPage } from "../-ui-kit-views";
 import { useDocumentTitle } from "../-shared";
 
@@ -7,6 +8,7 @@ export const Route = createFileRoute("/_UIKit")({
 });
 
 function UIKitRouteComponent() {
+  const { runtimeConfig } = useAppRuntime();
   useDocumentTitle("Yobi UI");
-  return <UIKitPage />;
+  return <UIKitPage runtimeConfig={runtimeConfig} />;
 }

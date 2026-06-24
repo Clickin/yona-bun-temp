@@ -279,6 +279,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
       /^frontend\/src\/routes\/-shared\.tsx$/i,
       /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
+      /^frontend\/src\/routes\/\[_\]UIKit\/route\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
       /^frontend\/src\/i18n\.tsx$/i,

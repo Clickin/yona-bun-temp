@@ -224,9 +224,10 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let temp = tempdir().expect("tempdir");
     let asset_root = temp.path();
     fs::create_dir_all(asset_root.join("assets")).expect("assets dir");
+    fs::create_dir_all(asset_root.join("images")).expect("images dir");
     fs::write(
         asset_root.join("index.html"),
-        "<!doctype html><html><head><title>Yona</title></head><body><div id=\"root\"></div><script type=\"module\" src=\"./assets/app.js\"></script></body></html>",
+        "<!doctype html><html><head><title>Yona</title><link rel=\"stylesheet\" href=\"/assets/app.css\"></head><body><div id=\"root\"></div><img src=\"/images/logo.png\"><script type=\"module\" src=\"/assets/app.js\"></script></body></html>",
     )
     .expect("write index");
     fs::write(
@@ -234,6 +235,12 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
         "console.log('pilot');",
     )
     .expect("write asset");
+    fs::write(
+        asset_root.join("assets").join("app.css"),
+        "body{color:#333}",
+    )
+    .expect("write css");
+    fs::write(asset_root.join("images").join("logo.png"), b"png").expect("write image");
 
     let app = create_router_with_filesystem_assets(
         RuntimeConfig {
@@ -261,6 +268,10 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"apiBaseUrl\":\"/yona/api\""));
+    assert!(html.contains("src=\"/yona/assets/app.js\""));
+    assert!(html.contains("href=\"/yona/assets/app.css\""));
+    assert!(html.contains("src=\"/yona/images/logo.png\""));
+    assert!(!html.contains("src=\"/assets/app.js\""));
 
     let asset = app
         .clone()
@@ -279,6 +290,21 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
         String::from_utf8(asset_body.to_vec()).unwrap(),
         "console.log('pilot');"
     );
+
+    let image = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/images/logo.png")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(image.status(), StatusCode::OK);
+    let image_body = image.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(image_body.as_ref(), b"png");
 
     let fallback = app
         .clone()
@@ -379,6 +405,10 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
     assert!(!html.contains("https://www.google-analytics.com/analytics.js"));
+    assert!(html.contains("src=\"/yona/assets/app.js\""));
+    assert!(html.contains("href=\"/yona/assets/app.css\""));
+    assert!(html.contains("src=\"/yona/images/fork-pull/fork.jpg\""));
+    assert!(!html.contains("src=\"/assets/app.js\""));
 
     let asset = app
         .clone()
@@ -397,6 +427,21 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         String::from_utf8(asset_body.to_vec()).unwrap().trim_end(),
         "console.log('embedded-pilot');"
     );
+
+    let image = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/images/fork-pull/fork.jpg")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(image.status(), StatusCode::OK);
+    let image_body = image.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(image_body.as_ref(), b"jpg\n");
 
     let fallback = app
         .clone()

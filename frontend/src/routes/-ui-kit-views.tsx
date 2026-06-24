@@ -1,4 +1,6 @@
 import * as React from "react";
+import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath } from "../runtime-config";
 
 const avatarSizes = [
   [".mini (12x12)", "mini"],
@@ -13,7 +15,13 @@ const avatarSizes = [
 const labelColors = ["#da5454", "#ff9933", "#ffcc33", "#22b4b9"] as const;
 const labelNames = ["Clean", "Fresh", "Modern", "Unique"] as const;
 
-export function UIKitPage() {
+export function UIKitPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const uiKitHref = prefixBasePath(runtimeConfig.basePath, "/ui-kit");
+  const defaultAvatarUrl = prefixBasePath(
+    runtimeConfig.basePath,
+    "/assets/images/default-avatar-128.png",
+  );
+
   return (
     <>
       <style>{uiKitInlineStyle}</style>
@@ -27,25 +35,25 @@ export function UIKitPage() {
             <div>
               <pre>.ybtn</pre>
               <p>
-                <a href="/ui-kit" className="ybtn">
+                <a href={uiKitHref} className="ybtn">
                   Default
                 </a>
                 <button type="button" className="ybtn ybtn-primary">
                   Primary
                 </button>
-                <a href="/ui-kit" className="ybtn ybtn-inverse">
+                <a href={uiKitHref} className="ybtn ybtn-inverse">
                   Inverse
                 </a>
                 <button type="button" className="ybtn ybtn-info">
                   Info
                 </button>
-                <a href="/ui-kit" className="ybtn ybtn-watching">
+                <a href={uiKitHref} className="ybtn ybtn-watching">
                   Watching
                 </a>
                 <button type="button" className="ybtn ybtn-warning">
                   Warning
                 </button>
-                <a href="/ui-kit" className="ybtn ybtn-danger">
+                <a href={uiKitHref} className="ybtn ybtn-danger">
                   Danger
                 </a>
                 <button type="button" className="ybtn ybtn-disabled">
@@ -67,9 +75,9 @@ export function UIKitPage() {
             <h3>Select</h3>
             <div>
               <pre>.dropdown-toggle</pre>
-              <DropdownSample size="small" />
-              <DropdownSample size="medium" />
-              <DropdownSample size="large" />
+              <DropdownSample size="small" uiKitHref={uiKitHref} />
+              <DropdownSample size="medium" uiKitHref={uiKitHref} />
+              <DropdownSample size="large" uiKitHref={uiKitHref} />
               <Xmp>{dropdownExample}</Xmp>
             </div>
             <hr />
@@ -152,8 +160,8 @@ export function UIKitPage() {
                     <span className="css">{label}</span>
                   </dt>
                   <dd>
-                    <a href="/ui-kit" className={`avatar-wrap ${size}`}>
-                      <img alt="" src="/assets/images/default-avatar-128.png" />
+                    <a href={uiKitHref} className={`avatar-wrap ${size}`}>
+                      <img alt="" src={defaultAvatarUrl} />
                     </a>
                   </dd>
                 </dl>
@@ -166,10 +174,10 @@ export function UIKitPage() {
             <div>
               <ul className="nav nav-tabs">
                 <li className="active">
-                  <a href="/ui-kit?tab=files">파일</a>
+                  <a href={`${uiKitHref}?tab=files`}>파일</a>
                 </li>
                 <li>
-                  <a href="/ui-kit?tab=commits">커밋</a>
+                  <a href={`${uiKitHref}?tab=commits`}>커밋</a>
                 </li>
               </ul>
             </div>
@@ -206,7 +214,13 @@ export function UIKitPage() {
   );
 }
 
-function DropdownSample({ size }: { size: "small" | "medium" | "large" }) {
+function DropdownSample({
+  size,
+  uiKitHref,
+}: {
+  size: "small" | "medium" | "large";
+  uiKitHref: string;
+}) {
   return (
     <dl>
       <dt>
@@ -222,10 +236,10 @@ function DropdownSample({ size }: { size: "small" | "medium" | "large" }) {
           </button>
           <ul className="dropdown-menu">
             <li data-value="" data-selected="true" className="active">
-              <a href="/ui-kit?assignee=all">전체</a>
+              <a href={`${uiKitHref}?assignee=all`}>전체</a>
             </li>
             <li data-value="0">
-              <a href="/ui-kit?assignee=none">담당자 없음</a>
+              <a href={`${uiKitHref}?assignee=none`}>담당자 없음</a>
             </li>
           </ul>
         </div>

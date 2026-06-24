@@ -27,6 +27,8 @@ pub(crate) fn apply_asset_routes(
         AssetMode::Filesystem(asset_root) => {
             let asset_root_for_assets = asset_root.clone();
             let browser_runtime_for_assets = browser_runtime.clone();
+            let asset_root_for_images = asset_root.clone();
+            let browser_runtime_for_images = browser_runtime.clone();
             let asset_root_for_index = asset_root.clone();
             let browser_runtime_for_index = browser_runtime.clone();
             let asset_root_for_fallback = asset_root.clone();
@@ -54,7 +56,31 @@ pub(crate) fn apply_asset_routes(
                     get(move |AxumPath(path): AxumPath<String>| {
                         let asset_root = asset_root_for_assets.clone();
                         let browser_runtime = browser_runtime_for_assets.clone();
-                        async move { serve_filesystem_asset(asset_root, &path, browser_runtime).await }
+                        async move {
+                            serve_filesystem_public_asset(
+                                asset_root,
+                                "assets",
+                                &path,
+                                browser_runtime,
+                            )
+                            .await
+                        }
+                    }),
+                )
+                .route(
+                    "/images/{*path}",
+                    get(move |AxumPath(path): AxumPath<String>| {
+                        let asset_root = asset_root_for_images.clone();
+                        let browser_runtime = browser_runtime_for_images.clone();
+                        async move {
+                            serve_filesystem_public_asset(
+                                asset_root,
+                                "images",
+                                &path,
+                                browser_runtime,
+                            )
+                            .await
+                        }
                     }),
                 )
                 .route(
@@ -63,7 +89,8 @@ pub(crate) fn apply_asset_routes(
                         let asset_root = asset_root_for_single_segment_fallback.clone();
                         let browser_runtime = browser_runtime_for_single_segment_fallback.clone();
                         async move {
-                            serve_filesystem_fallback(asset_root, Method::GET, browser_runtime).await
+                            serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
+                                .await
                         }
                     }),
                 )
@@ -73,7 +100,8 @@ pub(crate) fn apply_asset_routes(
                         let asset_root = asset_root_for_two_segment_fallback.clone();
                         let browser_runtime = browser_runtime_for_two_segment_fallback.clone();
                         async move {
-                            serve_filesystem_fallback(asset_root, Method::GET, browser_runtime).await
+                            serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
+                                .await
                         }
                     }),
                 )
@@ -95,6 +123,7 @@ pub(crate) fn apply_asset_routes(
         AssetMode::Embedded => {
             let browser_runtime_for_index = browser_runtime.clone();
             let browser_runtime_for_assets = browser_runtime.clone();
+            let browser_runtime_for_images = browser_runtime.clone();
             let browser_runtime_for_fallback = browser_runtime.clone();
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let browser_runtime_for_two_segment_fallback = browser_runtime;
@@ -115,7 +144,18 @@ pub(crate) fn apply_asset_routes(
                     "/assets/{*path}",
                     get(move |AxumPath(path): AxumPath<String>| {
                         let browser_runtime = browser_runtime_for_assets.clone();
-                        async move { serve_embedded_asset(&path, browser_runtime).await }
+                        async move {
+                            serve_embedded_public_asset("assets", &path, browser_runtime).await
+                        }
+                    }),
+                )
+                .route(
+                    "/images/{*path}",
+                    get(move |AxumPath(path): AxumPath<String>| {
+                        let browser_runtime = browser_runtime_for_images.clone();
+                        async move {
+                            serve_embedded_public_asset("images", &path, browser_runtime).await
+                        }
                     }),
                 )
                 .route(
@@ -162,8 +202,34 @@ pub(crate) fn mount_base_path(
     } else if let AssetMode::Filesystem(asset_root) = assets {
         let browser_runtime_for_mount = browser_runtime;
         let asset_root_for_mount = asset_root;
+        let asset_root_for_root_assets = asset_root_for_mount.clone();
+        let browser_runtime_for_root_assets = browser_runtime_for_mount.clone();
+        let asset_root_for_root_images = asset_root_for_mount.clone();
+        let browser_runtime_for_root_images = browser_runtime_for_mount.clone();
 
         Router::new()
+            .route(
+                "/assets/{*path}",
+                get(move |AxumPath(path): AxumPath<String>| {
+                    let asset_root = asset_root_for_root_assets.clone();
+                    let browser_runtime = browser_runtime_for_root_assets.clone();
+                    async move {
+                        serve_filesystem_public_asset(asset_root, "assets", &path, browser_runtime)
+                            .await
+                    }
+                }),
+            )
+            .route(
+                "/images/{*path}",
+                get(move |AxumPath(path): AxumPath<String>| {
+                    let asset_root = asset_root_for_root_images.clone();
+                    let browser_runtime = browser_runtime_for_root_images.clone();
+                    async move {
+                        serve_filesystem_public_asset(asset_root, "images", &path, browser_runtime)
+                            .await
+                    }
+                }),
+            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {
@@ -175,8 +241,24 @@ pub(crate) fn mount_base_path(
             .nest(&base_path, base_router)
     } else if matches!(assets, AssetMode::Embedded) {
         let browser_runtime_for_mount = browser_runtime;
+        let browser_runtime_for_root_assets = browser_runtime_for_mount.clone();
+        let browser_runtime_for_root_images = browser_runtime_for_mount.clone();
 
         Router::new()
+            .route(
+                "/assets/{*path}",
+                get(move |AxumPath(path): AxumPath<String>| {
+                    let browser_runtime = browser_runtime_for_root_assets.clone();
+                    async move { serve_embedded_public_asset("assets", &path, browser_runtime).await }
+                }),
+            )
+            .route(
+                "/images/{*path}",
+                get(move |AxumPath(path): AxumPath<String>| {
+                    let browser_runtime = browser_runtime_for_root_images.clone();
+                    async move { serve_embedded_public_asset("images", &path, browser_runtime).await }
+                }),
+            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {
@@ -341,15 +423,16 @@ pub(crate) async fn serve_frontend_page(
     }
 }
 
-pub(crate) async fn serve_filesystem_asset(
+pub(crate) async fn serve_filesystem_public_asset(
     asset_root: PathBuf,
+    public_dir: &str,
     requested_path: &str,
     browser_runtime: BrowserRuntimeConfig,
 ) -> Response {
     let Some(relative_path) = sanitize_relative_path(requested_path) else {
         return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
     };
-    let file_path = asset_root.join("assets").join(relative_path);
+    let file_path = asset_root.join(public_dir).join(relative_path);
     let Ok(bytes) = tokio::fs::read(&file_path).await else {
         return serve_index_html(asset_root, browser_runtime).await;
     };
@@ -358,7 +441,8 @@ pub(crate) async fn serve_filesystem_asset(
     ([(axum::http::header::CONTENT_TYPE, mime.as_ref())], bytes).into_response()
 }
 
-pub(crate) async fn serve_embedded_asset(
+pub(crate) async fn serve_embedded_public_asset(
+    public_dir: &str,
     requested_path: &str,
     browser_runtime: BrowserRuntimeConfig,
 ) -> Response {
@@ -366,7 +450,7 @@ pub(crate) async fn serve_embedded_asset(
         return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
     };
     let normalized = relative_path.to_string_lossy().replace('\\', "/");
-    let Some(bytes) = embedded_assets::get(&format!("assets/{normalized}")) else {
+    let Some(bytes) = embedded_assets::get(&format!("{public_dir}/{normalized}")) else {
         return serve_embedded_index_html(browser_runtime).await;
     };
 
@@ -433,6 +517,7 @@ fn html_with_runtime(index_html: String, browser_runtime: BrowserRuntimeConfig) 
         "<script>window.__YONA_RUNTIME_CONFIG__ = {};</script>",
         runtime_json
     );
+    let index_html = html_with_base_path_assets(index_html, browser_runtime.base_path());
     let injected = if index_html.contains("</head>") {
         index_html.replacen("</head>", &format!("{runtime_script}</head>"), 1)
     } else if index_html.contains("<body>") {
@@ -451,6 +536,18 @@ fn html_with_runtime(index_html: String, browser_runtime: BrowserRuntimeConfig) 
         injected,
     )
         .into_response()
+}
+
+fn html_with_base_path_assets(index_html: String, base_path: &str) -> String {
+    if base_path == "/" {
+        return index_html;
+    }
+
+    index_html
+        .replace("src=\"/assets/", &format!("src=\"{base_path}/assets/"))
+        .replace("href=\"/assets/", &format!("href=\"{base_path}/assets/"))
+        .replace("src=\"/images/", &format!("src=\"{base_path}/images/"))
+        .replace("href=\"/images/", &format!("href=\"{base_path}/images/"))
 }
 
 fn inject_legacy_yona_usage_script(index_html: String) -> String {

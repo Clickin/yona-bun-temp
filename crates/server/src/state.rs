@@ -213,6 +213,10 @@ pub(crate) struct BrowserRuntimeConfig {
 }
 
 impl BrowserRuntimeConfig {
+    pub(crate) fn base_path(&self) -> &str {
+        &self.base_path
+    }
+
     pub(crate) fn from_base_path(
         base_path: &str,
         project_default_menus: Vec<String>,
