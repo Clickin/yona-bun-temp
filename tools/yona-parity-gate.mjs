@@ -34,7 +34,6 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "bin/",
   "drizzle/",
   "reports/",
-  "reference/mixed-code/",
   "reference/spikes/",
   "scripts/",
   "crates/protocol/src/generated/",

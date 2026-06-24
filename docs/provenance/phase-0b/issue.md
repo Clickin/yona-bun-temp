@@ -33,7 +33,7 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `reference/mixed-code/frontend/src/lib/issue-trpc.ts`, `reference/mixed-code/packages/domain/*issue*`
+- obsolete pre-Rust residual path, not reference: `reference/mixed-code/frontend/src/lib/issue-trpc.ts`, `reference/mixed-code/packages/domain/*issue*`
 - canonical implementation path: `repo root`
 - canonical owner path: `crates/domain`, `crates/server`, `frontend`
 

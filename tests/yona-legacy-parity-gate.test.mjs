@@ -31,12 +31,11 @@ test("passes when only documentation changes are present", () => {
   assert.match(result.summary, /No implementation files/);
 });
 
-test("ignores reference-only root mixed-code changes", () => {
+test("treats residual mixed-code changes as implementation changes", () => {
   const result = runGate(["reference/mixed-code/packages/auth/src/app-service.ts"]);
 
-  assert.equal(result.verdict, "pass");
-  assert.equal(result.implementationFiles.length, 0);
-  assert.match(result.summary, /No implementation files/);
+  assert.equal(result.verdict, "block");
+  assert.deepEqual(result.implementationFiles, ["reference/mixed-code/packages/auth/src/app-service.ts"]);
 });
 
 test("ignores reference-only spikes archive changes", () => {

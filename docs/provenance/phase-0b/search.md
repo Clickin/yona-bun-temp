@@ -18,7 +18,7 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `reference/mixed-code/frontend/src/lib/search-trpc.ts`, `reference/mixed-code/packages/domain/*search*`, `reference/mixed-code/packages/db/*search*`
+- obsolete pre-Rust residual path, not reference: `reference/mixed-code/frontend/src/lib/search-trpc.ts`, `reference/mixed-code/packages/domain/*search*`, `reference/mixed-code/packages/db/*search*`
 - canonical implementation path: `repo root`
 - canonical owner path: `frontend`, `crates/server`, `crates/search`, `crates/persistence`
 

@@ -48,7 +48,7 @@
 
 - 1차 기능/UX 근거 source of truth는 [`yona-original/`](/G:/programming/yona/yona-original)의 Java/Play 기반 legacy Yona다.
 - 2차 canonical implementation baseline은 [repo root](/G:/programming/yona)다.
-- 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
+- historical spike evidence는 `reference/spikes/**`에 둔다.
 - canonical frontend ownership은 [`frontend/`](/G:/programming/yona/frontend)에 둔다.
 - canonical application API contract는 REST JSON API(`/api/v1`)와 frontend typed API client/TanStack Query 경계에 둔다. `proto/`는 REST pivot 이전 message schema snapshot으로만 다루며 runtime ConnectRPC surface나 새 기능의 기본 contract source가 아니다.
 - 최소 ownership은 다음 경계로 고정한다.
@@ -58,7 +58,7 @@
   - [`crates/persistence`](/G:/programming/yona/crates/persistence): DB access, repositories, dialect handling, entity re-exports
   - [`crates/migration`](/G:/programming/yona/crates/migration): schema, seed, migration
   - [`crates/vcs`](/G:/programming/yona/crates/vcs), [`crates/search`](/G:/programming/yona/crates/search), [`crates/integrations`](/G:/programming/yona/crates/integrations): 후속 vertical slice owner
-- `reference/mixed-code/**` 경로는 모두 reference-only 또는 legacy-only로 재분류한다.
+- `reference/mixed-code/**`는 legacy reference가 아니다. 남아 있다면 pre-Rust Bun/TanStack/tRPC/Drizzle 잔여 코드로만 취급하고, parity 근거나 구현 참고자료로 사용하지 않는다.
 - historical 문서는 삭제하지 않는다. `historical`, `superseded`, `reference-only` 상태 배너를 붙이고, 현재 canonical 설명은 Rust pivot 이후 위치로 갱신한다.
 
 ## Execution Rules
@@ -66,7 +66,7 @@
 - 작업 전 이 문서의 변환 원칙, 관련 `SPEC.md` 섹션, `docs/agents/*` mirror를 먼저 확인한다.
 - 구현 전 대응 legacy route/test/model과 UI 기준을 `yona-original/`에서 식별한다.
 - frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.
-- 구현 전 `reference/mixed-code/**`의 대응 경로도 함께 읽되, reference-only migration material로 다룬다.
+- `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
 - root Bun/Go 혼합 코드, `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend 관련 결정은 현재 baseline처럼 서술하지 않는다.
 - 일부 기능이 아직 비어 있으면 반드시 세 계층에 남긴다.

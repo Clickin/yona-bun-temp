@@ -4,8 +4,9 @@
 
 - `yona-original/`: legacy Yona read-only reference
 - `repo root`: current canonical implementation baseline
-- `reference/mixed-code/**`: reference-only migration material
 - `reference/spikes/**`: historical spike archive
+
+`reference/mixed-code/**`, if present, is obsolete pre-Rust Bun/TanStack/tRPC/Drizzle residual code. It is not a legacy reference path.
 
 ## Canonical Workspace
 
@@ -19,9 +20,8 @@
 - `crates/vcs/`, `crates/search/`, `crates/integrations/`: 후속 vertical slice owner
 - `Cargo.toml`, `buf.yaml`, `buf.gen.yaml`: workspace root manifests
 
-## Reference-Only Root Paths
+## Historical Root Paths
 
-- `reference/mixed-code/**`
 - `reference/spikes/**`
 
-이 경로들은 useful reference일 수 있지만 새 canonical ownership을 추가하지 않는다.
+이 경로에는 새 canonical ownership을 추가하지 않는다.

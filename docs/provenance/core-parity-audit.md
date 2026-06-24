@@ -11,7 +11,7 @@
 
 ## Interpretation After Rust Pivot
 
-- The `Current route/contract` column below should now be read as the **current mixed-code reference snapshot**, not as the canonical implementation target.
+- The `Current route/contract` column below is a historical label. Legacy parity evidence must come from `yona-original/`; `reference/mixed-code/**` paths are obsolete pre-Rust residuals and are not reference material.
 - The canonical implementation path is [repo root](/G:/programming/yona).
 - PR detail empty-event rendering follows `git/view.scala.html`: keep `.board-comment-wrap`, omit `ul#comments`, and do not add placeholder text.
 - PR changes empty commit/diff rendering follows `git/viewChanges.scala.html`: keep `#commits`, keep `.diff-body.diffs-wrap-scroll`, and do not add placeholder text.
@@ -49,7 +49,7 @@
 - Workspace/public-profile anonymous fallback rendering uses the legacy `User.anonymous.name` key instead of a literal `Anonymous` label for route-level fallback session seeds.
 - Issue child rows follow legacy `issue/partial_view_child.scala.html` by rendering `common.commentAndVoterPairDisplay`-style `comments-count` / `vote-count` anchors from child issue comment/voter counts instead of a raw `open` / `closed` state string.
 - Issue subtask parent rows follow legacy `issue/partial_view_childIssueList.scala.html` by projecting and rendering the parent issue state for `.parent-issue-state` instead of reusing the currently viewed child issue state.
-- Unless a row explicitly says otherwise, read owner intent through this mapping:
+- Unless a row explicitly says otherwise, read old owner labels through this historical mapping. `reference/mixed-code/**` entries name obsolete pre-Rust residual locations only; they are not parity evidence:
 
 | Historical owner label                       | Canonical owner path                    |
 | -------------------------------------------- | --------------------------------------- |

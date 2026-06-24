@@ -14,7 +14,7 @@ Freeze these identifiers as the canonical parity fixture names:
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: root domain/db/frontend fixture helpers
+- obsolete pre-Rust residual path, not reference: root domain/db/frontend fixture helpers
 - canonical implementation path: `repo root`
 - canonical owner path:
   - `crates/domain`

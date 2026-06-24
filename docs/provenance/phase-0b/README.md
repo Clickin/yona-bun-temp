@@ -6,8 +6,8 @@
 
 - canonical execution rules는 `AGENTS.md`와 `SPEC.md`에 있다.
 - canonical implementation path는 [repo root](/G:/programming/yona)다.
-- 이 디렉터리에서 언급하는 root mixed-code 경로는 모두 reference-only migration material이다.
-- legacy source, current mixed-code reference, Rust target layer를 함께 남기는 것이 이 디렉터리의 목적이다.
+- 이 디렉터리에서 언급하는 root mixed-code 경로는 obsolete pre-Rust residual path이며 parity reference가 아니다.
+- legacy source와 Rust target layer를 함께 남기는 것이 이 디렉터리의 목적이다.
 
 ## Contents
 

@@ -34,11 +34,12 @@ the repo root runtime surface.
   excluding `node_modules`, `target`, `yona-original`, and
   `reference/mixed-code`.
 
-## Residual Reference Material
+## Residual Non-Reference Code
 
-The only residual Bun/Node backend-style code lives under
-`reference/mixed-code/**`, which `AGENTS.md`, `docs/agents/03-repo-structure.md`,
-and `docs/agents/04-architecture-guardrails.md` classify as reference-only:
+The only residual Bun/Node backend-style application code lives under
+`reference/mixed-code/**`. This path is not legacy Yona reference material and
+must not be used as parity evidence or implementation guidance. Legacy
+functional and UX reference comes from `yona-original/`.
 
 - `reference/mixed-code/root-toolchain/package.json` and `bun.lock`
 - `reference/mixed-code/apps/app/package.json`
@@ -47,13 +48,14 @@ and `docs/agents/04-architecture-guardrails.md` classify as reference-only:
 - `reference/mixed-code/tests/*bun*` and hybrid testcontainer scripts
 - `reference/mixed-code/tools/bun-package/package.json`
 
-That material includes the old Bun/TanStack Start/tRPC/Drizzle direction and
-must not be described as current runtime baseline or used for new application
-endpoints.
+That material includes the old Bun/TanStack Start/tRPC/Drizzle direction. It is
+obsolete residual code, not a current runtime baseline, not a release asset, and
+not a source to consult before implementing parity work.
 
 ## Release Decision
 
-- Keep `reference/mixed-code/**` for historical migration evidence only.
+- Treat `reference/mixed-code/**` as a deletion/exclusion target before public
+  source release.
 - Do not publish `reference/mixed-code/**` as part of release artifacts, Docker
   images, or user-facing docs.
 - Do not revive Bun, TanStack Start, in-process tRPC, Go backend, `connect-go`,

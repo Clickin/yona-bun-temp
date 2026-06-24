@@ -4,7 +4,7 @@
 
 - current canonical implementation baseline은 `repo root`다.
 - legacy truth는 `yona-original/`에 있다.
-- `reference/mixed-code/**`는 reference-only다.
+- `reference/mixed-code/**`는 legacy reference가 아니다. 남아 있다면 obsolete pre-Rust Bun/TanStack/tRPC/Drizzle residual code로만 취급한다.
 
 ## G2) Ownership Boundary
 
@@ -20,7 +20,7 @@
 
 ## G3) Historical Discipline
 
-- `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend, `connect-go`, `chi`, `uptrace/bun`, `Better Auth`를 current baseline처럼 되살리지 않는다.
+- `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend, `connect-go`, `chi`, `uptrace/bun`, `Better Auth`를 current baseline이나 parity reference처럼 되살리지 않는다.
 - REST pivot 이후 ConnectRPC/protobuf를 future canonical application API처럼 서술하지 않는다. `proto/` 언급은 schema snapshot 또는 historical evidence로 한정한다.
 - historical 문서는 status banner 없이 current guidance처럼 남겨 두지 않는다.
 
@@ -30,4 +30,3 @@
 - 기능 누락은 `deferred`, `gap`, `deviation` 중 하나로 반드시 기록한다.
 - `deviation`은 legacy 동작, Rust 동작, 사용자 영향, 허용 사유, provenance 위치를 남긴다. URL deviation은 legacy route, Rust route, redirect/alias 여부까지 기록한다.
 - root canonical, provenance, plan docs 사이에 누락 항목 대응이 맞아야 한다.
-

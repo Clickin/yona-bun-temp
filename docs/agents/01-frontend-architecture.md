@@ -17,7 +17,7 @@
 
 - frontend는 REST API client, TanStack Query hooks, route modules만 통해 backend와 통신한다.
 - `frontend/`는 DB, repository, server bootstrap을 직접 알지 않는다.
-- root `reference/mixed-code/frontend/src/lib/*-trpc*`, `createServerFn`, route/query wiring은 reference-only migration material이다.
+- root `reference/mixed-code/frontend/src/lib/*-trpc*`, `createServerFn`, route/query wiring은 obsolete pre-Rust residual code이며 parity reference가 아니다.
 - ConnectRPC wrapper code는 Phase -1에서 제거된 migration debt다. 새 frontend data flow는 REST API client와 TanStack Query hook으로만 추가한다.
 
 ## 화면 원칙

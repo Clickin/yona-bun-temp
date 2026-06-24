@@ -39,7 +39,7 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | N-06 | 에러 메시지, 빈 상태 텍스트, placeholder 등을 legacy와 다르게 작성                          | copy parity 위반         |
 | N-07 | legacy에서 사용하는 URL 경로 패턴을 변경 (예: `/issues` → `/tickets`)                       | deep-link parity 위반    |
 | N-08 | 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어들이기                                   | scope creep              |
-| N-09 | `reference/mixed-code/**` 코드를 canonical implementation처럼 취급                          | reference-only 원칙 위반 |
+| N-09 | `reference/mixed-code/**` 코드를 parity 근거 또는 canonical implementation처럼 취급          | legacy reference 원칙 위반 |
 | N-10 | 현재 Phase에 속하지 않는 기능을 선행 구현                                                   | Phase gate 위반          |
 
 ### 0.4 권한과 근거 우선순위
@@ -54,7 +54,6 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | 2    | 이 문서 (`SPEC.md`)       | Rust pivot 이후 기술적 실행 명세             |
 | 3    | `repo root` 현재 코드     | canonical implementation baseline            |
 | 4    | `docs/agents/*.md`        | `AGENTS.md`와 `SPEC.md`의 실행 mirror        |
-| 5    | `reference/mixed-code/**` | reference-only migration material            |
 
 **기능/UX 근거 우선순위**:
 
@@ -64,7 +63,6 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | 2    | 이 문서 (`SPEC.md`)       | legacy 근거를 Rust 구현으로 번역한 실행 명세                  |
 | 3    | `docs/provenance/*`       | legacy source → Rust target 매핑, gap/deviation/deferred 근거 |
 | 4    | `repo root` 현재 코드     | 현재 canonical implementation baseline                        |
-| 5    | `reference/mixed-code/**` | pre-Rust pivot reference-only migration material              |
 
 ---
 
@@ -103,7 +101,7 @@ repo root/
     search/               # search vertical slice owner
     integrations/         # notification/webhook/integration vertical slice owner
   yona-original/          # legacy Java/Play Yona (READ-ONLY 참조)
-  reference/mixed-code/   # pre-Rust pivot Go/TS 코드 (REFERENCE-ONLY)
+  reference/mixed-code/   # obsolete pre-Rust Bun/TS residuals, not parity reference
 ```
 
 ### 1.3 Frontend 규칙

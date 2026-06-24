@@ -20,8 +20,11 @@ client.
 1. `yona-original/`: legacy Yona reference source for functional and UX parity.
    It is reference-only and must not provide public Yoram release assets.
 2. Repo root: current canonical implementation baseline.
-3. `reference/mixed-code/**`: reference-only migration material
-4. `reference/spikes/**`: historical spike archive
+3. `reference/spikes/**`: historical spike archive
+
+`reference/mixed-code/**`, if present in a working tree, is obsolete pre-Rust
+Bun/TanStack/tRPC/Drizzle code. It is not legacy Yona reference material and
+must not be used as parity evidence.
 
 ## Workspace Landmarks
 
@@ -41,7 +44,7 @@ client.
 - canonical execution rules는 `AGENTS.md`와 `SPEC.md`에 있다.
 - 구현 전에는 `yona-original/`에서 대응 legacy route/test/model을 먼저 식별한다.
 - frontend component design 또는 화면 styling 작업 전에는 `DESIGN.md`와 legacy LESS/view 근거를 확인한다.
-- `reference/mixed-code/**`는 reference-only migration material로 읽고, 새 canonical ownership은 repo root에 둔다.
+- `reference/mixed-code/**`는 legacy reference가 아니므로 구현 근거나 parity evidence로 읽지 않는다.
 - 일부 기능 누락은 허용되지만 반드시 `deferred`, `gap`, `deviation`으로 기록한다.
 
 ## Current Deferred Scope Snapshot

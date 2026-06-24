@@ -4,7 +4,7 @@
 
 - 테스트 전략은 behavior-first이면서 legacy-provenance-first다.
 - 구현자는 먼저 legacy source를 읽고 intent를 추출한 뒤 failing Red test를 작성한다.
-- root mixed code도 reference-only migration material로 읽고 비교 기준으로 활용한다.
+- 비교 기준은 `yona-original/`의 legacy source다. `reference/mixed-code/**`는 비교 기준이나 parity evidence로 사용하지 않는다.
 - legacy semantics와 다른 결정을 했다면 `deviation`을 남긴다.
 
 ## 계층 매핑 규칙
@@ -21,7 +21,6 @@
 
 - source legacy path
 - extracted intent summary
-- current mixed-code reference path
 - Rust translation target layer
 - canonical owner path
 - intentionally dropped semantics 또는 `deviation`

@@ -27,7 +27,7 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `reference/mixed-code/frontend/legacy-start/src/lib/organization-trpc.ts`, `reference/mixed-code/packages/domain/*organization*`, `reference/mixed-code/packages/db/*organization*`
+- obsolete pre-Rust residual path, not reference: `reference/mixed-code/frontend/legacy-start/src/lib/organization-trpc.ts`, `reference/mixed-code/packages/domain/*organization*`, `reference/mixed-code/packages/db/*organization*`
 - canonical implementation path: `repo root`
 - canonical owner path:
   - `frontend`

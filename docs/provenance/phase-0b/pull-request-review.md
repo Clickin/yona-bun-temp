@@ -25,7 +25,7 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `reference/mixed-code/frontend/src/lib/pull-request-trpc.ts`, `reference/mixed-code/packages/domain/*pull-request*`
+- obsolete pre-Rust residual path, not reference: `reference/mixed-code/frontend/src/lib/pull-request-trpc.ts`, `reference/mixed-code/packages/domain/*pull-request*`
 - canonical implementation path: `repo root`
 - canonical owner path: `frontend`, `crates/server`, `crates/domain`
 
