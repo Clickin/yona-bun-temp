@@ -1,8 +1,9 @@
 use sea_orm::{ConnectionTrait, Database, DbBackend, Statement};
 use serde::Deserialize;
 use testcontainers_modules::{mariadb, postgres, testcontainers::runners::AsyncRunner};
+use yona_rust_persistence::{AppRepository, SearchRepositoryInput, SearchScope};
 use yona_rust_pilot_migration::{
-    optional_legacy_table_names, required_runtime_table_names, seed_pilot_data, Migrator,
+    Migrator, optional_legacy_table_names, required_runtime_table_names, seed_pilot_data,
 };
 use yona_rust_pilot_server::persistence::PilotRepository;
 
@@ -84,6 +85,30 @@ async fn run_case(name: &str, url: &str) {
     seed_pilot_data(&db)
         .await
         .unwrap_or_else(|error| panic!("{name}: seeding failed: {error}"));
+
+    let app_repo = AppRepository::new(db.clone());
+    let search = app_repo
+        .search_app(SearchRepositoryInput {
+            actor_id: None,
+            keyword: "Pilot".to_string(),
+            organization_name: None,
+            owner_name: None,
+            page_num: 1,
+            project_name: None,
+            requested_search_type: "issue".to_string(),
+            search_type: "issue".to_string(),
+            scope: SearchScope::Global,
+        })
+        .await
+        .unwrap_or_else(|error| panic!("{name}: issue search failed: {error}"))
+        .unwrap_or_else(|| panic!("{name}: issue search context missing"));
+    assert_eq!(search.counts.issues, 1, "{name}: issue search count");
+    assert!(
+        search.items.iter().any(|item| item.owner_name == "pilot"
+            && item.project_name == "yona"
+            && item.title == "Pilot issue"),
+        "{name}: expected seeded issue in search results"
+    );
 
     let repo = PilotRepository::new(db);
     let projects = repo
