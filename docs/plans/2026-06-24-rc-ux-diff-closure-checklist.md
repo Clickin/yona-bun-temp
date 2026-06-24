@@ -84,7 +84,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                                     | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `pass`      |
 | `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequestForm`, `/admin/sample/reviews`, `/admin/sample/pullRequest/**`                                                                                                                      | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `pass`      |
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settingform`, `/admin/sample/webhooks`, `/admin/sample/deleteform`, `/admin/sample/transfer`, `/admin/sample/newFork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `pass`      |
-| `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                               | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `unchecked` |
+| `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                               | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `pass`      |
 | `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                              | XSS, SQLi literal keyword behavior, long SQL fenced code block fallback, and invalid Markdown recovery stay green.                                           | `unchecked` |
 | `rc-ux-db-migration-smoke`   | Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL/MariaDB runtime matrix                                                                                                                                                                   | In-place legacy MariaDB adopt and supported DB matrix prove the same pages work from migrated data, including DB-specific search behavior.                   | `unchecked` |
 
@@ -416,6 +416,37 @@ change)"` executed the audit file outside the sandbox and passed all 43 tests,
   `org_project_contract`, `project_members_contract`, `project_webhook_contract`,
   `project_delete_contract`, `project_transfer_contract`,
   `project_fork_contract`, and `project_change_vcs_contract`.
+
+### `rc-ux-fragment-conversions`
+
+- App-runtime conversion boundary: the logged-in root shell, notification pages,
+  workspace settings notification page, site-admin sidebars, project settings
+  menus, issue notification receiver shells, and user workspace surfaces are
+  rendered by React from REST/API data. Legacy Java fragment routes remain only
+  compatibility/direct-route evidence, not frontend data sources for the normal
+  app screens.
+- Existing provenance: `docs/provenance/core-parity-audit.md` records the
+  authenticated root sidebar as React-rendered from API data while treating
+  legacy user-menu/sidebar HTML fragment endpoints as compatibility references;
+  the workspace/notification row records `/api/v1/notifications` plus
+  `/notification` route coverage.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/auth-workspace-shell.spec.tsx
+src/directory-home-user-files-notification-i18n.spec.tsx
+src/user-profile-route-loading-shell-i18n.spec.tsx src/route-parity.spec.tsx`
+  passed with 4 files and 120 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notification"`
+  executed the audit file outside the sandbox and passed all 43 tests, including
+  the logged-in root shell, `/notifications`, `/notification`, and notification
+  settings rows.
+- Backend compatibility verification: these focused contracts passed outside the
+  sandbox:
+  `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_legacy_fragment`,
+  `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`,
+  `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
+  and
+  `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
 
 ## Goal Packet Template
 
