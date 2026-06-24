@@ -2392,13 +2392,19 @@ pub(crate) fn routes(
     let direct_project_label_attach_service = service.clone();
     let direct_project_label_detach_service = service.clone();
     let direct_project_change_vcs_service = service.clone();
+    let direct_project_change_vcs_assets = assets.clone();
+    let direct_project_change_vcs_browser_runtime = browser_runtime.clone();
     let direct_project_member_assets = assets.clone();
     let direct_project_member_browser_runtime = browser_runtime.clone();
     let direct_project_member_add_service = service.clone();
     let direct_project_member_update_service = service.clone();
     let direct_project_member_delete_service = service.clone();
+    let direct_project_webhook_assets = assets.clone();
+    let direct_project_webhook_browser_runtime = browser_runtime.clone();
     let direct_project_webhook_create_service = service.clone();
     let direct_project_webhook_delete_service = service.clone();
+    let direct_project_transfer_assets = assets.clone();
+    let direct_project_transfer_browser_runtime = browser_runtime.clone();
     let direct_project_transfer_request_service = service.clone();
     let legacy_watchers_service = service.clone();
     let legacy_project_labels_service = service.clone();
@@ -2767,7 +2773,16 @@ pub(crate) fn routes(
         )
         .route(
             "/{owner_name}/{project_name}/changeVCS",
-            post(
+            get({
+                let assets = direct_project_change_vcs_assets.clone();
+                let browser_runtime = direct_project_change_vcs_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .post(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>| {
                     async move {
@@ -2850,7 +2865,16 @@ pub(crate) fn routes(
         )
         .route(
             "/{owner_name}/{project_name}/webhooks",
-            post(
+            get({
+                let assets = direct_project_webhook_assets.clone();
+                let browser_runtime = direct_project_webhook_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .post(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Form(form): Form<HashMap<String, String>>| {
@@ -2887,7 +2911,16 @@ pub(crate) fn routes(
         )
         .route(
             "/{owner_name}/{project_name}/transfer",
-            put(
+            get({
+                let assets = direct_project_transfer_assets.clone();
+                let browser_runtime = direct_project_transfer_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .put(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<HashMap<String, String>>| {

@@ -2388,55 +2388,6 @@ export function ProjectWebhooksPage(props: {
                 </>
               )}
             </div>
-
-            <div className="webhook-history-wrap" id="webhookDeliveryHistory">
-              <h4 className="form-legend">
-                {legacyMessage(props.messages, "project.webhook.delivery.history")}
-              </h4>
-              {detail.deliveries.length === 0 ? (
-                <div className="error-wrap">
-                  <i className="ico ico-err1" />
-                  <p>{legacyMessage(props.messages, "project.webhook.delivery.empty")}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="row-fluid list-head">
-                    <div className="span2 text-center">
-                      {legacyMessage(props.messages, "project.webhook.delivery.created")}
-                    </div>
-                    <div className="span2 text-center">
-                      {legacyMessage(props.messages, "project.webhook.delivery.event")}
-                    </div>
-                    <div className="span2 text-center">
-                      {legacyMessage(props.messages, "project.webhook.delivery.status")}
-                    </div>
-                    <div className="span3 payload-url">
-                      {legacyMessage(props.messages, "project.webhook.payloadUrl")}
-                    </div>
-                    <div className="span3">
-                      {legacyMessage(props.messages, "project.webhook.delivery.response")}
-                    </div>
-                  </div>
-                  {detail.deliveries.map((delivery) => (
-                    <div
-                      className="row-fluid list-item vertical-align webhook-history-item"
-                      data-webhook-delivery-id={delivery.id}
-                      key={delivery.id}
-                    >
-                      <div className="span2 text-center">{delivery.createdLabel}</div>
-                      <div className="span2 text-center">{delivery.eventType}</div>
-                      <div className="span2 text-center">{delivery.status}</div>
-                      <div className="span3 payload-url">{delivery.payloadUrl}</div>
-                      <div className="span3 webhook-delivery-response">
-                        {delivery.errorMessage ||
-                          delivery.responseBody ||
-                          legacyMessage(props.messages, "project.webhook.delivery.response.empty")}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>

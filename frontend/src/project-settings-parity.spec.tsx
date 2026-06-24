@@ -205,8 +205,8 @@ describe("project settings parity", () => {
     expect(membersHtml).toContain('class="d-label">user.role.member</span>');
     expect(membersHtml).toContain(">user.role.manager</button>");
     expect(webhooksHtml).toContain(">project.webhook.new</strong>");
-    expect(webhooksHtml).toContain(">project.webhook.delivery.history</h4>");
-    expect(webhooksHtml).toContain(">project.webhook.delivery.empty</p>");
+    expect(webhooksHtml).not.toContain("project.webhook.delivery.");
+    expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
     expect(transferHtml).toContain(">project.transfer.new.owner</div>");
     expect(deleteHtml).toContain(">project.delete.description</strong>");
     expect(changeVcsHtml).toContain(">project.changeVCS.description1 Subversion</strong>");
@@ -477,12 +477,8 @@ describe("project settings parity", () => {
     expect(membersHtml).toContain(">ROLE_OWNER_LOOKUP</span>");
     expect(membersHtml).toContain(">ROLE_MEMBER_LOOKUP</span>");
     expect(membersHtml).toContain(">ROLE_MANAGER_LOOKUP</button>");
-    expect(webhooksHtml).toContain(">DELIVERY_HISTORY_LOOKUP</h4>");
-    expect(webhooksHtml).toContain(">DELIVERY_CREATED_LOOKUP</div>");
-    expect(webhooksHtml).toContain(">DELIVERY_EVENT_LOOKUP</div>");
-    expect(webhooksHtml).toContain(">DELIVERY_STATUS_LOOKUP</div>");
-    expect(webhooksHtml).toContain(">DELIVERY_RESPONSE_LOOKUP</div>");
-    expect(webhooksHtml).toContain(">DELIVERY_RESPONSE_EMPTY_LOOKUP</div>");
+    expect(webhooksHtml).not.toContain("project.webhook.delivery.");
+    expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
     expect(forkHelpHtml).toContain(">FORK_HELP_TITLE_LOOKUP</p>");
     expect(forkHelpHtml).toContain(">FORK_HELP_1_LOOKUP</p>");
     expect(forkHelpHtml).toContain(">FORK_HELP_2_LOOKUP</p>");

@@ -44,7 +44,7 @@ therefore recorded separately from the legacy HTML baseline until the browser ch
 ## Results
 
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed.
-- Local Playwright visual sweep: 107 checked, 96 passed, 11 failed.
+- Local Playwright visual sweep: 107 checked, 99 passed, 8 failed.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 
@@ -62,7 +62,6 @@ smoke test.
 
 | Failure class | Paths |
 | --- | --- |
-| Navigation failed with HTTP response code failure | `/pilot/yona/changeVCS`, `/pilot/yona/transfer`, `/pilot/yona/webhooks` |
 | Missing project header/menu | `/pilot/yona/milestone/1`, `/pilot/yona/milestone/1/editform`, `/pilot/yona/newPullRequestForm`, `/pilot/yona/post/1`, `/pilot/yona/pullRequest/1`, `/pilot/yona/pullRequest/1/changes`, `/pilot/yona/pullRequest/1/changes/HEAD`, `/pilot/yona/pullRequest/1/editform` |
 
 ## Follow-Up
@@ -71,5 +70,7 @@ smoke test.
 - Split the missing project chrome group into two checks: routes that need seeded fixture records
   (`post/1`, `milestone/1`, `pullRequest/1`) and routes that should render project chrome even in
   an empty/error state (`newPullRequestForm`).
+- `/changeVCS`, `/transfer`, and `/webhooks` now reach the React SPA on GET; the legacy direct
+  mutation handlers still own POST/PUT/DELETE.
 - Re-run the same 107-route local Playwright sweep after each repair batch; success criterion is
   107/107 local pass before comparing visual screenshots against legacy.

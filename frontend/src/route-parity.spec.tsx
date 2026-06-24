@@ -5069,8 +5069,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="gitPush"');
     expect(viewSource).toContain('id="webhooksList"');
     expect(viewSource).toContain("data-webhook-id");
-    expect(viewSource).toContain('id="webhookDeliveryHistory"');
-    expect(viewSource).toContain("data-webhook-delivery-id");
+    expect(viewSource).not.toContain('id="webhookDeliveryHistory"');
+    expect(viewSource).not.toContain("data-webhook-delivery-id");
     expect(viewSource).toContain('data-request-method="delete"');
     expect(viewSource).toContain("project.webhook.payloadUrl.empty");
     expect(viewSource).not.toContain('required\n                      type="url"');
@@ -5161,8 +5161,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<h6 class="mr20 truncate">https://hooks.example.test/yona</h6>');
     expect(html).toContain("<h6>NONE</h6>");
     expect(html).toContain('data-request-uri="/yona/yona/projectYobi/webhooks/7"');
-    expect(html).toContain('id="webhookDeliveryHistory"');
-    expect(html).toContain('data-webhook-delivery-id="9"');
+    expect(html).not.toContain('id="webhookDeliveryHistory"');
+    expect(html).not.toContain('data-webhook-delivery-id="9"');
     expect(html).not.toContain("project.webhook.type.SIMPLE");
     expect(html).not.toContain(">button.add</button>");
     expect(html).not.toContain("project.webhook.gitPush");
