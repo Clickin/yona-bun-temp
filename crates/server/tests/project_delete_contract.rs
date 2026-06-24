@@ -8,13 +8,13 @@ use sea_orm::{
 use serde_json::{json, Value};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     comment_thread, commit_comment, favorite_project, issue, issue_label, issue_label_category,
     posting, project_label, project_pushed_branch, project_transfer, project_user, pull_request,
     user_enrolled_project, webhook, AppRepository,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 
@@ -258,8 +258,8 @@ async fn project_delete_requires_update_authority_and_removes_project_state() {
         .await
         .expect("project lookup")
         .expect("project exists");
-    let repo_path = yona_rust_vcs::repository_path(data_dir.path(), project.id);
-    let svn_repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project.id);
+    let repo_path = yoram_vcs::repository_path(data_dir.path(), project.id);
+    let svn_repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project.id);
     assert!(
         repo_path.exists(),
         "project create should provision bare repo"

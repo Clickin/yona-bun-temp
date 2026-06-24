@@ -26,9 +26,9 @@ guards that prevent legacy failure modes from taking the service down.
 
 - `pnpm smoke:legacy-mariadb-dump` passed against the ignored
   `.agent/legacy-dumps/yona-dump.sql` baseline.
-- `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test
+- `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test
 db_matrix_env --features db-matrix -- --nocapture` passed.
-- `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test
+- `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test
 db_matrix_testcontainers --features db-matrix -- --nocapture` passed with
   SQLite/PostgreSQL/MariaDB runtime migration, schema validation, repository,
   and seeded issue search smoke coverage.

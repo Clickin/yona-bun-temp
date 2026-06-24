@@ -4795,11 +4795,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "yona-rust-domain"
+name = "yoram-domain"
 version = "0.1.0"
 
 [[package]]
-name = "yona-rust-integrations"
+name = "yoram-integrations"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -4807,28 +4807,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "yona-rust-persistence"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "rand 0.8.5",
- "sea-orm",
- "serde",
- "tokio",
- "yona-rust-persistence-entities",
- "yona-rust-pilot-migration",
- "yona-rust-search",
-]
-
-[[package]]
-name = "yona-rust-persistence-entities"
-version = "0.1.0"
-dependencies = [
- "sea-orm",
-]
-
-[[package]]
-name = "yona-rust-pilot-migration"
+name = "yoram-migration"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -4839,11 +4818,39 @@ dependencies = [
  "sha2",
  "tempfile",
  "tokio",
- "yona-rust-persistence-entities",
+ "yoram-persistence-entities",
 ]
 
 [[package]]
-name = "yona-rust-pilot-server"
+name = "yoram-persistence"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "rand 0.8.5",
+ "sea-orm",
+ "serde",
+ "tokio",
+ "yoram-migration",
+ "yoram-persistence-entities",
+ "yoram-search",
+]
+
+[[package]]
+name = "yoram-persistence-entities"
+version = "0.1.0"
+dependencies = [
+ "sea-orm",
+]
+
+[[package]]
+name = "yoram-search"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "yoram-server"
 version = "0.1.0"
 dependencies = [
  "ammonia",
@@ -4877,23 +4884,16 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "yona-rust-domain",
- "yona-rust-integrations",
- "yona-rust-persistence",
- "yona-rust-pilot-migration",
- "yona-rust-search",
- "yona-rust-vcs",
+ "yoram-domain",
+ "yoram-integrations",
+ "yoram-migration",
+ "yoram-persistence",
+ "yoram-search",
+ "yoram-vcs",
 ]
 
 [[package]]
-name = "yona-rust-search"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "yona-rust-vcs"
+name = "yoram-vcs"
 version = "0.1.0"
 dependencies = [
  "mime_guess",

@@ -13,9 +13,9 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{original_email, AppRepository};
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_persistence::{original_email, AppRepository};
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 
@@ -427,15 +427,15 @@ fn run_git(args: &[&str], cwd: Option<&Path>) {
 }
 
 fn svn_tools_available() -> bool {
-    Command::new(yona_rust_vcs::svn_executable("svnadmin"))
+    Command::new(yoram_vcs::svn_executable("svnadmin"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
-        && Command::new(yona_rust_vcs::svn_executable("svnlook"))
+        && Command::new(yoram_vcs::svn_executable("svnlook"))
             .arg("--version")
             .output()
             .is_ok_and(|output| output.status.success())
-        && Command::new(yona_rust_vcs::svn_executable("svn"))
+        && Command::new(yoram_vcs::svn_executable("svn"))
             .arg("--version")
             .output()
             .is_ok_and(|output| output.status.success())
@@ -453,7 +453,7 @@ fn seed_svn_readme(repo_path: &Path, contents: &str) -> Option<i64> {
     let trunk_dir = import_dir.path().join("trunk");
     fs::create_dir_all(&trunk_dir).expect("create svn trunk");
     fs::write(trunk_dir.join("README.md"), contents).expect("write svn readme");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["import", "-m", "seed svn readme"])
         .arg(import_dir.path())
         .arg(svn_file_url(repo_path))
@@ -464,7 +464,7 @@ fn seed_svn_readme(repo_path: &Path, contents: &str) -> Option<i64> {
         "svn import should seed executable-backed repository: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+    Some(yoram_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
 fn seed_bare_repository(yona_data: &Path, project_id: i64) {
@@ -1447,8 +1447,8 @@ async fn rest_commit_detail_creates_comments_from_svn_revision() {
     ))
     .await
     .expect("mark project as svn");
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project.id);
-    yona_rust_vcs::create_svn_repository(&repo_path).expect("create svn repository");
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project.id);
+    yoram_vcs::create_svn_repository(&repo_path).expect("create svn repository");
     let revision = seed_svn_readme(&repo_path, "# Hello SVN\n").expect("seed svn revision");
     let commit_id = revision.to_string();
     let detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}");

@@ -158,7 +158,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract                               | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/**`, `crates/server/tests/issue_core_contract.rs`, `crates/server/tests/issue_assignable_contract.rs`                                  |
 | Backend behavior                            | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                                                                              |
 | UI route surface                            | `frontend/src/routes/$owner/$projectName/issues`, `issueform`, `issue/$issueNumber`, `issue/$issueNumber/editform`                                                                        |
-| Regression tests                            | `cargo test -p yona-rust-pilot-server --test issue_core_contract`                                                                                                                         |
+| Regression tests                            | `cargo test -p yoram-server --test issue_core_contract`                                                                                                                         |
 
 ## Phase 2E Evidence
 
@@ -171,7 +171,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract            | `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/issue_sharer_contract.rs`                  |
 | Backend behavior         | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                     |
 | UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`                   |
-| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx` |
+| Regression tests         | `cargo test -p yoram-server --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx` |
 
 ## Phase 2G Evidence
 
@@ -182,7 +182,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract             | `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/issues/:number/favorite`, `ReadIssueDetailResponse.isFavorited`                 |
 | Backend behavior          | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                                   |
 | UI route surface          | `frontend/src/routes/user/issues/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
-| Regression tests          | `cargo test -p yona-rust-pilot-server --test user_issue_favorite_contract`; `pnpm --dir frontend test -- route-parity.spec.tsx auth-workspace-shell.spec.tsx` |
+| Regression tests          | `cargo test -p yoram-server --test user_issue_favorite_contract`; `pnpm --dir frontend test -- route-parity.spec.tsx auth-workspace-shell.spec.tsx` |
 
 ## Phase 2H Evidence
 
@@ -193,7 +193,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract             | `/api/v1/owners/:owner/projects/:project/issues/:number/comments/:commentId/vote`, `IssueCommentVoter`, comment vote projection fields     |
 | Backend behavior          | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`, direct POST compatibility routes       |
 | UI route surface          | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts` |
-| Regression tests          | `cargo test -p yona-rust-pilot-server --test issue_comment_vote_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx route-parity.spec.tsx` |
+| Regression tests          | `cargo test -p yoram-server --test issue_comment_vote_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx route-parity.spec.tsx` |
 
 ## Phase 2J Evidence
 
@@ -204,7 +204,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract            | `/api/v1/owners/:owner/projects/:project/issues/:number/assignable-users`, `crates/server/tests/issue_assignable_contract.rs`               |
 | Backend behavior         | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/api/issue-meta.ts` |
-| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
+| Regression tests         | `cargo test -p yoram-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
 
 ## Phase 2K Evidence
 
@@ -214,7 +214,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract            | `/api/v1/owners/:owner/projects/:project/assignable-users`, `crates/server/tests/issue_assignable_contract.rs`                              |
 | Backend behavior         | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface         | `frontend/src/routes/$owner/$projectName/issueform/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/api/issue-meta.ts` |
-| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
+| Regression tests         | `cargo test -p yoram-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
 
 ## Phase 2L Evidence
 
@@ -225,7 +225,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract               | `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/mention-users`, `crates/server/tests/issue_sharer_contract.rs`, `crates/server/tests/issue_mention_contract.rs` |
 | Backend behavior            | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface            | `frontend/src/api/issue-meta.ts`, `frontend/src/auth-workspace-client.ts`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
-| Regression tests            | `cargo test -p yona-rust-pilot-server --test issue_sharer_contract --test issue_mention_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
+| Regression tests            | `cargo test -p yoram-server --test issue_sharer_contract --test issue_mention_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
 
 ## Phase 2M Evidence
 
@@ -235,7 +235,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract                  | `/api/v1/owners/:owner/projects/:project/issue-references`, `crates/server/tests/issue_reference_autocomplete_contract.rs`                  |
 | Backend behavior               | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface               | `frontend/src/api/issue-meta.ts`, `frontend/src/api/query-keys.ts`, `frontend/src/auth-workspace-client.ts`, `frontend/src/routes/$owner/$projectName/issueform/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
-| Regression tests               | `cargo test -p yona-rust-pilot-server --test issue_reference_autocomplete_contract --test issue_mention_contract --test rest_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx api-query.spec.ts` |
+| Regression tests               | `cargo test -p yoram-server --test issue_reference_autocomplete_contract --test issue_mention_contract --test rest_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx api-query.spec.ts` |
 
 ## Phase 2N Evidence
 
@@ -246,7 +246,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | REST contract               | `/api/v1/notifications`, `/api/v1/projects/:owner/:project/issues/:number/state`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/notification_contract.rs`, `crates/server/tests/issue_sharer_contract.rs` |
 | Backend behavior            | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
-| Regression tests            | `cargo test -p yona-rust-pilot-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
+| Regression tests            | `cargo test -p yoram-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
 
 Notification list projection follows the legacy `NotificationEvent.getMessage` direct-value cases for issue/post/comment create/update events and the legacy issue close/reopen message keys for `ISSUE_STATE_CHANGED`, while the inbox shell and paging remain backed by `/api/v1/notifications`.
 

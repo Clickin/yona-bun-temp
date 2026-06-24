@@ -3,17 +3,17 @@ use sea_orm::{
     Set,
 };
 use std::collections::BTreeMap;
-use yona_rust_integrations::{MailboxMimePart, MailboxParsedMessageInput};
-use yona_rust_persistence::{
+use yoram_integrations::{MailboxMimePart, MailboxParsedMessageInput};
+use yoram_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
     CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput,
     MailboxActionExecutionInput, MailboxNormalizedMessageInput, MailboxReplyTargetRecord,
     PostingMutationInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::runtime_config::load_startup_config;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::runtime_config::load_startup_config;
+use yoram_server::{
     mailbox_polling_config_from_startup, poll_mailbox_scheduler_tick,
     process_mailbox_parsed_message, process_mailbox_raw_message, MailboxPollingConfig,
 };

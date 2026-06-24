@@ -71,5 +71,5 @@ fn targets_file(repo_path: &Path, route: &SvnProtocolRoute) -> bool {
     if path.is_empty() || path.starts_with("!svn/") {
         return false;
     }
-    yona_rust_vcs::svn_cat_file(repo_path, None, path).is_ok()
+    yoram_vcs::svn_cat_file(repo_path, None, path).is_ok()
 }

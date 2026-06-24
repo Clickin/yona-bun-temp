@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, report_items, svn_protocol_not_implemented_response,
@@ -13,7 +13,7 @@ use super::{
 pub(crate) fn mergeinfo(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) -> Response {
     let revision = match xml::i64(request, "revision") {
         Some(revision) => revision,
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -38,7 +38,7 @@ pub(crate) fn mergeinfo(repo_path: &StdPath, route: &SvnProtocolRoute, request: 
     for requested_path in requested_paths {
         let path = path::join_report_path(&base_path, requested_path);
         let mergeinfo =
-            match yona_rust_vcs::svn_property(repo_path, Some(revision), &path, "svn:mergeinfo") {
+            match yoram_vcs::svn_property(repo_path, Some(revision), &path, "svn:mergeinfo") {
                 Ok(Some(mergeinfo)) => mergeinfo,
                 Ok(None) => continue,
                 Err(VcsError::NotFound) => continue,

@@ -24,12 +24,12 @@ Date: 2026-04-09
 
 | Category                | Command                                                                                                                                         | Result                |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| JS contract             | `bun test tests/yona-rust-schema-foundation.test.mjs tests/yona-legacy-parity-gate.test.mjs`                                                    | `14 passed, 0 failed` |
-| Startup config          | `cargo test -p yona-rust-pilot-server --test runtime_config_contract`                                                                           | `5 passed, 0 failed`  |
-| Migration runtime guard | `cargo test -p yona-rust-pilot-migration --test runtime_schema_contract`                                                                        | `8 passed, 0 failed`  |
-| Persistence regression  | `cargo test -p yona-rust-persistence --tests`                                                                                                   | `5 passed, 0 failed`  |
-| Server regression       | `cargo test -p yona-rust-pilot-server --test auth_workspace_contract --test org_project_contract --test db_router_contract --test sqlite_smoke` | `7 passed, 0 failed`  |
-| DB matrix               | `cargo test -p yona-rust-pilot-server --test db_matrix_testcontainers`                                                                          | `1 passed, 0 failed`  |
+| JS contract             | `bun test tests/yoram-schema-foundation.test.mjs tests/yona-legacy-parity-gate.test.mjs`                                                    | `14 passed, 0 failed` |
+| Startup config          | `cargo test -p yoram-server --test runtime_config_contract`                                                                           | `5 passed, 0 failed`  |
+| Migration runtime guard | `cargo test -p yoram-migration --test runtime_schema_contract`                                                                        | `8 passed, 0 failed`  |
+| Persistence regression  | `cargo test -p yoram-persistence --tests`                                                                                                   | `5 passed, 0 failed`  |
+| Server regression       | `cargo test -p yoram-server --test auth_workspace_contract --test org_project_contract --test db_router_contract --test sqlite_smoke` | `7 passed, 0 failed`  |
+| DB matrix               | `cargo test -p yoram-server --test db_matrix_testcontainers`                                                                          | `1 passed, 0 failed`  |
 
 Total: `40 passed, 0 failed`
 

@@ -5,7 +5,7 @@ use std::path::Path as StdPath;
 
 use crate::base_path_href;
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, href, path, svn_protocol_not_implemented_response,
@@ -45,7 +45,7 @@ pub(super) fn merge(repo_path: &StdPath, route: &SvnProtocolRoute, body: &Bytes)
     if path::activity_id(&activity_href).is_none() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+    let revision = match yoram_vcs::svn_youngest_revision(repo_path) {
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
@@ -58,7 +58,7 @@ pub(super) fn merge(repo_path: &StdPath, route: &SvnProtocolRoute, body: &Bytes)
     let merge_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
+    let changed_paths = match yoram_vcs::svn_changed_paths(repo_path, revision) {
         Ok(paths) => paths,
         Err(VcsError::NotFound) => Vec::new(),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -114,7 +114,7 @@ fn merge_updated_responses(
     route: &SvnProtocolRoute,
     revision: i64,
     merge_path: &str,
-    changed_paths: &[yona_rust_vcs::SvnChangedPath],
+    changed_paths: &[yoram_vcs::SvnChangedPath],
 ) -> String {
     let mut updated_responses = String::new();
     let project_href = base_path_href(

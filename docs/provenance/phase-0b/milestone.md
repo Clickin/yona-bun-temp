@@ -38,8 +38,8 @@
 
 ## Verification
 
-- `cargo test -p yona-rust-pilot-server --test milestone_contract`
-- `cargo test -p yona-rust-pilot-server --test rest_contract rest_project_routes_cover_directory_views_and_mutations`
+- `cargo test -p yoram-server --test milestone_contract`
+- `cargo test -p yoram-server --test rest_contract rest_project_routes_cover_directory_views_and_mutations`
 - `pnpm --dir frontend build`
 - `pnpm --dir frontend check`
 - `pnpm --dir frontend test:e2e -- tests/shell-routing-smoke.e2e.ts -g "project milestone .*image uploads|project milestone edit editor submits pasted image uploads"`

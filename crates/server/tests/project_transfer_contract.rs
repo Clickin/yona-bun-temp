@@ -5,14 +5,14 @@ use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilte
 use serde_json::{json, Value};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
-use yona_rust_persistence::{project_transfer, AppRepository};
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_persistence::{project_transfer, AppRepository};
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
     SmtpRuntimeConfig,
 };
-use yona_rust_vcs::repository_path;
+use yoram_vcs::repository_path;
 
 mod rest_test_support;
 

@@ -11,16 +11,16 @@ use sea_orm::{
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
-use yona_rust_persistence::{
+use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_persistence::{
     attachment, issue, issue_comment, issue_label, issue_label_category, milestone, n4user,
     posting, posting_comment, project, project_user, role, site_admin, AppRepository,
     CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
     CreateProjectLabelInput, IssueMutationInput, MilestoneListFilter, MilestoneMutationInput,
     PostingMutationInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config,
     reconcile_site_import_staging_uploads_for_startup, AppRuntimeConfig, RuntimeConfig,
@@ -4455,7 +4455,7 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
         .await
         .expect("read beta project")
         .expect("beta project");
-    let beta_repo_path = yona_rust_vcs::repository_path(data_root.path(), beta_project.id);
+    let beta_repo_path = yoram_vcs::repository_path(data_root.path(), beta_project.id);
     assert!(
         beta_repo_path.join("HEAD").is_file(),
         "project create should provision repository under the app-config data root"

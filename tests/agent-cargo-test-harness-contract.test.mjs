@@ -18,7 +18,7 @@ describe("agent cargo test harness contract", () => {
     const options = parseArgs([
       "--",
       "-p",
-      "yona-rust-pilot-server",
+      "yoram-server",
       "--test",
       "rest_contract",
       "target_test",
@@ -28,7 +28,7 @@ describe("agent cargo test harness contract", () => {
 
     assert.deepEqual(options.cargoArgs, [
       "-p",
-      "yona-rust-pilot-server",
+      "yoram-server",
       "--test",
       "rest_contract",
       "target_test",
@@ -39,7 +39,7 @@ describe("agent cargo test harness contract", () => {
       args: [
         "test",
         "-p",
-        "yona-rust-pilot-server",
+        "yoram-server",
         "--test",
         "rest_contract",
         "target_test",

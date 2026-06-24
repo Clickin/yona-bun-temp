@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, report_filters, report_items, svn_protocol_not_implemented_response,
@@ -11,7 +11,7 @@ use super::{
 };
 
 pub(crate) fn log(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) -> Response {
-    let youngest_revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+    let youngest_revision = match yoram_vcs::svn_youngest_revision(repo_path) {
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
@@ -27,7 +27,7 @@ pub(crate) fn log(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) 
         .and_then(|value| usize::try_from(value).ok())
         .unwrap_or(0);
     let entries =
-        match yona_rust_vcs::svn_log_entries(repo_path, start_revision, end_revision, limit) {
+        match yoram_vcs::svn_log_entries(repo_path, start_revision, end_revision, limit) {
             Ok(entries) => entries,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
@@ -49,7 +49,7 @@ pub(crate) fn log(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) 
         .filter_map(|entry| {
             let changed_paths =
                 if (include_changed_paths || path_filter.is_some()) && entry.revision > 0 {
-                    yona_rust_vcs::svn_changed_paths(repo_path, entry.revision).unwrap_or_default()
+                    yoram_vcs::svn_changed_paths(repo_path, entry.revision).unwrap_or_default()
                 } else {
                     Vec::new()
                 };

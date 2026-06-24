@@ -4,7 +4,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, svn_protocol_not_implemented_response, svn_protocol_status_response,
@@ -18,7 +18,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, head_only: boo
             if head_only { "HEAD" } else { "GET" },
         );
     };
-    let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
+    let bytes = match yoram_vcs::svn_cat_file(repo_path, revision, &path) {
         Ok(bytes) => bytes,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),

@@ -14,15 +14,15 @@ use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::SystemTime;
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
-use yona_rust_persistence::{
+use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_persistence::{
     comment_thread, issue, issue_comment, issue_event, n4user, notification_event,
     notification_event_n4user, notification_mail, posting, posting_comment, project,
     review_comment, unwatch, user_project_notification, watch, AppRepository, RepositoryConfig,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::runtime_config::load_startup_config;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::runtime_config::load_startup_config;
+use yoram_server::{
     create_router_with_app_repository, deliver_due_notification_mails,
     deliver_due_notification_mails_with_config, deliver_notification_mail_scheduler_tick,
     notification_mail_add_noreferrer_to_external_links,
@@ -1552,7 +1552,7 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
             allowed_domains: vec!["allowed.example.com".to_string()],
             default_from: "configured-notify@example.com".to_string(),
             hide_address: false,
-            integrations: yona_rust_integrations::IntegrationConfig::default(),
+            integrations: yoram_integrations::IntegrationConfig::default(),
             recipient_limit: None,
             reply_to_address: Some("noreply@yona.example".to_string()),
             site_name: "Yona".to_string(),

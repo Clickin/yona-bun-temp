@@ -8,12 +8,12 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_persistence::AppRepository;
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
-use yona_rust_vcs::repository_path;
+use yoram_vcs::repository_path;
 
 mod rest_test_support;
 

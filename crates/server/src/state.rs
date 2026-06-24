@@ -13,7 +13,7 @@ use crate::{
     AppRuntimeConfig, AuthUiConfig, LdapRuntimeConfig, OAuthRuntimeConfig, PilotRepository,
     SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
 };
-use yona_rust_integrations::IntegrationConfig;
+use yoram_integrations::IntegrationConfig;
 
 pub(crate) static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 

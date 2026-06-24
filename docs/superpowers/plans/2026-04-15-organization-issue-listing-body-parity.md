@@ -19,7 +19,7 @@ Current canonical evidence shows:
 
 - `frontend/src/routes/organizations/$organizationName/issues/route.tsx` still renders `PlaceholderPage`.
 - `docs/plans/2026-04-11-wave-2b-organization-follow-up.md` marks **organization issue listing body parity** as the first active follow-up gap.
-- `docs/superpowers/plans/2026-04-15-yona-rust-phase-2a-project-issue-surface-parity.md` names this as the immediate next packet after project issue list/detail parity.
+- `docs/superpowers/plans/2026-04-15-yoram-phase-2a-project-issue-surface-parity.md` names this as the immediate next packet after project issue list/detail parity.
 - Legacy Yona treats `/organizations/:organizationName/issues` as an organization-shell page over issues from the viewer’s visible projects, not as a new organization-owned issue model.
 
 Therefore the next packet is **organization issue listing body parity only**.

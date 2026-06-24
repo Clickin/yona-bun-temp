@@ -11,12 +11,12 @@ use std::process::Command;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
-use yona_rust_integrations::{
+use yoram_integrations::{
     clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
 };
-use yona_rust_persistence::{webhook_thread, AppRepository};
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_persistence::{webhook_thread, AppRepository};
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 

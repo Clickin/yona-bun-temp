@@ -256,20 +256,20 @@ async fn fork_project_after_auth(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     let source_repo_path =
-        yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let fork_repo_path = yona_rust_vcs::repository_path(&service.data_root, fork.id);
+        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let fork_repo_path = yoram_vcs::repository_path(&service.data_root, fork.id);
     let clone_result = {
         let _guard = repository_provisioning_lock()
             .lock()
             .map_err(|_| internal_error("repository provisioning lock poisoned"))
             .map_err(RestRouteError::from_connect_error)?;
-        yona_rust_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
+        yoram_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
     };
     if let Err(error) = clone_result {
         let _ = repository
             .delete_project_by_owner_and_name(&fork.owner_name, &fork.project_name)
             .await;
-        let _ = yona_rust_vcs::delete_repository(&fork_repo_path);
+        let _ = yoram_vcs::delete_repository(&fork_repo_path);
         return Err(RestRouteError::from_connect_error(code_browser_error(
             error,
         )));

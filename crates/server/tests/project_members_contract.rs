@@ -6,11 +6,11 @@ use sea_orm::{
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     notification_event, notification_mail, project_user, user_enrolled_project, AppRepository,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yoram_migration::Migrator;
+use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 

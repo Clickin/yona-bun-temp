@@ -1,11 +1,11 @@
 use sea_orm::{ConnectionTrait, Database, DbBackend, Statement};
 use serde::Deserialize;
 use testcontainers_modules::{mariadb, postgres, testcontainers::runners::AsyncRunner};
-use yona_rust_persistence::{AppRepository, SearchRepositoryInput, SearchScope};
-use yona_rust_pilot_migration::{
+use yoram_persistence::{AppRepository, SearchRepositoryInput, SearchScope};
+use yoram_migration::{
     optional_legacy_table_names, required_runtime_table_names, seed_pilot_data, Migrator,
 };
-use yona_rust_pilot_server::persistence::PilotRepository;
+use yoram_server::persistence::PilotRepository;
 
 const MANIFEST_JSON: &str = include_str!("../../migration/legacy-final-schema-manifest.json");
 

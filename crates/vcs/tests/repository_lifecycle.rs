@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use tempfile::tempdir;
-use yona_rust_vcs::{
+use yoram_vcs::{
     create_svn_repository, delete_repository, ensure_svnadmin_available, repository_path,
     repository_path_for_vcs, svn_executable, svn_path_last_changed_revision, svn_repository_path,
     svn_repository_uuid, svn_youngest_revision, VcsError,

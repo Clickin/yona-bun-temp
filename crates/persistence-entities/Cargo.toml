@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-persistence-entities"
+name = "yoram-persistence-entities"
 edition.workspace = true
 license.workspace = true
 version.workspace = true

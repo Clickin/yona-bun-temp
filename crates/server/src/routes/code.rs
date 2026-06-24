@@ -8,7 +8,7 @@ use axum::{
 use http::HeaderValue;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use yona_rust_vcs::{
+use yoram_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
     CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
@@ -834,8 +834,8 @@ pub(crate) async fn direct_code_ajax_compat(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = match yona_rust_vcs::read_code_browser(
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = match yoram_vcs::read_code_browser(
         &repo_path,
         branch.as_deref().filter(|value| !value.trim().is_empty()),
         &path,
@@ -904,8 +904,8 @@ pub(crate) async fn direct_code_file(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    match yona_rust_vcs::read_file_bytes(&repo_path, &revision, &path) {
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    match yoram_vcs::read_file_bytes(&repo_path, &revision, &path) {
         Ok(file) => direct_code_file_response(file, mode),
         Err(VcsError::NotFound) if mode == DirectCodeFileMode::Raw => {
             direct_code_raw_missing_redirect(
@@ -1071,8 +1071,8 @@ pub(crate) async fn direct_code_archive(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    match yona_rust_vcs::read_archive_zip(&repo_path, &revision) {
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    match yoram_vcs::read_archive_zip(&repo_path, &revision) {
         Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
         Err(error) => direct_code_file_error(error),
     }
@@ -1192,8 +1192,8 @@ async fn rest_read_code_browser(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yona_rust_vcs::read_code_browser(
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::read_code_browser(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
         &query.path,
@@ -1384,8 +1384,8 @@ async fn rest_read_code_history(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let mut snapshot = yona_rust_vcs::read_code_history(
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let mut snapshot = yoram_vcs::read_code_history(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
         &query.path,
@@ -1504,12 +1504,12 @@ async fn rest_code_commit_detail_response(
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
     let mut snapshot = if authorization.project.vcs == "Subversion" {
         let repo_path =
-            yona_rust_vcs::svn_repository_path(&service.data_root, authorization.project.id);
-        yona_rust_vcs::read_svn_commit_detail(&repo_path, commit_id, &query.path)
+            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_svn_commit_detail(&repo_path, commit_id, &query.path)
     } else {
         let repo_path =
-            yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-        yona_rust_vcs::read_commit_detail(
+            yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_commit_detail(
             &repo_path,
             commit_id,
             Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
@@ -1964,8 +1964,8 @@ async fn rest_read_code_compare(
         };
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yona_rust_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
 
@@ -1993,8 +1993,8 @@ async fn rest_read_code_branches(
     };
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yona_rust_vcs::read_branch_list(&repo_path)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::read_branch_list(&repo_path)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
     let pull_requests =
@@ -2034,8 +2034,8 @@ async fn rest_set_default_code_branch(
             ConnectError::permission_denied("branch default update is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yona_rust_vcs::set_default_branch(&repo_path, &body.branch_name)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::set_default_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
     let pull_requests =
@@ -2075,8 +2075,8 @@ async fn rest_delete_code_branch(
             ConnectError::permission_denied("branch delete is not allowed"),
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yona_rust_vcs::delete_branch(&repo_path, &body.branch_name)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::delete_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
     let pull_requests =

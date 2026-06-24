@@ -4,9 +4,9 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{issue, original_email, AppRepository};
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yoram_persistence::{issue, original_email, AppRepository};
+use yoram_migration::Migrator;
+use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 

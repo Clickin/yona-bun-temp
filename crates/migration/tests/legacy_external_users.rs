@@ -1,4 +1,4 @@
-use yona_rust_pilot_migration::legacy_external::{
+use yoram_migration::legacy_external::{
     find_endpoint,
     users::{
         find_fixture, fixtures, parse_admin_user_list_response, parse_admin_user_state_request,

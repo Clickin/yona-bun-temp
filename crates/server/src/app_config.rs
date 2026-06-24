@@ -8,7 +8,7 @@ use crate::{
 };
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use yona_rust_integrations::IntegrationConfig;
+use yoram_integrations::IntegrationConfig;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeConfig {

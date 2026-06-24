@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-domain"
+name = "yoram-domain"
 edition.workspace = true
 license.workspace = true
 version.workspace = true

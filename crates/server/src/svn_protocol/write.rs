@@ -4,7 +4,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path;
 
 use super::svndiff;
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 pub(crate) fn revision_response(status: StatusCode, revision: i64) -> Response {
     let mut response = status.into_response();
@@ -23,7 +23,7 @@ pub(crate) fn put_contents(repo_path: &Path, path: &str, body: &Bytes) -> Result
     if !body.starts_with(b"SVN\0") {
         return Ok(body.clone());
     }
-    let source = match yona_rust_vcs::svn_cat_file(repo_path, None, path) {
+    let source = match yoram_vcs::svn_cat_file(repo_path, None, path) {
         Ok(bytes) => bytes,
         Err(VcsError::NotFound) => Vec::new(),
         Err(error) => return Err(error),

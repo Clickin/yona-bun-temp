@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use yona_rust_vcs::{CodeCommitFileDiffRecord, VcsError};
+use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
 use crate::{
@@ -1327,8 +1327,8 @@ fn rest_pull_request_pushed_branch_from_record(
 }
 
 fn default_branch_for_project_id(service: &PilotServiceImpl, project_id: i64) -> String {
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, project_id);
-    yona_rust_vcs::read_branch_list(&repo_path)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, project_id);
+    yoram_vcs::read_branch_list(&repo_path)
         .ok()
         .map(|snapshot| snapshot.default_branch)
         .filter(|branch| !branch.trim().is_empty())
@@ -1500,7 +1500,7 @@ fn rest_pull_request_commit_from_record(
 }
 
 fn rest_pull_request_commit_from_vcs_record_with_state(
-    record: yona_rust_vcs::PullRequestDiffCommitRecord,
+    record: yoram_vcs::PullRequestDiffCommitRecord,
     known_commit_state_by_id: &HashMap<String, String>,
 ) -> RestPullRequestCommit {
     let state = known_commit_state_by_id
@@ -1528,7 +1528,7 @@ fn rest_pull_request_changed_file_from_code_commit_record(
 }
 
 fn rest_pull_request_changed_file_from_vcs_record(
-    record: yona_rust_vcs::PullRequestChangedFileRecord,
+    record: yoram_vcs::PullRequestChangedFileRecord,
 ) -> RestPullRequestChangedFile {
     RestPullRequestChangedFile {
         path: record.path,
@@ -1586,8 +1586,8 @@ async fn rest_pull_request_source_branch_state(
         return Ok(RestPullRequestSourceBranchState::default());
     }
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, source_project.id);
-    let snapshot = yona_rust_vcs::read_branch_list(&repo_path).map_err(code_browser_error)?;
+    let repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
+    let snapshot = yoram_vcs::read_branch_list(&repo_path).map_err(code_browser_error)?;
     let branch = snapshot
         .branches
         .iter()
@@ -1861,8 +1861,8 @@ fn rest_pull_request_branch_options(
     project: &persistence::ProjectRecord,
     selected_branch: &str,
 ) -> Result<(Vec<RestPullRequestBranchOption>, String), RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, project.id);
-    let branches = yona_rust_vcs::list_repository_branches(&repo_path)
+    let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
+    let branches = yoram_vcs::list_repository_branches(&repo_path)
         .map_err(rest_pull_request_branch_error)?;
     if branches.is_empty() {
         return Err(RestRouteError::bad_request(
@@ -2143,10 +2143,10 @@ pub(crate) async fn rest_read_pull_request_merge_result(
         rest_pull_request_branch_options(&service, &to_authorization.project, &query.to_branch)?;
 
     let source_repo_path =
-        yona_rust_vcs::repository_path(&service.data_root, from_authorization.project.id);
+        yoram_vcs::repository_path(&service.data_root, from_authorization.project.id);
     let target_repo_path =
-        yona_rust_vcs::repository_path(&service.data_root, to_authorization.project.id);
-    let preview = yona_rust_vcs::preview_pull_request_merge(
+        yoram_vcs::repository_path(&service.data_root, to_authorization.project.id);
+    let preview = yoram_vcs::preview_pull_request_merge(
         &source_repo_path,
         &target_repo_path,
         &selected_from_branch,
@@ -2474,10 +2474,10 @@ async fn accept_pull_request_for_actor(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&service.data_root, from_project.id);
+    let source_repo_path = yoram_vcs::repository_path(&service.data_root, from_project.id);
     let target_repo_path =
-        yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    let merge = yona_rust_vcs::merge_pull_request(
+        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let merge = yoram_vcs::merge_pull_request(
         &source_repo_path,
         &target_repo_path,
         &current.from_branch,
@@ -2557,8 +2557,8 @@ pub(crate) async fn rest_delete_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&service.data_root, source_project.id);
-    yona_rust_vcs::delete_branch(&source_repo_path, &current.from_branch)
+    let source_repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
+    yoram_vcs::delete_branch(&source_repo_path, &current.from_branch)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
     repository
@@ -2628,10 +2628,10 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yona_rust_vcs::repository_path(&service.data_root, source_project.id);
+    let source_repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
     let target_repo_path =
-        yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
-    yona_rust_vcs::restore_branch_from_merge(
+        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    yoram_vcs::restore_branch_from_merge(
         &source_repo_path,
         &target_repo_path,
         &current.from_branch,
@@ -2927,15 +2927,15 @@ pub(crate) async fn rest_read_pull_request_changes(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let diff = if merged_commit_id_from.trim().is_empty() || merged_commit_id_to.trim().is_empty() {
-        yona_rust_vcs::PullRequestDiffSnapshot {
+        yoram_vcs::PullRequestDiffSnapshot {
             commits: Vec::new(),
             files: Vec::new(),
             no_head: true,
         }
     } else {
-        yona_rust_vcs::read_pull_request_diff_between_revisions(
+        yoram_vcs::read_pull_request_diff_between_revisions(
             &repo_path,
             &merged_commit_id_from,
             &merged_commit_id_to,
@@ -2975,7 +2975,7 @@ pub(crate) async fn rest_read_pull_request_changes(
                 .iter()
                 .any(|commit| commit.commit_id == selected_commit_id)
         {
-            yona_rust_vcs::read_commit_detail(&repo_path, selected_commit_id, None, "")
+            yoram_vcs::read_commit_detail(&repo_path, selected_commit_id, None, "")
                 .map_err(code_browser_error)
                 .map_err(RestRouteError::from_connect_error)?
                 .files

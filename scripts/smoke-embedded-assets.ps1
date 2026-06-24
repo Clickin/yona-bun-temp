@@ -13,7 +13,7 @@ try {
   }
 
   $env:YONA_EMBED_ASSET_ROOT = $frontendDist
-  cargo build -p yona-rust-pilot-server --bin yoram
+  cargo build -p yoram-server --bin yoram
   if ($LASTEXITCODE -ne 0) {
     throw "cargo build failed with exit code $LASTEXITCODE"
   }

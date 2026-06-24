@@ -17,9 +17,9 @@ use std::process::Command;
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_persistence::AppRepository;
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, LdapFixtureUser,
     LdapRuntimeConfig, RuntimeConfig,
 };
@@ -27,25 +27,25 @@ use yona_rust_pilot_server::{
 mod rest_test_support;
 
 fn svn_tools_available() -> bool {
-    Command::new(yona_rust_vcs::svn_executable("svnadmin"))
+    Command::new(yoram_vcs::svn_executable("svnadmin"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
-        && Command::new(yona_rust_vcs::svn_executable("svnlook"))
+        && Command::new(yoram_vcs::svn_executable("svnlook"))
             .arg("--version")
             .output()
             .is_ok_and(|output| output.status.success())
 }
 
 fn svn_client_available() -> bool {
-    Command::new(yona_rust_vcs::svn_executable("svn"))
+    Command::new(yoram_vcs::svn_executable("svn"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
 }
 
 fn run_svn(args: &[&str], cwd: Option<&Path>) {
-    let mut command = Command::new(yona_rust_vcs::svn_executable("svn"));
+    let mut command = Command::new(yoram_vcs::svn_executable("svn"));
     command.args(args);
     command.env("SVN_NONINTERACTIVE", "1");
     if let Some(cwd) = cwd {
@@ -62,7 +62,7 @@ fn run_svn(args: &[&str], cwd: Option<&Path>) {
 }
 
 fn run_svn_capture(args: &[&str], cwd: Option<&Path>) -> std::process::Output {
-    let mut command = Command::new(yona_rust_vcs::svn_executable("svn"));
+    let mut command = Command::new(yoram_vcs::svn_executable("svn"));
     command.args(args);
     command.env("SVN_NONINTERACTIVE", "1");
     if let Some(cwd) = cwd {
@@ -127,7 +127,7 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     let trunk_dir = import_dir.path().join("trunk");
     std::fs::create_dir_all(&trunk_dir).expect("create svn trunk");
     std::fs::write(trunk_dir.join("README.md"), contents).expect("write svn readme");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["import", "-m", "seed svn readme"])
         .arg(import_dir.path())
         .arg(file_url(repo_path))
@@ -138,7 +138,7 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
         "svn import should seed executable-backed repository: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+    Some(yoram_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
 fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
@@ -146,7 +146,7 @@ fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
         return None;
     }
     let checkout_dir = tempdir().expect("svn nested checkout tempdir");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .arg("checkout")
         .arg(file_url(repo_path))
         .arg(checkout_dir.path())
@@ -160,7 +160,7 @@ fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
     let manual_dir = checkout_dir.path().join("trunk").join("manual");
     std::fs::create_dir_all(&manual_dir).expect("create svn manual");
     std::fs::write(manual_dir.join("guide.md"), "nested guide\n").expect("write svn guide");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["add", "trunk/manual"])
         .current_dir(checkout_dir.path())
         .output()
@@ -170,7 +170,7 @@ fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
         "svn add should stage nested executable-backed fixture: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["commit", "-m", "seed svn nested tree"])
         .arg(checkout_dir.path())
         .output()
@@ -180,7 +180,7 @@ fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
         "svn commit should persist nested executable-backed fixture: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+    Some(yoram_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
 fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) -> Option<i64> {
@@ -188,7 +188,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         return None;
     }
     let checkout_dir = tempdir().expect("svn mergeinfo checkout tempdir");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .arg("checkout")
         .arg(file_url(repo_path))
         .arg(checkout_dir.path())
@@ -200,7 +200,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         String::from_utf8_lossy(&output.stderr)
     );
     let target = checkout_dir.path().join(path.trim_start_matches('/'));
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["propset", "svn:mergeinfo", mergeinfo])
         .arg(&target)
         .output()
@@ -210,7 +210,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         "svn propset should seed mergeinfo: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["commit", "-m", "seed svn mergeinfo"])
         .arg(checkout_dir.path())
         .output()
@@ -220,7 +220,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         "svn commit should persist mergeinfo fixture: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read mergeinfo revision"))
+    Some(yoram_vcs::svn_youngest_revision(repo_path).expect("read mergeinfo revision"))
 }
 
 fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Option<i64> {
@@ -228,7 +228,7 @@ fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Op
         return None;
     }
     let checkout_dir = tempdir().expect("svn copy checkout tempdir");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .arg("checkout")
         .arg(file_url(repo_path))
         .arg(checkout_dir.path())
@@ -241,7 +241,7 @@ fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Op
     );
     let source = checkout_dir.path().join("trunk").join("README.md");
     let copied = checkout_dir.path().join("trunk").join("README_COPY.md");
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .arg("copy")
         .arg(&source)
         .arg(&copied)
@@ -252,7 +252,7 @@ fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Op
         "svn copy should preserve copyfrom metadata: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .args(["commit", "-m", "seed svn copied file"])
         .arg(checkout_dir.path())
         .output()
@@ -263,7 +263,7 @@ fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Op
         String::from_utf8_lossy(&output.stderr)
     );
     let copied_revision =
-        yona_rust_vcs::svn_youngest_revision(repo_path).expect("read copied revision");
+        yoram_vcs::svn_youngest_revision(repo_path).expect("read copied revision");
     assert!(
         copied_revision > source_revision,
         "svn copy fixture should create a newer revision than the source"
@@ -272,7 +272,7 @@ fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Op
 }
 
 fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> Option<String> {
-    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+    let output = Command::new(yoram_vcs::svn_executable("svn"))
         .arg("propget")
         .arg(property_name)
         .arg(format!(
@@ -438,10 +438,10 @@ async fn mark_project_as_svn(
     ))
     .await
     .expect("mark project as svn");
-    let repo_path = yona_rust_vcs::svn_repository_path(data_root, project.id);
+    let repo_path = yoram_vcs::svn_repository_path(data_root, project.id);
     let youngest_revision = if svn_tools_available() {
-        yona_rust_vcs::create_svn_repository(&repo_path).expect("seed executable svn storage");
-        Some(yona_rust_vcs::svn_youngest_revision(&repo_path).expect("read youngest revision"))
+        yoram_vcs::create_svn_repository(&repo_path).expect("seed executable svn storage");
+        Some(yoram_vcs::svn_youngest_revision(&repo_path).expect("read youngest revision"))
     } else {
         std::fs::create_dir_all(&repo_path).expect("seed svn storage");
         None
@@ -570,8 +570,8 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
             "SVN root PROPFIND should include executable-backed youngest revision metadata: {text}"
         );
-        let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
-        let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+        let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+        let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
         assert!(
             text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
             "SVN root PROPFIND should include executable-backed repository UUID metadata: {text}"
@@ -595,8 +595,8 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
-    let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repository_uuid = yoram_vcs::svn_repository_uuid(&repo_path).ok();
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
@@ -685,8 +685,8 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             )),
             "SVN default VCC PROPFIND should expose the latest baseline resource for ra_serf discovery: {text}"
         );
-        let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
-        let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+        let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+        let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
         assert!(
             text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
             "SVN default VCC PROPFIND should include executable-backed repository UUID metadata: {text}"
@@ -1047,7 +1047,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let revision = seed_svn_readme(&repo_path, "hello from svn\n").expect("seed svn readme");
 
     let response = direct_request(
@@ -2063,9 +2063,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let nested_dir_revision =
-        yona_rust_vcs::svn_make_collection(&repo_path, "trunk/guides", "seed nested svn directory")
+        yoram_vcs::svn_make_collection(&repo_path, "trunk/guides", "seed nested svn directory")
             .expect("seed nested svn directory");
-    let nested_revision = yona_rust_vcs::svn_put_file(
+    let nested_revision = yoram_vcs::svn_put_file(
         &repo_path,
         "trunk/guides/Guide.md",
         b"nested guide\n",
@@ -2258,10 +2258,10 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN list-report should expose executable-backed directory entries in ra_serf shape: {text}"
     );
 
-    let inherited_revision = yona_rust_vcs::svn_patch_properties(
+    let inherited_revision = yoram_vcs::svn_patch_properties(
         &repo_path,
         "trunk",
-        &[yona_rust_vcs::SvnPropertyPatch {
+        &[yoram_vcs::SvnPropertyPatch {
             name: "reviewed".to_string(),
             value: Some("true".to_string()),
         }],
@@ -2869,7 +2869,7 @@ async fn svn_protocol_external_client_can_info_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn client\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -2899,7 +2899,7 @@ async fn svn_protocol_external_client_can_ls_cat_and_log_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn read\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -2993,7 +2993,7 @@ async fn svn_protocol_external_client_can_ls_recursive_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn recursive ls\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3034,7 +3034,7 @@ async fn svn_protocol_external_client_can_log_verbose_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn verbose log\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3096,9 +3096,9 @@ async fn svn_protocol_external_client_can_read_mergeinfo() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn mergeinfo\n").expect("seed svn readme");
-    yona_rust_vcs::svn_copy_path(&repo_path, None, "trunk", "topic", "seed mergeinfo branch")
+    yoram_vcs::svn_copy_path(&repo_path, None, "trunk", "topic", "seed mergeinfo branch")
         .expect("seed mergeinfo branch");
     seed_svn_mergeinfo(&repo_path, "trunk", "/topic:2").expect("seed svn mergeinfo");
 
@@ -3147,7 +3147,7 @@ async fn svn_protocol_external_client_can_blame_public_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn blame\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3188,10 +3188,10 @@ async fn svn_protocol_external_client_can_diff_public_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let base_revision =
         seed_svn_readme(&repo_path, "hello before external svn diff\n").expect("seed svn readme");
-    let target_revision = yona_rust_vcs::svn_put_file(
+    let target_revision = yoram_vcs::svn_put_file(
         &repo_path,
         "trunk/README.md",
         b"hello after external svn diff\n",
@@ -3283,7 +3283,7 @@ async fn svn_protocol_external_client_can_checkout_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn checkout\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3327,7 +3327,7 @@ async fn svn_protocol_external_client_can_checkout_depth_empty() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth empty checkout\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3382,7 +3382,7 @@ async fn svn_protocol_external_client_can_deepen_depth_empty_checkout() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth-deepen update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3451,7 +3451,7 @@ async fn svn_protocol_external_client_can_update_depth_empty_checkout_to_files()
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth-files update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3517,7 +3517,7 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_files() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth-files shrink\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3587,7 +3587,7 @@ async fn svn_protocol_external_client_can_exclude_child_directory_depth() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth exclude\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3648,7 +3648,7 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_empty() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth-shrink update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3720,7 +3720,7 @@ async fn svn_protocol_external_client_can_checkout_depth_files() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn depth files checkout\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3774,7 +3774,7 @@ async fn svn_protocol_external_client_can_checkout_depth_immediates() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(
         &repo_path,
         "hello from external svn depth immediates checkout\n",
@@ -3838,9 +3838,9 @@ async fn svn_protocol_external_client_can_switch_working_copy_directory() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from trunk before svn switch\n").expect("seed svn readme");
-    yona_rust_vcs::svn_copy_path(
+    yoram_vcs::svn_copy_path(
         &repo_path,
         None,
         "trunk",
@@ -3848,7 +3848,7 @@ async fn svn_protocol_external_client_can_switch_working_copy_directory() {
         "seed switch branch",
     )
     .expect("seed switch branch copy");
-    yona_rust_vcs::svn_put_file(
+    yoram_vcs::svn_put_file(
         &repo_path,
         "branch-switch/README.md",
         b"hello from branch after svn switch\n",
@@ -3924,7 +3924,7 @@ async fn svn_protocol_external_client_can_export_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello from external svn export\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3973,7 +3973,7 @@ async fn svn_protocol_external_client_can_checkout_requested_revision() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let initial_revision = seed_svn_readme(
         &repo_path,
         "hello from external svn requested revision checkout\n",
@@ -4058,7 +4058,7 @@ async fn svn_protocol_external_client_can_commit_file_update() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn commit\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4093,7 +4093,7 @@ async fn svn_protocol_external_client_can_commit_file_update() {
     )
     .await;
 
-    let committed = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md")
+    let committed = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md")
         .expect("read committed readme");
     assert_eq!(committed, b"hello after external svn commit\n");
 
@@ -4112,7 +4112,7 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn update\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4205,7 +4205,7 @@ async fn svn_protocol_external_client_can_update_to_older_revision_and_back_to_h
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let initial_revision = seed_svn_readme(&repo_path, "hello before revision-targeted update\n")
         .expect("seed svn readme");
 
@@ -4293,7 +4293,7 @@ async fn svn_protocol_external_client_can_update_after_remote_delete() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn delete update\n")
         .expect("seed svn readme");
 
@@ -4356,9 +4356,9 @@ async fn svn_protocol_external_client_can_update_after_remote_delete() {
         "svn update should remove files deleted in the remote repository"
     );
 
-    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    let deleted = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
     assert!(
-        matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)),
+        matches!(deleted, Err(yoram_vcs::VcsError::NotFound)),
         "fixture should delete README.md from the executable-backed repository"
     );
 
@@ -4379,7 +4379,7 @@ async fn svn_protocol_external_client_reports_conflict_on_update() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn conflict\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4476,7 +4476,7 @@ async fn svn_protocol_external_client_can_add_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn add\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4521,7 +4521,7 @@ async fn svn_protocol_external_client_can_add_file_and_commit() {
     .await;
 
     let committed =
-        yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/ADDED.txt").expect("read added file");
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/ADDED.txt").expect("read added file");
     assert_eq!(committed, b"hello from external svn add\n");
 
     let _ = shutdown.send(());
@@ -4539,7 +4539,7 @@ async fn svn_protocol_external_client_can_delete_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn delete\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4582,8 +4582,8 @@ async fn svn_protocol_external_client_can_delete_file_and_commit() {
     )
     .await;
 
-    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
-    assert!(matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)));
+    let deleted = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(matches!(deleted, Err(yoram_vcs::VcsError::NotFound)));
 
     let _ = shutdown.send(());
 }
@@ -4602,7 +4602,7 @@ async fn svn_protocol_external_client_can_delete_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn delete\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4632,9 +4632,9 @@ async fn svn_protocol_external_client_can_delete_direct_url() {
         String::from_utf8_lossy(&delete_output.stderr)
     );
 
-    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    let deleted = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
     assert!(
-        matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)),
+        matches!(deleted, Err(yoram_vcs::VcsError::NotFound)),
         "svn direct URL delete should remove README.md"
     );
 
@@ -4653,7 +4653,7 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn mkdir\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4697,7 +4697,7 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
     .await;
 
     let tree =
-        yona_rust_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+        yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
     assert!(
         tree.entries
             .iter()
@@ -4723,7 +4723,7 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn mkdir\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4754,7 +4754,7 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
     );
 
     let tree =
-        yona_rust_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+        yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
     assert!(
         tree.entries
             .iter()
@@ -4780,7 +4780,7 @@ async fn svn_protocol_external_client_can_import_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn import\n").expect("seed svn readme");
 
     let import_dir = tempdir().expect("svn import tempdir");
@@ -4821,7 +4821,7 @@ async fn svn_protocol_external_client_can_import_direct_url() {
         String::from_utf8_lossy(&import_output.stderr)
     );
 
-    let imported = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/imported/IMPORTED.txt")
+    let imported = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/imported/IMPORTED.txt")
         .expect("read direct URL imported file");
     assert_eq!(imported, b"hello from direct URL svn import\n");
 
@@ -4842,7 +4842,7 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn propset\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4899,7 +4899,7 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
     .await;
 
     let properties =
-        yona_rust_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
+        yoram_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
     assert!(
         properties
             .iter()
@@ -5079,7 +5079,7 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
     .await;
 
     let properties =
-        yona_rust_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
+        yoram_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
     assert!(
         properties
             .iter()
@@ -5103,7 +5103,7 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn lock\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5136,7 +5136,7 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
         None,
     )
     .await;
-    let lock = yona_rust_vcs::svn_lock(&repo_path, "trunk/README.md")
+    let lock = yoram_vcs::svn_lock(&repo_path, "trunk/README.md")
         .expect("read lock")
         .expect("external svn lock should persist lock metadata");
     assert_eq!(lock.owner, "owner");
@@ -5154,7 +5154,7 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
         None,
     )
     .await;
-    let lock = yona_rust_vcs::svn_lock(&repo_path, "trunk/README.md").expect("read lock");
+    let lock = yoram_vcs::svn_lock(&repo_path, "trunk/README.md").expect("read lock");
     assert!(lock.is_none(), "external svn unlock should clear the lock");
 
     let _ = shutdown.send(());
@@ -5172,7 +5172,7 @@ async fn svn_protocol_external_client_can_copy_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn copy\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5217,7 +5217,7 @@ async fn svn_protocol_external_client_can_copy_file_and_commit() {
     )
     .await;
 
-    let committed = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README_COPY.md")
+    let committed = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README_COPY.md")
         .expect("read copied file");
     assert_eq!(committed, b"hello before external svn copy\n");
 
@@ -5238,7 +5238,7 @@ async fn svn_protocol_external_client_can_copy_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn copy\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5270,7 +5270,7 @@ async fn svn_protocol_external_client_can_copy_direct_url() {
         String::from_utf8_lossy(&copy_output.stderr)
     );
 
-    let committed = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README_DIRECT_COPY.md")
+    let committed = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README_DIRECT_COPY.md")
         .expect("read direct URL copied file");
     assert_eq!(committed, b"hello before direct URL svn copy\n");
 
@@ -5291,7 +5291,7 @@ async fn svn_protocol_external_client_can_copy_directory_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn directory copy\n")
         .expect("seed svn readme");
 
@@ -5324,7 +5324,7 @@ async fn svn_protocol_external_client_can_copy_directory_direct_url() {
         String::from_utf8_lossy(&copy_output.stderr)
     );
 
-    let committed = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk-copy/README.md")
+    let committed = yoram_vcs::svn_cat_file(&repo_path, None, "trunk-copy/README.md")
         .expect("read direct URL copied directory file");
     assert_eq!(committed, b"hello before direct URL svn directory copy\n");
 
@@ -5343,7 +5343,7 @@ async fn svn_protocol_external_client_can_move_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before external svn move\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5388,11 +5388,11 @@ async fn svn_protocol_external_client_can_move_file_and_commit() {
     )
     .await;
 
-    let moved_contents = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README_MOVED.md")
+    let moved_contents = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README_MOVED.md")
         .expect("read moved file");
     assert_eq!(moved_contents, b"hello before external svn move\n");
-    let original = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
-    assert!(matches!(original, Err(yona_rust_vcs::VcsError::NotFound)));
+    let original = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(matches!(original, Err(yoram_vcs::VcsError::NotFound)));
 
     let _ = shutdown.send(());
 }
@@ -5411,7 +5411,7 @@ async fn svn_protocol_external_client_can_move_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn move\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5443,12 +5443,12 @@ async fn svn_protocol_external_client_can_move_direct_url() {
         String::from_utf8_lossy(&move_output.stderr)
     );
 
-    let moved = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README_DIRECT_MOVED.md")
+    let moved = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README_DIRECT_MOVED.md")
         .expect("read direct URL moved file");
     assert_eq!(moved, b"hello before direct URL svn move\n");
-    let original = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    let original = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
     assert!(
-        matches!(original, Err(yona_rust_vcs::VcsError::NotFound)),
+        matches!(original, Err(yoram_vcs::VcsError::NotFound)),
         "svn direct URL move should remove the original README.md"
     );
 
@@ -5469,7 +5469,7 @@ async fn svn_protocol_external_client_can_move_directory_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     seed_svn_readme(&repo_path, "hello before direct URL svn directory move\n")
         .expect("seed svn readme");
 
@@ -5502,12 +5502,12 @@ async fn svn_protocol_external_client_can_move_directory_direct_url() {
         String::from_utf8_lossy(&move_output.stderr)
     );
 
-    let moved = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk-moved/README.md")
+    let moved = yoram_vcs::svn_cat_file(&repo_path, None, "trunk-moved/README.md")
         .expect("read direct URL moved directory file");
     assert_eq!(moved, b"hello before direct URL svn directory move\n");
-    let original = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    let original = yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
     assert!(
-        matches!(original, Err(yona_rust_vcs::VcsError::NotFound)),
+        matches!(original, Err(yoram_vcs::VcsError::NotFound)),
         "svn direct URL directory move should remove the original trunk/README.md"
     );
 
@@ -5528,7 +5528,7 @@ async fn svn_protocol_root_and_default_vcc_propfind_honor_label_revision() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let old_revision =
         seed_svn_readme(&repo_path, "hello before label propfind\n").expect("seed svn readme");
     let latest_revision = seed_svn_nested_tree(&repo_path).expect("seed second svn revision");
@@ -5581,10 +5581,10 @@ async fn svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metad
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let revision =
         seed_svn_readme(&repo_path, "hello before root vcc allprop\n").expect("seed svn readme");
-    let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+    let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     for (path, href, displayname) in [
@@ -5682,7 +5682,7 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
     let Some(revision) = seed_svn_readme(&repo_path, "initial content\n") else {
         eprintln!(
             "skipping executable SVN checkout/merge test because svnadmin/svnlook/svn is unavailable"

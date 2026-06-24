@@ -5,7 +5,7 @@ use sea_query::{
     TableCreateStatement, TableRef,
 };
 use serde::Deserialize;
-use yona_rust_persistence_entities::{
+use yoram_persistence_entities::{
     assignee, attachment, comment_thread, comment_thread_n4user, commit_comment, email,
     favorite_issue, favorite_organization, favorite_project, issue, issue_comment,
     issue_comment_voter, issue_event, issue_issue_label, issue_label, issue_label_category,

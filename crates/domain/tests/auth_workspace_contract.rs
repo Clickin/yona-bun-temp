@@ -1,4 +1,4 @@
-use yona_rust_domain::{
+use yoram_domain::{
     build_anonymous_app_session, build_authenticated_app_session, normalize_default_landing_path,
     resolve_post_auth_landing_path, AppUserSummary,
 };

@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, date, href, path, propfind, propfind_items,
@@ -76,7 +76,7 @@ fn revision_provenance(
     {
         return None;
     }
-    match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
+    match yoram_vcs::svn_log_entries(repo_path, revision, revision, 1) {
         Ok(mut entries) => entries
             .pop()
             .map(|entry| propfind_items::RevisionProvenance {
@@ -339,7 +339,7 @@ pub(super) fn baseline(repo_path: &StdPath, route: &SvnProtocolRoute, request: &
     if revision < 0 {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    match yona_rust_vcs::svn_youngest_revision(repo_path) {
+    match yoram_vcs::svn_youngest_revision(repo_path) {
         Ok(youngest) if revision <= youngest => {}
         Ok(_) | Err(VcsError::NotFound) => {
             return svn_protocol_status_response(StatusCode::NOT_FOUND);
@@ -360,7 +360,7 @@ pub(super) fn baseline(repo_path: &StdPath, route: &SvnProtocolRoute, request: &
     let repository_uuid = if propfind::is_propname(request)
         || propfind::wants(request, "repository-uuid")
     {
-        match yona_rust_vcs::svn_repository_uuid(repo_path) {
+        match yoram_vcs::svn_repository_uuid(repo_path) {
             Ok(uuid) => Some(uuid),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -374,7 +374,7 @@ pub(super) fn baseline(repo_path: &StdPath, route: &SvnProtocolRoute, request: &
         None
     };
     let log_entry = if wants_creation_metadata {
-        match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
+        match yoram_vcs::svn_log_entries(repo_path, revision, revision, 1) {
             Ok(mut entries) => entries.pop(),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
@@ -497,7 +497,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
     let Some((revision, path)) = path::file_lookup_for_route(route) else {
         return svn_protocol_not_implemented_response(route, "PROPFIND");
     };
-    let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
+    let bytes = match yoram_vcs::svn_cat_file(repo_path, revision, &path) {
         Ok(bytes) => bytes,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -515,7 +515,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
     );
     let version_revision = match revision {
         Some(revision) => Some(revision),
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => Some(revision),
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => None,
@@ -532,7 +532,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
             path.trim_matches('/')
         )
     });
-    let properties = match yona_rust_vcs::svn_properties(repo_path, version_revision, &path) {
+    let properties = match yoram_vcs::svn_properties(repo_path, version_revision, &path) {
         Ok(properties) => properties,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -544,7 +544,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
         }
     };
     let lock = if revision.is_none() {
-        match yona_rust_vcs::svn_lock(repo_path, &path) {
+        match yoram_vcs::svn_lock(repo_path, &path) {
             Ok(lock) => lock,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
@@ -571,7 +571,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
         &path,
         &properties,
         lock.as_ref().map(|lock| (route, lock)),
-        yona_rust_vcs::svn_repository_uuid(repo_path)
+        yoram_vcs::svn_repository_uuid(repo_path)
             .ok()
             .as_deref(),
         provenance.as_ref(),
@@ -588,9 +588,9 @@ pub(super) fn tree(
 ) -> Option<Response> {
     let (revision, path) = path::file_lookup_for_route(route)?;
     let tree_result = if recursive_children {
-        yona_rust_vcs::svn_list_tree_recursive(repo_path, revision, &path)
+        yoram_vcs::svn_list_tree_recursive(repo_path, revision, &path)
     } else {
-        yona_rust_vcs::svn_list_tree(repo_path, revision, &path)
+        yoram_vcs::svn_list_tree(repo_path, revision, &path)
     };
     let tree = match tree_result {
         Ok(tree) => tree,
@@ -607,7 +607,7 @@ pub(super) fn tree(
     };
     let version_revision = match revision {
         Some(revision) => Some(revision),
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => Some(revision),
             Err(VcsError::NotFound) => {
                 return Some(svn_protocol_status_response(StatusCode::NOT_FOUND));
@@ -627,7 +627,7 @@ pub(super) fn tree(
         &tree,
         version_revision,
         include_children,
-        yona_rust_vcs::svn_repository_uuid(repo_path)
+        yoram_vcs::svn_repository_uuid(repo_path)
             .ok()
             .as_deref(),
         provenance.as_ref(),
@@ -637,7 +637,7 @@ pub(super) fn tree(
 
 fn propfind_tree(
     route: &SvnProtocolRoute,
-    tree: &yona_rust_vcs::SvnTree,
+    tree: &yoram_vcs::SvnTree,
     version_revision: Option<i64>,
     include_children: bool,
     repository_uuid: Option<&str>,
@@ -725,8 +725,8 @@ fn propfind_file(
     version_revision: Option<i64>,
     version_href: Option<String>,
     baseline_relative_path: &str,
-    properties: &[yona_rust_vcs::SvnProperty],
-    lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
+    properties: &[yoram_vcs::SvnProperty],
+    lock: Option<(&SvnProtocolRoute, &yoram_vcs::SvnLock)>,
     repository_uuid: Option<&str>,
     provenance: Option<&propfind_items::RevisionProvenance>,
     request: &str,

@@ -10,15 +10,15 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::{tempdir, TempDir};
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
     PostingMutationInput, ProjectMenuSettingsRecord, PullRequestMutationInput, RepositoryConfig,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
-use yona_rust_vcs::{repository_path, svn_repository_path};
+use yoram_vcs::{repository_path, svn_repository_path};
 
 fn svnadmin_available() -> bool {
     Command::new("svnadmin")

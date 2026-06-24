@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::path::Path as StdPath;
 
-pub(crate) fn lock(lock: &yona_rust_vcs::SvnLock) -> String {
+pub(crate) fn lock(lock: &yoram_vcs::SvnLock) -> String {
     let comment = if lock.comment.is_empty() {
         String::new()
     } else {
@@ -36,8 +36,8 @@ pub(crate) fn lock(lock: &yona_rust_vcs::SvnLock) -> String {
 }
 
 pub(crate) fn log(
-    entry: &yona_rust_vcs::SvnLogEntry,
-    changed_paths: &[yona_rust_vcs::SvnChangedPath],
+    entry: &yoram_vcs::SvnLogEntry,
+    changed_paths: &[yoram_vcs::SvnChangedPath],
 ) -> String {
     let changed_paths = changed_paths
         .iter()
@@ -58,7 +58,7 @@ pub(crate) fn log(
     )
 }
 
-pub(crate) fn file_rev(path: &str, entry: &yona_rust_vcs::SvnLogEntry, contents: &[u8]) -> String {
+pub(crate) fn file_rev(path: &str, entry: &yoram_vcs::SvnLogEntry, contents: &[u8]) -> String {
     let txdelta = general_purpose::STANDARD.encode(super::svndiff::svndiff0_fulltext(contents));
     format!(
         r#"  <S:file-rev path="/{}" rev="{}">
@@ -97,7 +97,7 @@ pub(crate) fn mergeinfo(path: &str, mergeinfo: &str) -> String {
 pub(crate) fn list(
     repo_path: &StdPath,
     revision: i64,
-    entry: &yona_rust_vcs::SvnTreeEntry,
+    entry: &yoram_vcs::SvnTreeEntry,
     author: &str,
     date: &str,
 ) -> String {
@@ -105,7 +105,7 @@ pub(crate) fn list(
     let size = if entry.is_dir {
         String::new()
     } else {
-        match yona_rust_vcs::svn_cat_file(repo_path, Some(revision), &entry.path) {
+        match yoram_vcs::svn_cat_file(repo_path, Some(revision), &entry.path) {
             Ok(bytes) => format!(r#" size="{}""#, bytes.len()),
             Err(_) => String::new(),
         }
@@ -132,7 +132,7 @@ pub(crate) fn list(
     )
 }
 
-pub(crate) fn inherited_props(item: &yona_rust_vcs::SvnInheritedPropertySet) -> String {
+pub(crate) fn inherited_props(item: &yoram_vcs::SvnInheritedPropertySet) -> String {
     item.properties
         .iter()
         .map(|property| {
@@ -148,7 +148,7 @@ pub(crate) fn inherited_props(item: &yona_rust_vcs::SvnInheritedPropertySet) -> 
 
 pub(crate) fn proppatch_multistatus(
     href: &str,
-    patches: &[yona_rust_vcs::SvnPropertyPatch],
+    patches: &[yoram_vcs::SvnPropertyPatch],
 ) -> String {
     let mut properties = String::new();
     for patch in patches {
@@ -173,12 +173,12 @@ pub(crate) fn proppatch_multistatus(
     )
 }
 
-fn log_changed_path(changed_path: &yona_rust_vcs::SvnChangedPath) -> String {
+fn log_changed_path(changed_path: &yoram_vcs::SvnChangedPath) -> String {
     let tag_name = match changed_path.action {
-        yona_rust_vcs::SvnChangedAction::Added => "added-path",
-        yona_rust_vcs::SvnChangedAction::Modified => "modified-path",
-        yona_rust_vcs::SvnChangedAction::Deleted => "deleted-path",
-        yona_rust_vcs::SvnChangedAction::Replaced => "replaced-path",
+        yoram_vcs::SvnChangedAction::Added => "added-path",
+        yoram_vcs::SvnChangedAction::Modified => "modified-path",
+        yoram_vcs::SvnChangedAction::Deleted => "deleted-path",
+        yoram_vcs::SvnChangedAction::Replaced => "replaced-path",
     };
     let node_kind = if changed_path.is_dir { "dir" } else { "file" };
     let copyfrom = match (

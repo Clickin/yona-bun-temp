@@ -8,13 +8,13 @@ use sea_orm::{
 use serde_json::json;
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     attachment, comment_thread, original_email, project_pushed_branch, pull_request,
     pull_request_commit, pull_request_event, pull_request_reviewers, review_comment, watch,
     AppRepository,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yoram_migration::Migrator;
+use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 

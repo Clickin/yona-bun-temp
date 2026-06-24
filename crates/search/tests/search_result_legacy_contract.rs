@@ -1,4 +1,4 @@
-use yona_rust_search::{keyword_matches, make_snippets, SearchHighlight};
+use yoram_search::{keyword_matches, make_snippets, SearchHighlight};
 
 #[test]
 fn snippets_follow_legacy_korean_window_boundaries() {

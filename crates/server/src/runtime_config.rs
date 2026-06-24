@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
-use yona_rust_pilot_migration::RuntimeSchemaPolicy;
+use yoram_migration::RuntimeSchemaPolicy;
 
 use crate::RuntimeConfig;
 

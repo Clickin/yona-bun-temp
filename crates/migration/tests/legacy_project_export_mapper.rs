@@ -1,10 +1,10 @@
 use serde_json::json;
 use std::collections::BTreeMap;
-use yona_rust_pilot_migration::legacy_external::project_export_mapper::{
+use yoram_migration::legacy_external::project_export_mapper::{
     map_project_export_json_to_yobi_data,
     map_project_export_json_to_yobi_data_with_attachment_content_base64,
 };
-use yona_rust_pilot_migration::legacy_external::yona_export_adapter::map_yona_export_project_directory_to_yobi_data;
+use yoram_migration::legacy_external::yona_export_adapter::map_yona_export_project_directory_to_yobi_data;
 
 #[test]
 fn maps_legacy_project_api_export_to_yobi_data_snapshot_core_fields() {

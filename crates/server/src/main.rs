@@ -1,8 +1,8 @@
 use tracing_subscriber::EnvFilter;
-use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
-use yona_rust_pilot_server::persistence::PilotRepository;
-use yona_rust_pilot_server::runtime_config::load_startup_config_from_env;
-use yona_rust_pilot_server::{
+use yoram_migration::{seed_pilot_data, Migrator};
+use yoram_server::persistence::PilotRepository;
+use yoram_server::runtime_config::load_startup_config_from_env;
+use yoram_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_embedded_assets_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config,
@@ -81,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn asset_mode_label(
-    startup: &yona_rust_pilot_server::runtime_config::StartupConfig,
+    startup: &yoram_server::runtime_config::StartupConfig,
 ) -> &'static str {
     if startup.use_embedded_assets {
         "embedded"

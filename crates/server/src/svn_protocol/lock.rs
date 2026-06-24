@@ -22,7 +22,7 @@ pub(crate) fn token_header(headers: &HeaderMap) -> Option<String> {
     }
 }
 
-pub(crate) fn discovery_body(project_href: &str, lock: &yona_rust_vcs::SvnLock) -> String {
+pub(crate) fn discovery_body(project_href: &str, lock: &yoram_vcs::SvnLock) -> String {
     let item = discovery_item(project_href, lock);
     format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
@@ -31,7 +31,7 @@ pub(crate) fn discovery_body(project_href: &str, lock: &yona_rust_vcs::SvnLock) 
     )
 }
 
-pub(crate) fn discovery_item(project_href: &str, lock: &yona_rust_vcs::SvnLock) -> String {
+pub(crate) fn discovery_item(project_href: &str, lock: &yoram_vcs::SvnLock) -> String {
     let href = format!("{project_href}{}", lock.path);
     let created = if lock.created.is_empty() {
         String::new()

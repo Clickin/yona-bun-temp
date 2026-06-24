@@ -1,6 +1,6 @@
 use sea_orm::entity::prelude::DateTime;
 use serde::Serialize;
-use yona_rust_search::SearchSnippet;
+use yoram_search::SearchSnippet;
 
 mod legacy_external;
 

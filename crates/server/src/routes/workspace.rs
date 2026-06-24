@@ -11,7 +11,7 @@ use http::header::SET_COOKIE;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use yona_rust_domain::{
+use yoram_domain::{
     authorize_project_access, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
     ProjectScope,
 };

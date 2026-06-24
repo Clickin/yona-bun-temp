@@ -1,4 +1,4 @@
-use yona_rust_integrations::IntegrationConfig;
+use yoram_integrations::IntegrationConfig;
 
 #[test]
 fn smtp_ssl_env_accepts_legacy_yona_alias() {

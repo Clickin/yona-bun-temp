@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, svn_protocol_not_implemented_response, svn_protocol_status_response,
@@ -14,7 +14,7 @@ pub(crate) fn dated_rev(repo_path: &StdPath, route: &SvnProtocolRoute, request: 
     let Some(creation_date) = xml::text(request, "creationdate") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let revision = match yona_rust_vcs::svn_revision_at_or_before(repo_path, &creation_date) {
+    let revision = match yoram_vcs::svn_revision_at_or_before(repo_path, &creation_date) {
         Ok(Some(revision)) => revision,
         Ok(None) | Err(VcsError::NotFound) => {
             return svn_protocol_status_response(StatusCode::NOT_FOUND);
@@ -55,7 +55,7 @@ pub(crate) fn deleted_rev(
     };
     let end_revision = match xml::i64(request, "end-revision") {
         Some(revision) => revision,
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -71,7 +71,7 @@ pub(crate) fn deleted_rev(
         .unwrap_or_default();
     let path = path::join_report_path(&base_path, &requested_path);
     let deleted_revision =
-        match yona_rust_vcs::svn_deleted_revision(repo_path, &path, peg_revision, end_revision) {
+        match yoram_vcs::svn_deleted_revision(repo_path, &path, peg_revision, end_revision) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {

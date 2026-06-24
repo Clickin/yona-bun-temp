@@ -15,11 +15,11 @@ import {
 
 describe("agent cargo harness contract", () => {
   it("wraps arbitrary cargo args without injecting a subcommand", () => {
-    const options = parseArgs(["--", "check", "-p", "yona-rust-pilot-server", "--lib"]);
+    const options = parseArgs(["--", "check", "-p", "yoram-server", "--lib"]);
 
-    assert.deepEqual(options.cargoArgs, ["check", "-p", "yona-rust-pilot-server", "--lib"]);
+    assert.deepEqual(options.cargoArgs, ["check", "-p", "yoram-server", "--lib"]);
     assert.deepEqual(cargoCommand(options), {
-      args: ["check", "-p", "yona-rust-pilot-server", "--lib"],
+      args: ["check", "-p", "yoram-server", "--lib"],
       command: "cargo",
     });
   });

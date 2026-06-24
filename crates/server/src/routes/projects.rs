@@ -35,7 +35,7 @@ use crate::{
     ProjectCreatableResource, RestIssueAssignableUsersQuery, RestMentionReferenceMetadata,
     RestProjectDeleteResponse, RestRouteError,
 };
-use yona_rust_domain::{
+use yoram_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
     is_valid_project_name, ProjectAccessFacts, ProjectOperation,
@@ -316,12 +316,12 @@ pub(crate) async fn project_create(
             .await
             .map_err(internal_error)?
     };
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, created.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
     {
         let _guard = repository_provisioning_lock()
             .lock()
             .map_err(|_| internal_error("repository provisioning lock poisoned"))?;
-        yona_rust_vcs::create_bare_repository(&repo_path).map_err(code_browser_error)?;
+        yoram_vcs::create_bare_repository(&repo_path).map_err(code_browser_error)?;
     }
     repository
         .add_project_membership(created.id, user_id, "manager")
@@ -1321,7 +1321,7 @@ async fn rest_create_project(
     let menu_settings = body.menu_settings();
     let requested_vcs = body.normalized_vcs()?;
     if requested_vcs == "Subversion" {
-        yona_rust_vcs::ensure_svnadmin_available()
+        yoram_vcs::ensure_svnadmin_available()
             .map_err(code_browser_error)
             .map_err(RestRouteError::from_connect_error)?;
     }

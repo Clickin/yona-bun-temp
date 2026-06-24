@@ -83,7 +83,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;
 use std::pin::Pin;
 use std::time::{Duration, SystemTime};
-use yona_rust_search::{
+use yoram_search::{
     keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
     SearchType, SearchTypeCounts,
 };

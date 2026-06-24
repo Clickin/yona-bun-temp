@@ -15,7 +15,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 ENV YONA_EMBED_ASSET_ROOT=/app/frontend/dist
-RUN cargo build --release -p yona-rust-pilot-server --bin yoram
+RUN cargo build --release -p yoram-server --bin yoram
 
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update \

@@ -1,3 +1,3 @@
-pub use yona_rust_persistence::*;
+pub use yoram_persistence::*;
 
 pub type PilotRepository = AppRepository;

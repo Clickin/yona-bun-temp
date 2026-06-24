@@ -1,5 +1,5 @@
 use super::*;
-use yona_rust_integrations::{
+use yoram_integrations::{
     deliver_webhook_with_config, OutboundWebhook, WebhookDeliveryOutcome,
 };
 

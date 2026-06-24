@@ -4,12 +4,12 @@ use crate::runtime_config;
 use crate::server_config::{configured_command_parts, parse_legacy_duration_ms};
 
 pub async fn process_mailbox_parsed_message(
-    repository: &yona_rust_persistence::AppRepository,
-    input: yona_rust_integrations::MailboxParsedMessageInput,
-) -> Result<yona_rust_persistence::MailboxNormalizedMessageResult, sea_orm::DbErr> {
-    let normalized = yona_rust_integrations::mailbox_normalize_parsed_message(input);
+    repository: &yoram_persistence::AppRepository,
+    input: yoram_integrations::MailboxParsedMessageInput,
+) -> Result<yoram_persistence::MailboxNormalizedMessageResult, sea_orm::DbErr> {
+    let normalized = yoram_integrations::mailbox_normalize_parsed_message(input);
     repository
-        .process_mailbox_normalized_message(yona_rust_persistence::MailboxNormalizedMessageInput {
+        .process_mailbox_normalized_message(yoram_persistence::MailboxNormalizedMessageInput {
             body_markdown: normalized.body_markdown,
             from_addresses: normalized.from_addresses,
             message_id: normalized.message_id,
@@ -21,11 +21,11 @@ pub async fn process_mailbox_parsed_message(
 }
 
 pub async fn process_mailbox_raw_message(
-    repository: &yona_rust_persistence::AppRepository,
+    repository: &yoram_persistence::AppRepository,
     raw_message: &str,
     imap_address: &str,
-) -> Result<yona_rust_persistence::MailboxNormalizedMessageResult, String> {
-    let parsed = yona_rust_integrations::mailbox_parse_raw_message(raw_message, imap_address)
+) -> Result<yoram_persistence::MailboxNormalizedMessageResult, String> {
+    let parsed = yoram_integrations::mailbox_parse_raw_message(raw_message, imap_address)
         .ok_or_else(|| "raw mailbox message is missing a Message-ID header".to_string())?;
     process_mailbox_parsed_message(repository, parsed)
         .await
@@ -95,9 +95,9 @@ fn mailbox_polling_config_from_options(
 }
 
 pub async fn poll_mailbox_scheduler_tick(
-    repository: &yona_rust_persistence::AppRepository,
+    repository: &yoram_persistence::AppRepository,
     config: &MailboxPollingConfig,
-) -> Result<Vec<yona_rust_persistence::MailboxNormalizedMessageResult>, String> {
+) -> Result<Vec<yoram_persistence::MailboxNormalizedMessageResult>, String> {
     if !config.enabled {
         return Ok(Vec::new());
     }
@@ -112,7 +112,7 @@ pub async fn poll_mailbox_scheduler_tick(
 }
 
 pub fn spawn_mailbox_polling_scheduler(
-    repository: yona_rust_persistence::AppRepository,
+    repository: yoram_persistence::AppRepository,
     config: MailboxPollingConfig,
 ) -> Option<tokio::task::JoinHandle<()>> {
     if !config.enabled {

@@ -1,4 +1,4 @@
-use yona_rust_pilot_migration::legacy_external::{
+use yoram_migration::legacy_external::{
     find_endpoint,
     milestones::{
         find_fixture, fixtures, parse_milestone_import_request, AuthRequirement,

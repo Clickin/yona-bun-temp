@@ -1,6 +1,6 @@
 use super::*;
 use std::path::Path as StdPath;
-use yona_rust_vcs::{ProjectHistoryCommitRecord, VcsError};
+use yoram_vcs::{ProjectHistoryCommitRecord, VcsError};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -203,8 +203,8 @@ async fn rest_project_home_history(
         .await
         .map_err(internal_error)?
     {
-        let repo_path = yona_rust_vcs::repository_path(&service.data_root, project.id);
-        for commit in yona_rust_vcs::read_project_history_commits(&repo_path, 10)
+        let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
+        for commit in yoram_vcs::read_project_history_commits(&repo_path, 10)
             .map_err(code_browser_error)?
         {
             items.push(rest_project_history_item_from_commit(
@@ -270,7 +270,7 @@ async fn rest_project_readme_file(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let mut readme = project_readme_file_from_git(
         &repo_path,
         &service.base_path,
@@ -300,7 +300,7 @@ fn project_readme_file_from_git(
         "README.markdown",
         "readme.markdown",
     ] {
-        match yona_rust_vcs::read_code_browser(repo_path, None, candidate) {
+        match yoram_vcs::read_code_browser(repo_path, None, candidate) {
             Ok(snapshot) => {
                 let Some(file) = snapshot.file else {
                     continue;

@@ -87,7 +87,7 @@ try {
     throw new Error(`frontend dist not found: ${frontendDist}`);
   }
 
-  await run("cargo", ["build", "-p", "yona-rust-pilot-server", "--bin", "yoram"], {
+  await run("cargo", ["build", "-p", "yoram-server", "--bin", "yoram"], {
     env: { YONA_EMBED_ASSET_ROOT: frontendDist },
   });
   if (!existsSync(binaryPath)) {

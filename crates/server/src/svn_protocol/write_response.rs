@@ -4,7 +4,7 @@ use http::{HeaderMap, HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, persistence, smart_http_basic_challenge_response, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, href, lock as lock_helpers, path, report_items,
@@ -27,7 +27,7 @@ pub(super) fn put(
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let existed = match yona_rust_vcs::svn_path_exists(repo_path, None, &path) {
+    let existed = match yoram_vcs::svn_path_exists(repo_path, None, &path) {
         Ok(exists) => exists,
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
@@ -49,7 +49,7 @@ pub(super) fn put(
         }
     };
     let message = format!("Update {path} through WebDAV by {}", actor.login_id);
-    match yona_rust_vcs::svn_put_file(repo_path, &path, &contents, &message) {
+    match yoram_vcs::svn_put_file(repo_path, &path, &contents, &message) {
         Ok(revision) => {
             let status = if existed {
                 StatusCode::NO_CONTENT
@@ -98,7 +98,7 @@ pub(super) fn copy(
         "Copy {source_path} to {destination_path} through WebDAV by {}",
         actor.login_id
     );
-    match yona_rust_vcs::svn_copy_path(
+    match yoram_vcs::svn_copy_path(
         repo_path,
         source_revision,
         &source_path,
@@ -146,7 +146,7 @@ pub(super) fn move_path(
         "Move {source_path} to {destination_path} through WebDAV by {}",
         actor.login_id
     );
-    match yona_rust_vcs::svn_move_path(repo_path, &source_path, &destination_path, &message) {
+    match yoram_vcs::svn_move_path(repo_path, &source_path, &destination_path, &message) {
         Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -173,7 +173,7 @@ pub(super) fn mkcol(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
     let message = format!("Create {path} through WebDAV by {}", actor.login_id);
-    match yona_rust_vcs::svn_make_collection(repo_path, &path, &message) {
+    match yoram_vcs::svn_make_collection(repo_path, &path, &message) {
         Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -222,7 +222,7 @@ pub(super) fn proppatch(
         "Update properties on {path} through WebDAV by {}",
         actor.login_id
     );
-    match yona_rust_vcs::svn_patch_properties(repo_path, &path, &patches, &message) {
+    match yoram_vcs::svn_patch_properties(repo_path, &path, &patches, &message) {
         Ok(revision) => {
             let mut response = (
                 StatusCode::MULTI_STATUS,
@@ -260,7 +260,7 @@ pub(super) fn delete(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
     let message = format!("Delete {path} through WebDAV by {}", actor.login_id);
-    match yona_rust_vcs::svn_delete_path(repo_path, &path, &message) {
+    match yoram_vcs::svn_delete_path(repo_path, &path, &message) {
         Ok(revision) => write::revision_response(StatusCode::NO_CONTENT, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -289,7 +289,7 @@ pub(super) fn lock(
         .unwrap_or_else(|| "Yona WebDAV lock".to_string());
     let token = lock_helpers::new_token();
     let lock =
-        match yona_rust_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
+        match yoram_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
             Ok(lock) => lock,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::InvalidPath) => {
@@ -335,7 +335,7 @@ pub(super) fn unlock(
     let Some(token) = lock_helpers::token_header(headers) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    match yona_rust_vcs::svn_unlock_path(repo_path, &path, &actor.login_id, &token) {
+    match yoram_vcs::svn_unlock_path(repo_path, &path, &actor.login_id, &token) {
         Ok(()) => svn_protocol_status_response(StatusCode::NO_CONTENT),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),

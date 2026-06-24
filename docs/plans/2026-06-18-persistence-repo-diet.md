@@ -72,7 +72,7 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 
 `repo_types.rs` remains unchanged until the repository module split is stable. A later pass may apply the same module tree to `repo_types/` with public re-exports.
 
-`crates/persistence-entities/src/*.rs` owns SeaORM generated entity modules, including `prelude.rs` and the historical `entities.rs` snapshot. `crates/persistence/src/lib.rs` re-exports this crate before exposing repository APIs, preserving existing `yona_rust_persistence::issue`-style imports.
+`crates/persistence-entities/src/*.rs` owns SeaORM generated entity modules, including `prelude.rs` and the historical `entities.rs` snapshot. `crates/persistence/src/lib.rs` re-exports this crate before exposing repository APIs, preserving existing `yoram_persistence::issue`-style imports.
 
 ## Move Order
 
@@ -113,7 +113,7 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 - [x] Convert `repo.rs` to `repo/mod.rs`.
 - [x] Move `AppUserRepository` implementation to `repo/app_user.rs`.
 - [x] Move `DefaultLandingRepository` implementation to `repo/default_landing.rs`.
-- [x] Compile `yona-rust-persistence` after the wrapper split.
+- [x] Compile `yoram-persistence` after the wrapper split.
 - [x] Move `site_admin.rs`.
 - [x] Move `search.rs`.
 - [x] Move webhook-related methods into `project.rs` for the initial physical split.
@@ -128,36 +128,36 @@ Legacy Yona divides backend code mostly by `yona-original/app/models/*.java`, wi
 
 ## Verification
 
-- 2026-06-18: `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed after the full physical split in 56.86s.
-- 2026-06-18: touching `crates/persistence/src/repo/search.rs` followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 10.73s. Timing report: `target/cargo-timings/cargo-timing-20260617T235305655Z-bd4efcc15b512d74.html`.
-- 2026-06-18: `repo/` implementation files were promoted from `include!` files to child modules; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 18.56s.
-- 2026-06-18: touching `crates/persistence/src/repo/search.rs` after child-module promotion followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 9.95s. Timing report: `target/cargo-timings/cargo-timing-20260618T001741584Z-bd4efcc15b512d74.html`.
-- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` passed in 27.2s after child-module promotion.
-- 2026-06-18: moved issue comments, posting comments, webhooks, pull-request review actions, and commit discussion methods into narrower child modules; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 3m46s.
-- 2026-06-18: touching `crates/persistence/src/repo/search.rs` after the narrower child-module split followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 10.18s. Timing report: `target/cargo-timings/cargo-timing-20260618T003304938Z-bd4efcc15b512d74.html`.
+- 2026-06-18: `cargo check --locked --offline -p yoram-persistence --all-targets` passed after the full physical split in 56.86s.
+- 2026-06-18: touching `crates/persistence/src/repo/search.rs` followed by `cargo check --locked --offline -p yoram-persistence --all-targets --timings` passed in 10.73s. Timing report: `target/cargo-timings/cargo-timing-20260617T235305655Z-bd4efcc15b512d74.html`.
+- 2026-06-18: `repo/` implementation files were promoted from `include!` files to child modules; `cargo check --locked --offline -p yoram-persistence --all-targets` passed in 18.56s.
+- 2026-06-18: touching `crates/persistence/src/repo/search.rs` after child-module promotion followed by `cargo check --locked --offline -p yoram-persistence --all-targets --timings` passed in 9.95s. Timing report: `target/cargo-timings/cargo-timing-20260618T001741584Z-bd4efcc15b512d74.html`.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yoram-persistence --test auth_workspace_repository` passed in 27.2s after child-module promotion.
+- 2026-06-18: moved issue comments, posting comments, webhooks, pull-request review actions, and commit discussion methods into narrower child modules; `cargo check --locked --offline -p yoram-persistence --all-targets` passed in 3m46s.
+- 2026-06-18: touching `crates/persistence/src/repo/search.rs` after the narrower child-module split followed by `cargo check --locked --offline -p yoram-persistence --all-targets --timings` passed in 10.18s. Timing report: `target/cargo-timings/cargo-timing-20260618T003304938Z-bd4efcc15b512d74.html`.
 - 2026-06-18: focused tests passed after the narrower split:
-  - `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` in 25.4s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 289.2s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test board_contract board_posting_contract_covers_labels_readme_notice_mentions_comments_email_and_legacy_direct_routes` in 290.6s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test pull_request_mutation_contract pull_request_interaction_surface_mutates_state_review_comments_threads_and_events` in 262.0s.
-- 2026-06-18: split `event_notification_helpers.rs` into issue/pull-request event helpers, notification events, receiver calculation, mention sync, and target projection modules; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 4m49s.
-- 2026-06-18: touching `crates/persistence/src/repo/notification_receivers.rs` followed by `cargo check --locked --offline -p yona-rust-persistence --all-targets --timings` passed in 42.37s. Timing report: `target/cargo-timings/cargo-timing-20260618T010744732Z-bd4efcc15b512d74.html`.
+  - `pnpm agent:cargo-test -- -p yoram-persistence --test auth_workspace_repository` in 25.4s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 289.2s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test board_contract board_posting_contract_covers_labels_readme_notice_mentions_comments_email_and_legacy_direct_routes` in 290.6s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test pull_request_mutation_contract pull_request_interaction_surface_mutates_state_review_comments_threads_and_events` in 262.0s.
+- 2026-06-18: split `event_notification_helpers.rs` into issue/pull-request event helpers, notification events, receiver calculation, mention sync, and target projection modules; `cargo check --locked --offline -p yoram-persistence --all-targets` passed in 4m49s.
+- 2026-06-18: touching `crates/persistence/src/repo/notification_receivers.rs` followed by `cargo check --locked --offline -p yoram-persistence --all-targets --timings` passed in 42.37s. Timing report: `target/cargo-timings/cargo-timing-20260618T010744732Z-bd4efcc15b512d74.html`.
 - 2026-06-18: Rosetta check for the persistence compile path found native Apple Silicon toolchain evidence: `uname -m` returned `arm64`, `rustc -vV` and `cargo -vV` reported host `aarch64-apple-darwin`, `rustup show active-toolchain` reported `stable-aarch64-apple-darwin`, and `file $(which rustc) $(which cargo)` reported Mach-O `arm64` binaries.
-- 2026-06-18: `cargo build --locked --offline -p yona-rust-persistence --timings` passed in 1m00s. Timing report: `target/cargo-timings/cargo-timing-20260618T012110664Z-bd4efcc15b512d74.html`. The critical dependency chain is SeaORM/SQLx multi-dialect work rather than Rosetta: `sea-query` 26.0s with MySQL/PostgreSQL/SQLite backends, `sqlx-core` 3.6s, `sqlx-postgres` 4.3s, `sqlx-sqlite` 3.7s, `sqlx-mysql` 3.6s, `sqlx` 2.8s, `sea-query-binder` 2.5s, `sea-orm` 4.9s, then `yona-rust-persistence` 6.7s.
+- 2026-06-18: `cargo build --locked --offline -p yoram-persistence --timings` passed in 1m00s. Timing report: `target/cargo-timings/cargo-timing-20260618T012110664Z-bd4efcc15b512d74.html`. The critical dependency chain is SeaORM/SQLx multi-dialect work rather than Rosetta: `sea-query` 26.0s with MySQL/PostgreSQL/SQLite backends, `sqlx-core` 3.6s, `sqlx-postgres` 4.3s, `sqlx-sqlite` 3.7s, `sqlx-mysql` 3.6s, `sqlx` 2.8s, `sea-query-binder` 2.5s, `sea-orm` 4.9s, then `yoram-persistence` 6.7s.
 - 2026-06-18: focused notification tests passed after receiver/mention split:
-  - `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` in 295.4s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test pull_request_mutation_contract pull_request_state_notifications_include_legacy_review_comment_watchers` in 147.9s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 274.8s.
-  - `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test board_contract board_contract_manages_project_posts_comments_watch_and_notifications` in 18.9s.
-- 2026-06-18: split `repo/issue.rs` into `issue.rs`, `issue_list.rs`, `issue_mutation.rs`, `issue_picker.rs`, `issue_reference.rs`, and `issue_user_list.rs`; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 4m38s, and `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` passed in 59.9s.
-- 2026-06-18: split `repo/project.rs` into `project.rs`, `project_membership.rs`, `project_delete.rs`, and `project_watchers.rs`; `cargo check --locked --offline -p yona-rust-persistence --all-targets` passed in 3m20s.
-- 2026-06-18: moved generated SeaORM entity modules from `crates/persistence/src` into new `crates/persistence-entities`; `crates/persistence/src` now only contains `lib.rs`, `repo_types.rs`, and `repo/**`, while `crates/persistence/src/lib.rs` re-exports `yona_rust_persistence_entities::*` for compatibility.
-- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --no-run --timings` passed in 110.6s. Timing report: `target/cargo-timings/cargo-timing-20260618T015542557Z-bd4efcc15b512d74.html`. Targets were the persistence lib plus three integration test binaries; `yona-rust-persistence-entities` compiled as a separate 4.6s unit, `yona-rust-persistence` as a separate 5.0s unit, and each persistence integration test binary as about 4.4s.
-- 2026-06-18: cached compile-only splits passed after entity crate separation: `pnpm agent:cargo-test -- -p yona-rust-persistence --lib --no-run --timings` in 0.4s (`target/cargo-timings/cargo-timing-20260618T015827380Z-bd4efcc15b512d74.html`) and `pnpm agent:cargo-test -- -p yona-rust-persistence --tests --no-run --timings` in 0.2s (`target/cargo-timings/cargo-timing-20260618T015849048Z-bd4efcc15b512d74.html`).
-- 2026-06-18: `cargo tree -p yona-rust-persistence -e features -i sea-orm`, `cargo tree -p yona-rust-persistence -e features -i sqlx`, and `cargo tree -p yona-rust-persistence --duplicates` confirmed the active SeaORM/SQLx surface is still the intended Day-1 MySQL/PostgreSQL/SQLite feature set, with duplicate transitive versions around proc-macro dependencies rather than a duplicate SeaORM/SQLx version.
-- 2026-06-18: `cargo check --locked --offline -p yona-rust-persistence-entities -p yona-rust-persistence --all-targets` passed in 6m25s after profile and crate-boundary changes.
-- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test auth_workspace_repository` passed in 279.5s after adding the entity re-export contract assertion.
-- 2026-06-18: `cargo check --locked --offline -p yona-rust-pilot-server --tests` passed in 3m10s, confirming server test targets still resolve the persistence entity re-exports.
-- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-pilot-server --test issue_core_contract issue_entity_reexport_preserves_legacy_table_name` passed in 479.0s.
-- 2026-06-18: `pnpm agent:cargo-test -- -p yona-rust-persistence --test org_project_repo_contract project_entity_reexport_preserves_legacy_table_name` passed in 114.4s.
-- 2026-06-19: `crates/migration` now imports generated entity modules from `yona-rust-persistence-entities` instead of the `yona-rust-persistence` facade, so migration schema tests no longer pull repository code through the migration crate's normal dependency graph. `pnpm agent:cargo-test -- -p yona-rust-pilot-migration --test migration ensure_runtime_schema_applies_to_an_empty_sqlite_database` passed in 426.8s, and `cargo tree -p yona-rust-pilot-migration -e normal` showed `yona-rust-persistence-entities` without `yona-rust-persistence`.
+  - `pnpm agent:cargo-test -- -p yoram-persistence --test auth_workspace_repository` in 295.4s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test pull_request_mutation_contract pull_request_state_notifications_include_legacy_review_comment_watchers` in 147.9s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` in 274.8s.
+  - `pnpm agent:cargo-test -- -p yoram-server --test board_contract board_contract_manages_project_posts_comments_watch_and_notifications` in 18.9s.
+- 2026-06-18: split `repo/issue.rs` into `issue.rs`, `issue_list.rs`, `issue_mutation.rs`, `issue_picker.rs`, `issue_reference.rs`, and `issue_user_list.rs`; `cargo check --locked --offline -p yoram-persistence --all-targets` passed in 4m38s, and `pnpm agent:cargo-test -- -p yoram-server --test issue_core_contract issue_core_contract_creates_reads_updates_and_deletes_over_rest` passed in 59.9s.
+- 2026-06-18: split `repo/project.rs` into `project.rs`, `project_membership.rs`, `project_delete.rs`, and `project_watchers.rs`; `cargo check --locked --offline -p yoram-persistence --all-targets` passed in 3m20s.
+- 2026-06-18: moved generated SeaORM entity modules from `crates/persistence/src` into new `crates/persistence-entities`; `crates/persistence/src` now only contains `lib.rs`, `repo_types.rs`, and `repo/**`, while `crates/persistence/src/lib.rs` re-exports `yoram_persistence_entities::*` for compatibility.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yoram-persistence --no-run --timings` passed in 110.6s. Timing report: `target/cargo-timings/cargo-timing-20260618T015542557Z-bd4efcc15b512d74.html`. Targets were the persistence lib plus three integration test binaries; `yoram-persistence-entities` compiled as a separate 4.6s unit, `yoram-persistence` as a separate 5.0s unit, and each persistence integration test binary as about 4.4s.
+- 2026-06-18: cached compile-only splits passed after entity crate separation: `pnpm agent:cargo-test -- -p yoram-persistence --lib --no-run --timings` in 0.4s (`target/cargo-timings/cargo-timing-20260618T015827380Z-bd4efcc15b512d74.html`) and `pnpm agent:cargo-test -- -p yoram-persistence --tests --no-run --timings` in 0.2s (`target/cargo-timings/cargo-timing-20260618T015849048Z-bd4efcc15b512d74.html`).
+- 2026-06-18: `cargo tree -p yoram-persistence -e features -i sea-orm`, `cargo tree -p yoram-persistence -e features -i sqlx`, and `cargo tree -p yoram-persistence --duplicates` confirmed the active SeaORM/SQLx surface is still the intended Day-1 MySQL/PostgreSQL/SQLite feature set, with duplicate transitive versions around proc-macro dependencies rather than a duplicate SeaORM/SQLx version.
+- 2026-06-18: `cargo check --locked --offline -p yoram-persistence-entities -p yoram-persistence --all-targets` passed in 6m25s after profile and crate-boundary changes.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yoram-persistence --test auth_workspace_repository` passed in 279.5s after adding the entity re-export contract assertion.
+- 2026-06-18: `cargo check --locked --offline -p yoram-server --tests` passed in 3m10s, confirming server test targets still resolve the persistence entity re-exports.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yoram-server --test issue_core_contract issue_entity_reexport_preserves_legacy_table_name` passed in 479.0s.
+- 2026-06-18: `pnpm agent:cargo-test -- -p yoram-persistence --test org_project_repo_contract project_entity_reexport_preserves_legacy_table_name` passed in 114.4s.
+- 2026-06-19: `crates/migration` now imports generated entity modules from `yoram-persistence-entities` instead of the `yoram-persistence` facade, so migration schema tests no longer pull repository code through the migration crate's normal dependency graph. `pnpm agent:cargo-test -- -p yoram-migration --test migration ensure_runtime_schema_applies_to_an_empty_sqlite_database` passed in 426.8s, and `cargo tree -p yoram-migration -e normal` showed `yoram-persistence-entities` without `yoram-persistence`.

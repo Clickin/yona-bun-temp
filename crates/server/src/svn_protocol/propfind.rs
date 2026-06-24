@@ -1,5 +1,5 @@
 use super::xml_escape;
-use yona_rust_vcs::SvnProperty;
+use yoram_vcs::SvnProperty;
 
 pub(crate) fn supportedlock_item(request: &str) -> String {
     if !wants(request, "supportedlock") {

@@ -40,16 +40,16 @@ pub(crate) fn delete_project_repository_storage(
     service: &PilotServiceImpl,
     project_id: i64,
 ) -> Result<(), RestRouteError> {
-    let git_repo_path = yona_rust_vcs::repository_path(&service.data_root, project_id);
-    let svn_repo_path = yona_rust_vcs::svn_repository_path(&service.data_root, project_id);
+    let git_repo_path = yoram_vcs::repository_path(&service.data_root, project_id);
+    let svn_repo_path = yoram_vcs::svn_repository_path(&service.data_root, project_id);
     let _guard = repository_provisioning_lock()
         .lock()
         .map_err(|_| internal_error("repository provisioning lock poisoned"))
         .map_err(RestRouteError::from_connect_error)?;
-    yona_rust_vcs::delete_repository(&git_repo_path)
+    yoram_vcs::delete_repository(&git_repo_path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
-    yona_rust_vcs::delete_repository(&svn_repo_path)
+    yoram_vcs::delete_repository(&svn_repo_path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)
 }
@@ -64,13 +64,13 @@ pub(super) fn reset_project_repository_storage(
         .lock()
         .map_err(|_| internal_error("repository provisioning lock poisoned"))
         .map_err(RestRouteError::from_connect_error)?;
-    let repo_path = yona_rust_vcs::repository_path_for_vcs(&service.data_root, project_id, vcs);
+    let repo_path = yoram_vcs::repository_path_for_vcs(&service.data_root, project_id, vcs);
     if vcs == "Subversion" {
-        return yona_rust_vcs::create_svn_repository(&repo_path)
+        return yoram_vcs::create_svn_repository(&repo_path)
             .map_err(code_browser_error)
             .map_err(RestRouteError::from_connect_error);
     }
-    yona_rust_vcs::create_bare_repository(&repo_path)
+    yoram_vcs::create_bare_repository(&repo_path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)
 }
@@ -119,7 +119,7 @@ pub(super) async fn rest_change_project_vcs(
         rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
     let next_vcs = rest_next_project_vcs(&authorization.project.vcs);
     if next_vcs == "Subversion" {
-        yona_rust_vcs::ensure_svnadmin_available()
+        yoram_vcs::ensure_svnadmin_available()
             .map_err(code_browser_error)
             .map_err(RestRouteError::from_connect_error)?;
     }

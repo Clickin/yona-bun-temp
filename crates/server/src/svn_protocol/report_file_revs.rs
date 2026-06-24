@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, report_items, svn_protocol_not_implemented_response,
@@ -11,7 +11,7 @@ use super::{
 };
 
 pub(crate) fn file_revs(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) -> Response {
-    let youngest_revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+    let youngest_revision = match yoram_vcs::svn_youngest_revision(repo_path) {
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::SvnLookUnavailable) => {
@@ -31,7 +31,7 @@ pub(crate) fn file_revs(repo_path: &StdPath, route: &SvnProtocolRoute, request: 
     if file_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let entries = match yona_rust_vcs::svn_log_entries(repo_path, start_revision, end_revision, 0) {
+    let entries = match yoram_vcs::svn_log_entries(repo_path, start_revision, end_revision, 0) {
         Ok(entries) => entries,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -44,7 +44,7 @@ pub(crate) fn file_revs(repo_path: &StdPath, route: &SvnProtocolRoute, request: 
     };
     let mut file_revs = String::new();
     for entry in entries {
-        match yona_rust_vcs::svn_cat_file(repo_path, Some(entry.revision), &file_path) {
+        match yoram_vcs::svn_cat_file(repo_path, Some(entry.revision), &file_path) {
             Ok(contents) => {
                 file_revs.push_str(&report_items::file_rev(&file_path, &entry, &contents))
             }

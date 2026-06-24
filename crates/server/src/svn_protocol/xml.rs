@@ -34,7 +34,7 @@ pub(crate) fn sections<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
     sections
 }
 
-pub(crate) fn property_patches(request: &str) -> Option<Vec<yona_rust_vcs::SvnPropertyPatch>> {
+pub(crate) fn property_patches(request: &str) -> Option<Vec<yoram_vcs::SvnPropertyPatch>> {
     let mut patches = Vec::new();
     for section in sections(request, "set") {
         patches.extend(property_elements(section, true));
@@ -61,7 +61,7 @@ fn find_close_tag(xml: &str, tag: &str) -> Option<usize> {
         .or_else(|| xml.find(&format!("</{tag}>")))
 }
 
-fn property_elements(section: &str, set_value: bool) -> Vec<yona_rust_vcs::SvnPropertyPatch> {
+fn property_elements(section: &str, set_value: bool) -> Vec<yoram_vcs::SvnPropertyPatch> {
     let prop_body = sections(section, "prop")
         .into_iter()
         .next()
@@ -92,12 +92,12 @@ fn property_elements(section: &str, set_value: bool) -> Vec<yona_rust_vcs::SvnPr
                 .find(&close_tag)
                 .map(|end| rest[value_start..value_start + end].to_string())
                 .unwrap_or_default();
-            patches.push(yona_rust_vcs::SvnPropertyPatch {
+            patches.push(yoram_vcs::SvnPropertyPatch {
                 name,
                 value: Some(value),
             });
         } else {
-            patches.push(yona_rust_vcs::SvnPropertyPatch { name, value: None });
+            patches.push(yoram_vcs::SvnPropertyPatch { name, value: None });
         }
         rest = &rest[open_end + 1..];
     }

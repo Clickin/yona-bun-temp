@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, href, path, svn_protocol_not_implemented_response,
@@ -16,7 +16,7 @@ pub(crate) fn update(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
         xml::i64(request, "target-revision").or_else(|| xml::i64(request, "revision"));
     let target_revision = match target_revision {
         Some(revision) => revision,
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -44,9 +44,9 @@ pub(crate) fn update(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
     let inline_text_deltas = update::inline_text_deltas(request);
     let recursive = depth.eq_ignore_ascii_case("infinity") || depth.eq_ignore_ascii_case("unknown");
     let tree_result = if recursive {
-        yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
+        yoram_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
     } else {
-        yona_rust_vcs::svn_list_tree(repo_path, Some(target_revision), &update_path)
+        yoram_vcs::svn_list_tree(repo_path, Some(target_revision), &update_path)
     };
     let tree = match tree_result {
         Ok(tree) => tree,
@@ -61,9 +61,9 @@ pub(crate) fn update(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
     };
     let base_entries = if !start_empty && base_revision != target_revision {
         let base_tree_result = if recursive {
-            yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(base_revision), &update_path)
+            yoram_vcs::svn_list_tree_recursive(repo_path, Some(base_revision), &update_path)
         } else {
-            yona_rust_vcs::svn_list_tree(repo_path, Some(base_revision), &update_path)
+            yoram_vcs::svn_list_tree(repo_path, Some(base_revision), &update_path)
         };
         match base_tree_result {
             Ok(tree) => tree.entries,
@@ -82,8 +82,8 @@ pub(crate) fn update(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
         Vec::new()
     };
     let revision_log =
-        match yona_rust_vcs::svn_log_entries(repo_path, target_revision, target_revision, 1) {
-            Ok(mut entries) => entries.pop().unwrap_or(yona_rust_vcs::SvnLogEntry {
+        match yoram_vcs::svn_log_entries(repo_path, target_revision, target_revision, 1) {
+            Ok(mut entries) => entries.pop().unwrap_or(yoram_vcs::SvnLogEntry {
                 revision: target_revision,
                 author: String::new(),
                 date: String::new(),
@@ -182,7 +182,7 @@ pub(crate) fn update(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
                 ));
             } else {
                 let inline_delta = if inline_text_deltas {
-                    match yona_rust_vcs::svn_cat_file(
+                    match yoram_vcs::svn_cat_file(
                         repo_path,
                         Some(target_revision),
                         entry.path.trim_matches('/'),

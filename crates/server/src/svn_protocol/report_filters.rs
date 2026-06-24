@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::xml_escape;
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 pub(crate) struct LocationSegment {
     pub(crate) path: String,
@@ -23,7 +23,7 @@ pub(crate) fn location_segments(
     let mut current_range_end = start_revision;
     let mut revision = start_revision;
     while revision >= end_revision && revision > 0 {
-        let copy = yona_rust_vcs::svn_changed_paths(repo_path, revision)?
+        let copy = yoram_vcs::svn_changed_paths(repo_path, revision)?
             .into_iter()
             .find(|changed_path| {
                 changed_path.path.trim_matches('/') == current_path.trim_matches('/')
@@ -74,33 +74,33 @@ pub(crate) fn log_path_included(changed_path: &str, filter_path: &str) -> bool {
 }
 
 pub(crate) fn replay_operation(
-    path: &yona_rust_vcs::SvnChangedPath,
+    path: &yoram_vcs::SvnChangedPath,
     low_water_mark: i64,
 ) -> String {
     let name = xml_escape(path.path.trim_matches('/'));
     match (&path.action, path.is_dir) {
-        (yona_rust_vcs::SvnChangedAction::Added, true)
-        | (yona_rust_vcs::SvnChangedAction::Replaced, true) => format!(
+        (yoram_vcs::SvnChangedAction::Added, true)
+        | (yoram_vcs::SvnChangedAction::Replaced, true) => format!(
             r#"    <S:add-directory name="{name}">
     </S:add-directory>
 "#
         ),
-        (yona_rust_vcs::SvnChangedAction::Added, false)
-        | (yona_rust_vcs::SvnChangedAction::Replaced, false) => format!(
+        (yoram_vcs::SvnChangedAction::Added, false)
+        | (yoram_vcs::SvnChangedAction::Replaced, false) => format!(
             r#"    <S:add-file name="{name}">
       <S:close-file/>
     </S:add-file>
 "#
         ),
-        (yona_rust_vcs::SvnChangedAction::Deleted, _) => {
+        (yoram_vcs::SvnChangedAction::Deleted, _) => {
             format!(r#"    <S:delete-entry name="{name}" rev="{low_water_mark}"/>"#) + "\n"
         }
-        (yona_rust_vcs::SvnChangedAction::Modified, true) => format!(
+        (yoram_vcs::SvnChangedAction::Modified, true) => format!(
             r#"    <S:open-directory name="{name}" rev="{low_water_mark}">
     </S:open-directory>
 "#
         ),
-        (yona_rust_vcs::SvnChangedAction::Modified, false) => format!(
+        (yoram_vcs::SvnChangedAction::Modified, false) => format!(
             r#"    <S:open-file name="{name}" rev="{low_water_mark}">
       <S:close-file/>
     </S:open-file>

@@ -1,4 +1,4 @@
-use yona_rust_pilot_migration::legacy_external::{
+use yoram_migration::legacy_external::{
     boards::{
         find_fixture, fixtures, parse_board_comment_import_request,
         parse_board_content_update_request, parse_board_label_replace_request,

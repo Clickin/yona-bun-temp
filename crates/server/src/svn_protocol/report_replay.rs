@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, report_filters, svn_protocol_not_implemented_response,
@@ -15,7 +15,7 @@ pub(crate) fn replay(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
         .or_else(|| path::file_lookup_for_route(route).and_then(|(revision, _)| revision))
     {
         Some(revision) => revision,
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -34,7 +34,7 @@ pub(crate) fn replay(repo_path: &StdPath, route: &SvnProtocolRoute, request: &st
         .map(|(_, path)| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
     let filter_path = include_path.or(base_path);
-    let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
+    let changed_paths = match yoram_vcs::svn_changed_paths(repo_path, revision) {
         Ok(paths) => paths,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),

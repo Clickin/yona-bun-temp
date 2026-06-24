@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, report_items, svn_protocol_not_implemented_response,
@@ -14,7 +14,7 @@ pub(crate) fn get_locks(repo_path: &StdPath, route: &SvnProtocolRoute) -> Respon
     let path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
-    let lock = match yona_rust_vcs::svn_lock(repo_path, &path) {
+    let lock = match yoram_vcs::svn_lock(repo_path, &path) {
         Ok(lock) => lock,
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -47,7 +47,7 @@ pub(crate) fn inherited_props(
 ) -> Response {
     let revision = match xml::i64(request, "revision") {
         Some(revision) => revision,
-        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        None => match yoram_vcs::svn_youngest_revision(repo_path) {
             Ok(revision) => revision,
             Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
             Err(VcsError::SvnLookUnavailable) => {
@@ -63,7 +63,7 @@ pub(crate) fn inherited_props(
         .map(|(_, path)| path)
         .unwrap_or_default();
     let path = path::join_report_path(&base_path, &requested_path);
-    let inherited = match yona_rust_vcs::svn_inherited_properties(repo_path, revision, &path) {
+    let inherited = match yoram_vcs::svn_inherited_properties(repo_path, revision, &path) {
         Ok(inherited) => inherited,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),

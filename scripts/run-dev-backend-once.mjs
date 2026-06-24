@@ -34,7 +34,7 @@ const config = [
 
 fs.writeFileSync(configPath, `${config}\n`);
 
-const child = spawn("cargo", ["run", "-p", "yona-rust-pilot-server", "--bin", "yoram"], {
+const child = spawn("cargo", ["run", "-p", "yoram-server", "--bin", "yoram"], {
   cwd: repoRoot,
   env: {
     ...process.env,

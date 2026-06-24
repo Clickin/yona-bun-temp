@@ -17,8 +17,8 @@ use std::{
     path::{Path as StdPath, PathBuf},
     sync::atomic::Ordering,
 };
-use yona_rust_domain::ProjectScope;
-use yona_rust_integrations::{deliver_with_config, OutboundMail};
+use yoram_domain::ProjectScope;
+use yoram_integrations::{deliver_with_config, OutboundMail};
 
 use crate::assets::serve_frontend_page;
 use crate::persistence::PilotRepository;

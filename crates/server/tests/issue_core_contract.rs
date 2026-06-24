@@ -7,10 +7,10 @@ use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
+use yoram_persistence::AppRepository;
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
 };
@@ -19,7 +19,7 @@ mod rest_test_support;
 
 #[test]
 fn issue_entity_reexport_preserves_legacy_table_name() {
-    assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
+    assert_eq!(yoram_persistence::issue::Entity.table_name(), "issue");
 }
 
 fn webhook_outbox_lock() -> &'static Mutex<()> {

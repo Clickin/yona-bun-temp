@@ -4,9 +4,9 @@ use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection};
 use std::fs;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_persistence::AppRepository;
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router, create_router_with_filesystem_assets,
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config, AppRuntimeConfig,

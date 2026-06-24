@@ -124,9 +124,9 @@ Parallel rule: `crates/server` API/router ownership이 필요하므로 다른 se
 
 Verification note:
 
-- `cargo test -p yona-rust-pilot-server --test site_admin_contract site_admin_export_download_follows_legacy_site_data_route` passed.
-- `cargo test -p yona-rust-pilot-server --test site_admin_contract site_admin_import_restores_supported_yobi_data_snapshot_sections` passed.
-- `cargo test -p yona-rust-pilot-server --test site_admin_contract site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list` passed.
+- `cargo test -p yoram-server --test site_admin_contract site_admin_export_download_follows_legacy_site_data_route` passed.
+- `cargo test -p yoram-server --test site_admin_contract site_admin_import_restores_supported_yobi_data_snapshot_sections` passed.
+- `cargo test -p yoram-server --test site_admin_contract site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list` passed.
 
 ### 7. OAuth / LDAP deferred confirmation
 

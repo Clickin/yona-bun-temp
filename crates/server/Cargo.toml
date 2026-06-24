@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-pilot-server"
+name = "yoram-server"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
@@ -14,18 +14,18 @@ path = "src/main.rs"
 default = ["sqlite"]
 sqlite = [
     "sea-orm/sqlx-sqlite",
-    "yona-rust-persistence/sqlite",
-    "yona-rust-pilot-migration/sqlite",
+    "yoram-persistence/sqlite",
+    "yoram-migration/sqlite",
 ]
 postgres = [
     "sea-orm/sqlx-postgres",
-    "yona-rust-persistence/postgres",
-    "yona-rust-pilot-migration/postgres",
+    "yoram-persistence/postgres",
+    "yoram-migration/postgres",
 ]
 mysql = [
     "sea-orm/sqlx-mysql",
-    "yona-rust-persistence/mysql",
-    "yona-rust-pilot-migration/mysql",
+    "yoram-persistence/mysql",
+    "yoram-migration/mysql",
 ]
 db-matrix = ["sqlite", "postgres", "mysql"]
 
@@ -59,12 +59,12 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 sea-orm.workspace = true
 toml = "0.8"
-yona-rust-domain = { path = "../domain" }
-yona-rust-integrations = { path = "../integrations" }
-yona-rust-persistence = { path = "../persistence" }
-yona-rust-pilot-migration = { path = "../migration" }
-yona-rust-search = { path = "../search" }
-yona-rust-vcs = { path = "../vcs" }
+yoram-domain = { path = "../domain" }
+yoram-integrations = { path = "../integrations" }
+yoram-persistence = { path = "../persistence" }
+yoram-migration = { path = "../migration" }
+yoram-search = { path = "../search" }
+yoram-vcs = { path = "../vcs" }
 
 [dev-dependencies]
 tempfile.workspace = true

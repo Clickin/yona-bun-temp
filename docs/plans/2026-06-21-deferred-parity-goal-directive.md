@@ -73,7 +73,7 @@ follow-up.
 P0-A runnable app smoke refresh, 2026-06-21:
 
 - The local debug server was built with the required cargo wrapper
-  (`pnpm agent:cargo -- --outside-sandbox build -p yona-rust-pilot-server`)
+  (`pnpm agent:cargo -- --outside-sandbox build -p yoram-server`)
   after `pnpm --dir frontend build`, then launched outside the Codex sandbox
   because sandboxed localhost binding was denied. Runtime env:
   `YONA_BASE_PATH=/yona`, `YONA_DATABASE_URL=sqlite::memory:`,
@@ -106,7 +106,7 @@ P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
   then runs `adopt` and asserts the baseline marker is written while fixture data
   remains. Live MariaDB evidence is no longer blocked on fixture availability.
   The refreshed focused command
-  `pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration runtime_schema_contract -- --nocapture`
+  `pnpm agent:cargo-test -- --outside-sandbox -p yoram-migration --test migration runtime_schema_contract -- --nocapture`
   passed on 2026-06-21.
 - P0-C packaging smoke: `pnpm smoke:embedded-assets` passed on 2026-06-21,
   rebuilding `frontend/dist`, compiling the debug server with
@@ -115,7 +115,7 @@ P0-B/P0-C/P0-D evidence refresh, 2026-06-21:
   and `/api/v1/projects` seeded `projectName:"yona"` response. The compile
   emitted two existing server warnings in `boards.rs` and `routes/utils.rs`.
   `pnpm smoke:docker` also passed on 2026-06-21: Docker Buildx built
-  `yona-rust-pilot:smoke`, the release compile completed in 1m22s with the same
+  `yoram:smoke`, the release compile completed in 1m22s with the same
   two warnings, the runtime image retained `ca-certificates`, `curl`, `git`, and
   `subversion`, and container `473ecf69c428` returned 200 responses for the same
   base-path, asset, session, and REST project smoke endpoints.
@@ -689,11 +689,11 @@ pnpm --dir frontend build
 pnpm test:dev-scripts
 pnpm smoke:embedded-assets
 pnpm smoke:docker
-pnpm agent:cargo -- --outside-sandbox check -p yona-rust-pilot-server --tests
-pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-migration --test migration
-pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test smart_http_contract
-pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test db_matrix_env --features db-matrix
-pnpm agent:cargo-test -- --outside-sandbox -p yona-rust-pilot-server --test db_matrix_testcontainers --features db-matrix
+pnpm agent:cargo -- --outside-sandbox check -p yoram-server --tests
+pnpm agent:cargo-test -- --outside-sandbox -p yoram-migration --test migration
+pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test smart_http_contract
+pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test db_matrix_env --features db-matrix
+pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test db_matrix_testcontainers --features db-matrix
 pnpm agent:cargo-test -- --outside-sandbox --workspace
 ```
 

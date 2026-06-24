@@ -12,14 +12,14 @@ use sea_orm::{
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
-use yona_rust_persistence::{
+use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_persistence::{
     assignee, attachment, comment_thread, email, issue, linked_account, n4user, project,
     pull_request, user_credential, user_project_notification, user_verification, watch,
     AppRepository, CreateOrganizationInput, CreateProjectInput, RepositoryConfig,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
     LdapFixtureUser, LdapRuntimeConfig, RuntimeConfig, SmtpRuntimeConfig,
@@ -556,9 +556,9 @@ async fn legacy_oauth_start_redirects_to_configured_github_authorization_endpoin
                 enabled_social_providers: vec!["github".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "github",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     authorization_url: "https://github.example/login/oauth/authorize".to_string(),
                     client_id: "github-client".to_string(),
                     client_secret: "github-secret".to_string(),
@@ -606,9 +606,9 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
                 enabled_social_providers: vec!["github".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "github",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     authorization_url: "https://github.example/login/oauth/authorize".to_string(),
                     client_id: "github-client".to_string(),
                     client_secret: "github-secret".to_string(),
@@ -692,9 +692,9 @@ async fn legacy_oauth_logout_clears_local_session_without_provider_logout_redire
                 enabled_social_providers: vec!["github".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "github",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     authorization_url: "https://github.example/login/oauth/authorize".to_string(),
                     client_id: "github-client".to_string(),
                     client_secret: "github-secret".to_string(),
@@ -773,9 +773,9 @@ async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
                 enabled_social_providers: vec!["github".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "github",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     access_token_url: format!("{provider_base}/token"),
                     authorization_url: "https://github.example/login/oauth/authorize".to_string(),
                     client_id: "github-client".to_string(),
@@ -839,9 +839,9 @@ async fn legacy_oauth_callback_exchanges_google_code_for_provider_identity() {
                 enabled_social_providers: vec!["google".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "google",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     access_token_url: format!("{provider_base}/token"),
                     authorization_url: "https://accounts.example/o/oauth2/auth".to_string(),
                     client_id: "google-client".to_string(),
@@ -900,9 +900,9 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
                 enabled_social_providers: vec!["google".to_string()],
                 ..AuthUiConfig::default()
             },
-            oauth: yona_rust_pilot_server::OAuthRuntimeConfig::from_providers([(
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
                 "google",
-                yona_rust_pilot_server::OAuthProviderRuntimeConfig {
+                yoram_server::OAuthProviderRuntimeConfig {
                     authorization_url: "https://accounts.example/o/oauth2/auth".to_string(),
                     client_id: "google-client".to_string(),
                     client_secret: "google-secret".to_string(),
@@ -915,7 +915,7 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
     )
     .await;
     let existing = repository
-        .create_user(yona_rust_persistence::CreateUserInput {
+        .create_user(yoram_persistence::CreateUserInput {
             display_name: "Existing Door".to_string(),
             email_address: "door@example.com".to_string(),
             is_confirmed: true,
@@ -3118,8 +3118,8 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
         "/yona/user/editform"
     );
     assert_eq!(response_text(reset_visited).await, "");
-    assert!(yona_rust_persistence::recent_project::Entity::find()
-        .filter(yona_rust_persistence::recent_project::Column::UserId.eq(Some(user.id)))
+    assert!(yoram_persistence::recent_project::Entity::find()
+        .filter(yoram_persistence::recent_project::Column::UserId.eq(Some(user.id)))
         .all(&db)
         .await
         .unwrap()

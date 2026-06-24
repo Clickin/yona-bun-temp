@@ -7,7 +7,7 @@ use sea_orm_migration::seaql_migrations;
 use serde::Deserialize;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
-use yona_rust_persistence_entities::webhook_delivery;
+use yoram_persistence_entities::webhook_delivery;
 
 pub mod entity_schema;
 pub mod import_checkpoint;

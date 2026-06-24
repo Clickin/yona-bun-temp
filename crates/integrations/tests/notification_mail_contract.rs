@@ -1,4 +1,4 @@
-use yona_rust_integrations::{
+use yoram_integrations::{
     notification_mail_batches, IntegrationConfig, NotificationMailAddress,
     NotificationMailRecipient,
 };

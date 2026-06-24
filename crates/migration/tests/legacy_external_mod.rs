@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use yona_rust_pilot_migration::legacy_external::{
+use yoram_migration::legacy_external::{
     endpoint_group_summaries, endpoint_groups, endpoints, find_endpoint, EndpointDomain,
     EndpointGroupSummary, EndpointStatus,
 };

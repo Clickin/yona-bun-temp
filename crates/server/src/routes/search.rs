@@ -6,7 +6,7 @@ use axum::{
 };
 
 use axum::Json;
-use yona_rust_search::SearchType;
+use yoram_search::SearchType;
 
 use crate::{
     decode_query_component, internal_error, normalize_identifier, parse_rest_query_u32,

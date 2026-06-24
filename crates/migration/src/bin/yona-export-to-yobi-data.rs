@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use yona_rust_pilot_migration::legacy_external::yona_export_adapter::map_yona_export_project_directory_to_yobi_data;
+use yoram_migration::legacy_external::yona_export_adapter::map_yona_export_project_directory_to_yobi_data;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();

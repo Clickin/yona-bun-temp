@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use crate::{
     code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
@@ -2099,11 +2099,11 @@ fn sync_readme_posting_to_git(
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(());
     }
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     if !repo_path.exists() {
         return Ok(());
     }
-    yona_rust_vcs::commit_readme_file(
+    yoram_vcs::commit_readme_file(
         &repo_path,
         body_markdown,
         &actor.display_name,
@@ -2125,7 +2125,7 @@ fn rest_post_online_commit_options(
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(RestPostOnlineCommitOptions::default());
     }
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let issue_template = query.issue_template;
     let path = if issue_template {
         "ISSUE_TEMPLATE.md".to_string()
@@ -2148,14 +2148,14 @@ fn rest_post_online_commit_options(
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .or_else(|| {
-            yona_rust_vcs::read_branch_list(&repo_path)
+            yoram_vcs::read_branch_list(&repo_path)
                 .ok()
                 .map(|snapshot| snapshot.default_branch)
                 .filter(|value| !value.is_empty())
         })
         .unwrap_or_else(|| "main".to_string());
     let prepared_body_markdown =
-        match yona_rust_vcs::read_code_browser(&repo_path, Some(&branch), &path) {
+        match yoram_vcs::read_code_browser(&repo_path, Some(&branch), &path) {
             Ok(snapshot) => snapshot
                 .file
                 .filter(|file| !file.is_binary && !file.is_too_large)
@@ -2202,14 +2202,14 @@ fn create_online_commit_from_posting_form(
             "online code editing requires a file path",
         ));
     }
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let branch = if input.branch.trim().is_empty() {
         None
     } else {
         Some(input.branch.as_str())
     };
     if input.edit && !input.issue_template {
-        let snapshot = yona_rust_vcs::read_code_browser(&repo_path, branch, &input.path)
+        let snapshot = yoram_vcs::read_code_browser(&repo_path, branch, &input.path)
             .map_err(code_browser_error)
             .map_err(RestRouteError::from_connect_error)?;
         if snapshot.file.is_none() {
@@ -2218,7 +2218,7 @@ fn create_online_commit_from_posting_form(
             ));
         }
     }
-    let commit_id = yona_rust_vcs::commit_text_file(
+    let commit_id = yoram_vcs::commit_text_file(
         &repo_path,
         branch,
         &input.path,
@@ -2229,7 +2229,7 @@ fn create_online_commit_from_posting_form(
     )
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
-    let snapshot = yona_rust_vcs::read_code_browser(&repo_path, branch, &input.path)
+    let snapshot = yoram_vcs::read_code_browser(&repo_path, branch, &input.path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
     let redirect_href = format!(

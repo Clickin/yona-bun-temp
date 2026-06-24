@@ -1,4 +1,4 @@
-use yona_rust_persistence::RepositoryConfig;
+use yoram_persistence::RepositoryConfig;
 
 #[test]
 fn repository_config_parses_issue_and_project_legacy_env_style_values_without_process_env() {

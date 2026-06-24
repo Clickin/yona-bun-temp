@@ -1,15 +1,15 @@
 use sea_orm::{Database, EntityName};
-use yona_rust_persistence::{
+use yoram_persistence::{
     AppRepository, AppUserInput, AppUserRepository, CreateUserInput, DefaultLandingRepository,
     RepositoryConfig,
 };
-use yona_rust_pilot_migration::Migrator;
+use yoram_migration::Migrator;
 
 #[test]
 fn persistence_crate_reexports_seaorm_entities() {
-    assert_eq!(yona_rust_persistence::issue::Entity.table_name(), "issue");
+    assert_eq!(yoram_persistence::issue::Entity.table_name(), "issue");
     assert_eq!(
-        yona_rust_persistence::project::Entity.table_name(),
+        yoram_persistence::project::Entity.table_name(),
         "project"
     );
 }

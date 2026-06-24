@@ -8,7 +8,7 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
     CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
@@ -16,8 +16,8 @@ use yona_rust_persistence::{
     UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput, UpdatePostingInput,
     UpdatePullRequestInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
     create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
@@ -813,7 +813,7 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
         Some("/yona/")
     );
     assert!(
-        yona_rust_vcs::repository_path(data_root.path(), project.id)
+        yoram_vcs::repository_path(data_root.path(), project.id)
             .join("HEAD")
             .is_file(),
         "legacy /_init should recreate missing Git repository storage before redirecting"

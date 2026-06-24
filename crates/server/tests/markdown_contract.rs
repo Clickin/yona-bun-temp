@@ -4,9 +4,9 @@ use http_body_util::BodyExt;
 use sea_orm::Database;
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yoram_persistence::AppRepository;
+use yoram_migration::Migrator;
+use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 async fn build_app_with_repository() -> axum::Router {
     let db = Database::connect("sqlite::memory:")

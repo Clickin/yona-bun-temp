@@ -1,6 +1,6 @@
 use sea_orm::Database;
-use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
-use yona_rust_pilot_server::persistence::PilotRepository;
+use yoram_migration::{seed_pilot_data, Migrator};
+use yoram_server::persistence::PilotRepository;
 
 #[tokio::test]
 async fn sqlite_smoke_covers_migrate_seed_read_and_update() {

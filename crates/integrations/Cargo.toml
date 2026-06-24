@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-integrations"
+name = "yoram-integrations"
 edition.workspace = true
 license.workspace = true
 version.workspace = true

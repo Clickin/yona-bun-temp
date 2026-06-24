@@ -1,4 +1,4 @@
-use yona_rust_integrations::{
+use yoram_integrations::{
     mailbox_collect_thread_message_ids, mailbox_extract_content, mailbox_message_id_left,
     mailbox_normalize_parsed_message, mailbox_parse_message_ids, mailbox_parse_raw_message,
     mailbox_project_detail, mailbox_recipients_to_yona, mailbox_resource_path_from_detail,

@@ -1,5 +1,5 @@
 use serde_json::json;
-use yona_rust_pilot_migration::import_checkpoint::{
+use yoram_migration::import_checkpoint::{
     summarize_site_import_report_json, ImportCheckpointSummaryStatus,
 };
 

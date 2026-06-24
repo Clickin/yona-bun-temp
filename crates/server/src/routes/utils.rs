@@ -10,8 +10,8 @@ use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, time::SystemTime};
-use yona_rust_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
-use yona_rust_vcs::{CodeFileRecord, VcsError};
+use yoram_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
+use yoram_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
     persistence,
@@ -23,7 +23,7 @@ use crate::{
     PilotServiceImpl, ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
     ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
 };
-use yona_rust_domain::{
+use yoram_domain::{
     authorize_project_access, can_create_organization_project, can_request_project_enrollment,
     can_update_organization, ProjectAccessFacts, ProjectOperation, ProjectScope,
     DEFAULT_LANDING_FALLBACK_PATH,

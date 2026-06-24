@@ -35,5 +35,5 @@
   canonical owner path and public Rust target layer while moving volatile compatibility
   DTOs into narrower modules. The 2026-06-17 `IssueCommentNotificationReceiverRecord`
   split keeps the legacy `IssueApi.commentNotiRecivers` translation contract unchanged
-  and was verified with `cargo check -p yona-rust-persistence` (cold sandbox check:
+  and was verified with `cargo check -p yoram-persistence` (cold sandbox check:
   5m25s; immediate no-change check: 0.36s).

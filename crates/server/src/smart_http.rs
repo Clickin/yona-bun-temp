@@ -16,9 +16,9 @@ use crate::{
     ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
     LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
-use yona_rust_domain::ProjectScope;
-use yona_rust_integrations::{deliver_webhook_with_config, IntegrationConfig, OutboundWebhook};
-use yona_rust_vcs::{
+use yoram_domain::ProjectScope;
+use yoram_integrations::{deliver_webhook_with_config, IntegrationConfig, OutboundWebhook};
+use yoram_vcs::{
     GitHeadRefRecord, GitHttpBackendRequest, GitPushCommitRecord, VcsError,
     MAX_SMART_HTTP_RPC_BYTES,
 };
@@ -198,10 +198,10 @@ pub(crate) async fn direct_smart_http_request(
         .get("git-protocol")
         .and_then(|value| value.to_str().ok());
     let remote_addr = smart_http_remote_addr(&parts.headers);
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let is_receive_pack_post = method == "POST" && route.git_path == "git-receive-pack";
     let before_refs = if is_receive_pack_post {
-        match yona_rust_vcs::read_head_refs(&repo_path) {
+        match yoram_vcs::read_head_refs(&repo_path) {
             Ok(refs) => refs,
             Err(error) => {
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
@@ -211,7 +211,7 @@ pub(crate) async fn direct_smart_http_request(
         Vec::new()
     };
 
-    let response = yona_rust_vcs::run_git_http_backend(GitHttpBackendRequest {
+    let response = yoram_vcs::run_git_http_backend(GitHttpBackendRequest {
         body: &body_bytes,
         content_type,
         git_protocol,
@@ -530,7 +530,7 @@ fn smart_http_remote_addr(headers: &HeaderMap) -> String {
         .to_string()
 }
 
-fn smart_http_backend_response(output: yona_rust_vcs::GitHttpBackendResponse) -> Response {
+fn smart_http_backend_response(output: yoram_vcs::GitHttpBackendResponse) -> Response {
     let status = StatusCode::from_u16(output.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
     let mut response = (status, output.body).into_response();
     for (name, value) in output.headers {
@@ -652,7 +652,7 @@ fn smart_http_push_summary(
     repo_path: &Path,
     before_refs: Vec<GitHeadRefRecord>,
 ) -> Result<SmartHttpPushSummary, VcsError> {
-    let after_refs = yona_rust_vcs::read_head_refs(repo_path)?;
+    let after_refs = yoram_vcs::read_head_refs(repo_path)?;
     let before_by_full_name = before_refs
         .iter()
         .map(|record| (record.full_name.clone(), record.clone()))
@@ -673,7 +673,7 @@ fn smart_http_push_summary(
             continue;
         }
         let old_oid = before.map(|record| record.object_id.clone());
-        let commits = yona_rust_vcs::read_push_commits(
+        let commits = yoram_vcs::read_push_commits(
             repo_path,
             old_oid.as_deref(),
             &after.object_id,

@@ -3,7 +3,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::{internal_error, RestRouteError};
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 use super::{
     add_svn_dav_headers, path, report_filters, svn_protocol_not_implemented_response,
@@ -20,7 +20,7 @@ pub(crate) fn locations(repo_path: &StdPath, route: &SvnProtocolRoute, request: 
         .unwrap_or_default();
     let location_path = path::join_report_path(&base_path, &requested_path);
     let exists =
-        match yona_rust_vcs::svn_path_exists(repo_path, Some(location_revision), &location_path) {
+        match yoram_vcs::svn_path_exists(repo_path, Some(location_revision), &location_path) {
             Ok(exists) => exists,
             Err(VcsError::InvalidPath) => {
                 return svn_protocol_status_response(StatusCode::BAD_REQUEST);
@@ -71,7 +71,7 @@ pub(crate) fn location_segments(
         .unwrap_or_default();
     let location_path = path::join_report_path(&base_path, &requested_path);
     let exists =
-        match yona_rust_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
+        match yoram_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
             Ok(exists) => exists,
             Err(VcsError::InvalidPath) => {
                 return svn_protocol_status_response(StatusCode::BAD_REQUEST);

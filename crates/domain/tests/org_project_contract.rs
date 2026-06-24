@@ -1,4 +1,4 @@
-use yona_rust_domain::{
+use yoram_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
     is_valid_project_name, ProjectAccessFacts, ProjectOperation, ProjectScope,

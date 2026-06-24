@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-persistence"
+name = "yoram-persistence"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
@@ -17,12 +17,12 @@ async-trait.workspace = true
 rand.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
-yona-rust-persistence-entities = { path = "../persistence-entities" }
-yona-rust-search = { path = "../search" }
+yoram-persistence-entities = { path = "../persistence-entities" }
+yoram-search = { path = "../search" }
 
 [dev-dependencies]
 tokio.workspace = true
-yona-rust-pilot-migration = { path = "../migration" }
+yoram-migration = { path = "../migration" }
 sea-orm.workspace = true
 
 [[test]]

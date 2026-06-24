@@ -1,4 +1,4 @@
-use yona_rust_vcs::VcsError;
+use yoram_vcs::VcsError;
 
 pub(crate) fn apply_svndiff0(source: &[u8], body: &[u8]) -> Result<Vec<u8>, VcsError> {
     if !body.starts_with(b"SVN\0") {

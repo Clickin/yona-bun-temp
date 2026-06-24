@@ -70,10 +70,10 @@ Focused checks run by subagents or parent:
 - `pnpm --dir frontend exec tsc --noEmit` passed.
 - `pnpm --dir frontend exec vitest run src/ui-kit-route-parity.spec.tsx src/route-parity.spec.tsx` passed.
 - `pnpm --dir frontend build` passed with an existing chunk-size warning.
-- `cargo test -p yona-rust-pilot-server --test router_contract legacy_migration -- --nocapture` passed.
-- `cargo test -p yona-rust-pilot-server --test assets_contract --no-run` passed after the code Ajax partial-move fix.
-- `cargo test -p yona-rust-pilot-server --test assets_contract legacy_init_redirects_home_and_recreates_project_repositories` passed.
-- `cargo test -p yona-rust-pilot-server --test code_browser_contract direct_code_ajax_compat_routes_return_legacy_metadata_json` passed.
-- `cargo test -p yona-rust-pilot-server --test code_browser_contract direct_code_file_routes_stream_raw_open_and_image_bytes` passed.
+- `cargo test -p yoram-server --test router_contract legacy_migration -- --nocapture` passed.
+- `cargo test -p yoram-server --test assets_contract --no-run` passed after the code Ajax partial-move fix.
+- `cargo test -p yoram-server --test assets_contract legacy_init_redirects_home_and_recreates_project_repositories` passed.
+- `cargo test -p yoram-server --test code_browser_contract direct_code_ajax_compat_routes_return_legacy_metadata_json` passed.
+- `cargo test -p yoram-server --test code_browser_contract direct_code_file_routes_stream_raw_open_and_image_bytes` passed.
 
 Remaining follow-up remains limited to the deferred items above.

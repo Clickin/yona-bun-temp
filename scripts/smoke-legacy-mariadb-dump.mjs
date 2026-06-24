@@ -141,7 +141,7 @@ async function stopServer(server) {
 
 let containerId;
 try {
-  await run("cargo", ["build", "-p", "yona-rust-pilot-server", "--bin", "yoram", "--features", "db-matrix"]);
+  await run("cargo", ["build", "-p", "yoram-server", "--bin", "yoram", "--features", "db-matrix"]);
   if (!existsSync(binaryPath)) {
     throw new Error(`server binary not found: ${binaryPath}`);
   }

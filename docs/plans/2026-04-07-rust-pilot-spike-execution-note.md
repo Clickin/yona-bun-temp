@@ -26,8 +26,8 @@
 
 ```powershell
 cd G:\programming\yona
-cargo test -p yona-rust-pilot-server
-cargo test -p yona-rust-pilot-server --test db_matrix_env -- --nocapture
+cargo test -p yoram-server
+cargo test -p yoram-server --test db_matrix_env -- --nocapture
 pwsh ./scripts/run-db-matrix.ps1
 pwsh ./scripts/smoke-embedded-assets.ps1
 ```
@@ -35,7 +35,7 @@ pwsh ./scripts/smoke-embedded-assets.ps1
 ## Verification Snapshot
 
 - `cargo test --workspace`: pass at spike time
-- `cargo build -p yona-rust-pilot-server`: pass at spike time
+- `cargo build -p yoram-server`: pass at spike time
 - `pnpm --dir frontend build`: pass at spike time
 - `pwsh ./scripts/run-db-matrix.ps1`: pass at spike time
 - `pwsh ./scripts/smoke-embedded-assets.ps1`: pass at spike time

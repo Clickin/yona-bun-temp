@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 use std::fs;
 
 use tempfile::tempdir;
-use yona_rust_pilot_migration::RuntimeSchemaPolicy;
-use yona_rust_pilot_server::repository_config_from_startup;
-use yona_rust_pilot_server::runtime_config::{
+use yoram_migration::RuntimeSchemaPolicy;
+use yoram_server::repository_config_from_startup;
+use yoram_server::runtime_config::{
     join_base_path, load_startup_config, normalize_base_path,
 };
 

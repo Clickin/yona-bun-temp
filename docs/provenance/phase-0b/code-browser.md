@@ -60,7 +60,7 @@
 | Commit detail route surface | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx`, `frontend/src/api/code-commits.ts`, `frontend/src/routes/-code-views.tsx` |
 | Compare route surface | `frontend/src/routes/$owner/$projectName/compare/$revisionRange/route.tsx`, `frontend/src/routes/-code-views.tsx` |
 | Branch administration route surface | `frontend/src/routes/$owner/$projectName/branches/route.tsx`, `frontend/src/api/code-branches.ts`, `frontend/src/routes/-code-views.tsx` |
-| Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `cargo test -p yona-rust-pilot-server --test smart_http_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e`; `frontend/src/code-views.spec.tsx`; `frontend/tests/project-code-comment-upload-parity.e2e.ts` |
+| Regression tests | `cargo test -p yoram-server --test code_browser_contract`; `cargo test -p yoram-server --test smart_http_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e`; `frontend/src/code-views.spec.tsx`; `frontend/tests/project-code-comment-upload-parity.e2e.ts` |
 
 ## Remaining Phase 3 Follow-ups
 

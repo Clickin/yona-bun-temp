@@ -1,5 +1,5 @@
 use std::io::Read;
-use yona_rust_pilot_migration::import_checkpoint::summarize_site_import_report_json;
+use yoram_migration::import_checkpoint::summarize_site_import_report_json;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();

@@ -4,7 +4,7 @@ use axum::{
     Json,
 };
 
-use yona_rust_domain::{authorize_project_access, ProjectAccessFacts, ProjectOperation};
+use yoram_domain::{authorize_project_access, ProjectAccessFacts, ProjectOperation};
 
 use crate::{
     legacy_external_api_auth_error_response, legacy_external_authenticated_user_id,

@@ -1,4 +1,4 @@
-use yona_rust_pilot_migration::legacy_external::{
+use yoram_migration::legacy_external::{
     find_endpoint,
     watchers::{
         favorite_helper_boundaries, find_fixture, fixtures, parse_favorite_issues_response,

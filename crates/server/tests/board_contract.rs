@@ -12,13 +12,13 @@ use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Barrier;
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
-use yona_rust_persistence::{
+use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
+use yoram_persistence::{
     original_email, AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
     PostingMutationInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
 };

@@ -1,6 +1,6 @@
 use sea_orm::Database;
-use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
-use yona_rust_pilot_server::persistence::PilotRepository;
+use yoram_migration::{seed_pilot_data, Migrator};
+use yoram_server::persistence::PilotRepository;
 
 #[tokio::test]
 async fn env_backed_db_matrix_smokes_the_seeded_repository_flow() {

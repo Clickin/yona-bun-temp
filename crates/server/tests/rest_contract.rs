@@ -11,13 +11,13 @@ use sea_orm::{
 use serde_json::json;
 use serde_json::Value;
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     email, issue, title_head, user_project_notification, watch, AppRepository,
     CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
     CreateProjectInput, IssueMutationInput, PostingMutationInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig, TranslationProxyConfig,
 };

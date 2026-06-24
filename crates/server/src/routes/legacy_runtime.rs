@@ -15,7 +15,7 @@ use crate::{
     rest_project_menu_settings, AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository,
     PilotServiceImpl, RestRouteError,
 };
-use yona_rust_domain::{
+use yoram_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,
 };
 
@@ -40,11 +40,11 @@ async fn make_legacy_test_repositories(repository: &PilotRepository, data_root: 
         }
     };
     for project in projects {
-        let repo_path = yona_rust_vcs::repository_path_for_vcs(data_root, project.id, &project.vcs);
+        let repo_path = yoram_vcs::repository_path_for_vcs(data_root, project.id, &project.vcs);
         let result = if project.vcs.eq_ignore_ascii_case("Subversion") {
-            yona_rust_vcs::create_svn_repository(&repo_path)
+            yoram_vcs::create_svn_repository(&repo_path)
         } else {
-            yona_rust_vcs::create_bare_repository(&repo_path)
+            yoram_vcs::create_bare_repository(&repo_path)
         };
         if let Err(error) = result {
             tracing::warn!(
@@ -212,7 +212,7 @@ pub(crate) async fn direct_import_project(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
 
-    let repo_path = yona_rust_vcs::repository_path(&service.data_root, created.id);
+    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
     let clone_result = {
         let _guard = match repository_provisioning_lock().lock() {
             Ok(guard) => guard,
@@ -222,15 +222,15 @@ pub(crate) async fn direct_import_project(
             }
         };
         if repo_path.exists() {
-            let _ = yona_rust_vcs::delete_repository(&repo_path);
+            let _ = yoram_vcs::delete_repository(&repo_path);
         }
-        yona_rust_vcs::clone_bare_repository_from_source(&source_url, &repo_path)
+        yoram_vcs::clone_bare_repository_from_source(&source_url, &repo_path)
     };
     if let Err(error) = clone_result {
         let _ = repository
             .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
             .await;
-        let _ = yona_rust_vcs::delete_repository(&repo_path);
+        let _ = yoram_vcs::delete_repository(&repo_path);
         return legacy_plain_response(
             StatusCode::BAD_REQUEST,
             &format!("project.import.error.invalid.url: {error}"),
@@ -244,7 +244,7 @@ pub(crate) async fn direct_import_project(
         let _ = repository
             .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
             .await;
-        let _ = yona_rust_vcs::delete_repository(&repo_path);
+        let _ = yoram_vcs::delete_repository(&repo_path);
         return RestRouteError::internal(error.to_string()).into_response();
     }
     if let Some(menu_settings) = direct_project_menu_settings_from_form(&form) {

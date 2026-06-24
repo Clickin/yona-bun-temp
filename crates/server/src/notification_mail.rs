@@ -1,6 +1,6 @@
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use std::time::{Duration, SystemTime};
-use yona_rust_integrations::{
+use yoram_integrations::{
     deliver_with_config, notification_mail_batches, IntegrationConfig, NotificationMailRecipient,
     OutboundMail,
 };

@@ -103,7 +103,7 @@ src/wave1-auth-workspace-parity.spec.tsx src/auth-workspace-shell.spec.tsx
 src/help-route-parity.spec.tsx src/route-parity.spec.tsx` passed with 4 files
   and 129 tests.
 - Backend direct-route verification: `pnpm agent:cargo-test --
---outside-sandbox -p yona-rust-pilot-server --test auth_workspace_contract
+--outside-sandbox -p yoram-server --test auth_workspace_contract
 direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate
 -- --nocapture` passed.
 - Note: stale `server_core_contract.rs` reference to missing
@@ -143,7 +143,7 @@ src/project-create-parity.spec.tsx src/project-import-parity.spec.tsx
 src/organization-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx
 src/route-parity.spec.tsx` passed with 5 files and 131 tests.
 - Backend direct-route verification: `pnpm agent:cargo-test --
---outside-sandbox -p yona-rust-pilot-server --test org_project_contract
+--outside-sandbox -p yoram-server --test org_project_contract
   project_import_direct_route_clones_git_repository_and_preserves_legacy_errors
   -- --nocapture` passed with 1 test.
 
@@ -315,7 +315,7 @@ src/issue-board-pr-milestone-i18n.spec.tsx src/route-parity.spec.tsx` passed
   targets passed outside the sandbox: `:1829` milestone list/detail/form shell,
   `:1878` create editor image upload, and `:1970` edit editor image upload.
 - Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
-yona-rust-pilot-server --test milestone_contract -- --nocapture` passed.
+yoram-server --test milestone_contract -- --nocapture` passed.
 
 ### `rc-ux-board`
 
@@ -462,7 +462,7 @@ tests/search-parity.e2e.ts tests/legacy-rendered-page-audit.e2e.ts -g "hostile
 search|XSS payloads"` executed outside the sandbox and passed 49 tests,
   including hostile search result text inertness and issue detail XSS inertness.
 - Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
-yona-rust-pilot-server --test search_contract
+yoram-server --test search_contract
 global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
   passed, proving the SQL metacharacter probe is treated as a literal keyword
   and returns no broad `OR 1=1` match.
@@ -479,13 +479,13 @@ global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
   `users: 1`, `validate_only_left_migration_table_absent: true`, and
   `adopted_version: m20260409_000001_create_legacy_start_schema`.
 - Env-backed matrix verification: `pnpm agent:cargo-test -- --outside-sandbox -p
-yona-rust-pilot-server --test db_matrix_env --features db-matrix --
+yoram-server --test db_matrix_env --features db-matrix --
 --nocapture` passed and logged to
   `.agent/cargo-test-logs/cargo-test-2026-06-24T010913-122Z.log`, covering the
   seeded repository read/update smoke path for SQLite plus any configured
   external PostgreSQL/MySQL/MariaDB URLs.
 - Live DB matrix verification: `pnpm agent:cargo-test -- --outside-sandbox -p
-yona-rust-pilot-server --test db_matrix_testcontainers --features db-matrix --
+yoram-server --test db_matrix_testcontainers --features db-matrix --
 --nocapture` passed after adding seeded issue search coverage and logged to
   `.agent/cargo-test-logs/cargo-test-2026-06-24T011051-430Z.log`. The test now
   covers live SQLite, PostgreSQL, and MariaDB runtime schema creation,

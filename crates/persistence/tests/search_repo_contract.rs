@@ -1,9 +1,9 @@
 use sea_orm::{ConnectionTrait, Database, DatabaseBackend, Statement};
-use yona_rust_persistence::{
+use yoram_persistence::{
     AppRepository, CreateIssueInput, CreateProjectInput, CreateUserInput, IssueMutationInput,
     SearchRepositoryInput, SearchScope,
 };
-use yona_rust_pilot_migration::Migrator;
+use yoram_migration::Migrator;
 
 #[tokio::test]
 async fn search_repository_preserves_literal_matches_when_sqlite_fts_candidates_are_narrower() {
@@ -190,7 +190,7 @@ async fn search_issue_keyword(
     repo: &AppRepository,
     actor_id: i64,
     keyword: &str,
-) -> yona_rust_persistence::SearchResultRecord {
+) -> yoram_persistence::SearchResultRecord {
     repo.search_app(SearchRepositoryInput {
         actor_id: Some(actor_id),
         keyword: keyword.to_string(),

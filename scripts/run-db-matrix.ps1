@@ -1,9 +1,9 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$pgName = "yona-rust-pilot-pg"
-$mysqlName = "yona-rust-pilot-mysql"
-$mariaName = "yona-rust-pilot-mariadb"
+$pgName = "yoram-pg"
+$mysqlName = "yoram-mysql"
+$mariaName = "yoram-mariadb"
 
 function Wait-ForTcp {
   param(
@@ -47,7 +47,7 @@ try {
   $env:YONA_SPIKE_TEST_MARIADB_URL = "mysql://yona:yona@127.0.0.1:53307/yona"
 
   Push-Location $root
-  cargo test -p yona-rust-pilot-server --test db_matrix_env -- --nocapture
+  cargo test -p yoram-server --test db_matrix_env -- --nocapture
   if ($LASTEXITCODE -ne 0) {
     throw "db_matrix_env test failed with exit code $LASTEXITCODE"
   }

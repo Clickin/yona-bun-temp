@@ -1,4 +1,4 @@
-pub use yona_rust_persistence_entities::*;
+pub use yoram_persistence_entities::*;
 
 mod repo;
 mod repo_types;

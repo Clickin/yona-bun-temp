@@ -45,7 +45,7 @@ try {
 
   $env:YONA_EMBED_ASSET_ROOT = $frontendDist
 
-  $cargoArgs = @("build", "-p", "yona-rust-pilot-server", "--bin", "yoram", "--target", $Target)
+  $cargoArgs = @("build", "-p", "yoram-server", "--bin", "yoram", "--target", $Target)
   if ($Profile -eq "release") {
     $cargoArgs += "--release"
   }

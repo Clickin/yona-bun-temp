@@ -53,13 +53,13 @@ then start with adopt mode:
 ```sh
 YONA_DATABASE_URL='sqlite:/path/to/yona.sqlite' \
 YONA_SCHEMA_POLICY=validate_only \
-target/release/yona-rust-pilot-server
+target/release/yoram-server
 ```
 
 ```sh
 YONA_DATABASE_URL='sqlite:/path/to/yona.sqlite' \
 YONA_SCHEMA_POLICY=adopt \
-target/release/yona-rust-pilot-server
+target/release/yoram-server
 ```
 
 If validation fails, do not start with `adopt`; treat the converter output as an

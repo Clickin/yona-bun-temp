@@ -22,11 +22,11 @@ the repo root runtime surface.
 
 - Root `package.json` exposes Node scripts for tooling, smoke tests,
   Playwright orchestration, and cargo wrappers only. These scripts start the
-  Rust backend through `cargo run -p yona-rust-pilot-server` or build/smoke the
+  Rust backend through `cargo run -p yoram-server` or build/smoke the
   Rust binary and Docker image.
 - `scripts/dev-backend.mjs` uses `cargo watch` and delegates to
   `scripts/run-dev-backend-once.mjs`; that script writes dev config and runs
-  `cargo run -p yona-rust-pilot-server`.
+  `cargo run -p yoram-server`.
 - Root non-reference `package.json` files are only `package.json` and
   `frontend/package.json`; `frontend/node_modules/.vite/deps/package.json` is
   generated dependency cache and ignored for ownership.

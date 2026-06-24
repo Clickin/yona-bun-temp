@@ -1,5 +1,5 @@
 use http::HeaderMap;
-use yona_rust_pilot_server::session::{Session, SessionConfig, SessionManager};
+use yoram_server::session::{Session, SessionConfig, SessionManager};
 
 #[test]
 fn csrf_validation_accepts_matching_token() {

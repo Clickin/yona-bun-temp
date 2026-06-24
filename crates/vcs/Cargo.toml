@@ -1,5 +1,5 @@
 [package]
-name = "yona-rust-vcs"
+name = "yoram-vcs"
 edition.workspace = true
 license.workspace = true
 version.workspace = true

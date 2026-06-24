@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use yona_rust_vcs::{read_pull_request_diff, read_pull_request_diff_between_revisions};
+use yoram_vcs::{read_pull_request_diff, read_pull_request_diff_between_revisions};
 
 fn temp_repo_path(label: &str) -> PathBuf {
     let nanos = SystemTime::now()

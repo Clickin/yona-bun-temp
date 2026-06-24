@@ -5,7 +5,7 @@ use std::path::Path;
 
 use super::{date, href, svndiff, xml, xml_escape, SvnProtocolRoute};
 
-pub(crate) fn depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth: &str) -> bool {
+pub(crate) fn depth_includes(entry: &yoram_vcs::SvnTreeEntry, depth: &str) -> bool {
     match depth.to_ascii_lowercase().as_str() {
         "empty" => false,
         "files" => !entry.is_dir,
@@ -15,12 +15,12 @@ pub(crate) fn depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth: &str) -
 
 pub(crate) fn entries_recursive(
     route: &SvnProtocolRoute,
-    entries: &[yona_rust_vcs::SvnTreeEntry],
-    base_entries: &[yona_rust_vcs::SvnTreeEntry],
+    entries: &[yoram_vcs::SvnTreeEntry],
+    base_entries: &[yoram_vcs::SvnTreeEntry],
     parent_path: &str,
     revision: i64,
     base_revision: i64,
-    revision_log: &yona_rust_vcs::SvnLogEntry,
+    revision_log: &yoram_vcs::SvnLogEntry,
     indent_level: usize,
     start_empty: bool,
     repo_path: &Path,
@@ -113,7 +113,7 @@ pub(crate) fn entries_recursive(
             ));
         } else if let Some(entry) = child_entry {
             let inline_delta = if inline_text_deltas {
-                yona_rust_vcs::svn_cat_file(repo_path, Some(revision), entry.path.trim_matches('/'))
+                yoram_vcs::svn_cat_file(repo_path, Some(revision), entry.path.trim_matches('/'))
                     .ok()
             } else {
                 None
@@ -148,10 +148,10 @@ fn immediate_child_name(parent_path: &str, path: &str) -> Option<String> {
 
 pub(crate) fn file_entry(
     route: &SvnProtocolRoute,
-    entry: &yona_rust_vcs::SvnTreeEntry,
+    entry: &yoram_vcs::SvnTreeEntry,
     revision: i64,
     base_revision: i64,
-    revision_log: &yona_rust_vcs::SvnLogEntry,
+    revision_log: &yoram_vcs::SvnLogEntry,
     indent_level: usize,
     start_empty: bool,
     inline_delta: Option<&[u8]>,
@@ -225,7 +225,7 @@ pub(crate) fn inline_text_deltas(request: &str) -> bool {
 }
 
 pub(crate) fn entry_props(
-    revision_log: &yona_rust_vcs::SvnLogEntry,
+    revision_log: &yoram_vcs::SvnLogEntry,
     indent_level: usize,
 ) -> String {
     let indent = "  ".repeat(indent_level);

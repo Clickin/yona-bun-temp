@@ -10,13 +10,13 @@ use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{
+use yoram_persistence::{
     comment_thread, pull_request, review_comment, AppRepository, CreateIssueCommentInput,
     CreateIssueInput, CreatePostingCommentInput, CreatePostingInput, IssueMutationInput,
     MilestoneMutationInput, PostingMutationInput,
 };
-use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{
+use yoram_migration::Migrator;
+use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
 };

@@ -3,9 +3,9 @@ use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::Database;
 use tower::ServiceExt;
-use yona_rust_pilot_migration::{seed_pilot_data, Migrator};
-use yona_rust_pilot_server::persistence::PilotRepository;
-use yona_rust_pilot_server::{create_router_with_repository, RuntimeConfig};
+use yoram_migration::{seed_pilot_data, Migrator};
+use yoram_server::persistence::PilotRepository;
+use yoram_server::{create_router_with_repository, RuntimeConfig};
 
 #[tokio::test]
 async fn db_backed_router_reads_and_updates_seeded_data() {
@@ -17,7 +17,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
 
     let repo = PilotRepository::new(db);
     repo.create_organization(
-        yona_rust_pilot_server::persistence::CreateOrganizationInput {
+        yoram_server::persistence::CreateOrganizationInput {
             description: Some("Seeded pilot organization".to_string()),
             organization_name: "weblabs".to_string(),
         },

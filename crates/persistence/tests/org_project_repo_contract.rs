@@ -1,14 +1,14 @@
 use sea_orm::{ActiveModelTrait, Database, EntityName, Set};
-use yona_rust_persistence::{
+use yoram_persistence::{
     user_enrolled_organization, AppRepository, CreateOrganizationInput, CreateProjectInput,
     CreateUserInput, UpdateOrganizationInput,
 };
-use yona_rust_pilot_migration::Migrator;
+use yoram_migration::Migrator;
 
 #[test]
 fn project_entity_reexport_preserves_legacy_table_name() {
     assert_eq!(
-        yona_rust_persistence::project::Entity.table_name(),
+        yoram_persistence::project::Entity.table_name(),
         "project"
     );
 }
@@ -257,7 +257,7 @@ async fn reads_organization_members_together_with_pending_enrollment_requests() 
 
     assert_eq!(
         directory.enrollment_requests,
-        vec![yona_rust_persistence::OrganizationEnrollmentRequestRecord {
+        vec![yoram_persistence::OrganizationEnrollmentRequestRecord {
             email_address: "org-pending@example.com".to_string(),
             login_id: "org-pending".to_string(),
             user_id: pending.id,
@@ -267,21 +267,21 @@ async fn reads_organization_members_together_with_pending_enrollment_requests() 
     assert_eq!(
         directory.members,
         vec![
-            yona_rust_persistence::OrganizationMemberRecord {
+            yoram_persistence::OrganizationMemberRecord {
                 email_address: "org-admin@example.com".to_string(),
                 login_id: "org-admin".to_string(),
                 role: "org_admin".to_string(),
                 user_id: admin.id,
                 user_label: "A Admin".to_string(),
             },
-            yona_rust_persistence::OrganizationMemberRecord {
+            yoram_persistence::OrganizationMemberRecord {
                 email_address: "org-accepted@example.com".to_string(),
                 login_id: "org-accepted".to_string(),
                 role: "org_member".to_string(),
                 user_id: accepted.id,
                 user_label: "D Accepted".to_string(),
             },
-            yona_rust_persistence::OrganizationMemberRecord {
+            yoram_persistence::OrganizationMemberRecord {
                 email_address: "org-member@example.com".to_string(),
                 login_id: "org-member".to_string(),
                 role: "org_member".to_string(),
