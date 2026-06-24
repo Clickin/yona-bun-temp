@@ -192,8 +192,8 @@ pub(crate) fn app_routes(
         .nest("/api/v1", rest_router)
         .merge(legacy_runtime_routes(
             service.clone(),
-            assets,
-            browser_runtime,
+            assets.clone(),
+            browser_runtime.clone(),
         ))
         .merge(workspace_routes(service.clone(), runtime.site_name.clone()))
         .merge(user_routes(service.clone()))
@@ -209,7 +209,7 @@ pub(crate) fn app_routes(
         )
         .merge(file_routes(service.clone()))
         .merge(pull_request_routes(service.clone()))
-        .merge(site_admin_routes(service.clone()))
+        .merge(site_admin_routes(service.clone(), assets, browser_runtime))
         .merge(code_routes(service))
 }
 

@@ -1,9 +1,9 @@
 use axum::{
     body::Bytes,
     extract::{Path, Query},
-    http::HeaderMap,
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    http::{HeaderMap, Method},
+    response::{IntoResponse, Redirect, Response},
     routing::{delete, get, post},
     Json, Router,
 };
@@ -20,18 +20,19 @@ use std::{
 use yona_rust_domain::ProjectScope;
 use yona_rust_integrations::{deliver_with_config, OutboundMail};
 
+use crate::assets::serve_frontend_page;
 use crate::persistence::PilotRepository;
 use crate::{
     base_path_href, decode_query_component, delete_project_repository_storage,
-    detect_upload_mime_type, escape_html_text, gravatar_url, headers_with_form_csrf,
-    internal_error, legacy_external_date_string, legacy_external_parse_datetime, map_project_scope,
+    detect_upload_mime_type, gravatar_url, headers_with_form_csrf, internal_error,
+    legacy_external_date_string, legacy_external_parse_datetime, map_project_scope,
     normalize_identifier, normalize_issue_label_color, normalize_milestone_state,
     parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
     random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
     require_session, require_valid_csrf, rest_board_label_from_record, rest_repository,
-    site_export_filename_stamp, site_import_staging_lock, workspace_avatar_url, ConnectError,
-    PilotServiceImpl, RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    site_export_filename_stamp, site_import_staging_lock, workspace_avatar_url, AssetMode,
+    BrowserRuntimeConfig, ConnectError, PilotServiceImpl, RestBoardLabel,
+    RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 use super::uploaded_file_path_with_root;
@@ -1233,7 +1234,13 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+pub(crate) fn routes(
+    service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Router {
+    let site_diagnostic_shell_assets = assets;
+    let site_diagnostic_shell_browser_runtime = browser_runtime;
     let unwatch_service = service.clone();
     let site_update_download_service = service.clone();
     let site_update_download_file_service = service.clone();
@@ -1281,10 +1288,14 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
         .route(
             "/sites/diagnostic",
             get(move |headers: HeaderMap| {
+                let assets = site_diagnostic_shell_assets.clone();
+                let browser_runtime = site_diagnostic_shell_browser_runtime.clone();
                 async move {
                     direct_read_site_diagnostic_shell(
                         headers,
                         site_diagnostic_shell_service.clone(),
+                        assets,
+                        browser_runtime,
                     )
                     .await
                 }
@@ -1463,52 +1474,16 @@ struct RestSiteDirectUserMutationQuery {
 async fn direct_read_site_diagnostic_shell(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
 ) -> Response {
     match rest_read_site_diagnostics(headers, service).await {
-        Ok(payload) => {
-            let payload = payload.0;
-            Html(render_legacy_site_diagnostic_shell(&payload)).into_response()
-        }
+        Ok(payload) => match assets {
+            AssetMode::None => payload.into_response(),
+            assets => serve_frontend_page(assets, Method::GET, browser_runtime).await,
+        },
         Err(error) => error.into_response(),
     }
-}
-
-fn render_legacy_site_diagnostic_shell(payload: &RestSiteDiagnosticsResponse) -> String {
-    let body = if payload.errors.is_empty() {
-        "<p>site.diagnostic.errorNotFound</p>".to_string()
-    } else {
-        let mut items = String::new();
-        for error in &payload.errors {
-            items.push_str(&format!("<li><pre>{}</pre></li>", escape_html_text(error)));
-        }
-        format!(
-            "<p>site.diagnostic.errorFound {}</p><ul>{items}</ul>",
-            payload.error_count
-        )
-    };
-    format!(
-        r#"<!doctype html>
-<html>
-<head><title>title.siteSetting</title></head>
-<body>
-<div class="site-breadcrumb-outer"><h3>site.sidebar</h3></div>
-<div class="site-setting-wrap">
-<ul class="site-setting-nav">
-<li><a href="/sites/userList">site.sidebar.userList</a></li>
-<li><a href="/sites/postList">site.sidebar.postList</a></li>
-<li><a href="/sites/issueList">site.sidebar.issueList</a></li>
-<li><a href="/sites/projectList">site.sidebar.projectList</a></li>
-<li><a href="/sites/mail">site.sidebar.mailSend</a></li>
-<li><a href="/sites/massmail">site.sidebar.massMail</a></li>
-<li><a href="/sites/update">site.sidebar.update</a></li>
-<li class="active"><a href="/sites/diagnostic">site.sidebar.diagnostics</a></li>
-</ul>
-<div class="title_area"><h2 class="pull-left">site.sidebar.diagnostics</h2></div>
-{body}
-</div>
-</body>
-</html>"#
-    )
 }
 
 async fn direct_read_site_no_avatar_users(

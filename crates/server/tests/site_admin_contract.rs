@@ -22,6 +22,7 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
+    create_router_with_repository_and_filesystem_assets_and_app_config,
     reconcile_site_import_staging_uploads_for_startup, AppRuntimeConfig, RuntimeConfig,
     SiteUpdateConfig, SmtpRuntimeConfig,
 };
@@ -4793,7 +4794,27 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
 
 #[tokio::test]
 async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list() {
-    let (app, _repo, db) = build_app_with_repository().await;
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let repo = AppRepository::new(db.clone());
+    let asset_root = tempfile::tempdir().expect("site diagnostic assets");
+    std::fs::write(
+        asset_root.path().join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">legacy index</main></body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repo,
+        asset_root.path().to_path_buf(),
+        AppRuntimeConfig::default(),
+    );
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -4835,9 +4856,10 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
         "text/html; charset=utf-8"
     );
     let direct_body = response_text(direct).await;
-    assert!(direct_body.contains("site.sidebar.diagnostics"));
-    assert!(direct_body.contains("site.diagnostic.errorNotFound"));
-    assert!(direct_body.contains(r#"<li class="active"><a href="/sites/diagnostic">"#));
+    assert!(direct_body.contains("legacy index"));
+    assert!(direct_body.contains("window.__YONA_RUNTIME_CONFIG__"));
+    assert!(direct_body.contains(r#""basePath":"/yona""#));
+    assert!(!direct_body.contains("site.diagnostic.errorNotFound"));
 }
 
 #[tokio::test]
