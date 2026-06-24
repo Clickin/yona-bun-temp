@@ -80,7 +80,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `pass`      |
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `pass`      |
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
-| `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `unchecked` |
+| `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `pass`      |
 | `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `pass`      |
 | `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequest`, `/admin/sample/newPullRequestForm`, `/admin/sample/pullRequest/**`                                                                                                     | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `unchecked` |
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settings`, `/admin/sample/webhooks`, `/admin/sample/delete`, `/admin/sample/transfer`, `/admin/sample/fork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `unchecked` |
@@ -283,6 +283,31 @@ src/issue-board-pr-milestone-i18n.spec.tsx src/route-parity.spec.tsx` passed
   `:1878` create editor image upload, and `:1970` edit editor image upload.
 - Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
 yona-rust-pilot-server --test milestone_contract -- --nocapture` passed.
+
+### `rc-ux-board`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin/sample/posts` and
+  `/admin/sample/postform`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
+  `anchor-coverage.json` map board list and create-form routes to Rust routes,
+  parity specs, rendered e2e coverage, and project header/menu anchor evidence.
+- Test expectation fixes closed in this packet: board e2e now targets the
+  runtime English legacy copy for search, label, sort, pagination, watch,
+  comment, and save/delete controls; the backend board contract now verifies
+  current numeric REST ids rather than stale string expectations.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/issue-board-pr-milestone-i18n.spec.tsx src/issue-list-filter.spec.tsx
+src/route-parity.spec.tsx` passed with 3 files and 69 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/board-posting-parity.e2e.ts` passed outside the sandbox with 6 tests,
+  covering board list filters/sort/pagination, detail watch, comment
+  create/update/delete, post create/edit/delete, image upload insertion, and
+  organization board filters.
+- Backend verification: these focused contracts passed outside the sandbox:
+  `board_contract_manages_project_posts_comments_watch_and_notifications` and
+  `organization_board_contract_lists_visible_cross_project_posts_without_notice_pin`.
 
 ## Goal Packet Template
 

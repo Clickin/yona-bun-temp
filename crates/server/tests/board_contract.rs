@@ -249,7 +249,7 @@ async fn create_label(app: axum::Router, cookie: &str, csrf: &str) -> String {
         .await,
     )
     .await;
-    payload["label"]["id"].as_str().unwrap().to_string()
+    payload["label"]["id"].as_i64().unwrap().to_string()
 }
 
 fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, String)> {
@@ -870,7 +870,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .await,
     )
     .await;
-    assert_eq!(linked_issue["issueNumber"], "1");
+    assert_eq!(linked_issue["issueNumber"], 1);
 
     let form_options = ok_json(
         rest(
