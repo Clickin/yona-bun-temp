@@ -381,13 +381,13 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   page,
 }) => {
   await page.goto("/yona/admin/projectYobi/pullRequests?pageNum=1");
-  await expect(page.locator(".pullrequeset-tab-menu")).toContainText("pullRequest.state.open");
+  await expect(page.locator(".pullrequeset-tab-menu")).toContainText("Open");
   await expect(page.locator("#search .search-btn .yobicon-search")).toHaveCount(1);
   await expect(page.locator("#advanced-search-form #contributors")).toBeVisible();
   await expect(page.locator(".post-list-wrap")).toContainText("Open read surface");
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination")).toContainText("Next page");
   await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/pullRequests?pageNum=2",
@@ -405,11 +405,11 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   await expect(page.locator("ul#comments")).toContainText("pullRequest.event.message");
   await expect(page.locator(".review-card")).toHaveCount(0);
   await expect(
-    page.locator(".pull-request-overview-tabs a", { hasText: "pullRequest.menu.changes" }),
+    page.locator(".pull-request-overview-tabs a", { hasText: "Code review" }),
   ).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3/changes");
-  await expect(page.locator("#commits")).toContainText("pullRequest.changes.all");
+  await expect(page.locator("#commits")).toContainText("Changes of all commits");
   await expect(page.locator(".diff-body.diffs-wrap-scroll")).toBeVisible();
   await expect(page.locator(".diff-body .btnPop")).toBeVisible();
   await expect(page.locator(".review-card")).toContainText("Review **comment** body");
@@ -453,7 +453,7 @@ test("renders organization PR lists and REST error shells", async ({ page }) => 
     },
   );
   await page.goto("/yona/admin/projectYobi/pullRequest/403");
-  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
 
   await page.route(
     apiV1Route("/owners/admin/projects/projectYobi/pull-requests/404"),
@@ -466,5 +466,5 @@ test("renders organization PR lists and REST error shells", async ({ page }) => 
     },
   );
   await page.goto("/yona/admin/projectYobi/pullRequest/404");
-  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
 });

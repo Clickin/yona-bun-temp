@@ -682,60 +682,62 @@ test("covers create/edit forms and PR interaction actions without placeholders",
 
   await page.locator("#pullRequestState").fill("Created interaction parity");
   await page.locator("#status").fill("Create PR body");
-  await page.getByRole("button", { name: "pullRequest.send" }).click();
+  await page.getByRole("button", { name: "Send pull request" }).click();
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/pullRequest\/9$/);
 
   await expect(page.locator(".board-header .pullRequest-stateInfo.open")).toBeVisible();
-  await expect(page.locator("#state .alert-success")).toContainText("pullRequest.is.safe");
-  await expect(page.locator("#reviewers .reviewer-status.lacking")).toContainText(
-    "pullRequest.review.lacking 1",
+  await expect(page.locator("#state .alert-success")).toContainText(
+    "This pull request can be merged automatically.",
   );
-  await expect(page.locator("#reviewers")).toContainText("pullRequest.review.participants 0");
+  await expect(page.locator("#reviewers .reviewer-status.lacking")).toContainText(
+    "1 more reviewers are required",
+  );
+  await expect(page.locator("#reviewers")).toContainText("<strong>0</strong> participants");
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
   await page.locator("#watch-button").click();
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "true");
-  await expect(page.locator("#watch-button")).toContainText("project.unwatch");
+  await expect(page.locator("#watch-button")).toContainText("Unwatch");
   await page.locator("#watch-button").click();
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
-  await expect(page.locator("#watch-button")).toContainText("project.watch");
-  await page.getByRole("button", { name: "pullRequest.review" }).click();
+  await expect(page.locator("#watch-button")).toContainText("Watch");
+  await page.getByRole("button", { name: "Reviewed" }).click();
   await expect(page.locator("#reviewers .reviewer-status.reviewed")).toContainText(
-    "pullRequest.review.complete",
+    "Review complete",
   );
   await expect(page.locator("#reviewers img.avatar-wrap.smaller")).toHaveAttribute(
     "src",
     "/yona/avatar/reviewer.png",
   );
-  await page.getByRole("button", { name: "pullRequest.unreview" }).click();
+  await page.getByRole("button", { name: "Unreview" }).click();
   await expect(page.locator("#reviewers .reviewer-status.lacking")).toContainText(
-    "pullRequest.review.lacking 1",
+    "1 more reviewers are required",
   );
-  await expect(page.locator("#reviewers")).toContainText("pullRequest.review.participants 0");
-  await page.getByRole("button", { name: "pullRequest.review" }).click();
+  await expect(page.locator("#reviewers")).toContainText("<strong>0</strong> participants");
+  await page.getByRole("button", { name: "Reviewed" }).click();
   await expect(page.locator("#reviewers .reviewer-status.reviewed")).toContainText(
-    "pullRequest.review.complete",
+    "Review complete",
   );
 
   await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
   const generalCommentForm = page.locator("#comment-form");
   await generalCommentForm.locator("textarea").fill("New review comment");
-  await generalCommentForm.getByRole("button", { exact: true, name: "button.comment.new" }).click();
+  await generalCommentForm.getByRole("button", { exact: true, name: "Add a comment" }).click();
   const nonRangedThreads = page.locator(".non-ranged-threads-wrap");
   await expect(nonRangedThreads).toContainText("New review comment");
   await expect(nonRangedThreads.locator(".btn-thread-here .yobicon-comments")).toHaveCount(1);
   await expect(nonRangedThreads.locator(".thread-header")).toHaveCount(0);
 
-  await expect(nonRangedThreads.getByRole("button", { name: "commentThread.close" })).toHaveAttribute(
+  await expect(nonRangedThreads.getByRole("button", { name: "Close" })).toHaveAttribute(
     "data-request-uri",
     "/yona/threads/12/close",
   );
-  await nonRangedThreads.getByRole("button", { name: "commentThread.close" }).click();
+  await nonRangedThreads.getByRole("button", { name: "Close" }).click();
   await expect(nonRangedThreads.locator(".comment-thread-wrap.closed")).toBeVisible();
-  await expect(nonRangedThreads.getByRole("button", { name: "commentThread.open" })).toHaveAttribute(
+  await expect(nonRangedThreads.getByRole("button", { name: "Open" })).toHaveAttribute(
     "data-request-uri",
     "/yona/threads/12/open",
   );
-  await nonRangedThreads.getByRole("button", { name: "commentThread.open" }).click();
+  await nonRangedThreads.getByRole("button", { name: "Open" }).click();
   await expect(nonRangedThreads.locator(".comment-thread-wrap.open")).toBeVisible();
 
   await expect(page.locator(".diff-file[data-file-path='src/lib.rs']")).toBeVisible();
@@ -746,7 +748,7 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
   );
   await page.locator(".inline-review-form textarea").fill("Inline review body");
-  await page.locator(".inline-review-form").getByRole("button", { name: "button.comment.new" }).click();
+  await page.locator(".inline-review-form").getByRole("button", { name: "Add a comment" }).click();
   const submittedInlineReview = (await inlineReviewRequest).postDataJSON() as {
     commitId?: string;
     contentsMarkdown?: string;
@@ -771,14 +773,13 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   const threadReplyRequest = page.waitForRequest(
     (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
   );
-  await expect(page.locator("#thread-17 .write-comment-form .avatar-wrap.medium img")).toHaveAttribute(
-    "src",
-    "/yona/avatar/reviewer.png",
-  );
+  await expect(
+    page.locator("#thread-17 .write-comment-form .avatar-wrap.medium img"),
+  ).toHaveAttribute("src", "/yona/avatar/reviewer.png");
   await page.locator("#thread-17 .write-comment-form textarea").fill("Reply on inline thread");
   await page
     .locator("#thread-17 .write-comment-form")
-    .getByRole("button", { exact: true, name: "button.comment.new" })
+    .getByRole("button", { exact: true, name: "Add a comment" })
     .click();
   const submittedThreadReply = (await threadReplyRequest).postDataJSON() as {
     contentsMarkdown?: string;
@@ -795,9 +796,11 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   );
   await expect(page.locator("#comment-18 [data-toggle='comment-delete']")).toHaveAttribute(
     "title",
-    "common.comment.delete",
+    "Delete comment",
   );
-  await expect(page.locator("#comment-18 [data-toggle='comment-delete'] .yobicon-trash")).toHaveCount(1);
+  await expect(
+    page.locator("#comment-18 [data-toggle='comment-delete'] .yobicon-trash"),
+  ).toHaveCount(1);
   await expect(page.locator("#comment-18 [data-request-method='patch']")).toHaveAttribute(
     "data-request-uri",
     "/yona/api/v1/owners/admin/projects/projectYobi/pull-requests/9/comments/18",
@@ -806,12 +809,12 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     (request) =>
       request.url().endsWith("/pull-requests/9/comments/18") && request.method() === "PATCH",
   );
-  await page.locator("#comment-18").getByRole("button", { name: "button.edit" }).click();
+  await page.locator("#comment-18").getByRole("button", { name: "Edit" }).click();
   await page.locator("#comment-18 .review-comment-edit-form textarea").fill("Edited inline body");
   await page
     .locator("#comment-18 .review-comment-edit-form")
     .getByRole("button", {
-      name: "button.save",
+      name: "Save",
     })
     .click();
   const submittedInlineEdit = (await inlineEditRequest).postDataJSON() as {
@@ -819,7 +822,7 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   };
   expect(submittedInlineEdit).toMatchObject({ contentsMarkdown: "Edited inline body" });
   await expect(page.locator("#comment-18")).toContainText("Edited inline body");
-  await page.locator("#comment-18").getByRole("button", { name: "common.comment.delete" }).click();
+  await page.locator("#comment-18").getByRole("button", { name: "Delete comment" }).click();
   await expect(page.locator("#comment-18")).toHaveCount(0);
   await page.goto("/yona/admin/projectYobi/pullRequest/9");
 
@@ -848,19 +851,21 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "src",
     "/yona/avatar/reviewer.png",
   );
-  await expect(sourceBranchActions).toContainText("pullRequest.delete.frombranch.message");
+  await expect(sourceBranchActions).toContainText("You can delete the branch.");
   await expect(sourceBranchActions.locator("[data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/pullRequest/9/deletefrombranch",
   );
-  await sourceBranchActions.getByRole("button", { name: "pullRequest.delete.branch" }).click();
-  await expect(sourceBranchActions).toContainText("pullRequest.restore.frombranch.message");
-  await expect(
-    sourceBranchActions.getByRole("link", { name: "pullRequest.restore.branch" }),
-  ).toHaveAttribute("href", "/yona/admin/projectYobi/pullRequest/9/restorefrombranch");
-  await sourceBranchActions.getByRole("link", { name: "pullRequest.restore.branch" }).click();
-  await expect(sourceBranchActions).toContainText("pullRequest.delete.frombranch.message");
-  await expect(page.locator("ul#comments")).toContainText("pullRequest.event.message.merged");
+  await sourceBranchActions.getByRole("button", { name: "Delete branch" }).click();
+  await expect(sourceBranchActions).toContainText("The branch cannot be restored.");
+  await expect(sourceBranchActions.getByRole("link", { name: "Restore branch" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/9/restorefrombranch",
+  );
+  await sourceBranchActions.getByRole("link", { name: "Restore branch" }).click();
+  await expect(sourceBranchActions).toContainText("You can delete the branch.");
+  await expect(page.locator("ul#comments .state.merged")).toContainText("Merged");
+  await expect(page.locator("ul#comments")).toContainText("merged commit");
 
   await page.goto("/yona/admin/projectYobi/pullRequest/9/editform");
   await expect(page.locator("#fromProjectId")).toBeDisabled();
@@ -869,7 +874,7 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator("#toBranch")).toBeDisabled();
   await page.locator("#pullRequestState").fill("Updated interaction parity");
   await page.locator("#status").fill("Updated body");
-  await page.getByRole("button", { name: "button.save" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/pullRequest\/9$/);
   await expect(page.locator(".board-header.issue .title")).toContainText(
     "Updated interaction parity",
@@ -898,7 +903,10 @@ test("creates a multi-line inline review from selected diff text", async ({ page
   });
 
   await expect(page.locator(".inline-review-form")).toHaveCount(0);
-  await expect(page.locator(".diff-body .btnPop button")).toHaveAttribute("data-block-ready", "true");
+  await expect(page.locator(".diff-body .btnPop button")).toHaveAttribute(
+    "data-block-ready",
+    "true",
+  );
   await page.locator(".diff-body .btnPop button").click();
   await expect(page.locator(".inline-review-form")).toBeVisible();
   await expect(page.locator(".inline-review-form input[name='startLine']")).toHaveValue("1");
@@ -908,7 +916,7 @@ test("creates a multi-line inline review from selected diff text", async ({ page
     (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
   );
   await page.locator(".inline-review-form textarea").fill("Multi-line review body");
-  await page.locator(".inline-review-form").getByRole("button", { name: "button.comment.new" }).click();
+  await page.locator(".inline-review-form").getByRole("button", { name: "Add a comment" }).click();
   const submittedInlineReview = (await inlineReviewRequest).postDataJSON() as {
     contentsMarkdown?: string;
     endLine?: number;
@@ -933,7 +941,7 @@ test("renders selected outdated pull request commits with legacy change markers"
   const commitPicker = page.locator("#commits");
   await expect(commitPicker).toBeVisible();
   await expect(commitPicker.locator(".d-label .commit-hash")).toHaveText("123456a");
-  await expect(commitPicker.locator(".d-label .outdated-label")).toHaveText("review.outdated");
+  await expect(commitPicker.locator(".d-label .outdated-label")).toHaveText("Outdated");
 
   await expect(commitPicker.locator("li.outdated")).toHaveCount(0);
   await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toBeVisible();
@@ -946,7 +954,7 @@ test("renders selected outdated pull request commits with legacy change markers"
   await expect(page.locator(".review-wrap .review-list #reviewcards-closed")).toBeVisible();
   await expect(
     page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
-  ).toHaveText("review.outdated");
+  ).toHaveText("Outdated");
   await expect(page.locator(".commitInfo")).toContainText("reviewer@example.com");
   await expect(page.locator(".commitInfo .ago")).toHaveAttribute("title", "2026-05-02");
   await expect(page.locator(".commitMsg.mt5")).toContainText("Superseded src/lib.rs");
@@ -992,13 +1000,9 @@ test("shows legacy conflict guidance and disables merge accept for conflicted pu
   await page.goto("/yona/admin/projectYobi/pullRequest/9");
   await expect(page.locator(".board-header .pullRequest-stateInfo.conflict")).toBeVisible();
   await expect(page.locator("#btnAccept")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "pullRequest.merge" })).toBeDisabled();
-  await expect(page.locator(".merge-conflict-help")).toContainText(
-    "pullRequest.conflict.manualResolve",
-  );
-  await expect(page.locator(".howto-resolve-conflict")).toContainText(
-    "pullRequest.resolve.conflict",
-  );
+  await expect(page.getByRole("button", { name: "Merge code" })).toBeDisabled();
+  await expect(page.locator(".merge-conflict-help")).toContainText("Resolve conflicts manually.");
+  await expect(page.locator(".howto-resolve-conflict")).toContainText("Resolve conflicts");
   await expect(page.locator(".howto-resolve-conflict")).toContainText("git checkout topic/pr");
   await expect(page.locator(".howto-resolve-conflict")).toContainText(
     "git remote add upstream /yona/admin/projectYobi.git",
@@ -1120,7 +1124,7 @@ test("project pull request comment editor inserts pasted image uploads", async (
   );
   await page
     .locator("#comment-form")
-    .getByRole("button", { exact: true, name: "button.comment.new" })
+    .getByRole("button", { exact: true, name: "Add a comment" })
     .click();
   const submittedComment = (await commentRequest).postDataJSON() as {
     attachmentIds?: number[];

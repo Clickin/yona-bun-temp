@@ -354,6 +354,7 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/phase-0b/pull-request-review.md",
       "docs/provenance/core-parity-audit.md",
+      "docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md",
     ],
   },
   {
@@ -651,6 +652,18 @@ function matchesKeywordInPathOrContent(repoRoot, filePath, keywords) {
 }
 
 function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO_ROOT) {
+  if (filePath === "frontend/src/i18n.tsx") {
+    const contextualBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
+      (bucket) =>
+        bucket.id !== "auth-account-lifecycle" &&
+        capabilityHasTestEvidence(bucket, changedFiles, repoRoot) &&
+        capabilityHasProvenanceEvidence(bucket, changedFiles),
+    );
+    if (contextualBucket) {
+      return contextualBucket;
+    }
+  }
+
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
   );

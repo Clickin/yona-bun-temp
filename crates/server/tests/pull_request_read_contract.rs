@@ -736,7 +736,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         .await,
     )
     .await;
-    assert_eq!(linked_issue["issueNumber"], "1");
+    assert_eq!(linked_issue["issueNumber"], 1);
     create_organization(app.clone(), &owner_cookie, &owner_csrf, "acme").await;
     create_project(
         app.clone(),

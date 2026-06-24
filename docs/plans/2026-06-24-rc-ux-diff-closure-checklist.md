@@ -82,7 +82,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issueform`, `/admin/sample/issue/labelsform`                                                                                                                         | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `pass`      |
 | `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `pass`      |
 | `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `pass`      |
-| `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequest`, `/admin/sample/newPullRequestForm`, `/admin/sample/pullRequest/**`                                                                                                     | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `unchecked` |
+| `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequestForm`, `/admin/sample/reviews`, `/admin/sample/pullRequest/**`                                                                                                            | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `pass`      |
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settings`, `/admin/sample/webhooks`, `/admin/sample/delete`, `/admin/sample/transfer`, `/admin/sample/fork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `unchecked` |
 | `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                     | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `unchecked` |
 | `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                    | XSS, SQLi literal keyword behavior, long SQL fenced code block fallback, and invalid Markdown recovery stay green.                                           | `unchecked` |
@@ -343,6 +343,41 @@ tests/board-posting-parity.e2e.ts` passed outside the sandbox with 6 tests,
 - Backend verification: these focused contracts passed outside the sandbox:
   `board_contract_manages_project_posts_comments_watch_and_notifications` and
   `organization_board_contract_lists_visible_cross_project_posts_without_notice_pin`.
+
+### `rc-ux-pull-requests`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin/sample/pullRequests`
+  and `/admin/sample/reviews`. The same audit records
+  `/admin/sample/newPullRequestForm` as expected legacy HTTP 400 for the sampled
+  project/branch state.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
+  `anchor-coverage.json` map PR list, review list, create form, detail, changes,
+  and review-thread routes to Rust routes, parity specs, rendered e2e coverage,
+  and project header/menu anchor evidence.
+- Parity fixes closed in this packet: PR e2e assertions now follow runtime
+  legacy copy for create/edit/comment/review/merge/source-branch controls and
+  translated error shells. PR event timeline no longer leaks
+  `pullRequest.event.*` keys for merge/open/closed/conflict/resolved states.
+  The backend PR read contract now verifies the current numeric REST issue
+  number shape.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/pull-request-list-form-review-i18n.spec.tsx
+src/pull-request-review-i18n.spec.tsx
+src/pull-request-route-loading-shell-i18n.spec.tsx
+src/project-reviews-export.spec.tsx src/route-parity.spec.tsx` passed with 5
+  files and 69 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/pull-request-review-read-parity.e2e.ts` passed outside the sandbox with 2
+  tests, and `pnpm --dir frontend test:e2e --
+tests/pull-request-interaction-parity.e2e.ts` passed outside the sandbox with 7
+  tests covering create/edit forms, comments, inline review, outdated threads,
+  conflict guidance, merge, source-branch delete/restore, and image upload
+  insertion.
+- Backend verification: these focused contracts passed outside the sandbox:
+  `pull_request_read_contract`, `pull_request_mutation_contract`, and
+  `project_fork_contract`.
 
 ## Goal Packet Template
 
