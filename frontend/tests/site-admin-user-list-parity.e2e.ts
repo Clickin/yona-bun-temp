@@ -256,7 +256,9 @@ test("site admin user list preserves legacy shell and toggles user state", async
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("site.sidebar.userList");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.unlocked");
+  await expect(page.locator(".site-setting-wrap .span10 > .nav-tabs li.active a")).toContainText(
+    "site.userList.unlocked",
+  );
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
   await expect(page.locator("input[name='state']")).toHaveValue("ACTIVE");
@@ -307,21 +309,29 @@ test("site admin user list preserves legacy shell and toggles user state", async
   await expect(page.locator(".warning-none")).toHaveCount(0);
 
   await page.goto("/yona/sites/userList?state=DELETED&query=del");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.deleted");
+  await expect(page.locator(".site-setting-wrap .span10 > .nav-tabs li.active a")).toContainText(
+    "site.userList.deleted",
+  );
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@deletee");
   await expect(page.locator(".user-list-wrap .email")).toHaveText(
     "deleted-deletee@noreply.yona.io",
   );
 
   await page.goto("/yona/sites/userList?state=GUEST");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.guest");
+  await expect(page.locator(".site-setting-wrap .span10 > .nav-tabs li.active a")).toContainText(
+    "site.userList.guest",
+  );
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
   await expect(page.locator("[data-request-uri$='/guest/toggle']")).toContainText(
     "button.user.make.normal.mode",
   );
 
   await page.goto("/yona/sites/userList?state=SITE_ADMIN");
-  await expect(page.locator(".nav-tabs li.active a")).toContainText("site.userList.siteAdmin");
-  await expect(page.locator(".nav-tabs li.active .num-badge")).toHaveText("2");
+  await expect(page.locator(".site-setting-wrap .span10 > .nav-tabs li.active a")).toContainText(
+    "site.userList.siteAdmin",
+  );
+  await expect(
+    page.locator(".site-setting-wrap .span10 > .nav-tabs li.active .num-badge"),
+  ).toHaveText("2");
   await expect(page.locator(".user-list-wrap .user-id")).toContainText(["@siteboss", "@member"]);
 });

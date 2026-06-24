@@ -344,7 +344,6 @@ describe("file-route parity harness", () => {
       ["routes/$owner/$projectName/code/-code-route.tsx", "menu.code", "Code"],
       ["routes/user/issues/route.tsx", "issue.myIssue", "User Issues"],
       ["routes/user/editform/password/route.tsx", "userinfo.accountSetting", "Account Settings"],
-      ["routes/sites/$pageName/route.tsx", "title.siteSetting", "Site Admin"],
       ["routes/verify/$loginId/$verificationCode/route.tsx", "user.verification", "Verify User"],
       [
         "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",

@@ -142,7 +142,9 @@ test("site admin issue list preserves legacy state tabs and read-only anchors", 
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("site.sidebar.issueList");
-  await expect(page.locator(".nav.nav-tabs li.active a")).toHaveText("issue.state.open");
+  await expect(page.locator(".site-setting-wrap .span10 > .nav.nav-tabs li.active a")).toHaveText(
+    "issue.state.open",
+  );
   await expect(
     page.locator(".nav.nav-tabs a[href='/yona/sites/issueList?state=closed']"),
   ).toHaveText("issue.state.closed");

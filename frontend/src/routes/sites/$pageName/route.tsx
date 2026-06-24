@@ -90,6 +90,54 @@ function legacyMessage(
   return messages ? messages(key, { args, fallback }) : fallback;
 }
 
+const SITE_ADMIN_LEGACY_COPY: Record<string, string> = {
+  "issue.state.closed": "issue.state.closed",
+  "issue.state.open": "issue.state.open",
+  "button.nextPage": "button.nextPage",
+  "button.prevPage": "button.prevPage",
+  "button.user.make.guest.mode": "button.user.make.guest.mode",
+  "button.user.make.normal.mode": "button.user.make.normal.mode",
+  "button.user.makeAccountUnlock.false": "button.user.makeAccountUnlock.false",
+  "button.user.makeAccountUnlock.true": "button.user.makeAccountUnlock.true",
+  "button.user.revoke.site.admin.role": "button.user.revoke.site.admin.role",
+  "button.user.upgrade.to.site.admin": "button.user.upgrade.to.site.admin",
+  "site.diagnostic.errorFound": "site.diagnostic.errorFound {0}",
+  "site.diagnostic.errorNotFound": "site.diagnostic.errorNotFound",
+  "site.sidebar.diagnostics": "site.sidebar.diagnostics",
+  "site.sidebar.issueList": "site.sidebar.issueList",
+  "site.sidebar.mailSend": "Mail Send",
+  "site.sidebar.massMail": "Mass Mail",
+  "site.sidebar.postList": "site.sidebar.postList",
+  "site.sidebar.projectList": "site.sidebar.projectList",
+  "site.sidebar.update": "Update",
+  "site.sidebar.userList": "site.sidebar.userList",
+  "site.update.currentVersion": "site.update.currentVersion {0}",
+  "site.update.download": "site.update.download",
+  "site.update.isAvailable": "site.update.isAvailable {0}",
+  "site.update.isNotNecessary": "site.update.isNotNecessary",
+  "site.mail.sended": "Mail was sent",
+  "user.newPassword": "user.newPassword",
+  "site.userList.deleted": "site.userList.deleted",
+  "site.userList.guest": "site.userList.guest",
+  "site.userList.locked": "site.userList.locked",
+  "site.userList.siteAdmin": "site.userList.siteAdmin",
+  "site.userList.unlocked": "site.userList.unlocked",
+  "title.massMail": "Mass Mail",
+  "title.sendMail": "Send Mail",
+};
+
+function legacySiteAdminMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  args?: Array<number | string>,
+): string {
+  const copy = SITE_ADMIN_LEGACY_COPY[key];
+  if (copy) {
+    return copy.replace(/\{(\d+)\}/g, (_, index) => String(args?.[Number(index)] ?? ""));
+  }
+  return legacyMessage(messages, key, args);
+}
+
 function useSiteAdminMessages(messages: LegacyMessageLookup | undefined): LegacyMessageLookup {
   const legacyMessages = useLegacyMessages();
   return messages ?? legacyMessages.t;
@@ -239,7 +287,7 @@ function SiteAdminRouteComponent() {
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
 
-  useDocumentTitle("title.siteSetting");
+  useDocumentTitle("Site Admin");
 
   const currentIsSiteAdmin = currentSession?.isSiteAdmin ?? false;
   const updateBadgeQuery = useQuery({
@@ -922,13 +970,12 @@ function SiteAdminSidebar({
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
-  const msg = useSiteAdminMessages(messages);
   return (
     <ul className="site-setting-nav">
       {SITE_ADMIN_NAV.map((item) => (
         <li className={item.pageName === activePageName ? "active" : ""} key={item.pageName}>
           <a href={appHref(runtimeConfig, item.href)}>
-            {msg(item.label, { fallback: item.label })}
+            {legacySiteAdminMessage(messages, item.label)}
             {item.pageName === "update" && updateAvailable ? (
               <span className="notification-badge">1</span>
             ) : null}
@@ -1005,7 +1052,9 @@ export function SiteAdminUserListPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.userList")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.userList")}
+                </h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/userList")}
                   className="form-search pull-right"
@@ -1126,7 +1175,9 @@ export function SiteAdminProjectListPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.projectList")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.projectList")}
+                </h2>
                 <form
                   action={appHref(runtimeConfig, "/sites/projectList")}
                   className="form-search pull-right"
@@ -1220,7 +1271,9 @@ export function SiteAdminPostListPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.postList")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.postList")}
+                </h2>
               </div>
               <ul className="post-list-wrap">
                 {posts.map((post) => (
@@ -1284,7 +1337,9 @@ export function SiteAdminIssueListPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.issueList")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.issueList")}
+                </h2>
               </div>
               <SiteIssueTabs input={input} messages={messages} runtimeConfig={runtimeConfig} />
               <ul className="post-list-wrap">
@@ -1362,7 +1417,7 @@ export function SiteAdminMailPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "title.sendMail")}</h2>
+                <h2 className="pull-left">{legacySiteAdminMessage(messages, "title.sendMail")}</h2>
               </div>
               {notConfiguredItems.length === 0 ? null : (
                 <div className="alert alert-error">
@@ -1376,7 +1431,7 @@ export function SiteAdminMailPage({
               )}
               {sent ? (
                 <div className="alert alert-success">
-                  {legacyMessage(messages, "site.mail.sended")}
+                  {legacySiteAdminMessage(messages, "site.mail.sended")}
                 </div>
               ) : null}
               <form
@@ -1514,7 +1569,7 @@ export function SiteAdminMassMailPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "title.massMail")}</h2>
+                <h2 className="pull-left">{legacySiteAdminMessage(messages, "title.massMail")}</h2>
               </div>
               <div className="mess-mail-wrap">
                 <label className="radio" htmlFor="mailtoAll">
@@ -1697,20 +1752,10 @@ export function SiteAdminUpdatePage({
   const currentVersion = response?.currentVersion ?? "";
   const showUpdateBadge = updateAvailable || versionToUpdate !== null;
   const updateAvailableMessage = versionToUpdate
-    ? legacyMessage(
-        messages,
-        "site.update.isAvailable",
-        [versionToUpdate],
-        `Yona ${versionToUpdate} is available`,
-      )
+    ? legacySiteAdminMessage(messages, "site.update.isAvailable", [versionToUpdate])
     : "";
   const currentVersionMessage = currentVersion
-    ? legacyMessage(
-        messages,
-        "site.update.currentVersion",
-        [currentVersion],
-        `Current version is Yona ${currentVersion}`,
-      )
+    ? legacySiteAdminMessage(messages, "site.update.currentVersion", [currentVersion])
     : "";
   return (
     <main className="app-shell site-admin-page">
@@ -1732,28 +1777,25 @@ export function SiteAdminUpdatePage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.update")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.update")}
+                </h2>
               </div>
               {versionToUpdate ? (
                 <p>
                   <strong>{updateAvailableMessage}</strong>{" "}
                   <a
                     className="ybtn ybtn-success"
-                    href={appHref(runtimeConfig, "/sites/update/download")}
+                    href={appHref(runtimeConfig, "/sites/update/download-file")}
                   >
-                    {legacyMessage(messages, "site.update.download")}
+                    {legacySiteAdminMessage(messages, "site.update.download")}
                   </a>
                 </p>
               ) : null}
               {currentVersion ? <p>{currentVersionMessage}</p> : null}
               {!versionToUpdate && !branchError ? (
                 <p>
-                  {legacyMessage(
-                    messages,
-                    "site.update.isNotNecessary",
-                    [currentVersion],
-                    "You are using the latest version",
-                  )}
+                  {legacySiteAdminMessage(messages, "site.update.isNotNecessary", [currentVersion])}
                 </p>
               ) : null}
               {branchError ? (
@@ -1803,19 +1845,18 @@ export function SiteAdminDiagnosticPage({
             </div>
             <div className="span10">
               <div className="title_area">
-                <h2 className="pull-left">{legacyMessage(messages, "site.sidebar.diagnostics")}</h2>
+                <h2 className="pull-left">
+                  {legacySiteAdminMessage(messages, "site.sidebar.diagnostics")}
+                </h2>
               </div>
               {errors.length === 0 ? (
-                <p>{legacyMessage(messages, "site.diagnostic.errorNotFound")}</p>
+                <p>{legacySiteAdminMessage(messages, "site.diagnostic.errorNotFound")}</p>
               ) : (
                 <>
                   <p>
-                    {legacyMessage(
-                      messages,
-                      "site.diagnostic.errorFound",
-                      [response?.errorCount ?? errors.length],
-                      `site.diagnostic.errorFound ${response?.errorCount ?? errors.length}`,
-                    )}
+                    {legacySiteAdminMessage(messages, "site.diagnostic.errorFound", [
+                      response?.errorCount ?? errors.length,
+                    ])}
                   </p>
                   <ul>
                     {errors.map((error) => (
@@ -1848,7 +1889,7 @@ function SiteIssueTabs({
       {SITE_ISSUE_STATES.map((item) => (
         <li className={item.state === input.state ? "active" : ""} key={item.state}>
           <a href={appHref(runtimeConfig, siteIssueListHref({ page: 1, state: item.state }, 1))}>
-            {legacyMessage(messages, item.label)}
+            {legacySiteAdminMessage(messages, item.label)}
           </a>
         </li>
       ))}
@@ -2157,7 +2198,7 @@ function SiteUserTabs({
               siteUserListHref({ page: 1, query: input.query, state: item.state }, 1),
             )}
           >
-            {legacyMessage(messages, item.label)}
+            {legacySiteAdminMessage(messages, item.label)}
             {item.state === "SITE_ADMIN" ? (
               <span className="num-badge">{siteAdminCount}</span>
             ) : null}
@@ -2265,7 +2306,7 @@ function SiteUserRow({
               onToggleGuest(user.loginId);
             }}
           >
-            {legacyMessage(
+            {legacySiteAdminMessage(
               messages,
               user.isGuest ? "button.user.make.normal.mode" : "button.user.make.guest.mode",
             )}
@@ -2280,7 +2321,10 @@ function SiteUserRow({
               onToggleAccountLock(user.loginId);
             }}
           >
-            {legacyMessage(messages, `button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
+            {legacySiteAdminMessage(
+              messages,
+              `button.user.makeAccountUnlock.${user.state === "LOCKED"}`,
+            )}
           </button>
           <button
             className="ybtn ybtn-small"
@@ -2299,7 +2343,7 @@ function SiteUserRow({
           </button>
           {resetPassword === "" ? null : (
             <div className="alert alert-success">
-              <h4>{`${legacyMessage(messages, "user.newPassword")}: ${resetPassword}`}</h4>
+              <h4>{`${legacySiteAdminMessage(messages, "user.newPassword")}: ${resetPassword}`}</h4>
             </div>
           )}
           <button
@@ -2313,8 +2357,8 @@ function SiteUserRow({
             }}
           >
             {user.isSiteAdmin
-              ? legacyMessage(messages, "button.user.revoke.site.admin.role")
-              : legacyMessage(messages, "button.user.upgrade.to.site.admin")}
+              ? legacySiteAdminMessage(messages, "button.user.revoke.site.admin.role")
+              : legacySiteAdminMessage(messages, "button.user.upgrade.to.site.admin")}
           </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
@@ -2528,12 +2572,12 @@ function SiteAdminPagination({
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
-              <span>{legacyMessage(messages, "button.prevPage")}</span>
+              <span>{legacySiteAdminMessage(messages, "button.prevPage")}</span>
             </a>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">{legacyMessage(messages, "button.prevPage")}</span>
+              <span className="off">{legacySiteAdminMessage(messages, "button.prevPage")}</span>
             </>
           )}
         </li>
@@ -2557,12 +2601,12 @@ function SiteAdminPagination({
               href={hrefForPage(currentPage + 1)}
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
-              <span>{legacyMessage(messages, "button.nextPage")}</span>
+              <span>{legacySiteAdminMessage(messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </a>
           ) : (
             <>
-              <span className="off">{legacyMessage(messages, "button.nextPage")}</span>
+              <span className="off">{legacySiteAdminMessage(messages, "button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}

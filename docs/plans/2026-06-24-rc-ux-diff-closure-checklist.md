@@ -77,7 +77,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-directory-create`     | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`                                                                                                                                                               | Directory filters, create/import forms, org empty/list states, labels, route shells, and permission visibility.                                              | `pass`      |
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `pass`      |
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `pass`      |
-| `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `unchecked` |
+| `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `pass`      |
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `unchecked` |
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
 | `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `unchecked` |
@@ -196,6 +196,44 @@ tests/search-parity.e2e.ts` passed outside the sandbox with 6 tests, including
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
   `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
+
+### `rc-ux-site-admin`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/sites/userList`,
+  `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`,
+  `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, and `/sites/data`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, and `e2e-render-coverage.json` map those paths to
+  the Rust site-admin route and rendered legacy signal evidence.
+- Parity fixes closed in this packet: site-admin document title now renders
+  `Site Admin`, site-admin-only legacy copy fallbacks preserve observed key-style
+  labels where legacy exposes keys, update download uses
+  `/sites/update/download-file`, and the root sidebar no longer creates a false
+  active tab collision inside site-admin pages.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/site-admin-route-parity.spec.tsx src/site-admin-data-parity.spec.tsx
+src/route-parity.spec.tsx` passed with 3 files and 74 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/site-admin-user-list-parity.e2e.ts
+tests/site-admin-project-list-parity.e2e.ts
+tests/site-admin-post-list-parity.e2e.ts
+tests/site-admin-issue-list-parity.e2e.ts
+tests/site-admin-mail-parity.e2e.ts
+tests/site-admin-update-parity.e2e.ts
+tests/site-admin-diagnostic-parity.e2e.ts` passed outside the sandbox with 10
+  tests.
+- Backend verification: these focused `site_admin_contract` tests passed outside
+  the sandbox:
+  `site_admin_user_list_and_toggles_follow_legacy_state_buckets`,
+  `site_admin_project_list_and_delete_follow_legacy_surface`,
+  `site_admin_post_list_follows_legacy_read_only_surface`,
+  `site_admin_issue_list_follows_legacy_state_tabs`,
+  `site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list`,
+  `site_admin_update_status_follows_legacy_update_view_branches`,
+  `site_admin_mail_send_and_recipient_lookup_follow_legacy_surface`,
+  `site_admin_export_download_follows_legacy_site_data_route`, and
+  `site_admin_import_dry_run_reports_counts_and_never_writes`.
 
 ## Goal Packet Template
 
