@@ -1087,6 +1087,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("syntax-token");
   });
 
+  it("renders any very long fenced block as plain source without syntax highlighting", () => {
+    const longRust = Array.from({ length: 2_200 }, (_, index) => {
+      return `fn release_candidate_${index}() { return; }`;
+    }).join("\n");
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={`\`\`\`rust\n${longRust}\n\`\`\``} />,
+    );
+
+    expect(html).toContain('class="rust"');
+    expect(html).toContain("release_candidate_2199");
+    expect(html).not.toContain("syntax-token");
+  });
+
   it("recognizes legacy Highlight.js Rust numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

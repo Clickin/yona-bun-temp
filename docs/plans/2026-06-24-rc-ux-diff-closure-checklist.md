@@ -453,10 +453,10 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   rendered text. The current audit also keeps the project issue detail XSS
   regression in `frontend/tests/legacy-rendered-page-audit.e2e.ts`.
 - Markdown stability verification: `pnpm --dir frontend exec vitest run
-src/markdown-renderer.spec.tsx` passed with 428 tests, including raw
-  script/style stripping, unsafe `javascript:` URL stripping, very long SQL
-  fenced blocks rendered as plain source without syntax highlighting, EOF/tilde
-  fenced block recovery, and raw/invalid Markdown sanitizer cases.
+src/markdown-renderer.spec.tsx` passed with 429 tests, including raw
+  script/style stripping, unsafe `javascript:` URL stripping, very long fenced
+  blocks rendered as plain source without syntax highlighting, EOF/tilde fenced
+  block recovery, and raw/invalid Markdown sanitizer cases.
 - Rendered e2e verification: `pnpm --dir frontend test:e2e --
 tests/search-parity.e2e.ts tests/legacy-rendered-page-audit.e2e.ts -g "hostile
 search|XSS payloads"` executed outside the sandbox and passed 49 tests,
