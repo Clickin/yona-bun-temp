@@ -763,11 +763,20 @@ function evaluateCapability(capability, changedFiles, implementationFiles, repoR
   };
 }
 
-function collectImplementationChanges(changedFiles) {
+function isDeletedMixedCodeResidual(repoRoot, filePath) {
+  return filePath.startsWith("reference/mixed-code/") && !existsSync(path.join(repoRoot, filePath));
+}
+
+function collectImplementationChanges(changedFiles, repoRoot = DEFAULT_REPO_ROOT) {
   const implementationFiles = [];
   const nonImplementationFiles = [];
 
   for (const filePath of changedFiles) {
+    if (isDeletedMixedCodeResidual(repoRoot, filePath)) {
+      nonImplementationFiles.push(filePath);
+      continue;
+    }
+
     if (isImplementationFile(filePath)) {
       implementationFiles.push(filePath);
       continue;
@@ -795,7 +804,7 @@ export function evaluateParityGate({ changedFiles = [], repoRoot = DEFAULT_REPO_
   }
 
   const { implementationFiles, nonImplementationFiles } =
-    collectImplementationChanges(normalizedFiles);
+    collectImplementationChanges(normalizedFiles, repoRoot);
 
   if (implementationFiles.length === 0) {
     return {

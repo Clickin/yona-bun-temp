@@ -34,12 +34,12 @@ the repo root runtime surface.
   excluding `node_modules`, `target`, `yona-original`, and
   `reference/mixed-code`.
 
-## Residual Non-Reference Code
+## Removed Non-Reference Code
 
-The only residual Bun/Node backend-style application code lives under
-`reference/mixed-code/**`. This path is not legacy Yona reference material and
-must not be used as parity evidence or implementation guidance. Legacy
-functional and UX reference comes from `yona-original/`.
+The previous Bun/Node backend-style application code under
+`reference/mixed-code/**` has been removed. That path is not legacy Yona
+reference material and must not be used as parity evidence or implementation
+guidance. Legacy functional and UX reference comes from `yona-original/`.
 
 - `reference/mixed-code/root-toolchain/package.json` and `bun.lock`
 - `reference/mixed-code/apps/app/package.json`
@@ -48,16 +48,14 @@ functional and UX reference comes from `yona-original/`.
 - `reference/mixed-code/tests/*bun*` and hybrid testcontainer scripts
 - `reference/mixed-code/tools/bun-package/package.json`
 
-That material includes the old Bun/TanStack Start/tRPC/Drizzle direction. It is
-obsolete residual code, not a current runtime baseline, not a release asset, and
-not a source to consult before implementing parity work.
+That removed material included the old Bun/TanStack Start/tRPC/Drizzle
+direction. It was obsolete residual code, not a current runtime baseline, not a
+release asset, and not a source to consult before implementing parity work.
 
 ## Release Decision
 
-- Treat `reference/mixed-code/**` as a deletion/exclusion target before public
-  source release.
-- Do not publish `reference/mixed-code/**` as part of release artifacts, Docker
-  images, or user-facing docs.
+- Keep `reference/mixed-code/**` absent from the repository, release artifacts,
+  Docker images, and user-facing docs.
 - Do not revive Bun, TanStack Start, in-process tRPC, Go backend, `connect-go`,
   `chi`, or `uptrace/bun` as RC implementation choices.
 - Keep Node scripts as repo tooling; they are not a backend runtime.

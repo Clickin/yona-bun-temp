@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
 
@@ -31,11 +31,23 @@ test("passes when only documentation changes are present", () => {
   assert.match(result.summary, /No implementation files/);
 });
 
-test("treats residual mixed-code changes as implementation changes", () => {
+test("ignores deleted residual mixed-code files", () => {
   const result = runGate(["reference/mixed-code/packages/auth/src/app-service.ts"]);
 
+  assert.equal(result.verdict, "pass");
+  assert.equal(result.implementationFiles.length, 0);
+});
+
+test("blocks recreated residual mixed-code files", () => {
+  const filePath = "reference/mixed-code/packages/auth/src/app-service.ts";
+  const absolutePath = path.join(TEST_REPO_ROOT, filePath);
+  mkdirSync(path.dirname(absolutePath), { recursive: true });
+  writeFileSync(absolutePath, "export {};\n");
+
+  const result = runGate([filePath]);
+
   assert.equal(result.verdict, "block");
-  assert.deepEqual(result.implementationFiles, ["reference/mixed-code/packages/auth/src/app-service.ts"]);
+  assert.deepEqual(result.implementationFiles, [filePath]);
 });
 
 test("ignores reference-only spikes archive changes", () => {
