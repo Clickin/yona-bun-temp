@@ -85,7 +85,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequestForm`, `/admin/sample/reviews`, `/admin/sample/pullRequest/**`                                                                                                                      | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `pass`      |
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settingform`, `/admin/sample/webhooks`, `/admin/sample/deleteform`, `/admin/sample/transfer`, `/admin/sample/newFork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `pass`      |
 | `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                               | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `pass`      |
-| `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                              | XSS, SQLi literal keyword behavior, long SQL fenced code block fallback, and invalid Markdown recovery stay green.                                           | `unchecked` |
+| `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                              | XSS, SQLi literal keyword behavior, long SQL fenced code block fallback, and invalid Markdown recovery stay green.                                           | `pass`      |
 | `rc-ux-db-migration-smoke`   | Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL/MariaDB runtime matrix                                                                                                                                                                   | In-place legacy MariaDB adopt and supported DB matrix prove the same pages work from migrated data, including DB-specific search behavior.                   | `unchecked` |
 
 ## Closed Row Evidence
@@ -447,6 +447,27 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
   `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
+
+### `rc-ux-security-stability`
+
+- XSS and hostile-text provenance: `docs/provenance/legacy-html-page-audit.md`
+  records issue title/body XSS probes and hostile search result probes as inert
+  rendered text. The current audit also keeps the project issue detail XSS
+  regression in `frontend/tests/legacy-rendered-page-audit.e2e.ts`.
+- Markdown stability verification: `pnpm --dir frontend exec vitest run
+src/markdown-renderer.spec.tsx` passed with 428 tests, including raw
+  script/style stripping, unsafe `javascript:` URL stripping, very long SQL
+  fenced blocks rendered as plain source without syntax highlighting, EOF/tilde
+  fenced block recovery, and raw/invalid Markdown sanitizer cases.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/search-parity.e2e.ts tests/legacy-rendered-page-audit.e2e.ts -g "hostile
+search|XSS payloads"` executed outside the sandbox and passed 49 tests,
+  including hostile search result text inertness and issue detail XSS inertness.
+- Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
+yona-rust-pilot-server --test search_contract
+global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
+  passed, proving the SQL metacharacter probe is treated as a literal keyword
+  and returns no broad `OR 1=1` match.
 
 ## Goal Packet Template
 
