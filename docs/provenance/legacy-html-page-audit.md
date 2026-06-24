@@ -3,7 +3,7 @@
 > Status: current verification baseline for curl-based legacy SSR page checks.
 > This is not a claim that every Yona page has passed 1:1 UI parity.
 
-Last updated: 2026-06-23
+Last updated: 2026-06-25
 
 ## Scope
 
@@ -56,7 +56,7 @@ it separates pages covered by rendered e2e flows that assert the legacy signals
 from pages that still need one; it exits non-zero while any audited URL lacks
 rendered e2e or rendered legacy signal evidence.
 
-Latest local run against the homelab instance on 2026-06-23:
+Latest local run against the homelab instance on 2026-06-25:
 `57` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
 
@@ -78,15 +78,13 @@ sample-data URLs are normalized to their TanStack `fullPath`, for example
 
 The same `57` routed URLs have frontend parity spec evidence with
 `pnpm smoke:legacy-parity-spec-coverage`: `57` with spec evidence, `0` missing.
-This pass found a missing explicit alias assertion for `/user/issues/new/mine`;
-`frontend/src/route-parity.spec.tsx` now pins that route to
+The route parity spec pins `/user/issues/new/mine` to
 `DirectIssueCreateFormRouteComponent mine={true}`.
 
 The latest `pnpm smoke:legacy-anchor-coverage` run checks `104` curl-observed
 legacy anchors across those pages: `104` with Rust evidence, `0` missing. This
-pass found that the logged-in root page's legacy `admin-logged-in-affix` anchor
-was absent from Rust source; `frontend/src/routes/__root.tsx` now renders that
-site-admin user-menu affix for site admins.
+keeps the logged-in root page's legacy `admin-logged-in-affix` anchor and the
+other curl-observed anchors tied to Rust source/spec evidence.
 
 The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
 Playwright e2e navigation evidence and rendered legacy signal evidence for all
