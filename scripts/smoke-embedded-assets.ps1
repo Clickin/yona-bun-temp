@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $frontendDir = Join-Path $repoRoot "frontend"
 $frontendDist = Join-Path $frontendDir "dist"
-$binaryPath = Join-Path $repoRoot "target\debug\yona-rust-pilot-server.exe"
+$binaryPath = Join-Path $repoRoot "target\debug\yoram.exe"
 
 Push-Location $repoRoot
 try {
@@ -13,7 +13,7 @@ try {
   }
 
   $env:YONA_EMBED_ASSET_ROOT = $frontendDist
-  cargo build -p yona-rust-pilot-server
+  cargo build -p yona-rust-pilot-server --bin yoram
   if ($LASTEXITCODE -ne 0) {
     throw "cargo build failed with exit code $LASTEXITCODE"
   }

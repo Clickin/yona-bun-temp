@@ -120,7 +120,7 @@ repo root/
 - runtime base-path: `YONA_BASE_PATH` 환경변수로 first-class 지원
 - embedded static assets vs user-uploaded files 분리
 - legacy `/messages.js` JavaScript message lookup route는 base-path와 anonymous access gate를 통과해 `Messages(key, ...)` global을 제공한다
-- 설정: 환경변수 + TOML 파일 (`yona.toml`)
+- 설정: 환경변수 + TOML 파일 (`yoram.toml`)
 
 ### 1.5 설정 호환성 — Legacy application.conf 대응
 
@@ -135,7 +135,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.use.email.verification`       | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED`              |                              |
 | `signup.require.admin.confirm`             | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`                  |                              |
 | `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |
-| `application.use.ldap.login.supoort` / `ldap.*` | `YONA_LDAP_ENABLED`, `YONA_LDAP_*` / `yona.toml` `[ldap]` | legacy typo spelling preserved; fixture-backed form-login/BasicAuth plus real bind/search connector implemented; existing-user display-name, nonblank English-name, password, and guest refresh implemented |
+| `application.use.ldap.login.supoort` / `ldap.*` | `YONA_LDAP_ENABLED`, `YONA_LDAP_*` / `yoram.toml` `[ldap]` | legacy typo spelling preserved; fixture-backed form-login/BasicAuth plus real bind/search connector implemented; existing-user display-name, nonblank English-name, password, and guest refresh implemented |
 | `application.login.page.loginId.placeholder` | `YONA_AUTH_LOGIN_ID_PLACEHOLDER`                   | 로그인 ID 입력 placeholder   |
 | `application.login.page.password.placeholder` | `YONA_AUTH_PASSWORD_PLACEHOLDER`                   | 비밀번호 입력 placeholder    |
 | `session.maxAge`                          | `YONA_SESSION_TIMEOUT_SECONDS`                     | non-remember session timeout seconds |
@@ -155,7 +155,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.issue-event.draft-time`        | `YONA_ISSUE_EVENT_DRAFT_TIME`                    | issue timeline event merge window; default 30s |
 | webhook delivery retry count                 | `YONA_WEBHOOK_DELIVERY_RETRIES`                  | capped at 5 retries          |
 | webhook private-network delivery opt-in      | `YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS`            | default false; SSRF guard    |
-| `slack.<EventType>`                          | `yona.toml` `[slack] <EventType>` / legacy-style env `slack.<EventType>` | `DETAIL_SLACK` attachment color |
+| `slack.<EventType>`                          | `yoram.toml` `[slack] <EventType>` / legacy-style env `slack.<EventType>` | `DETAIL_SLACK` attachment color |
 | `application.maxFileSize`                  | `YONA_MAX_FILE_SIZE`                                |                              |
 | `project.default.scope.when.create`        | `YONA_PROJECT_DEFAULT_SCOPE`                        | public/protected/private     |
 | `project.creation.default.menus`           | `YONA_PROJECT_DEFAULT_MENUS`                        | issue, milestone, board 등   |
@@ -174,7 +174,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 - `YONA_UPDATE_METADATA_URL` / `YONA_UPDATE_METADATA_FILE`: site update 화면에서 JSON metadata의 `version`/`tag_name`과 `releaseUrl`/`html_url`을 읽어 live update-available branch를 채운다. 명시적 `YONA_UPDATE_LATEST_VERSION` / `YONA_UPDATE_VERSION` / `YONA_UPDATE_RELEASE_URL` override가 있으면 우선한다. `https://` update binary fetch는 기본 `curl` executable wrapper를 사용하며, 운영 환경에서 다른 fetcher가 필요하면 curl-style HTTP response bytes를 stdout으로 쓰는 `YONA_UPDATE_HTTPS_FETCH_COMMAND`로 대체할 수 있다.
 - `YONA_WEBHOOK_DELIVERY_RETRIES`: webhook transient delivery failure retry count로 사용한다. legacy-compatible `WEBHOOK_DELIVERY_RETRIES` alias도 인식하며 runaway retry를 막기 위해 최대 5회로 제한한다.
 - `YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS`: webhook HTTP/HTTPS delivery가 DNS 해석 후 loopback/private/link-local/unspecified/multicast endpoint를 기본 차단한다. 테스트/폐쇄망 운영에서 내부망 webhook이 필요하면 이 값을 true로 명시한다. legacy-compatible `WEBHOOK_ALLOW_PRIVATE_NETWORKS` alias도 인식한다. HTTPS delivery는 기본 `curl` executable wrapper를 사용하며, 운영 환경에서 다른 fetcher가 필요하면 body를 stdin으로 받고 curl-style HTTP response bytes를 stdout으로 쓰는 `YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND` / `WEBHOOK_HTTPS_DELIVERY_COMMAND`로 대체할 수 있다.
-- `slack.<EventType>`: legacy `Webhook.buildAttachmentJSON`의 `slack.NEW_COMMENT` 같은 이벤트별 attachment color 설정은 `yona.toml` `[slack]` 테이블 또는 legacy-style env key `slack.<EventType>`로 주입하고, `DETAIL_SLACK` issue/comment/PR attachment의 `color` 필드에 반영한다.
+- `slack.<EventType>`: legacy `Webhook.buildAttachmentJSON`의 `slack.NEW_COMMENT` 같은 이벤트별 attachment color 설정은 `yoram.toml` `[slack]` 테이블 또는 legacy-style env key `slack.<EventType>`로 주입하고, `DETAIL_SLACK` issue/comment/PR attachment의 `color` 필드에 반영한다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
 ---
@@ -1555,7 +1555,7 @@ Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직�
 ### 1차 PoC 종료 조건 (전체)
 
 1. FG-01 ~ FG-18의 Phase 1~6 해당 기능이 모두 구현됨
-2. legacy `application.conf.default`의 핵심 설정이 `yona.toml`로 migration 가능
+2. legacy `application.conf.default`의 핵심 설정이 `yoram.toml`로 migration 가능
 3. 검증을 통과한 기존 MariaDB 데이터를 `adopt` 모드로 인식하여 무손실 서비스 가능
 4. `git clone`/`git push`가 정상 동작
 5. single binary 빌드 후 실행 시 frontend 포함 전체 앱이 서비스됨
@@ -1630,12 +1630,12 @@ historical 문서(`docs/plans/*`, `docs/workflow/*`)는 삭제하지 않는다. 
 
 ## 부록 A: Legacy 설정 Migration 가이드
 
-Rust 런타임은 legacy `conf/application.conf` HOCON 파일을 직접 파싱하지 않는다. 운영자는 legacy 값을 `yona.toml`로 옮기거나 동일한 `YONA_*` 환경 변수로 주입한다. 우선순위는 `YONA_*` 환경 변수 > `YONA_CONFIG_TOML`로 지정한 파일 > 현재 작업 디렉터리의 `yona.toml` > 런타임 기본값이다.
+Rust 런타임은 legacy `conf/application.conf` HOCON 파일을 직접 파싱하지 않는다. 운영자는 legacy 값을 `yoram.toml`로 옮기거나 동일한 `YONA_*` 환경 변수로 주입한다. 우선순위는 `YONA_*` 환경 변수 > `YORAM_CONFIG_TOML`로 지정한 파일 > 현재 작업 디렉터리의 `yoram.toml` > 런타임 기본값이다.
 
 Legacy Play/JVM 전용 키(`application.secret`, `application.global`, `application.server`, Ebean/evolutions, Play/Akka thread-pool, JNDI, logger 설정)는 Rust 런타임 설정으로 옮기지 않는다. Broader external-directory/OAuth edge behavior beyond the bounded LDAP and configured GitHub/Google OAuth runtime slices, legacy outbound GitHub migration (`/migration`, Yona-to-GitHub), app-wide i18n opt-in beyond the bounded frontend runtime/auth-session persistence slice, analytics/custom navbar, and broad external API/migrator behavior remain deferred/follow-up boundaries documented in the main SPEC and provenance.
 
 ```toml
-# yona.toml — legacy application.conf에서 변환
+# yoram.toml — legacy application.conf에서 변환
 
 base_path = "/yona"                     # application.context; "/" 또는 비어 있으면 root mount
 public_origin = "https://yona.example.com" # application.scheme + application.hostname + application.port
@@ -1728,7 +1728,7 @@ default_menus = ["issue", "milestone", "board"]  # project.creation.default.menu
 max_file_size = 2147483454             # application.maxFileSize
 ```
 
-Environment variable equivalents use the names exercised by `crates/server/tests/runtime_config_contract.rs`, for example `YONA_CONFIG_TOML`, `YONA_BASE_PATH`, `YONA_PUBLIC_ORIGIN`, `YONA_BIND_ADDR`, `YONA_DATABASE_URL`, `YONA_SCHEMA_POLICY`, `YONA_SITE_NAME`, `YONA_APPLICATION_HOSTNAME`, `YONA_ALLOWED_MAIL_DOMAINS`, `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`, `YONA_SESSION_TIMEOUT_SECONDS`, `YONA_SMTP_*`, `YONA_NOTIFICATION_*`, `YONA_MAILBOX_*`, `YONA_UPDATE_*`, `YONA_PROJECT_DEFAULT_*`, legacy-style `slack.<EventType>` webhook color keys, `YONA_MAX_FILE_SIZE`, `YONA_USE_EMBEDDED_ASSETS`, and `YONA_ASSET_ROOT`.
+Environment variable equivalents use the names exercised by `crates/server/tests/runtime_config_contract.rs`, for example `YORAM_CONFIG_TOML`, `YONA_BASE_PATH`, `YONA_PUBLIC_ORIGIN`, `YONA_BIND_ADDR`, `YONA_DATABASE_URL`, `YONA_SCHEMA_POLICY`, `YONA_SITE_NAME`, `YONA_APPLICATION_HOSTNAME`, `YONA_ALLOWED_MAIL_DOMAINS`, `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`, `YONA_SESSION_TIMEOUT_SECONDS`, `YONA_SMTP_*`, `YONA_NOTIFICATION_*`, `YONA_MAILBOX_*`, `YONA_UPDATE_*`, `YONA_PROJECT_DEFAULT_*`, legacy-style `slack.<EventType>` webhook color keys, `YONA_MAX_FILE_SIZE`, `YONA_USE_EMBEDDED_ASSETS`, and `YONA_ASSET_ROOT`.
 
 ---
 

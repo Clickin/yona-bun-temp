@@ -34,11 +34,11 @@ const config = [
 
 fs.writeFileSync(configPath, `${config}\n`);
 
-const child = spawn("cargo", ["run", "-p", "yona-rust-pilot-server"], {
+const child = spawn("cargo", ["run", "-p", "yona-rust-pilot-server", "--bin", "yoram"], {
   cwd: repoRoot,
   env: {
     ...process.env,
-    YONA_CONFIG_TOML: configPath,
+    YORAM_CONFIG_TOML: configPath,
   },
   stdio: "inherit",
 });

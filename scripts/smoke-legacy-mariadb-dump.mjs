@@ -9,7 +9,7 @@ const dumpPath = resolve(
   process.env.YONA_LEGACY_MARIADB_DUMP_SQL ?? ".agent/legacy-dumps/yona-dump.sql",
 );
 const image = process.env.YONA_LEGACY_MARIADB_IMAGE ?? "mariadb:10.3";
-const binaryName = process.platform === "win32" ? "yona-rust-pilot-server.exe" : "yona-rust-pilot-server";
+const binaryName = process.platform === "win32" ? "yoram.exe" : "yoram";
 const binaryPath = join(repoRoot, "target", "debug", binaryName);
 
 if (!existsSync(dumpPath)) {
@@ -141,7 +141,7 @@ async function stopServer(server) {
 
 let containerId;
 try {
-  await run("cargo", ["build", "-p", "yona-rust-pilot-server", "--features", "db-matrix"]);
+  await run("cargo", ["build", "-p", "yona-rust-pilot-server", "--bin", "yoram", "--features", "db-matrix"]);
   if (!existsSync(binaryPath)) {
     throw new Error(`server binary not found: ${binaryPath}`);
   }

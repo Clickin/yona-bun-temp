@@ -29,7 +29,7 @@ fn joins_base_paths_without_double_slashes() {
 #[test]
 fn loads_startup_config_from_toml_file() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(
         &config_path,
         r#"
@@ -48,7 +48,7 @@ data_root = "/var/lib/yona-test"
 
     let config = load_startup_config(
         BTreeMap::from([(
-            "YONA_CONFIG_TOML".to_string(),
+            "YORAM_CONFIG_TOML".to_string(),
             config_path.to_string_lossy().into_owned(),
         )]),
         dir.path(),
@@ -65,12 +65,39 @@ data_root = "/var/lib/yona-test"
     assert_eq!(config.asset_root.as_deref(), Some("C:/assets"));
     assert_eq!(config.data_root.as_deref(), Some("/var/lib/yona-test"));
     assert_eq!(config.bind_addr, "127.0.0.1:8089");
+    assert!(config.config_source.ends_with("yoram.toml"));
+}
+
+#[test]
+fn discovers_default_yoram_toml_and_accepts_legacy_env_alias() {
+    let dir = tempdir().expect("tempdir");
+    let default_path = dir.path().join("yoram.toml");
+    fs::write(&default_path, "base_path = \"/default\"\n").expect("write default config");
+    let default_config =
+        load_startup_config(BTreeMap::new(), dir.path()).expect("load default config");
+    assert_eq!(default_config.runtime.base_path, "/default");
+    assert_eq!(
+        default_config.config_source,
+        default_path.display().to_string()
+    );
+
+    let legacy_path = dir.path().join("legacy.toml");
+    fs::write(&legacy_path, "base_path = \"/legacy-env\"\n").expect("write legacy config");
+    let legacy_config = load_startup_config(
+        BTreeMap::from([(
+            "YONA_CONFIG_TOML".to_string(),
+            legacy_path.to_string_lossy().into_owned(),
+        )]),
+        dir.path(),
+    )
+    .expect("load legacy env config");
+    assert_eq!(legacy_config.runtime.base_path, "/legacy-env");
 }
 
 #[test]
 fn loads_sectioned_legacy_migration_toml_keys() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(
         &config_path,
         r##"
@@ -169,7 +196,7 @@ draft_time = "1s"
 
     let config = load_startup_config(
         BTreeMap::from([(
-            "YONA_CONFIG_TOML".to_string(),
+            "YORAM_CONFIG_TOML".to_string(),
             config_path.to_string_lossy().into_owned(),
         )]),
         dir.path(),
@@ -331,7 +358,7 @@ draft_time = "1s"
 #[test]
 fn loads_legacy_ldap_keys_and_yona_env_overrides() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(
         &config_path,
         r#"
@@ -362,7 +389,7 @@ englishNameAttributeName = "givenName"
     let config = load_startup_config(
         BTreeMap::from([
             (
-                "YONA_CONFIG_TOML".to_string(),
+                "YORAM_CONFIG_TOML".to_string(),
                 config_path.to_string_lossy().into_owned(),
             ),
             (
@@ -413,7 +440,7 @@ englishNameAttributeName = "givenName"
 #[test]
 fn environment_overrides_toml_values() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(
         &config_path,
         r#"
@@ -488,7 +515,7 @@ draft_time = "30s"
     let config = load_startup_config(
         BTreeMap::from([
             (
-                "YONA_CONFIG_TOML".to_string(),
+                "YORAM_CONFIG_TOML".to_string(),
                 config_path.to_string_lossy().into_owned(),
             ),
             ("YONA_BASE_PATH".to_string(), "/env".to_string()),
@@ -913,7 +940,7 @@ fn startup_config_snapshots_legacy_smtp_aliases() {
 #[test]
 fn repository_config_from_startup_carries_persistence_runtime_snapshot() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(
         &config_path,
         r#"
@@ -934,7 +961,7 @@ draft_time = "250ms"
 
     let config = load_startup_config(
         BTreeMap::from([(
-            "YONA_CONFIG_TOML".to_string(),
+            "YORAM_CONFIG_TOML".to_string(),
             config_path.to_string_lossy().into_owned(),
         )]),
         dir.path(),
@@ -957,12 +984,12 @@ draft_time = "250ms"
 #[test]
 fn invalid_schema_policy_in_toml_is_rejected() {
     let dir = tempdir().expect("tempdir");
-    let config_path = dir.path().join("yona.toml");
+    let config_path = dir.path().join("yoram.toml");
     fs::write(&config_path, "schema_policy = \"broken\"\n").expect("write config");
 
     let error = load_startup_config(
         BTreeMap::from([(
-            "YONA_CONFIG_TOML".to_string(),
+            "YORAM_CONFIG_TOML".to_string(),
             config_path.to_string_lossy().into_owned(),
         )]),
         dir.path(),

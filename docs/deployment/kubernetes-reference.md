@@ -21,15 +21,15 @@ packaging target for the existing Docker image contract.
 
 Use the current Docker image shape as the contract:
 
-- Container command: `yona-rust-pilot-server`.
+- Container command: `yoram`.
 - Container port: `8089`.
 - Listen address: `YONA_BIND_ADDR=0.0.0.0:8089`.
 - Base path: set `YONA_BASE_PATH` to the external mount path, for example
   `/yona`; keep reverse proxy path rewriting consistent with that value.
 - Public origin: set `YONA_PUBLIC_ORIGIN` when generated links need an external
   scheme/host.
-- Config file: mount `yona.toml` read-only and set
-  `YONA_CONFIG_TOML=/etc/yona/yona.toml`, or inject equivalent `YONA_*`
+- Config file: mount `yoram.toml` read-only and set
+  `YORAM_CONFIG_TOML=/etc/yona/yoram.toml`, or inject equivalent `YONA_*`
   environment variables.
 - Database: inject `YONA_DATABASE_URL` from a Secret or an operator-managed
   secret source. Use `YONA_SCHEMA_POLICY=adopt` for existing databases and `up`

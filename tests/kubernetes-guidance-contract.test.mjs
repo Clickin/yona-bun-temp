@@ -16,11 +16,11 @@ test("kubernetes guidance remains reference-only and non-baseline", () => {
 
 test("kubernetes guidance tracks current runtime and volume contract", () => {
   for (const token of [
-    "yona-rust-pilot-server",
+    "yoram",
     "YONA_BIND_ADDR=0.0.0.0:8089",
     "YONA_BASE_PATH",
     "YONA_PUBLIC_ORIGIN",
-    "YONA_CONFIG_TOML=/etc/yona/yona.toml",
+    "YORAM_CONFIG_TOML=/etc/yona/yoram.toml",
     "YONA_DATABASE_URL",
     "YONA_SCHEMA_POLICY=adopt",
     "YONA_USE_EMBEDDED_ASSETS=1",

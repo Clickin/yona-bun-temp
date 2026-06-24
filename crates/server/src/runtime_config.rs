@@ -19,6 +19,7 @@ pub struct StartupConfig {
     pub oauth_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
     pub allowed_sending_mail_domains: Option<Vec<String>>,
     pub bind_addr: String,
+    pub config_source: String,
     pub data_root: Option<String>,
     pub database_url: String,
     pub guest_login_prefix: Option<String>,
@@ -292,7 +293,7 @@ pub fn load_startup_config(
     env: BTreeMap<String, String>,
     current_dir: &Path,
 ) -> anyhow::Result<StartupConfig> {
-    let file = read_startup_config_file(&env, current_dir)?;
+    let (file, config_source) = read_startup_config_file(&env, current_dir)?;
     let application = file.application.unwrap_or_default();
     let site = file.site.unwrap_or_default();
     let auth = file.auth.unwrap_or_default();
@@ -315,6 +316,7 @@ pub fn load_startup_config(
         .or(file.base_path)
         .or(site.base_path)
         .unwrap_or_default();
+    let base_path = normalize_base_path(&base_path);
     let public_origin = env
         .get("YONA_PUBLIC_ORIGIN")
         .cloned()
@@ -549,6 +551,7 @@ pub fn load_startup_config(
         oauth_providers,
         allowed_sending_mail_domains,
         bind_addr,
+        config_source,
         data_root,
         database_url,
         guest_login_prefix,
@@ -794,18 +797,25 @@ fn slack_webhook_colors_from_config_and_env(
 fn read_startup_config_file(
     env: &BTreeMap<String, String>,
     current_dir: &Path,
-) -> anyhow::Result<StartupConfigFile> {
-    let explicit_path = env.get("YONA_CONFIG_TOML").map(PathBuf::from);
+) -> anyhow::Result<(StartupConfigFile, String)> {
+    let explicit_path = env
+        .get("YORAM_CONFIG_TOML")
+        .or_else(|| env.get("YONA_CONFIG_TOML"))
+        .map(PathBuf::from);
     let config_path = explicit_path.or_else(|| {
-        let default_path = current_dir.join("yona.toml");
-        default_path.exists().then_some(default_path)
+        let yoram_path = current_dir.join("yoram.toml");
+        if yoram_path.exists() {
+            return Some(yoram_path);
+        }
+        let legacy_path = current_dir.join("yona.toml");
+        legacy_path.exists().then_some(legacy_path)
     });
 
     let Some(config_path) = config_path else {
-        return Ok(StartupConfigFile::default());
+        return Ok((StartupConfigFile::default(), "defaults".to_string()));
     };
 
     let text = fs::read_to_string(&config_path)?;
     let parsed: StartupConfigFile = toml::from_str(&text)?;
-    Ok(parsed)
+    Ok((parsed, config_path.display().to_string()))
 }

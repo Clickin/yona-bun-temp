@@ -15,7 +15,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 ENV YONA_EMBED_ASSET_ROOT=/app/frontend/dist
-RUN cargo build --release -p yona-rust-pilot-server
+RUN cargo build --release -p yona-rust-pilot-server --bin yoram
 
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update \
@@ -24,7 +24,7 @@ RUN apt-get update \
 
 RUN useradd --system --create-home --home-dir /var/lib/yona --shell /usr/sbin/nologin yona
 WORKDIR /var/lib/yona
-COPY --from=builder /app/target/release/yona-rust-pilot-server /usr/local/bin/yona-rust-pilot-server
+COPY --from=builder /app/target/release/yoram /usr/local/bin/yoram
 
 ENV YONA_BIND_ADDR=0.0.0.0:8089 \
     YONA_BASE_PATH=/ \
@@ -34,4 +34,4 @@ ENV YONA_BIND_ADDR=0.0.0.0:8089 \
 
 EXPOSE 8089
 USER yona
-CMD ["yona-rust-pilot-server"]
+CMD ["yoram"]

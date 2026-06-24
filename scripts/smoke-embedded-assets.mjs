@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const frontendDist = join(repoRoot, "frontend", "dist");
-const binaryName = process.platform === "win32" ? "yona-rust-pilot-server.exe" : "yona-rust-pilot-server";
+const binaryName = process.platform === "win32" ? "yoram.exe" : "yoram";
 const binaryPath = join(repoRoot, "target", "debug", binaryName);
 
 function run(command, args, options = {}) {
@@ -87,7 +87,7 @@ try {
     throw new Error(`frontend dist not found: ${frontendDist}`);
   }
 
-  await run("cargo", ["build", "-p", "yona-rust-pilot-server"], {
+  await run("cargo", ["build", "-p", "yona-rust-pilot-server", "--bin", "yoram"], {
     env: { YONA_EMBED_ASSET_ROOT: frontendDist },
   });
   if (!existsSync(binaryPath)) {
