@@ -279,7 +279,7 @@ async function discoverProjectPaths(page, baseUrl) {
 }
 
 function hasRawI18n(text) {
-  return /(?<![a-z0-9_.-])(?:title|button|error|label|message|project|issue|user|notification)\.[a-z0-9_.-]+\b/u.test(
+  return /(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/u.test(
     text,
   );
 }
@@ -287,7 +287,7 @@ function hasRawI18n(text) {
 function rawI18nKeys(text) {
   return [
     ...new Set(
-      text.match(/(?<![a-z0-9_.-])(?:title|button|error|label|message|project|issue|user|notification)\.[a-z0-9_.-]+\b/gu) ??
+      text.match(/(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/gu) ??
         [],
     ),
   ].sort();

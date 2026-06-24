@@ -48,7 +48,7 @@ function ProjectReviewsRouteComponent() {
   const error = containerQuery.error ?? reviewsQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle(`${projectName} - menu.review`);
+  useDocumentTitle(`${projectName} - ${messages("menu.review", { fallback: "menu.review" })}`);
 
   if (bootstrapping || containerQuery.isLoading || reviewsQuery.isLoading) {
     return (

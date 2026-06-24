@@ -477,9 +477,11 @@ describe("file-route parity harness", () => {
       "utf8",
     );
 
-    expect(reviewRouteSource).toContain("useDocumentTitle(`${projectName} - menu.review`)");
+    expect(reviewRouteSource).toContain('messages("menu.review", { fallback: "menu.review" })');
+    expect(reviewRouteSource).not.toContain("useDocumentTitle(`${projectName} - menu.review`)");
     expect(reviewRouteSource).not.toContain('useDocumentTitle("Reviews")');
-    expect(commitRouteSource).toContain("useDocumentTitle(`code.commits @${commitId}`)");
+    expect(commitRouteSource).toContain('messages("code.commits", { fallback: "code.commits" })');
+    expect(commitRouteSource).not.toContain("useDocumentTitle(`code.commits @${commitId}`)");
     expect(commitRouteSource).not.toContain('useDocumentTitle("Commit")');
     expect(pullRequestDetailRouteSource).toContain(
       'useDocumentTitle(pullRequestQuery.data?.title ?? "menu.pullRequest")',

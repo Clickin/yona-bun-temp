@@ -4278,7 +4278,9 @@ export function ProjectIssueFormPage(props: {
 
   return (
     <main className="app-shell issue-form-page">
-      <h1 className="sr-only">{props.mode === "create" ? "button.newIssue" : "button.edit"}</h1>
+      <h1 className="sr-only">
+        {legacyMessage(messages, props.mode === "create" ? "button.newIssue" : "button.edit")}
+      </h1>
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">

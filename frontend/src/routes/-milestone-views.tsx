@@ -648,7 +648,10 @@ export function ProjectMilestoneFormPage(props: {
   return (
     <main className="app-shell milestone-form-page">
       <h1 className="sr-only">
-        {props.mode === "create" ? "title.newMilestone" : "title.editMilestone"}
+        {legacyMessage(
+          props.messages,
+          props.mode === "create" ? "title.newMilestone" : "title.editMilestone",
+        )}
       </h1>
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />

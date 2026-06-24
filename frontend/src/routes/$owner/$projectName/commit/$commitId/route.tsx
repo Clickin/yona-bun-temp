@@ -151,7 +151,7 @@ function CodeCommitDetailRouteComponent() {
   const error = containerQuery.error ?? commitDetailQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle(`code.commits @${commitId}`);
+  useDocumentTitle(`${messages("code.commits", { fallback: "code.commits" })} @${commitId}`);
 
   if (bootstrapping || containerQuery.isLoading || commitDetailQuery.isLoading) {
     return (
