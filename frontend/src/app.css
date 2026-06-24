@@ -137,6 +137,91 @@ button[type="submit"]:focus {
   padding: 24px 0 60px;
 }
 
+.gnb-outer {
+  min-height: 40px;
+  color: #555;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+.gnb-inner {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.gnb-nav {
+  float: left;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.gnb-nav > li,
+.gnb-usermenu > li {
+  float: left;
+}
+
+.gnb-nav a,
+.gnb-usermenu-item a {
+  display: block;
+  padding: 10px 12px;
+  line-height: 20px;
+}
+
+.gnb-nav .logo-letter {
+  width: 40px;
+  padding: 0;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 40px;
+  text-align: center;
+  background: #f36c22;
+}
+
+.gnb-nav .divider,
+.gnb-usermenu .divider {
+  width: 1px;
+  height: 20px;
+  margin: 10px 4px;
+  background: #e5e5e5;
+}
+
+.gnb-search-form {
+  margin: 5px 0 0 8px;
+}
+
+.gnb-search-form .search-box {
+  display: flex;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.gnb-search-form input[type="text"] {
+  width: 180px;
+  min-height: 28px;
+  border: 0;
+  box-shadow: none;
+}
+
+.gnb-search-form button {
+  min-height: 28px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #777;
+}
+
+.gnb-inner::after {
+  display: block;
+  clear: both;
+  content: "";
+}
+
 .modal.hide,
 .loginDialog.hide {
   display: none;
@@ -196,9 +281,7 @@ button[type="submit"]:focus {
 
 .siteintro {
   border-bottom: 1px solid #333;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
-    #333;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), #333;
   background-position: center center;
   background-size: cover;
 }
@@ -990,7 +1073,10 @@ h1 {
 
 .attachment-files .row {
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) minmax(180px, 5fr) minmax(72px, 1fr) minmax(72px, 1fr) minmax(120px, 2fr) minmax(180px, 4fr);
+  grid-template-columns: minmax(72px, 1fr) minmax(180px, 5fr) minmax(72px, 1fr) minmax(
+      72px,
+      1fr
+    ) minmax(120px, 2fr) minmax(180px, 4fr);
   align-items: center;
   border-bottom: 1px solid #eee;
 }

@@ -411,6 +411,9 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.title === "Yona Rust Frontend") {
     errors.push("non-legacy default document title visible");
   }
+  if (!metrics.isErrorPage && (!metrics.gnb || metrics.gnb.width < metrics.viewportWidth * 0.8)) {
+    errors.push("missing global navigation");
+  }
   if (path === "/" && metrics.loginDialog && metrics.loginDialog.width > metrics.viewportWidth * 0.8) {
     errors.push("login dialog width looks unstyled");
   }

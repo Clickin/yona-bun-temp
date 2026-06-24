@@ -52,6 +52,18 @@ import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("auth and workspace views", () => {
+  it("keeps the legacy global navigation shell in the root route", () => {
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+
+    expect(source).toContain('<header className="gnb-outer">');
+    expect(source).toContain('className="gnb-inner"');
+    expect(source).toContain('className="gnb-nav"');
+    expect(source).toContain('messages("title.list", { fallback: "List All" })');
+    expect(source).toContain('messages("title.yobi.feedback", { fallback: "Feedback" })');
+    expect(source).toContain("<RootAnonymousMenu />");
+    expect(source).not.toContain('<ul className="gnb-outer gnb-usermenu">');
+  });
+
   it("renders the canonical login shell with legacy field names and recovery link", () => {
     const html = renderLogin({
       routeHref: "/users/loginform?redirectUrl=/admin/projectYobi/issue/1",

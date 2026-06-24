@@ -21,12 +21,63 @@ function RootRouteComponent() {
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
+        <RootHeader />
         <RootSidebar />
-        <RootUserMenu />
         <Outlet />
         <RootLoginDialog />
       </AppRuntimeProvider>
     </YonaQueryProvider>
+  );
+}
+
+function RootHeader() {
+  const { currentSession, messages, runtimeConfig } = useAppRuntime();
+
+  return (
+    <header className="gnb-outer">
+      <div className="gnb-inner">
+        <div className="pin" title="Sidebar">
+          <i className="yobicon-arrow-left"></i>
+          <i className="yobicon-arrow-right"></i>
+        </div>
+        <ul className="gnb-nav">
+          <li>
+            <a className="logo logo-letter" href={prefixBasePath(runtimeConfig.basePath, "/")}>
+              Y
+            </a>
+          </li>
+          <li>
+            <a
+              className="show-progress-bar"
+              href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+            >
+              {messages("title.list", { fallback: "List All" })}
+            </a>
+          </li>
+          <li className="divider"></li>
+          <li>
+            <a href="https://github.com/yona-projects/yona/issues" rel="noreferrer" target="_blank">
+              {messages("title.yobi.feedback", { fallback: "Feedback" })}
+            </a>
+          </li>
+          <li>
+            <form
+              action={prefixBasePath(runtimeConfig.basePath, "/search")}
+              className="input-prepend gnb-search-form"
+            >
+              <input name="searchType" type="hidden" value="auto" />
+              <div className="search-box">
+                <input autoComplete="off" name="keyword" type="text" />
+                <button type="submit">
+                  <i className="yobicon-search"></i>
+                </button>
+              </div>
+            </form>
+          </li>
+        </ul>
+        {currentSession && !currentSession.isAnonymous ? <RootUserMenu /> : <RootAnonymousMenu />}
+      </div>
+    </header>
   );
 }
 
@@ -207,7 +258,7 @@ function RootUserMenu() {
   }
 
   return (
-    <ul className="gnb-outer gnb-usermenu">
+    <ul className="gnb-usermenu">
       {currentSession.isSiteAdmin ? (
         <li className="gnb-usermenu-item admin-logged-in-affix">
           <a
@@ -228,6 +279,33 @@ function RootUserMenu() {
           </a>
         </li>
       ) : null}
+    </ul>
+  );
+}
+
+function RootAnonymousMenu() {
+  const { messages, runtimeConfig } = useAppRuntime();
+
+  return (
+    <ul className="gnb-usermenu">
+      <li className="gnb-usermenu-item" id="required-logged-in">
+        <a
+          className="user-item-btn"
+          data-login="required"
+          href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
+        >
+          {messages("button.login", { fallback: "Log in" })}
+        </a>
+      </li>
+      <li className="divider"></li>
+      <li>
+        <a
+          className="ybtn ybtn-success"
+          href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
+        >
+          {messages("title.signup", { fallback: "Sign up" })}
+        </a>
+      </li>
     </ul>
   );
 }
