@@ -13,12 +13,12 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     assignee, attachment, comment_thread, email, issue, linked_account, n4user, project,
-    pull_request, user_credential, user_project_notification, user_verification, watch,
+    pull_request, site_admin, user_credential, user_project_notification, user_verification, watch,
     AppRepository, CreateOrganizationInput, CreateProjectInput, RepositoryConfig,
 };
-use yoram_migration::Migrator;
 use yoram_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
@@ -1004,7 +1004,7 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
 #[tokio::test]
 // Guards auth route-owned session/sign-in/sign-out helpers plus service-snapshot auth capability adapters.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let capabilities = app
@@ -1048,6 +1048,11 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
     assert!(register_json.contains("\"loginId\":\"door\""));
+    assert_eq!(
+        site_admin::Entity::find().all(&db).await.unwrap().len(),
+        1,
+        "first registered user should become the initial site admin"
+    );
 
     let current = app
         .clone()

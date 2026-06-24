@@ -29,17 +29,37 @@ try {
 
     $index = Invoke-WebRequest -Uri "http://127.0.0.1:8089/yona/" -UseBasicParsing
     $projects = Invoke-WebRequest -Uri "http://127.0.0.1:8089/yona/projects" -UseBasicParsing
-    $assetPath = [regex]::Match($index.Content, 'src=\"(?<path>(?:\./|/)?assets/[^\"]+)\"').Groups["path"].Value
+    $assetPath = [regex]::Match($index.Content, 'src=\"(?<path>(?:\./|/(?:yona/)?)?assets/[^\"]+)\"').Groups["path"].Value
     if ([string]::IsNullOrWhiteSpace($assetPath)) {
       throw "Failed to discover embedded asset path from index.html"
     }
-    if ($assetPath.StartsWith("/")) {
+    $stylesheetPath = [regex]::Match($index.Content, 'href=\"(?<path>(?:\./|/(?:yona/)?)?assets/[^\"]+\.css)\"').Groups["path"].Value
+    if ([string]::IsNullOrWhiteSpace($stylesheetPath)) {
+      throw "Failed to discover embedded stylesheet path from index.html"
+    }
+    if ($assetPath.StartsWith("/yona/")) {
+      $assetUri = "http://127.0.0.1:8089" + $assetPath
+    }
+    elseif ($assetPath.StartsWith("/")) {
       $assetUri = "http://127.0.0.1:8089/yona" + $assetPath
     }
     else {
       $assetUri = "http://127.0.0.1:8089/yona/" + $assetPath.TrimStart('.')
     }
+    if ($stylesheetPath.StartsWith("/yona/")) {
+      $stylesheetUri = "http://127.0.0.1:8089" + $stylesheetPath
+    }
+    elseif ($stylesheetPath.StartsWith("/")) {
+      $stylesheetUri = "http://127.0.0.1:8089/yona" + $stylesheetPath
+    }
+    else {
+      $stylesheetUri = "http://127.0.0.1:8089/yona/" + $stylesheetPath.TrimStart('.')
+    }
     $asset = Invoke-WebRequest -Uri $assetUri -UseBasicParsing
+    $stylesheet = Invoke-WebRequest -Uri $stylesheetUri -UseBasicParsing
+    if (-not ([string]$stylesheet.Headers["Content-Type"]).StartsWith("text/css")) {
+      throw "Stylesheet response is not text/css: $($stylesheet.Headers["Content-Type"])"
+    }
     $session = Invoke-WebRequest -Uri "http://127.0.0.1:8089/yona/api/auth/session" -UseBasicParsing
     $restProjects = Invoke-WebRequest -Uri "http://127.0.0.1:8089/yona/api/v1/projects" -UseBasicParsing
 
@@ -50,6 +70,10 @@ try {
       asset_uri = $assetUri
       asset_status = $asset.StatusCode
       asset_non_empty = ($asset.Content.Length -gt 0)
+      stylesheet_uri = $stylesheetUri
+      stylesheet_status = $stylesheet.StatusCode
+      stylesheet_content_type = $stylesheet.Headers["Content-Type"]
+      stylesheet_non_empty = ($stylesheet.Content.Length -gt 0)
       session_status = $session.StatusCode
       session_has_csrf = [bool]$session.Headers["X-CSRF-Token"]
       rest_projects_status = $restProjects.StatusCode

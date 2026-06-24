@@ -16,6 +16,14 @@ impl AppRepositoryImpl<'_> {
         self.db.begin().await
     }
 
+    pub async fn has_registered_users(&self) -> Result<bool, DbErr> {
+        let users = n4user::Entity::find().all(&self.db).await?;
+        Ok(users.into_iter().any(|user| {
+            normalize_optional(user.login_id.as_deref()).as_deref()
+                != Some(LEGACY_ANONYMOUS_LOGIN_ID)
+        }))
+    }
+
     pub fn with_transaction<'tx>(
         &self,
         transaction: &'tx DatabaseTransaction,

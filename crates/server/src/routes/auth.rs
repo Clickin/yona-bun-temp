@@ -538,7 +538,10 @@ pub(crate) async fn auth_register_with_password(
             display_name: request.name.trim().to_string(),
             email_address,
             is_confirmed: !crate::confirmation_session_required_from_config(&service.auth_ui),
-            is_site_admin: false,
+            is_site_admin: !repository
+                .has_registered_users()
+                .await
+                .map_err(crate::internal_error)?,
             login_id,
             password_hash,
         })

@@ -8,6 +8,7 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use tempfile::tempdir;
 use tower::ServiceExt;
+use yoram_migration::Migrator;
 use yoram_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
@@ -16,7 +17,6 @@ use yoram_persistence::{
     UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput, UpdatePostingInput,
     UpdatePullRequestInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
     create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
@@ -291,6 +291,31 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
         "console.log('pilot');"
     );
 
+    let stylesheet = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/assets/app.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(stylesheet.status(), StatusCode::OK);
+    assert_eq!(
+        stylesheet
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/css")
+    );
+    let stylesheet_body = stylesheet.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(stylesheet_body.to_vec()).unwrap(),
+        "body{color:#333}"
+    );
+
     let image = app
         .clone()
         .oneshot(
@@ -426,6 +451,33 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert_eq!(
         String::from_utf8(asset_body.to_vec()).unwrap().trim_end(),
         "console.log('embedded-pilot');"
+    );
+
+    let stylesheet = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/assets/app.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(stylesheet.status(), StatusCode::OK);
+    assert_eq!(
+        stylesheet
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/css")
+    );
+    let stylesheet_body = stylesheet.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(stylesheet_body.to_vec())
+            .unwrap()
+            .trim_end(),
+        "body{color:#333}"
     );
 
     let image = app

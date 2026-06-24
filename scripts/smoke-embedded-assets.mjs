@@ -66,14 +66,25 @@ async function fetchOk(url) {
 }
 
 function discoverAssetPath(indexHtml) {
-  const match = indexHtml.match(/src="(?<path>(?:\.\/|\/)?assets\/[^"]+)"/);
+  const match = indexHtml.match(/src="(?<path>(?:\.\/|\/(?:yona\/)?)?assets\/[^"]+)"/);
   if (!match?.groups?.path) {
     throw new Error("Failed to discover embedded asset path from index.html");
   }
   return match.groups.path;
 }
 
+function discoverStylesheetPath(indexHtml) {
+  const match = indexHtml.match(/href="(?<path>(?:\.\/|\/(?:yona\/)?)?assets\/[^"]+\.css)"/);
+  if (!match?.groups?.path) {
+    throw new Error("Failed to discover embedded stylesheet path from index.html");
+  }
+  return match.groups.path;
+}
+
 function assetUrl(origin, assetPath) {
+  if (assetPath.startsWith("/yona/")) {
+    return `${origin}${assetPath}`;
+  }
   if (assetPath.startsWith("/")) {
     return `${origin}/yona${assetPath}`;
   }
@@ -131,7 +142,9 @@ try {
   const index = await fetchOk(`${origin}/yona/`);
   const projects = await fetchOk(`${origin}/yona/projects`);
   const assetPath = discoverAssetPath(index.body);
+  const stylesheetPath = discoverStylesheetPath(index.body);
   const asset = await fetchOk(assetUrl(origin, assetPath));
+  const stylesheet = await fetchOk(assetUrl(origin, stylesheetPath));
   const session = await fetchOk(`${origin}/yona/api/auth/session`);
   const restProjects = await fetchOk(`${origin}/yona/api/v1/projects`);
 
@@ -142,6 +155,10 @@ try {
     asset_uri: assetUrl(origin, assetPath),
     asset_status: asset.response.status,
     asset_non_empty: asset.body.length > 0,
+    stylesheet_uri: assetUrl(origin, stylesheetPath),
+    stylesheet_status: stylesheet.response.status,
+    stylesheet_content_type: stylesheet.response.headers.get("content-type"),
+    stylesheet_non_empty: stylesheet.body.length > 0,
     session_status: session.response.status,
     session_has_csrf: session.response.headers.has("x-csrf-token"),
     rest_projects_status: restProjects.response.status,
@@ -154,6 +171,9 @@ try {
     result.projects_status !== 200 ||
     result.asset_status !== 200 ||
     !result.asset_non_empty ||
+    result.stylesheet_status !== 200 ||
+    !result.stylesheet_content_type?.startsWith("text/css") ||
+    !result.stylesheet_non_empty ||
     result.session_status !== 200 ||
     !result.session_has_csrf ||
     result.rest_projects_status !== 200 ||
