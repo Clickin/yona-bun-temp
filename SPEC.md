@@ -376,7 +376,7 @@ POST  /user/defultLoginPage     → 기본 랜딩 페이지 설정
 GET   /user/sidebar             → legacy framed sidebar shell
 GET   /user/usermenuTabContentList → workspace overview JSON for React user menu
 GET   /notifications            → 알림 목록 full page
-GET   /notification             → 알림 목록 incremental partial fragment
+GET   /notification             → 알림 목록 JSON for React incremental rendering
 POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 ```
 
@@ -996,7 +996,7 @@ GET   /organizations/:name/search            → 조직 내 검색
 
 ```
 GET   /notifications         → 알림 목록 full page
-GET   /notification          → 알림 목록 incremental partial fragment
+GET   /notification          → 알림 목록 JSON for React incremental rendering
 POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 GET   /unwatch?resource.type=...&resource.id=... → 리소스 감시 해제 후 target redirect
 POST  /unwatch?resource.type=...&resource.id=... → 리소스 감시 해제 후 target redirect
@@ -1824,7 +1824,7 @@ Environment variable equivalents use the names exercised by `crates/server/tests
 | `/-_-api/v1/favoriteOrganizations/:id` | POST  | favorite organization toggle          | legacy user-menu helper JSON                  | implemented        |
 | `/-_-api/v1/translation`           | POST     | issue/board translation helper        | legacy recursive request parsing + 412 when unconfigured + executable translation proxy + React Markdown rendering | implemented        |
 | `/notifications`                   | GET      | `GET /api/v1/notifications`           | `notifications/` full page                    | implemented        |
-| `/notification`                    | GET      | direct legacy partial fragment        | `partial_notifications.scala.html`            | implemented        |
+| `/notification`                    | GET      | `GET /api/v1/notifications`-equivalent JSON for React-rendered list | `partial_notifications.scala.html`            | implemented        |
 | `/noti/toggle/:projectId/:notiType` | POST    | `POST /api/v1/workspace/notifications` | direct empty OK adapter                       | implemented        |
 | `/:owner/:project/watch`            | POST     | `POST /api/v1/owners/:owner/projects/:project/watch` | direct empty OK adapter                       | implemented        |
 | `/:owner/:project/unwatch`          | POST     | `DELETE /api/v1/owners/:owner/projects/:project/watch` | direct empty OK adapter + notification cleanup | implemented        |

@@ -195,7 +195,7 @@ tests/search-parity.e2e.ts` passed outside the sandbox with 6 tests, including
   `search_contract::global_search_treats_sql_injection_probe_as_plain_keyword`,
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
-  `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
+  `notification_contract::notification_contract_direct_notification_route_returns_api_payload`.
 
 ### `rc-ux-site-admin`
 
@@ -446,7 +446,7 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`,
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
-  `notification_contract::notification_contract_direct_notification_route_returns_legacy_partial_fragment`.
+  `notification_contract::notification_contract_direct_notification_route_returns_api_payload`.
 
 ### `rc-ux-security-stability`
 

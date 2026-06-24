@@ -724,8 +724,8 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
 }
 
 #[tokio::test]
-async fn notification_contract_direct_notification_route_returns_legacy_partial_fragment() {
-    // Guards route-utils-owned HTML escaping used by legacy notification fragments.
+async fn notification_contract_direct_notification_route_returns_api_payload() {
+    // Guards direct legacy notification URL as API data for React-rendered notification lists.
     let (app, _repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
@@ -740,25 +740,29 @@ async fn notification_contract_direct_notification_route_returns_legacy_partial_
     )
     .await;
     assert_eq!(response.status(), StatusCode::OK);
-    let html = response_text(response).await;
+    let content_type = response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(content_type.starts_with("application/json"));
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert!(html.contains(r#"<li class="notification-stream">"#));
-    assert!(html.contains(r#"<div class="stream-type megaphone">"#));
-    assert!(html.contains(r#"data-toggle="learnmore""#));
-    assert!(html.contains(r#"id="message-"#));
-    assert!(html.contains(r#"class="message-wrap nowrap""#));
-    assert!(html.contains(r#"<div class="message">Issue is shared with guest</div>"#));
-    assert!(html.contains(r#"<a href="/yona/owner/projectYobi/issue/1">Private issue</a>"#));
-    assert!(html.contains(r#"class="avatar-wrap smaller""#));
-    assert!(html.contains(r#"<a href="/yona/owner" class="author">owner</a>@owner"#));
-    assert!(html.contains(r#"data-target="message-"#));
-    assert!(html.contains(r#"class="ago pull-right""#));
-    assert!(html
-        .contains(r#"<a href="javascript:void(0);" id="notification-more" class="ybtn">More</a>"#));
-    assert!(html.contains(r#"/yona/notification?from=1&amp;size=1"#));
-    assert!(html.contains(r#"$('.activity-streams').append(data);"#));
-    assert!(!html.contains("page-wrap-outer"));
-    assert!(!html.contains("common/mySeriesMenuTab"));
+    assert_eq!(payload["total"], 1);
+    assert_eq!(payload["hasMore"], false);
+    let items = payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0]["eventType"], "ISSUE_SHARER_CHANGED");
+    assert_eq!(items[0]["typeIcon"], "megaphone");
+    assert_eq!(items[0]["message"], "Issue is shared with guest");
+    assert_eq!(items[0]["targetHref"], "/yona/owner/projectYobi/issue/1");
+    assert_eq!(items[0]["targetTitle"], "Private issue");
+    assert_eq!(items[0]["actor"]["loginId"], "owner");
+    assert!(items[0]["createdLabel"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 }
 
 #[tokio::test]
