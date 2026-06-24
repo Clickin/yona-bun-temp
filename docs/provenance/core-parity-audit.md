@@ -1343,6 +1343,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   inspection also showed project subpages such as milestones still look much
   plainer than legacy even when the smoke heuristics pass; that is tracked as
   UX diff work rather than a routing/CSS-load blocker.
+- 2026-06-25 project chrome CSS note: the React project pages now reuse the
+  legacy project header/menu/page/milestone chrome styles from
+  `yona-original/app/assets/stylesheets/less/_page.less` for the existing
+  `ProjectHeader`, `ProjectMenu`, `.project-page-wrap`, `.filter-wrap`,
+  `.error-wrap`, and `.milestones` class surface. Focused Playwright evidence
+  on `/yona/pilot/yona/milestones` showed the legacy-sized 120px header, 39px
+  menu bar, non-overlapping keymap button, and styled empty milestone state.
 
 ## Wave 0 Exit Snapshot
 
