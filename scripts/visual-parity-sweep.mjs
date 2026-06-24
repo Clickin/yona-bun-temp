@@ -408,6 +408,9 @@ async function inspectPage(page, baseUrl, path, label) {
   if (hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
     errors.push(`raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`);
   }
+  if (metrics.title === "Yona Rust Frontend") {
+    errors.push("non-legacy default document title visible");
+  }
   if (path === "/" && metrics.loginDialog && metrics.loginDialog.width > metrics.viewportWidth * 0.8) {
     errors.push("login dialog width looks unstyled");
   }
