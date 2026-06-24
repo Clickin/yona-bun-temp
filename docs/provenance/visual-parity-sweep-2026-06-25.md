@@ -8,7 +8,8 @@ Status: current audit evidence.
 - Legacy target: `http://192.168.45.10:9000`
 - Browser: Playwright Chromium API using the system `msedge` channel, `1366x900`
 - Local runtime: embedded assets, in-memory SQLite, `YONA_SEED_PILOT=1`
-- Local authentication: REST bootstrap through `/api/auth/session` and `/api/v1/auth/register`
+- Local authentication: REST bootstrap through `/api/auth/session`, first-admin registration
+  through `/api/v1/auth/register`, and existing-admin fallback through `/api/v1/auth/sign-in`
 - Local route corpus: explicit legacy base pages, route-tree sample expansion, and discovered seeded
   project links. Each route is inspected in an isolated Playwright page so one navigation failure
   cannot cascade into later false failures.
@@ -45,8 +46,10 @@ therefore recorded separately from the legacy HTML baseline until the browser ch
 
 ## Results
 
-- Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed.
-- Local Playwright visual sweep: 107 checked, 107 passed, 0 failed.
+- Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed, 0 discovered links unaudited.
+- Legacy route/spec/anchor/render coverage smokes: 57 routed, 57 with spec evidence, 104/104
+  curl-observed anchors with Rust evidence, 57/57 with rendered e2e signal evidence.
+- Local Playwright visual sweep: 107 checked, 107 passed, 0 failed, authenticated session confirmed.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 
@@ -63,6 +66,9 @@ smoke test.
 ## Local Failures
 
 None in the stabilized 107-route rendered-screen sweep.
+
+The local sweep also fails if seeded fixture copy such as `browser-safe route tree` or an unbased
+`localhost:3001/yo` clone URL becomes visible in rendered UI.
 
 ## Follow-Up
 
