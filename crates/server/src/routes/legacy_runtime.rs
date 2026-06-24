@@ -1,7 +1,7 @@
 use axum::{
     extract::Form,
     http::{HeaderMap, Method, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::{get, post},
     Router,
 };
@@ -10,10 +10,10 @@ use std::path::Path;
 
 use crate::assets::serve_frontend_page;
 use crate::{
-    base_path_href, escape_html_text, headers_with_form_csrf, legacy_external_api_hello,
-    map_project_scope, persistence, redirect_to, repository_provisioning_lock, require_session,
-    require_valid_csrf, rest_project_menu_settings, AssetMode, BrowserRuntimeConfig, PilotBackend,
-    PilotRepository, PilotServiceImpl, RestRouteError,
+    base_path_href, headers_with_form_csrf, legacy_external_api_hello, map_project_scope,
+    persistence, redirect_to, repository_provisioning_lock, require_session, require_valid_csrf,
+    rest_project_menu_settings, AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestRouteError,
 };
 use yona_rust_domain::{
     can_create_organization_project, can_create_personal_project, is_valid_project_name,
@@ -62,6 +62,8 @@ async fn make_legacy_test_repositories(repository: &PilotRepository, data_root: 
 pub(crate) async fn direct_legacy_migration_disabled(
     headers: HeaderMap,
     service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
 ) -> Response {
     if service
         .session_manager
@@ -76,60 +78,17 @@ pub(crate) async fn direct_legacy_migration_disabled(
         .into_response();
     }
 
-    let guide_href = base_path_href(&service.base_path, "/sites/data");
-    let escaped_site_name = escape_html_text(&service.site_name);
-    let body = format!(
-        r#"<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>{escaped_site_name}</title>
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-<div class="yobi-migration">
-<div class="header-pannel">
-<div class="comeback-text pull-right">Yona to Github<span class="midium-font"></span></div>
-<div class="row title-text-bg">
-<div id="system-msg" class="well board">
-<div class="messages">error.forbidden.or.not.allowed</div>
-</div>
-</div>
-<div class="status">
-<div class="row">
-<div class="head-title row-fluid">
-<div class="source-title span5"><div class="project-name warn">Source 프로젝트를 선택해 주세요</div></div>
-<div class="arrow span1"><i class="yobicon-arrow-right-alt"></i></div>
-<div class="destination-title span6"><div class="project-name warn">Destination 프로젝트를 선택해 주세요</div></div>
-</div>
-</div>
-</div>
-<div class="row source-destination">
-<div class="source-project span4"><div class="header">Source 0 개</div><div class="search left-border"><input tabindex="1" type="text" class="search-query" name="target-filter" placeholder="Search.." autofocus disabled></div><div class="left-project-list"></div></div>
-<div class="destination-project span4"><div class="header">Destination 0 개</div><div class="search"><input type="text" tabindex="2" class="search-query" name="target-filter" placeholder="Search.." disabled></div><div class="destination-project-list"></div></div>
-<div class="span6 status">
-<div class="progress row"><div class="bar span10 bar-danger" style="width: 0%">0/0</div></div>
-<table class="table">
-<thead><tr><th colspan="2">Migration 대상</th><th></th></tr></thead>
-<tbody>
-<tr><td class="left-title">마일스톤</td><td class="left-title">0</td><td><div class="btn-group"><button class="btn btn-danger" disabled>마일스톤 옮기기</button></div></td></tr>
-<tr><td class="left-title">이슈</td><td class="left-title"><span>0</span></td><td><div class="btn-group"><button class="btn btn-danger" disabled>이슈 옮기기</button></div></td></tr>
-<tr><td class="left-title">게시글</td><td class="left-title"><span>0</span></td><td><div class="btn-group"><button class="btn btn-danger" disabled>게시글 옮기기</button></div></td></tr>
-<tr><td class="td-title left-title">주의 사항!!</td><td colspan="2" class="text-align-left"><div class="caution">작업 시작전에 Yona to Githbub 마이그레이션 가이드를 꼭 읽어주세요.</div></td></tr>
-</tbody>
-</table>
-<div class="left-title">기존 이슈 담당자</div>
-<div class="caution">Migration 기능은 현재 사용할 수 없습니다.</div>
-<div class="caution"><a href="{guide_href}">/sites/data</a></div>
-</div>
-</div>
-</div>
-</div>
-</body>
-</html>"#
-    );
-    (StatusCode::FORBIDDEN, Html(body)).into_response()
+    match assets {
+        AssetMode::None => {
+            RestRouteError::forbidden_code("forbidden", "error.forbidden.or.not.allowed")
+                .into_response()
+        }
+        assets => {
+            let mut response = serve_frontend_page(assets, Method::GET, browser_runtime).await;
+            *response.status_mut() = StatusCode::FORBIDDEN;
+            response
+        }
+    }
 }
 
 pub(crate) async fn direct_legacy_migration_json_disabled(
@@ -342,8 +301,10 @@ pub(crate) fn routes(
 ) -> Router {
     let legacy_api_index_assets = assets.clone();
     let legacy_api_index_browser_runtime = browser_runtime.clone();
-    let legacy_api_v1_index_assets = assets;
-    let legacy_api_v1_index_browser_runtime = browser_runtime;
+    let legacy_api_v1_index_assets = assets.clone();
+    let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
+    let legacy_migration_assets = assets;
+    let legacy_migration_browser_runtime = browser_runtime;
     let legacy_init_service = service.clone();
     let project_import_service = service.clone();
     let legacy_migration_service = service.clone();
@@ -386,8 +347,13 @@ pub(crate) fn routes(
         .route(
             "/migration",
             get(move |headers: HeaderMap| {
+                let assets = legacy_migration_assets.clone();
+                let browser_runtime = legacy_migration_browser_runtime.clone();
                 let service = legacy_migration_service.clone();
-                async move { direct_legacy_migration_disabled(headers, service).await }
+                async move {
+                    direct_legacy_migration_disabled(headers, service, assets, browser_runtime)
+                        .await
+                }
             }),
         )
         .route(

@@ -106,11 +106,9 @@ src/help-route-parity.spec.tsx src/route-parity.spec.tsx` passed with 4 files
 --outside-sandbox -p yona-rust-pilot-server --test auth_workspace_contract
 direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate
 -- --nocapture` passed.
-- Note: the broader filtered cargo command `pnpm agent:cargo-test --
---outside-sandbox -p yona-rust-pilot-server auth_workspace_contract --
---nocapture` currently fails before running this row's tests because
-  `crates/server/tests/server_core_contract.rs` references missing module
-  `protocol_foundation_contract`.
+- Note: stale `server_core_contract.rs` reference to missing
+  `protocol_foundation_contract` was removed so the consolidated server-core
+  target can compile before filtered route tests run.
 
 ### `rc-ux-auth-shell`
 
@@ -427,8 +425,8 @@ change)"` executed the audit file outside the sandbox and passed all 43 tests,
   app screens.
 - Existing provenance: `docs/provenance/core-parity-audit.md` records the
   authenticated root sidebar as React-rendered from API data while treating
-  legacy user-menu/sidebar HTML fragment endpoints as compatibility references;
-  the workspace/notification row records `/api/v1/notifications` plus
+  legacy user-menu/sidebar fragment views as provenance references; the
+  workspace/notification row records `/api/v1/notifications` plus
   `/notification` route coverage.
 - Frontend verification: `pnpm --dir frontend exec vitest run
 src/auth-workspace-shell.spec.tsx

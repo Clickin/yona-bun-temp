@@ -8,7 +8,9 @@ use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router, create_router_with_filesystem_assets,
-    create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, RuntimeConfig,
+    create_router_with_repository_and_app_config,
+    create_router_with_repository_and_filesystem_assets_and_app_config, AppRuntimeConfig,
+    AuthUiConfig, RuntimeConfig,
 };
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -471,12 +473,39 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
 }
 
 #[tokio::test]
-async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
-    let (app, _, _) = build_app_with_repository_and_app_config(AppRuntimeConfig {
-        site_name: "Legacy Yona".to_string(),
-        ..AppRuntimeConfig::default()
-    })
-    .await;
+async fn legacy_migration_root_returns_disabled_react_shell_not_server_html() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db);
+    let asset_root = std::env::temp_dir().join(format!(
+        "yona-migration-index-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos()
+    ));
+    fs::create_dir_all(&asset_root).expect("asset root");
+    fs::write(
+        asset_root.join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">legacy index</main></body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo,
+        asset_root.clone(),
+        AppRuntimeConfig {
+            site_name: "Legacy Yona".to_string(),
+            ..AppRuntimeConfig::default()
+        },
+    );
     let cookie_header = register_user(app.clone(), "migrator").await;
 
     let response = app
@@ -501,18 +530,12 @@ async fn legacy_migration_root_returns_disabled_shell_not_spa_fallback() {
     assert!(content_type.contains("text/html"));
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let html = String::from_utf8(body.to_vec()).unwrap();
-    assert!(html.contains("<title>Legacy Yona</title>"));
-    assert!(html.contains("yobi-migration"));
-    assert!(html.contains("Yona to Github"));
-    assert!(html.contains("Source 프로젝트를 선택해 주세요"));
-    assert!(html.contains("Destination 프로젝트를 선택해 주세요"));
-    assert!(html.contains("Migration 대상"));
-    assert!(html.contains("마일스톤 옮기기"));
-    assert!(html.contains("이슈 옮기기"));
-    assert!(html.contains("게시글 옮기기"));
-    assert!(html.contains("<a href=\"/yona/sites/data\">/sites/data</a>"));
-    assert!(html.contains("error.forbidden.or.not.allowed"));
-    assert!(!html.contains("window.__YONA_RUNTIME_CONFIG__"));
+    assert!(html.contains("legacy index"));
+    assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
+    assert!(html.contains(r#""siteName":"Legacy Yona""#));
+    assert!(!html.contains("yobi-migration"));
+
+    fs::remove_dir_all(asset_root).expect("asset cleanup");
 }
 
 #[tokio::test]
@@ -592,9 +615,8 @@ async fn runtime_config_registry_scopes_app_config_without_env_mutation() {
         .unwrap();
     assert_eq!(migration.status(), StatusCode::FORBIDDEN);
     let body = migration.into_body().collect().await.unwrap().to_bytes();
-    let html = String::from_utf8(body.to_vec()).unwrap();
-    assert!(html.contains("<title>Registry Yona</title>"));
-    assert!(!html.contains("Other Yona"));
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["message"], "error.forbidden.or.not.allowed");
 }
 
 #[tokio::test]

@@ -242,7 +242,7 @@ closure status는 `docs/provenance/deferred-parity-closure-inventory.md`와
 | SVN 프로토콜 / WebDAV 지원               | ✅ app-runtime SVN/WebDAV bridge implemented; P3-A broader VCC/baseline PROPFIND edge list closed by `svn_protocol_contract` evidence |
 | LDAP 연동                                | P2-C/P2-D fixture-backed form-login and BasicAuth slices plus real LDAP bind/search connector implemented; existing-user display-name/nonblank-English-name/password/guest refresh implemented |
 | GitHub outbound migration (`/migration`, Yona -> GitHub) | 외부 GitHub API 의존; `/_import` Git URL clone과 별개이며 app-runtime scope가 아니라 migration-tool destination adapter 후보 |
-| Migration 도구 (Export CSV/Excel)        | 부가 기능; `/migration` legacy shell은 비활성 호환 상태만 제공 |
+| Migration 도구 (Export CSV/Excel)        | 부가 기능; `/migration` React disabled shell과 JSON disabled export boundary만 제공 |
 | Social Login (OAuth)                     | P2-A/P2-B bounded runtime slice implemented for configured GitHub/Google start, deterministic callback link/create, real provider token/userinfo HTTP exchange, denied/unsupported redirects, session creation, connected-provider profile projection, and legacy local logout; earlier provider-specific external logout follow-up retired as not applicable because legacy only performs local PlayAuthenticate/session logout plus Referer redirect |
 | IMAP 메일박스 서비스                     | ✅ command-backed mailbox polling and raw RFC822 DB-backed bridge implemented for app-runtime scope |
 | Slack project webhook detail/color       | ✅ project webhook `DETAIL_SLACK` 구현                 |
@@ -1575,7 +1575,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 세션/인증         | ✅ 구현           | bcrypt, CSRF, 세션 쿠키                                          |
 | DB 엔티티         | ✅ 구현           | 60+ SeaORM 모델, legacy 스키마 전체 매핑                         |
 | Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
-| Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB, legacy `/migration` 비활성 shell; legacy outbound Yona-to-GitHub migration is evidence-backed external destination-adapter follow-up, not app-runtime import |
+| Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB, React `/migration` 비활성 shell; legacy outbound Yona-to-GitHub migration is evidence-backed external destination-adapter follow-up, not app-runtime import |
 | 인증 플로우       | ✅ 구현           | 로그인/가입/비밀번호 찾기/이메일 인증                            |
 | Workspace         | ✅ 구현           | 대시보드, 공개 프로필, 설정, 이메일, 토큰, 아바타                |
 | 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입, legacy settings/member/delete shell anchors |

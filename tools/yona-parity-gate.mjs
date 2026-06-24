@@ -511,7 +511,7 @@ const DOMAIN_BUCKETS = [
     id: "second-priority-deferred",
     label: "SVN, LDAP, import/export follow-up scope",
     status: "partial",
-    implementationPatterns: [/(\/|^)(svn|ldap|import|export)(\/|\.|$)/i],
+    implementationPatterns: [/(\/|^)(svn|ldap|import|export|migration)(\/|\.|$)/i],
     testKeywords: ["svn", "ldap", "import", "export", "migration"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
