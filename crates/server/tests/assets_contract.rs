@@ -512,6 +512,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
 
     let project_fallback = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -530,6 +531,36 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         .to_bytes();
     let project_fallback_html = String::from_utf8(project_fallback_body.to_vec()).unwrap();
     assert!(project_fallback_html.contains("window.__YONA_RUNTIME_CONFIG__"));
+
+    for path in [
+        "/yona/_import",
+        "/yona/notification?from=0&limit=20",
+        "/yona/sites/mail",
+        "/yona/owner/projectYobi/members",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .header(http::header::ACCEPT, "text/html")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        let content_type = response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default();
+        assert!(content_type.contains("text/html"), "{path}: {content_type}");
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+        assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"), "{path}");
+    }
 }
 
 #[tokio::test]

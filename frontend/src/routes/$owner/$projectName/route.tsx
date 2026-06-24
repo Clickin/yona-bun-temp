@@ -17,6 +17,7 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useCurrentHref,
 } from "../../-shared";
@@ -45,7 +46,37 @@ function legacyProjectEnrollFallback(error: unknown): string {
 }
 
 function ProjectLayoutRouteComponent() {
+  const { owner, projectName } = Route.useParams();
+  const { runtimeConfig } = useAppRuntime();
+  const legacyAdminAlias = legacyAdminAliasPath(owner, projectName);
+
+  if (legacyAdminAlias) {
+    navigateToAppHref(runtimeConfig.basePath, legacyAdminAlias);
+    return null;
+  }
+
   return <Outlet />;
+}
+
+function legacyAdminAliasPath(owner: string, projectName: string): string | null {
+  if (owner !== "admin") {
+    return null;
+  }
+
+  switch (projectName) {
+    case "projects":
+      return "/sites/projectList";
+    case "users":
+      return "/sites/userList";
+    case "mail":
+      return "/sites/mail";
+    case "site":
+      return "/sites/data";
+    case "sql":
+      return "/sites/diagnostic";
+    default:
+      return null;
+  }
 }
 
 export function ProjectDetailRouteComponent() {

@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query},
-    http::HeaderMap,
+    http::{HeaderMap, Method},
     http::StatusCode,
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
@@ -8,10 +8,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, direct_toggle_workspace_notification, format_project_date_label,
     internal_error, persistence, redirect_to, require_project_read, require_session, ConnectError,
-    PilotBackend, PilotServiceImpl, RestRouteError,
+    AssetMode, BrowserRuntimeConfig, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -67,8 +68,14 @@ struct RestNotificationsResponse {
     total: u32,
 }
 
-pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+pub(crate) fn routes(
+    service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Router {
     let notification_service = service.clone();
+    let notification_assets = assets;
+    let notification_browser_runtime = browser_runtime;
     let watch_service = service.clone();
     let unwatch_get_service = service.clone();
     let unwatch_post_service = service.clone();
@@ -80,7 +87,12 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             get(
                 move |headers: HeaderMap, Query(query): Query<DirectNotificationPartialQuery>| {
                     let service = notification_service.clone();
-                    async move { direct_notification_api(headers, query, service).await }
+                    let assets = notification_assets.clone();
+                    let browser_runtime = notification_browser_runtime.clone();
+                    async move {
+                        direct_notification_api(headers, query, service, assets, browser_runtime)
+                            .await
+                    }
                 },
             ),
         )
@@ -208,7 +220,17 @@ async fn direct_notification_api(
     headers: HeaderMap,
     query: DirectNotificationPartialQuery,
     service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
 ) -> Response {
+    let wants_html = headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.split(',').any(|part| part.trim().starts_with("text/html")));
+    if wants_html {
+        return serve_frontend_page(assets, Method::GET, browser_runtime).await;
+    }
+
     let from = query.from.unwrap_or(0);
     let size = query
         .size

@@ -2,7 +2,7 @@ use crate::api_types::OwnedView;
 use axum::{
     body::Bytes,
     extract::{Form, Path, Query},
-    http::{HeaderMap, StatusCode},
+    http::{HeaderMap, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, patch, post, put},
     Json, Router,
@@ -11,6 +11,7 @@ use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::assets::serve_frontend_page;
 use crate::api_types::*;
 use crate::routes::utils::gravatar_url;
 use crate::{
@@ -31,7 +32,8 @@ use crate::{
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
-    ConnectError, Context, PilotBackend, PilotRepository, PilotServiceImpl,
+    AssetMode, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotRepository,
+    PilotServiceImpl,
     ProjectCreatableResource, RestIssueAssignableUsersQuery, RestMentionReferenceMetadata,
     RestProjectDeleteResponse, RestRouteError,
 };
@@ -2375,15 +2377,23 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
         )
 }
 
-pub(crate) fn routes(service: PilotServiceImpl) -> Router {
+pub(crate) fn routes(
+    service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Router {
     let direct_project_watch_service = service.clone();
     let direct_project_unwatch_service = service.clone();
     let direct_project_enroll_service = service.clone();
     let direct_project_cancel_enroll_service = service.clone();
     let direct_project_labels_service = service.clone();
+    let direct_project_labels_assets = assets.clone();
+    let direct_project_labels_browser_runtime = browser_runtime.clone();
     let direct_project_label_attach_service = service.clone();
     let direct_project_label_detach_service = service.clone();
     let direct_project_change_vcs_service = service.clone();
+    let direct_project_member_assets = assets.clone();
+    let direct_project_member_browser_runtime = browser_runtime.clone();
     let direct_project_member_add_service = service.clone();
     let direct_project_member_update_service = service.clone();
     let direct_project_member_delete_service = service.clone();
@@ -2395,6 +2405,8 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let legacy_title_heads_service = service.clone();
     let legacy_project_assignable_service = service.clone();
     let legacy_milestone_service = service.clone();
+    let milestone_list_assets = assets.clone();
+    let milestone_list_browser_runtime = browser_runtime.clone();
     let milestone_create_service = service.clone();
     let milestone_update_service = service.clone();
     let milestone_delete_service = service.clone();
@@ -2432,7 +2444,26 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
         )
         .route(
             "/{owner}/{project}/milestones",
-            post(
+            get({
+                let assets = milestone_list_assets.clone();
+                let browser_runtime = milestone_list_browser_runtime.clone();
+                move |headers: HeaderMap| {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move {
+                        if headers
+                            .get("accept")
+                            .and_then(|value| value.to_str().ok())
+                            .is_some_and(|accept| accept.contains("text/html"))
+                        {
+                            serve_frontend_page(assets, Method::GET, browser_runtime).await
+                        } else {
+                            StatusCode::METHOD_NOT_ALLOWED.into_response()
+                        }
+                    }
+                }
+            })
+            .post(
                 move |headers: HeaderMap,
                       Path((owner, project)): Path<(String, String)>,
                       Form(form): Form<HashMap<String, String>>| {
@@ -2677,7 +2708,16 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             get(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>| {
+                    let assets = direct_project_labels_assets.clone();
+                    let browser_runtime = direct_project_labels_browser_runtime.clone();
                     async move {
+                        if headers
+                            .get("accept")
+                            .and_then(|value| value.to_str().ok())
+                            .is_some_and(|accept| accept.contains("text/html"))
+                        {
+                            return serve_frontend_page(assets, Method::GET, browser_runtime).await;
+                        }
                         direct_project_labels(
                             headers,
                             owner_name,
@@ -2744,7 +2784,16 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
         )
         .route(
             "/{owner_name}/{project_name}/members",
-            post(
+            get({
+                let assets = direct_project_member_assets.clone();
+                let browser_runtime = direct_project_member_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .post(
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Form(form): Form<HashMap<String, String>>| {

@@ -31,7 +31,7 @@ function RootRouteComponent() {
 }
 
 function RootSidebar() {
-  const { currentSession, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
 
   if (!currentSession || currentSession.isAnonymous) {
     return null;
@@ -77,11 +77,13 @@ function RootSidebar() {
             <SidebarProjectList
               active
               id="myOrganizationList"
+              noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               projects={workspaceOverview?.favoriteProjects ?? []}
               runtimeConfig={runtimeConfig}
             />
             <SidebarProjectList
               id="myProjectList"
+              noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               projects={[
                 ...(workspaceOverview?.recentProjects ?? []),
                 ...(workspaceOverview?.watchedProjects ?? []),
@@ -90,6 +92,7 @@ function RootSidebar() {
             />
             <SidebarIssueList
               issues={workspaceOverview?.issueItems ?? []}
+              noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               runtimeConfig={runtimeConfig}
             />
           </div>
@@ -102,18 +105,20 @@ function RootSidebar() {
 function SidebarProjectList({
   active = false,
   id,
+  noResultsLabel,
   projects,
   runtimeConfig,
 }: {
   active?: boolean;
   id: string;
+  noResultsLabel: string;
   projects: Array<{ ownerName: string; projectName: string }>;
   runtimeConfig: RuntimeConfig;
 }) {
   if (projects.length === 0) {
     return (
       <div className={`no-result tab-pane user-ul ${active ? "active" : ""}`} id={id}>
-        title.no.results
+        {noResultsLabel}
       </div>
     );
   }
@@ -157,15 +162,17 @@ function SidebarProjectList({
 
 function SidebarIssueList({
   issues,
+  noResultsLabel,
   runtimeConfig,
 }: {
   issues: NonNullable<WorkspaceOverviewViewModel["issueItems"]>;
+  noResultsLabel: string;
   runtimeConfig: RuntimeConfig;
 }) {
   if (issues.length === 0) {
     return (
       <div className="no-result tab-pane user-ul" id="myRecentIssueList">
-        title.no.results
+        {noResultsLabel}
       </div>
     );
   }

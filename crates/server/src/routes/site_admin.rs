@@ -1239,8 +1239,10 @@ pub(crate) fn routes(
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
 ) -> Router {
-    let site_diagnostic_shell_assets = assets;
-    let site_diagnostic_shell_browser_runtime = browser_runtime;
+    let site_diagnostic_shell_assets = assets.clone();
+    let site_diagnostic_shell_browser_runtime = browser_runtime.clone();
+    let site_mail_shell_assets = assets;
+    let site_mail_shell_browser_runtime = browser_runtime;
     let unwatch_service = service.clone();
     let site_update_download_service = service.clone();
     let site_update_download_file_service = service.clone();
@@ -1328,7 +1330,16 @@ pub(crate) fn routes(
         )
         .route(
             "/sites/mail",
-            post(move |headers: HeaderMap, body: Bytes| {
+            get({
+                let assets = site_mail_shell_assets.clone();
+                let browser_runtime = site_mail_shell_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .post(move |headers: HeaderMap, body: Bytes| {
                 async move {
                     direct_send_site_mail(
                         headers,

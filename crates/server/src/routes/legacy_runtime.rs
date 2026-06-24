@@ -338,7 +338,16 @@ pub(crate) fn routes(
         )
         .route(
             "/_import",
-            post(
+            get({
+                let assets = legacy_migration_assets.clone();
+                let browser_runtime = legacy_migration_browser_runtime.clone();
+                move || {
+                    let assets = assets.clone();
+                    let browser_runtime = browser_runtime.clone();
+                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                }
+            })
+            .post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_import_project(headers, form, project_import_service.clone()).await
                 },

@@ -200,17 +200,29 @@ pub(crate) fn app_routes(
         .merge(board_routes(service.clone()))
         .merge(issue_routes(service.clone()))
         .merge(static_compat_routes())
-        .merge(notification_routes(service.clone()))
+        .merge(notification_routes(
+            service.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+        ))
         .merge(comment_routes(service.clone()))
-        .merge(project_routes(service.clone()))
+        .merge(site_admin_routes(
+            service.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+        ))
+        .merge(file_routes(service.clone()))
+        .merge(pull_request_routes(service.clone()))
+        .merge(code_routes(service.clone()))
+        .merge(project_routes(
+            service.clone(),
+            assets.clone(),
+            browser_runtime.clone(),
+        ))
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
         )
-        .merge(file_routes(service.clone()))
-        .merge(pull_request_routes(service.clone()))
-        .merge(site_admin_routes(service.clone(), assets, browser_runtime))
-        .merge(code_routes(service))
 }
 
 pub(crate) fn static_compat_routes() -> Router {

@@ -1240,7 +1240,7 @@ export function ProjectImportPage(props: {
             <dl>
               <dt>
                 <label htmlFor="url">
-                  {legacyMessage(messages, "project.git.url")}{" "}
+                  {legacyMessage(messages, "project.git.repository.url")}{" "}
                   <strong className="orange-txt">*</strong>
                 </label>
               </dt>
@@ -1269,7 +1269,7 @@ export function ProjectImportPage(props: {
                     type="checkbox"
                     onChange={(event) => setRepoAuthOpen(event.target.checked)}
                   />
-                  {legacyMessage(messages, "project.git.useRepoAuth")}
+                  {legacyMessage(messages, "project.import.auth.required")}
                 </label>
                 <div
                   className="repo-auth-wrap"

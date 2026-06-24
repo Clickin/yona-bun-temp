@@ -1325,6 +1325,24 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   coverage: `runtime_config_contract`, `assets_contract`,
   `frontend/src/runtime-config.spec.ts`, and
   `frontend/src/root-custom-navbar-link.spec.ts`.
+- 2026-06-25 Playwright route-sweep note: authenticated Chrome sweep over 36
+  user-visible local routes under `/yona` now reports zero smoke blockers
+  after fixing direct legacy GET navigation for `/_import`, `/notification`,
+  `/sites/mail`, `/:owner/:project/members`, `/:owner/:project/milestones`,
+  and `/:owner/:project/labels`; preserving JSON/POST behavior for existing
+  direct APIs; preventing `/admin/{projects,users,mail,site,sql}` from being
+  misread as project routes; and resolving the visible raw legacy message keys
+  found in the sweep. Evidence artifact path during the run:
+  `output/playwright/route-sweep-20260625/local-report-final3-authenticated.json`
+  with `badCount: 0`; generated screenshots were not committed. The homelab
+  legacy URL `http://192.168.45.10:9000` remained reachable via curl, but
+  Playwright Chrome in this execution environment returned
+  `net::ERR_ADDRESS_UNREACHABLE` even with `--no-sandbox`, so the current
+  browser sweep is local Yoram only and the legacy comparison remains a
+  follow-up for an environment whose browser can reach that LAN host. Visual
+  inspection also showed project subpages such as milestones still look much
+  plainer than legacy even when the smoke heuristics pass; that is tracked as
+  UX diff work rather than a routing/CSS-load blocker.
 
 ## Wave 0 Exit Snapshot
 

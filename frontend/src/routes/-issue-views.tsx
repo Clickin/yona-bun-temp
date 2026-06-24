@@ -2715,7 +2715,7 @@ export function UserIssueListPage(props: {
                         href={filterHref(filter.value)}
                       >
                         <span className={filter.className}>
-                          <i className={filter.icon} /> {filter.label}
+                          <i className={filter.icon} /> {messages(filter.label)}
                         </span>
                         {sideFilterCountFor(filter.value) !== null ? (
                           <span>{` (${sideFilterCountFor(filter.value)})`}</span>
