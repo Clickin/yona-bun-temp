@@ -18,3 +18,44 @@
 - session/auth bootstrap, asset delivery, HTTP/REST 진입점은 동일한 runtime 기준을 공유해야 한다.
 - 환경별 secret과 credential은 실행 파일이 아니라 외부 주입으로 관리한다.
 - single-binary 배포와 container 배포가 동일한 contract를 제공해야 한다.
+
+## Windows MSVC 빌드
+
+전제:
+
+- Windows 10/11
+- Visual Studio Build Tools 2022의 `Desktop development with C++`
+- Rust MSVC toolchain: `rustup default stable-x86_64-pc-windows-msvc`
+- Node.js와 `pnpm`
+
+기본 빌드:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-msvc.ps1
+```
+
+기본값은 `x86_64-pc-windows-msvc`, `release`, `db-matrix` feature다. 따라서
+SQLite, PostgreSQL, MySQL/MariaDB 런타임을 포함한다. SQLite 전용 smoke binary가
+필요하면 다음처럼 빌드한다:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-msvc.ps1 -Features none
+```
+
+산출물:
+
+- `dist\windows-msvc-x86_64-pc-windows-msvc\yoram.exe`
+- `dist\windows-msvc-x86_64-pc-windows-msvc\yoram.toml`
+- `dist\yoram-windows-msvc-x86_64-pc-windows-msvc.zip`
+
+실행 예:
+
+```powershell
+cd .\dist\windows-msvc-x86_64-pc-windows-msvc
+$env:YORAM_CONFIG_TOML = (Resolve-Path .\yoram.toml)
+$env:YONA_USE_EMBEDDED_ASSETS = "1"
+.\yoram.exe
+```
+
+다른 config 파일을 쓸 때도 `YORAM_CONFIG_TOML`만 바꾸면 된다. 환경변수
+`YONA_*`는 `yoram.toml`보다 우선한다.
